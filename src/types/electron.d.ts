@@ -2,6 +2,10 @@
 declare global {
   interface Window {
     electronAPI?: {
+      // Id of the current app launch — changes on every restart, so a session
+      // stamped with an older id is treated as expired.
+      appRunId?: string;
+
       // Window management
       openLoanAppWindow: () => void;
       openNewWindow: (route: string) => void;

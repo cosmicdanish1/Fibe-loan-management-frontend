@@ -1,6 +1,20 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
 
+// Id of the current app launch, read synchronously here in preload so the
+// renderer can use it while building its initial auth state (AuthContext runs
+// this check at module load, before any async IPC could return).
+//
+// Guarded: if this ever threw, the exposeInMainWorld call below would never
+// run and the renderer would lose the whole electronAPI bridge. Falling back to
+// undefined only costs the close-app-logs-out behaviour, not the app.
+let appRunId: string | undefined;
+try {
+  appRunId = ipcRenderer.sendSync('get-app-run-id');
+} catch (error) {
+  console.error('Failed to read app run id:', error);
+}
+
 // List of valid IPC channels
 const validSendChannels = [
   'open-loan-app-window',
@@ -138,6 +152,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // App info
   getAppVersion: () => secureIpcRenderer.invoke('get-app-version'),
+
+  // Identifies THIS launch of the app. Changes every time the app restarts, so
+  // a session stamped with an older id is treated as expired.
+  appRunId,
 
   // External links
   openExternal: (url: string) => {

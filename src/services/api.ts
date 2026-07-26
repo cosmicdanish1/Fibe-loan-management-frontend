@@ -236,6 +236,18 @@ class ApiService {
     };
   }
 
+  /**
+   * Drop the cached token without calling the backend. Used when the session is
+   * discarded locally (explicit logout, or a session left over from a previous
+   * app run) — without this the in-memory token would outlive localStorage and
+   * keep authenticating requests.
+   */
+  clearAuth(): void {
+    this.token = null;
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  }
+
   async logout(): Promise<ApiResponse> {
     const response = await this.request('/auth/logout', {
       method: 'POST',

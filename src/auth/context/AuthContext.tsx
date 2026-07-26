@@ -12,9 +12,48 @@ type AuthAction =
 // Inactivity timeout logic removed as per user request
 
 
+// Id of the current app launch, supplied by the Electron main process (see
+// main.ts APP_RUN_ID). Undefined when running in a plain browser.
+const APP_RUN_ID: string | undefined = (window as any).electronAPI?.appRunId;
+
+// Every key that makes up a logged-in session, including the API tokens.
+const SESSION_KEYS = [
+  'isAuthenticated',
+  'user',
+  'sessionStartTime',
+  'lastActivity',
+  'accessToken',
+  'refreshToken',
+  'appRunId',
+];
+
+const clearStoredSession = () => {
+  SESSION_KEYS.forEach((key) => localStorage.removeItem(key));
+  // Also drop the token ApiService holds in memory, which localStorage removal
+  // alone would leave behind.
+  apiService.clearAuth();
+};
+
+// A stored session only counts if it was created by THIS run of the app.
+// Closing and reopening the app mints a new run id, so the old session is
+// rejected here and the user has to log in again.
+//
+// In a browser there is no run id, so this check is skipped and the previous
+// persist-across-reload behaviour is kept for dev.
+const isSessionFromCurrentRun = (): boolean => {
+  if (!APP_RUN_ID) return true;
+  return localStorage.getItem('appRunId') === APP_RUN_ID;
+};
+
 // Check authentication state
 const getInitialState = (): AuthState => {
   const currentTime = Date.now();
+
+  // Discard anything left over from a previous launch before reading it.
+  if (!isSessionFromCurrentRun()) {
+    console.log('[Auth] Session belongs to a previous app run — requiring login');
+    clearStoredSession();
+  }
 
   // Update last activity immediately (this window is now active)
   localStorage.setItem('lastActivity', currentTime.toString());
@@ -38,10 +77,7 @@ const getInitialState = (): AuthState => {
       };
     } catch (error) {
       console.error('[Auth] Error parsing session data:', error);
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('user');
-      localStorage.removeItem('sessionStartTime');
-      localStorage.removeItem('lastActivity');
+      clearStoredSession();
     }
   }
 
@@ -123,9 +159,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Clear any existing session
   const clearSession = () => {
     console.log('[Auth] Clearing existing session');
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    localStorage.removeItem('sessionStartTime');
+    clearStoredSession();
   };
 
   // Set up the cross-window logout channel (must run before the session-expiry
@@ -161,6 +195,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const initializeAuth = async () => {
       try {
         console.log('[Auth] Initializing auth state');
+
+        // Same guard as getInitialState — a session from an earlier launch of
+        // the app must never be restored.
+        if (!isSessionFromCurrentRun()) {
+          console.log('[Auth] Stale session from previous app run - showing login form');
+          clearStoredSession();
+          dispatch({ type: 'LOGOUT' });
+          return;
+        }
 
         // Check if we have a valid session from getInitialState
         const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
@@ -228,6 +271,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('sessionStartTime', Date.now().toString());
         localStorage.setItem('lastActivity', Date.now().toString());
+        // Tie the session to this launch — see isSessionFromCurrentRun.
+        if (APP_RUN_ID) localStorage.setItem('appRunId', APP_RUN_ID);
 
         console.log('[Auth] Session started at:', new Date().toLocaleString());
         // Absolute expiry removed

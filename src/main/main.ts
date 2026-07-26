@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as https from 'https';
 import * as http from 'http';
+import { randomUUID } from 'crypto';
 import { initMainLogger } from './logger';
 
 // Dev vs packaged — use Electron's built-in flag instead of the external
@@ -13,6 +14,26 @@ import { initMainLogger } from './logger';
 const isDev = !app.isPackaged;
 
 initMainLogger();
+
+// ===== APP RUN ID (session lifetime) =====
+// A fresh id minted on every launch of the app. Renderers stamp their stored
+// session with it at login and re-check it at startup: if the stored id doesn't
+// match, the session belongs to a PREVIOUS run and is discarded, forcing a new
+// login. This is what makes "close the app => logged out" hold.
+//
+// Why an id rather than clearing storage on quit: a crash or a force-kill never
+// runs quit handlers, but it can't fake a matching id either — any new process
+// gets a new id, so a stale session is always rejected.
+//
+// All windows of one run share this id (localStorage is per-origin, so child
+// tool windows stay logged in alongside the dashboard).
+const APP_RUN_ID = randomUUID();
+
+// Synchronous on purpose: the renderer needs this while building its initial
+// auth state, before any React render or async IPC could resolve.
+ipcMain.on('get-app-run-id', (event) => {
+  event.returnValue = APP_RUN_ID;
+});
 
 // ===== SERVER CONFIG (LAN deployment) =====
 // Priority: server-config.json (any location) → localhost fallback in dev → empty in prod
