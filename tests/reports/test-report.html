@@ -1,0 +1,277 @@
+<html><head><meta charset="utf-8"/><title>Test Report</title><style type="text/css">:root {
+  --text-primary: #111;
+  --text-secondary: #4f4f4f;
+  --success: #006633;
+  --success-bright: #80ffbf;
+  --danger: #cc071e;
+  --danger-bright: #fbdfe0;
+  --warning: #995c00;
+  --warning-bright: #ffeea8;
+  --panel: #eee;
+  --border: #949494;
+  --disabled: #6b6b6b;
+}
+
+html,
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  margin: 0;
+  padding: 0;
+  color: var(--text-primary);
+}
+body {
+  padding: 2rem 1rem;
+}
+.jesthtml-content {
+  margin: 0 auto;
+  max-width: 70rem;
+}
+header {
+  display: flex;
+  align-items: center;
+}
+#title {
+  margin: 0;
+  flex-grow: 1;
+}
+#logo {
+  height: 4rem;
+}
+#timestamp {
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
+
+#metadata-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.additional-information-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+}
+
+/** SUMMARY */
+#summary {
+  color: var(--text-primary);
+  display: flex;
+  font-family: monospace;
+  font-size: 1rem;
+}
+#summary > div {
+  margin-right: 0.5rem;
+  background: var(--panel);
+  padding: 1rem;
+  min-width: 15rem;
+}
+#summary > div:last-child {
+  margin-right: 0;
+}
+@media only screen and (max-width: 720px) {
+  #summary {
+    flex-direction: column;
+  }
+  #summary > div {
+    margin-right: 0;
+    margin-top: 1rem;
+  }
+  #summary > div:first-child {
+    margin-top: 0;
+  }
+}
+
+.summary-total {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.summary-passed {
+  color: var(--success);
+  border-left: 0.4rem solid var(--success);
+  padding-left: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+.summary-failed,
+.summary-obsolete-snapshots {
+  color: var(--danger);
+  border-left: 0.4rem solid var(--danger);
+  padding-left: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+.summary-pending {
+  color: var(--warning);
+  border-left: 0.4rem solid var(--warning);
+  padding-left: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+.summary-empty {
+  color: var(--disabled);
+  border-left: 0.4rem solid var(--disabled);
+  margin-bottom: 0.15rem;
+}
+
+.test-result {
+  padding: 1rem;
+  margin-bottom: 0.25rem;
+}
+.test-result:last-child {
+  border: 0;
+}
+.test-result.passed {
+  background-color: var(--success-bright);
+  color: var(--success);
+}
+.test-result.failed {
+  background-color: var(--danger-bright);
+  color: var(--danger);
+}
+.test-result.pending {
+  background-color: var(--warning-bright);
+  color: var(--warning);
+}
+
+.test-info {
+  display: flex;
+  justify-content: space-between;
+}
+.test-suitename {
+  width: 20%;
+  text-align: left;
+  font-weight: bold;
+  word-break: break-word;
+}
+.test-title {
+  width: 40%;
+  text-align: left;
+  font-style: italic;
+}
+.test-status {
+  width: 20%;
+  text-align: right;
+}
+.test-duration {
+  width: 10%;
+  text-align: right;
+  font-size: 0.85rem;
+}
+
+.failureMessages {
+  padding: 0 1rem;
+  margin-top: 1rem;
+  border-top: 1px dashed var(--danger);
+}
+.failureMessages.suiteFailure {
+  border-top: none;
+}
+.failureMsg {
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+
+.suite-container {
+  margin-bottom: 1rem;
+}
+.suite-info {
+  padding: 1rem;
+  background-color: var(--panel);
+  color: var(--text-secondary);
+  border: 0.15rem solid;
+  border-color: var(--panel);
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+.suite-info:hover {
+  border-color: var(--border);
+  cursor: pointer;
+}
+.suite-info .suite-path {
+  word-break: break-all;
+  flex-grow: 1;
+  font-family: monospace;
+  font-size: 1rem;
+}
+.suite-info .suite-time {
+  margin-left: 1rem;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.85rem;
+}
+.suite-info .suite-time.warn {
+  background-color: var(--danger);
+  color: #fff;
+}
+.suite-info:before {
+  content: "\2303";
+  display: inline-block;
+  margin-right: 1rem;
+  transform: rotate(180deg) translateY(0.15rem);
+}
+.suite-container[open] .suite-info:before {
+  transform: rotate(0deg) translateY(0.15rem);
+}
+
+/* CONSOLE LOGS */
+.suite-consolelog {
+  margin-bottom: 0.25rem;
+  padding: 1rem;
+  background-color: var(--panel);
+}
+.suite-consolelog-header {
+  font-weight: bold;
+}
+.suite-consolelog-item {
+  padding: 0.5rem;
+}
+.suite-consolelog-item pre {
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+.suite-consolelog-item-origin {
+  color: var(--text-secondary);
+  font-weight: bold;
+}
+.suite-consolelog-item-message {
+  color: var(--text-primary);
+  font-size: 1rem;
+  padding: 0 0.5rem;
+}
+
+/* OBSOLETE SNAPSHOTS */
+.suite-obsolete-snapshots {
+  margin-bottom: 0.25rem;
+  padding: 1rem;
+  background-color: var(--danger-bright);
+  color: var(--danger);
+}
+.suite-obsolete-snapshots-header {
+  font-weight: bold;
+}
+.suite-obsolete-snapshots-item {
+  padding: 0.5rem;
+}
+.suite-obsolete-snapshots-item pre {
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+.suite-obsolete-snapshots-item-message {
+  color: var(--text-primary);
+  font-size: 1rem;
+  padding: 0 0.5rem;
+}
+</style></head><body><main class="jesthtml-content"><header><h1 id="title">Test Report</h1></header><section id="metadata-container"><div id="timestamp">Started: 2025-09-11 01:20:33</div><div id="summary"><div id="suite-summary"><div class="summary-total">Suites (65)</div><div class="summary-passed  summary-empty">0 passed</div><div class="summary-failed ">65 failed</div><div class="summary-pending  summary-empty">0 pending</div></div><div id="test-summary"><div class="summary-total">Tests (0)</div><div class="summary-passed  summary-empty">0 passed</div><div class="summary-failed  summary-empty">0 failed</div><div class="summary-pending  summary-empty">0 pending</div></div></div></section><details id="suite-1" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\HeadAdditionModification.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-2" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\DepositLoanSlab.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-3" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\CreateModifyUsers.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-4" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ChangePassword.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-5" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\InterestCalculation.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-6" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\RoleManagement.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-7" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ChangeLoanSurety.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-8" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ReceiptPaymentVoucher.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-9" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ModifyFdAccount.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-10" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\SettingsPage.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-11" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\PassTransactions.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-12" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ExitOption1.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-13" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\DemandPrintOrder.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-14" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\JournalTransferVoucher.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-15" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ModifyMemberBalance.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-16" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\JournalTransferEntry.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-17" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\LoanPayment.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-18" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\MemberBalanceTransfer.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-19" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\Receipt.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-20" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\Generate.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-21" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\DividendPayment.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-22" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\BankDetailLedger.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-23" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\CashBookMonthly.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-24" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\NewLoanDisbursed.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-25" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\FDInterestVoucherPosting.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-26" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\LoanApplication.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-27" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\Dashboard.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-28" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\MemberMaster.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-29" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\DetailLedger.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-30" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\MemberLedgerReport.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-31" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\FixedDepositReceipt.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-32" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\GeneralLedger.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-33" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ModifyBusinessRules.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-34" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\DayBookSB.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-35" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\DayBook.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-36" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\SubNavbar.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-37" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\CompulsoryDepositTransaction.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-38" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ModifyShortRecovery.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-39" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\DesignationMaster.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-40" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\DayEnd.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-41" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\PrintMembersDemandList.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-42" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\CashBook.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-43" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ChangeMemberOffice.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-44" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\ConsolidationOfDailyAccount.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-45" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\WingOfficeMaster.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-46" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\Security.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-47" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\SignatureScanning.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-48" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\Contents.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-49" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\UpdationLedgerPosting.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-50" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\App.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-51" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\CashBookReceiptwiseRough.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-52" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\DataEntryOption1.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-53" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\Navbar.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-54" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\main.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-55" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\PassRdAccount.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-56" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\LoginPage.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-57" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\CertificateParameterSetting.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-58" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\components\Navbar.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-59" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\InterestCalculationPosting.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-60" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\LogoutUser.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-61" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\HeadOpeningBalance.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-62" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\unit\pages\FinancialYearClosing.test.tsx</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-63" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\example.spec.ts</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-64" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\e2e\example.spec.ts</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details><details id="suite-65" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">F:\becan\main project\electron-react-ts\tests\e2e\navbar.spec.ts</div><div class="suite-time">0s</div></summary><div class="suite-tests"/></details></main></body></html>

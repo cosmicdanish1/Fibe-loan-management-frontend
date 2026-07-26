@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Test</title>
+</head>
+<body>
+    <h1>Login Test</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testLogin() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing login...\n';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+
+                const data = await response.json();
+                output.textContent += '\n=== RAW RESPONSE ===\n';
+                output.textContent += JSON.stringify(data, null, 2);
+                
+                output.textContent += '\n\n=== STRUCTURE CHECK ===\n';
+                output.textContent += 'data.success: ' + data.success + '\n';
+                output.textContent += 'data.data exists: ' + (!!data.data) + '\n';
+                output.textContent += 'data.data.user exists: ' + (!!data.data?.user) + '\n';
+                output.textContent += 'data.data.accessToken exists: ' + (!!data.data?.accessToken) + '\n';
+                
+                if (data.data?.user) {
+                    output.textContent += '\n=== USER DATA ===\n';
+                    output.textContent += JSON.stringify(data.data.user, null, 2);
+                }
+            } catch (error) {
+                output.textContent += '\n\nERROR: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>JottingReport Frontend API Test</h1>
+    <p>This page tests the exact API calls that the JottingReport frontend should make.</p>
+    
+    <div>
+        <button onclick="testHeadMasters()">Test Head Masters API</button>
+        <button onclick="testWings()">Test Wings API</button>
+        <button onclick="testOffices()">Test Offices API</button>
+        <button onclick="testJottingReport()">Test JottingReport API</button>
+        <button onclick="testAll()">Test All APIs</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const BASE_URL = 'http://localhost:3001/api/v1';
+        
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function makeApiCall(endpoint, description) {
+            try {
+                addResult(`🔄 Testing ${description}...`, 'info');
+                
+                const response = await fetch(`${BASE_URL}${endpoint}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                addResult(`✅ ${description} - SUCCESS`, 'success');
+                addResult(`<strong>Status:</strong> ${response.status}<br>
+                          <strong>Data Type:</strong> ${typeof data}<br>
+                          <strong>Has data property:</strong> ${!!data.data}<br>
+                          <strong>Data length:</strong> ${data.data?.length || 0}<br>
+                          <strong>Sample data:</strong><pre>${JSON.stringify(data.data?.slice(0, 2) || data, null, 2)}</pre>`, 'info');
+                
+                return { success: true, data };
+            } catch (error) {
+                addResult(`❌ ${description} - FAILED: ${error.message}`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function testHeadMasters() {
+            clearResults();
+            await makeApiCall('/jotting-report/head-masters', 'Head Masters API');
+        }
+        
+        async function testWings() {
+            clearResults();
+            await makeApiCall('/jotting-report/wings', 'Wings API');
+        }
+        
+        async function testOffices() {
+            clearResults();
+            await makeApiCall('/jotting-report/offices', 'Offices API');
+        }
+        
+        async function testJottingReport() {
+            clearResults();
+            await makeApiCall('/jotting-report?headCode=L1004&asOnDate=2024-12-28&sortBy=MBNO', 'JottingReport API');
+        }
+        
+        async function testAll() {
+            clearResults();
+            addResult('🚀 Starting comprehensive API test...', 'info');
+            
+            const results = await Promise.all([
+                makeApiCall('/jotting-report/head-masters', 'Head Masters API'),
+                makeApiCall('/jotting-report/wings', 'Wings API'),
+                makeApiCall('/jotting-report/offices', 'Offices API'),
+                makeApiCall('/jotting-report?headCode=L1004&asOnDate=2024-12-28&sortBy=MBNO', 'JottingReport API')
+            ]);
+            
+            const successCount = results.filter(r => r.success).length;
+            const totalCount = results.length;
+            
+            if (successCount === totalCount) {
+                addResult(`🎉 ALL TESTS PASSED (${successCount}/${totalCount})`, 'success');
+                addResult(`✅ The JottingReport frontend should work correctly!<br>
+                          ✅ All APIs are accessible from the browser<br>
+                          ✅ CORS is working properly<br>
+                          ✅ Data is being returned correctly`, 'success');
+            } else {
+                addResult(`⚠️ SOME TESTS FAILED (${successCount}/${totalCount})`, 'error');
+                addResult(`❌ The JottingReport frontend may have issues<br>
+                          ❌ Check the failed API calls above<br>
+                          ❌ Verify backend is running and accessible`, 'error');
+            }
+        }
+        
+        // Auto-run test on page load
+        window.onload = function() {
+            addResult('🔍 Frontend API Test Page Loaded', 'info');
+            addResult('Click the buttons above to test individual APIs or test all at once.', 'info');
+            addResult('This simulates the exact API calls that the JottingReport frontend makes.', 'info');
+        };
+    </script>
+</body>
+</html>

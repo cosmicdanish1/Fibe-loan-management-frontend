@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Backend Connection Tester</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+    h2 { color: #333; }
+    .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    input { width: 100%; padding: 10px; font-size: 15px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
+    button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 4px; }
+    button:hover { background: #1d4ed8; }
+    button.green { background: #16a34a; }
+    button.green:hover { background: #15803d; }
+    .result { margin-top: 14px; padding: 12px; border-radius: 6px; font-size: 13px; white-space: pre-wrap; word-break: break-all; }
+    .success { background: #dcfce7; border: 1px solid #16a34a; color: #166534; }
+    .error   { background: #fee2e2; border: 1px solid #dc2626; color: #991b1b; }
+    .info    { background: #dbeafe; border: 1px solid #2563eb; color: #1e40af; }
+    .loading { background: #fef9c3; border: 1px solid #ca8a04; color: #92400e; }
+    label { font-size: 13px; font-weight: bold; color: #555; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: bold; margin-left: 8px; }
+    .badge.ok  { background: #dcfce7; color: #166534; }
+    .badge.fail{ background: #fee2e2; color: #991b1b; }
+    .badge.wait{ background: #fef9c3; color: #92400e; }
+  </style>
+</head>
+<body>
+
+<h2>🔌 Backend Connection Tester</h2>
+
+<div class="card">
+  <label>Backend IP Address</label>
+  <input type="text" id="serverIP" value="192.168.1.50" placeholder="e.g. 192.168.1.50" />
+  <label>Port</label>
+  <input type="text" id="port" value="3001" placeholder="3001" style="width:100px" />
+  <br/>
+  <button onclick="runAllTests()">▶ Run All Tests</button>
+  <button class="green" onclick="testLogin()">🔑 Test Login</button>
+</div>
+
+<!-- Test Results -->
+<div class="card">
+  <b>1. Health Check</b> <span id="badge-health" class="badge wait">waiting</span>
+  <div id="result-health" class="result info">Click "Run All Tests"</div>
+</div>
+
+<div class="card">
+  <b>2. License Status</b> <span id="badge-license" class="badge wait">waiting</span>
+  <div id="result-license" class="result info">Click "Run All Tests"</div>
+</div>
+
+<div class="card">
+  <b>3. Members Endpoint</b> <span id="badge-members" class="badge wait">waiting</span>
+  <div id="result-members" class="result info">Click "Run All Tests"</div>
+</div>
+
+<div class="card">
+  <b>4. Login Test</b> <span id="badge-login" class="badge wait">waiting</span>
+  <br/><br/>
+  <label>Username</label>
+  <input type="text" id="username" value="admin" style="width:200px; margin-right:10px" />
+  <label>Password</label>
+  <input type="password" id="password" value="" placeholder="Enter password" style="width:200px" />
+  <div id="result-login" class="result info">Click "🔑 Test Login" or "Run All Tests"</div>
+</div>
+
+<script>
+  function getBase() {
+    const ip   = document.getElementById('serverIP').value.trim();
+    const port = document.getElementById('port').value.trim();
+    return `http://${ip}:${port}/api/v1`;
+  }
+
+  function setBadge(id, status) {
+    const el = document.getElementById('badge-' + id);
+    el.className = 'badge ' + (status === 'ok' ? 'ok' : status === 'fail' ? 'fail' : 'wait');
+    el.textContent = status === 'ok' ? '✅ OK' : status === 'fail' ? '❌ FAIL' : '⏳ ...';
+  }
+
+  function setResult(id, cls, text) {
+    const el = document.getElementById('result-' + id);
+    el.className = 'result ' + cls;
+    el.textContent = text;
+  }
+
+  async function testEndpoint(id, url, options = {}) {
+    setResult(id, 'loading', '⏳ Connecting to ' + url + ' ...');
+    setBadge(id, 'wait');
+    try {
+      const start = Date.now();
+      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(8000) });
+      const ms = Date.now() - start;
+      let body = '';
+      try { body = JSON.stringify(await res.json(), null, 2); } catch { body = await res.text(); }
+
+      if (res.ok) {
+        setBadge(id, 'ok');
+        setResult(id, 'success', `✅ SUCCESS  [HTTP ${res.status}]  ${ms}ms\n\n${body}`);
+      } else {
+        setBadge(id, 'fail');
+        setResult(id, 'error', `❌ HTTP ${res.status} ${res.statusText}  ${ms}ms\n\n${body}`);
+      }
+    } catch (e) {
+      setBadge(id, 'fail');
+      setResult(id, 'error', `❌ FAILED — ${e.message}\n\nPossible causes:\n• Backend not running\n• Wrong IP or port\n• Firewall blocking port 3001\n• CORS (if running in browser, not Electron)`);
+    }
+  }
+
+  async function runAllTests() {
+    const base = getBase();
+    await testEndpoint('health',  `${base}/health`);
+    await testEndpoint('license', `${base}/license/status`);
+    await testEndpoint('members', `${base}/members?limit=1`);
+    await testLogin();
+  }
+
+  async function testLogin() {
+    const base = getBase();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    if (!password) {
+      setResult('login', 'info', 'ℹ️  Enter password above and click "🔑 Test Login"');
+      return;
+    }
+    await testEndpoint('login', `${base}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Detail Ledger - Complete Data Print Test</title>
+    <style>
+        /* Screen styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .no-print {
+            background-color: #d4edda;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 2px solid #28a745;
+        }
+        
+        .print-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .print-header, .print-info, .print-footer {
+            display: none;
+        }
+        
+        /* Simulate Ant Design table structure */
+        .ant-table-wrapper {
+            width: 100%;
+        }
+        
+        .ant-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .ant-table-thead > tr > th,
+        .ant-table-tbody > tr > td,
+        .ant-table-summary > tr > td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .ant-table-thead > tr > th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        .ant-table-summary > tr > td {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        
+        /* COMPLETE DATA PRINT STYLES */
+        @media print {
+            /* NUCLEAR CSS RESET - Hide everything first */
+            * {
+              visibility: hidden !important;
+              overflow: hidden !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            
+            /* Show only print content */
+            .print-content,
+            .print-content * {
+              visibility: visible !important;
+            }
+            
+            .print-content {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              overflow: hidden !important;
+            }
+            
+            /* Hide non-printable elements */
+            .no-print,
+            .no-print * {
+              display: none !important;
+              visibility: hidden !important;
+            }
+            
+            /* Print-specific elements */
+            .print-header {
+              display: block !important;
+              visibility: visible !important;
+              text-align: center;
+              margin-bottom: 10px;
+              border-bottom: 2px solid #333;
+              padding-bottom: 5px;
+              font-size: 14px;
+              font-weight: bold;
+            }
+            
+            .print-info {
+              display: flex !important;
+              visibility: visible !important;
+              margin-bottom: 10px;
+              justify-content: space-between;
+              font-size: 9px;
+            }
+            
+            .print-footer {
+              display: block !important;
+              visibility: visible !important;
+              margin-top: 10px;
+              font-size: 8px;
+              text-align: center;
+              color: #666;
+              border-top: 1px solid #ccc;
+              padding-top: 5px;
+            }
+            
+            /* CLEAN TABLE OVERRIDES */
+            .ant-table-wrapper,
+            .ant-table-wrapper *,
+            .ant-table,
+            .ant-table *,
+            .ant-table-container,
+            .ant-table-container *,
+            .ant-table-content,
+            .ant-table-content *,
+            .ant-table-body,
+            .ant-table-body *,
+            .ant-table-scroll,
+            .ant-table-scroll *,
+            table,
+            table *,
+            thead,
+            thead *,
+            tbody,
+            tbody *,
+            tfoot,
+            tfoot *,
+            tr,
+            tr *,
+            th,
+            th *,
+            td,
+            td * {
+              width: auto !important;
+              max-width: none !important;
+              min-width: 0 !important;
+              table-layout: fixed !important;
+              border-collapse: collapse !important;
+              font-size: 7px !important;
+              overflow: hidden !important;
+              white-space: nowrap !important;
+              text-overflow: ellipsis !important;
+              visibility: visible !important;
+              padding: 1px !important;
+              margin: 0 !important;
+              border: none !important;
+            }
+            
+            /* Force table to be exactly 100% width */
+            .ant-table-wrapper,
+            .ant-table,
+            table {
+              width: 100% !important;
+              max-width: 100% !important;
+              display: table !important;
+              border: 1px solid #333 !important;
+            }
+            
+            /* Force rows to display properly */
+            .ant-table-thead,
+            .ant-table-tbody,
+            .ant-table-summary,
+            thead,
+            tbody,
+            tfoot {
+              display: table-header-group !important;
+              width: 100% !important;
+            }
+            
+            .ant-table-tbody {
+              display: table-row-group !important;
+            }
+            
+            .ant-table-summary {
+              display: table-footer-group !important;
+            }
+            
+            tr {
+              display: table-row !important;
+              width: 100% !important;
+            }
+            
+            th, td {
+              display: table-cell !important;
+              border: 0.5px solid #666 !important;
+              padding: 2px 3px !important;
+            }
+            
+            /* Header row with bottom border only */
+            th {
+              background-color: #f0f0f0 !important;
+              font-weight: bold !important;
+              text-transform: uppercase !important;
+              -webkit-print-color-adjust: exact !important;
+              font-size: 6px !important;
+              border-bottom: 1px solid #333 !important;
+              border-left: none !important;
+              border-right: none !important;
+              border-top: none !important;
+            }
+            
+            /* Data rows with minimal borders */
+            td {
+              border-left: none !important;
+              border-right: none !important;
+              border-top: 0.5px solid #ddd !important;
+              border-bottom: none !important;
+            }
+            
+            /* Column separators only for important divisions */
+            th:nth-child(4), td:nth-child(4),
+            th:nth-child(5), td:nth-child(5) {
+              border-left: 0.5px solid #999 !important;
+            }
+            
+            /* OPTIMIZED COLUMN WIDTHS FOR PERFECT FIT */
+            th:nth-child(1), td:nth-child(1) { width: 9% !important; max-width: 9% !important; }
+            th:nth-child(2), td:nth-child(2) { width: 32% !important; max-width: 32% !important; }
+            th:nth-child(3), td:nth-child(3) { width: 25% !important; max-width: 25% !important; }
+            th:nth-child(4), td:nth-child(4) { width: 11% !important; max-width: 11% !important; text-align: center !important; }
+            th:nth-child(5), td:nth-child(5) { width: 11.5% !important; max-width: 11.5% !important; text-align: right !important; }
+            th:nth-child(6), td:nth-child(6) { width: 11.5% !important; max-width: 11.5% !important; text-align: right !important; }
+            
+            /* Summary row styling - with top border */
+            .ant-table-summary td,
+            tfoot td {
+              font-weight: bold !important;
+              background-color: #f5f5f5 !important;
+              -webkit-print-color-adjust: exact !important;
+              border-top: 1px solid #333 !important;
+              border-bottom: none !important;
+              border-left: none !important;
+              border-right: none !important;
+            }
+            
+            /* Summary row column separators */
+            .ant-table-summary td:nth-child(5),
+            tfoot td:nth-child(5) {
+              border-left: 0.5px solid #999 !important;
+            }
+            
+            @page {
+                size: A4 portrait;
+                margin: 4mm;
+            }
+            
+            /* Force body to not scroll */
+            html, body {
+              overflow: hidden !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <h2>🔍 Member Detail Ledger - Complete Data Print Test</h2>
+        <p><strong>📊 TEST DATA SUMMARY:</strong></p>
+        <ul>
+            <li><strong>Member:</strong> SSS MURTHY (610023352)</li>
+            <li><strong>Total Entries:</strong> <span id="entryCount">25</span> transactions</li>
+            <li><strong>Date Range:</strong> 01/11/2014 to 28/12/2025</li>
+            <li><strong>Total Debits:</strong> ₹ <span id="totalDebits">1,077,409.00</span></li>
+            <li><strong>Total Credits:</strong> ₹ <span id="totalCredits">1,179,736.00</span></li>
+        </ul>
+        
+        <p><strong>✅ VERIFICATION CHECKLIST:</strong></p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+            <div>
+                <strong>Print Preview Should Show:</strong>
+                <ul style="font-size: 12px;">
+                    <li>✓ Header: "MEMBER DETAIL LEDGER"</li>
+                    <li>✓ Member info with name & number</li>
+                    <li>✓ Date range information</li>
+                    <li>✓ All 6 table columns visible</li>
+                    <li>✓ All <span id="entryCount2">25</span> data rows</li>
+                </ul>
+            </div>
+            <div>
+                <strong>Layout Should Be:</strong>
+                <ul style="font-size: 12px;">
+                    <li>✓ No horizontal scrollbar</li>
+                    <li>✓ Clean professional borders</li>
+                    <li>✓ Proper column alignment</li>
+                    <li>✓ Total row with correct sums</li>
+                    <li>✓ Footer at bottom</li>
+                </ul>
+            </div>
+        </div>
+        
+        <button onclick="window.print()" style="padding: 12px 24px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 10px;">
+            🖨️ Print Complete Data Test
+        </button>
+        
+        <button onclick="countRows()" style="padding: 12px 24px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">
+            📊 Count Table Rows
+        </button>
+        
+        <div id="rowCount" style="margin-top: 10px; font-weight: bold; color: #007bff;"></div>
+    </div>
+
+    <div class="print-content">
+        <div class="print-header">
+            <h2>MEMBER DETAIL LEDGER</h2>
+        </div>
+        
+        <div class="print-info">
+            <div>
+                <strong>Member:</strong> SSS MURTHY (610023352)<br/>
+                <strong>Date Range:</strong> 01/11/2014 to 28/12/2025
+            </div>
+            <div>
+                <strong>Report Generated:</strong> 28-Dec-2025 22:35:00
+            </div>
+        </div>
+
+        <div class="ant-table-wrapper">
+            <table class="ant-table">
+                <thead class="ant-table-thead">
+                    <tr>
+                        <th>DATE</th>
+                        <th>ACCOUNT HEAD</th>
+                        <th>PARTICULARS</th>
+                        <th>VOUCHER NO.</th>
+                        <th>DEBIT</th>
+                        <th>CREDIT</th>
+                    </tr>
+                </thead>
+                <tbody class="ant-table-tbody" id="tableBody">
+                    <!-- Data rows will be generated by JavaScript -->
+                </tbody>
+                <tfoot class="ant-table-summary">
+                    <tr>
+                        <td colspan="4" style="text-align: right;"><strong>TOTAL</strong></td>
+                        <td style="text-align: right;"><strong>₹ <span id="footerDebits">1,077,409.00</span></strong></td>
+                        <td style="text-align: right;"><strong>₹ <span id="footerCredits">1,179,736.00</span></strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="print-footer">
+            Printed from Banking System - Member Detail Ledger Report
+        </div>
+    </div>
+
+    <script>
+        // Sample data representing typical API response
+        const sampleData = [
+            { date: '30/11/2019', accountHead: 'COMPULSORY DEPOSIT', particulars: 'Demand Receipt', voucherNo: 'D00310', debit: 0, credit: 200 },
+            { date: '30/11/2019', accountHead: 'EMERGENCY LOAN', particulars: 'Demand Receipt', voucherNo: 'D00310', debit: 0, credit: 4000 },
+            { date: '30/11/2019', accountHead: 'INTT FROM MEMBER', particulars: 'Demand Receipt', voucherNo: 'D00310', debit: 0, credit: 600 },
+            { date: '30/11/2019', accountHead: 'FAMILY RELIEF SCHEME(FRS 1)', particulars: 'Demand Receipt', voucherNo: 'D00310', debit: 0, credit: 25 },
+            { date: '30/11/2019', accountHead: 'FAMILY RELIEF SCHEME(FRS 1)', particulars: 'Demand Receipt', voucherNo: 'D00310', debit: 0, credit: 25 },
+            { date: '26/12/2019', accountHead: 'COMPULSORY DEPOSIT', particulars: 'Demand Receipt', voucherNo: 'D00317', debit: 0, credit: 200 },
+            { date: '26/12/2019', accountHead: 'FAMILY RELIEF SCHEME(FRS 1)', particulars: 'Demand Receipt', voucherNo: 'D00317', debit: 0, credit: 25 },
+            { date: '26/12/2019', accountHead: 'INTT FROM MEMBER', particulars: 'Demand Receipt', voucherNo: 'D00317', debit: 0, credit: 600 },
+            { date: '26/12/2019', accountHead: 'EMERGENCY LOAN', particulars: 'Demand Receipt', voucherNo: 'D00317', debit: 0, credit: 4000 },
+            { date: '30/11/2019', accountHead: 'INTT FROM MEMBER', particulars: 'Demand Receipt', voucherNo: 'D00310', debit: 0, credit: 600 },
+            { date: '27/01/2020', accountHead: 'FAMILY RELIEF SCHEME(FRS 1)', particulars: 'Demand Receipt', voucherNo: 'D00323', debit: 0, credit: 25 },
+            { date: '27/01/2020', accountHead: 'EMERGENCY LOAN', particulars: 'Demand Receipt', voucherNo: 'D00323', debit: 0, credit: 4000 },
+            { date: '27/01/2020', accountHead: 'INTT FROM MEMBER', particulars: 'Demand Receipt', voucherNo: 'D00323', debit: 0, credit: 600 },
+            { date: '27/01/2020', accountHead: 'COMPULSORY DEPOSIT', particulars: 'Demand Receipt', voucherNo: 'D00323', debit: 0, credit: 200 },
+            { date: '30/11/2019', accountHead: 'EMERGENCY LOAN', particulars: 'Demand Receipt', voucherNo: 'D00310', debit: 0, credit: 4000 },
+            { date: '30/11/2019', accountHead: 'EMERGENCY LOAN', particulars: 'Demand Receipt', voucherNo: 'D00310', debit: 0, credit: 4000 },
+            { date: '26/12/2019', accountHead: 'FAMILY RELIEF SCHEME(FRS 1)', particulars: 'Demand Receipt', voucherNo: 'D00317', debit: 0, credit: 25 },
+            { date: '26/12/2019', accountHead: 'EMERGENCY LOAN', particulars: 'Demand Receipt', voucherNo: 'D00317', debit: 0, credit: 4000 },
+            { date: '27/01/2020', accountHead: 'INTT FROM MEMBER', particulars: 'Demand Receipt', voucherNo: 'D00323', debit: 0, credit: 600 },
+            { date: '15/03/2020', accountHead: 'SAVINGS BANK ACCOUNT', particulars: 'Cash Deposit', voucherNo: 'SB001', debit: 0, credit: 15000 },
+            { date: '20/03/2020', accountHead: 'LOAN REPAYMENT', particulars: 'Monthly Installment', voucherNo: 'LN001', debit: 2500, credit: 0 },
+            { date: '25/03/2020', accountHead: 'SHARE CAPITAL', particulars: 'Share Purchase', voucherNo: 'SC001', debit: 0, credit: 5000 },
+            { date: '10/04/2020', accountHead: 'FIXED DEPOSIT', particulars: 'FD Opening', voucherNo: 'FD001', debit: 0, credit: 50000 },
+            { date: '15/04/2020', accountHead: 'LOAN DISBURSEMENT', particulars: 'Personal Loan', voucherNo: 'PL001', debit: 100000, credit: 0 },
+            { date: '30/04/2020', accountHead: 'INTEREST EARNED', particulars: 'FD Interest', voucherNo: 'INT001', debit: 0, credit: 1250 }
+        ];
+
+        function generateTableRows() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            sampleData.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.date}</td>
+                    <td>${row.accountHead}</td>
+                    <td>${row.particulars}</td>
+                    <td style="text-align: center;">${row.voucherNo}</td>
+                    <td style="text-align: right;">${row.debit > 0 ? row.debit.toFixed(2) : '0.00'}</td>
+                    <td style="text-align: right;">${row.credit > 0 ? row.credit.toFixed(2) : '0.00'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Update counts
+            document.getElementById('entryCount').textContent = sampleData.length;
+            document.getElementById('entryCount2').textContent = sampleData.length;
+            
+            // Calculate totals
+            const totalDebits = sampleData.reduce((sum, row) => sum + row.debit, 0);
+            const totalCredits = sampleData.reduce((sum, row) => sum + row.credit, 0);
+            
+            document.getElementById('totalDebits').textContent = totalDebits.toFixed(2);
+            document.getElementById('totalCredits').textContent = totalCredits.toFixed(2);
+            document.getElementById('footerDebits').textContent = totalDebits.toFixed(2);
+            document.getElementById('footerCredits').textContent = totalCredits.toFixed(2);
+        }
+
+        function countRows() {
+            const rows = document.querySelectorAll('#tableBody tr');
+            const headerRows = document.querySelectorAll('.ant-table-thead tr');
+            const footerRows = document.querySelectorAll('.ant-table-summary tr');
+            
+            document.getElementById('rowCount').innerHTML = `
+                📊 <strong>Row Count Verification:</strong><br>
+                • Header rows: ${headerRows.length}<br>
+                • Data rows: ${rows.length}<br>
+                • Footer rows: ${footerRows.length}<br>
+                • <strong>Total table rows: ${headerRows.length + rows.length + footerRows.length}</strong><br>
+                • Expected data entries: ${sampleData.length}<br>
+                ${rows.length === sampleData.length ? '✅ All data rows present!' : '⚠️ Row count mismatch!'}
+            `;
+        }
+
+        // Initialize the table
+        generateTableRows();
+        
+        console.log('🔍 Member Detail Ledger Complete Data Print Test loaded');
+        console.log(`📊 Generated ${sampleData.length} sample transactions`);
+        console.log('🖨️ Click "Print Complete Data Test" to verify all data appears in print preview');
+        console.log('📊 Click "Count Table Rows" to verify row counts');
+        
+        // Test print functionality
+        function testPrint() {
+            console.log('🖨️ Testing print with complete data set...');
+            console.log(`📊 Printing ${sampleData.length} transactions`);
+            window.print();
+        }
+        
+        // Add keyboard shortcut for quick testing
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                testPrint();
+            }
+        });
+        
+        console.log('💡 Press Ctrl+P to test print or click the Print button');
+        console.log('🎯 Verify all 25 data rows appear in print preview with correct totals');
+    </script>
+</body>
+</html>

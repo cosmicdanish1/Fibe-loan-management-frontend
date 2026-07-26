@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Detail Ledger - Clean Professional Borders</title>
+    <style>
+        /* Screen styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .no-print {
+            background-color: #e8f5e8;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 2px solid #28a745;
+        }
+        
+        .print-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .print-header, .print-info, .print-footer {
+            display: none;
+        }
+        
+        /* Simulate Ant Design table structure */
+        .ant-table-wrapper {
+            width: 100%;
+        }
+        
+        .ant-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .ant-table-thead > tr > th,
+        .ant-table-tbody > tr > td,
+        .ant-table-summary > tr > td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .ant-table-thead > tr > th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        .ant-table-summary > tr > td {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        
+        /* CLEAN PROFESSIONAL PRINT STYLES */
+        @media print {
+            /* NUCLEAR CSS RESET - Hide everything first */
+            * {
+              visibility: hidden !important;
+              overflow: hidden !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            
+            /* Show only print content */
+            .print-content,
+            .print-content * {
+              visibility: visible !important;
+            }
+            
+            .print-content {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              overflow: hidden !important;
+            }
+            
+            /* Hide non-printable elements */
+            .no-print,
+            .no-print * {
+              display: none !important;
+              visibility: hidden !important;
+            }
+            
+            /* Print-specific elements */
+            .print-header {
+              display: block !important;
+              visibility: visible !important;
+              text-align: center;
+              margin-bottom: 10px;
+              border-bottom: 2px solid #333;
+              padding-bottom: 5px;
+              font-size: 14px;
+              font-weight: bold;
+            }
+            
+            .print-info {
+              display: flex !important;
+              visibility: visible !important;
+              margin-bottom: 10px;
+              justify-content: space-between;
+              font-size: 9px;
+            }
+            
+            .print-footer {
+              display: block !important;
+              visibility: visible !important;
+              margin-top: 10px;
+              font-size: 8px;
+              text-align: center;
+              color: #666;
+              border-top: 1px solid #ccc;
+              padding-top: 5px;
+            }
+            
+            /* CLEAN TABLE OVERRIDES */
+            .ant-table-wrapper,
+            .ant-table-wrapper *,
+            .ant-table,
+            .ant-table *,
+            .ant-table-container,
+            .ant-table-container *,
+            .ant-table-content,
+            .ant-table-content *,
+            .ant-table-body,
+            .ant-table-body *,
+            .ant-table-scroll,
+            .ant-table-scroll *,
+            table,
+            table *,
+            thead,
+            thead *,
+            tbody,
+            tbody *,
+            tfoot,
+            tfoot *,
+            tr,
+            tr *,
+            th,
+            th *,
+            td,
+            td * {
+              width: auto !important;
+              max-width: none !important;
+              min-width: 0 !important;
+              table-layout: fixed !important;
+              border-collapse: collapse !important;
+              font-size: 7px !important;
+              overflow: hidden !important;
+              white-space: nowrap !important;
+              text-overflow: ellipsis !important;
+              visibility: visible !important;
+              padding: 1px !important;
+              margin: 0 !important;
+              border: none !important;
+            }
+            
+            /* Force table to be exactly 100% width */
+            .ant-table-wrapper,
+            .ant-table,
+            table {
+              width: 100% !important;
+              max-width: 100% !important;
+              display: table !important;
+              border: 1px solid #333 !important;
+            }
+            
+            /* Force rows to display properly */
+            .ant-table-thead,
+            .ant-table-tbody,
+            .ant-table-summary,
+            thead,
+            tbody,
+            tfoot {
+              display: table-header-group !important;
+              width: 100% !important;
+            }
+            
+            .ant-table-tbody {
+              display: table-row-group !important;
+            }
+            
+            .ant-table-summary {
+              display: table-footer-group !important;
+            }
+            
+            tr {
+              display: table-row !important;
+              width: 100% !important;
+            }
+            
+            th, td {
+              display: table-cell !important;
+              border: 0.5px solid #666 !important;
+              padding: 2px 3px !important;
+            }
+            
+            /* Header row with bottom border only */
+            th {
+              background-color: #f0f0f0 !important;
+              font-weight: bold !important;
+              text-transform: uppercase !important;
+              -webkit-print-color-adjust: exact !important;
+              font-size: 6px !important;
+              border-bottom: 1px solid #333 !important;
+              border-left: none !important;
+              border-right: none !important;
+              border-top: none !important;
+            }
+            
+            /* Data rows with minimal borders */
+            td {
+              border-left: none !important;
+              border-right: none !important;
+              border-top: 0.5px solid #ddd !important;
+              border-bottom: none !important;
+            }
+            
+            /* Column separators only for important divisions */
+            th:nth-child(4), td:nth-child(4),
+            th:nth-child(5), td:nth-child(5) {
+              border-left: 0.5px solid #999 !important;
+            }
+            
+            /* OPTIMIZED COLUMN WIDTHS FOR PERFECT FIT */
+            th:nth-child(1), td:nth-child(1) { width: 9% !important; max-width: 9% !important; }
+            th:nth-child(2), td:nth-child(2) { width: 32% !important; max-width: 32% !important; }
+            th:nth-child(3), td:nth-child(3) { width: 25% !important; max-width: 25% !important; }
+            th:nth-child(4), td:nth-child(4) { width: 11% !important; max-width: 11% !important; text-align: center !important; }
+            th:nth-child(5), td:nth-child(5) { width: 11.5% !important; max-width: 11.5% !important; text-align: right !important; }
+            th:nth-child(6), td:nth-child(6) { width: 11.5% !important; max-width: 11.5% !important; text-align: right !important; }
+            
+            /* Summary row styling - with top border */
+            .ant-table-summary td,
+            tfoot td {
+              font-weight: bold !important;
+              background-color: #f5f5f5 !important;
+              -webkit-print-color-adjust: exact !important;
+              border-top: 1px solid #333 !important;
+              border-bottom: none !important;
+              border-left: none !important;
+              border-right: none !important;
+            }
+            
+            /* Summary row column separators */
+            .ant-table-summary td:nth-child(5),
+            tfoot td:nth-child(5) {
+              border-left: 0.5px solid #999 !important;
+            }
+            
+            @page {
+                size: A4 portrait;
+                margin: 4mm;
+            }
+            
+            /* Force body to not scroll */
+            html, body {
+              overflow: hidden !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <h2>✨ Member Detail Ledger - Clean Professional Borders</h2>
+        <p><strong>🎯 BORDER IMPROVEMENTS:</strong></p>
+        <ul>
+            <li><strong>✅ Removed excessive borders:</strong> No more cluttered grid lines</li>
+            <li><strong>✅ Clean header:</strong> Bottom border only for separation</li>
+            <li><strong>✅ Minimal row borders:</strong> Light top borders for readability</li>
+            <li><strong>✅ Strategic column separators:</strong> Only before Voucher No. and Debit columns</li>
+            <li><strong>✅ Professional total row:</strong> Clear top border for summary</li>
+            <li><strong>✅ Outer table border:</strong> Clean frame around entire table</li>
+        </ul>
+        <p><strong>📄 Result:</strong> Professional, clean appearance without visual clutter</p>
+        <button onclick="window.print()" style="padding: 12px 24px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">
+            🖨️ Print Clean Layout
+        </button>
+    </div>
+
+    <div class="print-content">
+        <div class="print-header">
+            <h2>MEMBER DETAIL LEDGER</h2>
+        </div>
+        
+        <div class="print-info">
+            <div>
+                <strong>Member:</strong> SSS MURTHY (610023352)<br/>
+                <strong>Date Range:</strong> 01/11/2014 to 28/12/2025
+            </div>
+            <div>
+                <strong>Report Generated:</strong> 28-Dec-2025 22:30:15
+            </div>
+        </div>
+
+        <div class="ant-table-wrapper">
+            <table class="ant-table">
+                <thead class="ant-table-thead">
+                    <tr>
+                        <th>DATE</th>
+                        <th>ACCOUNT HEAD</th>
+                        <th>PARTICULARS</th>
+                        <th>VOUCHER NO.</th>
+                        <th>DEBIT</th>
+                        <th>CREDIT</th>
+                    </tr>
+                </thead>
+                <tbody class="ant-table-tbody">
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>COMPULSORY DEPOSIT</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">200.00</td>
+                    </tr>
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>EMERGENCY LOAN</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">4,000.00</td>
+                    </tr>
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>INTT FROM MEMBER</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">600.00</td>
+                    </tr>
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>FAMILY RELIEF SCHEME (FRS 1)</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">25.00</td>
+                    </tr>
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>FAMILY RELIEF SCHEME (FRS 2)</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">25.00</td>
+                    </tr>
+                    <tr>
+                        <td>26/12/2019</td>
+                        <td>COMPULSORY DEPOSIT</td>
+                        <td>Demand Receipt</td>
+                        <td>D00317</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">200.00</td>
+                    </tr>
+                    <tr>
+                        <td>26/12/2019</td>
+                        <td>FAMILY RELIEF SCHEME (FRS 1)</td>
+                        <td>Demand Receipt</td>
+                        <td>D00317</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">25.00</td>
+                    </tr>
+                    <tr>
+                        <td>26/12/2019</td>
+                        <td>INTT FROM MEMBER</td>
+                        <td>Demand Receipt</td>
+                        <td>D00317</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">600.00</td>
+                    </tr>
+                    <tr>
+                        <td>15/01/2020</td>
+                        <td>SAVINGS BANK ACCOUNT</td>
+                        <td>Cash Deposit via Branch</td>
+                        <td>SB9876</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">15,000.00</td>
+                    </tr>
+                    <tr>
+                        <td>20/02/2020</td>
+                        <td>LOAN REPAYMENT</td>
+                        <td>Monthly Installment</td>
+                        <td>V12345</td>
+                        <td style="text-align: right;">2,500.00</td>
+                        <td style="text-align: right;">0.00</td>
+                    </tr>
+                </tbody>
+                <tfoot class="ant-table-summary">
+                    <tr>
+                        <td colspan="4" style="text-align: right;"><strong>TOTAL</strong></td>
+                        <td style="text-align: right;"><strong>₹ 2,500.00</strong></td>
+                        <td style="text-align: right;"><strong>₹ 20,675.00</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="print-footer">
+            Printed from Banking System - Member Detail Ledger Report
+        </div>
+    </div>
+
+    <script>
+        console.log('✨ Member Detail Ledger Clean Professional Borders Test loaded');
+        console.log('🎯 Applied clean border styling:');
+        console.log('  - Removed excessive grid lines');
+        console.log('  - Clean header with bottom border only');
+        console.log('  - Minimal row separators');
+        console.log('  - Strategic column dividers');
+        console.log('  - Professional total row');
+        
+        // Test print functionality
+        function testPrint() {
+            console.log('🖨️ Testing print with clean professional borders...');
+            window.print();
+        }
+        
+        // Add keyboard shortcut for quick testing
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                testPrint();
+            }
+        });
+        
+        console.log('💡 Press Ctrl+P to test print or click the Print Clean Layout button');
+        console.log('✨ Expected result: Clean, professional appearance without visual clutter');
+    </script>
+</body>
+</html>

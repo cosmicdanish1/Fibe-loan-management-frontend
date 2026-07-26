@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Lookup Debug - RD Component</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        input, button {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .member-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .member-item:hover {
+            background-color: #e9ecef;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .debug-info {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Member Lookup Debug - RD Component</h1>
+        <p>This page tests the Member Lookup functionality that should work in the Premature Information RD component.</p>
+
+        <!-- Test 1: Direct API Call -->
+        <div class="test-section">
+            <h3>Test 1: Direct API Call</h3>
+            <input type="text" id="directSearch" placeholder="Enter member number or name" value="610">
+            <button onclick="testDirectAPI()">Search via API</button>
+            <div id="directResults" class="results"></div>
+        </div>
+
+        <!-- Test 2: Simulated MemberLookup Behavior -->
+        <div class="test-section">
+            <h3>Test 2: Simulated MemberLookup Behavior</h3>
+            <div style="display: flex; align-items: center;">
+                <input type="text" id="simulatedSearch" placeholder="Enter member number or search" style="flex: 1;">
+                <button onclick="simulateMemberLookup()" style="margin-left: 5px;">🔍 Search</button>
+            </div>
+            <div id="simulatedResults" class="results"></div>
+        </div>
+
+        <!-- Test 3: Network Connectivity -->
+        <div class="test-section">
+            <h3>Test 3: Network Connectivity</h3>
+            <button onclick="testNetworkConnectivity()">Test Backend Connection</button>
+            <div id="networkResults" class="results"></div>
+        </div>
+
+        <!-- Test 4: CORS and Headers -->
+        <div class="test-section">
+            <h3>Test 4: CORS and Headers Test</h3>
+            <button onclick="testCORS()">Test CORS Headers</button>
+            <div id="corsResults" class="results"></div>
+        </div>
+
+        <!-- Debug Information -->
+        <div class="test-section">
+            <h3>Debug Information</h3>
+            <div id="debugInfo" class="debug-info">
+                <strong>Browser:</strong> <span id="browserInfo"></span><br>
+                <strong>User Agent:</strong> <span id="userAgent"></span><br>
+                <strong>Current URL:</strong> <span id="currentUrl"></span><br>
+                <strong>API Base URL:</strong> http://localhost:3001/api/v1<br>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3001/api/v1';
+
+        // Initialize debug info
+        document.getElementById('browserInfo').textContent = navigator.appName + ' ' + navigator.appVersion;
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        document.getElementById('currentUrl').textContent = window.location.href;
+
+        // Test 1: Direct API Call
+        async function testDirectAPI() {
+            const searchTerm = document.getElementById('directSearch').value;
+            const resultsDiv = document.getElementById('directResults');
+            
+            resultsDiv.innerHTML = '<div>🔄 Searching...</div>';
+            
+            try {
+                console.log('🔍 [DIRECT-API] Searching for:', searchTerm);
+                
+                const response = await fetch(`${API_BASE_URL}/members/lookup?search=${encodeURIComponent(searchTerm)}`);
+                
+                console.log('📡 [DIRECT-API] Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('📋 [DIRECT-API] Result:', result);
+
+                const members = result.data || [];
+                
+                if (members.length > 0) {
+                    let html = `<div class="success">✅ Found ${members.length} members</div>`;
+                    members.slice(0, 10).forEach((member, index) => {
+                        html += `
+                            <div class="member-item" onclick="selectMember('${member.memberNo}', '${member.memberName}')">
+                                <strong>${member.memberNo}</strong> - ${member.memberName}
+                                <br><small>Office: ${member.officeName} (${member.officeNo})</small>
+                            </div>
+                        `;
+                    });
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = '<div class="error">❌ No members found</div>';
+                }
+                
+            } catch (error) {
+                console.error('❌ [DIRECT-API] Error:', error);
+                resultsDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test 2: Simulated MemberLookup Behavior
+        async function simulateMemberLookup() {
+            const searchTerm = document.getElementById('simulatedSearch').value;
+            const resultsDiv = document.getElementById('simulatedResults');
+            
+            resultsDiv.innerHTML = '<div>🔄 Simulating MemberLookup component behavior...</div>';
+            
+            try {
+                // Simulate the exact behavior of MemberLookupInput component
+                console.log('🔍 [SIMULATED] Searching for:', searchTerm);
+                
+                const response = await fetch(`${API_BASE_URL}/members/lookup?search=${encodeURIComponent(searchTerm)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                const members = result.data || [];
+                
+                console.log('📋 [SIMULATED] Found members:', members.length);
+
+                if (members.length > 0) {
+                    let html = `<div class="success">✅ MemberLookup would show ${members.length} results</div>`;
+                    html += '<div style="border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto;">';
+                    
+                    members.slice(0, 10).forEach((member, index) => {
+                        html += `
+                            <div class="member-item" onclick="simulateSelection('${member.memberNo}', '${member.memberName}', '${member.officeName}')">
+                                👤 <strong>${member.memberNo}</strong> - ${member.memberName}
+                                <br><small style="color: #666;">Office: ${member.officeName}</small>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = '<div class="error">❌ MemberLookup would show "No members found"</div>';
+                }
+                
+            } catch (error) {
+                console.error('❌ [SIMULATED] Error:', error);
+                resultsDiv.innerHTML = `<div class="error">❌ MemberLookup would show error: ${error.message}</div>`;
+            }
+        }
+
+        // Test 3: Network Connectivity
+        async function testNetworkConnectivity() {
+            const resultsDiv = document.getElementById('networkResults');
+            resultsDiv.innerHTML = '<div>🔄 Testing network connectivity...</div>';
+            
+            try {
+                // Test basic connectivity
+                const healthResponse = await fetch(`${API_BASE_URL}/health`, { timeout: 5000 });
+                const healthData = await healthResponse.json();
+                
+                let html = '<div class="success">✅ Backend is reachable</div>';
+                html += `<div class="debug-info">Health check: ${JSON.stringify(healthData, null, 2)}</div>`;
+                
+                // Test member lookup endpoint specifically
+                const lookupResponse = await fetch(`${API_BASE_URL}/members/lookup?search=test`);
+                const lookupData = await lookupResponse.json();
+                
+                html += '<div class="success">✅ Member lookup endpoint is working</div>';
+                html += `<div class="debug-info">Lookup test: Found ${lookupData.data?.length || 0} members</div>`;
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('❌ [NETWORK] Error:', error);
+                resultsDiv.innerHTML = `<div class="error">❌ Network error: ${error.message}</div>`;
+            }
+        }
+
+        // Test 4: CORS and Headers
+        async function testCORS() {
+            const resultsDiv = document.getElementById('corsResults');
+            resultsDiv.innerHTML = '<div>🔄 Testing CORS headers...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/members/lookup?search=test`);
+                
+                let html = '<div class="success">✅ CORS is working (request succeeded)</div>';
+                html += '<div class="debug-info"><strong>Response Headers:</strong><br>';
+                
+                // Log response headers
+                for (let [key, value] of response.headers.entries()) {
+                    html += `${key}: ${value}<br>`;
+                }
+                
+                html += '</div>';
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('❌ [CORS] Error:', error);
+                resultsDiv.innerHTML = `<div class="error">❌ CORS error: ${error.message}</div>`;
+            }
+        }
+
+        // Helper functions
+        function selectMember(memberNo, memberName) {
+            alert(`Selected: ${memberNo} - ${memberName}`);
+            console.log('Selected member:', { memberNo, memberName });
+        }
+
+        function simulateSelection(memberNo, memberName, officeName) {
+            alert(`MemberLookup would call onChange with:\nMember No: ${memberNo}\nName: ${memberName}\nOffice: ${officeName}`);
+            console.log('Simulated selection:', { memberNo, memberName, officeName });
+        }
+
+        // Auto-run network test on page load
+        window.addEventListener('load', () => {
+            console.log('🚀 Page loaded, running initial network test...');
+            testNetworkConnectivity();
+        });
+
+        // Add keyboard support
+        document.getElementById('directSearch').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                testDirectAPI();
+            }
+        });
+
+        document.getElementById('simulatedSearch').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                simulateMemberLookup();
+            }
+        });
+    </script>
+</body>
+</html>

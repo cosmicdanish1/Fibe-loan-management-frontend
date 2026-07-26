@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Statement Print Layout Test</title>
+    <style>
+        /* Simulate the print styles */
+        @media print {
+            @page { size: portrait; margin: 8mm; }
+            body { background: white !important; }
+            .no-print { display: none !important; }
+            .print-header { display: block !important; margin-bottom: 10px; text-align: center; }
+            .print-footer { display: block !important; margin-top: 15px; }
+            
+            .ant-table-thead > tr > th { 
+                background: #f8fafc !important; 
+                color: black !important; 
+                font-weight: bold !important;
+                border-bottom: 2px solid #e2e8f0 !important;
+                font-size: 9px !important;
+                padding: 2px 4px !important;
+            }
+            .ant-table-tbody > tr > td {
+                font-size: 8px !important;
+                padding: 2px 4px !important;
+                line-height: 1.2 !important;
+            }
+            
+            .ant-card { 
+                border: none !important; 
+                box-shadow: none !important; 
+                margin-bottom: 0 !important; 
+            }
+            .ant-card-body { padding: 0 !important; }
+            .ant-card-head { 
+                padding: 4px 8px !important; 
+                min-height: auto !important;
+                font-size: 10px !important;
+                font-weight: bold !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+            }
+            
+            .ant-table { 
+                font-size: 8px !important;
+                width: 100% !important;
+                table-layout: fixed !important;
+            }
+            
+            /* Summary table column widths */
+            .summary-table .ant-table-thead > tr > th:nth-child(1) { width: 55% !important; }
+            .summary-table .ant-table-thead > tr > th:nth-child(2) { width: 15% !important; }
+            .summary-table .ant-table-thead > tr > th:nth-child(3) { width: 30% !important; }
+            
+            /* Transaction table column widths */
+            .transaction-table .ant-table-thead > tr > th:nth-child(1) { width: 10% !important; }
+            .transaction-table .ant-table-thead > tr > th:nth-child(2) { width: 18% !important; }
+            .transaction-table .ant-table-thead > tr > th:nth-child(3) { width: 8% !important; }
+            .transaction-table .ant-table-thead > tr > th:nth-child(4) { width: 32% !important; }
+            .transaction-table .ant-table-thead > tr > th:nth-child(5) { width: 16% !important; }
+            .transaction-table .ant-table-thead > tr > th:nth-child(6) { width: 16% !important; }
+            
+            /* Grid layout for print */
+            .print-grid { 
+                display: flex !important; 
+                flex-direction: row !important;
+                gap: 10px !important;
+            }
+            .print-grid .ant-col:first-child { 
+                width: 35% !important; 
+                margin-bottom: 0 !important; 
+            }
+            .print-grid .ant-col:last-child { 
+                width: 65% !important; 
+                margin-bottom: 0 !important; 
+            }
+        }
+        
+        /* Base styles for testing */
+        .print-header { display: none; }
+        .print-footer { display: none; }
+        
+        .ant-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .ant-card-head {
+            padding: 8px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: bold;
+        }
+        .ant-card-body {
+            padding: 16px;
+        }
+        .ant-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .ant-table-thead th {
+            background: #f8fafc;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            font-weight: bold;
+        }
+        .ant-table-tbody td {
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .print-grid {
+            display: flex;
+            gap: 16px;
+        }
+        .ant-col:first-child {
+            flex: 0 0 35%;
+        }
+        .ant-col:last-child {
+            flex: 0 0 65%;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <h2>Print Layout Test - Press Ctrl+P to see print preview</h2>
+        <p>This simulates the Member Statement print layout with the recent fixes.</p>
+        <button onclick="window.print()">Print Preview</button>
+        <hr>
+    </div>
+
+    <!-- Print Header -->
+    <div class="print-header">
+        <h3>EMP ESPAT EMPLOYEES CO-OP CREDIT SOCIETY LTD.</h3>
+        <p>Sector 27A, Nigdi, Pradhikaran, Pune - 411044</p>
+        <hr>
+        <h4>MEMBER CONSOLIDATED STATEMENT</h4>
+        <p><strong>Member:</strong> 610016572 - Mr SINGH DALBIR &nbsp;&nbsp;&nbsp; <strong>Period:</strong> 01-Jan-2025 to 28-Dec-2025</p>
+        <p>Generated on: 28-Dec-2025 20:44:22</p>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="print-grid">
+        <!-- Account Balances (Left Column) -->
+        <div class="ant-col">
+            <div class="ant-card">
+                <div class="ant-card-head">
+                    <div class="ant-card-head-title">💰 Account Balances</div>
+                </div>
+                <div class="ant-card-body">
+                    <table class="ant-table summary-table">
+                        <thead class="ant-table-thead">
+                            <tr>
+                                <th>Account Head</th>
+                                <th>Code</th>
+                                <th>Current Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody class="ant-table-tbody">
+                            <tr><td>Savings Bank Account</td><td>A001</td><td>₹ 4,714.00</td></tr>
+                            <tr><td>CASH IN HAND</td><td>A1001</td><td>₹ 10,000.00</td></tr>
+                            <tr><td>CURRENT ACCOUNT (HDFC)</td><td>A1008</td><td>₹ 3,05,640.00</td></tr>
+                            <tr><td>EMERGENCY LOAN</td><td>A1047</td><td>₹ -12,197.00</td></tr>
+                            <tr><td>BUTT ON COMPULSORY DEPOSIT</td><td>E1026</td><td>₹ -13,244.00</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Journal (Right Column) -->
+        <div class="ant-col">
+            <div class="ant-card">
+                <div class="ant-card-head">
+                    <div class="ant-card-head-title">📊 Full Transaction Journal</div>
+                </div>
+                <div class="ant-card-body">
+                    <table class="ant-table transaction-table">
+                        <thead class="ant-table-thead">
+                            <tr>
+                                <th>Date</th>
+                                <th>Head / Account</th>
+                                <th>Voucher</th>
+                                <th>Action</th>
+                                <th>Withdrawal (DR)</th>
+                                <th>Deposit (CR)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="ant-table-tbody">
+                            <tr>
+                                <td>02-Oct-2025</td>
+                                <td>SHARE VALUE<br><small>L1001</small></td>
+                                <td>R50016</td>
+                                <td>Share Contribution</td>
+                                <td>-</td>
+                                <td>1,943.00</td>
+                            </tr>
+                            <tr>
+                                <td>03-Oct-2025</td>
+                                <td>COMPULSORY DEPOSIT<br><small>L1004</small></td>
+                                <td>R50041</td>
+                                <td>Fixed Deposit</td>
+                                <td>-</td>
+                                <td>1,362.00</td>
+                            </tr>
+                            <tr>
+                                <td>16-Oct-2025</td>
+                                <td>EMERGENCY LOAN<br><small>A1047</small></td>
+                                <td>R50039</td>
+                                <td>Loan Disbursement</td>
+                                <td>1,056.00</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>17-Dec-2025</td>
+                                <td>INTT FROM MEMBER<br><small>I1002</small></td>
+                                <td>R50037</td>
+                                <td>Interest Credit</td>
+                                <td>-</td>
+                                <td>170.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Footer -->
+    <div class="print-footer">
+        <div style="border-top: 1px solid #ccc; padding-top: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <div style="text-align: center; width: 33%;">
+                    <div style="border-top: 1px solid #666; width: 120px; margin: 0 auto; padding-top: 5px;">
+                        <strong>Prepared By</strong><br>
+                        <small>Date: ___________</small>
+                    </div>
+                </div>
+                <div style="text-align: center; width: 33%;">
+                    <div style="border-top: 1px solid #666; width: 120px; margin: 0 auto; padding-top: 5px;">
+                        <strong>Checked By</strong><br>
+                        <small>Date: ___________</small>
+                    </div>
+                </div>
+                <div style="text-align: center; width: 33%;">
+                    <div style="border-top: 1px solid #666; width: 120px; margin: 0 auto; padding-top: 5px;">
+                        <strong>Secretary</strong><br>
+                        <small>Date: ___________</small>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; font-size: 10px; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
+                System Generated Report • Printed on 28-Dec-2025 20:44:22 • Page 1 of 1
+            </div>
+        </div>
+    </div>
+</body>
+</html>

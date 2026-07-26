@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FD Certificate Print Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { max-width: 600px; margin: 0 auto; }
+        .test-button { 
+            background: #1890ff; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .test-button:hover { background: #40a9ff; }
+        .info { background: #f0f9ff; padding: 15px; border-radius: 6px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Fixed Deposit Certificate - Print Test</h1>
+        
+        <div class="info">
+            <h3>Test Sample Data:</h3>
+            <p><strong>Member:</strong> NIRMALENDU DEY</p>
+            <p><strong>Account:</strong> 500009</p>
+            <p><strong>Certificate:</strong> FD0009</p>
+            <p><strong>Amount:</strong> ₹2,50,000</p>
+            <p><strong>Rate:</strong> 8.3%</p>
+            <p><strong>Tenure:</strong> 12 months</p>
+        </div>
+
+        <button class="test-button" onclick="testPrint()">🖨️ Test Print Certificate</button>
+        
+        <div class="info">
+            <h3>Expected Result:</h3>
+            <ul>
+                <li>New window should open with certificate</li>
+                <li>Print dialog should appear automatically</li>
+                <li>Certificate should be in portrait orientation</li>
+                <li>Professional banking layout with signatures</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function testPrint() {
+            const certificateData = {
+                memberNo: "610025808",
+                memberName: "NIRMALENDU DEY",
+                accountNo: "500009",
+                certificateNo: "FD0009",
+                depositAmount: 250000,
+                interestRate: 8.3,
+                tenure: 12,
+                openDate: "2024-01-15T00:00:00.000Z",
+                maturityDate: "2025-01-15T00:00:00.000Z",
+                maturityAmount: 268750,
+                nominee: "Not Specified"
+            };
+            
+            const certificateType = "Original";
+
+            const printContent = `
+                <html>
+                    <head>
+                        <title>Fixed Deposit Certificate</title>
+                        <style>
+                            @page { size: A4 portrait; margin: 0.5in; }
+                            body { font-family: 'Times New Roman', serif; margin: 0; padding: 20px; background: white; color: black; }
+                            .certificate { border: 3px solid #2c5aa0; padding: 30px; background: white; page-break-inside: avoid; }
+                            .header { text-align: center; margin-bottom: 30px; }
+                            .org-name { font-size: 24px; font-weight: bold; color: #2c5aa0; margin-bottom: 10px; }
+                            .cert-title { font-size: 20px; font-weight: bold; color: #d4af37; margin-bottom: 20px; text-decoration: underline; }
+                            .cert-no { font-size: 14px; color: #666; margin-bottom: 20px; }
+                            .content { line-height: 1.8; font-size: 16px; }
+                            .highlight { font-weight: bold; color: #2c5aa0; }
+                            .amount { font-size: 18px; font-weight: bold; color: #d4af37; }
+                            .details-table { width: 100%; margin: 20px 0; border-collapse: collapse; }
+                            .details-table td { padding: 8px; border-bottom: 1px solid #ddd; }
+                            .details-table .label { font-weight: bold; width: 200px; }
+                            .signature-section { margin-top: 50px; display: flex; justify-content: space-between; }
+                            .signature { text-align: center; }
+                            .signature-line { border-bottom: 1px solid #000; width: 200px; margin-bottom: 5px; }
+                            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+                            @media print { 
+                                body { margin: 0; padding: 10px; }
+                                .certificate { border: 2px solid #000; }
+                                .org-name, .cert-title, .highlight, .amount { color: #000 !important; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="certificate">
+                            <div class="header">
+                                <div class="org-name">EMPLOYEE COOPERATIVE CREDIT SOCIETY LTD.</div>
+                                <div class="cert-title">FIXED DEPOSIT CERTIFICATE</div>
+                                <div class="cert-no">Certificate No: ${certificateData.certificateNo} (${certificateType})</div>
+                            </div>
+                            
+                            <div class="content">
+                                <p>This is to certify that <span class="highlight">${certificateData.memberName}</span>, 
+                                Member No. <span class="highlight">${certificateData.memberNo}</span> has deposited 
+                                <span class="amount">₹${certificateData.depositAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span> 
+                                (Rupees ${certificateData.depositAmount.toLocaleString('en-IN')} only) with this Society on 
+                                <span class="highlight">15-JAN-2024</span> 
+                                for a period of <span class="highlight">${certificateData.tenure} months</span> 
+                                at an interest rate of <span class="highlight">${certificateData.interestRate}% per annum</span>.</p>
+
+                                <table class="details-table">
+                                    <tr>
+                                        <td class="label">Account Number:</td>
+                                        <td>${certificateData.accountNo}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Date of Deposit:</td>
+                                        <td>15-JAN-2024</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Maturity Date:</td>
+                                        <td>15-JAN-2025</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Maturity Amount:</td>
+                                        <td class="amount">₹${certificateData.maturityAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Nominee:</td>
+                                        <td>${certificateData.nominee}</td>
+                                    </tr>
+                                </table>
+
+                                <p>This deposit will mature on <span class="highlight">15-JAN-2025</span> 
+                                and the maturity amount of <span class="amount">₹${certificateData.maturityAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span> 
+                                will be payable to the depositor or nominee as per the terms and conditions of the Society.</p>
+                            </div>
+
+                            <div class="signature-section">
+                                <div class="signature">
+                                    <div class="signature-line"></div>
+                                    <div>Depositor's Signature</div>
+                                </div>
+                                <div class="signature">
+                                    <div class="signature-line"></div>
+                                    <div>Authorized Signatory</div>
+                                    <div style="margin-top: 10px; font-size: 12px;">Employee Cooperative Credit Society</div>
+                                </div>
+                            </div>
+
+                            <div class="footer">
+                                <p>This certificate is issued on ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').toUpperCase()} and is valid subject to the rules and regulations of the Society.</p>
+                                <p><strong>Note:</strong> This certificate should be surrendered at the time of maturity/premature withdrawal.</p>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+            `;
+
+            // Create a new window for printing with proper typing
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            if (printWindow) {
+                try {
+                    const doc = printWindow.document;
+                    doc.open();
+                    doc.write(printContent);
+                    doc.close();
+                    
+                    // Focus the window
+                    printWindow.focus();
+                    
+                    // Wait for content to load then print
+                    setTimeout(() => {
+                        printWindow.print();
+                        setTimeout(() => {
+                            printWindow.close();
+                        }, 100);
+                    }, 500);
+                } catch (error) {
+                    console.error('Print error:', error);
+                    alert('Error preparing print document');
+                    printWindow.close();
+                }
+            } else {
+                alert('Unable to open print window. Please check popup blocker settings.');
+            }
+        }
+    </script>
+</body>
+</html>

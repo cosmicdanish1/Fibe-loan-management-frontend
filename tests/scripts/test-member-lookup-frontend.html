@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Member Lookup API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        button { padding: 8px 16px; margin: 5px; background: #1976d2; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #1565c0; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 3px; width: 200px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Member Lookup API Test</h1>
+        
+        <div class="test-section">
+            <h3>Test 1: Get All Members</h3>
+            <button onclick="testAllMembers()">Get All Members</button>
+            <div id="allMembersResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 2: Search Members</h3>
+            <input type="text" id="searchInput" placeholder="Enter search term" value="A ANAND">
+            <button onclick="testSearchMembers()">Search Members</button>
+            <div id="searchResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 3: Member Details</h3>
+            <input type="text" id="memberNoInput" placeholder="Enter member number" value="610031566">
+            <button onclick="testMemberDetails()">Get Member Details</button>
+            <div id="memberDetailsResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api/v1';
+
+        async function testAllMembers() {
+            const resultDiv = document.getElementById('allMembersResult');
+            resultDiv.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/members/lookup`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const members = data.data || [];
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Success: Found ${members.length} members</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Member No</th>
+                                    <th>Name</th>
+                                    <th>Office No</th>
+                                    <th>Wing No</th>
+                                    <th>Office Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${members.slice(0, 10).map(member => `
+                                    <tr>
+                                        <td>${member.memberNo}</td>
+                                        <td>${member.memberName}</td>
+                                        <td>${member.officeNo}</td>
+                                        <td>${member.wingNo}</td>
+                                        <td>${member.officeName}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        ${members.length > 10 ? `<p>... and ${members.length - 10} more members</p>` : ''}
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function testSearchMembers() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const resultDiv = document.getElementById('searchResult');
+            resultDiv.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/members/lookup?search=${encodeURIComponent(searchTerm)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const members = data.data || [];
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Success: Found ${members.length} members for "${searchTerm}"</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Member No</th>
+                                    <th>Name</th>
+                                    <th>Office No</th>
+                                    <th>Wing No</th>
+                                    <th>Office Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${members.map(member => `
+                                    <tr>
+                                        <td>${member.memberNo}</td>
+                                        <td>${member.memberName}</td>
+                                        <td>${member.officeNo}</td>
+                                        <td>${member.wingNo}</td>
+                                        <td>${member.officeName}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function testMemberDetails() {
+            const memberNo = document.getElementById('memberNoInput').value;
+            const resultDiv = document.getElementById('memberDetailsResult');
+            resultDiv.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/members/details/${memberNo}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Success: Member Details</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            testAllMembers();
+        };
+    </script>
+</body>
+</html>

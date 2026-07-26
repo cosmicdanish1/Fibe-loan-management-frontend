@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Detail Ledger - Data Visibility Test</title>
+    <style>
+        /* Screen styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .no-print {
+            background-color: #fff3cd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 2px solid #ffc107;
+        }
+        
+        .print-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .print-header, .print-info, .print-footer {
+            display: none;
+        }
+        
+        /* Simulate Ant Design table structure */
+        .ant-table-wrapper {
+            width: 100%;
+        }
+        
+        .ant-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .ant-table-thead > tr > th,
+        .ant-table-tbody > tr > td,
+        .ant-table-summary > tr > td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .ant-table-thead > tr > th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        .ant-table-summary > tr > td {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        
+        /* FIXED PRINT STYLES - DATA VISIBILITY FOCUS */
+        @media print {
+            /* NUCLEAR CSS RESET - Hide everything first */
+            * {
+              visibility: hidden !important;
+              overflow: hidden !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            
+            /* Show only print content */
+            .print-content,
+            .print-content * {
+              visibility: visible !important;
+            }
+            
+            .print-content {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              overflow: hidden !important;
+            }
+            
+            /* Hide non-printable elements */
+            .no-print,
+            .no-print * {
+              display: none !important;
+              visibility: hidden !important;
+            }
+            
+            /* Print-specific elements */
+            .print-header {
+              display: block !important;
+              visibility: visible !important;
+              text-align: center;
+              margin-bottom: 10px;
+              border-bottom: 2px solid #333;
+              padding-bottom: 5px;
+              font-size: 14px;
+              font-weight: bold;
+            }
+            
+            .print-info {
+              display: flex !important;
+              visibility: visible !important;
+              margin-bottom: 10px;
+              justify-content: space-between;
+              font-size: 9px;
+            }
+            
+            .print-footer {
+              display: block !important;
+              visibility: visible !important;
+              margin-top: 10px;
+              font-size: 8px;
+              text-align: center;
+              color: #666;
+              border-top: 1px solid #ccc;
+              padding-top: 5px;
+            }
+            
+            /* CORRECTED TABLE OVERRIDES - PROPER DISPLAY VALUES */
+            .ant-table-wrapper,
+            .ant-table-wrapper *,
+            .ant-table,
+            .ant-table *,
+            .ant-table-container,
+            .ant-table-container *,
+            .ant-table-content,
+            .ant-table-content *,
+            .ant-table-body,
+            .ant-table-body *,
+            .ant-table-scroll,
+            .ant-table-scroll *,
+            table,
+            table *,
+            thead,
+            thead *,
+            tbody,
+            tbody *,
+            tfoot,
+            tfoot *,
+            tr,
+            tr *,
+            th,
+            th *,
+            td,
+            td * {
+              width: auto !important;
+              max-width: none !important;
+              min-width: 0 !important;
+              table-layout: fixed !important;
+              border-collapse: collapse !important;
+              font-size: 7px !important;
+              overflow: hidden !important;
+              white-space: nowrap !important;
+              text-overflow: ellipsis !important;
+              visibility: visible !important;
+              padding: 1px !important;
+              margin: 0 !important;
+              border: 1px solid #333 !important;
+            }
+            
+            /* Force table to be exactly 100% width */
+            .ant-table-wrapper,
+            .ant-table,
+            table {
+              width: 100% !important;
+              max-width: 100% !important;
+              display: table !important;
+            }
+            
+            /* Force rows to display properly */
+            .ant-table-thead,
+            .ant-table-tbody,
+            .ant-table-summary,
+            thead,
+            tbody,
+            tfoot {
+              display: table-header-group !important;
+              width: 100% !important;
+            }
+            
+            .ant-table-tbody {
+              display: table-row-group !important;
+            }
+            
+            .ant-table-summary {
+              display: table-footer-group !important;
+            }
+            
+            tr {
+              display: table-row !important;
+              width: 100% !important;
+            }
+            
+            th, td {
+              display: table-cell !important;
+            }
+            
+            /* OPTIMIZED COLUMN WIDTHS FOR PERFECT FIT */
+            th:nth-child(1), td:nth-child(1) { width: 9% !important; max-width: 9% !important; }
+            th:nth-child(2), td:nth-child(2) { width: 32% !important; max-width: 32% !important; }
+            th:nth-child(3), td:nth-child(3) { width: 25% !important; max-width: 25% !important; }
+            th:nth-child(4), td:nth-child(4) { width: 11% !important; max-width: 11% !important; text-align: center !important; }
+            th:nth-child(5), td:nth-child(5) { width: 11.5% !important; max-width: 11.5% !important; text-align: right !important; }
+            th:nth-child(6), td:nth-child(6) { width: 11.5% !important; max-width: 11.5% !important; text-align: right !important; }
+            
+            /* Header styling */
+            th {
+              background-color: #f0f0f0 !important;
+              font-weight: bold !important;
+              text-transform: uppercase !important;
+              -webkit-print-color-adjust: exact !important;
+              font-size: 6px !important;
+            }
+            
+            /* Summary row styling */
+            .ant-table-summary td,
+            tfoot td {
+              font-weight: bold !important;
+              background-color: #f5f5f5 !important;
+              -webkit-print-color-adjust: exact !important;
+            }
+            
+            @page {
+                size: A4 portrait;
+                margin: 4mm;
+            }
+            
+            /* Force body to not scroll */
+            html, body {
+              overflow: hidden !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <h2>🔍 Member Detail Ledger - Data Visibility Test</h2>
+        <p><strong>⚠️ ISSUE IDENTIFIED:</strong> Table data rows not showing in print preview</p>
+        <p><strong>🔧 FIX APPLIED:</strong> Corrected CSS display values for proper table structure</p>
+        <ul>
+            <li><strong>Problem:</strong> All elements had <code>display: table-cell !important</code></li>
+            <li><strong>Solution:</strong> Specific display values for table elements:
+                <ul>
+                    <li>Table: <code>display: table</code></li>
+                    <li>Tbody: <code>display: table-row-group</code></li>
+                    <li>Tr: <code>display: table-row</code></li>
+                    <li>Td/Th: <code>display: table-cell</code></li>
+                </ul>
+            </li>
+        </ul>
+        <button onclick="window.print()" style="padding: 12px 24px; background-color: #ffc107; color: #000; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">
+            🖨️ Test Print (Data Visibility Fix)
+        </button>
+    </div>
+
+    <div class="print-content">
+        <div class="print-header">
+            <h2>MEMBER DETAIL LEDGER</h2>
+        </div>
+        
+        <div class="print-info">
+            <div>
+                <strong>Member:</strong> SSS MURTHY (610023352)<br/>
+                <strong>Date Range:</strong> 01/11/2014 to 28/12/2025
+            </div>
+            <div>
+                <strong>Report Generated:</strong> 28-Dec-2025 22:25:45
+            </div>
+        </div>
+
+        <div class="ant-table-wrapper">
+            <table class="ant-table">
+                <thead class="ant-table-thead">
+                    <tr>
+                        <th>DATE</th>
+                        <th>ACCOUNT HEAD</th>
+                        <th>PARTICULARS</th>
+                        <th>VOUCHER NO.</th>
+                        <th>DEBIT</th>
+                        <th>CREDIT</th>
+                    </tr>
+                </thead>
+                <tbody class="ant-table-tbody">
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>COMPULSORY DEPOSIT</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">200.00</td>
+                    </tr>
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>EMERGENCY LOAN</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">4,000.00</td>
+                    </tr>
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>INTT FROM MEMBER</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">600.00</td>
+                    </tr>
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>FAMILY RELIEF SCHEME (FRS 1)</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">25.00</td>
+                    </tr>
+                    <tr>
+                        <td>30/11/2019</td>
+                        <td>FAMILY RELIEF SCHEME (FRS 2)</td>
+                        <td>Demand Receipt</td>
+                        <td>D00310</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">25.00</td>
+                    </tr>
+                    <tr>
+                        <td>26/12/2019</td>
+                        <td>COMPULSORY DEPOSIT</td>
+                        <td>Demand Receipt</td>
+                        <td>D00317</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">200.00</td>
+                    </tr>
+                    <tr>
+                        <td>26/12/2019</td>
+                        <td>FAMILY RELIEF SCHEME (FRS 1)</td>
+                        <td>Demand Receipt</td>
+                        <td>D00317</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">25.00</td>
+                    </tr>
+                    <tr>
+                        <td>26/12/2019</td>
+                        <td>INTT FROM MEMBER</td>
+                        <td>Demand Receipt</td>
+                        <td>D00317</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">600.00</td>
+                    </tr>
+                    <tr>
+                        <td>15/01/2020</td>
+                        <td>SAVINGS BANK ACCOUNT</td>
+                        <td>Cash Deposit via Branch</td>
+                        <td>SB9876</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">15,000.00</td>
+                    </tr>
+                    <tr>
+                        <td>20/02/2020</td>
+                        <td>LOAN REPAYMENT</td>
+                        <td>Monthly Installment</td>
+                        <td>V12345</td>
+                        <td style="text-align: right;">2,500.00</td>
+                        <td style="text-align: right;">0.00</td>
+                    </tr>
+                </tbody>
+                <tfoot class="ant-table-summary">
+                    <tr>
+                        <td colspan="4" style="text-align: right;"><strong>TOTAL</strong></td>
+                        <td style="text-align: right;"><strong>₹ 2,500.00</strong></td>
+                        <td style="text-align: right;"><strong>₹ 20,675.00</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="print-footer">
+            Printed from Banking System - Member Detail Ledger Report
+        </div>
+    </div>
+
+    <script>
+        console.log('🔍 Member Detail Ledger Data Visibility Test loaded');
+        console.log('🔧 Applied fix: Corrected CSS display values for proper table structure');
+        console.log('✅ Expected result: All table rows should now be visible in print preview');
+        
+        // Test print functionality
+        function testPrint() {
+            console.log('🖨️ Testing print with data visibility fix...');
+            window.print();
+        }
+        
+        // Add keyboard shortcut for quick testing
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                testPrint();
+            }
+        });
+        
+        console.log('💡 Press Ctrl+P to test print or click the Test Print button');
+        console.log('🎯 Check if all 10 data rows are visible in print preview');
+    </script>
+</body>
+</html>

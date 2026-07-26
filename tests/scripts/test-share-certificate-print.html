@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Certificate Print Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { max-width: 600px; margin: 0 auto; }
+        .test-button { 
+            background: #52c41a; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .test-button:hover { background: #73d13d; }
+        .info { background: #f6ffed; padding: 15px; border-radius: 6px; margin: 10px 0; border: 1px solid #b7eb8f; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Share Certificate - Print Test</h1>
+        
+        <div class="info">
+            <h3>Test Sample Data:</h3>
+            <p><strong>Member:</strong> Mr S.K.SHUKLA Z</p>
+            <p><strong>Certificate:</strong> SC-940025</p>
+            <p><strong>Total Shares:</strong> 593 shares</p>
+            <p><strong>Share Range:</strong> 2512501 to 2513093</p>
+            <p><strong>Face Value:</strong> ₹10 per share</p>
+            <p><strong>Total Value:</strong> ₹5,930</p>
+        </div>
+
+        <button class="test-button" onclick="testPrint()">🖨️ Test Print Share Certificate</button>
+        
+        <div class="info">
+            <h3>Expected Result:</h3>
+            <ul>
+                <li>New window should open with certificate</li>
+                <li>Print dialog should appear automatically</li>
+                <li>Certificate should be in portrait orientation</li>
+                <li>Professional banking layout with signatures</li>
+            </ul>
+        </div>
+
+        <div id="status" style="margin-top: 20px; padding: 10px; border-radius: 4px;"></div>
+    </div>
+
+    <script>
+        function showStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.style.backgroundColor = isError ? '#fff2f0' : '#f6ffed';
+            statusDiv.style.color = isError ? '#cf1322' : '#389e0d';
+            statusDiv.style.border = isError ? '1px solid #ffccc7' : '1px solid #b7eb8f';
+        }
+
+        function testPrint() {
+            const certificateData = {
+                memberNo: "940025125",
+                memberName: "Mr S.K.SHUKLA Z",
+                certificateNo: "SC-940025",
+                totalShares: 593,
+                shareFrom: 2512501,
+                shareTo: 2513093,
+                faceValuePerShare: 10,
+                totalValue: 5930,
+                totalShareAmount: 5928,
+                address: "Test Address",
+                membershipDate: "1994-02-09T18:30:00.000Z",
+                issueDate: "2025-12-29T00:00:00.000Z"
+            };
+
+            const printContent = `
+                <html>
+                    <head>
+                        <title>Share Certificate</title>
+                        <style>
+                            @page { size: A4 portrait; margin: 0.5in; }
+                            body { font-family: 'Times New Roman', serif; margin: 0; padding: 20px; background: white; color: black; }
+                            .certificate { border: 3px solid #2c5aa0; padding: 30px; background: white; page-break-inside: avoid; }
+                            .header { text-align: center; margin-bottom: 30px; }
+                            .org-name { font-size: 24px; font-weight: bold; color: #2c5aa0; margin-bottom: 10px; }
+                            .cert-title { font-size: 20px; font-weight: bold; color: #d4af37; margin-bottom: 20px; text-decoration: underline; }
+                            .cert-no { font-size: 14px; color: #666; margin-bottom: 20px; }
+                            .content { line-height: 1.8; font-size: 16px; }
+                            .highlight { font-weight: bold; color: #2c5aa0; }
+                            .amount { font-size: 18px; font-weight: bold; color: #d4af37; }
+                            .details-table { width: 100%; margin: 20px 0; border-collapse: collapse; }
+                            .details-table td { padding: 8px; border-bottom: 1px solid #ddd; }
+                            .details-table .label { font-weight: bold; width: 200px; }
+                            .signature-section { margin-top: 50px; display: flex; justify-content: space-between; }
+                            .signature { text-align: center; }
+                            .signature-line { border-bottom: 1px solid #000; width: 200px; margin-bottom: 5px; }
+                            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+                            @media print { 
+                                body { margin: 0; padding: 10px; }
+                                .certificate { border: 2px solid #000; }
+                                .org-name, .cert-title, .highlight, .amount { color: #000 !important; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="certificate">
+                            <div class="header">
+                                <div class="org-name">EMPLOYEE COOPERATIVE CREDIT SOCIETY LTD.</div>
+                                <div class="cert-title">SHARE CERTIFICATE</div>
+                                <div class="cert-no">Certificate No: ${certificateData.certificateNo}</div>
+                            </div>
+                            
+                            <div class="content">
+                                <p>This is to certify that <span class="highlight">${certificateData.memberName}</span>, 
+                                Member No. <span class="highlight">${certificateData.memberNo}</span> is the registered holder of 
+                                <span class="amount">${certificateData.totalShares} shares</span> 
+                                (Share Numbers <span class="highlight">${certificateData.shareFrom} to ${certificateData.shareTo}</span>) 
+                                of <span class="amount">₹${certificateData.faceValuePerShare}</span> each, fully paid up, 
+                                in the Employee Cooperative Credit Society Ltd.</p>
+
+                                <table class="details-table">
+                                    <tr>
+                                        <td class="label">Member Number:</td>
+                                        <td>${certificateData.memberNo}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Member Name:</td>
+                                        <td>${certificateData.memberName}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Address:</td>
+                                        <td>${certificateData.address || 'Address not available'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Membership Date:</td>
+                                        <td>09-FEB-1994</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Share Numbers:</td>
+                                        <td>${certificateData.shareFrom} to ${certificateData.shareTo}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Total Shares:</td>
+                                        <td class="amount">${certificateData.totalShares} shares</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Face Value per Share:</td>
+                                        <td>₹${certificateData.faceValuePerShare}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Total Value:</td>
+                                        <td class="amount">₹${certificateData.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                    </tr>
+                                </table>
+
+                                <p>These shares are subject to the Memorandum and Articles of Association of the Society and the rules and regulations as may be framed from time to time.</p>
+                                
+                                <p><strong>Note:</strong> This certificate is not transferable and should be surrendered to the Society upon cessation of membership.</p>
+                            </div>
+
+                            <div class="signature-section">
+                                <div class="signature">
+                                    <div class="signature-line"></div>
+                                    <div>Member's Signature</div>
+                                </div>
+                                <div class="signature">
+                                    <div class="signature-line"></div>
+                                    <div>Secretary</div>
+                                    <div style="margin-top: 10px; font-size: 12px;">Employee Cooperative Credit Society</div>
+                                </div>
+                            </div>
+
+                            <div class="footer">
+                                <p>This certificate is issued on ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').toUpperCase()} and is valid subject to the rules and regulations of the Society.</p>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+            `;
+
+            showStatus('Opening print window...', false);
+
+            // Create a new window for printing with proper typing
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            if (printWindow) {
+                try {
+                    showStatus('Print window opened successfully. Writing content...', false);
+                    
+                    const doc = printWindow.document;
+                    doc.open();
+                    doc.write(printContent);
+                    doc.close();
+                    
+                    // Focus the window
+                    printWindow.focus();
+                    
+                    showStatus('Content loaded. Preparing to print...', false);
+                    
+                    // Wait for content to load then print
+                    setTimeout(() => {
+                        try {
+                            printWindow.print();
+                            showStatus('Print dialog opened successfully!', false);
+                            setTimeout(() => {
+                                printWindow.close();
+                                showStatus('Print test completed successfully!', false);
+                            }, 100);
+                        } catch (printError) {
+                            showStatus('Error during printing: ' + printError.message, true);
+                            printWindow.close();
+                        }
+                    }, 500);
+                } catch (error) {
+                    showStatus('Error preparing print document: ' + error.message, true);
+                    printWindow.close();
+                }
+            } else {
+                showStatus('Unable to open print window. Please check popup blocker settings.', true);
+            }
+        }
+    </script>
+</body>
+</html>

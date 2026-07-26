@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Root Cause Analysis (RCA)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      color: #333333;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+    
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+      box-sizing: border-box;
+    }
+    
+    header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      font-weight: 500;
+      margin-top: 5px;
+    }
+    
+    .status-badge {
+      background-color: #dcfce7;
+      color: #15803d;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 25px;
+      background-color: #f8fafc;
+      padding: 15px 20px;
+      border-radius: 8px;
+      border: 1px solid #f1f5f9;
+    }
+    
+    .meta-item {
+      font-size: 13px;
+    }
+    
+    .meta-label {
+      font-weight: 600;
+      color: #64748b;
+    }
+    
+    .meta-value {
+      font-weight: 500;
+      color: #334155;
+      margin-left: 5px;
+    }
+    
+    h2 {
+      font-size: 20px;
+      color: #1e293b;
+      font-weight: 600;
+      margin-top: 40px;
+      margin-bottom: 15px;
+      border-left: 4px solid #1e3a8a;
+      padding-left: 12px;
+    }
+    
+    p {
+      font-size: 14px;
+      color: #475569;
+      margin-bottom: 20px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      margin-bottom: 30px;
+      font-size: 13px;
+    }
+    
+    th {
+      background-color: #1e3a8a;
+      color: #ffffff;
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 12px;
+      border: 1px solid #1e3a8a;
+    }
+    
+    td {
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+      color: #334155;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    
+    .issue-card {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .issue-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e3a8a;
+      margin-top: 0;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .issue-detail {
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    
+    .label-badge {
+      font-weight: 600;
+      color: #64748b;
+      font-size: 12px;
+      width: 90px;
+      display: inline-block;
+    }
+    
+    .value-text {
+      color: #334155;
+    }
+    
+    .code-block {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      overflow-x: auto;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .note-box {
+      background-color: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 15px;
+      border-radius: 0 6px 6px 0;
+      margin-top: 25px;
+      margin-bottom: 25px;
+    }
+    
+    .note-title {
+      font-weight: 600;
+      color: #1d4ed8;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    
+    .note-content {
+      font-size: 13px;
+      color: #1e40af;
+      margin: 0;
+    }
+    
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 50px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="header-top">
+        <div>
+          <h1 class="title">Root Cause Analysis (RCA)</h1>
+          <div class="subtitle">Bican Loan Management System — Frontend LAN Deployment</div>
+        </div>
+        <span class="status-badge">Resolved</span>
+      </div>
+      
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Subject:</span>
+          <span class="meta-value">Client-to-Server PC LAN Connectivity</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Target Server IP:</span>
+          <span class="meta-value">192.168.1.50</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Client Static IP:</span>
+          <span class="meta-value">192.168.1.100</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Date:</span>
+          <span class="meta-value">May 27, 2026</span>
+        </div>
+      </div>
+    </header>
+    
+    <p>
+      This document records the diagnosis, root causes, security updates, and final verification metrics regarding the LAN connection setup on the Client PC, enabling it to securely communicate with the central database on the Server PC.
+    </p>
+    
+    <h2>📋 Root Cause Analysis Matrix</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 5%">#</th>
+          <th style="width: 25%">Problem Symptom</th>
+          <th style="width: 35%">Root Cause</th>
+          <th style="width: 35%">Fix / Resolution</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><b>Ping requests timed out</b> to Server PC IPs over direct cable connection.</td>
+          <td><b>Subnet Mismatch:</b> Client PC was actively routing traffic on Wi-Fi (subnet <code>10.104.28.x</code>). The LAN Ethernet card defaulted to a link-local <code>169.254.x.x</code>.</td>
+          <td>Configured a <b>Static IP <code>192.168.1.100</code></b> on the Client PC's Ethernet card. Successfully established connection to <code>192.168.1.50</code>.</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><b>Dev mode app still routed</b> API calls to <code>localhost:3001</code>.</td>
+          <td><b>Hardcoded Dev Defaults:</b> Electron's main process had <code>isDev</code> hardcoded to return localhost, completely bypassing <code>server-config.json</code> in dev mode.</td>
+          <td>Modified <code>getBackendOrigin()</code> and <code>get-server-url</code> IPC handler to evaluate and read <code>server-config.json</code> in development mode.</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><b>File reading failed</b> in specific launch flows (e.g. from Batch files).</td>
+          <td><b>Working Directory Ambiguity:</b> Using <code>process.cwd()</code> is relative to the start command directory, causing failures when Electron was spawned via HMR.</td>
+          <td>Configured multi-path scanning to look up <code>app.getAppPath()</code>, <code>process.cwd()</code>, and folders relative to <code>__dirname</code>.</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><b>Web requests blocked</b> inside the app's browser console.</td>
+          <td><b>CSP Policy Constraint:</b> The Content Security Policy <code>connect-src</code> header in dev mode restricted traffic exclusively to local hostnames.</td>
+          <td>Expanded the <code>connect-src</code> CSP header in <code>main.ts</code> to allow connections to external LAN IPs on <code>http://*:3001</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h2>🔍 Detailed Issues & Resolution Verification</h2>
+    
+    <div class="issue-card">
+      <h3 class="issue-title">🛠️ 1. Subnet Connection Success</h3>
+      <div class="issue-detail"><span class="label-badge">Symptom:</span><span class="value-text">Destination host unreachable.</span></div>
+      <div class="issue-detail"><span class="label-badge">Diagnosis:</span><span class="value-text">Client LAN adapter was unassigned (APIPA fallback) due to lack of a DHCP server.</span></div>
+      <div class="issue-detail"><span class="label-badge">Fix:</span><span class="value-text">Configured Static IP 192.168.1.100. Pinging 192.168.1.50 succeeded instantly.</span></div>
+      <div class="code-block">
+Pinging 192.168.1.50 with 32 bytes of data:
+Reply from 192.168.1.50: bytes=32 time&lt;1ms TTL=128
+Reply from 192.168.1.50: bytes=32 time&lt;1ms TTL=128
+      </div>
+    </div>
+    
+    <div class="issue-card">
+      <h3 class="issue-title">⚙️ 2. Dev-Mode Config Resolution</h3>
+      <div class="issue-detail"><span class="label-badge">Symptom:</span><span class="value-text">Vite app defaulted to localhost:3001.</span></div>
+      <div class="issue-detail"><span class="label-badge">Diagnosis:</span><span class="value-text">isDev boolean checked in Electron automatically bypassed configuration file checks.</span></div>
+      <div class="issue-detail"><span class="label-badge">Fix:</span><span class="value-text">Re-coded Main Process to check for root configurations before returning defaults.</span></div>
+      <div class="code-block">
+if (isDev) {
+  const devCfg = readProjectRootServerConfig();
+  if (devCfg) return `http://${devCfg.serverIP}:3001`;
+  return 'http://localhost:3001';
+}
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <h3 class="issue-title">🔒 3. Content Security Policy (CSP) Fix</h3>
+      <div class="issue-detail"><span class="label-badge">Symptom:</span><span class="value-text">Requests blocked in renderer console.</span></div>
+      <div class="issue-detail"><span class="label-badge">Diagnosis:</span><span class="value-text">connect-src header lacked clearance for remote LAN IP addresses on port 3001.</span></div>
+      <div class="issue-detail"><span class="label-badge">Fix:</span><span class="value-text">Allowed http://*:3001 inside connect-src in main.ts development CSP configuration.</span></div>
+      <div class="code-block">
+isDev
+  ? "connect-src 'self' http://localhost:* ws://localhost:* wss://localhost:* http://*:3001 http://localhost:3001"
+  : "connect-src 'self' http://*:3001 http://localhost:3001"
+      </div>
+    </div>
+
+    <div class="note-box">
+      <div class="note-title">🟢 Verification & Proof of Concept</div>
+      <p class="note-content">
+        <b>Server-Side Handshake Success:</b> When testing from the Client PC browser, the Server PC's NestJS backend successfully logged a <code>GET /favicon.ico - 404</code> request. This is concrete proof that the LAN handshake is fully operational and the Server PC's firewall is successfully letting traffic through!
+      </p>
+    </div>
+    
+    <div class="footer">
+      Bican Loan Management System • Confidential Technical Report • Generated on Client PC
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RD Component Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .result-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 RD Premature Information Component Test</h1>
+
+    <div class="test-section">
+        <h2>📋 Test Checklist</h2>
+        <div id="checklist">
+            <p class="info">✅ Ultra-compact UI implemented</p>
+            <p class="info">✅ Member validation working</p>
+            <p class="warning">⚠️ RD accounts loading issue detected</p>
+            <p class="info">✅ Calculation logic implemented</p>
+            <p class="info">✅ Responsive design achieved</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Troubleshooting Steps</h2>
+        <div>
+            <h3>Issue: "No RD accounts found for this member"</h3>
+            <p><strong>Cause:</strong> The component might not be calling the API correctly or the response format is different.</p>
+            
+            <h4>Solutions to try:</h4>
+            <ol>
+                <li><strong>Check Browser Console:</strong> Open Developer Tools (F12) and look for console logs when entering member 610017770</li>
+                <li><strong>Verify API Response:</strong> Look for logs showing "📊 RD API Response:" in the console</li>
+                <li><strong>Check Network Tab:</strong> See if any API calls are being made</li>
+                <li><strong>Refresh Page:</strong> Sometimes the component needs a fresh reload</li>
+            </ol>
+
+            <h4>Expected Behavior:</h4>
+            <ul>
+                <li>Enter member number: <code>610017770</code></li>
+                <li>Member details should appear: "A B A LARDI"</li>
+                <li>RD Account dropdown should show 2 accounts:
+                    <ul>
+                        <li>RD001001 - ₹5000/month (8.5%)</li>
+                        <li>RD001002 - ₹3000/month (8.0%)</li>
+                    </ul>
+                </li>
+                <li>Select an account to see details</li>
+                <li>Click Calculate to see premature withdrawal amounts</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧮 Manual Calculation Test</h2>
+        <p>Test the calculation logic manually:</p>
+        
+        <div class="result-box">
+            <h4>Test Scenario: RD001001</h4>
+            <ul>
+                <li><strong>Monthly Installment:</strong> ₹5,000</li>
+                <li><strong>Original Interest Rate:</strong> 8.5%</li>
+                <li><strong>Months Completed:</strong> ~35 months (from Jan 2023)</li>
+                <li><strong>Premature Rate:</strong> 7.5% (8.5% - 1% penalty)</li>
+                <li><strong>Total Deposited:</strong> ₹1,75,000 (5000 × 35)</li>
+                <li><strong>Interest Earned:</strong> ₹38,281 (approx)</li>
+                <li><strong>Total Amount:</strong> ₹2,13,281</li>
+            </ul>
+        </div>
+
+        <button class="btn btn-primary" onclick="calculateManual()">Calculate Manually</button>
+        <div id="manual-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Next Steps</h2>
+        <div>
+            <h4>If RD accounts are still not showing:</h4>
+            <ol>
+                <li><strong>Check the browser console</strong> for any JavaScript errors</li>
+                <li><strong>Verify the API service</strong> is returning data correctly</li>
+                <li><strong>Test with other members:</strong> Try 1001, 1002, 1003</li>
+                <li><strong>Check component state</strong> using React Developer Tools</li>
+            </ol>
+
+            <h4>If everything is working:</h4>
+            <ol>
+                <li><strong>Test all calculations</strong> with different scenarios</li>
+                <li><strong>Verify responsive design</strong> on different screen sizes</li>
+                <li><strong>Test error handling</strong> with invalid member numbers</li>
+                <li><strong>Test member lookup modal</strong> functionality</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Component Status</h2>
+        <div id="status">
+            <p class="success">✅ <strong>Implementation:</strong> Complete</p>
+            <p class="success">✅ <strong>UI Design:</strong> Ultra-compact, single-screen</p>
+            <p class="success">✅ <strong>Database:</strong> Sample data created</p>
+            <p class="success">✅ <strong>Backend API:</strong> Endpoints implemented</p>
+            <p class="warning">⚠️ <strong>Frontend Integration:</strong> Debugging in progress</p>
+            <p class="info">ℹ️ <strong>Authentication:</strong> Using mock data for testing</p>
+        </div>
+    </div>
+
+    <script>
+        function calculateManual() {
+            // Manual calculation for RD001001
+            const monthlyInstallment = 5000;
+            const originalRate = 8.5;
+            const monthsCompleted = 35;
+            
+            const prematureRate = originalRate - 1.0; // 1% penalty
+            const totalDeposited = monthlyInstallment * monthsCompleted;
+            const timeInYears = monthsCompleted / 12;
+            const interestEarned = (totalDeposited * prematureRate * timeInYears) / 100;
+            const totalAmount = totalDeposited + interestEarned;
+
+            const resultHTML = `
+                <div class="result-box">
+                    <h4>Manual Calculation Result:</h4>
+                    <ul>
+                        <li><strong>Duration:</strong> ${monthsCompleted} months</li>
+                        <li><strong>Penalty:</strong> 1.0%</li>
+                        <li><strong>Premature Rate:</strong> ${prematureRate}%</li>
+                        <li><strong>Total Deposited:</strong> ₹${totalDeposited.toLocaleString()}</li>
+                        <li><strong>Interest Earned:</strong> ₹${Math.round(interestEarned).toLocaleString()}</li>
+                        <li><strong>Total Amount:</strong> ₹${Math.round(totalAmount).toLocaleString()}</li>
+                    </ul>
+                    <p class="success">✅ This should match the component calculation!</p>
+                </div>
+            `;
+
+            document.getElementById('manual-result').innerHTML = resultHTML;
+        }
+
+        // Auto-run status check
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 RD Component Test Page Loaded');
+            console.log('💡 Open the RD Premature Information page and test with member 610017770');
+        });
+    </script>
+</body>
+</html>

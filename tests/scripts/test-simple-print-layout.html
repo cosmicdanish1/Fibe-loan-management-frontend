@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Print Layout - No Scroll</title>
+    <style>
+        @media print {
+            @page { 
+                size: portrait; 
+                margin: 5mm; 
+            }
+            body { 
+                background: white !important; 
+                margin: 0 !important;
+                padding: 0 !important;
+                font-family: Arial, sans-serif !important;
+                font-size: 8px !important;
+                line-height: 1.1 !important;
+                overflow: hidden !important;
+                width: 100% !important;
+                max-width: none !important;
+            }
+            .no-print { display: none !important; }
+            
+            /* Ultra-simple layout */
+            .print-content {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+            
+            .print-header {
+                text-align: center;
+                margin-bottom: 8px;
+                border-bottom: 1px solid #333;
+                padding-bottom: 5px;
+            }
+            
+            .print-header h1 {
+                font-size: 10px;
+                margin: 0 0 2px 0;
+                font-weight: bold;
+            }
+            
+            .print-header p {
+                font-size: 7px;
+                margin: 1px 0;
+            }
+            
+            .two-column {
+                display: flex;
+                gap: 3mm;
+                width: 100%;
+                overflow: hidden;
+            }
+            
+            .left-column {
+                width: 35%;
+                flex-shrink: 0;
+            }
+            
+            .right-column {
+                width: 65%;
+                flex-shrink: 0;
+            }
+            
+            .section-title {
+                font-size: 8px;
+                font-weight: bold;
+                background: #f0f0f0;
+                padding: 2px 4px;
+                margin-bottom: 2px;
+                border: 1px solid #ccc;
+            }
+            
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 6px;
+                margin-bottom: 5px;
+            }
+            
+            th, td {
+                border: 1px solid #ccc;
+                padding: 1px 2px;
+                text-align: left;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+            
+            th {
+                background: #f5f5f5;
+                font-weight: bold;
+                font-size: 6px;
+            }
+            
+            .amount {
+                text-align: right;
+            }
+            
+            .print-footer {
+                margin-top: 10px;
+                border-top: 1px solid #333;
+                padding-top: 5px;
+                display: flex;
+                justify-content: space-between;
+                font-size: 6px;
+            }
+            
+            .signature-box {
+                text-align: center;
+                width: 30%;
+            }
+            
+            .signature-line {
+                border-top: 1px solid #666;
+                margin-top: 15px;
+                padding-top: 2px;
+            }
+        }
+        
+        /* Screen styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .no-print {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .print-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .two-column {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .left-column {
+            flex: 1;
+        }
+        
+        .right-column {
+            flex: 2;
+        }
+        
+        .section-title {
+            background: #e3f2fd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        
+        .amount {
+            text-align: right;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <h2>Simple Print Layout Test</h2>
+        <p>This is a minimal layout designed to absolutely prevent scroll bars in print.</p>
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Print Preview</button>
+        <hr style="margin: 20px 0;">
+    </div>
+
+    <div class="print-content">
+        <div class="print-header">
+            <h1>EMP ESPAT EMPLOYEES CO-OP CREDIT SOCIETY LTD.</h1>
+            <p>Sector 27A, Nigdi, Pradhikaran, Pune - 411044</p>
+            <p><strong>MEMBER CONSOLIDATED STATEMENT</strong></p>
+            <p>Member: 610016572 - Mr SINGH DALBIR | Period: 01-Jan-2025 to 28-Dec-2025</p>
+            <p>Generated: 28-Dec-2025 20:49:28</p>
+        </div>
+
+        <div class="two-column">
+            <div class="left-column">
+                <div class="section-title">Account Balances</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Account Head</th>
+                            <th>Code</th>
+                            <th class="amount">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Savings Bank</td><td>A001</td><td class="amount">4,714.00</td></tr>
+                        <tr><td>Cash in Hand</td><td>A1001</td><td class="amount">10,000.00</td></tr>
+                        <tr><td>Current A/c</td><td>A1008</td><td class="amount">3,05,640.00</td></tr>
+                        <tr><td>Emergency Loan</td><td>A1047</td><td class="amount">-12,197.00</td></tr>
+                        <tr><td>Compulsory Dep</td><td>E1026</td><td class="amount">-13,244.00</td></tr>
+                        <tr><td>Enrolment Head</td><td>FD</td><td class="amount">1,50,000.00</td></tr>
+                        <tr><td>Interest Income</td><td>I1002</td><td class="amount">472.00</td></tr>
+                        <tr><td>Reserve Income</td><td>INT</td><td class="amount">938.00</td></tr>
+                        <tr><td>Share Value</td><td>L1001</td><td class="amount">-46,097.00</td></tr>
+                        <tr><td>Relief Scheme</td><td>L1002</td><td class="amount">-7,185.00</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="right-column">
+                <div class="section-title">Transaction Journal</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Head</th>
+                            <th>Vchr</th>
+                            <th>Action</th>
+                            <th class="amount">DR</th>
+                            <th class="amount">CR</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>02-Oct</td>
+                            <td>SHARE VALUE</td>
+                            <td>R50016</td>
+                            <td>Share Contribution</td>
+                            <td class="amount">-</td>
+                            <td class="amount">1,943.00</td>
+                        </tr>
+                        <tr>
+                            <td>03-Oct</td>
+                            <td>COMPULSORY</td>
+                            <td>R50041</td>
+                            <td>Fixed Deposit</td>
+                            <td class="amount">-</td>
+                            <td class="amount">1,362.00</td>
+                        </tr>
+                        <tr>
+                            <td>16-Oct</td>
+                            <td>EMERGENCY</td>
+                            <td>R50039</td>
+                            <td>Loan Disbursement</td>
+                            <td class="amount">1,056.00</td>
+                            <td class="amount">-</td>
+                        </tr>
+                        <tr>
+                            <td>17-Dec</td>
+                            <td>INTEREST</td>
+                            <td>R50037</td>
+                            <td>Interest Credit</td>
+                            <td class="amount">-</td>
+                            <td class="amount">170.00</td>
+                        </tr>
+                        <tr>
+                            <td>21-Dec</td>
+                            <td>FAMILY RELIEF</td>
+                            <td>R50032</td>
+                            <td>Thrift Deposit</td>
+                            <td class="amount">-</td>
+                            <td class="amount">543.00</td>
+                        </tr>
+                        <tr>
+                            <td>22-Nov</td>
+                            <td>COMPULSORY</td>
+                            <td>R50033</td>
+                            <td>Fixed Deposit</td>
+                            <td class="amount">-</td>
+                            <td class="amount">1,374.00</td>
+                        </tr>
+                        <tr>
+                            <td>24-Nov</td>
+                            <td>DIVIDEND</td>
+                            <td>-</td>
+                            <td>Dividend Payment</td>
+                            <td class="amount">2,500.00</td>
+                            <td class="amount">-</td>
+                        </tr>
+                        <tr>
+                            <td>25-Nov</td>
+                            <td>COMPULSORY</td>
+                            <td>R50017</td>
+                            <td>Fixed Deposit</td>
+                            <td class="amount">-</td>
+                            <td class="amount">1,319.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="print-footer">
+            <div class="signature-box">
+                <div class="signature-line">
+                    <strong>Prepared By</strong><br>
+                    Date: _______
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    <strong>Checked By</strong><br>
+                    Date: _______
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    <strong>Secretary</strong><br>
+                    Date: _______
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 10px; font-size: 6px; color: #666;">
+            System Generated Report • Page 1 of 1
+        </div>
+    </div>
+</body>
+</html>

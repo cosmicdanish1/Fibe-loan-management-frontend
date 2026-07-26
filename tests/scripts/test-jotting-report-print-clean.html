@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JottingReport Print Test</title>
+    <style>
+        /* Screen styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .no-print {
+            background-color: #e3f2fd;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .print-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .pagination {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .pagination button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .pagination button.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        /* Print styles */
+        @media print {
+            /* Hide everything first */
+            * {
+                visibility: hidden !important;
+                overflow: hidden !important;
+            }
+            
+            /* Show only print content */
+            .print-content,
+            .print-content * {
+                visibility: visible !important;
+            }
+            
+            .print-content {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+            }
+            
+            /* Hide non-printable elements */
+            .no-print,
+            .no-print *,
+            .pagination,
+            .pagination * {
+                display: none !important;
+                visibility: hidden !important;
+            }
+            
+            /* Print header */
+            .print-header {
+                display: block !important;
+                visibility: visible !important;
+                text-align: center;
+                margin-bottom: 15px;
+                border-bottom: 2px solid #333;
+                padding-bottom: 8px;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            
+            .print-info {
+                display: flex !important;
+                visibility: visible !important;
+                margin-bottom: 15px;
+                justify-content: space-between;
+                font-size: 10px;
+            }
+            
+            .print-summary {
+                display: block !important;
+                visibility: visible !important;
+                margin-top: 10px;
+                padding: 8px;
+                border: 1px solid #333;
+                background-color: #f8f8f8;
+                font-size: 9px;
+                font-weight: bold;
+            }
+            
+            .print-footer {
+                display: block !important;
+                visibility: visible !important;
+                margin-top: 15px;
+                font-size: 9px;
+                text-align: center;
+                color: #666;
+                border-top: 1px solid #ccc;
+                padding-top: 8px;
+            }
+            
+            /* Clean table */
+            table {
+                width: 100% !important;
+                border: 1px solid #333 !important;
+                border-collapse: collapse !important;
+                font-size: 8px !important;
+            }
+            
+            th, td {
+                border: 0.5px solid #666 !important;
+                padding: 2px 3px !important;
+                visibility: visible !important;
+            }
+            
+            th {
+                background-color: #f0f0f0 !important;
+                font-weight: bold !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            
+            @page {
+                size: A4 portrait;
+                margin: 4mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <h2>JottingReport Print Test</h2>
+        <p>This page tests the clean print functionality for JottingReport.</p>
+        <button onclick="window.print()">🖨️ Print Test</button>
+        <p><strong>Expected:</strong> Only the report content below should print, without pagination or screen elements.</p>
+    </div>
+
+    <div class="print-content">
+        <!-- Print Header - Only visible when printing -->
+        <div class="print-header" style="display: none;">
+            JOTTING REPORT (BALANCE SNAPSHOT)
+        </div>
+        
+        <!-- Print Info - Only visible when printing -->
+        <div class="print-info" style="display: none;">
+            <div>
+                <strong>Head Code:</strong> L1004<br/>
+                <strong>As On Date:</strong> 28/12/2024<br/>
+            </div>
+            <div>
+                <strong>Report Generated:</strong> 29-Dec-2024 07:15:03<br/>
+                <strong>Sort By:</strong> MBNO
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Member No</th>
+                    <th>Member Name</th>
+                    <th>Wing</th>
+                    <th>Office</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>610014881</td>
+                    <td>KEERTY LATA DESHMUKH</td>
+                    <td>Traffic Dept</td>
+                    <td>1</td>
+                    <td style="text-align: right;">-121836.00</td>
+                </tr>
+                <tr>
+                    <td>610015124</td>
+                    <td>Mr DEO LAL</td>
+                    <td>Traffic Dept</td>
+                    <td>1</td>
+                    <td style="text-align: right;">-59430.00</td>
+                </tr>
+                <tr>
+                    <td>610015300</td>
+                    <td>Mr KRISHNA MURTHY</td>
+                    <td>Traffic Dept</td>
+                    <td>1</td>
+                    <td style="text-align: right;">-187256.00</td>
+                </tr>
+                <tr>
+                    <td>610015408</td>
+                    <td>Mr RAJESH KUMAR JAIN</td>
+                    <td>Traffic Dept</td>
+                    <td>1</td>
+                    <td style="text-align: right;">-42010.00</td>
+                </tr>
+                <tr>
+                    <td>610015502</td>
+                    <td>MADAN LAL</td>
+                    <td>Traffic Dept</td>
+                    <td>1</td>
+                    <td style="text-align: right;">-35008.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Pagination - Should be hidden in print -->
+        <div class="pagination no-print">
+            <button class="active">1</button>
+            <button>2</button>
+            <button>3</button>
+            <button>4</button>
+            <button>5</button>
+            <span>20 / page</span>
+        </div>
+
+        <!-- Clean Summary Section for Print -->
+        <div class="print-summary" style="display: none;">
+            <div style="display: flex; justify-content: space-between;">
+                <span>Total Members: 102</span>
+                <span>Total Balance: ₹-5,202,174.00</span>
+            </div>
+        </div>
+        
+        <!-- Print Footer - Only visible when printing -->
+        <div class="print-footer" style="display: none;">
+            Printed from Banking System - Jotting Report
+        </div>
+    </div>
+
+    <div class="no-print">
+        <h3>Screen Summary (Not Printed)</h3>
+        <div style="padding: 12px; background-color: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                <span>Total Members: 102</span>
+                <span>Total Balance: ₹-5,202,174.00</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

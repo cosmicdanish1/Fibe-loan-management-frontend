@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RD Statement Frontend Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-header {
+            color: #1890ff;
+            border-bottom: 2px solid #1890ff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #fafafa;
+            border-left: 4px solid #52c41a;
+        }
+        .test-input {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .test-input label {
+            min-width: 120px;
+            font-weight: bold;
+        }
+        .test-input input, .test-input select {
+            padding: 8px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            min-width: 200px;
+        }
+        .test-button {
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background-color: #40a9ff;
+        }
+        .test-button.success {
+            background-color: #52c41a;
+        }
+        .test-button.danger {
+            background-color: #ff4d4f;
+        }
+        .test-results {
+            background-color: #f6ffed;
+            border: 1px solid #b7eb8f;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .test-error {
+            background-color: #fff2f0;
+            border: 1px solid #ffccc7;
+            color: #ff4d4f;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .transaction-table th,
+        .transaction-table td {
+            border: 1px solid #d9d9d9;
+            padding: 8px;
+            text-align: left;
+        }
+        .transaction-table th {
+            background-color: #fafafa;
+            font-weight: bold;
+        }
+        .balance-info {
+            display: flex;
+            justify-content: space-between;
+            background-color: #e6f7ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .balance-item {
+            text-align: center;
+        }
+        .balance-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .balance-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1890ff;
+        }
+        .print-test {
+            background-color: #fff7e6;
+            border: 1px solid #ffd591;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-header">🔍 RD Statement Frontend Verification Test</h1>
+        
+        <div class="test-section">
+            <h3>📋 Test Configuration</h3>
+            <div class="test-input">
+                <label>Backend URL:</label>
+                <input type="text" id="backendUrl" value="http://localhost:3001/api/v1" />
+            </div>
+            <div class="test-input">
+                <label>Member Number:</label>
+                <input type="text" id="memberNo" value="1001" />
+            </div>
+            <div class="test-input">
+                <label>From Date:</label>
+                <input type="date" id="fromDate" value="2015-04-01" />
+            </div>
+            <div class="test-input">
+                <label>To Date:</label>
+                <input type="date" id="toDate" />
+            </div>
+            <div class="test-input">
+                <label>Head Code:</label>
+                <select id="headCode">
+                    <option value="A1003">A1003 - RECURRING DEPOSIT</option>
+                    <option value="A004">A004 - RECURRING DEPOSIT</option>
+                    <option value="RD01">RD01 - Legacy Code</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚀 API Testing</h3>
+            <button class="test-button" onclick="testBackendConnection()">Test Backend Connection</button>
+            <button class="test-button" onclick="testRDStatementAPI()">Test RD Statement API</button>
+            <button class="test-button" onclick="testMemberLookup()">Test Member Lookup</button>
+            <div id="apiResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 RD Statement Results</h3>
+            <div id="statementResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🖨️ Print Testing</h3>
+            <div class="print-test">
+                <p><strong>Print Test Instructions:</strong></p>
+                <ol>
+                    <li>First generate RD statement data above</li>
+                    <li>Click "Test Print Preview" to see how it will look when printed</li>
+                    <li>Verify portrait orientation and proper formatting</li>
+                    <li>Check that all columns fit within page width</li>
+                    <li>Ensure headers, footers, and signatures are visible</li>
+                </ol>
+                <button class="test-button" onclick="testPrintPreview()">Test Print Preview</button>
+                <button class="test-button" onclick="actualPrint()">Actual Print</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set today's date as default
+        document.getElementById('toDate').value = new Date().toISOString().split('T')[0];
+
+        let currentStatementData = null;
+
+        async function testBackendConnection() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const resultsDiv = document.getElementById('apiResults');
+            
+            try {
+                resultsDiv.innerHTML = '<p>🔄 Testing backend connection...</p>';
+                
+                const response = await fetch(`${backendUrl}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML = `
+                        <div class="test-results">
+                            <h4>✅ Backend Connection Successful</h4>
+                            <p>Status: ${response.status}</p>
+                            <p>Backend is running and accessible</p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="test-error">
+                        <h4>❌ Backend Connection Failed</h4>
+                        <p>Error: ${error.message}</p>
+                        <p>Please ensure the backend server is running on the specified URL</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testRDStatementAPI() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const memberNo = document.getElementById('memberNo').value;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            const headCode = document.getElementById('headCode').value;
+            const resultsDiv = document.getElementById('apiResults');
+            
+            try {
+                resultsDiv.innerHTML = '<p>🔄 Testing RD Statement API...</p>';
+                
+                const params = new URLSearchParams({
+                    memberNo: memberNo,
+                    fromDate: fromDate + 'T00:00:00.000Z',
+                    toDate: toDate + 'T23:59:59.999Z',
+                    headCode: headCode
+                });
+                
+                const response = await fetch(`${backendUrl}/report/rd-statement?${params.toString()}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentStatementData = data.data;
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="test-results">
+                            <h4>✅ RD Statement API Successful</h4>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Success:</strong> ${data.success}</p>
+                            <p><strong>Member:</strong> ${data.data.memberNo} - ${data.data.memberName}</p>
+                            <p><strong>Transactions:</strong> ${data.data.transactions?.length || 0}</p>
+                        </div>
+                    `;
+                    
+                    displayStatementResults(data.data);
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="test-error">
+                        <h4>❌ RD Statement API Failed</h4>
+                        <p>Error: ${error.message}</p>
+                        <p>Check member number, date range, and head code</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayStatementResults(data) {
+            const resultsDiv = document.getElementById('statementResults');
+            
+            if (!data || !data.transactions) {
+                resultsDiv.innerHTML = '<p>No data to display</p>';
+                return;
+            }
+            
+            const balanceInfo = `
+                <div class="balance-info">
+                    <div class="balance-item">
+                        <div class="balance-label">Opening Balance</div>
+                        <div class="balance-value">₹${data.openingBalance?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-label">Closing Balance</div>
+                        <div class="balance-value">₹${data.closingBalance?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-label">Total Transactions</div>
+                        <div class="balance-value">${data.transactions.length}</div>
+                    </div>
+                </div>
+            `;
+            
+            let transactionRows = '';
+            data.transactions.forEach((trans, index) => {
+                const date = new Date(trans.date).toLocaleDateString('en-IN');
+                const withdrawal = trans.withdrawal > 0 ? `₹${trans.withdrawal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-';
+                const deposit = trans.deposit > 0 ? `₹${trans.deposit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-';
+                const balance = `₹${trans.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                
+                transactionRows += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${date}</td>
+                        <td>${trans.particulars || ''}</td>
+                        <td>${trans.voucherNo || ''}</td>
+                        <td style="text-align: right">${withdrawal}</td>
+                        <td style="text-align: right">${deposit}</td>
+                        <td style="text-align: right; font-weight: bold">${balance}</td>
+                    </tr>
+                `;
+            });
+            
+            resultsDiv.innerHTML = `
+                <h4>📊 RD Statement for Member ${data.memberNo} - ${data.memberName}</h4>
+                ${balanceInfo}
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Particulars</th>
+                            <th>Voucher</th>
+                            <th>Withdrawal</th>
+                            <th>Deposit</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${transactionRows}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function testMemberLookup() {
+            const resultsDiv = document.getElementById('apiResults');
+            resultsDiv.innerHTML = `
+                <div class="test-results">
+                    <h4>📋 Member Lookup Test</h4>
+                    <p>Member lookup functionality is designed for Electron environment.</p>
+                    <p>In the actual application:</p>
+                    <ul>
+                        <li>Press F2 or click the search icon in member number field</li>
+                        <li>A new window will open with member search functionality</li>
+                        <li>Selected member details will auto-fill in the form</li>
+                    </ul>
+                    <p><strong>Test Members Available:</strong></p>
+                    <ul>
+                        <li>1001 - Member1001 Kumar Singh</li>
+                        <li>Try other member numbers from your database</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        function testPrintPreview() {
+            if (!currentStatementData) {
+                alert('Please generate RD statement data first');
+                return;
+            }
+            
+            // Create a print preview window
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            const printContent = generatePrintContent(currentStatementData);
+            
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+        }
+
+        function actualPrint() {
+            if (!currentStatementData) {
+                alert('Please generate RD statement data first');
+                return;
+            }
+            
+            const printContent = generatePrintContent(currentStatementData);
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function generatePrintContent(data) {
+            const memberNo = document.getElementById('memberNo').value;
+            const fromDate = new Date(document.getElementById('fromDate').value).toLocaleDateString('en-IN');
+            const toDate = new Date(document.getElementById('toDate').value).toLocaleDateString('en-IN');
+            
+            let transactionRows = '';
+            data.transactions.forEach(trans => {
+                const date = new Date(trans.date).toLocaleDateString('en-IN');
+                const withdrawal = trans.withdrawal > 0 ? trans.withdrawal.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-';
+                const deposit = trans.deposit > 0 ? trans.deposit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-';
+                const balance = trans.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                
+                transactionRows += `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${trans.particulars || ''}</td>
+                        <td>${trans.voucherNo || ''}</td>
+                        <td style="text-align: right">${withdrawal}</td>
+                        <td style="text-align: right">${deposit}</td>
+                        <td style="text-align: right; font-weight: bold">${balance}</td>
+                    </tr>
+                `;
+            });
+            
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>RD Statement - ${data.memberName}</title>
+                    <style>
+                        @page { size: A4 portrait; margin: 10mm; }
+                        body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 0; }
+                        .header { text-align: center; margin-bottom: 20px; }
+                        .header h2 { margin: 0; font-size: 16px; }
+                        .header .subtitle { font-size: 12px; margin: 5px 0; }
+                        .info-row { display: flex; justify-content: space-between; margin: 5px 0; font-size: 9px; }
+                        .balance-row { display: flex; justify-content: space-between; margin: 10px 0; font-weight: bold; background: #f0f0f0; padding: 8px; }
+                        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                        th, td { border: 1px solid #666; padding: 4px; font-size: 8px; }
+                        th { background: #f0f0f0; font-weight: bold; text-align: center; }
+                        .signature-section { display: flex; justify-content: space-between; margin-top: 40px; }
+                        .signature-box { width: 30%; text-align: center; }
+                        .signature-line { border-bottom: 1px solid #666; margin-bottom: 5px; height: 20px; }
+                        .disclaimer { text-align: center; margin-top: 30px; font-size: 8px; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>EMP ESPAT EMPLOYEES CO-OP CREDIT SOCIETY LTD.</h2>
+                        <div class="subtitle">Sector 27A, Nigdi, Pradhikaran, Pune - 411044</div>
+                        <div class="subtitle" style="font-weight: bold; text-decoration: underline;">RECURRING DEPOSIT (RD) STATEMENT</div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span><strong>Member No:</strong> ${memberNo}</span>
+                        <span><strong>Member Name:</strong> ${data.memberName}</span>
+                        <span><strong>Generated:</strong> ${new Date().toLocaleString('en-IN')}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span><strong>From Date:</strong> ${fromDate}</span>
+                        <span><strong>To Date:</strong> ${toDate}</span>
+                        <span><strong>Total Transactions:</strong> ${data.transactions.length}</span>
+                    </div>
+                    
+                    <div class="balance-row">
+                        <span>Opening Balance: ₹${data.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span>Closing Balance: ₹${data.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Particulars</th>
+                                <th>Voucher</th>
+                                <th>Withdrawal</th>
+                                <th>Deposit</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${transactionRows}
+                        </tbody>
+                    </table>
+                    
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <strong>Account Holder</strong>
+                        </div>
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <strong>Verified By</strong>
+                        </div>
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <strong>Authorized Signatory</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="disclaimer">
+                        This is a computer generated statement - EMP ESPAT EMPLOYEES CO-OP CREDIT SOCIETY LTD.
+                    </div>
+                </body>
+                </html>
+            `;
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            setTimeout(() => {
+                testBackendConnection();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

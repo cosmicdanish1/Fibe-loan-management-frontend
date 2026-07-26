@@ -1,0 +1,83 @@
+{
+    "name": "eslint-plugin-route-management",
+    "version": "1.0.0",
+    "description": "Custom ESLint rules to enforce centralized route management",
+    "main": "index.js",
+    "rules": {
+        "no-hardcoded-routes": {
+            "meta": {
+                "type": "problem",
+                "docs": {
+                    "description": "Disallow hardcoded route strings - use ROUTES constants instead",
+                    "category": "Best Practices",
+                    "recommended": true
+                },
+                "messages": {
+                    "noHardcodedRoute": "Hardcoded route '{{route}}' detected. Use ROUTES.{{suggestion}} from config/routes.ts instead."
+                },
+                "schema": []
+            },
+            "create": function(context) {
+                // Common route patterns to detect
+        const routePatterns = [
+          /^\/[a-z-
+                    ]+(?:\/[a-z-
+                    ]+)*$/, // Matches: /loan-application, /reports/daily/cash-book
+          /^\/administration\ //,
+          /^\/transaction\ //,
+          /^\/reports\ //,
+          /^\/masters\ //,
+          /^\/utility\ //,
+          /^\/help\ //,
+          /^\/exit\ //
+                ];
+
+        function isLikelyRoute(value) {
+          return routePatterns.some(pattern => pattern.test(value));
+                }
+
+        function suggestConstantName(route) {
+                    // Convert route to constant name
+                    // e.g., /loan-application -> LOAN_APPLICATION
+          return route
+            .replace(/^\ //, '')
+            .replace(/\ //g, '_')
+            .replace(/-/g, '_')
+            .toUpperCase();
+                }
+
+        return {
+          Literal(node) {
+            if (typeof node.value === 'string' && isLikelyRoute(node.value)) {
+                            // Check if this is in a route-related context
+              const parent = node.parent;
+              
+              // Skip if already using ROUTES constant
+              const sourceCode = context.getSourceCode();
+              const text = sourceCode.getText(node);
+              if (text.includes('ROUTES.')) {
+                return;
+                            }
+                            // Check if this is in a JSX path attribute or route configuration
+              const isInRouteContext = 
+                (parent.type === 'JSXAttribute' && parent.name.name === 'path') ||
+                (parent.type === 'Property' && parent.key.name === 'route') ||
+                (parent.type === 'Property' && parent.key.name === 'path');
+
+              if (isInRouteContext) {
+                context.report({
+                  node,
+                  messageId: 'noHardcodedRoute',
+                  data: {
+                    route: node.value,
+                    suggestion: suggestConstantName(node.value)
+                                    }
+                                });
+                            }
+                        }
+                    }
+                };
+            }
+        }
+    }
+}

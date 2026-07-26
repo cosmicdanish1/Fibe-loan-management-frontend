@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Detail Ledger Print Test</title>
+    <style>
+        /* Screen styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .no-print {
+            background-color: #e3f2fd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .print-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .print-header, .print-info, .print-footer {
+            display: none;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        .right {
+            text-align: right;
+        }
+        
+        .total-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            
+            .print-content, .print-content * {
+                visibility: visible;
+            }
+            
+            .print-content {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #333;
+                padding-bottom: 10px;
+            }
+            
+            .print-info {
+                display: flex !important;
+                margin-bottom: 20px;
+                justify-content: space-between;
+                font-size: 12px;
+            }
+            
+            .print-footer {
+                display: block !important;
+                margin-top: 20px;
+                font-size: 10px;
+                text-align: center;
+                color: #666;
+                border-top: 1px solid #ccc;
+                padding-top: 10px;
+            }
+            
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 10px;
+            }
+            
+            th, td {
+                border: 1px solid #333;
+                padding: 4px;
+                text-align: left;
+            }
+            
+            th {
+                background-color: #f0f0f0 !important;
+                font-weight: bold;
+                text-transform: uppercase;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            .right {
+                text-align: right;
+            }
+            
+            .total-row {
+                font-weight: bold;
+                background-color: #f5f5f5 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            @page {
+                size: A4 portrait;
+                margin: 15mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <h2>Member Detail Ledger - Print Test</h2>
+        <p>This section will be hidden when printing.</p>
+        <button onclick="window.print()" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            🖨️ Print Report
+        </button>
+    </div>
+
+    <div class="print-content">
+        <div class="print-header">
+            <h2>MEMBER DETAIL LEDGER</h2>
+        </div>
+        
+        <div class="print-info">
+            <div>
+                <strong>Member:</strong> SSS MURTHY (610023352)<br/>
+                <strong>Date Range:</strong> 01/01/2019 to 31/12/2025
+            </div>
+            <div>
+                <strong>Report Generated:</strong> 28-Dec-2025 16:30:45
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Account Head</th>
+                    <th>Particulars</th>
+                    <th>Voucher No.</th>
+                    <th>Debit (₹)</th>
+                    <th>Credit (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>29/11/2019</td>
+                    <td>COMPULSORY DEPOSIT</td>
+                    <td>Demand Receipt</td>
+                    <td>D00310</td>
+                    <td class="right">0.00</td>
+                    <td class="right">200.00</td>
+                </tr>
+                <tr>
+                    <td>29/11/2019</td>
+                    <td>EMERGENCY LOAN</td>
+                    <td>Demand Receipt</td>
+                    <td>D00310</td>
+                    <td class="right">0.00</td>
+                    <td class="right">4,000.00</td>
+                </tr>
+                <tr>
+                    <td>29/11/2019</td>
+                    <td>INTT FROM MEMBER</td>
+                    <td>Demand Receipt</td>
+                    <td>D00310</td>
+                    <td class="right">0.00</td>
+                    <td class="right">600.00</td>
+                </tr>
+                <tr>
+                    <td>15/12/2025</td>
+                    <td>INTT FROM MEMBER</td>
+                    <td>Interest Credit</td>
+                    <td>R50046</td>
+                    <td class="right">0.00</td>
+                    <td class="right">128.00</td>
+                </tr>
+                <tr>
+                    <td>17/12/2025</td>
+                    <td>EMERGENCY LOAN</td>
+                    <td>Loan Disbursement</td>
+                    <td>R50053</td>
+                    <td class="right">876.00</td>
+                    <td class="right">0.00</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="4" class="right">TOTAL</td>
+                    <td class="right">1,077,409.00</td>
+                    <td class="right">1,179,736.00</td>
+                </tr>
+            </tfoot>
+        </table>
+        
+        <div class="print-footer">
+            Printed from Banking System
+        </div>
+    </div>
+
+    <script>
+        console.log('Member Detail Ledger Print Test loaded');
+        console.log('Click the Print button to test print functionality');
+    </script>
+</body>
+</html>

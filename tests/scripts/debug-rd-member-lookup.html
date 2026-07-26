@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug RD Member Lookup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        input, button {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .member-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .member-item:hover {
+            background-color: #e9ecef;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .debug-info {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug RD Member Lookup Issue</h1>
+        <p>This page helps debug why the member lookup is not working in the Premature Information RD component.</p>
+
+        <!-- Test 1: Backend Connection -->
+        <div class="test-section">
+            <h3>Test 1: Backend Connection</h3>
+            <button onclick="testBackendConnection()">Test Backend</button>
+            <div id="backendResults" class="results"></div>
+        </div>
+
+        <!-- Test 2: Member Lookup API -->
+        <div class="test-section">
+            <h3>Test 2: Member Lookup API</h3>
+            <input type="text" id="memberSearch" placeholder="Enter member number or name" value="610">
+            <button onclick="testMemberLookupAPI()">Test API</button>
+            <div id="apiResults" class="results"></div>
+        </div>
+
+        <!-- Test 3: API Service Method -->
+        <div class="test-section">
+            <h3>Test 3: API Service Method</h3>
+            <button onclick="testApiServiceMethod()">Test API Service</button>
+            <div id="serviceResults" class="results"></div>
+        </div>
+
+        <!-- Test 4: Browser Console Check -->
+        <div class="test-section">
+            <h3>Test 4: Browser Console Errors</h3>
+            <button onclick="checkConsoleErrors()">Check Console</button>
+            <div id="consoleResults" class="results"></div>
+        </div>
+
+        <!-- Test 5: Network Tab Check -->
+        <div class="test-section">
+            <h3>Test 5: Network Requests</h3>
+            <button onclick="monitorNetworkRequests()">Monitor Network</button>
+            <div id="networkResults" class="results"></div>
+        </div>
+
+        <!-- Debug Log -->
+        <div class="test-section">
+            <h3>Debug Log</h3>
+            <button onclick="clearLog()">Clear Log</button>
+            <div id="debugLog" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3001/api/v1';
+        let debugLog = [];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            debugLog.push(logEntry);
+            console.log(logEntry);
+            updateDebugLog();
+        }
+
+        function updateDebugLog() {
+            document.getElementById('debugLog').innerHTML = debugLog.join('<br>');
+        }
+
+        function clearLog() {
+            debugLog = [];
+            updateDebugLog();
+        }
+
+        // Test 1: Backend Connection
+        async function testBackendConnection() {
+            const resultsDiv = document.getElementById('backendResults');
+            resultsDiv.innerHTML = '<div>🔄 Testing backend connection...</div>';
+            log('Testing backend connection...');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`, { timeout: 5000 });
+                const data = await response.json();
+                
+                resultsDiv.innerHTML = `
+                    <div class="success">✅ Backend is running</div>
+                    <div class="debug-info">Status: ${response.status}<br>Response: ${JSON.stringify(data, null, 2)}</div>
+                `;
+                log('✅ Backend connection successful');
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Backend connection failed: ${error.message}</div>`;
+                log(`❌ Backend connection failed: ${error.message}`);
+            }
+        }
+
+        // Test 2: Member Lookup API
+        async function testMemberLookupAPI() {
+            const searchTerm = document.getElementById('memberSearch').value;
+            const resultsDiv = document.getElementById('apiResults');
+            resultsDiv.innerHTML = '<div>🔄 Testing member lookup API...</div>';
+            log(`Testing member lookup API with search: "${searchTerm}"`);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/members/lookup?search=${encodeURIComponent(searchTerm)}&limit=10`);
+                
+                log(`API Response Status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                log(`API Response: ${JSON.stringify(result, null, 2).substring(0, 500)}...`);
+
+                if (result.success && result.data && result.data.length > 0) {
+                    let html = `<div class="success">✅ Found ${result.data.length} members</div>`;
+                    result.data.slice(0, 5).forEach((member, index) => {
+                        html += `
+                            <div class="member-item">
+                                <strong>${member.memberNo}</strong> - ${member.memberName}
+                                <br><small>Office: ${member.officeName}</small>
+                            </div>
+                        `;
+                    });
+                    resultsDiv.innerHTML = html;
+                    log(`✅ Member lookup API working - found ${result.data.length} members`);
+                } else {
+                    resultsDiv.innerHTML = '<div class="error">❌ No members found or invalid response</div>';
+                    log('❌ No members found or invalid response structure');
+                }
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ API Error: ${error.message}</div>`;
+                log(`❌ Member lookup API error: ${error.message}`);
+            }
+        }
+
+        // Test 3: API Service Method (Simulate)
+        async function testApiServiceMethod() {
+            const resultsDiv = document.getElementById('serviceResults');
+            resultsDiv.innerHTML = '<div>🔄 Testing API service method simulation...</div>';
+            log('Testing API service method simulation...');
+            
+            try {
+                // Simulate the API service request method
+                const endpoint = '/members/lookup?search=610&limit=500&offset=0';
+                const url = `${API_BASE_URL}${endpoint}`;
+                
+                log(`Making request to: ${url}`);
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log(`Raw response: ${JSON.stringify(data, null, 2).substring(0, 300)}...`);
+
+                // Simulate API service response unwrapping
+                const actualData = (data && data.data !== undefined) ? data.data : data;
+                
+                const apiServiceResponse = {
+                    success: true,
+                    data: actualData,
+                };
+
+                resultsDiv.innerHTML = `
+                    <div class="success">✅ API Service simulation successful</div>
+                    <div class="debug-info">
+                        Response structure: ${JSON.stringify({
+                            success: apiServiceResponse.success,
+                            dataType: typeof apiServiceResponse.data,
+                            dataLength: Array.isArray(apiServiceResponse.data) ? apiServiceResponse.data.length : 'not array',
+                            firstItem: Array.isArray(apiServiceResponse.data) && apiServiceResponse.data.length > 0 ? apiServiceResponse.data[0] : null
+                        }, null, 2)}
+                    </div>
+                `;
+                log(`✅ API service simulation successful - data length: ${Array.isArray(actualData) ? actualData.length : 'not array'}`);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ API Service Error: ${error.message}</div>`;
+                log(`❌ API service simulation error: ${error.message}`);
+            }
+        }
+
+        // Test 4: Console Errors
+        function checkConsoleErrors() {
+            const resultsDiv = document.getElementById('consoleResults');
+            log('Checking for console errors...');
+            
+            // Override console methods to capture errors
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            const errors = [];
+            const warnings = [];
+            
+            console.error = function(...args) {
+                errors.push(args.join(' '));
+                originalError.apply(console, args);
+            };
+            
+            console.warn = function(...args) {
+                warnings.push(args.join(' '));
+                originalWarn.apply(console, args);
+            };
+            
+            // Test a member lookup call to see if it generates errors
+            testMemberLookupAPI().then(() => {
+                setTimeout(() => {
+                    let html = '<div class="success">✅ Console check complete</div>';
+                    
+                    if (errors.length > 0) {
+                        html += '<div class="error"><strong>Errors:</strong><br>' + errors.join('<br>') + '</div>';
+                    }
+                    
+                    if (warnings.length > 0) {
+                        html += '<div style="background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px;"><strong>Warnings:</strong><br>' + warnings.join('<br>') + '</div>';
+                    }
+                    
+                    if (errors.length === 0 && warnings.length === 0) {
+                        html += '<div class="success">No console errors or warnings detected</div>';
+                    }
+                    
+                    resultsDiv.innerHTML = html;
+                    log(`Console check: ${errors.length} errors, ${warnings.length} warnings`);
+                    
+                    // Restore original console methods
+                    console.error = originalError;
+                    console.warn = originalWarn;
+                }, 1000);
+            });
+        }
+
+        // Test 5: Network Monitoring
+        function monitorNetworkRequests() {
+            const resultsDiv = document.getElementById('networkResults');
+            resultsDiv.innerHTML = '<div>🔄 Monitoring network requests...</div>';
+            log('Starting network request monitoring...');
+            
+            // Override fetch to monitor requests
+            const originalFetch = window.fetch;
+            const requests = [];
+            
+            window.fetch = function(...args) {
+                const url = args[0];
+                const options = args[1] || {};
+                
+                requests.push({
+                    url: url,
+                    method: options.method || 'GET',
+                    timestamp: new Date().toLocaleTimeString()
+                });
+                
+                log(`Network request: ${options.method || 'GET'} ${url}`);
+                
+                return originalFetch.apply(this, args).then(response => {
+                    log(`Network response: ${response.status} ${response.statusText} for ${url}`);
+                    return response;
+                }).catch(error => {
+                    log(`Network error: ${error.message} for ${url}`);
+                    throw error;
+                });
+            };
+            
+            // Test a member lookup to see network activity
+            testMemberLookupAPI().then(() => {
+                setTimeout(() => {
+                    let html = '<div class="success">✅ Network monitoring complete</div>';
+                    
+                    if (requests.length > 0) {
+                        html += '<div class="debug-info"><strong>Network Requests:</strong><br>';
+                        requests.forEach(req => {
+                            html += `[${req.timestamp}] ${req.method} ${req.url}<br>`;
+                        });
+                        html += '</div>';
+                    } else {
+                        html += '<div class="error">❌ No network requests detected</div>';
+                    }
+                    
+                    resultsDiv.innerHTML = html;
+                    log(`Network monitoring: ${requests.length} requests detected`);
+                    
+                    // Restore original fetch
+                    window.fetch = originalFetch;
+                }, 1000);
+            });
+        }
+
+        // Auto-run backend test on page load
+        window.addEventListener('load', () => {
+            log('Page loaded, running initial tests...');
+            testBackendConnection();
+        });
+    </script>
+</body>
+</html>

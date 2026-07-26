@@ -1,0 +1,17 @@
+  async initiateYearTransfer(yearCode: number): Promise<ApiResponse> {
+    return this.request('/admin/financial-year/transfer-entries', {
+      method: 'POST',
+      body: JSON.stringify({ yearCode }),
+    });
+  }
+
+  async manualBalanceTransfer(transferData: any): Promise<ApiResponse> {
+    return this.request('/admin/financial-year/balance-transfer', {
+      method: 'POST',
+      body: JSON.stringify(transferData),
+    });
+  }
+}
+
+export const apiService = new ApiService();
+export default apiService;
