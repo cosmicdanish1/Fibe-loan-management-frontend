@@ -261,7 +261,7 @@ export const useFDWithdrawalInterestPayment = (): FDWithdrawalHookReturn => {
 
     const handleExit = useCallback(() => {
         if (window.electron?.ipcRenderer) {
-            window.electron.ipcRenderer.send('close-window');
+            window.electron.ipcRenderer.send('window-close');
         }
     }, []);
 

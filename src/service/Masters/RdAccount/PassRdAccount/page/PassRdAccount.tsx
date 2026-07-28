@@ -23,7 +23,7 @@ const PassRdAccount: React.FC = () => {
   const [memberName, setMemberName] = useState('');
 
   const handleExit = () => {
-    if (window.electron?.ipcRenderer) window.electron.ipcRenderer.send('close-window');
+    if (window.electron?.ipcRenderer) window.electron.ipcRenderer.send('window-close');
   };
 
   // Shared account loader — used by both the lookup modal and manual member-no entry.

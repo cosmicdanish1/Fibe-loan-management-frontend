@@ -180,7 +180,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
 
   const handleClose = () => {
     if ((window as any).electronAPI?.ipcRenderer) {
-      (window as any).electronAPI.ipcRenderer.send('close-window');
+      (window as any).electronAPI.ipcRenderer.send('window-close');
     } else {
       window.close();
     }

@@ -15,7 +15,7 @@ import { useSaakhScore, type FactorScore } from '../hook/useSaakhScore';
 
 const closeWindow = () => {
   const api = (window as any).electronAPI;
-  if (api?.ipcRenderer?.send) api.ipcRenderer.send('close-window');
+  if (api?.ipcRenderer?.send) api.ipcRenderer.send('window-close');
   else window.close();
 };
 

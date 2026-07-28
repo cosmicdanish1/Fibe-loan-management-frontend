@@ -197,7 +197,7 @@ const SignatureScanning: React.FC = () => {
 
   const handleExit = () => {
     if (window.electron?.ipcRenderer) {
-      window.electron.ipcRenderer.send('close-window');
+      window.electron.ipcRenderer.send('window-close');
     }
   };
 

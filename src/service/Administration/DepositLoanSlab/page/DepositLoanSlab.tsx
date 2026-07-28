@@ -233,7 +233,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
   const handleClose = () => {
     const api = (window as any).electronAPI;
     if (api?.ipcRenderer) {
-      api.ipcRenderer.send('close-window');
+      api.ipcRenderer.send('window-close');
     } else {
       window.close();
     }

@@ -272,7 +272,7 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
 
     const handleExit = useCallback(() => {
         if ((window as any).electronAPI?.closeWindow) (window as any).electronAPI.closeWindow();
-        else if ((window as any).electron?.ipcRenderer) (window as any).electron.ipcRenderer.send('close-window');
+        else if ((window as any).electron?.ipcRenderer) (window as any).electron.ipcRenderer.send('window-close');
     }, []);
 
     return {

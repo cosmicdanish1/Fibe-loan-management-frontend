@@ -717,7 +717,7 @@ const LoanApplication: React.FC = () => {
           type="button"
           onClick={() => {
             if ((window as any).electronAPI?.ipcRenderer) {
-              (window as any).electronAPI.ipcRenderer.send('close-window');
+              (window as any).electronAPI.ipcRenderer.send('window-close');
             } else {
               window.close();
             }

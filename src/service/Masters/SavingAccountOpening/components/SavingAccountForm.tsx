@@ -73,7 +73,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
 
     const handleExit = () => {
         if ((window as any).electron?.ipcRenderer) {
-            (window as any).electron.ipcRenderer.send('close-window');
+            (window as any).electron.ipcRenderer.send('window-close');
         }
     };
 

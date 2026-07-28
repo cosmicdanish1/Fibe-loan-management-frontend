@@ -245,7 +245,7 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
 
     const handleExit = useCallback(() => {
         if ((window as any).electron?.ipcRenderer) {
-            (window as any).electron.ipcRenderer.send('close-window');
+            (window as any).electron.ipcRenderer.send('window-close');
         }
     }, []);
 

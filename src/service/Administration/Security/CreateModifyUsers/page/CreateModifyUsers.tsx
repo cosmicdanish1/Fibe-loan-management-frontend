@@ -229,7 +229,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
 
   const handleClose = () => {
     const api = (window as any).electronAPI;
-    if (api?.ipcRenderer) api.ipcRenderer.send('close-window');
+    if (api?.ipcRenderer) api.ipcRenderer.send('window-close');
     else window.close();
   };
 

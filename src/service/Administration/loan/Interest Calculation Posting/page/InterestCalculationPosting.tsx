@@ -134,7 +134,7 @@ const InterestCalculationPosting: React.FC = () => {
           <button
             onClick={() => {
               if (window.electronAPI?.ipcRenderer) {
-                window.electronAPI.ipcRenderer.send('close-window');
+                window.electronAPI.ipcRenderer.send('window-close');
               } else {
                 window.close();
               }

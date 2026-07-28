@@ -119,7 +119,7 @@ const MemberBalanceTransfer: React.FC = () => {
   };
 
   const handleExit = () => {
-    if ((window as any).electronAPI?.ipcRenderer) (window as any).electronAPI.ipcRenderer.send('close-window');
+    if ((window as any).electronAPI?.ipcRenderer) (window as any).electronAPI.ipcRenderer.send('window-close');
     else window.close();
   };
 

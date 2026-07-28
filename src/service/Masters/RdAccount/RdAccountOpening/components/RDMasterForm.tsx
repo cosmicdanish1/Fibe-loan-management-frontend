@@ -28,7 +28,7 @@ const RDMasterForm: React.FC<RDMasterFormProps> = ({
   const [showMemberLookup, setShowMemberLookup] = useState(false);
 
   const handleExit = () => {
-    if (window.electron?.ipcRenderer) window.electron.ipcRenderer.send('close-window');
+    if (window.electron?.ipcRenderer) window.electron.ipcRenderer.send('window-close');
   };
 
   const fetchMemberDetails = async (memberNo: string | number) => {
