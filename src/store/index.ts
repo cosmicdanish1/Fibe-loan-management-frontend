@@ -14,7 +14,6 @@ const themePersistConfig = {
         'fontScale',
         'density',
         'cornerRadius',
-        'welcomeText',
         'fontFamily',
         'backgroundType',
         'backgroundColor1',

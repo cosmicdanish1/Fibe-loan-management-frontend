@@ -10,6 +10,7 @@ import { LicenseProvider } from '../components/license/LicenseContext';
 import LicenseGate from '../components/license/LicenseGate';
 import LicenseWarningBanner from '../components/license/LicenseWarningBanner';
 import ServerSetup from '../pages/setup/ServerSetup';
+import { applyAppFont, FONT_STORAGE_KEY, FONT_SYNC_CHANNEL } from '../config/fontOptions';
 
 const FloatingChatBot = lazy(() => import('../components/chat/FloatingChatBot'));
 
@@ -226,6 +227,21 @@ const App: React.FC = () => {
       if (e.data?.fontBase) {
         document.documentElement.style.setProperty('--fz-base', e.data.fontBase);
         localStorage.setItem('lms-font-size', e.data.fontBase);
+      }
+    };
+    return () => bc.close();
+  }, []);
+
+  // Apply saved font style on load, then keep in sync with Settings window
+  useEffect(() => {
+    const saved = localStorage.getItem(FONT_STORAGE_KEY);
+    if (saved) applyAppFont(saved);
+
+    const bc = new BroadcastChannel(FONT_SYNC_CHANNEL);
+    bc.onmessage = (e) => {
+      if (e.data?.fontFamily) {
+        applyAppFont(e.data.fontFamily);
+        localStorage.setItem(FONT_STORAGE_KEY, e.data.fontFamily);
       }
     };
     return () => bc.close();

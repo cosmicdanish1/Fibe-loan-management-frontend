@@ -22,19 +22,11 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             if (isAuthenticated && isFirstMount.current) {
                 try {
                     console.log('[ThemeProvider] Fetching initial settings from DB...');
-                    const [prefRes, welcomeRes] = await Promise.all([
-                        apiService.getUserPreferences(),
-                        apiService.getSystemSetting('welcomeText')
-                    ]);
+                    const prefRes = await apiService.getUserPreferences();
 
                     const newTheme: any = {};
                     if (prefRes.success && prefRes.data) {
                         Object.assign(newTheme, prefRes.data);
-                    }
-                    if (welcomeRes.success && welcomeRes.data) {
-                        newTheme.welcomeText = typeof welcomeRes.data === 'string'
-                            ? welcomeRes.data
-                            : welcomeRes.data.value;
                     }
 
                     if (Object.keys(newTheme).length > 0) {
@@ -204,10 +196,20 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         .ring-indigo-100, .ring-indigo-200, .ring-indigo-500 {
           --tw-ring-color: var(--accent-color) !important;
         }
-        /* Themeable header gradient — the standard app header bar
-           (bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900, used in
-           ~50 windows) follows the Settings → Header Gradient choice. */
-        .bg-gradient-to-r.from-slate-900.via-indigo-900.to-slate-900 {
+        /* Themeable header gradient — the dark app header bar follows the
+           Settings → Header Gradient choice.
+
+           Matched on the dark starting colour rather than the full three-class
+           combo: most windows use "from-slate-900 via-indigo-900 to-slate-900",
+           but ~11 headers use other middle shades (amber, rose, emerald, blue,
+           slate) and were silently left out of the theme before.
+
+           Deliberately NOT matched: banners that start on a saturated colour
+           (from-red-600, from-rose-500, from-amber-600/50). Those are alert and
+           warning strips, not header bars — recolouring them would destroy the
+           status signal they carry. */
+        .bg-gradient-to-r.from-slate-900,
+        .bg-gradient-to-r.from-slate-800 {
           background-image: var(--header-gradient, linear-gradient(to right, #0f172a, #312e81, #0f172a)) !important;
         }
 

@@ -11,6 +11,7 @@ import {
   Slider,
   Tag
 } from 'antd';
+import { FONT_OPTIONS, FONT_STORAGE_KEY, FONT_SYNC_CHANNEL, applyAppFont } from '../../config/fontOptions';
 import {
   Settings,
   Save,
@@ -79,7 +80,6 @@ interface AppSettings {
   backgroundImage: string | null;
 
   // Content
-  welcomeText: string;
   textColor: string;
 
   // Typography extras
@@ -117,7 +117,6 @@ const defaultSettings: AppSettings = {
   backgroundColor2: '#000000',
   backgroundImage: null,
 
-  welcomeText: '',
   textColor: '#1f2937',
 
   boldText: false,
@@ -329,11 +328,14 @@ const SettingsPage: React.FC = () => {
       themeMode: theme.interfaceMode,
       accentColor: theme.accentColor,
       borderRadius: theme.cornerRadius,
-      welcomeText: typeof theme.welcomeText === 'string' ? theme.welcomeText : (theme.welcomeText as any)?.value || '',
       fontSize: theme.fontScale <= 0.9 ? 'small' : theme.fontScale >= 1.2 ? 'large' : 'medium',
       density: theme.density <= 0.9 ? 'compact' : 'comfortable',
       boldText: localStorage.getItem('lms-bold-text') === '1',
       dashboardBg: localStorage.getItem('lms-dashboard-bg') || '#f5f6fa',
+      // localStorage is the source of truth here (same as text size / bold
+      // text). Falls back to the first option so the picker always shows a
+      // selection, including for older profiles that stored plain "Inter".
+      fontFamily: localStorage.getItem(FONT_STORAGE_KEY) || FONT_OPTIONS[0]!.value,
     };
   });
 
@@ -423,10 +425,7 @@ const SettingsPage: React.FC = () => {
     // 1. Fetch latest settings from server ensures we display the "Truth"
     const fetchLatestSettings = async () => {
       try {
-        const [prefRes, welcomeRes] = await Promise.all([
-          apiService.getUserPreferences(),
-          apiService.getSystemSetting('welcomeText')
-        ]);
+        const prefRes = await apiService.getUserPreferences();
 
         if (prefRes.success && prefRes.data) {
           const remotePrefs = prefRes.data;
@@ -456,11 +455,6 @@ const SettingsPage: React.FC = () => {
           dispatch(setTheme(remotePrefs));
         }
 
-        if (welcomeRes.success && welcomeRes.data) {
-          const text = typeof welcomeRes.data === 'string' ? welcomeRes.data : (welcomeRes.data as any).value;
-          setSettings(prev => ({ ...prev, welcomeText: text || prev.welcomeText }));
-        }
-
       } catch (error) {
         console.error('Failed to load settings in SettingsPage', error);
       }
@@ -476,7 +470,6 @@ const SettingsPage: React.FC = () => {
       themeMode: theme.interfaceMode,
       accentColor: theme.accentColor,
       borderRadius: theme.cornerRadius,
-      welcomeText: typeof theme.welcomeText === 'string' ? theme.welcomeText : (theme.welcomeText as any)?.value || theme.welcomeText || '',
       fontSize: theme.fontScale <= 0.9 ? 'small' : theme.fontScale >= 1.2 ? 'large' : 'medium',
       density: theme.density <= 0.9 ? 'compact' : 'comfortable'
     }));
@@ -545,18 +538,11 @@ const SettingsPage: React.FC = () => {
       dashboardWidgets: settings.dashboardWidgets,
     };
 
-    const systemSettings = {
-      welcomeText: settings.welcomeText
-    };
-
     try {
-      const [prefRes, welcomeRes] = await Promise.all([
-        apiService.updateUserPreferences(userPreferences),
-        apiService.updateSystemSetting('welcomeText', systemSettings.welcomeText)
-      ]);
+      const prefRes = await apiService.updateUserPreferences(userPreferences);
 
-      if (prefRes.success && welcomeRes.success) {
-        const fullThemeState = { ...userPreferences, ...systemSettings };
+      if (prefRes.success) {
+        const fullThemeState = { ...userPreferences };
         dispatch(setTheme(fullThemeState));
         if (window.electronAPI?.send) {
           window.electronAPI.send('update-settings', fullThemeState);
@@ -692,23 +678,6 @@ const SettingsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Content Logic */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Welcome Text</label>
-              <div className="flex gap-2">
-                <Input
-                  value={settings.welcomeText}
-                  onChange={e => setSettings({ ...settings, welcomeText: e.target.value })}
-                  size="small"
-                  className="text-xs font-semibold"
-                />
-                <ColorPicker
-                  value={settings.textColor}
-                  onChange={(c) => setSettings(prev => ({ ...prev, textColor: c.toHexString() }))}
-                />
-              </div>
-            </div>
-
             {/* Header Gradient */}
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Header Gradient</label>
@@ -778,6 +747,43 @@ const SettingsPage: React.FC = () => {
                   }}
                   marks={{ 0: 'A', 1: 'AA', 2: 'AAA' }}
                 />
+              </div>
+            </div>
+
+            {/* Font Style */}
+            <div className="space-y-2 pt-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Font Style</label>
+              <div className="grid grid-cols-2 gap-2">
+                {FONT_OPTIONS.map(font => (
+                  <div
+                    key={font.label}
+                    onClick={() => {
+                      // Apply here, remember it, and mirror to every open window —
+                      // same pattern as Text Size and Bold Text above.
+                      applyAppFont(font.value);
+                      localStorage.setItem(FONT_STORAGE_KEY, font.value);
+                      try {
+                        const bc = new BroadcastChannel(FONT_SYNC_CHANNEL);
+                        bc.postMessage({ fontFamily: font.value });
+                        bc.close();
+                      } catch { }
+                      setSettings(prev => ({ ...prev, fontFamily: font.value }));
+                    }}
+                    className={`cursor-pointer border rounded-xl px-3 py-2 transition-all ${settings.fontFamily === font.value
+                      ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500'
+                      : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                  >
+                    {/* Previewed in its own face so the choice is visible before applying */}
+                    <div className="text-[13px] font-bold text-slate-700 leading-tight" style={{ fontFamily: font.value }}>
+                      {font.label}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">{font.hint}</div>
+                    <div className="text-[11px] text-slate-500 mt-1 truncate" style={{ fontFamily: font.value }}>
+                      Member 1043 · ₹ 24,850.00
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -917,7 +923,7 @@ const SettingsPage: React.FC = () => {
                   {settings.backgroundImage && (
                     <div className="absolute bottom-4 left-4 right-4 backdrop-blur-sm px-4 py-2 shadow-sm border border-white/50" style={{ borderRadius: settings.borderRadius }}>
                       <span style={{ color: settings.textColor, fontFamily: settings.fontFamily, fontSize: settings.fontSize === 'small' ? 12 : settings.fontSize === 'large' ? 16 : 14 }} className="font-bold">
-                        {settings.welcomeText || 'Preview Text'}
+                        Preview Text
                       </span>
                     </div>
                   )}

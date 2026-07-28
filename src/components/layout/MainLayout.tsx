@@ -10,7 +10,6 @@ export interface AppSettings {
     backgroundColor1: string;
     backgroundColor2: string;
     backgroundImage: string | null;
-    welcomeText: string;
     textColor: string;
 }
 
@@ -19,7 +18,6 @@ const defaultSettings: AppSettings = {
     backgroundColor1: '#ffffff',
     backgroundColor2: '#000000',
     backgroundImage: null,
-    welcomeText: 'Welcome to Paper White Technology LMS',
     textColor: '#1f2937'
 };
 

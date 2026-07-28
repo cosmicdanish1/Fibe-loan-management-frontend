@@ -6,7 +6,6 @@ export interface ThemeState {
     fontScale: number;
     density: number;
     cornerRadius: number;
-    welcomeText: string;
 
     // New Fields
     fontFamily?: string;
@@ -37,7 +36,6 @@ const initialState: ThemeState = {
     fontScale: 1.0,
     density: 1.0,
     cornerRadius: 8,
-    welcomeText: '',
 
     // Default values for new fields
     fontFamily: 'Inter',
@@ -83,9 +81,6 @@ const themeSlice = createSlice({
         setCornerRadius: (state, action: PayloadAction<number>) => {
             state.cornerRadius = action.payload;
         },
-        setWelcomeText: (state, action: PayloadAction<string>) => {
-            state.welcomeText = action.payload;
-        },
         setBoldText: (state, action: PayloadAction<boolean>) => {
             state.boldText = action.payload;
         }
@@ -99,7 +94,6 @@ export const {
     setFontScale,
     setDensity,
     setCornerRadius,
-    setWelcomeText,
     setBoldText
 } = themeSlice.actions;
 
