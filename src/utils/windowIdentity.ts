@@ -15,3 +15,9 @@ export const IS_MAIN_WINDOW =
   initialHash === '#/' ||
   initialHash === '#/dashboard' ||
   initialHash === '#/login';
+
+// The small logon dialog the app starts with (main process: createLoginWindow).
+// It is the only window opened directly at "#/login" — the dashboard starts at
+// the root hash. Used to keep the dialog from rendering the dashboard into its
+// own 520px frame after a successful sign-in.
+export const IS_LOGIN_WINDOW = initialHash === '#/login';

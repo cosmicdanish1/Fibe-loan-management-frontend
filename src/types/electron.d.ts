@@ -6,6 +6,10 @@ declare global {
       // stamped with an older id is treated as expired.
       appRunId?: string;
 
+      // Told by the logon dialog once credentials are accepted; the main
+      // process opens the dashboard and closes the dialog.
+      loginSuccess?: () => void;
+
       // Window management
       openLoanAppWindow: () => void;
       openNewWindow: (route: string) => void;

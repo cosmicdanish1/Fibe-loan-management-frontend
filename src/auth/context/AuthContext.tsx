@@ -278,6 +278,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Absolute expiry removed
 
         dispatch({ type: 'LOGIN_SUCCESS', payload: userData });
+
+        // Hand off to the dashboard. The session is already in localStorage
+        // above, and the dashboard window shares that storage (same origin), so
+        // it reads the session itself — nothing is passed through this call.
+        // No-op outside the logon dialog (e.g. in a plain browser).
+        (window as any).electronAPI?.loginSuccess?.();
+
         return true;
       } else {
         throw new Error(apiResponse.error || 'Backend login failed');

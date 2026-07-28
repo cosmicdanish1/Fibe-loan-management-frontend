@@ -35,6 +35,14 @@ ipcMain.on('get-app-run-id', (event) => {
   event.returnValue = APP_RUN_ID;
 });
 
+// The logon dialog reports a successful sign-in. The session itself already
+// lives in localStorage, which the dashboard window shares (same origin), so
+// nothing needs to be handed over here — we only swap the windows.
+ipcMain.on('login-success', () => {
+  console.log('[DEBUG] Login succeeded — opening dashboard');
+  openDashboardAfterLogin();
+});
+
 // ===== SERVER CONFIG (LAN deployment) =====
 // Priority: server-config.json (any location) → localhost fallback in dev → empty in prod
 //
@@ -207,6 +215,8 @@ const DEBUG_LOGGING = isDev;
 // Global references to windows
 let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
+// Small logon dialog shown before the dashboard exists (see createLoginWindow).
+let loginWindow: BrowserWindow | null = null;
 
 // Type declarations for Electron modules
 declare global {
@@ -223,6 +233,151 @@ function getMainWindow(): BrowserWindow {
     throw new Error('Main window is not initialized');
   }
   return mainWindow;
+}
+
+// Small logon dialog, shown before the dashboard exists — mirrors how the
+// legacy society software starts: a compact credentials box, and only once it
+// succeeds does the full application window appear.
+//
+// It loads the SAME renderer bundle at the #/login route, so the existing
+// LoginPage/LoginForm and their styling are reused as-is.
+function createLoginWindow(): void {
+  // Already open — just focus it rather than stacking a second dialog.
+  if (loginWindow && !loginWindow.isDestroyed()) {
+    loginWindow.focus();
+    return;
+  }
+
+  loginWindow = new BrowserWindow({
+    // Snug around the form — the dialog IS the card, so there is no page
+    // background or centering gutter to leave room for.
+    width: 420,
+    height: 540,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    center: true,
+    // No OS chrome: the dark Windows title bar clashed with the dialog. The
+    // renderer draws its own accent-coloured bar instead (see LoginPage), which
+    // carries the title, the close button and the drag region.
+    frame: false,
+    backgroundColor: '#ffffff',
+    title: 'Logon To Fibe Loan Management',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      webgl: false,
+      plugins: false,
+      experimentalFeatures: false,
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegrationInWorker: false,
+      nodeIntegrationInSubFrames: false,
+      webviewTag: false,
+      navigateOnDragDrop: false,
+      disableBlinkFeatures: 'Auxclick'
+    },
+    // Hidden until painted, so the user never sees a blank white box while the
+    // renderer bundle loads.
+    show: false,
+    autoHideMenuBar: true,
+    skipTaskbar: false,
+  });
+
+  applySecurityHeaders(loginWindow);
+
+  if (isDev) {
+    loginWindow.loadURL('http://localhost:5177/#/login')
+      .catch(err => console.error('Failed to load login window from dev server:', err));
+  } else {
+    loginWindow.loadFile(path.join(__dirname, '../renderer/index.html'), { hash: '/login' })
+      .catch(err => console.error('Failed to load login window:', err));
+  }
+
+  // Keep the dialog's own title. Electron otherwise adopts the document title,
+  // which for the shared bundle is the generic app title.
+  loginWindow.on('page-title-updated', (event) => {
+    event.preventDefault();
+  });
+
+  loginWindow.once('ready-to-show', () => {
+    loginWindow?.show();
+    loginWindow?.focus();
+    console.log('[DEBUG] Login window opened');
+  });
+
+  loginWindow.on('closed', () => {
+    loginWindow = null;
+  });
+}
+
+// Login succeeded: bring up the dashboard, THEN dismiss the dialog.
+//
+// Order matters. 'window-all-closed' quits the app, so closing the login window
+// first would leave zero windows open for an instant and kill the app before
+// the dashboard ever appeared.
+function openDashboardAfterLogin(): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.focus();
+  } else {
+    createWindow();
+  }
+
+  const dialog = loginWindow;
+  loginWindow = null;
+  if (dialog && !dialog.isDestroyed()) {
+    dialog.close();
+  }
+}
+
+// CSP and hardening headers. Registered on the window's session, which every
+// window shares — but the login window is created BEFORE the dashboard now, so
+// this has to be callable for whichever window comes up first.
+function applySecurityHeaders(win: BrowserWindow): void {
+  const csp = [
+    "default-src 'self'",
+    // Script sources - allow unsafe-eval in dev for HMR
+    "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : "") + " https://unpkg.com",
+    // Style sources
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    // Font sources
+    "font-src 'self' https://fonts.gstatic.com data:",
+    // Image sources
+    "img-src 'self' data: blob: https:",
+    // Connect sources
+    // BUG FIX: dev mode must also allow http://*:3001 so LAN IPs work when
+    // a developer or client PC is connecting to a remote server in dev mode.
+    isDev
+      ? "connect-src 'self' http://localhost:* ws://localhost:* wss://localhost:* http://*:3001"
+      : "connect-src 'self' http://*:3001 http://localhost:3001",
+    // Media sources
+    "media-src 'self'",
+    // Object sources
+    "object-src 'none'",
+    // Frame sources
+    "frame-src 'self'",
+    // Form actions
+    "form-action 'self'",
+    // Base URI
+    "base-uri 'self'"
+  ].join('; ');
+
+  win.webContents.session.webRequest.onHeadersReceived(
+    (details: Electron.OnHeadersReceivedListenerDetails,
+      callback: (response: Electron.HeadersReceivedResponse) => void) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [csp],
+          'X-Content-Type-Options': ['nosniff'],
+          'X-Frame-Options': ['SAMEORIGIN'],
+          'X-XSS-Protection': ['1; mode=block']
+        }
+      });
+    }
+  );
 }
 
 function createWindow(): void {
@@ -276,50 +431,7 @@ function createWindow(): void {
     updateActiveWindow('/dashboard', mainWindow!);
   });
 
-  // Set up CSP headers - more permissive for development
-  let csp = [
-    "default-src 'self'",
-    // Script sources - allow unsafe-eval in dev for HMR
-    "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : "") + " https://unpkg.com",
-    // Style sources
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    // Font sources
-    "font-src 'self' https://fonts.gstatic.com data:",
-    // Image sources
-    "img-src 'self' data: blob: https:",
-    // Connect sources
-    // BUG FIX: dev mode must also allow http://*:3001 so LAN IPs work when
-    // a developer or client PC is connecting to a remote server in dev mode.
-    isDev
-      ? "connect-src 'self' http://localhost:* ws://localhost:* wss://localhost:* http://*:3001"
-      : "connect-src 'self' http://*:3001 http://localhost:3001",
-    // Media sources
-    "media-src 'self'",
-    // Object sources
-    "object-src 'none'",
-    // Frame sources
-    "frame-src 'self'",
-    // Form actions
-    "form-action 'self'",
-    // Base URI
-    "base-uri 'self'"
-  ].join('; ');
-
-  // Set CSP and other security headers
-  mainWindow.webContents.session.webRequest.onHeadersReceived(
-    (details: Electron.OnHeadersReceivedListenerDetails,
-      callback: (response: Electron.HeadersReceivedResponse) => void) => {
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          'Content-Security-Policy': [csp],
-          'X-Content-Type-Options': ['nosniff'],
-          'X-Frame-Options': ['SAMEORIGIN'],
-          'X-XSS-Protection': ['1; mode=block']
-        }
-      });
-    }
-  );
+  applySecurityHeaders(mainWindow);
 
   // Load the app
   const loadApp = () => {
@@ -1635,23 +1747,15 @@ ipcMain.on('window-close', (event) => {
   }
 });
 
-// Auth logout: close every child window and bring the main dashboard to the
-// front so re-authentication happens ONLY on the dashboard, never on a
-// standalone tool window (e.g. Loan Calculator, Member Lookup).
+// Auth logout: quit the application outright.
+//
+// Since login now happens in its own dialog before the dashboard is built, the
+// dashboard has no login form to fall back to — there is nowhere to "return
+// to" after signing out. Quitting is also what makes the next launch land on
+// the logon dialog, which is the behaviour the society software has always had.
 ipcMain.on('auth-logout', () => {
-  if (DEBUG_LOGGING) console.log('[DEBUG] IPC auth-logout received — closing child windows');
-
-  BrowserWindow.getAllWindows().forEach((win) => {
-    if (win !== mainWindow && !win.isDestroyed()) {
-      win.close();
-    }
-  });
-
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.show();
-    mainWindow.focus();
-    mainWindow.moveTop();
-  }
+  if (DEBUG_LOGGING) console.log('[DEBUG] IPC auth-logout received — quitting application');
+  app.quit();
 });
 
 // FIXED: Handler to close the latest active window (excluding dashboard)
@@ -1725,12 +1829,15 @@ app.whenReady().then(async () => {
     }
   }
 
-  createWindow()
+  // Start at the logon dialog — the dashboard is only built once credentials
+  // check out (see the 'login-success' handler).
+  createLoginWindow()
 
   app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    // dock icon is clicked and there are no other windows open. Which window
+    // depends on whether the user has logged in yet this run.
+    if (BrowserWindow.getAllWindows().length === 0) createLoginWindow()
   })
 })
 

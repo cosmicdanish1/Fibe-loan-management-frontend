@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Form, Input, Typography, Alert, Card, Row, Col } from 'antd';
 import { LockOutlined, UserOutlined, CloseOutlined, UndoOutlined } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
+import { IS_LOGIN_WINDOW } from '../../utils/windowIdentity';
+import fibeLogo from '../../assets/fibe-logo.png';
 
 const { Title } = Typography;
 
@@ -23,9 +25,13 @@ const LoginForm: React.FC = () => {
     }
   }, [error, clearError]);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated.
+  //
+  // Skipped in the logon dialog: there, the main process opens the dashboard in
+  // its own window and closes this one. Navigating would briefly paint the full
+  // dashboard inside the 520px dialog first.
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
+    if (isAuthenticated && !isLoading && !IS_LOGIN_WINDOW) {
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
@@ -51,19 +57,48 @@ const LoginForm: React.FC = () => {
   };
 
   const handleCancel = () => {
-    // Close the window in Electron environment, or navigate away in browser
-    if (window.electron) {
-      window.electron.ipcRenderer.send('close-window');
+    // In the logon dialog, Cancel means "don't sign in" — there is no app
+    // behind it yet, so quit outright, as the legacy software does.
+    if (IS_LOGIN_WINDOW) {
+      (window as any).electronAPI?.quitApp?.();
+      return;
+    }
+
+    // Elsewhere just close the window.
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI?.closeWindow) {
+      electronAPI.closeWindow();
     } else {
       window.close();
     }
   };
 
-  return (
-    <div style={{ maxWidth: '400px', margin: '0 auto', padding: '20px' }}>
-      <Card hoverable>
-        <Title level={2} style={{ textAlign: 'center', marginBottom: '24px' }}>Login</Title>
-        
+  // In the logon dialog the WINDOW is the card: the form sits flush against the
+  // frame instead of floating inside a page background, which is what made it
+  // look like "a window inside a card".
+  // The dialog's own title bar already names the app, so the body only needs
+  // the mark and a one-line prompt.
+  const heading = IS_LOGIN_WINDOW ? (
+    <div style={{ textAlign: 'center', marginBottom: 26 }}>
+      {/* Tailwind's preflight sets `img { display: block }`, so textAlign on the
+          parent does not centre this — the auto side margins do. */}
+      <img
+        src={fibeLogo}
+        alt=""
+        style={{ height: 46, objectFit: 'contain', margin: '0 auto 10px' }}
+      />
+      <div style={{ fontSize: 13, color: 'rgba(0,0,0,.45)' }}>
+        Sign in to continue
+      </div>
+    </div>
+  ) : (
+    <Title level={2} style={{ textAlign: 'center', marginBottom: '24px' }}>Login</Title>
+  );
+
+  const body = (
+    <>
+      {heading}
+
         {error && (
           <Alert
             message="Login Failed"
@@ -156,7 +191,16 @@ const LoginForm: React.FC = () => {
             </Row>
           </Form.Item>
         </Form>
-      </Card>
+    </>
+  );
+
+  if (IS_LOGIN_WINDOW) {
+    return <div style={{ padding: '26px 30px 30px' }}>{body}</div>;
+  }
+
+  return (
+    <div style={{ maxWidth: '400px', margin: '0 auto', padding: '20px' }}>
+      <Card hoverable>{body}</Card>
     </div>
   );
 };

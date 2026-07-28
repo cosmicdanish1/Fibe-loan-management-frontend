@@ -1,5 +1,5 @@
 import React, { ReactNode, useEffect, useState } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Spin } from 'antd';
 import { IS_MAIN_WINDOW } from '../../utils/windowIdentity';
@@ -10,7 +10,6 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
-  const location = useLocation();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
@@ -21,10 +20,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     }
   }, [isLoading, isAuthenticated]);
 
-  // On logout, a child/tool window must NOT show its own login form — it closes
-  // itself so re-authentication happens only on the main dashboard window.
+  // Losing the session tears the app down rather than showing a login form:
+  //  - child/tool window → close just that window
+  //  - dashboard         → quit, since login now lives in its own dialog that
+  //                        only exists at startup, so there is nothing to
+  //                        return to. Relaunching brings the dialog back.
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && !IS_MAIN_WINDOW) {
+    if (isLoading || isAuthenticated) return;
+
+    if (IS_MAIN_WINDOW) {
+      console.log('[ProtectedRoute] Session lost on the dashboard — quitting');
+      (window as any).electronAPI?.authLogout?.();
+    } else {
       console.log('[ProtectedRoute] Logged out in a child window — closing it');
       (window as any).electronAPI?.closeWindow?.();
     }
@@ -42,32 +49,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // If not authenticated:
-  //  - Main dashboard window → show the login form.
-  //  - Child/tool window → render a neutral placeholder while it closes (the
-  //    effect above triggers the close); never show a login form here.
+  // Not authenticated — never render a login form here. The effect above is
+  // already closing this window (or quitting); show a neutral placeholder until
+  // it does.
   if (!isAuthenticated) {
-    if (!IS_MAIN_WINDOW) {
-      console.log('[ProtectedRoute] Not authenticated in child window — closing, no login shown');
-      return (
-        <div className="flex items-center justify-center min-h-screen text-gray-500">
-          <Spin size="large" tip="Signing out…">
-            <div className="w-full h-32" />
-          </Spin>
-        </div>
-      );
-    }
-
-    console.log('[ProtectedRoute] Not authenticated, redirecting to login');
+    console.log('[ProtectedRoute] Not authenticated — tearing down, no login shown');
     return (
-      <Navigate
-        to="/login"
-        state={{
-          from: location,
-          message: 'Please log in to continue'
-        }}
-        replace
-      />
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        <Spin size="large" tip="Signing out…">
+          <div className="w-full h-32" />
+        </Spin>
+      </div>
     );
   }
 

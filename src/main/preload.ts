@@ -30,6 +30,7 @@ const validSendChannels = [
   'window-unmaximize',
   'window-close',
   'auth-logout',
+  'login-success',
   'reset-window-states',
   'update-settings',
   'member-selected',
@@ -190,9 +191,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   unmaximizeWindow: () => secureIpcRenderer.send('window-unmaximize'),
   closeWindow: () => secureIpcRenderer.send('window-close'),
 
-  // Logout: ask the main process to close all child windows and focus the
-  // dashboard, so login is shown only on the main window.
+  // Logout: quits the app. Login lives in its own dialog now, so there is no
+  // login form on the dashboard to fall back to.
   authLogout: () => secureIpcRenderer.send('auth-logout'),
+
+  // Sent from the logon dialog once credentials are accepted — the main
+  // process then opens the dashboard and dismisses the dialog.
+  loginSuccess: () => secureIpcRenderer.send('login-success'),
 
   // Window state management
   resetWindowStates: () => secureIpcRenderer.send('reset-window-states'),
