@@ -12,8 +12,8 @@ import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLo
 
 const { TextArea } = Input;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
     formData,
@@ -31,24 +31,24 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
 }) => {
     const columns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">WR No</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">WR No</span>,
             dataIndex: 'wrNo', key: 'wrNo',
-            render: (text: string) => <span className="text-[10px] font-mono font-bold text-slate-700">{text}</span>,
+            render: (text: string) => <span className="fz-small font-mono font-bold text-slate-700">{text}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Balance</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Balance</span>,
             dataIndex: 'balance', key: 'balance', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-mono text-slate-600">{v.toFixed(2)}</span>,
+            render: (v: number) => <span className="fz-small font-mono text-slate-600">{v.toFixed(2)}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Rate</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Rate</span>,
             dataIndex: 'rate', key: 'rate', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-mono text-indigo-600">{v.toFixed(2)}%</span>,
+            render: (v: number) => <span className="fz-small font-mono text-indigo-600">{v.toFixed(2)}%</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Dividend</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Dividend</span>,
             dataIndex: 'dividend', key: 'dividend', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-black text-emerald-600">₹{v.toFixed(2)}</span>,
+            render: (v: number) => <span className="fz-small font-black text-emerald-600">₹{v.toFixed(2)}</span>,
         },
     ];
 
@@ -63,23 +63,23 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                             <Banknote size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Dividend Payment</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Dividend Payment</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> DR L1024 → Ledger
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Reset
                         </button>
                         <button onClick={handleSave} disabled={isLoading}
-                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
                             {isLoading ? <RotateCcw size={11} className="animate-spin" /> : <Banknote size={11} />}
                             {isLoading ? 'Processing…' : 'Disburse'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -93,7 +93,7 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Users size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member Details</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member Details</span>
                             </div>
                             <div className="p-3 grid grid-cols-3 gap-x-4">
                                 <div>
@@ -129,7 +129,7 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                                         onChange={d => updateField('transDate', d ? d.format('YYYY-MM-DD') : '')}
                                         format="DD-MMM-YY"
                                         allowClear={false}
-                                        className="w-full h-7 text-[11px]"
+                                        className="w-full h-7 fz-caption"
                                         suffixIcon={<Calendar size={10} className="text-indigo-400" />}
                                     />
                                 </div>
@@ -141,17 +141,17 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Banknote size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Mode of Payment</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Mode of Payment</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
                                         <IndianRupee size={9} className="text-indigo-500" />
-                                        <span className="text-[8px] font-black text-indigo-500 uppercase">Actual Amt</span>
-                                        <span className="text-[9px] font-black text-indigo-700">₹{actualAmount.toFixed(2)}</span>
+                                        <span className="fz-mini font-black text-indigo-500 uppercase">Actual Amt</span>
+                                        <span className="fz-tiny font-black text-indigo-700">₹{actualAmount.toFixed(2)}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                                        <span className="text-[8px] font-black text-slate-500 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
-                                        <span className={`text-[9px] font-black ${bankBalance < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{bankBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="fz-mini font-black text-slate-500 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
+                                        <span className={`fz-tiny font-black ${bankBalance < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{bankBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
                             </div>
@@ -159,7 +159,7 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                                 <div className="flex gap-2">
                                     {['cash', 'bank'].map(mode => (
                                         <button key={mode} onClick={() => updateField('paymentMode', mode)}
-                                            className={`h-7 px-4 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all border ${
+                                            className={`h-7 px-4 rounded-lg fz-tiny font-black uppercase tracking-wide transition-all border ${
                                                 formData.paymentMode === mode
                                                     ? mode === 'cash' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-blue-600 text-white border-blue-500'
                                                     : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -171,7 +171,7 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
 
                                 {formData.paymentMode === 'bank' && (
                                     <div className="mt-3 pt-3 border-t border-slate-100">
-                                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">Cheque Details</p>
+                                        <p className="fz-mini font-black text-slate-500 uppercase tracking-widest mb-2">Cheque Details</p>
                                         <div className="grid grid-cols-4 gap-x-4">
                                             <div>
                                                 <label className={labelCls}>Pay From A/C</label>
@@ -186,7 +186,7 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                                                 <DatePicker
                                                     value={formData.chequeDate ? dayjs(formData.chequeDate) : null}
                                                     onChange={d => updateField('chequeDate', d)}
-                                                    format="DD-MMM-YY" allowClear={false} className="w-full h-7 text-[11px]" />
+                                                    format="DD-MMM-YY" allowClear={false} className="w-full h-7 fz-caption" />
                                             </div>
                                             <div>
                                                 <label className={labelCls}>Cheque No</label>
@@ -208,7 +208,7 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <FileText size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">WR Dividend Breakdown</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">WR Dividend Breakdown</span>
                             </div>
                             <Table
                                 columns={columns}
@@ -219,7 +219,7 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                                 rowKey="key"
                                 scroll={{ y: 220 }}
                                 loading={isLoading}
-                                locale={{ emptyText: <span className="text-[9px] text-slate-400 py-6 block text-center font-bold uppercase">Enter member no to load pending dividends</span> }}
+                                locale={{ emptyText: <span className="fz-tiny text-slate-400 py-6 block text-center font-bold uppercase">Enter member no to load pending dividends</span> }}
                             />
                         </div>
 
@@ -227,12 +227,12 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <FileText size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Narration</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Narration</span>
                             </div>
                             <div className="p-3">
                                 <TextArea value={formData.narration} onChange={e => updateField('narration', e.target.value)}
                                     placeholder="Enter narration / remarks…" rows={2}
-                                    className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none" />
+                                    className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
                             </div>
                         </div>
 
@@ -243,17 +243,17 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Dividend Payment</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Dividend Payment</span>
                         {formData.memberNo && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">Member: {formData.memberNo}</span>
+                                <span className="fz-mini font-black text-indigo-500">Member: {formData.memberNo}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

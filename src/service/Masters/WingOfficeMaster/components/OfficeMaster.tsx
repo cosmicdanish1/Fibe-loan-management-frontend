@@ -9,8 +9,8 @@ import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
 const { Option } = Select;
 const { TextArea } = Input;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
   data,
@@ -62,9 +62,9 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
           <Building2 size={11} className="text-slate-400" />
-          <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Office Details</span>
+          <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Office Details</span>
           {data.name && (
-            <span className="ml-auto text-[9px] font-black text-indigo-600">{data.name}</span>
+            <span className="ml-auto fz-tiny font-black text-indigo-600">{data.name}</span>
           )}
         </div>
         <div className="p-3 space-y-2">
@@ -90,7 +90,7 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
                   <Search size={12} />
                 </button>
               </div>
-              <p className="text-[7px] text-slate-400 mt-0.5 font-bold uppercase">Leave blank for new</p>
+              <p className="fz-micro text-slate-400 mt-0.5 font-bold uppercase">Leave blank for new</p>
             </div>
             <div className="col-span-2">
               <label className={labelCls}>Office Name</label>
@@ -134,7 +134,7 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
           <MapPin size={11} className="text-slate-400" />
-          <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Location</span>
+          <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Location</span>
         </div>
         <div className="p-3 grid grid-cols-3 gap-x-3 gap-y-2">
           <div className="col-span-2">
@@ -144,7 +144,7 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
               onChange={(e) => updateAddress(e.target.value)}
               placeholder="Enter address..."
               rows={3}
-              className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none"
+              className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none"
             />
           </div>
           <div>
@@ -164,7 +164,7 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
 
       <div className="flex items-center gap-1 px-1">
         <Info size={9} className="text-slate-400" />
-        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wide">
+        <span className="fz-mini font-bold text-slate-400 uppercase tracking-wide">
           Enter Branch No and press Enter to load existing office — or fill in details for new
         </span>
       </div>

@@ -98,7 +98,7 @@ const ModifyBusinessRules: React.FC = () => {
   const renderLoanSection = (title: string, loanType: keyof BusinessRulesData, data: LoanType) => (
     <div className="mbr-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden hover:border-slate-400 transition-all shadow-sm">
       <div className="mbr-card-header bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-2 py-1 flex items-center">
-        <h3 className="mbr-card-title text-[8px] font-black text-slate-700 tracking-widest uppercase flex items-center gap-1">
+        <h3 className="mbr-card-title fz-mini font-black text-slate-700 tracking-widest uppercase flex items-center gap-1">
           <Database size={9} className="text-slate-500" /> {title}
         </h3>
       </div>
@@ -213,7 +213,7 @@ const ModifyBusinessRules: React.FC = () => {
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
             <div className="bg-white rounded-xl shadow-2xl px-6 py-4 flex items-center gap-3">
               <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-              <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">
+              <span className="fz-caption font-black text-slate-700 uppercase tracking-widest">
                 {saving ? 'Saving rules…' : 'Loading rules…'}
               </span>
             </div>
@@ -227,8 +227,8 @@ const ModifyBusinessRules: React.FC = () => {
               <Settings size={12} />
             </div>
             <div>
-              <h1 className="text-[10px] font-black text-white tracking-tight leading-none uppercase">Modify Business Rules</h1>
-              <div className="flex items-center gap-1 mt-0.5 text-[7px] font-bold text-slate-300 uppercase tracking-widest leading-none">
+              <h1 className="fz-small font-black text-white tracking-tight leading-none uppercase">Modify Business Rules</h1>
+              <div className="flex items-center gap-1 mt-0.5 fz-micro font-bold text-slate-300 uppercase tracking-widest leading-none">
                 <Building2 size={7} className="text-indigo-300" /> Policy Configuration Ledger
               </div>
             </div>
@@ -237,10 +237,10 @@ const ModifyBusinessRules: React.FC = () => {
           <div className="flex items-center gap-1">
             <div className="hidden sm:flex items-center gap-1 bg-slate-700/50 px-1.5 py-0.5 rounded-full border border-white/10">
               <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-[7px] font-black text-slate-300 uppercase">Live Ruleset</span>
+              <span className="fz-micro font-black text-slate-300 uppercase">Live Ruleset</span>
             </div>
             <button onClick={handleSave} disabled={saving || loading}
-              className="h-5 px-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:opacity-60 text-white rounded-lg text-[7px] font-black transition-all flex items-center gap-1 active:scale-95 uppercase tracking-widest">
+              className="h-5 px-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:opacity-60 text-white rounded-lg fz-micro font-black transition-all flex items-center gap-1 active:scale-95 uppercase tracking-widest">
               <Save size={9} /> Save Rules
             </button>
             <button onClick={closeWindow}
@@ -292,7 +292,7 @@ const ModifyBusinessRules: React.FC = () => {
                     {/* Loan Against Deposits — custom layout */}
                     <div className="mbr-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
                       <div className="mbr-card-header bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-2 py-1">
-                        <h3 className="mbr-card-title text-[8px] font-black text-slate-700 tracking-widest uppercase flex items-center gap-1">
+                        <h3 className="mbr-card-title fz-mini font-black text-slate-700 tracking-widest uppercase flex items-center gap-1">
                           <TrendingUp size={9} className="text-slate-500" /> Loan Against Deposits
                         </h3>
                       </div>
@@ -322,7 +322,7 @@ const ModifyBusinessRules: React.FC = () => {
                   <div className="mbr-others-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
                     <div className="mbr-others-header bg-slate-900 px-2 py-1 flex items-center gap-1">
                       <Calculator size={9} className="text-indigo-400" />
-                      <h3 className="text-[8px] font-black text-white tracking-widest uppercase">Others & Penal Sector</h3>
+                      <h3 className="fz-mini font-black text-white tracking-widest uppercase">Others & Penal Sector</h3>
                     </div>
                     <div className="mbr-others-body p-2 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 bg-white">
                       <div className="space-y-0.5 col-span-2">
@@ -362,7 +362,7 @@ const ModifyBusinessRules: React.FC = () => {
                     <div className="mbr-notice-icon bg-slate-50 p-1 rounded-lg text-slate-600 shadow-sm shrink-0">
                       <Info size={10} />
                     </div>
-                    <p className="mbr-notice-text text-[8px] text-slate-600 font-semibold leading-relaxed">
+                    <p className="mbr-notice-text fz-mini text-slate-600 font-semibold leading-relaxed">
                       <strong className="uppercase tracking-widest font-black mr-1">Policy Notice:</strong>
                       These rules define the financial compliance and operational framework. Changes are applied in real-time to all session calculations. Ensure all parameters align with the latest board resolutions before synchronization.
                     </p>
@@ -391,7 +391,7 @@ const ModifyBusinessRules: React.FC = () => {
                         ].map(item => (
                           <div key={item.field}
                             className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                            <span className="mbr-toggle-label text-[8px] font-bold text-slate-600 max-w-[180px]">{item.label}</span>
+                            <span className="mbr-toggle-label fz-mini font-bold text-slate-600 max-w-[180px]">{item.label}</span>
                             <Switch size="small"
                               checked={(businessRules.generalSettings as any)[item.field]}
                               onChange={val => updateGeneralSetting(item.field as keyof GeneralSettings, val)} />
@@ -446,7 +446,7 @@ const ModifyBusinessRules: React.FC = () => {
                             <input type="text" value={businessRules.generalSettings.profitHead}
                               onChange={e => updateGeneralSetting('profitHead', e.target.value)}
                               placeholder="System ledger head"
-                              className="mbr-input w-full h-6 px-2 pr-6 bg-slate-50 border-2 border-slate-200 rounded-lg text-[9px] font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
+                              className="mbr-input w-full h-6 px-2 pr-6 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
                             <Database size={9} className="mbr-icon absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                           </div>
                         </div>
@@ -469,7 +469,7 @@ const ModifyBusinessRules: React.FC = () => {
                   <div className="mbr-fm-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
                     <div className="mbr-fm-card-header bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-2 py-1 flex items-center gap-1.5">
                       <div className="bg-slate-100 p-1 rounded-lg text-slate-600"><Settings size={9} /></div>
-                      <h3 className="mbr-fm-section-title text-[8px] font-black text-slate-700 uppercase tracking-widest">Global Fund Parameters</h3>
+                      <h3 className="mbr-fm-section-title fz-mini font-black text-slate-700 uppercase tracking-widest">Global Fund Parameters</h3>
                     </div>
                     <div className="p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
                       <div className="space-y-0.5">
@@ -478,10 +478,10 @@ const ModifyBusinessRules: React.FC = () => {
                           <Percent size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                           <input type="number" step="0.01" value={businessRules.fundManagement.fundInterestRate}
                             onChange={e => updateFundManagement('fundInterestRate', parseFloat(e.target.value) || 0)}
-                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg text-[9px] font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner"
+                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner"
                             placeholder="0.00" />
                         </div>
-                        <p className="mbr-fm-hint text-[7px] text-slate-400 font-medium ml-1">Applied on opening balance annually</p>
+                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Applied on opening balance annually</p>
                       </div>
                       <div className="space-y-0.5">
                         <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Dividend Payout (%)</label>
@@ -489,10 +489,10 @@ const ModifyBusinessRules: React.FC = () => {
                           <TrendingUp size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                           <input type="number" step="0.01" value={businessRules.fundManagement.dividendPercent}
                             onChange={e => updateFundManagement('dividendPercent', parseFloat(e.target.value) || 0)}
-                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg text-[9px] font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner"
+                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner"
                             placeholder="0.00" />
                         </div>
-                        <p className="mbr-fm-hint text-[7px] text-slate-400 font-medium ml-1">Percentage of share capital</p>
+                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Percentage of share capital</p>
                       </div>
                       <div className="space-y-0.5">
                         <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Group Insurance Deduction (₹)</label>
@@ -500,10 +500,10 @@ const ModifyBusinessRules: React.FC = () => {
                           <ShieldCheck size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                           <input type="number" value={businessRules.fundManagement.groupInsuranceAmount}
                             onChange={e => updateFundManagement('groupInsuranceAmount', parseFloat(e.target.value) || 0)}
-                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg text-[9px] font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner"
+                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner"
                             placeholder="0" />
                         </div>
-                        <p className="mbr-fm-hint text-[7px] text-slate-400 font-medium ml-1">Fixed yearly deduction amount</p>
+                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Fixed yearly deduction amount</p>
                       </div>
                     </div>
                   </div>
@@ -514,12 +514,12 @@ const ModifyBusinessRules: React.FC = () => {
                       <div className="flex items-center gap-1.5">
                         <div className="bg-slate-100 p-1 rounded-lg text-slate-600"><Calculator size={9} /></div>
                         <div>
-                          <h3 className="mbr-fm-section-title text-[8px] font-black text-slate-700 uppercase tracking-widest">Monthly Contribution Interest Chart</h3>
-                          <p className="mbr-fm-hint text-[7px] text-slate-400 font-bold mt-0.5">Define yearly interest for each contribution slab</p>
+                          <h3 className="mbr-fm-section-title fz-mini font-black text-slate-700 uppercase tracking-widest">Monthly Contribution Interest Chart</h3>
+                          <p className="mbr-fm-hint fz-micro text-slate-400 font-bold mt-0.5">Define yearly interest for each contribution slab</p>
                         </div>
                       </div>
                       <button onClick={addChartRow}
-                        className="px-1.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[7px] font-black uppercase tracking-widest flex items-center gap-1 transition-all shadow-sm active:scale-95">
+                        className="px-1.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-micro font-black uppercase tracking-widest flex items-center gap-1 transition-all shadow-sm active:scale-95">
                         <Plus size={9} /> Add Slab
                       </button>
                     </div>
@@ -528,40 +528,40 @@ const ModifyBusinessRules: React.FC = () => {
                       {businessRules.fundManagement.interestChart.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
                           <Database size={32} strokeWidth={1} className="mbr-chart-empty mb-2" />
-                          <p className="mbr-chart-empty text-[8px] font-bold uppercase tracking-widest">No slabs configured</p>
-                          <p className="mbr-chart-empty text-[7px] mt-0.5">Click "Add Slab" to start building the chart</p>
+                          <p className="mbr-chart-empty fz-mini font-bold uppercase tracking-widest">No slabs configured</p>
+                          <p className="mbr-chart-empty fz-micro mt-0.5">Click "Add Slab" to start building the chart</p>
                         </div>
                       ) : (
                         <div className="w-full">
                           <div className="sticky top-0 mbr-chart-header bg-slate-50/90 backdrop-blur-sm border-b border-slate-100 grid grid-cols-12 px-2 py-1 z-10">
-                            <div className="col-span-1 text-center mbr-chart-col-label text-[7px] font-black text-slate-400 uppercase tracking-widest">#</div>
-                            <div className="col-span-5 pl-2 mbr-chart-col-label text-[7px] font-black text-slate-400 uppercase tracking-widest">Monthly Contribution (₹)</div>
-                            <div className="col-span-5 pl-2 mbr-chart-col-label text-[7px] font-black text-slate-400 uppercase tracking-widest">Yearly Interest Credit (₹)</div>
-                            <div className="col-span-1 mbr-chart-col-label text-[7px] font-black text-slate-400 uppercase tracking-widest text-center">Del</div>
+                            <div className="col-span-1 text-center mbr-chart-col-label fz-micro font-black text-slate-400 uppercase tracking-widest">#</div>
+                            <div className="col-span-5 pl-2 mbr-chart-col-label fz-micro font-black text-slate-400 uppercase tracking-widest">Monthly Contribution (₹)</div>
+                            <div className="col-span-5 pl-2 mbr-chart-col-label fz-micro font-black text-slate-400 uppercase tracking-widest">Yearly Interest Credit (₹)</div>
+                            <div className="col-span-1 mbr-chart-col-label fz-micro font-black text-slate-400 uppercase tracking-widest text-center">Del</div>
                           </div>
                           <div className="divide-y divide-slate-50">
                             {businessRules.fundManagement.interestChart.map((row, idx) => (
                               <div key={idx}
                                 className="mbr-chart-row grid grid-cols-12 px-2 py-1.5 items-center hover:bg-slate-50/50 transition-colors group">
                                 <div className="col-span-1 text-center">
-                                  <span className="mbr-chart-num bg-slate-100 text-slate-500 w-5 h-5 rounded flex items-center justify-center text-[8px] font-bold mx-auto">
+                                  <span className="mbr-chart-num bg-slate-100 text-slate-500 w-5 h-5 rounded flex items-center justify-center fz-mini font-bold mx-auto">
                                     {idx + 1}
                                   </span>
                                 </div>
                                 <div className="col-span-10 grid grid-cols-2 gap-4">
                                   <div className="relative flex items-center">
-                                    <div className="absolute left-2 text-slate-300 pointer-events-none text-[8px]">₹</div>
+                                    <div className="absolute left-2 text-slate-300 pointer-events-none fz-mini">₹</div>
                                     <input type="number" value={row.monthlyContribution}
                                       onChange={e => handleChartChange(idx, 'monthlyContribution', parseFloat(e.target.value) || 0)}
-                                      className="mbr-chart-input w-full h-6 pl-5 pr-2 bg-white border-2 border-slate-200 rounded-lg text-[9px] font-bold text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200/40 transition-all"
+                                      className="mbr-chart-input w-full h-6 pl-5 pr-2 bg-white border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200/40 transition-all"
                                       placeholder="0" />
                                     <ArrowRight size={9} className="absolute -right-3 text-slate-300/50" />
                                   </div>
                                   <div className="relative flex items-center">
-                                    <div className="absolute left-2 text-slate-300 pointer-events-none text-[7px]">Get</div>
+                                    <div className="absolute left-2 text-slate-300 pointer-events-none fz-micro">Get</div>
                                     <input type="number" step="0.01" value={row.yearlyInterest}
                                       onChange={e => handleChartChange(idx, 'yearlyInterest', parseFloat(e.target.value) || 0)}
-                                      className="mbr-chart-input w-full h-6 pl-7 pr-2 bg-white border-2 border-slate-200 rounded-lg text-[9px] font-bold text-slate-600 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200/40 transition-all"
+                                      className="mbr-chart-input w-full h-6 pl-7 pr-2 bg-white border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-600 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200/40 transition-all"
                                       placeholder="0.00" />
                                   </div>
                                 </div>
@@ -589,15 +589,15 @@ const ModifyBusinessRules: React.FC = () => {
         <div className="mbr-footer px-2 py-1 bg-white border-t border-slate-100 flex items-center justify-between shrink-0 opacity-60">
           <div className="flex items-center gap-1">
             <Building2 size={9} className="text-slate-400" />
-            <span className="mbr-footer-text text-[7px] font-bold text-slate-500 uppercase tracking-tight">Trust Nagpur - Policy Governance</span>
+            <span className="mbr-footer-text fz-micro font-bold text-slate-500 uppercase tracking-tight">Trust Nagpur - Policy Governance</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-0.5 text-slate-600">
               <ShieldCheck size={9} />
-              <span className="mbr-footer-text text-[7px] font-black uppercase">Standard Compliant</span>
+              <span className="mbr-footer-text fz-micro font-black uppercase">Standard Compliant</span>
             </div>
             <div className="w-px h-2 bg-slate-200" />
-            <span className="mbr-footer-text text-[7px] font-bold text-slate-300 uppercase tracking-widest">RULESET_V3.1.2</span>
+            <span className="mbr-footer-text fz-micro font-bold text-slate-300 uppercase tracking-widest">RULESET_V3.1.2</span>
           </div>
         </div>
 

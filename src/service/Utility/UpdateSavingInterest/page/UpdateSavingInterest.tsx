@@ -25,7 +25,7 @@ interface InterestCalculationResult { memberNumber: string; memberName: string; 
 interface InterestRunSummary { totalMembers: number; totalInterestAmount: number; fromDate: string; toDate: string; interestRate: number; voucherNumber: string; calculationDate: string; memberCalculations: InterestCalculationResult[]; }
 interface InterestHistory { id: number; intType: string; fromDate: string; toDate: string; rate: number; totalAmount: number; memberCount: number; }
 
-const lbl = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
 
 const UpdateSavingInterest: React.FC = () => {
   const [formData, setFormData] = useState({ fromDate: '', toDate: '', interestRate: 4.0, accountHead: 'A1001', voucherNumber: '', narration: '' });
@@ -121,11 +121,11 @@ const UpdateSavingInterest: React.FC = () => {
   const formatCurrency = useCallback((amount: number) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount), []);
 
   const previewColumns = [
-    { title: <span className="text-[8px] font-black text-slate-500 uppercase">MB No.</span>, dataIndex: 'memberNumber', key: 'memberNumber', width: 90, render: (v: string) => <span className="text-[10px] font-black text-indigo-600">{v}</span> },
-    { title: <span className="text-[8px] font-black text-slate-500 uppercase">Name</span>, dataIndex: 'memberName', key: 'memberName', render: (v: string) => <span className="text-[10px] font-semibold text-slate-700 truncate block">{v}</span> },
-    { title: <span className="text-[8px] font-black text-slate-500 uppercase">Avg Balance</span>, dataIndex: 'averageBalance', key: 'averageBalance', align: 'right' as const, render: (v: number) => <span className="text-[10px] font-black text-slate-700">₹{formatCurrency(v)}</span> },
-    { title: <span className="text-[8px] font-black text-slate-500 uppercase">Days</span>, dataIndex: 'days', key: 'days', align: 'center' as const, render: (v: number) => <span className="text-[10px] font-semibold text-slate-600">{v}</span> },
-    { title: <span className="text-[8px] font-black text-slate-500 uppercase">Interest</span>, dataIndex: 'interestAmount', key: 'interestAmount', align: 'right' as const, render: (v: number) => <span className="text-[10px] font-black text-emerald-600">₹{formatCurrency(v)}</span> },
+    { title: <span className="fz-mini font-black text-slate-500 uppercase">MB No.</span>, dataIndex: 'memberNumber', key: 'memberNumber', width: 90, render: (v: string) => <span className="fz-small font-black text-indigo-600">{v}</span> },
+    { title: <span className="fz-mini font-black text-slate-500 uppercase">Name</span>, dataIndex: 'memberName', key: 'memberName', render: (v: string) => <span className="fz-small font-semibold text-slate-700 truncate block">{v}</span> },
+    { title: <span className="fz-mini font-black text-slate-500 uppercase">Avg Balance</span>, dataIndex: 'averageBalance', key: 'averageBalance', align: 'right' as const, render: (v: number) => <span className="fz-small font-black text-slate-700">₹{formatCurrency(v)}</span> },
+    { title: <span className="fz-mini font-black text-slate-500 uppercase">Days</span>, dataIndex: 'days', key: 'days', align: 'center' as const, render: (v: number) => <span className="fz-small font-semibold text-slate-600">{v}</span> },
+    { title: <span className="fz-mini font-black text-slate-500 uppercase">Interest</span>, dataIndex: 'interestAmount', key: 'interestAmount', align: 'right' as const, render: (v: number) => <span className="fz-small font-black text-emerald-600">₹{formatCurrency(v)}</span> },
   ];
 
   return (
@@ -139,17 +139,17 @@ const UpdateSavingInterest: React.FC = () => {
               <Calculator size={13} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Saving Interest Ledger</h1>
-              <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Financial Yield Configuration</p>
+              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Saving Interest Ledger</h1>
+              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Financial Yield Configuration</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/10 border border-white/10">
               <TrendingUp size={11} className="text-indigo-300" />
-              <span className="text-[9px] font-black uppercase tracking-tighter text-white">Current Rate: {currentRate}%</span>
+              <span className="fz-tiny font-black uppercase tracking-tighter text-white">Current Rate: {currentRate}%</span>
             </div>
             <button onClick={processInterest} disabled={isProcessing || !validationResult?.valid}
-              className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-400 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 uppercase tracking-wide transition-all">
+              className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-400 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 uppercase tracking-wide transition-all">
               {isProcessing ? <RefreshCw size={11} className="animate-spin" /> : <Play size={11} />}
               Execute Posting
             </button>
@@ -167,7 +167,7 @@ const UpdateSavingInterest: React.FC = () => {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                   <Settings size={10} className="text-slate-400" />
-                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Parameters</span>
+                  <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Parameters</span>
                 </div>
                 <div className="p-2.5 space-y-2">
                   <div className="grid grid-cols-2 gap-1.5">
@@ -175,14 +175,14 @@ const UpdateSavingInterest: React.FC = () => {
                       <label className={lbl}>From Date</label>
                       <DatePicker value={formData.fromDate ? dayjs(formData.fromDate) : null}
                         onChange={(d) => handleInputChange('fromDate', d ? d.format('YYYY-MM-DD') : '')}
-                        format="DD-MMM-YYYY" className="w-full h-7 text-[10px]" allowClear={false}
+                        format="DD-MMM-YYYY" className="w-full h-7 fz-small" allowClear={false}
                         suffixIcon={<Calendar size={10} className="text-slate-400" />} />
                     </div>
                     <div>
                       <label className={lbl}>To Date</label>
                       <DatePicker value={formData.toDate ? dayjs(formData.toDate) : null}
                         onChange={(d) => handleInputChange('toDate', d ? d.format('YYYY-MM-DD') : '')}
-                        format="DD-MMM-YYYY" className="w-full h-7 text-[10px]" allowClear={false}
+                        format="DD-MMM-YYYY" className="w-full h-7 fz-small" allowClear={false}
                         suffixIcon={<Calendar size={10} className="text-slate-400" />} />
                     </div>
                   </div>
@@ -192,7 +192,7 @@ const UpdateSavingInterest: React.FC = () => {
                       <TrendingUp size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
                       <Input type="number" step="0.01" value={formData.interestRate}
                         onChange={e => handleInputChange('interestRate', parseFloat(e.target.value) || 0)}
-                        className="h-7 pl-6 text-[10px] font-semibold" />
+                        className="h-7 pl-6 fz-small font-semibold" />
                     </div>
                   </div>
                   <div>
@@ -207,20 +207,20 @@ const UpdateSavingInterest: React.FC = () => {
                     <label className={lbl}>Voucher No.</label>
                     <input value={formData.voucherNumber} onChange={e => handleInputChange('voucherNumber', e.target.value)}
                       placeholder="Auto-generated if blank..."
-                      className="h-7 px-2 text-[10px] font-semibold bg-white border border-slate-300 rounded w-full focus:outline-none focus:border-indigo-400" />
+                      className="h-7 px-2 fz-small font-semibold bg-white border border-slate-300 rounded w-full focus:outline-none focus:border-indigo-400" />
                   </div>
                   <div>
                     <label className={lbl}>Narration</label>
                     <textarea value={formData.narration} onChange={e => handleInputChange('narration', e.target.value)}
-                      rows={2} className="px-2 py-1 text-[10px] font-semibold bg-white border border-slate-300 rounded w-full focus:outline-none focus:border-indigo-400 resize-none" />
+                      rows={2} className="px-2 py-1 fz-small font-semibold bg-white border border-slate-300 rounded w-full focus:outline-none focus:border-indigo-400 resize-none" />
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-100">
                     <button onClick={validateParameters} disabled={isValidating}
-                      className="h-7 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[9px] font-black uppercase flex items-center justify-center gap-1 transition-all">
+                      className="h-7 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded fz-tiny font-black uppercase flex items-center justify-center gap-1 transition-all">
                       {isValidating ? <RefreshCw size={10} className="animate-spin" /> : <ShieldCheck size={10} />} Validate
                     </button>
                     <button onClick={previewCalculation} disabled={isPreviewing}
-                      className="h-7 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[9px] font-black uppercase flex items-center justify-center gap-1 transition-all border border-indigo-200">
+                      className="h-7 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded fz-tiny font-black uppercase flex items-center justify-center gap-1 transition-all border border-indigo-200">
                       {isPreviewing ? <RefreshCw size={10} className="animate-spin" /> : <Eye size={10} />} Snapshot
                     </button>
                   </div>
@@ -232,11 +232,11 @@ const UpdateSavingInterest: React.FC = () => {
                 <div className={`rounded-xl border p-2.5 ${validationResult.valid ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
                   <div className="flex items-center gap-1.5 mb-1">
                     {validationResult.valid ? <CheckCircle size={12} className="text-emerald-600" /> : <AlertCircle size={12} className="text-rose-600" />}
-                    <span className={`text-[9px] font-black uppercase ${validationResult.valid ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    <span className={`fz-tiny font-black uppercase ${validationResult.valid ? 'text-emerald-700' : 'text-rose-700'}`}>
                       {validationResult.valid ? 'Validation Passed' : 'Validation Failed'}
                     </span>
                   </div>
-                  {validationResult.message && <p className={`text-[8px] leading-snug ${validationResult.valid ? 'text-emerald-600' : 'text-rose-600'}`}>{validationResult.message}</p>}
+                  {validationResult.message && <p className={`fz-mini leading-snug ${validationResult.valid ? 'text-emerald-600' : 'text-rose-600'}`}>{validationResult.message}</p>}
                 </div>
               )}
 
@@ -245,16 +245,16 @@ const UpdateSavingInterest: React.FC = () => {
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                   <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                     <Clock size={10} className="text-slate-400" />
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Batch History</span>
+                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Batch History</span>
                   </div>
                   <div className="max-h-40 overflow-y-auto">
                     {interestHistory.slice(0, 10).map(h => (
                       <div key={h.id} className="px-2.5 py-1.5 border-b border-slate-50 flex items-center justify-between">
                         <div>
-                          <p className="text-[9px] font-black text-slate-700">{dayjs(h.fromDate).format('DD/MM/YY')} — {dayjs(h.toDate).format('DD/MM/YY')}</p>
-                          <p className="text-[8px] text-slate-400">{h.memberCount} members · {h.rate}% p.a.</p>
+                          <p className="fz-tiny font-black text-slate-700">{dayjs(h.fromDate).format('DD/MM/YY')} — {dayjs(h.toDate).format('DD/MM/YY')}</p>
+                          <p className="fz-mini text-slate-400">{h.memberCount} members · {h.rate}% p.a.</p>
                         </div>
-                        <span className="text-[9px] font-black text-emerald-600">₹{formatCurrency(h.totalAmount)}</span>
+                        <span className="fz-tiny font-black text-emerald-600">₹{formatCurrency(h.totalAmount)}</span>
                       </div>
                     ))}
                   </div>
@@ -268,10 +268,10 @@ const UpdateSavingInterest: React.FC = () => {
               <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-1.5">
                   <FileText size={10} className="text-slate-400" />
-                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Preview / Sandbox</span>
+                  <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Preview / Sandbox</span>
                 </div>
                 {previewResult && (
-                  <div className="flex items-center gap-3 text-[9px] font-black">
+                  <div className="flex items-center gap-3 fz-tiny font-black">
                     <span className="text-slate-500">{previewResult.totalMembers} members</span>
                     <span className="text-emerald-600">Total: ₹{formatCurrency(previewResult.totalInterestAmount)}</span>
                   </div>
@@ -290,8 +290,8 @@ const UpdateSavingInterest: React.FC = () => {
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-slate-400 p-8">
                     <Eye size={36} className="mb-3 opacity-20" />
-                    <p className="text-[9px] font-black uppercase tracking-widest">No Preview Data</p>
-                    <p className="text-[9px] text-slate-400 mt-1">Click "Snapshot" after validating parameters</p>
+                    <p className="fz-tiny font-black uppercase tracking-widest">No Preview Data</p>
+                    <p className="fz-tiny text-slate-400 mt-1">Click "Snapshot" after validating parameters</p>
                   </div>
                 )}
               </div>

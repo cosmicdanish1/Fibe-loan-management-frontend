@@ -11,9 +11,9 @@ import dayjs from 'dayjs';
 const { Option } = Select;
 const { TextArea } = Input;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
-const roInputCls = "h-7 text-[11px] font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
+const roInputCls = "h-7 fz-caption font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
 
 interface FDEntry {
     key: string;
@@ -194,34 +194,34 @@ const FDInterestVoucherPosting: React.FC = () => {
 
     const columns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">AcNo</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">AcNo</span>,
             dataIndex: 'acNo', key: 'acNo', width: '15%',
-            render: (v: string) => <span className="text-[10px] font-mono font-bold text-slate-700">{v}</span>,
+            render: (v: string) => <span className="fz-small font-mono font-bold text-slate-700">{v}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">CertNo</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">CertNo</span>,
             dataIndex: 'certNo', key: 'certNo', width: '15%',
-            render: (v: string) => <span className="text-[10px] font-mono font-bold text-indigo-700">{v}</span>,
+            render: (v: string) => <span className="fz-small font-mono font-bold text-indigo-700">{v}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Amount</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Amount</span>,
             dataIndex: 'amount', key: 'amount', width: '18%', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-bold text-slate-700">₹{v.toFixed(2)}</span>,
+            render: (v: number) => <span className="fz-small font-bold text-slate-700">₹{v.toFixed(2)}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Rate</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Rate</span>,
             dataIndex: 'rate', key: 'rate', width: '12%', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-bold text-indigo-600">{v}%</span>,
+            render: (v: number) => <span className="fz-small font-bold text-indigo-600">{v}%</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Last Pay Date</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Last Pay Date</span>,
             dataIndex: 'lastPayDate', key: 'lastPayDate', width: '22%',
-            render: (v: string) => <span className="text-[10px] font-mono text-slate-600">{v}</span>,
+            render: (v: string) => <span className="fz-small font-mono text-slate-600">{v}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Interest</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Interest</span>,
             dataIndex: 'interest', key: 'interest', width: '18%', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-black text-emerald-600">₹{v.toFixed(2)}</span>,
+            render: (v: number) => <span className="fz-small font-black text-emerald-600">₹{v.toFixed(2)}</span>,
         },
     ];
 
@@ -251,8 +251,8 @@ const FDInterestVoucherPosting: React.FC = () => {
                             <Landmark size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">FD / Interest Voucher Posting</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">FD / Interest Voucher Posting</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> Fixed Deposit Settlement
                             </p>
                         </div>
@@ -262,23 +262,23 @@ const FDInterestVoucherPosting: React.FC = () => {
                         <div className="flex items-center bg-white/10 rounded-lg p-0.5 border border-white/20 mr-2">
                             {(['interest', 'payment'] as const).map(opt => (
                                 <button key={opt} onClick={() => opt === 'payment' ? openFdWithdrawal() : setFdOption(opt)}
-                                    className={`h-6 px-3 rounded-md text-[8px] font-black uppercase tracking-wide transition-all ${
+                                    className={`h-6 px-3 rounded-md fz-mini font-black uppercase tracking-wide transition-all ${
                                         fdOption === opt ? 'bg-white text-slate-800 shadow' : 'text-white/70 hover:text-white'
                                     }`}>
                                     {opt === 'interest' ? 'FD Interest' : 'FD Payment'}
                                 </button>
                             ))}
                         </div>
-                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Reset
                         </button>
                         <button onClick={handleSave} disabled={loading}
-                            className={`h-7 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-amber-400 shadow-lg uppercase tracking-wide ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                            className={`h-7 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-amber-400 shadow-lg uppercase tracking-wide ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}>
                             {loading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
                             {loading ? 'Saving…' : 'Post'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={() => window.close?.()} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={() => window.close?.()} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -294,15 +294,15 @@ const FDInterestVoucherPosting: React.FC = () => {
                                 <div className="flex items-center gap-3">
                                     <Save size={12} className="text-emerald-600" />
                                     <div>
-                                        <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wide">Voucher Posted</span>
-                                        <p className="text-[10px] font-black text-emerald-800">{lastSaved.voucherNo}</p>
+                                        <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">Voucher Posted</span>
+                                        <p className="fz-small font-black text-emerald-800">{lastSaved.voucherNo}</p>
                                     </div>
                                     <div>
-                                        <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wide">Interest Amount</span>
-                                        <p className="text-[10px] font-black text-emerald-800">₹{lastSaved.amount.toFixed(2)}</p>
+                                        <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">Interest Amount</span>
+                                        <p className="fz-small font-black text-emerald-800">₹{lastSaved.amount.toFixed(2)}</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setLastSaved(null)} className="text-[8px] font-black text-emerald-600 hover:text-emerald-800 uppercase tracking-wide flex items-center gap-1">
+                                <button onClick={() => setLastSaved(null)} className="fz-mini font-black text-emerald-600 hover:text-emerald-800 uppercase tracking-wide flex items-center gap-1">
                                     <X size={9} /> Dismiss
                                 </button>
                             </div>
@@ -316,7 +316,7 @@ const FDInterestVoucherPosting: React.FC = () => {
                                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
                                         <Hash size={11} className="text-slate-400" />
-                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Voucher Scope</span>
+                                        <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Voucher Scope</span>
                                     </div>
                                     <DatePicker value={transDate ? dayjs(transDate) : null}
                                         onChange={d => setTransDate(d ? d.format('YYYY-MM-DD') : '')}
@@ -365,7 +365,7 @@ const FDInterestVoucherPosting: React.FC = () => {
                                                     message.error(e?.message || 'Failed to remove lien');
                                                 }
                                             }}
-                                            className="h-7 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded text-[9px] font-black uppercase tracking-wide transition-colors"
+                                            className="h-7 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded fz-tiny font-black uppercase tracking-wide transition-colors"
                                         >
                                             Remove Lien
                                         </button>
@@ -377,7 +377,7 @@ const FDInterestVoucherPosting: React.FC = () => {
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                     <FileText size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">FD Details</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">FD Details</span>
                                 </div>
                                 <div className="p-3 grid grid-cols-2 gap-x-4 gap-y-1">
                                     {fdDetailRows.map(([label, value]) => (
@@ -395,12 +395,12 @@ const FDInterestVoucherPosting: React.FC = () => {
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <IndianRupee size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Interest Calculation</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Interest Calculation</span>
                                 </div>
                                 {inttToPay && (
                                     <div className="flex items-center gap-1 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                                        <span className="text-[8px] font-black text-emerald-500 uppercase">To Pay</span>
-                                        <span className="text-[10px] font-black text-emerald-700">₹{parseFloat(inttToPay).toFixed(2)}</span>
+                                        <span className="fz-mini font-black text-emerald-500 uppercase">To Pay</span>
+                                        <span className="fz-small font-black text-emerald-700">₹{parseFloat(inttToPay).toFixed(2)}</span>
                                     </div>
                                 )}
                             </div>
@@ -427,7 +427,7 @@ const FDInterestVoucherPosting: React.FC = () => {
                                             setPeriodAsOnDate(v);
                                             recompute(memberFDs.find(f => f.certNo === certNo), v, applRate);
                                         }}
-                                        format="DD-MMM-YY" allowClear={false} className="w-full h-7 text-[11px]"
+                                        format="DD-MMM-YY" allowClear={false} className="w-full h-7 fz-caption"
                                         suffixIcon={<Calendar size={10} className="text-slate-400" />} />
                                 </div>
                                 <div>
@@ -446,9 +446,9 @@ const FDInterestVoucherPosting: React.FC = () => {
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Landmark size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member FD Records</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member FD Records</span>
                                 </div>
-                                <span className="text-[8px] font-black text-slate-400 uppercase">{data.length} record(s) — click row to select</span>
+                                <span className="fz-mini font-black text-slate-400 uppercase">{data.length} record(s) — click row to select</span>
                             </div>
                             <Table
                                 columns={columns}
@@ -460,7 +460,7 @@ const FDInterestVoucherPosting: React.FC = () => {
                                 loading={loading}
                                 scroll={{ y: 180 }}
                                 onRow={record => ({ onClick: () => handleCertSelect(record.certNo), className: 'cursor-pointer' })}
-                                locale={{ emptyText: <span className="text-[9px] text-slate-400 py-4 block text-center font-bold uppercase">Enter member no to load FD records</span> }}
+                                locale={{ emptyText: <span className="fz-tiny text-slate-400 py-4 block text-center font-bold uppercase">Enter member no to load FD records</span> }}
                                 rowClassName={record => record.certNo === certNo ? 'fdiv-row-selected' : ''}
                             />
                         </div>
@@ -469,12 +469,12 @@ const FDInterestVoucherPosting: React.FC = () => {
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <FileText size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Narration</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Narration</span>
                             </div>
                             <div className="p-3">
                                 <TextArea value={narration} onChange={e => setNarration(e.target.value)}
                                     placeholder="Enter narration…" rows={2}
-                                    className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none" />
+                                    className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
                             </div>
                         </div>
 
@@ -485,27 +485,27 @@ const FDInterestVoucherPosting: React.FC = () => {
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">FD Interest Voucher Posting</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">FD Interest Voucher Posting</span>
                         {memberNo && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">Member: {memberNo}</span>
+                                <span className="fz-mini font-black text-indigo-500">Member: {memberNo}</span>
                             </>
                         )}
                         {certNo && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-amber-600">Cert: {certNo}</span>
+                                <span className="fz-mini font-black text-amber-600">Cert: {certNo}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className={`text-[8px] font-black uppercase tracking-wide px-2 py-0.5 rounded ${fdOption === 'interest' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                        <span className={`fz-mini font-black uppercase tracking-wide px-2 py-0.5 rounded ${fdOption === 'interest' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
                             {fdOption === 'interest' ? 'FD Interest' : 'FD Payment'}
                         </span>
                         <div className="flex items-center gap-1 text-indigo-500">
                             <Calendar size={9} />
-                            <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                            <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                         </div>
                     </div>
                 </div>

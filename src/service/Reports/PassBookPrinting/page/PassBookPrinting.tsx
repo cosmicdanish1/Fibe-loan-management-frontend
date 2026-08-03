@@ -492,7 +492,7 @@ const PassBookPrinting: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-sm font-black uppercase tracking-wider ${text}`}>Pass Book Printing</h1>
-              <p className={`text-[10px] mt-0.5 ${muted}`}>Enter member number to load passbook tracking details</p>
+              <p className={`fz-small mt-0.5 ${muted}`}>Enter member number to load passbook tracking details</p>
             </div>
           </div>
         </motion.div>
@@ -509,7 +509,7 @@ const PassBookPrinting: React.FC = () => {
             </div>
             <div className="p-4 flex flex-wrap gap-5 items-end">
               <div className="space-y-1.5 flex-1 min-w-[180px]">
-                <label className={`text-[10px] font-bold uppercase tracking-wider ${muted}`}>Member Number</label>
+                <label className={`fz-small font-bold uppercase tracking-wider ${muted}`}>Member Number</label>
                 <div className="flex gap-2">
                   <input
                     value={memberNo}
@@ -533,7 +533,7 @@ const PassBookPrinting: React.FC = () => {
               </div>
 
               <div className="space-y-1.5 min-w-[200px]">
-                <label className={`text-[10px] font-bold uppercase tracking-wider ${muted}`}>Deposit / Loan Passbook</label>
+                <label className={`fz-small font-bold uppercase tracking-wider ${muted}`}>Deposit / Loan Passbook</label>
                 <Select value={passbookType} onChange={v => setPassbookType(v)} className="w-full" style={{ height: 36 }}>
                   {PASSBOOK_TYPES.map(t => <Option key={t.value} value={t.value}>{t.label}</Option>)}
                 </Select>
@@ -541,7 +541,7 @@ const PassBookPrinting: React.FC = () => {
 
               {data?.memberDetails.address && (
                 <div className="space-y-1 min-w-[160px]">
-                  <label className={`text-[10px] font-bold uppercase tracking-wider ${muted}`}>Address</label>
+                  <label className={`fz-small font-bold uppercase tracking-wider ${muted}`}>Address</label>
                   <p className={`text-xs ${rowTx}`}>{data.memberDetails.address}</p>
                 </div>
               )}
@@ -556,7 +556,7 @@ const PassBookPrinting: React.FC = () => {
               <FileText size={14} className={isDark ? 'text-amber-400' : 'text-amber-500'} />
               <h2 className={`text-xs font-black uppercase tracking-wider ${text}`}>Pass Book Printing Details</h2>
               {data && (
-                <span className={`ml-auto text-[10px] font-mono ${muted}`}>
+                <span className={`ml-auto fz-small font-mono ${muted}`}>
                   {totalPending} pending {passbookType === 'D' ? 'deposit' : 'loan'} rows
                 </span>
               )}
@@ -564,15 +564,15 @@ const PassBookPrinting: React.FC = () => {
 
             <div className="flex-1 overflow-auto">
               {/* Tracking summary row */}
-              <table className="w-full text-[11px] border-collapse">
+              <table className="w-full fz-caption border-collapse">
                 <thead>
                   <tr className={tblHd}>
                     <th className={`text-left px-4 py-2.5 font-bold uppercase tracking-wider border-b ${tblBdr} ${tblHdTx}`}>Tr_Date Printed</th>
                     <th className={`text-center px-4 py-2.5 font-bold uppercase tracking-wider border-b border-l ${tblBdr} ${tblHdTx}`}>
-                      <div>Deposit</div><div className={`font-normal normal-case text-[10px] ${subtle}`}>Last Row_Id Printed</div>
+                      <div>Deposit</div><div className={`font-normal normal-case fz-small ${subtle}`}>Last Row_Id Printed</div>
                     </th>
                     <th className={`text-center px-4 py-2.5 font-bold uppercase tracking-wider border-b border-l ${tblBdr} ${tblHdTx}`}>
-                      <div>Loan</div><div className={`font-normal normal-case text-[10px] ${subtle}`}>Last Row_Id Printed</div>
+                      <div>Loan</div><div className={`font-normal normal-case fz-small ${subtle}`}>Last Row_Id Printed</div>
                     </th>
                     <th className={`text-center px-4 py-2.5 font-bold uppercase tracking-wider border-b border-l ${tblBdr} ${tblHdTx}`}>Last Line No.</th>
                   </tr>
@@ -615,14 +615,14 @@ const PassBookPrinting: React.FC = () => {
               {data && totalPending > 0 && (
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                    <span className={`fz-small font-black uppercase tracking-wider ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
                       Pending: {totalPending} unprinted {passbookType === 'D' ? 'deposit' : 'loan'} transactions
                     </span>
                   </div>
 
                   <div className={`rounded-lg border overflow-auto ${tblBdr}`}>
                     {passbookType === 'D' ? (
-                      <table className="w-full text-[10px] border-collapse">
+                      <table className="w-full fz-small border-collapse">
                         <thead>
                           <tr className={`${tblHd} border-b ${tblBdr}`}>
                             <th rowSpan={2} className={`text-left px-2 py-2 font-bold border-b border-r whitespace-nowrap ${tblBdr} ${tblHdTx}`}>#</th>
@@ -659,7 +659,7 @@ const PassBookPrinting: React.FC = () => {
                         </tbody>
                       </table>
                     ) : (
-                      <table className="w-full text-[10px] border-collapse">
+                      <table className="w-full fz-small border-collapse">
                         <thead>
                           <tr className={`${tblHd} border-b ${tblBdr}`}>
                             <th rowSpan={2} className={`text-left px-2 py-2 font-bold border-b border-r ${tblBdr} ${tblHdTx}`}>#</th>
@@ -744,7 +744,7 @@ const PassBookPrinting: React.FC = () => {
           footer={
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 mr-auto">
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${muted}`}>Printer</span>
+                <span className={`fz-small font-bold uppercase tracking-wider ${muted}`}>Printer</span>
                 <Select
                   {...(printerName ? { value: printerName } : {})}
                   placeholder="Ask via system dialog"
@@ -774,7 +774,7 @@ const PassBookPrinting: React.FC = () => {
                   { label: 'Lines / page', key: 'linesPerPage', step: 1, min: 5 },
                 ] as const).map(f => (
                   <div key={f.key} className="space-y-1">
-                    <label className={`block text-[10px] font-bold uppercase tracking-wider ${muted}`}>{f.label}</label>
+                    <label className={`block fz-small font-bold uppercase tracking-wider ${muted}`}>{f.label}</label>
                     <input
                       type="number" step={f.step} min={f.min} value={pageSetup[f.key]}
                       onChange={e => {
@@ -785,14 +785,14 @@ const PassBookPrinting: React.FC = () => {
                     />
                   </div>
                 ))}
-                <span className={`text-[10px] pb-2 ${muted}`}>job = {pageWMm.toFixed(1)} × {bookHMm.toFixed(1)} mm</span>
+                <span className={`fz-small pb-2 ${muted}`}>job = {pageWMm.toFixed(1)} × {bookHMm.toFixed(1)} mm</span>
               </div>
               <iframe
                 title="Passbook print preview"
                 srcDoc={previewHtml}
                 style={{ width: '100%', height: 420, border: 'none', borderRadius: 8, background: '#3f434a' }}
               />
-              <p className={`text-[11px] ${muted}`}>
+              <p className={`fz-caption ${muted}`}>
                 {previewPages.length} page{previewPages.length > 1 ? 's' : ''}, {pageSetup.linesPerPage} lines per page.
                 Content prints from the top of the inserted book; the dashed line in the preview marks where the passbook page (fold) ends.
                 {previewPages.length > 1 && ' Pages print one at a time — you will be asked to flip the passbook between pages.'}

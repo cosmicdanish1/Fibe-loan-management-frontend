@@ -82,8 +82,8 @@ const PassRdAccount: React.FC = () => {
   };
   const intOnly = (v: string) => v.replace(/[^0-9]/g, '');
 
-  const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-  const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+  const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+  const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
@@ -96,21 +96,21 @@ const PassRdAccount: React.FC = () => {
               <Lock size={13} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Pass RD Account</h1>
-              <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Pass RD Account</h1>
+              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                 <ShieldCheck size={7} className="text-indigo-400" /> Edit & Update RD Record
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <button onClick={onClear} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+            <button onClick={onClear} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
               <RotateCcw size={11} /> Purge
             </button>
-            <button onClick={save} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
+            <button onClick={save} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
               <ShieldCheck size={11} /> Save
             </button>
             <div className="h-4 w-px bg-white/20" />
-            <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+            <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
               <X size={11} /> Exit
             </button>
           </div>
@@ -124,9 +124,9 @@ const PassRdAccount: React.FC = () => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
               <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                 <Hash size={11} className="text-slate-400" />
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member & Account</span>
+                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member & Account</span>
                 {memberName && (
-                  <span className="ml-auto text-[9px] font-black text-indigo-600">{memberName}</span>
+                  <span className="ml-auto fz-tiny font-black text-indigo-600">{memberName}</span>
                 )}
               </div>
               <div className="p-3 grid grid-cols-2 gap-3">
@@ -172,14 +172,14 @@ const PassRdAccount: React.FC = () => {
                       String(option?.value || '').toLowerCase().includes(input.toLowerCase())
                     }
                     notFoundContent={
-                      <span className="text-[9px] text-slate-400">
+                      <span className="fz-tiny text-slate-400">
                         {formData.memberNo ? 'No RD accounts found' : 'Select member first'}
                       </span>
                     }
                   >
                     {memberAccounts.map((acc: any) => (
                       <Option key={acc.account_number || acc.accountNumber} value={String(acc.account_number || acc.accountNumber)}>
-                        <span className="text-[10px] font-bold">
+                        <span className="fz-small font-bold">
                           {acc.account_number || acc.accountNumber} — ₹{Number(acc.fdamount || acc.amount || 0).toLocaleString('en-IN')}
                         </span>
                       </Option>
@@ -192,9 +192,9 @@ const PassRdAccount: React.FC = () => {
             {/* ── RD Details ── */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
               <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">RD Details</span>
+                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">RD Details</span>
                 {formData.accountNo && (
-                  <span className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  <span className="fz-mini font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                     A/c #{formData.accountNo}
                   </span>
                 )}
@@ -206,7 +206,7 @@ const PassRdAccount: React.FC = () => {
                     value={formData.depositDate ? dayjs(formData.depositDate) : null}
                     onChange={d => updateField('depositDate', d ? d.format('YYYY-MM-DD') : '')}
                     format="DD-MMM-YY"
-                    className="w-full h-7 text-[11px]"
+                    className="w-full h-7 fz-caption"
                   />
                 </div>
                 <div>
@@ -280,7 +280,7 @@ const PassRdAccount: React.FC = () => {
                 onChange={e => updateField('specialInstructions', e.target.value)}
                 rows={3}
                 placeholder="Additional notes or instructions…"
-                className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none mt-1"
+                className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none mt-1"
               />
             </div>
 
@@ -291,13 +291,13 @@ const PassRdAccount: React.FC = () => {
         <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-1.5">
             <Building2 size={9} className="text-slate-400" />
-            <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Pass RD Registry</span>
+            <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Pass RD Registry</span>
             <div className="w-px h-2.5 bg-slate-300" />
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-wide">Authorized</span>
+            <span className="fz-mini font-black text-slate-400 uppercase tracking-wide">Authorized</span>
           </div>
           <div className="flex items-center gap-1 text-indigo-500">
             <Calendar size={9} />
-            <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+            <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
           </div>
         </div>
 

@@ -47,7 +47,7 @@ const MDAmountDetails: React.FC<MDAmountDetailsProps> = ({ onSelect }) => {
       <div className="p-3 border-b border-slate-100 flex items-center justify-between gap-3 bg-slate-50/30">
         <div className="flex items-center gap-2 px-1">
           <Database size={14} className="text-indigo-600" />
-          <h2 className="text-[10px] font-black text-slate-700 uppercase tracking-widest leading-none">Field Schema</h2>
+          <h2 className="fz-small font-black text-slate-700 uppercase tracking-widest leading-none">Field Schema</h2>
         </div>
         <div className="relative group max-w-[140px] flex-1">
           <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
@@ -56,7 +56,7 @@ const MDAmountDetails: React.FC<MDAmountDetailsProps> = ({ onSelect }) => {
             placeholder="Search Registry..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-8 pl-8 pr-3 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300 shadow-sm"
+            className="w-full h-8 pl-8 pr-3 bg-white border border-slate-200 rounded-lg fz-small font-bold text-slate-600 outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300 shadow-sm"
           />
         </div>
       </div>
@@ -74,7 +74,7 @@ const MDAmountDetails: React.FC<MDAmountDetailsProps> = ({ onSelect }) => {
                   : "hover:bg-slate-50 text-slate-600 border border-transparent hover:border-slate-100"
                   }`}
               >
-                <span className={`text-[11px] font-bold tracking-tight ${selectedIndex === index ? "text-white" : "text-slate-700"}`}>
+                <span className={`fz-caption font-bold tracking-tight ${selectedIndex === index ? "text-white" : "text-slate-700"}`}>
                   {col.name}
                 </span>
                 {selectedIndex === index ? (
@@ -86,7 +86,7 @@ const MDAmountDetails: React.FC<MDAmountDetailsProps> = ({ onSelect }) => {
             ))
           ) : (
             <div className="py-10 text-center">
-              <p className="text-[10px] font-bold text-slate-300 uppercase italic tracking-widest">No matching fields</p>
+              <p className="fz-small font-bold text-slate-300 uppercase italic tracking-widest">No matching fields</p>
             </div>
           )}
         </div>
@@ -95,10 +95,10 @@ const MDAmountDetails: React.FC<MDAmountDetailsProps> = ({ onSelect }) => {
       {/* Footer Meta */}
       <div className="p-3 border-t border-slate-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
         <div className="flex items-center justify-between px-1">
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-1.5">
+          <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-1.5">
             <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" /> Registry Count
           </span>
-          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter">{filteredColumns.length} Tokens</span>
+          <span className="fz-small font-black text-indigo-600 uppercase tracking-tighter">{filteredColumns.length} Tokens</span>
         </div>
       </div>
     </div>

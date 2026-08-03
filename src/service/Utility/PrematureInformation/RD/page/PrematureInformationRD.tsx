@@ -50,9 +50,9 @@ const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detai
   } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
 };
 
-const lbl = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inp = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
-const roInp = "h-7 text-[11px] font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
+const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inp = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
+const roInp = "h-7 fz-caption font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
 
 const PrematureInformationRD: React.FC = () => {
   const [memberNo, setMemberNo] = useState('');
@@ -193,13 +193,13 @@ const PrematureInformationRD: React.FC = () => {
               <Calculator size={13} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">RD Premature Information</h1>
-              <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Interest Calculation on Early Closure</p>
+              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">RD Premature Information</h1>
+              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Interest Calculation on Early Closure</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <button onClick={resetForm}
-              className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+              className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
               <RefreshCw size={11} /> Reset
             </button>
           </div>
@@ -209,7 +209,7 @@ const PrematureInformationRD: React.FC = () => {
         <div className="flex-1 flex flex-col min-h-0 p-2 gap-1.5 overflow-auto">
 
           {error && (
-            <div className="shrink-0 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 flex items-center gap-2 text-[9px] font-semibold text-rose-700">
+            <div className="shrink-0 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 flex items-center gap-2 fz-tiny font-semibold text-rose-700">
               <AlertCircle size={12} className="text-rose-500 shrink-0" />
               {error}
             </div>
@@ -221,7 +221,7 @@ const PrematureInformationRD: React.FC = () => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
               <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5 shrink-0">
                 <User size={10} className="text-slate-400" />
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member Selection</span>
+                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member Selection</span>
               </div>
               <div className="p-2.5 space-y-2 flex-1">
                 <div>
@@ -241,18 +241,18 @@ const PrematureInformationRD: React.FC = () => {
                 </div>
                 {selectedMember && (
                   <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-2 space-y-1">
-                    <p className="text-[10px] font-black text-indigo-800 uppercase">{selectedMember.name}</p>
-                    <div className="flex gap-3 text-[9px] font-semibold text-indigo-600">
+                    <p className="fz-small font-black text-indigo-800 uppercase">{selectedMember.name}</p>
+                    <div className="flex gap-3 fz-tiny font-semibold text-indigo-600">
                       <span>No: {selectedMember.memberNo}</span>
                       <span>Pay: ₹{selectedMember.basicPay.toLocaleString('en-IN')}</span>
                     </div>
                     {selectedMember.officeName && (
-                      <p className="text-[8px] text-indigo-500">{selectedMember.officeName}</p>
+                      <p className="fz-mini text-indigo-500">{selectedMember.officeName}</p>
                     )}
                   </div>
                 )}
                 {loading && (
-                  <div className="flex items-center gap-2 text-[9px] text-slate-400">
+                  <div className="flex items-center gap-2 fz-tiny text-slate-400">
                     <RefreshCw size={10} className="animate-spin" /> Loading...
                   </div>
                 )}
@@ -263,7 +263,7 @@ const PrematureInformationRD: React.FC = () => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
               <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5 shrink-0">
                 <Calculator size={10} className="text-slate-400" />
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">RD Account Information</span>
+                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">RD Account Information</span>
               </div>
               <div className="p-2.5 space-y-2 flex-1">
                 {selectedMember && rdAccounts.length > 0 ? (
@@ -286,20 +286,20 @@ const PrematureInformationRD: React.FC = () => {
                     {selectedAccount && (
                       <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
                         <div>
-                          <label className="block text-[7px] font-black text-emerald-600 uppercase tracking-wider">Start Date</label>
-                          <p className="text-[10px] font-black text-emerald-900">{dayjs(selectedAccount.startDate).format('DD/MM/YY')}</p>
+                          <label className="block fz-micro font-black text-emerald-600 uppercase tracking-wider">Start Date</label>
+                          <p className="fz-small font-black text-emerald-900">{dayjs(selectedAccount.startDate).format('DD/MM/YY')}</p>
                         </div>
                         <div>
-                          <label className="block text-[7px] font-black text-emerald-600 uppercase tracking-wider">Interest Rate</label>
-                          <p className="text-[10px] font-black text-emerald-900">{selectedAccount.interestRate}%</p>
+                          <label className="block fz-micro font-black text-emerald-600 uppercase tracking-wider">Interest Rate</label>
+                          <p className="fz-small font-black text-emerald-900">{selectedAccount.interestRate}%</p>
                         </div>
                         <div>
-                          <label className="block text-[7px] font-black text-emerald-600 uppercase tracking-wider">Installment</label>
-                          <p className="text-[10px] font-black text-emerald-900">₹{selectedAccount.monthlyInstallment}</p>
+                          <label className="block fz-micro font-black text-emerald-600 uppercase tracking-wider">Installment</label>
+                          <p className="fz-small font-black text-emerald-900">₹{selectedAccount.monthlyInstallment}</p>
                         </div>
                         <div>
-                          <label className="block text-[7px] font-black text-emerald-600 uppercase tracking-wider">Maturity</label>
-                          <p className="text-[10px] font-black text-emerald-900">{dayjs(selectedAccount.maturityDate).format('DD/MM/YY')}</p>
+                          <label className="block fz-micro font-black text-emerald-600 uppercase tracking-wider">Maturity</label>
+                          <p className="fz-small font-black text-emerald-900">{dayjs(selectedAccount.maturityDate).format('DD/MM/YY')}</p>
                         </div>
                       </div>
                     )}
@@ -307,7 +307,7 @@ const PrematureInformationRD: React.FC = () => {
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center py-8 text-slate-400">
                     <Calculator size={24} className="mb-2 opacity-30" />
-                    <p className="text-[9px] font-semibold italic">
+                    <p className="fz-tiny font-semibold italic">
                       {selectedMember ? 'No active RD accounts found' : 'Please select a member first'}
                     </p>
                   </div>
@@ -319,19 +319,19 @@ const PrematureInformationRD: React.FC = () => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
               <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5 shrink-0">
                 <CheckCircle size={10} className="text-slate-400" />
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Actions &amp; Results</span>
+                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Actions &amp; Results</span>
               </div>
               <div className="p-2.5 space-y-2 flex-1 overflow-auto">
                 <div className="flex gap-1.5">
                   <button
                     onClick={calculatePremature}
                     disabled={!selectedAccount || loading}
-                    className="flex-1 h-7 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded text-[9px] font-black uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all">
+                    className="flex-1 h-7 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded fz-tiny font-black uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all">
                     {loading ? <RefreshCw size={11} className="animate-spin" /> : <Calculator size={11} />}
                     Calculate
                   </button>
                   <button onClick={resetForm}
-                    className="h-7 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-[9px] font-black uppercase tracking-wide flex items-center gap-1.5 transition-all">
+                    className="h-7 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded fz-tiny font-black uppercase tracking-wide flex items-center gap-1.5 transition-all">
                     <RefreshCw size={11} /> Reset
                   </button>
                 </div>
@@ -340,15 +340,15 @@ const PrematureInformationRD: React.FC = () => {
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-1.5">
                       <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 text-center">
-                        <p className="text-[7px] font-black text-blue-600 uppercase tracking-wider">Duration</p>
-                        <p className="text-[16px] font-black text-blue-900 leading-none mt-0.5">{calculationResult.duration}<span className="text-[10px] ml-0.5">m</span></p>
+                        <p className="fz-micro font-black text-blue-600 uppercase tracking-wider">Duration</p>
+                        <p className="text-[16px] font-black text-blue-900 leading-none mt-0.5">{calculationResult.duration}<span className="fz-small ml-0.5">m</span></p>
                       </div>
                       <div className="bg-rose-50 border border-rose-100 rounded-lg p-2 text-center">
-                        <p className="text-[7px] font-black text-rose-600 uppercase tracking-wider">Penalty</p>
-                        <p className="text-[16px] font-black text-rose-900 leading-none mt-0.5">{calculationResult.penalty.toFixed(1)}<span className="text-[10px] ml-0.5">%</span></p>
+                        <p className="fz-micro font-black text-rose-600 uppercase tracking-wider">Penalty</p>
+                        <p className="text-[16px] font-black text-rose-900 leading-none mt-0.5">{calculationResult.penalty.toFixed(1)}<span className="fz-small ml-0.5">%</span></p>
                       </div>
                     </div>
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 space-y-1.5 text-[9px]">
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 space-y-1.5 fz-tiny">
                       <div className="flex justify-between border-b border-slate-100 pb-1.5">
                         <span className="text-slate-500 font-semibold">Principal Deposited</span>
                         <span className="font-black text-slate-700">{formatCurrency(calculationResult.balance)}</span>
@@ -362,13 +362,13 @@ const PrematureInformationRD: React.FC = () => {
                         <span className="font-black text-emerald-600">{formatCurrency(calculationResult.interest)}</span>
                       </div>
                       <div className="flex justify-between pt-1">
-                        <span className="font-black text-slate-800 uppercase text-[8px]">Total Payable</span>
-                        <span className="text-[14px] font-black text-indigo-600 leading-none">{formatCurrency(calculationResult.total)}</span>
+                        <span className="font-black text-slate-800 uppercase fz-mini">Total Payable</span>
+                        <span className="fz-heading font-black text-indigo-600 leading-none">{formatCurrency(calculationResult.total)}</span>
                       </div>
                     </div>
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 flex items-start gap-1.5">
                       <AlertCircle size={11} className="text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-[8px] text-amber-800 leading-snug">
+                      <p className="fz-mini text-amber-800 leading-snug">
                         <span className="font-black uppercase">Note: </span>
                         Rate reduced by {calculationResult.penalty}% for early closure.
                       </p>
@@ -388,7 +388,7 @@ const PrematureInformationRD: React.FC = () => {
               <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-4 py-3 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <User size={14} className="text-indigo-300" />
-                  <h2 className="text-[11px] font-black text-white uppercase tracking-wider">Select Member</h2>
+                  <h2 className="fz-caption font-black text-white uppercase tracking-wider">Select Member</h2>
                 </div>
                 <button onClick={() => setShowMemberLookup(false)}
                   className="w-7 h-7 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center justify-center transition-colors">

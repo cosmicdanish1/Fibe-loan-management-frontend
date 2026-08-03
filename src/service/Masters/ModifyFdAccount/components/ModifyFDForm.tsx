@@ -12,8 +12,8 @@ import type { ModifyFDHookReturn } from '../interfaces/interface';
 
 const { Option } = Select;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const RELATIONS = ['Son', 'Daughter', 'Wife', 'Husband', 'Father', 'Mother', 'Brother', 'Sister', 'Grandson', 'Granddaughter', 'Other'];
 
@@ -35,34 +35,34 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
 
     const nomineeColumns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Name</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Name</span>,
             dataIndex: 'name', key: 'name',
             render: (text: string, record: any) => (
                 <Input value={text} onChange={(e) => updateNominee(record.id, 'name', e.target.value)}
-                    className="h-6 text-[10px] font-semibold bg-white border-slate-300 rounded px-1.5"
+                    className="h-6 fz-small font-semibold bg-white border-slate-300 rounded px-1.5"
                     placeholder="Full name" />
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Address</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Address</span>,
             dataIndex: 'address', key: 'address',
             render: (text: string, record: any) => (
                 <Input value={text} onChange={(e) => updateNominee(record.id, 'address', e.target.value)}
-                    className="h-6 text-[10px] font-semibold bg-white border-slate-300 rounded px-1.5"
+                    className="h-6 fz-small font-semibold bg-white border-slate-300 rounded px-1.5"
                     placeholder="Address" />
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide text-center block">Age</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide text-center block">Age</span>,
             dataIndex: 'age', key: 'age', width: 70, align: 'center' as const,
             render: (text: string, record: any) => (
                 <Input value={text} onChange={(e) => updateNominee(record.id, 'age', e.target.value)}
-                    className="h-6 text-[10px] font-semibold bg-white border-slate-300 rounded text-center px-1"
+                    className="h-6 fz-small font-semibold bg-white border-slate-300 rounded text-center px-1"
                     placeholder="Age" />
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide text-center block">Relation</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide text-center block">Relation</span>,
             dataIndex: 'relation', key: 'relation', width: 130, align: 'center' as const,
             render: (text: string, record: any) => (
                 <Select value={text || undefined} onChange={(val) => updateNominee(record.id, 'relation', val)}
@@ -93,21 +93,21 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                             <Edit3 size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Modify Fixed Deposit</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Modify Fixed Deposit</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> fdmaster — Edit & Update
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={reset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={reset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Revert
                         </button>
-                        <button onClick={save} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
+                        <button onClick={save} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
                             <Save size={11} /> Save
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -121,9 +121,9 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Landmark size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Account Selection</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Account Selection</span>
                                 {data.allFdAccounts.length > 0 && (
-                                    <span className="ml-auto text-[8px] font-black text-slate-400 uppercase tracking-wide">
+                                    <span className="ml-auto fz-mini font-black text-slate-400 uppercase tracking-wide">
                                         {data.allFdAccounts.length} FD accounts
                                     </span>
                                 )}
@@ -149,12 +149,12 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                                         optionFilterProp="children"
                                         loading={data.allFdAccounts.length === 0}
                                         notFoundContent={
-                                            <span className="text-[9px] text-slate-400">No FD accounts found</span>
+                                            <span className="fz-tiny text-slate-400">No FD accounts found</span>
                                         }
                                     >
                                         {data.allFdAccounts.map(acc => (
                                             <Option key={acc.accountNumber} value={acc.accountNumber}>
-                                                <span className="text-[10px] font-bold">{acc.label}</span>
+                                                <span className="fz-small font-bold">{acc.label}</span>
                                             </Option>
                                         ))}
                                     </Select>
@@ -165,7 +165,7 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                                     <label className={labelCls}>Account Holder Name</label>
                                     <div className="grid grid-cols-[80px_1fr_1fr_1fr] gap-2">
                                         <div>
-                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-wide">Prefix</span>
+                                            <span className="fz-mini font-black text-slate-400 uppercase tracking-wide">Prefix</span>
                                             <Select value={data.prefix || undefined} onChange={v => updateField('prefix', v)}
                                                 className="w-full mt-0.5" style={{ height: 28 }} placeholder="—">
                                                 <Option value="Mr.">Mr.</Option>
@@ -175,17 +175,17 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                                             </Select>
                                         </div>
                                         <div>
-                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-wide">First</span>
+                                            <span className="fz-mini font-black text-slate-400 uppercase tracking-wide">First</span>
                                             <Input value={data.firstName} onChange={e => updateField('firstName', e.target.value)}
                                                 className={`${inputCls} mt-0.5`} placeholder="First name" />
                                         </div>
                                         <div>
-                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-wide">Middle</span>
+                                            <span className="fz-mini font-black text-slate-400 uppercase tracking-wide">Middle</span>
                                             <Input value={data.middleName} onChange={e => updateField('middleName', e.target.value)}
                                                 className={`${inputCls} mt-0.5`} placeholder="Middle name" />
                                         </div>
                                         <div>
-                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-wide">Last</span>
+                                            <span className="fz-mini font-black text-slate-400 uppercase tracking-wide">Last</span>
                                             <Input value={data.lastName} onChange={e => updateField('lastName', e.target.value)}
                                                 className={`${inputCls} mt-0.5`} placeholder="Last name" />
                                         </div>
@@ -198,9 +198,9 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Hash size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">FD Details</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">FD Details</span>
                                 {data.selectFD && (
-                                    <span className="ml-auto text-[8px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                    <span className="ml-auto fz-mini font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                                         A/c #{data.selectFD}
                                     </span>
                                 )}
@@ -224,7 +224,7 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                                         value={data.depositDate ? dayjs(data.depositDate) : null}
                                         onChange={d => updateField('depositDate', d ? d.format('YYYY-MM-DD') : '')}
                                         format="DD-MMM-YY"
-                                        className="w-full h-7 text-[11px]" />
+                                        className="w-full h-7 fz-caption" />
                                 </div>
                                 <div>
                                     <label className={labelCls}>Rate (%)</label>
@@ -257,7 +257,7 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                                         value={data.maturityDate ? dayjs(data.maturityDate) : null}
                                         onChange={d => updateField('maturityDate', d ? d.format('YYYY-MM-DD') : '')}
                                         format="DD-MMM-YY"
-                                        className="w-full h-7 text-[11px]" />
+                                        className="w-full h-7 fz-caption" />
                                 </div>
                                 <div className="col-span-2">
                                     <label className={labelCls}>Mode of Payment (Interest)</label>
@@ -331,7 +331,7 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                                         value={data.lastIntPaymentDate ? dayjs(data.lastIntPaymentDate) : null}
                                         onChange={d => updateField('lastIntPaymentDate', d ? d.format('YYYY-MM-DD') : '')}
                                         format="DD-MMM-YY"
-                                        className="w-full h-7 text-[11px]" />
+                                        className="w-full h-7 fz-caption" />
                                 </div>
                                 <div>
                                     <label className={labelCls}>Status</label>
@@ -352,16 +352,16 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Users size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Nominee Details</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Nominee Details</span>
                                 </div>
                                 <button onClick={addNominee}
-                                    className="h-6 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded text-[9px] font-black uppercase tracking-wide flex items-center gap-1 transition-colors border border-indigo-200">
+                                    className="h-6 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded fz-tiny font-black uppercase tracking-wide flex items-center gap-1 transition-colors border border-indigo-200">
                                     <Plus size={9} /> Add Nominee
                                 </button>
                             </div>
                             <div className="max-h-[160px] overflow-auto">
                                 {data.nominees.length === 0 ? (
-                                    <div className="py-5 text-center text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
+                                    <div className="py-5 text-center fz-tiny font-bold text-slate-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
                                         <Info size={10} /> No nominees — click Add Nominee
                                     </div>
                                 ) : (
@@ -386,17 +386,17 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Modify FD Registry</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Modify FD Registry</span>
                         {data.selectFD && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500 uppercase tracking-wide">A/C #{data.selectFD}</span>
+                                <span className="fz-mini font-black text-indigo-500 uppercase tracking-wide">A/C #{data.selectFD}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

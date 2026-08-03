@@ -311,8 +311,8 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
               <Calculator size={12} />
             </div>
             <div>
-              <h1 className="text-[9px] font-black text-white tracking-tight leading-none uppercase">Interest Calculator</h1>
-              <p className="text-[6px] font-black text-slate-400 uppercase tracking-wider mt-0.5">Investment & Dividend Management</p>
+              <h1 className="fz-tiny font-black text-white tracking-tight leading-none uppercase">Interest Calculator</h1>
+              <p className="fz-nano font-black text-slate-400 uppercase tracking-wider mt-0.5">Investment & Dividend Management</p>
             </div>
           </div>
 
@@ -320,14 +320,14 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
             <button
               onClick={handleReset}
               disabled={disabled}
-              className="ic-hdr-btn px-2 py-1 text-white hover:bg-white/10 rounded text-[7px] font-black transition-all flex items-center gap-1 uppercase tracking-wider"
+              className="ic-hdr-btn px-2 py-1 text-white hover:bg-white/10 rounded fz-micro font-black transition-all flex items-center gap-1 uppercase tracking-wider"
             >
               <RotateCcw size={10} /> Reset
             </button>
             <button
               onClick={handleCalculate}
               disabled={disabled || isCalculating}
-              className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[7px] font-black shadow-md shadow-indigo-100 transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95 uppercase tracking-wider"
+              className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded fz-micro font-black shadow-md shadow-indigo-100 transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95 uppercase tracking-wider"
             >
               {isCalculating ? <Loader2 size={10} className="animate-spin" /> : <Calculator size={10} />}
               {isCalculating ? 'Calculating...' : 'Run Analysis'}
@@ -354,7 +354,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                   <div className="ic-card-icon bg-slate-50 p-1 rounded text-slate-600">
                     <Wallet size={11} />
                   </div>
-                  <h2 className="ic-card-title text-[7px] font-black text-slate-700 uppercase tracking-wider">Interest Scope</h2>
+                  <h2 className="ic-card-title fz-micro font-black text-slate-700 uppercase tracking-wider">Interest Scope</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
@@ -421,7 +421,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                           <Percent size={10} />
                         </div>
                       </div>
-                      {errors.rate && <p className="text-[6px] text-red-500 font-black mt-0.5">{errors.rate}</p>}
+                      {errors.rate && <p className="fz-nano text-red-500 font-black mt-0.5">{errors.rate}</p>}
                     </div>
                     <div>
                       <label className="ic-label text-slate-600 font-black fz-label uppercase mb-0.5 block tracking-wider">Min Calculation Amount</label>
@@ -448,7 +448,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                   <div className="ic-card-icon bg-slate-50 p-1 rounded text-slate-600">
                     <Send size={11} />
                   </div>
-                  <h2 className="ic-card-title text-[7px] font-black text-slate-700 uppercase tracking-wider">Finalize Transaction</h2>
+                  <h2 className="ic-card-title fz-micro font-black text-slate-700 uppercase tracking-wider">Finalize Transaction</h2>
                 </div>
 
                 <div className="space-y-1.5">
@@ -468,7 +468,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                     <button
                       onClick={handlePost}
                       disabled={disabled || !calculationResult || isPosting}
-                      className="w-full py-1.5 bg-slate-900 text-white rounded font-black flex items-center justify-center gap-1 shadow-lg hover:bg-slate-800 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:grayscale disabled:hover:translate-y-0 text-[7px] uppercase tracking-wider"
+                      className="w-full py-1.5 bg-slate-900 text-white rounded font-black flex items-center justify-center gap-1 shadow-lg hover:bg-slate-800 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:grayscale disabled:hover:translate-y-0 fz-micro uppercase tracking-wider"
                     >
                       {isPosting ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} />}
                       {isPosting ? 'POSTING...' : 'POST TRANSACTION'}
@@ -477,7 +477,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                       <button
                         onClick={handleCrystalReport}
                         disabled={disabled}
-                        className="ic-report-btn w-full py-1.5 bg-white border-2 border-slate-300 text-slate-900 font-black rounded hover:bg-slate-50 transition-all flex items-center justify-center gap-1 text-[7px] uppercase tracking-wider"
+                        className="ic-report-btn w-full py-1.5 bg-white border-2 border-slate-300 text-slate-900 font-black rounded hover:bg-slate-50 transition-all flex items-center justify-center gap-1 fz-micro uppercase tracking-wider"
                       >
                         <FileText size={10} /> GENERATE REPORT
                       </button>
@@ -495,19 +495,19 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                     <List size={12} />
                   </div>
                   <div>
-                    <h3 className="ic-results-title text-[8px] font-black text-slate-800 tracking-tight leading-none">Calculation Breakdown</h3>
-                    <p className="ic-results-sub text-[6px] text-slate-600 font-black uppercase tracking-wider leading-none mt-0.5">Detailed Ledger Analysis</p>
+                    <h3 className="ic-results-title fz-mini font-black text-slate-800 tracking-tight leading-none">Calculation Breakdown</h3>
+                    <p className="ic-results-sub fz-nano text-slate-600 font-black uppercase tracking-wider leading-none mt-0.5">Detailed Ledger Analysis</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   {calculationResult && (
-                    <div className="ic-ready-badge flex items-center gap-1 bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded-full text-[7px] font-black border border-slate-200">
+                    <div className="ic-ready-badge flex items-center gap-1 bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded-full fz-micro font-black border border-slate-200">
                       <CheckCircle2 size={9} /> Ready
                     </div>
                   )}
                   {isCalculating && (
-                    <div className="ic-calc-indicator flex items-center gap-1 text-slate-600 font-black text-[7px] uppercase tracking-tight">
+                    <div className="ic-calc-indicator flex items-center gap-1 text-slate-600 font-black fz-micro uppercase tracking-tight">
                       <Loader2 size={10} className="animate-spin" /> Analyzing...
                     </div>
                   )}
@@ -521,7 +521,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                       <div className="ic-loading-ring w-12 h-12 border-4 border-slate-100 border-t-slate-600 rounded-full animate-spin"></div>
                       <Database size={18} className="ic-loading-icon absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-600" />
                     </div>
-                    <p className="ic-loading-txt text-[8px] font-black text-slate-500 uppercase tracking-wider animate-pulse">Running Financial Deep Scan...</p>
+                    <p className="ic-loading-txt fz-mini font-black text-slate-500 uppercase tracking-wider animate-pulse">Running Financial Deep Scan...</p>
                   </div>
                 ) : calculationResult ? (
                   <div className="ic-table-wrap overflow-hidden rounded border border-slate-200">
@@ -553,8 +553,8 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                     <div className="ic-empty-icon bg-slate-50 p-4 rounded-full border-4 border-slate-100 mb-2">
                       <TrendingUp size={32} strokeWidth={1} className="text-slate-300" />
                     </div>
-                    <h4 className="ic-empty-title text-[10px] font-black text-slate-400 leading-none">NO ANALYSIS PERFORMED</h4>
-                    <p className="ic-empty-sub text-[7px] font-black uppercase tracking-tight mt-1 text-slate-400 opacity-60">Configure parameters and click "Run Analysis"</p>
+                    <h4 className="ic-empty-title fz-small font-black text-slate-400 leading-none">NO ANALYSIS PERFORMED</h4>
+                    <p className="ic-empty-sub fz-micro font-black uppercase tracking-tight mt-1 text-slate-400 opacity-60">Configure parameters and click "Run Analysis"</p>
                   </div>
                 )}
               </div>
@@ -569,8 +569,8 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                     <Wallet size={12} />
                   </div>
                   <div>
-                    <p className="ic-summary-label text-[6px] font-black text-slate-600 uppercase tracking-wider leading-none mb-0.5">Closing Balance</p>
-                    <p className="ic-summary-val text-[10px] font-black text-slate-900 tracking-tighter">
+                    <p className="ic-summary-label fz-nano font-black text-slate-600 uppercase tracking-wider leading-none mb-0.5">Closing Balance</p>
+                    <p className="ic-summary-val fz-small font-black text-slate-900 tracking-tighter">
                       ₹{Number(calculationResult.total).toLocaleString('en-IN')}
                     </p>
                   </div>
@@ -581,8 +581,8 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                     <TrendingUp size={12} />
                   </div>
                   <div>
-                    <p className="ic-summary-label text-[6px] font-black text-slate-600 uppercase tracking-wider leading-none mb-0.5">Net Interest</p>
-                    <p className="ic-summary-val text-[10px] font-black text-slate-900 tracking-tighter">
+                    <p className="ic-summary-label fz-nano font-black text-slate-600 uppercase tracking-wider leading-none mb-0.5">Net Interest</p>
+                    <p className="ic-summary-val fz-small font-black text-slate-900 tracking-tighter">
                       ₹{Number(calculationResult.postAmount).toLocaleString('en-IN')}
                     </p>
                   </div>
@@ -593,8 +593,8 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                     <Users size={12} />
                   </div>
                   <div>
-                    <p className="ic-summary-label text-[6px] font-black text-slate-600 uppercase tracking-wider leading-none mb-0.5">Members</p>
-                    <p className="ic-summary-val text-[10px] font-black text-slate-900 tracking-tighter">
+                    <p className="ic-summary-label fz-nano font-black text-slate-600 uppercase tracking-wider leading-none mb-0.5">Members</p>
+                    <p className="ic-summary-val fz-small font-black text-slate-900 tracking-tighter">
                       {calculationResult.transactions.length}
                     </p>
                   </div>
@@ -605,8 +605,8 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                     <ArrowUpRight size={12} />
                   </div>
                   <div>
-                    <p className="ic-summary-label text-[6px] font-black text-slate-600 uppercase tracking-wider leading-none mb-0.5">Yield Rate</p>
-                    <p className="ic-summary-val text-[10px] font-black text-slate-900 tracking-tighter">
+                    <p className="ic-summary-label fz-nano font-black text-slate-600 uppercase tracking-wider leading-none mb-0.5">Yield Rate</p>
+                    <p className="ic-summary-val fz-small font-black text-slate-900 tracking-tighter">
                       {(calculationResult.total - calculationResult.postAmount) === 0
                         ? 'N/A'
                         : ((calculationResult.postAmount / (calculationResult.total - calculationResult.postAmount)) * 100).toFixed(2) + '%'

@@ -320,10 +320,10 @@ const CashBookMonthly: React.FC = () => {
                         ))}
                         <tr style={{ backgroundColor: isDark ? '#1e293b' : '#fff' }}>
                           <td colSpan={2} className="py-2 px-3" style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}></td>
-                          <td className={`text-right py-2 px-3 font-black text-[13px] ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>
+                          <td className={`text-right py-2 px-3 font-black fz-body ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>
                             {formatCurrency(totalReceipt)}
                           </td>
-                          <td className={`text-right py-2 px-3 font-black text-[13px] ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>
+                          <td className={`text-right py-2 px-3 font-black fz-body ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>
                             {formatCurrency(totalPayment)}
                           </td>
                         </tr>

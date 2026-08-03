@@ -5,6 +5,7 @@ import { RootState } from '../../store';
 import { setTheme } from '../../store/slices/themeSlice';
 import { useAuth } from '../../auth/context/AuthContext';
 import { apiService } from '../../services/api';
+import { configureNotificationEffects } from '../../utils/notificationEffects';
 
 interface ThemeProviderProps {
     children: React.ReactNode;
@@ -71,7 +72,48 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         root.style.setProperty('--base-padding', `${1 * theme.density}rem`);
         root.style.setProperty('--base-gap', `${0.75 * theme.density}rem`);
 
+        // ── Canvas appearance (Settings → Background) ────────────────────
+        // Painted on <body> rather than inside MainLayout, because MainLayout
+        // wraps only the /dashboard route — every tool window is a standalone
+        // route and so never received the background at all. ThemeProvider
+        // renders in every window, so this reaches all of them.
+        const body = document.body;
+        body.style.backgroundImage = '';
+        body.style.backgroundSize = '';
+        body.style.backgroundPosition = '';
+        body.style.backgroundRepeat = '';
+
+        const darkMode = theme.interfaceMode === 'dark'
+            || (theme.interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+        if (darkMode) {
+            // A configured light canvas would leave the navbar and toolbars
+            // sitting on a bright background, so dark mode keeps its own.
+            body.style.backgroundColor = '#0f172a';
+        } else if (theme.backgroundType === 'gradient') {
+            body.style.backgroundColor = theme.backgroundColor1 || '#ffffff';
+            body.style.backgroundImage =
+                `linear-gradient(135deg, ${theme.backgroundColor1}, ${theme.backgroundColor2})`;
+        } else if (theme.backgroundType === 'image' && theme.backgroundImage) {
+            body.style.backgroundColor = theme.backgroundColor1 || '#ffffff';
+            body.style.backgroundImage = `url(${theme.backgroundImage})`;
+            body.style.backgroundSize = 'cover';
+            body.style.backgroundPosition = 'center';
+            body.style.backgroundRepeat = 'no-repeat';
+        } else {
+            body.style.backgroundColor = theme.backgroundColor1 || '#ffffff';
+        }
+
     }, [theme]);
+
+    // 2a. Toast + sound behaviour (Settings → Notifications / Sound Effects).
+    //     Runs in every window, so a tool window honours the settings too.
+    useEffect(() => {
+        configureNotificationEffects({
+            notifications: theme.notifications !== false,
+            soundEffects: theme.soundEffects === true,
+        });
+    }, [theme.notifications, theme.soundEffects]);
 
     // 2b. Header gradient (localStorage-backed, per-machine UI pref — same
     //     pattern as dashboard background / font size). Applied as a CSS var
@@ -167,8 +209,47 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           color: ${theme.textColor || 'inherit'};
         }
 
-        .density-pad { padding: calc(1rem * ${theme.density}); }
-        .density-gap { gap: calc(0.75rem * ${theme.density}); }
+        /* ── Layout density ───────────────────────────────────────────────
+           Settings → Layout Density had no effect anywhere: it only defined
+           .density-pad / .density-gap and the --base-padding / --base-gap
+           variables, and not a single component ever used them.
+
+           It now scales the Tailwind spacing utilities the screens actually
+           use. Comfortable is 1.0, which reproduces Tailwind's own values
+           exactly, so this is a no-op until Compact (0.8) is selected.
+
+           No !important, so a component that sets padding inline still wins. */
+        .p-0\\.5  { padding: calc(0.125rem * var(--ui-density, 1)); }
+        .p-1      { padding: calc(0.25rem  * var(--ui-density, 1)); }
+        .p-1\\.5  { padding: calc(0.375rem * var(--ui-density, 1)); }
+        .p-2      { padding: calc(0.5rem   * var(--ui-density, 1)); }
+        .p-3      { padding: calc(0.75rem  * var(--ui-density, 1)); }
+        .p-4      { padding: calc(1rem     * var(--ui-density, 1)); }
+
+        .px-0\\.5 { padding-left: calc(0.125rem * var(--ui-density, 1)); padding-right: calc(0.125rem * var(--ui-density, 1)); }
+        .px-1     { padding-left: calc(0.25rem  * var(--ui-density, 1)); padding-right: calc(0.25rem  * var(--ui-density, 1)); }
+        .px-1\\.5 { padding-left: calc(0.375rem * var(--ui-density, 1)); padding-right: calc(0.375rem * var(--ui-density, 1)); }
+        .px-2     { padding-left: calc(0.5rem   * var(--ui-density, 1)); padding-right: calc(0.5rem   * var(--ui-density, 1)); }
+        .px-3     { padding-left: calc(0.75rem  * var(--ui-density, 1)); padding-right: calc(0.75rem  * var(--ui-density, 1)); }
+        .px-4     { padding-left: calc(1rem     * var(--ui-density, 1)); padding-right: calc(1rem     * var(--ui-density, 1)); }
+
+        .py-0\\.5 { padding-top: calc(0.125rem * var(--ui-density, 1)); padding-bottom: calc(0.125rem * var(--ui-density, 1)); }
+        .py-1     { padding-top: calc(0.25rem  * var(--ui-density, 1)); padding-bottom: calc(0.25rem  * var(--ui-density, 1)); }
+        .py-1\\.5 { padding-top: calc(0.375rem * var(--ui-density, 1)); padding-bottom: calc(0.375rem * var(--ui-density, 1)); }
+        .py-2     { padding-top: calc(0.5rem   * var(--ui-density, 1)); padding-bottom: calc(0.5rem   * var(--ui-density, 1)); }
+        .py-3     { padding-top: calc(0.75rem  * var(--ui-density, 1)); padding-bottom: calc(0.75rem  * var(--ui-density, 1)); }
+        .py-4     { padding-top: calc(1rem     * var(--ui-density, 1)); padding-bottom: calc(1rem     * var(--ui-density, 1)); }
+
+        .gap-0\\.5 { gap: calc(0.125rem * var(--ui-density, 1)); }
+        .gap-1     { gap: calc(0.25rem  * var(--ui-density, 1)); }
+        .gap-1\\.5 { gap: calc(0.375rem * var(--ui-density, 1)); }
+        .gap-2     { gap: calc(0.5rem   * var(--ui-density, 1)); }
+        .gap-3     { gap: calc(0.75rem  * var(--ui-density, 1)); }
+        .gap-4     { gap: calc(1rem     * var(--ui-density, 1)); }
+
+        .space-y-1 > :not([hidden]) ~ :not([hidden]) { margin-top: calc(0.25rem * var(--ui-density, 1)); }
+        .space-y-2 > :not([hidden]) ~ :not([hidden]) { margin-top: calc(0.5rem  * var(--ui-density, 1)); }
+        .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: calc(0.75rem * var(--ui-density, 1)); }
         
         .ant-btn, .ant-input, .ant-select-selector, .ant-picker, .ant-modal-content {
           border-radius: ${theme.cornerRadius}px !important;
@@ -212,6 +293,29 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         .bg-gradient-to-r.from-slate-800 {
           background-image: var(--header-gradient, linear-gradient(to right, #0f172a, #312e81, #0f172a)) !important;
         }
+
+        /* ── Corner radius ────────────────────────────────────────────────
+           Settings → Corner Radius reached only antd controls. Every card and
+           panel uses Tailwind's rounded-* utilities, which are fixed values —
+           so the slider rounded the inputs but not the boxes around them.
+
+           The multipliers reproduce Tailwind's own scale exactly at the
+           default 8px, so this is a pixel-for-pixel no-op until the slider is
+           actually moved.
+
+           Deliberately NOT !important: 153 components set borderRadius inline,
+           including six 50% circles, and those shapes must still win. Ordering
+           alone beats the utility class, since this block is injected after
+           the stylesheet.
+
+           rounded-full is left out entirely — pills and avatars stay round. */
+        .rounded-sm  { border-radius: calc(var(--corner-radius) * 0.25); }
+        .rounded     { border-radius: calc(var(--corner-radius) * 0.5); }
+        .rounded-md  { border-radius: calc(var(--corner-radius) * 0.75); }
+        .rounded-lg  { border-radius: var(--corner-radius); }
+        .rounded-xl  { border-radius: calc(var(--corner-radius) * 1.5); }
+        .rounded-2xl { border-radius: calc(var(--corner-radius) * 2); }
+        .rounded-3xl { border-radius: calc(var(--corner-radius) * 3); }
 
         .bg-indigo-50  { background-color: color-mix(in srgb, var(--accent-color) 10%, white) !important; }
         .bg-indigo-100 { background-color: color-mix(in srgb, var(--accent-color) 18%, white) !important; }

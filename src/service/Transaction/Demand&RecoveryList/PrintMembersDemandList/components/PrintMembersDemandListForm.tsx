@@ -7,8 +7,8 @@ import { PrintMembersDemandListHookReturn } from '../interface/PrintMembersDeman
 
 const { Option } = Select;
 
-const lbl = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inp = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inp = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = ({
     formData, updateField, handlePrint, handleExport, handleReset, handleExit,
@@ -24,19 +24,19 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                             <Printer size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Print Members Demand List</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Demand &amp; Recovery</p>
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Print Members Demand List</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Demand &amp; Recovery</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-white/20 uppercase tracking-wide transition-all">
+                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-white/20 uppercase tracking-wide transition-all">
                             <RotateCcw size={11} /> Reset
                         </button>
-                        <button onClick={handleExport} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide transition-all">
+                        <button onClick={handleExport} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide transition-all">
                             <FileOutput size={11} /> Export To Details
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide transition-all">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide transition-all">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -48,7 +48,7 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                     {/* Config card */}
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
                         <div className="px-3 py-1.5 border-b border-slate-100">
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Print Configuration</span>
+                            <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Print Configuration</span>
                         </div>
                         <div className="px-3 py-2 space-y-2">
                             {/* Row 1: Division + Branch */}
@@ -95,7 +95,7 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                                 </div>
                                 <div>
                                     <label className={lbl}>Total Pages</label>
-                                    <Input value="*" readOnly className="h-7 text-[11px] font-semibold bg-slate-50 border-slate-200 rounded text-slate-600" />
+                                    <Input value="*" readOnly className="h-7 fz-caption font-semibold bg-slate-50 border-slate-200 rounded text-slate-600" />
                                 </div>
                             </div>
 
@@ -107,7 +107,7 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                                     <div className="flex gap-1">
                                         {(['Screen','Printer'] as const).map(opt => (
                                             <button key={opt} onClick={() => updateField('outputType', opt)}
-                                                className={`h-7 px-3 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${
+                                                className={`h-7 px-3 rounded-lg fz-tiny font-black uppercase tracking-wide border transition-all ${
                                                     formData.outputType === opt ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-500 border-slate-300 hover:border-indigo-400'
                                                 }`}
                                             >{opt}</button>
@@ -131,7 +131,7 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                                                 onChange={(e) => updateField(key as any, e.target.checked)}
                                                 className="w-3.5 h-3.5 accent-indigo-600"
                                             />
-                                            <span className="text-[9px] font-black text-slate-700 uppercase tracking-wide">{label}</span>
+                                            <span className="fz-tiny font-black text-slate-700 uppercase tracking-wide">{label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -143,16 +143,16 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                     <div className="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center">
                         <div className="text-center space-y-3">
                             <Printer size={56} className="text-slate-200 mx-auto" />
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Report Preview</p>
-                            <p className="text-[8px] font-bold text-slate-300">Select parameters and click Export To Details</p>
+                            <p className="fz-tiny font-black text-slate-400 uppercase tracking-wider">Report Preview</p>
+                            <p className="fz-mini font-bold text-slate-300">Select parameters and click Export To Details</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
                 <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-1.5"><Building2 size={9} className="text-slate-400" /><span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Administration</span></div>
-                    <span className="text-[8px] font-black text-indigo-400 uppercase tracking-wide">Reporting Mode</span>
+                    <div className="flex items-center gap-1.5"><Building2 size={9} className="text-slate-400" /><span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Administration</span></div>
+                    <span className="fz-mini font-black text-indigo-400 uppercase tracking-wide">Reporting Mode</span>
                 </div>
             </div>
             <style>{`

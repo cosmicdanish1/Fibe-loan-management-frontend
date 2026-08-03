@@ -24,8 +24,8 @@ const HEAD_CODES: Record<string, string> = {
     'L1001': 'SHR', 'I1008': 'OTH', 'I1001': 'OTH',
 };
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const RECEIPT_TYPES = [
     { value: 'receipt', label: 'Receipt' },
@@ -69,7 +69,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
 
     const columns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Code</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Code</span>,
             dataIndex: 'code', key: 'code', width: '22%',
             render: (text: string, record: ReceiptRow) => (
                 <Select
@@ -93,30 +93,30 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Name / Description</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Name / Description</span>,
             dataIndex: 'description', key: 'description',
             render: (text: string, record: ReceiptRow) => (
                 <Input value={text} onChange={e => updateRow(record.id, 'description', e.target.value)}
                     placeholder="Description..."
-                    className="h-6 text-[10px] font-semibold bg-white border-slate-200 rounded" />
+                    className="h-6 fz-small font-semibold bg-white border-slate-200 rounded" />
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Amount</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Amount</span>,
             dataIndex: 'amount', key: 'amount', width: '18%',
             render: (text: string, record: ReceiptRow) => (
                 <Input type="number" value={text} onChange={e => updateRow(record.id, 'amount', e.target.value)}
                     placeholder="0.00"
-                    className="h-6 text-[10px] font-black text-emerald-700 text-right bg-emerald-50/30 border-emerald-200 rounded" />
+                    className="h-6 fz-small font-black text-emerald-700 text-right bg-emerald-50/30 border-emerald-200 rounded" />
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">RD Sr.No</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">RD Sr.No</span>,
             dataIndex: 'rdSrNo', key: 'rdSrNo', width: '14%',
             render: (text: string, record: ReceiptRow) => (
                 <Input value={text} onChange={e => updateRow(record.id, 'rdSrNo', e.target.value)}
                     placeholder="RD ref..."
-                    className="h-6 text-[10px] font-mono text-slate-600 bg-slate-50 border-slate-200 rounded" />
+                    className="h-6 fz-small font-mono text-slate-600 bg-slate-50 border-slate-200 rounded" />
             ),
         },
         {
@@ -144,8 +144,8 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                 <Receipt size={13} className="text-white" />
                             </div>
                             <div>
-                                <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Receipt</h1>
-                                <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                                <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Receipt</h1>
+                                <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                     <ShieldCheck size={7} className="text-indigo-400" /> CR(R) + DR(P) → Ledger
                                 </p>
                             </div>
@@ -154,7 +154,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                         <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/10 gap-0.5">
                             {RECEIPT_TYPES.map(tab => (
                                 <button key={tab.value} onClick={() => updateField('receiptType', tab.value)}
-                                    className={`px-2.5 h-6 text-[8px] font-black uppercase tracking-wide transition-all rounded-md ${
+                                    className={`px-2.5 h-6 fz-mini font-black uppercase tracking-wide transition-all rounded-md ${
                                         formData.receiptType === tab.value
                                             ? 'bg-indigo-600 text-white shadow-lg'
                                             : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
@@ -165,16 +165,16 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleCancel} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleCancel} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Clear
                         </button>
                         <button onClick={handleSave} disabled={isLoading}
-                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
                             {isLoading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
                             {isLoading ? 'Saving…' : 'Save'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -191,20 +191,20 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                     <Save size={12} className="text-emerald-600" />
                                     <div className="flex items-center gap-4">
                                         <div>
-                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wide">Voucher</span>
-                                            <p className="text-[10px] font-black text-emerald-800">{lastSaved.voucherNo}</p>
+                                            <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">Voucher</span>
+                                            <p className="fz-small font-black text-emerald-800">{lastSaved.voucherNo}</p>
                                         </div>
                                         <div>
-                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wide">Member</span>
-                                            <p className="text-[10px] font-bold text-emerald-800">{lastSaved.memberNo}</p>
+                                            <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">Member</span>
+                                            <p className="fz-small font-bold text-emerald-800">{lastSaved.memberNo}</p>
                                         </div>
                                         <div>
-                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wide">Amount</span>
-                                            <p className="text-[10px] font-black text-emerald-800">₹{lastSaved.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                                            <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">Amount</span>
+                                            <p className="fz-small font-black text-emerald-800">₹{lastSaved.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={handleCancel} className="text-[8px] font-black text-emerald-600 hover:text-emerald-800 uppercase tracking-wide flex items-center gap-1">
+                                <button onClick={handleCancel} className="fz-mini font-black text-emerald-600 hover:text-emerald-800 uppercase tracking-wide flex items-center gap-1">
                                     <RotateCcw size={9} /> New
                                 </button>
                             </div>
@@ -215,15 +215,15 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Users size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member Details</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member Details</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase">Month</label>
+                                    <label className="fz-tiny font-black text-slate-500 uppercase">Month</label>
                                     <Select value={formData.month} onChange={v => updateField('month', v)}
                                         className="w-20 rcpt-sm-select" style={{ height: 26 }}>
                                         {MONTHS.map(m => <Option key={m} value={m}>{m}</Option>)}
                                     </Select>
-                                    <label className="text-[9px] font-black text-slate-500 uppercase">Year</label>
+                                    <label className="fz-tiny font-black text-slate-500 uppercase">Year</label>
                                     <Select value={formData.year} onChange={v => updateField('year', v)}
                                         className="w-24 rcpt-sm-select" style={{ height: 26 }}>
                                         {Array.from({ length: 10 }, (_, i) => (dayjs().year() - 2 + i).toString()).map(y => (
@@ -253,12 +253,12 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                             </button>
                                         </div>
                                         {isLoadingMember && (
-                                            <div className="flex items-center gap-1 mt-1"><Spin size="small" /><span className="text-[9px] text-slate-400">Loading…</span></div>
+                                            <div className="flex items-center gap-1 mt-1"><Spin size="small" /><span className="fz-tiny text-slate-400">Loading…</span></div>
                                         )}
                                         {formData.memberName && !isLoadingMember && !isGeneral && (
                                             <div className="flex items-center gap-1 mt-1">
                                                 <Users size={9} className="text-indigo-400" />
-                                                <span className="text-[9px] font-black text-indigo-700">{formData.memberName}</span>
+                                                <span className="fz-tiny font-black text-indigo-700">{formData.memberName}</span>
                                             </div>
                                         )}
                                     </div>
@@ -276,7 +276,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                     {/* Loan Balances (Receipt type only) */}
                                     {formData.receiptType === 'receipt' && (
                                         <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Loan Balances</p>
+                                            <p className="fz-mini font-black text-slate-500 uppercase tracking-widest mb-1.5">Loan Balances</p>
                                             <div className="space-y-1">
                                                 {[
                                                     { label: 'RLN Bal / Intt', bal: formData.rlnBal, intt: formData.rlnIntt },
@@ -284,11 +284,11 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                                     { label: 'FLN Bal / Intt', bal: formData.flnBal, intt: formData.flnIntt },
                                                 ].map(item => (
                                                     <div key={item.label} className="flex items-center justify-between">
-                                                        <span className="text-[9px] font-bold text-slate-500 w-24">{item.label}</span>
-                                                        <span className={`text-[9px] font-black w-16 text-right ${item.bal > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                                                        <span className="fz-tiny font-bold text-slate-500 w-24">{item.label}</span>
+                                                        <span className={`fz-tiny font-black w-16 text-right ${item.bal > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
                                                             {item.bal.toFixed(2)}
                                                         </span>
-                                                        <span className={`text-[9px] font-black w-16 text-right ${item.intt > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                                                        <span className={`fz-tiny font-black w-16 text-right ${item.intt > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
                                                             {item.intt.toFixed(2)}
                                                         </span>
                                                     </div>
@@ -305,16 +305,16 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Banknote size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Mode of Payment</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Mode of Payment</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">
-                                        <span className="text-[8px] font-black text-emerald-500 uppercase">Actual Amt</span>
-                                        <span className="text-[9px] font-black text-emerald-700">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="fz-mini font-black text-emerald-500 uppercase">Actual Amt</span>
+                                        <span className="fz-tiny font-black text-emerald-700">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                                        <span className="text-[8px] font-black text-slate-500 uppercase">{formData.modeOfPay === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
-                                        <span className={`text-[9px] font-black ${(formData.bankBal || 0) < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{(formData.bankBal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="fz-mini font-black text-slate-500 uppercase">{formData.modeOfPay === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
+                                        <span className={`fz-tiny font-black ${(formData.bankBal || 0) < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{(formData.bankBal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
                             </div>
@@ -322,7 +322,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                 <div className="flex gap-2">
                                     {['cash', 'bank'].map(mode => (
                                         <button key={mode} onClick={() => updateField('modeOfPay', mode)}
-                                            className={`h-7 px-4 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all border ${
+                                            className={`h-7 px-4 rounded-lg fz-tiny font-black uppercase tracking-wide transition-all border ${
                                                 formData.modeOfPay === mode
                                                     ? mode === 'cash' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-blue-600 text-white border-blue-500'
                                                     : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -334,7 +334,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
 
                                 {formData.modeOfPay === 'bank' && (
                                     <div className="mt-3 pt-3 border-t border-slate-100">
-                                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">Cheque Details</p>
+                                        <p className="fz-mini font-black text-slate-500 uppercase tracking-widest mb-2">Cheque Details</p>
                                         <div className="grid grid-cols-4 gap-x-4">
                                             <div>
                                                 <label className={labelCls}>Date</label>
@@ -371,16 +371,16 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <FileText size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Receipt Breakdown</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Receipt Breakdown</span>
                                 </div>
                                 <button onClick={addRow}
-                                    className="h-6 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[9px] font-black flex items-center gap-1 transition-colors">
+                                    className="h-6 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded fz-tiny font-black flex items-center gap-1 transition-colors">
                                     <Plus size={10} /> Add Row
                                 </button>
                             </div>
                             <Table columns={columns} dataSource={formData.rows} pagination={false}
                                 size="small" className="rcpt-table" rowKey="id" scroll={{ y: 180 }}
-                                locale={{ emptyText: <span className="text-[9px] text-slate-400 py-4 block text-center font-bold uppercase">Add rows using the button above</span> }}
+                                locale={{ emptyText: <span className="fz-tiny text-slate-400 py-4 block text-center font-bold uppercase">Add rows using the button above</span> }}
                                 rowClassName={record => record.code ? 'row-coded' : ''} />
                         </div>
 
@@ -388,12 +388,12 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <FileText size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Narration</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Narration</span>
                             </div>
                             <div className="p-3">
                                 <TextArea value={formData.narration} onChange={e => updateField('narration', e.target.value)}
                                     placeholder="Enter narration / remarks…" rows={2}
-                                    className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none" />
+                                    className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
                             </div>
                         </div>
 
@@ -404,17 +404,17 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Receipt</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Receipt</span>
                         {formData.memberName && !isGeneral && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">{formData.memberName}</span>
+                                <span className="fz-mini font-black text-indigo-500">{formData.memberName}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

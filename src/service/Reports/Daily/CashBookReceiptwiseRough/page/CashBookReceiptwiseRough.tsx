@@ -237,7 +237,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Cash-Book (Transaction)</h1>
-              <div className={`flex items-center gap-1.5 mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${muted}`}>
+              <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
                 <ShieldCheck size={10} className="text-indigo-400" /> Voucher-wise Daily Report
               </div>
             </div>
@@ -264,7 +264,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
               className={`rounded-xl overflow-hidden ${panel}`}>
               <div className={`px-3 py-2 flex items-center justify-between ${panelHd}`}>
-                <h3 className={`text-[11px] font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
+                <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
                   <Settings size={11} className="text-indigo-400" /> Parameters
                 </h3>
                 <Tooltip title="Reload">
@@ -273,7 +273,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
               </div>
               <div className="p-3 space-y-3">
                 <div className="space-y-1">
-                  <label className={`text-[10px] font-bold uppercase tracking-tight ${muted}`}>Date</label>
+                  <label className={`fz-small font-bold uppercase tracking-tight ${muted}`}>Date</label>
                   <DatePicker className="w-full h-8 text-xs" value={selectedDate}
                     onChange={v => v && setSelectedDate(v)} format="DD-MMM-YYYY" />
                 </div>
@@ -291,25 +291,25 @@ const CashBookReceiptwiseRough: React.FC = () => {
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col gap-2">
                   <div className={`rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${muted}`}>Vouchers</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Vouchers</div>
                     <div className={`text-lg font-black font-mono ${text}`}>{data.vouchers.length}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening Balance</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening Balance</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmtAmtSigned(data.openingBalance)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-emerald-600/20 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Total Credit</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Total Credit</div>
                     <div className={`text-sm font-black font-mono ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt2(data.totalReceipts)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-rose-600/20 border border-rose-500/30' : 'bg-rose-50 border border-rose-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Total Debit</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Total Debit</div>
                     <div className={`text-sm font-black font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt2(data.totalPayments)}</div>
                   </div>
                   <div className={`border rounded-lg p-3 ${data.closingBalance >= 0
                     ? (isDark ? 'bg-indigo-600/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200')
                     : (isDark ? 'bg-rose-900/30 border-rose-700/40' : 'bg-rose-50 border-rose-200')}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Closing Balance</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Closing Balance</div>
                     <div className={`text-sm font-black font-mono ${data.closingBalance >= 0
                       ? (isDark ? 'text-indigo-300' : 'text-indigo-700')
                       : (isDark ? 'text-rose-300' : 'text-rose-700')}`}>
@@ -328,7 +328,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
                 Cash Book — {selectedDate.format('DD-MMM-YYYY')}
               </span>
               {data && (
-                <span className={`text-[10px] font-mono ${subtle}`}>
+                <span className={`fz-small font-mono ${subtle}`}>
                   {data.vouchers.length} vouchers · {reportLines.length} lines
                 </span>
               )}
@@ -379,9 +379,9 @@ const CashBookReceiptwiseRough: React.FC = () => {
         <div className={`px-4 py-1.5 flex items-center justify-between shrink-0 ${ftrBg}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-            <span className={`text-[10px] font-bold uppercase tracking-wide ${muted}`}>Cash Book · Transaction View</span>
+            <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Cash Book · Transaction View</span>
           </div>
-          <span className={`text-[10px] font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
+          <span className={`fz-small font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
         </div>
       </div>
     </ConfigProvider>

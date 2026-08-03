@@ -119,7 +119,7 @@ const CashBook2: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Cash Book</h1>
-              <div className={`flex items-center gap-1.5 mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${muted}`}>
+              <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
                 <ShieldCheck size={10} className="text-indigo-400" /> Daily Summary
               </div>
             </div>
@@ -146,7 +146,7 @@ const CashBook2: React.FC = () => {
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
               className={`rounded-xl overflow-hidden ${panel}`}>
               <div className={`px-3 py-2 flex items-center justify-between ${panelHd}`}>
-                <h3 className={`text-[11px] font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
+                <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
                   <Settings size={11} className="text-indigo-400" /> Parameters
                 </h3>
                 <Tooltip title="Reload">
@@ -155,7 +155,7 @@ const CashBook2: React.FC = () => {
               </div>
               <div className="p-3 space-y-3">
                 <div className="space-y-1">
-                  <label className={`text-[10px] font-bold uppercase tracking-tight ${muted}`}>Date</label>
+                  <label className={`fz-small font-bold uppercase tracking-tight ${muted}`}>Date</label>
                   <DatePicker className="w-full h-8 text-xs font-semibold" value={selectedDate}
                     onChange={v => v && setSelectedDate(v)} format="DD-MMM-YYYY" />
                 </div>
@@ -172,19 +172,19 @@ const CashBook2: React.FC = () => {
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="grid grid-cols-1 gap-2">
                   <div className={`rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening</div>
                     <div className={`text-base font-black font-mono ${text}`}>₹{fmt(data.openingBalance)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-emerald-600/20 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Receipts</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Receipts</div>
                     <div className={`text-base font-black font-mono ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>₹{fmt(data.totalReceipts)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-rose-600/20 border border-rose-500/30' : 'bg-rose-50 border border-rose-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Payments</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Payments</div>
                     <div className={`text-base font-black font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>₹{fmt(data.totalPayments)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-indigo-50 border border-indigo-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Closing</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Closing</div>
                     <div className={`text-base font-black font-mono ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>₹{fmt(data.closingBalance)}</div>
                   </div>
                 </motion.div>
@@ -201,7 +201,7 @@ const CashBook2: React.FC = () => {
                 </div>
                 <div>
                   <h3 className={`text-xs font-extrabold uppercase tracking-wide leading-none ${panelHdTx}`}>Cash Book</h3>
-                  <p className={`text-[10px] font-semibold uppercase mt-0.5 ${subtle}`}>{selectedDate.format('DD MMM YYYY')}</p>
+                  <p className={`fz-small font-semibold uppercase mt-0.5 ${subtle}`}>{selectedDate.format('DD MMM YYYY')}</p>
                 </div>
               </div>
             </div>
@@ -212,7 +212,7 @@ const CashBook2: React.FC = () => {
                   <div className="font-mono text-xs">
                     <div className={`text-center mb-3 border-b border-dashed pb-2 ${tblBdr}`}>
                       <div className={`text-sm font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className={`text-[11px] ${muted}`}>Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+                      <div className={`fz-caption ${muted}`}>Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
                     </div>
 
                     <div className={`border rounded-lg overflow-hidden ${tblBdr}`}>
@@ -251,9 +251,9 @@ const CashBook2: React.FC = () => {
                           {/* Balance summary */}
                           <tr className={`border-b ${tblBdr} ${summaryBg}`}>
                             <td colSpan={2} className={`py-1 px-3 border-r ${tblBdr}`} />
-                            <td className={`text-center py-1 px-3 border-r font-bold text-[10px] ${tblBdr} ${muted}`}>Cash In Hand</td>
-                            <td className={`text-center py-1 px-3 border-r font-bold text-[10px] ${tblBdr} ${muted}`}>Saving Balance</td>
-                            <td className={`text-center py-1 px-3 font-bold text-[10px] ${muted}`}>Clearing</td>
+                            <td className={`text-center py-1 px-3 border-r font-bold fz-small ${tblBdr} ${muted}`}>Cash In Hand</td>
+                            <td className={`text-center py-1 px-3 border-r font-bold fz-small ${tblBdr} ${muted}`}>Saving Balance</td>
+                            <td className={`text-center py-1 px-3 font-bold fz-small ${muted}`}>Clearing</td>
                           </tr>
                           {[
                             { label: 'Opening Balance :', v1: data.openingBalance, col: text },
@@ -294,11 +294,11 @@ const CashBook2: React.FC = () => {
         <div className={`px-4 py-2 flex items-center justify-between shrink-0 ${ftrBg}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-            <span className={`text-[10px] font-bold uppercase tracking-wide ${subtle}`}>Financial Ledger v2</span>
+            <span className={`fz-small font-bold uppercase tracking-wide ${subtle}`}>Financial Ledger v2</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-[10px] font-semibold uppercase ${subtle}`}>Index: {selectedDate.format('YYYYMMDD')}</span>
-            <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isDark ? 'bg-indigo-900/50 border border-indigo-700/40 text-indigo-400' : 'bg-indigo-50 border border-indigo-200 text-indigo-600'}`}>v5.2.0</div>
+            <span className={`fz-small font-semibold uppercase ${subtle}`}>Index: {selectedDate.format('YYYYMMDD')}</span>
+            <div className={`px-2 py-0.5 rounded fz-small font-bold uppercase ${isDark ? 'bg-indigo-900/50 border border-indigo-700/40 text-indigo-400' : 'bg-indigo-50 border border-indigo-200 text-indigo-600'}`}>v5.2.0</div>
           </div>
         </div>
       </div>

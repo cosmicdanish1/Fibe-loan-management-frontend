@@ -212,10 +212,10 @@ const SignatureScanning: React.FC = () => {
               <Fingerprint size={12} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[9px] font-black text-white tracking-wide leading-none uppercase">
+              <h1 className="fz-tiny font-black text-white tracking-wide leading-none uppercase">
                 Signature Scanning
               </h1>
-              <div className="flex items-center gap-1 mt-0.5 text-[6px] font-black text-indigo-300 uppercase tracking-wider leading-none">
+              <div className="flex items-center gap-1 mt-0.5 fz-nano font-black text-indigo-300 uppercase tracking-wider leading-none">
                 <Scan size={7} className="text-indigo-400" /> Terminal v3.2
               </div>
             </div>
@@ -225,7 +225,7 @@ const SignatureScanning: React.FC = () => {
             <button
               onClick={clearSignature}
               disabled={!data.memberId}
-              className="h-5 px-2 bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white rounded text-[7px] font-black transition-all flex items-center gap-1 active:scale-95 uppercase tracking-wide border border-white/20"
+              className="h-5 px-2 bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white rounded fz-micro font-black transition-all flex items-center gap-1 active:scale-95 uppercase tracking-wide border border-white/20"
               title="Delete saved signature from DB"
             >
               <RotateCcw size={10} /> Purge DB
@@ -233,7 +233,7 @@ const SignatureScanning: React.FC = () => {
             <div className="h-3 w-px bg-slate-700" />
             <button
               onClick={handleExit}
-              className="h-5 px-2 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded text-[7px] font-black transition-all flex items-center gap-1 active:scale-95 uppercase tracking-wide border border-rose-500/30"
+              className="h-5 px-2 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded fz-micro font-black transition-all flex items-center gap-1 active:scale-95 uppercase tracking-wide border border-rose-500/30"
             >
               <X size={10} /> Exit
             </button>
@@ -276,7 +276,7 @@ const SignatureScanning: React.FC = () => {
                   </p>
                 )}
                 {data.loading && (
-                  <p className="mt-0.5 text-[7px] text-slate-400 font-bold">Loading…</p>
+                  <p className="mt-0.5 fz-micro text-slate-400 font-bold">Loading…</p>
                 )}
               </div>
             </div>
@@ -288,11 +288,11 @@ const SignatureScanning: React.FC = () => {
               <div className="bg-gradient-to-r from-indigo-50 to-violet-50 px-2 py-1 border-b-2 border-indigo-200 flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <Scan size={11} className="text-indigo-700" />
-                  <span className="text-[7px] font-black text-indigo-900 uppercase tracking-wide">
+                  <span className="fz-micro font-black text-indigo-900 uppercase tracking-wide">
                     Signature Zone
                   </span>
                 </div>
-                <div className="px-1.5 py-0.5 bg-indigo-600 text-white rounded text-[6px] font-black uppercase border border-indigo-500">
+                <div className="px-1.5 py-0.5 bg-indigo-600 text-white rounded fz-nano font-black uppercase border border-indigo-500">
                   Active
                 </div>
               </div>
@@ -301,7 +301,7 @@ const SignatureScanning: React.FC = () => {
               <div className="flex border-b-2 border-indigo-100 bg-slate-50">
                 <button
                   onClick={() => setSigMode('draw')}
-                  className={`flex items-center gap-1 px-4 py-1.5 text-[7px] font-black uppercase tracking-wide border-b-2 transition-all ${
+                  className={`flex items-center gap-1 px-4 py-1.5 fz-micro font-black uppercase tracking-wide border-b-2 transition-all ${
                     sigMode === 'draw'
                       ? 'border-indigo-600 text-indigo-700 bg-white'
                       : 'border-transparent text-slate-400 hover:text-indigo-500 hover:bg-indigo-50/50'
@@ -311,7 +311,7 @@ const SignatureScanning: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setSigMode('upload')}
-                  className={`flex items-center gap-1 px-4 py-1.5 text-[7px] font-black uppercase tracking-wide border-b-2 transition-all ${
+                  className={`flex items-center gap-1 px-4 py-1.5 fz-micro font-black uppercase tracking-wide border-b-2 transition-all ${
                     sigMode === 'upload'
                       ? 'border-indigo-600 text-indigo-700 bg-white'
                       : 'border-transparent text-slate-400 hover:text-indigo-500 hover:bg-indigo-50/50'
@@ -340,7 +340,7 @@ const SignatureScanning: React.FC = () => {
                   {!hasDrawing && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
                       <PenTool size={22} className="text-indigo-200 mb-1" />
-                      <span className="text-[7px] font-black text-slate-300 uppercase tracking-widest">
+                      <span className="fz-micro font-black text-slate-300 uppercase tracking-widest">
                         Sign here with mouse or touch
                       </span>
                     </div>
@@ -352,14 +352,14 @@ const SignatureScanning: React.FC = () => {
                   <button
                     onClick={clearCanvas}
                     disabled={!hasDrawing}
-                    className="h-6 px-2.5 bg-white hover:bg-slate-100 disabled:opacity-30 rounded border-2 border-slate-300 text-[7px] font-black text-slate-600 flex items-center gap-1 uppercase tracking-wide transition-all"
+                    className="h-6 px-2.5 bg-white hover:bg-slate-100 disabled:opacity-30 rounded border-2 border-slate-300 fz-micro font-black text-slate-600 flex items-center gap-1 uppercase tracking-wide transition-all"
                   >
                     <RotateCcw size={8} /> Clear
                   </button>
                   <button
                     onClick={saveDrawing}
                     disabled={!hasDrawing || !data.memberId || data.loading}
-                    className="h-6 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded text-[7px] font-black flex items-center gap-1.5 uppercase tracking-wide transition-all shadow-sm"
+                    className="h-6 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded fz-micro font-black flex items-center gap-1.5 uppercase tracking-wide transition-all shadow-sm"
                   >
                     <Save size={8} />
                     {data.loading ? 'Saving…' : 'Save Signature'}
@@ -393,12 +393,12 @@ const SignatureScanning: React.FC = () => {
                     }`}
                   >
                     <UploadIcon size={24} className="text-indigo-300" />
-                    <p className="text-[8px] font-black text-indigo-900 uppercase tracking-wide">
+                    <p className="fz-mini font-black text-indigo-900 uppercase tracking-wide">
                       Click or drag file here
                     </p>
-                    <p className="text-[7px] text-slate-500">JPG / PNG · max 2 MB</p>
+                    <p className="fz-micro text-slate-500">JPG / PNG · max 2 MB</p>
                     {!data.memberId && (
-                      <p className="text-[7px] text-rose-500 font-black mt-1">
+                      <p className="fz-micro text-rose-500 font-black mt-1">
                         Search for a member first
                       </p>
                     )}
@@ -409,7 +409,7 @@ const SignatureScanning: React.FC = () => {
               {/* ── Save result toast — appears for both Draw and Upload, auto-dismisses 4 s ── */}
               {saveNotif && (
                 <div
-                  className={`mx-2 mt-1 mb-1 px-3 py-2 rounded-lg flex items-center justify-between gap-2 border-2 text-[7px] font-black uppercase tracking-wide shadow-sm ${
+                  className={`mx-2 mt-1 mb-1 px-3 py-2 rounded-lg flex items-center justify-between gap-2 border-2 fz-micro font-black uppercase tracking-wide shadow-sm ${
                     saveNotif.ok
                       ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
                       : 'bg-rose-50 border-rose-400 text-rose-800'
@@ -434,7 +434,7 @@ const SignatureScanning: React.FC = () => {
               {data.signatureData && (
                 <div className="border-t-2 border-indigo-100 px-3 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 flex items-center gap-3">
                   <div>
-                    <p className="text-[6px] font-black text-emerald-700 uppercase tracking-wide flex items-center gap-0.5 mb-1">
+                    <p className="fz-nano font-black text-emerald-700 uppercase tracking-wide flex items-center gap-0.5 mb-1">
                       <CheckCircle2 size={7} /> Saved Signature on Record
                     </p>
                     <img
@@ -443,7 +443,7 @@ const SignatureScanning: React.FC = () => {
                       className="max-h-[72px] max-w-[220px] object-contain bg-white border-2 border-emerald-200 rounded p-1 shadow-sm"
                     />
                   </div>
-                  <p className="text-[7px] text-emerald-600 font-black uppercase tracking-wide leading-tight ml-auto">
+                  <p className="fz-micro text-emerald-600 font-black uppercase tracking-wide leading-tight ml-auto">
                     Draw or upload<br />to replace
                   </p>
                 </div>
@@ -452,14 +452,14 @@ const SignatureScanning: React.FC = () => {
               {/* Zone footer */}
               <div className="bg-gradient-to-r from-slate-50 to-indigo-50 px-2 py-1 flex items-center justify-between border-t border-indigo-100">
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-indigo-600 font-black text-[6px] uppercase tracking-wide">
+                  <div className="flex items-center gap-1 text-indigo-600 font-black fz-nano uppercase tracking-wide">
                     <div className="w-1 h-1 rounded-full bg-indigo-600 animate-pulse" /> Live
                   </div>
                   {data.memberId && (
-                    <span className="text-[6px] font-black text-slate-400 uppercase tracking-wide">ID {data.memberId}</span>
+                    <span className="fz-nano font-black text-slate-400 uppercase tracking-wide">ID {data.memberId}</span>
                   )}
                 </div>
-                <p className="text-[6px] text-indigo-400 font-black tracking-wide uppercase">JPG / PNG · max 2 MB</p>
+                <p className="fz-nano text-indigo-400 font-black tracking-wide uppercase">JPG / PNG · max 2 MB</p>
               </div>
             </div>
 
@@ -470,7 +470,7 @@ const SignatureScanning: React.FC = () => {
         <div className="px-2 py-0.5 bg-white border-t-2 border-slate-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-1">
             <Building2 size={8} className="text-slate-400" />
-            <span className="text-[7px] font-black text-slate-500 uppercase tracking-wide">
+            <span className="fz-micro font-black text-slate-500 uppercase tracking-wide">
               Signature Capture
             </span>
           </div>

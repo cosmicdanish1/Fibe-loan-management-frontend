@@ -141,9 +141,9 @@ const ConsolidationOfDailyAccount: React.FC = () => {
           {/* Sub-entries */}
           {g.subEntries.map((e, i) => (
             <tr key={i} className={`border-b ${border} ${rowHover} ${i % 2 === 0 ? rowAlt : rowAlt2} transition-colors`}>
-              <td className={`px-3 py-0.5 text-right text-[11px] font-mono ${muted}`}>{e.mbNo}</td>
-              <td className={`px-3 py-0.5 text-[11px] ${isDark ? 'text-violet-300' : 'text-violet-600'} font-semibold`}>{e.memberName}</td>
-              <td className={`px-3 py-0.5 text-right text-[11px] font-semibold font-mono
+              <td className={`px-3 py-0.5 text-right fz-caption font-mono ${muted}`}>{e.mbNo}</td>
+              <td className={`px-3 py-0.5 fz-caption ${isDark ? 'text-violet-300' : 'text-violet-600'} font-semibold`}>{e.memberName}</td>
+              <td className={`px-3 py-0.5 text-right fz-caption font-semibold font-mono
                 ${label === 'RECEIPT'
                   ? (isDark ? 'text-emerald-300' : 'text-emerald-600')
                   : (isDark ? 'text-rose-300' : 'text-rose-600')}`}>
@@ -154,7 +154,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
           {/* Sub-total */}
           <tr className={`border-b-2 ${isDark ? 'border-slate-500' : 'border-slate-300'} ${totalRowBg}`}>
             <td colSpan={2} className={`px-3 py-1 ${muted}`} />
-            <td className={`px-3 py-1 text-right text-[11px] font-black font-mono border-t ${isDark ? 'border-slate-500 text-slate-200' : 'border-slate-300 text-slate-700'}`}>
+            <td className={`px-3 py-1 text-right fz-caption font-black font-mono border-t ${isDark ? 'border-slate-500 text-slate-200' : 'border-slate-300 text-slate-700'}`}>
               {fmt(g.total)}
             </td>
           </tr>
@@ -183,7 +183,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Consolidation Of Daily A/c</h1>
-              <div className={`flex items-center gap-1.5 mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${muted}`}>
+              <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
                 <ShieldCheck size={10} className="text-violet-400" /> Account Head Summary
               </div>
             </div>
@@ -215,7 +215,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
               className={`border rounded-xl overflow-hidden ${panel}`}>
               <div className={`border-b px-3 py-2 flex items-center justify-between ${panelHead}`}>
-                <h3 className={`text-[11px] font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${muted}`}>
+                <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${muted}`}>
                   <Settings size={11} className="text-violet-400" /> Parameters
                 </h3>
                 <Tooltip title="Reload">
@@ -224,7 +224,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
               </div>
               <div className="p-3 space-y-3">
                 <div className="space-y-1">
-                  <label className={`text-[10px] font-bold uppercase tracking-tight ${muted}`}>Date</label>
+                  <label className={`fz-small font-bold uppercase tracking-tight ${muted}`}>Date</label>
                   <DatePicker className="w-full h-8 text-xs font-semibold" value={selectedDate}
                     onChange={v => v && setSelectedDate(v)} format="DD-MMM-YYYY" />
                 </div>
@@ -242,25 +242,25 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col gap-2">
                   <div className={`border rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.openingBalance)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-emerald-600/20 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Receipts</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Receipts</div>
                     <div className={`text-sm font-black font-mono ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceipts)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-700/50 border border-slate-600' : 'bg-slate-100 border border-slate-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${muted}`}>Cash Total</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${muted}`}>Cash Total</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.totalCash)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-rose-600/20 border border-rose-500/30' : 'bg-rose-50 border border-rose-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Payments</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Payments</div>
                     <div className={`text-sm font-black font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPayments)}</div>
                   </div>
                   <div className={`rounded-lg p-3 border ${data.closingBalance >= 0
                     ? (isDark ? 'bg-violet-600/20 border-violet-500/30' : 'bg-violet-50 border-violet-200')
                     : (isDark ? 'bg-rose-900/30 border-rose-700/40' : 'bg-rose-50 border-rose-200')}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>Closing</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>Closing</div>
                     <div className={`text-sm font-black font-mono ${data.closingBalance >= 0
                       ? (isDark ? 'text-violet-300' : 'text-violet-700')
                       : (isDark ? 'text-rose-300' : 'text-rose-700')}`}>
@@ -268,7 +268,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                     </div>
                   </div>
                   <div className={`border rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${muted}`}>Heads</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Heads</div>
                     <div className={`text-lg font-black font-mono ${text}`}>{data.totalHeads}</div>
                   </div>
                 </motion.div>
@@ -283,7 +283,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                 Consolidation — {selectedDate.format('DD-MMM-YYYY')}
               </span>
               {data && (
-                <span className={`text-[10px] font-mono ${muted}`}>{data.totalHeads} heads</span>
+                <span className={`fz-small font-mono ${muted}`}>{data.totalHeads} heads</span>
               )}
             </div>
 
@@ -294,12 +294,12 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                     {/* Company header */}
                     <div className={`text-center mb-4 pb-3 border-b border-dashed ${border}`}>
                       <div className={`text-sm font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className={`text-[11px] ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                      <div className={`text-[10px] mt-0.5 ${muted}`}>Consolidation Of Daily Accounts for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
+                      <div className={`fz-caption ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
+                      <div className={`fz-small mt-0.5 ${muted}`}>Consolidation Of Daily Accounts for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
                     </div>
 
                     {/* Col headers */}
-                    <table className={`w-full text-[11px] font-mono border-collapse border ${border} mb-0`}>
+                    <table className={`w-full fz-caption font-mono border-collapse border ${border} mb-0`}>
                       <thead>
                         <tr className={headRowBg}>
                           <th className={`px-3 py-1.5 text-left font-black border-b ${border} w-24 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Code</th>
@@ -332,7 +332,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                       </tbody>
                     </table>
 
-                    <div className={`mt-3 text-[10px] italic ${muted}`}>* Report As Per Data Available ..</div>
+                    <div className={`mt-3 fz-small italic ${muted}`}>* Report As Per Data Available ..</div>
                   </div>
                 ) : !loading ? (
                   <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -354,11 +354,11 @@ const ConsolidationOfDailyAccount: React.FC = () => {
         <div className={`border-t px-4 py-1.5 flex items-center justify-between shrink-0 ${panel}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />
-            <span className={`text-[10px] font-bold uppercase tracking-wide ${muted}`}>Consolidation · Daily A/c Summary</span>
+            <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Consolidation · Daily A/c Summary</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-[10px] font-mono ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{selectedDate.format('YYYYMMDD')}</span>
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+            <span className={`fz-small font-mono ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{selectedDate.format('YYYYMMDD')}</span>
+            <span className={`fz-small font-bold px-1.5 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
               {isDark ? '◐ DARK' : '◑ LIGHT'}
             </span>
           </div>

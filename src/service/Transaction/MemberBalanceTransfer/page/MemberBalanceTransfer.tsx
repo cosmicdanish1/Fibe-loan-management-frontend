@@ -126,14 +126,14 @@ const MemberBalanceTransfer: React.FC = () => {
   const headOptions = heads.map(h => ({ value: h.code, label: `${h.code} - ${h.name}` }));
 
   const columns = [
-    { title: 'SrNo', dataIndex: 'srNo', width: 50, render: (v: number) => <span className="text-[10px] text-slate-500">{v}</span> },
-    { title: 'MbNo', dataIndex: 'mbno', width: 100, render: (v: string) => <span className="text-[10px] font-mono font-bold text-indigo-700">{v}</span> },
-    { title: 'Name', dataIndex: 'name', render: (v: string) => <span className="text-[10px] font-semibold text-slate-800">{v}</span> },
-    { title: 'DB Head Bal', dataIndex: 'dbHeadBal', width: 110, align: 'right' as const, render: (v: number) => <span className="text-[10px] font-mono text-slate-600">{fmt(v)}</span> },
-    { title: 'CR Head Bal', dataIndex: 'crHeadBal', width: 110, align: 'right' as const, render: (v: number) => <span className="text-[10px] font-mono text-slate-600">{fmt(v)}</span> },
-    { title: 'DB Amt', dataIndex: 'dbAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="text-[10px] font-mono font-bold text-rose-600">{fmt(v)}</span> },
-    { title: 'CR Amt', dataIndex: 'crAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="text-[10px] font-mono font-bold text-emerald-600">{fmt(v)}</span> },
-    { title: 'Ex.CR Amt', dataIndex: 'exCrAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="text-[10px] font-mono text-amber-600">{v > 0 ? fmt(v) : ''}</span> },
+    { title: 'SrNo', dataIndex: 'srNo', width: 50, render: (v: number) => <span className="fz-small text-slate-500">{v}</span> },
+    { title: 'MbNo', dataIndex: 'mbno', width: 100, render: (v: string) => <span className="fz-small font-mono font-bold text-indigo-700">{v}</span> },
+    { title: 'Name', dataIndex: 'name', render: (v: string) => <span className="fz-small font-semibold text-slate-800">{v}</span> },
+    { title: 'DB Head Bal', dataIndex: 'dbHeadBal', width: 110, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono text-slate-600">{fmt(v)}</span> },
+    { title: 'CR Head Bal', dataIndex: 'crHeadBal', width: 110, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono text-slate-600">{fmt(v)}</span> },
+    { title: 'DB Amt', dataIndex: 'dbAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono font-bold text-rose-600">{fmt(v)}</span> },
+    { title: 'CR Amt', dataIndex: 'crAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono font-bold text-emerald-600">{fmt(v)}</span> },
+    { title: 'Ex.CR Amt', dataIndex: 'exCrAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono text-amber-600">{v > 0 ? fmt(v) : ''}</span> },
   ];
 
   return (
@@ -145,25 +145,25 @@ const MemberBalanceTransfer: React.FC = () => {
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-lg bg-indigo-600"><ArrowRightLeft size={13} className="text-white" /></div>
             <div>
-              <h1 className="text-[11px] font-black text-white uppercase tracking-wider leading-none">Member Balance Transfer</h1>
-              <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5">
+              <h1 className="fz-caption font-black text-white uppercase tracking-wider leading-none">Member Balance Transfer</h1>
+              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">
                 <ShieldCheck size={7} className="inline text-indigo-400" /> Bulk Head-to-Head Transfer
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <button onClick={handleCancel} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+            <button onClick={handleCancel} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
               <RotateCcw size={11} /> Cancel
             </button>
             <button onClick={handleGenerate} disabled={loading}
-              className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-emerald-400 shadow-lg uppercase tracking-wide disabled:opacity-50">
+              className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-emerald-400 shadow-lg uppercase tracking-wide disabled:opacity-50">
               <Zap size={11} /> {loading ? 'Generating...' : 'Generate Transaction'}
             </button>
             <button onClick={handlePost} disabled={posting || entries.length === 0}
-              className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide disabled:opacity-50">
+              className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide disabled:opacity-50">
               <Send size={11} /> {posting ? 'Posting...' : 'Post Transaction'}
             </button>
-            <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+            <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
               <X size={11} /> Exit
             </button>
           </div>
@@ -173,30 +173,30 @@ const MemberBalanceTransfer: React.FC = () => {
         <div className="bg-slate-50 border-b border-slate-200 px-3 py-2">
           <div className="grid grid-cols-12 gap-2 items-end">
             <div className="col-span-3">
-              <label className="block text-[8px] font-black text-purple-700 uppercase tracking-wider mb-0.5">Debit Head</label>
+              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Debit Head</label>
               <Select showSearch value={debitHead} onChange={setDebitHead} placeholder="Select..." className="w-full" style={{ height: 28 }}
                 optionFilterProp="label" options={headOptions} />
             </div>
             <div className="col-span-3">
-              <label className="block text-[8px] font-black text-purple-700 uppercase tracking-wider mb-0.5">Credit Head</label>
+              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Credit Head</label>
               <Select showSearch value={creditHead} onChange={setCreditHead} placeholder="Select..." className="w-full" style={{ height: 28 }}
                 optionFilterProp="label" options={headOptions} />
             </div>
             <div className="col-span-1">
-              <label className="block text-[8px] font-black text-purple-700 uppercase tracking-wider mb-0.5">Credit Limit</label>
+              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Credit Limit</label>
               <Input value={creditLimit} onChange={e => setCreditLimit(e.target.value.replace(/[^0-9.]/g, ''))}
-                placeholder="0" className="h-7 text-[11px] font-bold text-center" />
+                placeholder="0" className="h-7 fz-caption font-bold text-center" />
             </div>
             <div className="col-span-3">
-              <label className="block text-[8px] font-black text-purple-700 uppercase tracking-wider mb-0.5">Excess Amt CR Head</label>
+              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Excess Amt CR Head</label>
               <Select showSearch value={excessHead} onChange={setExcessHead} placeholder="Select..." className="w-full" style={{ height: 28 }}
                 optionFilterProp="label" options={headOptions} allowClear />
             </div>
             <div className="col-span-2">
-              <label className="block text-[8px] font-black text-purple-700 uppercase tracking-wider mb-0.5">Balance As On</label>
+              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Balance As On</label>
               <DatePicker value={balanceAsOn ? dayjs(balanceAsOn) : null}
                 onChange={d => setBalanceAsOn(d ? d.format('YYYY-MM-DD') : '')}
-                format="DD-MMM-YYYY" className="w-full h-7 text-[11px]" />
+                format="DD-MMM-YYYY" className="w-full h-7 fz-caption" />
             </div>
           </div>
         </div>
@@ -204,35 +204,35 @@ const MemberBalanceTransfer: React.FC = () => {
         {/* Member List label */}
         <div className="px-3 py-0.5 bg-white border-b border-slate-200 flex items-center gap-1.5">
           <Building2 size={9} className="text-slate-400" />
-          <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member List</span>
-          {entries.length > 0 && <span className="text-[8px] font-bold text-indigo-500">{entries.length} members</span>}
+          <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member List</span>
+          {entries.length > 0 && <span className="fz-mini font-bold text-indigo-500">{entries.length} members</span>}
         </div>
 
         {/* Data Grid */}
         <div className="flex-1 overflow-auto">
           <Table columns={columns} dataSource={entries} pagination={false} size="small" rowKey="srNo"
             scroll={{ y: 'calc(100vh - 250px)' }}
-            locale={{ emptyText: <span className="text-[10px] text-slate-400 py-8 block text-center font-bold uppercase">Select heads and click Generate Transaction</span> }}
+            locale={{ emptyText: <span className="fz-small text-slate-400 py-8 block text-center font-bold uppercase">Select heads and click Generate Transaction</span> }}
           />
         </div>
 
         {/* Footer Totals */}
         <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center gap-6 shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black text-slate-500 uppercase">Total Debit</span>
-            <span className="text-[12px] font-black text-rose-600 font-mono">{fmt(totals.totalDebit)}</span>
+            <span className="fz-tiny font-black text-slate-500 uppercase">Total Debit</span>
+            <span className="fz-label font-black text-rose-600 font-mono">{fmt(totals.totalDebit)}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black text-slate-500 uppercase">Total Credit</span>
-            <span className="text-[12px] font-black text-emerald-600 font-mono">{fmt(totals.totalCredit)}</span>
+            <span className="fz-tiny font-black text-slate-500 uppercase">Total Credit</span>
+            <span className="fz-label font-black text-emerald-600 font-mono">{fmt(totals.totalCredit)}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black text-slate-500 uppercase">Exc Credit</span>
-            <span className="text-[12px] font-black text-amber-600 font-mono">{fmt(totals.excCredit)}</span>
+            <span className="fz-tiny font-black text-slate-500 uppercase">Exc Credit</span>
+            <span className="fz-label font-black text-amber-600 font-mono">{fmt(totals.excCredit)}</span>
           </div>
           <div className="ml-auto flex items-center gap-1 text-slate-400">
             <Calendar size={9} />
-            <span className="text-[8px] font-black uppercase">{dayjs().format('DD-MMM-YY')}</span>
+            <span className="fz-mini font-black uppercase">{dayjs().format('DD-MMM-YY')}</span>
           </div>
         </div>
       </div>

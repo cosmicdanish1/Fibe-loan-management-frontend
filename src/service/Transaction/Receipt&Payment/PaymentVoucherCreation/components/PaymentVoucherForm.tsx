@@ -116,19 +116,19 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
 
                 {/* ── Title bar ── */}
                 <div className="bg-gray-100 border-b border-gray-300 px-3 py-1.5 flex items-center justify-between shrink-0">
-                    <span className="text-[13px] font-semibold text-gray-700">Voucher Creation</span>
+                    <span className="fz-body font-semibold text-gray-700">Voucher Creation</span>
                     <div className="flex items-center gap-1.5">
                         <button onClick={handleClear}
-                            className="flex items-center gap-1 px-3 py-1 text-[11px] bg-white border border-gray-300 hover:bg-gray-50 rounded text-gray-600 transition-colors">
+                            className="flex items-center gap-1 px-3 py-1 fz-caption bg-white border border-gray-300 hover:bg-gray-50 rounded text-gray-600 transition-colors">
                             <RotateCcw size={11} /> Clear
                         </button>
                         <button onClick={handleSave} disabled={isLoading}
-                            className="flex items-center gap-1 px-3 py-1 text-[11px] bg-blue-700 hover:bg-blue-800 text-white border border-blue-800 rounded transition-colors disabled:opacity-60">
+                            className="flex items-center gap-1 px-3 py-1 fz-caption bg-blue-700 hover:bg-blue-800 text-white border border-blue-800 rounded transition-colors disabled:opacity-60">
                             {isLoading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
                             {isLoading ? 'Saving…' : 'Save'}
                         </button>
                         <button onClick={handleExit}
-                            className="flex items-center gap-1 px-3 py-1 text-[11px] bg-white border border-gray-300 hover:bg-red-50 hover:border-red-400 hover:text-red-600 rounded text-gray-600 transition-colors">
+                            className="flex items-center gap-1 px-3 py-1 fz-caption bg-white border border-gray-300 hover:bg-red-50 hover:border-red-400 hover:text-red-600 rounded text-gray-600 transition-colors">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -139,13 +139,13 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
 
                     {/* Saved success banner */}
                     {lastSaved && (
-                        <div className="mb-2 p-2 bg-green-50 border border-green-300 rounded text-[11px] text-green-700 flex items-center justify-between">
+                        <div className="mb-2 p-2 bg-green-50 border border-green-300 rounded fz-caption text-green-700 flex items-center justify-between">
                             <span>
                                 Saved — Voucher <strong>{lastSaved.voucherNo}</strong> &nbsp;|&nbsp;
                                 Member <strong>{lastSaved.memberNo}</strong> &nbsp;|&nbsp;
                                 Amount <strong>₹{lastSaved.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
                             </span>
-                            <button onClick={handleClear} className="text-green-600 hover:text-green-800 flex items-center gap-0.5 text-[10px]">
+                            <button onClick={handleClear} className="text-green-600 hover:text-green-800 flex items-center gap-0.5 fz-small">
                                 <RotateCcw size={9} /> New
                             </button>
                         </div>
@@ -156,7 +156,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                         <div className="flex items-center gap-6 flex-wrap">
                             {/* Voucher No */}
                             <div className="flex items-center gap-2">
-                                <label className="text-[12px] text-gray-600 whitespace-nowrap">Voucher No.</label>
+                                <label className="fz-label text-gray-600 whitespace-nowrap">Voucher No.</label>
                                 <Input
                                     value={formData.voucherNo}
                                     onChange={e => updateField('voucherNo', e.target.value)}
@@ -168,7 +168,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
 
                             {/* Trans Date */}
                             <div className="flex items-center gap-2">
-                                <label className="text-[12px] text-gray-600 whitespace-nowrap">Trans Date :</label>
+                                <label className="fz-label text-gray-600 whitespace-nowrap">Trans Date :</label>
                                 <DatePicker
                                     value={formData.transDate ? dayjs(formData.transDate) : null}
                                     onChange={d => updateField('transDate', d ? d.format('YYYY-MM-DD') : '')}
@@ -181,7 +181,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
 
                             {/* Pay From (cash / bank account credited) */}
                             <div className="flex items-center gap-2">
-                                <label className="text-[12px] text-gray-600 whitespace-nowrap">Pay From :</label>
+                                <label className="fz-label text-gray-600 whitespace-nowrap">Pay From :</label>
                                 <Select
                                     value={formData.payFromCode || 'A1001'}
                                     onChange={val => updateField('payFromCode', val)}
@@ -199,7 +199,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                                     { value: 'payment', label: 'Payment' },
                                     { value: 'general', label: 'General Payment' },
                                 ].map(opt => (
-                                    <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer text-[12px] text-gray-700 select-none">
+                                    <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer fz-label text-gray-700 select-none">
                                         <input
                                             type="radio"
                                             name="paymentType"
@@ -221,7 +221,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                             {/* Member No */}
                             <div>
                                 <div className="flex items-center gap-2 mb-0.5">
-                                    <label className="text-[12px] text-gray-600 whitespace-nowrap">
+                                    <label className="fz-label text-gray-600 whitespace-nowrap">
                                         Member No. <span className="text-red-500">*</span>
                                     </label>
                                     <div className="flex gap-1">
@@ -238,15 +238,15 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                                         </button>
                                     </div>
                                 </div>
-                                <p className="text-[10px] text-gray-400">(For List Press PgUp Key)</p>
+                                <p className="fz-small text-gray-400">(For List Press PgUp Key)</p>
                                 {formData.memberName && (
-                                    <p className="text-[11px] font-bold text-blue-700 mt-0.5">{formData.memberName}</p>
+                                    <p className="fz-caption font-bold text-blue-700 mt-0.5">{formData.memberName}</p>
                                 )}
                             </div>
 
                             {/* Office No */}
                             <div className="flex items-center gap-2">
-                                <label className="text-[12px] text-gray-600 whitespace-nowrap">Office No</label>
+                                <label className="fz-label text-gray-600 whitespace-nowrap">Office No</label>
                                 <Input
                                     value={formData.officeNo}
                                     onChange={e => updateField('officeNo', e.target.value)}
@@ -259,12 +259,12 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
 
                     {/* ── Total Amount ── */}
                     <div className="flex items-center justify-end mb-1 pr-1">
-                        <span className="text-[12px] text-gray-600 mr-2">Total Amount</span>
-                        <span className="text-[13px] font-black text-blue-800 min-w-[80px] text-right">
+                        <span className="fz-label text-gray-600 mr-2">Total Amount</span>
+                        <span className="fz-body font-black text-blue-800 min-w-[80px] text-right">
                             {totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </span>
                         <button onClick={addRow}
-                            className="ml-4 flex items-center gap-1 px-2 py-0.5 text-[11px] bg-white border border-gray-300 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 rounded transition-colors text-gray-600">
+                            className="ml-4 flex items-center gap-1 px-2 py-0.5 fz-caption bg-white border border-gray-300 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 rounded transition-colors text-gray-600">
                             <Plus size={11} /> Add Row
                         </button>
                     </div>
@@ -279,18 +279,18 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                             className="pvc-table"
                             rowKey="id"
                             scroll={{ y: 180 }}
-                            locale={{ emptyText: <span className="text-[11px] text-gray-400 py-6 block text-center">No rows — click Add Row</span> }}
+                            locale={{ emptyText: <span className="fz-caption text-gray-400 py-6 block text-center">No rows — click Add Row</span> }}
                         />
                     </div>
 
                     {/* ── Narration ── */}
                     <div className="flex items-start gap-2">
-                        <label className="text-[12px] text-gray-600 whitespace-nowrap pt-1">Narration</label>
+                        <label className="fz-label text-gray-600 whitespace-nowrap pt-1">Narration</label>
                         <TextArea
                             value={formData.narration}
                             onChange={e => updateField('narration', e.target.value)}
                             rows={3}
-                            className="text-[11px] resize-none border-gray-300"
+                            className="fz-caption resize-none border-gray-300"
                             style={{ flex: 1 }}
                         />
                     </div>
@@ -299,11 +299,11 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
 
                 {/* ── Footer status bar ── */}
                 <div className="px-3 py-1 bg-gray-100 border-t border-gray-300 flex items-center justify-between shrink-0">
-                    <span className="text-[11px] text-gray-500">
+                    <span className="fz-caption text-gray-500">
                         Payment Voucher
                         {formData.memberName && <> &nbsp;|&nbsp; <span className="text-blue-700 font-semibold">{formData.memberName}</span></>}
                     </span>
-                    <span className="text-[11px] text-gray-500">{dayjs().format('DD-MMM-YYYY')}</span>
+                    <span className="fz-caption text-gray-500">{dayjs().format('DD-MMM-YYYY')}</span>
                 </div>
 
             </div>

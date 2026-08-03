@@ -1,6 +1,6 @@
 {
   "name": "electron-react-ts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/main/main.js",
   "scripts": {
     "predev": "node scripts/ensure-dist.js",

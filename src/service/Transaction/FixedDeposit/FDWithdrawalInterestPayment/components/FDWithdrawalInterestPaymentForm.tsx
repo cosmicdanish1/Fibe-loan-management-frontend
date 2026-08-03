@@ -11,9 +11,9 @@ import { FDWithdrawalHookReturn } from '../interface/FDWithdrawalInterestPayment
 const { Option } = Select;
 const { TextArea } = Input;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
-const roInputCls = "h-7 text-[11px] font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
+const roInputCls = "h-7 fz-caption font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
 
 const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
     formData,
@@ -53,34 +53,34 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
 
     const columns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">AcNo</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">AcNo</span>,
             dataIndex: 'acNo', key: 'acNo', width: '16%',
-            render: (t: string) => <span className="text-[10px] font-mono font-bold text-slate-700">{t}</span>,
+            render: (t: string) => <span className="fz-small font-mono font-bold text-slate-700">{t}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">CertNo</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">CertNo</span>,
             dataIndex: 'certNo', key: 'certNo', width: '16%',
-            render: (t: string) => <span className="text-[10px] font-mono font-bold text-indigo-700">{t}</span>,
+            render: (t: string) => <span className="fz-small font-mono font-bold text-indigo-700">{t}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Amount</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Amount</span>,
             dataIndex: 'amount', key: 'amount', width: '18%', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-bold text-slate-700">₹{Number(v || 0).toFixed(2)}</span>,
+            render: (v: number) => <span className="fz-small font-bold text-slate-700">₹{Number(v || 0).toFixed(2)}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Rate</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Rate</span>,
             dataIndex: 'rate', key: 'rate', width: '12%', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-bold text-indigo-600">{v}%</span>,
+            render: (v: number) => <span className="fz-small font-bold text-indigo-600">{v}%</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Last Pay Date</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Last Pay Date</span>,
             dataIndex: 'lastPayDate', key: 'lastPayDate', width: '22%',
-            render: (t: string) => <span className="text-[10px] font-mono text-slate-600">{t}</span>,
+            render: (t: string) => <span className="fz-small font-mono text-slate-600">{t}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Interest</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Interest</span>,
             dataIndex: 'interest', key: 'interest', width: '16%', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-black text-emerald-600">₹{Number(v || 0).toFixed(2)}</span>,
+            render: (v: number) => <span className="fz-small font-black text-emerald-600">₹{Number(v || 0).toFixed(2)}</span>,
         },
     ];
 
@@ -95,8 +95,8 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                             <ArrowRightLeft size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">FD Withdrawal / Int. Payment</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">FD Withdrawal / Int. Payment</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> Fixed Deposit Settlement
                             </p>
                         </div>
@@ -106,7 +106,7 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                         <div className="flex items-center bg-white/10 rounded-lg p-0.5 border border-white/20 mr-2">
                             {(['interest', 'payment'] as const).map(opt => (
                                 <button key={opt} onClick={() => updateField('fdOption', opt)}
-                                    className={`h-6 px-3 rounded-md text-[8px] font-black uppercase tracking-wide transition-all ${
+                                    className={`h-6 px-3 rounded-md fz-mini font-black uppercase tracking-wide transition-all ${
                                         formData.fdOption === opt ? 'bg-white text-slate-800 shadow' : 'text-white/70 hover:text-white'
                                     }`}>
                                     {opt === 'interest' ? 'FD Interest' : 'FD Payment'}
@@ -120,19 +120,19 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                                     (window as any).electronAPI.openNewWindow(`/masters/signature-scanning?member=${formData.memberNo}`);
                                 }
                             }}
-                            className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                            className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             Sign
                         </button>
-                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Clear
                         </button>
                         <button onClick={handleSave} disabled={loading}
-                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}>
                             {loading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
                             {loading ? 'Saving…' : 'Save'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -150,7 +150,7 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
                                         <Hash size={11} className="text-slate-400" />
-                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Voucher Scope</span>
+                                        <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Voucher Scope</span>
                                     </div>
                                     <DatePicker value={formData.transDate ? dayjs(formData.transDate) : null}
                                         onChange={d => updateField('transDate', d ? d.format('YYYY-MM-DD') : '')}
@@ -199,7 +199,7 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                     <FileText size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">FD Details</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">FD Details</span>
                                 </div>
                                 <div className="p-3 grid grid-cols-2 gap-x-4 gap-y-1">
                                     {detailRows.map(([label, value, field]) => (
@@ -217,16 +217,16 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <IndianRupee size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Mode of Payment</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Mode of Payment</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
-                                        <span className="text-[8px] font-black text-indigo-500 uppercase">Actual Amt</span>
-                                        <span className="text-[9px] font-black text-indigo-700">₹{actualAmount.toFixed(2)}</span>
+                                        <span className="fz-mini font-black text-indigo-500 uppercase">Actual Amt</span>
+                                        <span className="fz-tiny font-black text-indigo-700">₹{actualAmount.toFixed(2)}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">
-                                        <span className="text-[8px] font-black text-emerald-500 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
-                                        <span className="text-[9px] font-black text-emerald-700">₹{bankBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="fz-mini font-black text-emerald-500 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
+                                        <span className="fz-tiny font-black text-emerald-700">₹{bankBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
                             </div>
@@ -234,7 +234,7 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                                 <div className="flex gap-2">
                                     {['cash', 'bank'].map(mode => (
                                         <button key={mode} onClick={() => updateField('paymentMode', mode)}
-                                            className={`h-7 px-4 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all border ${
+                                            className={`h-7 px-4 rounded-lg fz-tiny font-black uppercase tracking-wide transition-all border ${
                                                 formData.paymentMode === mode
                                                     ? mode === 'cash' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-blue-600 text-white border-blue-500'
                                                     : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -246,7 +246,7 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
 
                                 {formData.paymentMode === 'bank' && (
                                     <div className="mt-3 pt-3 border-t border-slate-100">
-                                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">Cheque Details</p>
+                                        <p className="fz-mini font-black text-slate-500 uppercase tracking-widest mb-2">Cheque Details</p>
                                         <div className="grid grid-cols-3 gap-x-4">
                                             <div>
                                                 <label className={labelCls}>Date</label>
@@ -254,7 +254,7 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                                                     value={formData.chequeDate ? dayjs(formData.chequeDate) : null}
                                                     onChange={date => updateField('chequeDate', date)}
                                                     format="DD-MMM-YYYY"
-                                                    className="w-full h-7 text-[11px] fdw2-dp" />
+                                                    className="w-full h-7 fz-caption fdw2-dp" />
                                             </div>
                                             <div>
                                                 <label className={labelCls}>Cheque No</label>
@@ -281,9 +281,9 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Landmark size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Deposit Control Ledger</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Deposit Control Ledger</span>
                                 </div>
-                                <span className="text-[8px] font-black text-slate-400 uppercase">{data.length} record(s)</span>
+                                <span className="fz-mini font-black text-slate-400 uppercase">{data.length} record(s)</span>
                             </div>
                             <Table
                                 columns={columns}
@@ -294,7 +294,7 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                                 className="fdw2-table"
                                 scroll={{ y: 180 }}
                                 loading={loading}
-                                locale={{ emptyText: <span className="text-[9px] text-slate-400 py-4 block text-center font-bold uppercase">No FD records loaded</span> }}
+                                locale={{ emptyText: <span className="fz-tiny text-slate-400 py-4 block text-center font-bold uppercase">No FD records loaded</span> }}
                             />
                         </div>
 
@@ -302,12 +302,12 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <FileText size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Narration</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Narration</span>
                             </div>
                             <div className="p-3">
                                 <TextArea value={formData.narration} onChange={e => updateField('narration', e.target.value)}
                                     placeholder="Enter narration…" rows={2}
-                                    className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none" />
+                                    className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
                             </div>
                         </div>
 
@@ -318,23 +318,23 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">FD Withdrawal / Int. Payment</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">FD Withdrawal / Int. Payment</span>
                         {formData.memberNo && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">Member: {formData.memberNo}</span>
+                                <span className="fz-mini font-black text-indigo-500">Member: {formData.memberNo}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className={`text-[8px] font-black uppercase tracking-wide px-2 py-0.5 rounded ${
+                        <span className={`fz-mini font-black uppercase tracking-wide px-2 py-0.5 rounded ${
                             formData.fdOption === 'interest' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'
                         }`}>
                             {formData.fdOption === 'interest' ? 'Interest Payout' : 'FD Payment'}
                         </span>
                         <div className="flex items-center gap-1 text-indigo-500">
                             <Calendar size={9} />
-                            <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                            <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                         </div>
                     </div>
                 </div>

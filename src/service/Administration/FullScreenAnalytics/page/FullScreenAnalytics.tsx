@@ -150,14 +150,14 @@ const FullScreenAnalytics: React.FC = () => {
 
       <div className="relative z-10 flex justify-between items-start">
         <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
+          <p className="fz-small font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
           <h3 className="text-3xl font-black text-slate-800 tracking-tight">{value}</h3>
-          {subtitle && <p className="text-[10px] font-bold text-slate-400 mt-1">{subtitle}</p>}
+          {subtitle && <p className="fz-small font-bold text-slate-400 mt-1">{subtitle}</p>}
 
           {trend !== undefined && (
             <div className={`flex items-center gap-1 mt-3 px-2 py-1 rounded w-fit ${trend >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
               {trend >= 0 ? <TrendingUp size={10} /> : <TrendingUp size={10} className="rotate-180" />}
-              <span className="text-[9px] font-black">{Math.abs(trend)}%</span>
+              <span className="fz-tiny font-black">{Math.abs(trend)}%</span>
             </div>
           )}
         </div>
@@ -228,7 +228,7 @@ const FullScreenAnalytics: React.FC = () => {
             </div>
             <div>
               <h1 className="text-sm font-black uppercase tracking-tight leading-none">Live Ops Center</h1>
-              <div className="flex items-center gap-2 mt-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+              <div className="flex items-center gap-2 mt-1 fz-tiny font-bold text-slate-400 uppercase tracking-widest leading-none">
                 <Globe size={10} className="text-indigo-400" />
                 <span>Connected</span>
                 <span className="w-1 h-1 bg-slate-600 rounded-full mx-1"></span>
@@ -243,7 +243,7 @@ const FullScreenAnalytics: React.FC = () => {
                 <button
                   key={v}
                   onClick={() => setActiveView(v.toLowerCase())}
-                  className={`px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded transition-all ${activeView === v.toLowerCase()
+                  className={`px-3 py-1 fz-tiny font-bold uppercase tracking-widest rounded transition-all ${activeView === v.toLowerCase()
                       ? 'bg-white text-indigo-900 shadow-sm'
                       : 'text-slate-400 hover:text-white'
                     }`}
@@ -381,7 +381,7 @@ const FullScreenAnalytics: React.FC = () => {
                             verticalAlign="bottom"
                             height={36}
                             iconType="circle"
-                            formatter={(value) => <span className="text-[10px] font-bold text-slate-500 uppercase">{value}</span>}
+                            formatter={(value) => <span className="fz-small font-bold text-slate-500 uppercase">{value}</span>}
                           />
                         </PieChart>
                       </ResponsiveContainer>
@@ -430,12 +430,12 @@ const FullScreenAnalytics: React.FC = () => {
                           </div>
                           <div>
                             <h4 className="text-xs font-black text-slate-700 uppercase">{svc}</h4>
-                            <p className="text-[10px] font-bold text-slate-400">Uptime: 99.9%</p>
+                            <p className="fz-small font-bold text-slate-400">Uptime: 99.9%</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
                           <CheckCircle2 size={12} />
-                          <span className="text-[10px] font-black uppercase">Healthy</span>
+                          <span className="fz-small font-black uppercase">Healthy</span>
                         </div>
                       </div>
                     ))}

@@ -229,7 +229,7 @@ export const UserProfileMenu: React.FC = () => {
         >
           <Bell className="w-5 h-5" />
           {unread > 0 && (
-            <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+            <span className="absolute top-0 right-0 bg-red-500 text-white fz-small font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
               {unread > 9 ? '9+' : unread}
             </span>
           )}
@@ -243,9 +243,9 @@ export const UserProfileMenu: React.FC = () => {
             <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-slate-900 to-indigo-900">
               <div className="flex items-center gap-1.5">
                 <Bell size={11} className="text-indigo-300" />
-                <span className="text-[10px] font-black text-white uppercase tracking-[0.18em]">Alerts</span>
+                <span className="fz-small font-black text-white uppercase tracking-[0.18em]">Alerts</span>
                 {unread > 0 && (
-                  <span className="bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                  <span className="bg-red-500 text-white fz-mini font-black px-1.5 py-0.5 rounded-full leading-none">
                     {unread}
                   </span>
                 )}
@@ -261,7 +261,7 @@ export const UserProfileMenu: React.FC = () => {
                 {unread > 0 && (
                   <button
                     onClick={markAll}
-                    className="text-[8px] font-black text-slate-400 hover:text-white transition-colors uppercase tracking-wider px-1.5 py-1 hover:bg-white/10 rounded"
+                    className="fz-mini font-black text-slate-400 hover:text-white transition-colors uppercase tracking-wider px-1.5 py-1 hover:bg-white/10 rounded"
                   >
                     ✓ All
                   </button>
@@ -280,13 +280,13 @@ export const UserProfileMenu: React.FC = () => {
               {loading ? (
                 <div className="flex items-center justify-center gap-1.5 py-5 text-gray-400">
                   <RefreshCw size={11} className="animate-spin text-indigo-400" />
-                  <span className="text-[9px] font-black uppercase tracking-wide">Loading…</span>
+                  <span className="fz-tiny font-black uppercase tracking-wide">Loading…</span>
                 </div>
               ) : items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-7 gap-1.5">
                   <CheckCircle size={20} className="text-green-400" />
-                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-wider">All Clear</p>
-                  <p className="text-[9px] text-gray-400">No alerts at this time</p>
+                  <p className="fz-small font-black text-gray-600 uppercase tracking-wider">All Clear</p>
+                  <p className="fz-tiny text-gray-400">No alerts at this time</p>
                 </div>
               ) : (
                 items.map(n => {
@@ -304,22 +304,22 @@ export const UserProfileMenu: React.FC = () => {
                       {/* Body */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <p className={`text-[10px] font-black text-slate-800 leading-tight truncate ${n.read ? 'opacity-40' : ''}`}>
+                          <p className={`fz-small font-black text-slate-800 leading-tight truncate ${n.read ? 'opacity-40' : ''}`}>
                             {n.title}
                           </p>
                           {!n.read && <div className={`shrink-0 w-1 h-1 rounded-full ${s.dot}`} />}
                         </div>
-                        <p className="text-[9px] text-slate-500 leading-tight line-clamp-1 mt-0.5">
+                        <p className="fz-tiny text-slate-500 leading-tight line-clamp-1 mt-0.5">
                           {n.detail}
                         </p>
                         <div className="flex items-center justify-between mt-0.5">
-                          <span className="text-[8px] text-slate-400 tabular-nums font-medium">
+                          <span className="fz-mini text-slate-400 tabular-nums font-medium">
                             {timeAgo(n.time)}
                           </span>
                           {n.actionLabel && (
                             <button
                               onClick={() => handleAction(n.actionPath, n.id)}
-                              className={`flex items-center gap-0.5 text-[8px] font-black uppercase tracking-wide ${s.text} hover:opacity-70 transition-opacity`}
+                              className={`flex items-center gap-0.5 fz-mini font-black uppercase tracking-wide ${s.text} hover:opacity-70 transition-opacity`}
                             >
                               {n.actionLabel} <ArrowRight size={8} />
                             </button>
@@ -334,12 +334,12 @@ export const UserProfileMenu: React.FC = () => {
 
             {/* Footer */}
             <div className="px-3 py-1.5 border-t border-gray-100 bg-slate-50 flex items-center justify-between">
-              <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider">
+              <span className="fz-mini text-slate-400 font-black uppercase tracking-wider">
                 {items.length} alert{items.length !== 1 ? 's' : ''}
               </span>
               <button
                 onClick={() => { setNotifOpen(false); window.electronAPI?.openNewWindow?.('/communication-hub'); }}
-                className="flex items-center gap-0.5 text-[8px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wider transition-colors"
+                className="flex items-center gap-0.5 fz-mini font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wider transition-colors"
               >
                 Comm Hub <ArrowRight size={8} />
               </button>

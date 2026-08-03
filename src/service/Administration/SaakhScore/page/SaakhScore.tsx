@@ -96,14 +96,14 @@ const ScoreGauge: React.FC<{ score: number; tier: keyof typeof TIER_CONFIG }> = 
           <span className="text-4xl font-black tracking-tight" style={{ color: tc.color, lineHeight: 1, textShadow: `0 0 24px ${tc.glow}` }}>
             <CountUp value={score} duration={1600} />
           </span>
-          <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.25em] mt-1">out of 10</span>
+          <span className="fz-tiny font-black text-white/40 uppercase tracking-[0.25em] mt-1">out of 10</span>
         </div>
       </div>
       <motion.div
         initial={{ opacity: 0, scale: 0.6, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ delay: 1.2, type: 'spring', stiffness: 300, damping: 18 }}
-        className="mt-2 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 border"
+        className="mt-2 px-4 py-1.5 rounded-full fz-caption font-black uppercase tracking-[0.2em] flex items-center gap-1.5 border"
         style={{ background: tc.bg, color: tc.color, borderColor: tc.glow, boxShadow: `0 0 20px ${tc.glow}` }}
       >
         <span>{tc.emoji}</span> {tc.label}
@@ -128,8 +128,8 @@ const FactorCard: React.FC<{ f: FactorScore; index: number }> = ({ f, index }) =
       style={{ boxShadow: '0 2px 12px -4px rgba(15,23,42,0.06)' }}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="ss-fc-name text-[10px] font-black text-slate-700 uppercase tracking-wide">{f.name}</span>
-        <span className="text-[10px] font-black px-2 py-0.5 rounded-full shrink-0" style={{ background: cBg, color: c }}>
+        <span className="ss-fc-name fz-small font-black text-slate-700 uppercase tracking-wide">{f.name}</span>
+        <span className="fz-small font-black px-2 py-0.5 rounded-full shrink-0" style={{ background: cBg, color: c }}>
           {f.score.toFixed(1)} / {f.maxScore}
         </span>
       </div>
@@ -142,7 +142,7 @@ const FactorCard: React.FC<{ f: FactorScore; index: number }> = ({ f, index }) =
           transition={{ delay: 0.6 + index * 0.08, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         />
       </div>
-      <p className="ss-fc-desc text-[9px] text-slate-500 font-medium leading-snug">{f.description}</p>
+      <p className="ss-fc-desc fz-tiny text-slate-500 font-medium leading-snug">{f.description}</p>
     </motion.div>
   );
 };
@@ -325,8 +325,8 @@ const SaakhScore: React.FC = () => {
               <Star size={14} className="text-white" />
             </motion.div>
             <div>
-              <h1 className="text-[12px] font-black text-white uppercase tracking-[0.2em] leading-none">Saakh Score</h1>
-              <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-[0.3em] mt-1">Member Financial Health Index · 0–10</p>
+              <h1 className="fz-label font-black text-white uppercase tracking-[0.2em] leading-none">Saakh Score</h1>
+              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-[0.3em] mt-1">Member Financial Health Index · 0–10</p>
             </div>
           </div>
 
@@ -340,7 +340,7 @@ const SaakhScore: React.FC = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleClear}
-                  className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-white/20 transition-colors"
+                  className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-mini font-black uppercase tracking-widest flex items-center gap-1.5 border border-white/20 transition-colors"
                 >
                   <RotateCcw size={10} /> Clear
                 </motion.button>
@@ -370,7 +370,7 @@ const SaakhScore: React.FC = () => {
                 onChange={e => handleMemberNoChange(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Enter MBNo — F2 or double-space for Lookup"
-                className="ss-input w-full h-9 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all"
+                className="ss-input w-full h-9 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-xl fz-label font-bold text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all"
                 autoFocus
               />
             </div>
@@ -379,7 +379,7 @@ const SaakhScore: React.FC = () => {
               whileTap={{ scale: 0.96 }}
               onClick={openMemberLookup}
               title="Open Member Lookup (F2)"
-              className="ss-lookup-btn h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-wide flex items-center gap-1.5 border border-slate-200 shadow-sm transition-colors"
+              className="ss-lookup-btn h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-600 rounded-xl fz-small font-black uppercase tracking-wide flex items-center gap-1.5 border border-slate-200 shadow-sm transition-colors"
             >
               <User size={12} /> Lookup
             </motion.button>
@@ -388,7 +388,7 @@ const SaakhScore: React.FC = () => {
               whileTap={{ scale: 0.96 }}
               onClick={handleSearch}
               disabled={loading || !memberNo.trim()}
-              className="h-9 px-5 text-white rounded-xl text-[10px] font-black uppercase tracking-wide flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+              className="h-9 px-5 text-white rounded-xl fz-small font-black uppercase tracking-wide flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 16px -4px rgba(99,102,241,0.5)' }}
             >
               <Zap size={12} /> {loading ? 'Scoring…' : 'Calculate'}
@@ -399,7 +399,7 @@ const SaakhScore: React.FC = () => {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0 }}
-                  className="text-[10px] font-black text-indigo-600 truncate max-w-[120px]"
+                  className="fz-small font-black text-indigo-600 truncate max-w-[120px]"
                 >
                   {memberName}
                 </motion.span>
@@ -430,8 +430,8 @@ const SaakhScore: React.FC = () => {
                   <Target size={36} className="text-indigo-400" />
                 </motion.div>
                 <div>
-                  <p className="ss-empty-title text-[12px] font-black text-slate-600 uppercase tracking-wider">Search a member to begin</p>
-                  <p className="ss-empty-desc text-[10px] text-slate-400 mt-1.5 max-w-xs">
+                  <p className="ss-empty-title fz-label font-black text-slate-600 uppercase tracking-wider">Search a member to begin</p>
+                  <p className="ss-empty-desc fz-small text-slate-400 mt-1.5 max-w-xs">
                     Saakh Score evaluates repayment punctuality, penalties, loan load, savings, tenure &amp; guarantor record
                   </p>
                 </div>
@@ -448,7 +448,7 @@ const SaakhScore: React.FC = () => {
                 className="ss-error flex items-center gap-2.5 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3.5 max-w-md"
               >
                 <XCircle size={16} className="text-rose-500 shrink-0" />
-                <p className="ss-error-text text-[10px] font-bold text-rose-700">{error}</p>
+                <p className="ss-error-text fz-small font-bold text-rose-700">{error}</p>
               </motion.div>
             )}
 
@@ -476,7 +476,7 @@ const SaakhScore: React.FC = () => {
                     <Sparkles size={20} className="text-white" />
                   </div>
                 </div>
-                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.25em]">Analysing member profile…</p>
+                <p className="fz-small font-black text-indigo-500 uppercase tracking-[0.25em]">Analysing member profile…</p>
               </motion.div>
             )}
 
@@ -516,11 +516,11 @@ const SaakhScore: React.FC = () => {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h2 className="text-xl font-black text-white leading-none tracking-tight">{data.memberName || '—'}</h2>
-                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${data.isActive ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30' : 'bg-white/10 text-white/50 border border-white/15'}`}>
+                            <span className={`fz-mini font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${data.isActive ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30' : 'bg-white/10 text-white/50 border border-white/15'}`}>
                               {data.isActive ? '● Active' : 'Inactive'}
                             </span>
                           </div>
-                          <p className="text-[11px] font-black text-indigo-300 mt-1 tracking-wide">Member #{data.mbno}</p>
+                          <p className="fz-caption font-black text-indigo-300 mt-1 tracking-wide">Member #{data.mbno}</p>
                         </div>
                       </div>
 
@@ -540,9 +540,9 @@ const SaakhScore: React.FC = () => {
                           >
                             <div className="flex items-center gap-1.5 text-indigo-300">
                               {s.icon}
-                              <span className="text-[8px] font-black uppercase tracking-widest">{s.label}</span>
+                              <span className="fz-mini font-black uppercase tracking-widest">{s.label}</span>
                             </div>
-                            <p className="text-[13px] font-black text-white mt-1">{s.value}</p>
+                            <p className="fz-body font-black text-white mt-1">{s.value}</p>
                           </motion.div>
                         ))}
                       </div>
@@ -556,7 +556,7 @@ const SaakhScore: React.FC = () => {
                         {data.totalScore >= 7 ? <TrendingUp size={13} className="text-emerald-400" /> :
                          data.totalScore >= 5 ? <Minus size={13} className="text-amber-400" /> :
                          <TrendingDown size={13} className="text-rose-400" />}
-                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${data.totalScore >= 7 ? 'text-emerald-400' : data.totalScore >= 5 ? 'text-amber-400' : 'text-rose-400'}`}>
+                        <span className={`fz-small font-black uppercase tracking-[0.2em] ${data.totalScore >= 7 ? 'text-emerald-400' : data.totalScore >= 5 ? 'text-amber-400' : 'text-rose-400'}`}>
                           {data.totalScore >= 7 ? 'Strong Profile' : data.totalScore >= 5 ? 'Moderate Risk' : 'High Risk'}
                         </span>
                       </motion.div>
@@ -568,7 +568,7 @@ const SaakhScore: React.FC = () => {
 
                 {/* Score breakdown — 6 factor cards */}
                 <div>
-                  <motion.p {...sectionAnim(0.25)} className="ss-section-label text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2.5 flex items-center gap-1.5">
+                  <motion.p {...sectionAnim(0.25)} className="ss-section-label fz-tiny font-black text-slate-400 uppercase tracking-[0.3em] mb-2.5 flex items-center gap-1.5">
                     <Sparkles size={10} className="text-indigo-400" /> Score Breakdown
                   </motion.p>
                   <div className="grid grid-cols-3 gap-2.5">
@@ -584,9 +584,9 @@ const SaakhScore: React.FC = () => {
                     className="ss-panel bg-white/70 backdrop-blur border border-slate-200/80 rounded-2xl p-4 space-y-3"
                     style={{ boxShadow: '0 2px 12px -4px rgba(15,23,42,0.06)' }}
                   >
-                    <p className="ss-panel-label text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Loan Eligibility Decision</p>
+                    <p className="ss-panel-label fz-tiny font-black text-slate-400 uppercase tracking-[0.3em]">Loan Eligibility Decision</p>
                     <EligibilityBadge eligible={data.eligibility.eligible} />
-                    <p className="ss-eligibility-reason text-[10px] text-slate-600 font-medium leading-relaxed">{data.eligibility.reason}</p>
+                    <p className="ss-eligibility-reason fz-small text-slate-600 font-medium leading-relaxed">{data.eligibility.reason}</p>
                     {data.eligibility.eligible !== 'NO' && data.eligibility.recommendedAmount > 0 && (
                       <div className="grid grid-cols-2 gap-2.5">
                         <motion.div
@@ -595,8 +595,8 @@ const SaakhScore: React.FC = () => {
                           style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.07), rgba(139,92,246,0.07))' }}
                         >
                           <IndianRupee size={13} className="text-indigo-500 mx-auto mb-1" />
-                          <p className="ss-rec-label text-[8px] font-black text-indigo-400 uppercase tracking-widest">Recommended Amt</p>
-                          <p className="ss-rec-val text-[14px] font-black text-indigo-800 mt-0.5">
+                          <p className="ss-rec-label fz-mini font-black text-indigo-400 uppercase tracking-widest">Recommended Amt</p>
+                          <p className="ss-rec-val fz-heading font-black text-indigo-800 mt-0.5">
                             ₹<CountUp value={data.eligibility.recommendedAmount} format duration={1400} />
                           </p>
                         </motion.div>
@@ -606,8 +606,8 @@ const SaakhScore: React.FC = () => {
                           style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.07), rgba(139,92,246,0.07))' }}
                         >
                           <Calendar size={13} className="text-indigo-500 mx-auto mb-1" />
-                          <p className="ss-rec-label text-[8px] font-black text-indigo-400 uppercase tracking-widest">Tenure</p>
-                          <p className="ss-rec-val text-[14px] font-black text-indigo-800 mt-0.5">{data.eligibility.recommendedTenure} months</p>
+                          <p className="ss-rec-label fz-mini font-black text-indigo-400 uppercase tracking-widest">Tenure</p>
+                          <p className="ss-rec-val fz-heading font-black text-indigo-800 mt-0.5">{data.eligibility.recommendedTenure} months</p>
                         </motion.div>
                       </div>
                     )}
@@ -619,7 +619,7 @@ const SaakhScore: React.FC = () => {
                     className="ss-panel bg-white/70 backdrop-blur border border-slate-200/80 rounded-2xl p-4 space-y-2"
                     style={{ boxShadow: '0 2px 12px -4px rgba(15,23,42,0.06)' }}
                   >
-                    <p className="ss-panel-label text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Financial Snapshot</p>
+                    <p className="ss-panel-label fz-tiny font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Financial Snapshot</p>
                     {[
                       { label: 'Share Capital', val: data.shareCapital, icon: <Star size={10} className="text-amber-500" />, highlight: false },
                       { label: 'CD Balance', val: data.cdBalance, icon: <IndianRupee size={10} className="text-emerald-600" />, highlight: false },
@@ -640,9 +640,9 @@ const SaakhScore: React.FC = () => {
                       >
                         <div className="flex items-center gap-2">
                           {row.icon}
-                          <span className="ss-fin-label text-[10px] font-bold text-slate-600">{row.label}</span>
+                          <span className="ss-fin-label fz-small font-bold text-slate-600">{row.label}</span>
                         </div>
-                        <span className={`text-[11px] font-black ${row.highlight ? 'ss-fin-val-hl text-rose-700' : 'ss-fin-val text-slate-800'}`}>
+                        <span className={`fz-caption font-black ${row.highlight ? 'ss-fin-val-hl text-rose-700' : 'ss-fin-val text-slate-800'}`}>
                           ₹{row.val.toLocaleString('en-IN')}
                         </span>
                       </motion.div>
@@ -658,9 +658,9 @@ const SaakhScore: React.FC = () => {
                       >
                         <div className="flex items-center gap-2">
                           <ShieldCheck size={10} className={data.guarantorInfo.guarantorLoansHealthy ? 'text-emerald-600' : 'text-amber-600'} />
-                          <span className="ss-fin-label text-[10px] font-bold text-slate-600">Guarantor for</span>
+                          <span className="ss-fin-label fz-small font-bold text-slate-600">Guarantor for</span>
                         </div>
-                        <span className={`text-[11px] font-black ${data.guarantorInfo.guarantorLoansHealthy ? 'text-emerald-700' : 'text-amber-700'}`}>
+                        <span className={`fz-caption font-black ${data.guarantorInfo.guarantorLoansHealthy ? 'text-emerald-700' : 'text-amber-700'}`}>
                           {data.guarantorInfo.isGuarantorForCount} member{data.guarantorInfo.isGuarantorForCount !== 1 ? 's' : ''}
                         </span>
                       </motion.div>
@@ -677,10 +677,10 @@ const SaakhScore: React.FC = () => {
                   >
                     <div className="ss-loans-header px-4 py-3 border-b border-slate-100 flex items-center justify-between"
                       style={{ background: 'linear-gradient(90deg, rgba(99,102,241,0.05), transparent)' }}>
-                      <p className="ss-section-label text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
+                      <p className="ss-section-label fz-tiny font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
                         <CreditCard size={10} className="text-indigo-400" /> Active Loans ({data.activeLoans.length})
                       </p>
-                      <span className="text-[10px] font-black text-rose-600">₹{data.totalOutstanding.toLocaleString('en-IN')} outstanding</span>
+                      <span className="fz-small font-black text-rose-600">₹{data.totalOutstanding.toLocaleString('en-IN')} outstanding</span>
                     </div>
                     <div className="divide-y divide-slate-50">
                       {data.activeLoans.map((loan, i) => (
@@ -698,20 +698,20 @@ const SaakhScore: React.FC = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="ss-loan-type text-[11px] font-black text-slate-700 uppercase tracking-wide">{loan.loantype}</span>
+                              <span className="ss-loan-type fz-caption font-black text-slate-700 uppercase tracking-wide">{loan.loantype}</span>
                               {loan.penalrate > 0 && (
-                                <span className="text-[7px] font-black bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                <span className="fz-micro font-black bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
                                   Penalty {loan.penalrate}%
                                 </span>
                               )}
                             </div>
-                            <p className="ss-loan-detail text-[9px] text-slate-500 mt-0.5">
+                            <p className="ss-loan-detail fz-tiny text-slate-500 mt-0.5">
                               Case #{loan.loancaseno} · {loan.noOfInstal} instals @ ₹{loan.instalAmt.toLocaleString('en-IN')}/mo · {loan.rate}% p.a.
                             </p>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-[12px] font-black text-rose-700">₹{loan.balance.toLocaleString('en-IN')}</p>
-                            <p className="text-[8px] text-slate-400 font-bold">{loan.repaidPct}% repaid</p>
+                            <p className="fz-label font-black text-rose-700">₹{loan.balance.toLocaleString('en-IN')}</p>
+                            <p className="fz-mini text-slate-400 font-bold">{loan.repaidPct}% repaid</p>
                           </div>
                           <div className="w-16 shrink-0">
                             <div className="ss-loan-track h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -743,7 +743,7 @@ const SaakhScore: React.FC = () => {
                     >
                       <Lightbulb size={15} className="text-indigo-500" />
                     </motion.div>
-                    <p className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.3em]">Score Improvement Tips</p>
+                    <p className="fz-tiny font-black text-indigo-600 uppercase tracking-[0.3em]">Score Improvement Tips</p>
                   </div>
                   <div className="space-y-2">
                     {data.improvementTips.map((tip, i) => (
@@ -755,7 +755,7 @@ const SaakhScore: React.FC = () => {
                         className="flex items-start gap-2"
                       >
                         <ChevronRight size={12} className="text-indigo-400 mt-0.5 shrink-0" />
-                        <p className="ss-tip-text text-[10px] text-slate-700 font-medium leading-relaxed">{tip}</p>
+                        <p className="ss-tip-text fz-small text-slate-700 font-medium leading-relaxed">{tip}</p>
                       </motion.div>
                     ))}
                   </div>
@@ -770,11 +770,11 @@ const SaakhScore: React.FC = () => {
         <div className="ss-footer px-4 py-1.5 bg-white/80 backdrop-blur border-t border-slate-200/70 flex items-center justify-between shrink-0">
           <div className="ss-footer-left flex items-center gap-1.5">
             <Building2 size={9} className="text-slate-400" />
-            <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em]">Saakh Score Engine v1.0</span>
+            <span className="fz-micro font-black text-slate-500 uppercase tracking-[0.2em]">Saakh Score Engine v1.0</span>
           </div>
           <div className="ss-footer-right flex items-center gap-1 text-indigo-500">
             <Info size={9} />
-            <span className="text-[7px] font-black uppercase tracking-[0.2em]">Score is indicative — committee decision is final</span>
+            <span className="fz-micro font-black uppercase tracking-[0.2em]">Score is indicative — committee decision is final</span>
           </div>
         </div>
 

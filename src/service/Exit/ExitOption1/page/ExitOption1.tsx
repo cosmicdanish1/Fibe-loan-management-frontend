@@ -152,10 +152,10 @@ const ExitOption1: React.FC = () => {
                 <div className="flex items-start gap-2">
                   <Shield size={14} className="text-rose-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] font-black text-rose-900 uppercase tracking-tight leading-tight mb-1">
+                    <p className="fz-small font-black text-rose-900 uppercase tracking-tight leading-tight mb-1">
                       Important Notice
                     </p>
-                    <p className="text-[9px] font-bold text-rose-700 leading-tight">
+                    <p className="fz-tiny font-bold text-rose-700 leading-tight">
                       All unsaved changes will be lost. Make sure you've saved your work before exiting.
                     </p>
                   </div>
@@ -192,7 +192,7 @@ const ExitOption1: React.FC = () => {
                 transition={{ delay: 0.7 }}
                 className="mt-4 text-center"
               >
-                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                <p className="fz-mini font-bold text-slate-400 uppercase tracking-widest">
                   Press ESC to cancel
                 </p>
               </motion.div>
@@ -295,7 +295,7 @@ const ExitOption1: React.FC = () => {
                   className="flex items-center gap-1.5"
                 >
                   <CheckCircle size={14} className="text-emerald-400" />
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">Saved</span>
+                  <span className="fz-tiny font-bold text-slate-400 uppercase">Saved</span>
                 </motion.div>
                 <motion.div
                   animate={{
@@ -305,7 +305,7 @@ const ExitOption1: React.FC = () => {
                   className="flex items-center gap-1.5"
                 >
                   <CheckCircle size={14} className="text-emerald-400" />
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">Closed</span>
+                  <span className="fz-tiny font-bold text-slate-400 uppercase">Closed</span>
                 </motion.div>
                 <motion.div
                   animate={{
@@ -315,7 +315,7 @@ const ExitOption1: React.FC = () => {
                   className="flex items-center gap-1.5"
                 >
                   <CheckCircle size={14} className="text-emerald-400" />
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">Done</span>
+                  <span className="fz-tiny font-bold text-slate-400 uppercase">Done</span>
                 </motion.div>
               </motion.div>
 
@@ -327,7 +327,7 @@ const ExitOption1: React.FC = () => {
                 className="mt-8 flex items-center justify-center gap-2"
               >
                 <Heart size={12} className="text-rose-400" />
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest">
                   See you soon!
                 </span>
               </motion.div>

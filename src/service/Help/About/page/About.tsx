@@ -132,7 +132,7 @@ const About: React.FC = () => {
               <Building2 size={80} className="absolute -right-4 -bottom-4 opacity-10" />
               <div className="relative z-10">
                 <h2 className="text-lg font-black uppercase tracking-wider leading-none mb-1">Paper White Technology</h2>
-                <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">Loan Management System</p>
+                <p className="fz-small font-bold opacity-80 uppercase tracking-widest">Loan Management System</p>
                 <div className="mt-3 flex items-center gap-2">
                   <Tag color="blue" className="bg-white/20 border-0 text-white font-black fz-body uppercase px-2 py-0.5 m-0 leading-none h-4 flex items-center">
                     Enterprise Edition

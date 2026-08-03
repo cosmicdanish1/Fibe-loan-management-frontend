@@ -25,8 +25,8 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
 interface BackupInfo { fileName: string; filePath: string; fileSize: number; createdAt: string; type: 'full' | 'schema' | 'data'; }
 interface DatabaseInfo { host: string; port: number; database: string; username: string; }
 
-const lbl = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inp = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded px-2 w-full focus:outline-none focus:border-indigo-400";
+const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inp = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded px-2 w-full focus:outline-none focus:border-indigo-400";
 
 const DatabaseBackup: React.FC = () => {
   const [destinationPath, setDestinationPath] = useState('C:\\DatabaseBackups');
@@ -128,10 +128,10 @@ const DatabaseBackup: React.FC = () => {
               <Database size={13} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Database Backup Registry</h1>
+              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Database Backup Registry</h1>
               <div className="flex items-center gap-2 mt-0.5">
                 <Badge status={connectionStatus === 'connected' ? 'success' : 'error'}
-                  text={<span className="text-[7px] font-black text-slate-300 uppercase tracking-wider">
+                  text={<span className="fz-micro font-black text-slate-300 uppercase tracking-wider">
                     {connectionStatus === 'connected' ? 'Live Connection' : 'Disconnected'}
                   </span>} />
               </div>
@@ -142,13 +142,13 @@ const DatabaseBackup: React.FC = () => {
               <div className="hidden lg:flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-lg border border-white/10">
                 <Activity size={10} className="text-indigo-300" />
                 <div className="flex flex-col items-end">
-                  <span className="text-[7px] font-black text-slate-300 uppercase">Last Activity</span>
-                  <span className="text-[9px] font-bold text-white">{dayjs(lastBackupDate).format('DD MMM YY HH:mm')}</span>
+                  <span className="fz-micro font-black text-slate-300 uppercase">Last Activity</span>
+                  <span className="fz-tiny font-bold text-white">{dayjs(lastBackupDate).format('DD MMM YY HH:mm')}</span>
                 </div>
               </div>
             )}
             <button onClick={handleBackup} disabled={isBackingUp}
-              className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-400 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 transition-all uppercase tracking-wide">
+              className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-400 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 transition-all uppercase tracking-wide">
               {isBackingUp ? <RefreshCw size={11} className="animate-spin" /> : <Download size={11} />}
               {isBackingUp ? `${backupProgress}%` : 'Trigger Backup'}
             </button>
@@ -165,8 +165,8 @@ const DatabaseBackup: React.FC = () => {
                 <div key={stat.label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-2.5 flex items-center justify-between">
                   <div className={`p-1.5 rounded-lg ${stat.color}`}><stat.icon size={14} /></div>
                   <div className="flex flex-col items-end">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{stat.label}</span>
-                    <span className="text-[12px] font-black text-slate-800">{stat.value}</span>
+                    <span className="fz-mini font-black text-slate-400 uppercase tracking-wider">{stat.label}</span>
+                    <span className="fz-label font-black text-slate-800">{stat.value}</span>
                   </div>
                 </div>
               ))}
@@ -179,14 +179,14 @@ const DatabaseBackup: React.FC = () => {
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                   <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                     <Settings size={10} className="text-slate-400" />
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Configuration</span>
+                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Configuration</span>
                   </div>
                   <div className="p-2.5 space-y-2">
                     <div>
                       <label className={lbl}>Destination Path</label>
                       <Input value={destinationPath} onChange={e => setDestinationPath(e.target.value)}
                         prefix={<Folder size={10} className="text-slate-400" />}
-                        className="h-7 text-[10px] font-semibold" />
+                        className="h-7 fz-small font-semibold" />
                     </div>
                     <div>
                       <label className={lbl}>Custom Name (optional)</label>
@@ -197,21 +197,21 @@ const DatabaseBackup: React.FC = () => {
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
                           <Switch size="small" checked={backupOptions.includeSchema} onChange={v => setBackupOptions(p => ({ ...p, includeSchema: v }))} />
-                          <label className="text-[9px] font-semibold text-slate-600">Include Schema</label>
+                          <label className="fz-tiny font-semibold text-slate-600">Include Schema</label>
                         </div>
                         <div className="flex items-center gap-2">
                           <Switch size="small" checked={backupOptions.includeData} onChange={v => setBackupOptions(p => ({ ...p, includeData: v }))} />
-                          <label className="text-[9px] font-semibold text-slate-600">Include Data</label>
+                          <label className="fz-tiny font-semibold text-slate-600">Include Data</label>
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-1.5 pt-1 border-t border-slate-100">
                       <button onClick={initializeComponent}
-                        className="flex-1 h-7 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-[9px] font-black uppercase flex items-center justify-center gap-1 transition-all">
+                        className="flex-1 h-7 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded fz-tiny font-black uppercase flex items-center justify-center gap-1 transition-all">
                         <RefreshCw size={10} /> Refresh
                       </button>
                       <button onClick={handleCleanup}
-                        className="flex-1 h-7 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-600 rounded text-[9px] font-black uppercase flex items-center justify-center gap-1 transition-all border border-rose-200">
+                        className="flex-1 h-7 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-600 rounded fz-tiny font-black uppercase flex items-center justify-center gap-1 transition-all border border-rose-200">
                         <Trash2 size={10} /> Purge Old
                       </button>
                     </div>
@@ -223,9 +223,9 @@ const DatabaseBackup: React.FC = () => {
                   <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                     <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                       <Server size={10} className="text-slate-400" />
-                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">DB Connection</span>
+                      <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">DB Connection</span>
                     </div>
-                    <div className="p-2.5 space-y-1.5 text-[9px]">
+                    <div className="p-2.5 space-y-1.5 fz-tiny">
                       {[{ l: 'Host', v: dbInfo.host }, { l: 'Port', v: dbInfo.port }, { l: 'Database', v: dbInfo.database }, { l: 'User', v: dbInfo.username }].map(r => (
                         <div key={r.l} className="flex justify-between border-b border-slate-50 pb-1">
                           <span className="font-black text-slate-400 uppercase">{r.l}</span>
@@ -242,13 +242,13 @@ const DatabaseBackup: React.FC = () => {
                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-1.5">
                     <History size={10} className="text-slate-400" />
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Backup History</span>
-                    <span className="text-[8px] font-black text-indigo-600 ml-1">{filteredBackups.length} files</span>
+                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Backup History</span>
+                    <span className="fz-mini font-black text-indigo-600 ml-1">{filteredBackups.length} files</span>
                   </div>
                   <div className="relative">
                     <Search size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                      placeholder="Search..." className="h-6 pl-6 pr-2 text-[9px] bg-slate-50 border border-slate-200 rounded focus:outline-none focus:border-indigo-400 w-40" />
+                      placeholder="Search..." className="h-6 pl-6 pr-2 fz-tiny bg-slate-50 border border-slate-200 rounded focus:outline-none focus:border-indigo-400 w-40" />
                   </div>
                 </div>
                 <div className="flex-1 overflow-auto">
@@ -257,7 +257,7 @@ const DatabaseBackup: React.FC = () => {
                       <thead className="sticky top-0 bg-[#f8fafc]">
                         <tr>
                           {['File Name', 'Type', 'Size', 'Created', 'Path'].map(h => (
-                            <th key={h} className="px-3 py-2 text-left text-[8px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">{h}</th>
+                            <th key={h} className="px-3 py-2 text-left fz-mini font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -267,24 +267,24 @@ const DatabaseBackup: React.FC = () => {
                             <td className="px-3 py-1.5">
                               <div className="flex items-center gap-1.5">
                                 <FileText size={11} className="text-indigo-400 shrink-0" />
-                                <span className="text-[9px] font-black text-slate-700 truncate max-w-[160px]">{backup.fileName}</span>
+                                <span className="fz-tiny font-black text-slate-700 truncate max-w-[160px]">{backup.fileName}</span>
                               </div>
                             </td>
                             <td className="px-3 py-1.5">
-                              <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase ${backup.type === 'full' ? 'bg-emerald-50 text-emerald-600' : backup.type === 'schema' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
+                              <span className={`px-1.5 py-0.5 rounded-full fz-mini font-black uppercase ${backup.type === 'full' ? 'bg-emerald-50 text-emerald-600' : backup.type === 'schema' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
                                 {backup.type}
                               </span>
                             </td>
-                            <td className="px-3 py-1.5 text-[9px] text-slate-600">{formatFileSize(backup.fileSize)}</td>
-                            <td className="px-3 py-1.5 text-[9px] text-slate-600">{dayjs(backup.createdAt).format('DD MMM YY HH:mm')}</td>
-                            <td className="px-3 py-1.5 text-[9px] text-slate-400 truncate max-w-[120px]" title={backup.filePath}>{backup.filePath}</td>
+                            <td className="px-3 py-1.5 fz-tiny text-slate-600">{formatFileSize(backup.fileSize)}</td>
+                            <td className="px-3 py-1.5 fz-tiny text-slate-600">{dayjs(backup.createdAt).format('DD MMM YY HH:mm')}</td>
+                            <td className="px-3 py-1.5 fz-tiny text-slate-400 truncate max-w-[120px]" title={backup.filePath}>{backup.filePath}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   ) : (
                     <div className="h-full flex items-center justify-center">
-                      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={<span className="text-[9px] font-black text-slate-400 uppercase">No backups found</span>} />
+                      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={<span className="fz-tiny font-black text-slate-400 uppercase">No backups found</span>} />
                     </div>
                   )}
                 </div>
@@ -299,12 +299,12 @@ const DatabaseBackup: React.FC = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-xl p-6 w-80 text-center">
               <Database size={32} className="text-indigo-600 mx-auto mb-3" />
-              <h3 className="text-[11px] font-black text-slate-800 uppercase mb-1">Backup in Progress</h3>
-              <p className="text-[9px] text-slate-400 mb-4">Please wait while the database is being backed up...</p>
+              <h3 className="fz-caption font-black text-slate-800 uppercase mb-1">Backup in Progress</h3>
+              <p className="fz-tiny text-slate-400 mb-4">Please wait while the database is being backed up...</p>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full bg-indigo-600 rounded-full transition-all duration-300" style={{ width: `${backupProgress}%` }} />
               </div>
-              <p className="text-[10px] font-black text-indigo-600 mt-2">{backupProgress}%</p>
+              <p className="fz-small font-black text-indigo-600 mt-2">{backupProgress}%</p>
             </div>
           </div>
         )}

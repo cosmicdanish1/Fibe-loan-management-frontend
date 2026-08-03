@@ -15,7 +15,6 @@ export interface ThemeState {
     backgroundImage?: string;
     textColor?: string;
     notifications?: boolean;
-    syncAcrossWindows?: boolean;
     soundEffects?: boolean;
     inactivityLogout?: boolean;
     inactivityTimeoutMinutes?: number;
@@ -45,7 +44,6 @@ const initialState: ThemeState = {
     backgroundImage: '',
     textColor: '#1f2937',
     notifications: true,
-    syncAcrossWindows: true,
     soundEffects: true,
     showChatbot: true,
     inactivityLogout: true,

@@ -659,13 +659,13 @@ const Navbar: React.FC = () => {
     {/* ── Bottom-left app watermark ── */}
     <div className="fixed bottom-3 left-3 z-40 pointer-events-none select-none">
       <p
-        className="text-[11px] font-black tracking-tight leading-none"
+        className="fz-caption font-black tracking-tight leading-none"
         style={{ color: 'rgba(15,23,42,0.18)' }}
       >
         Fibe
       </p>
       <p
-        className="text-[7px] font-bold uppercase tracking-widest leading-none mt-0.5"
+        className="fz-micro font-bold uppercase tracking-widest leading-none mt-0.5"
         style={{ color: 'rgba(15,23,42,0.12)' }}
       >
         Loan Management
@@ -682,7 +682,7 @@ const Navbar: React.FC = () => {
               <li key={navItem.id} className="relative">
                 <a
                   href="#"
-                  className="no-underline text-gray-700 font-semibold px-3.5 py-2 text-[13px] transition-all duration-150 whitespace-nowrap flex items-center hover:text-blue-700 hover:bg-blue-50 rounded"
+                  className="no-underline text-gray-700 font-semibold px-3.5 py-2 fz-body transition-all duration-150 whitespace-nowrap flex items-center hover:text-blue-700 hover:bg-blue-50 rounded"
                   onClick={(e) => {
                     e.preventDefault();
                     if (navItem.items.length === 0 && navItem.action) {
@@ -709,7 +709,7 @@ const Navbar: React.FC = () => {
           {/* Compact connection dot with tooltip-style label */}
           <div
             title={connStatus === 'connected' ? 'Backend: Connected' : connStatus === 'disconnected' ? 'Backend: Disconnected' : 'Checking connection…'}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[9px] font-bold transition-all cursor-default select-none"
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border fz-tiny font-bold transition-all cursor-default select-none"
             style={{
               backgroundColor: connStatus === 'connected' ? '#f0fdf4' : connStatus === 'disconnected' ? '#fef2f2' : '#fefce8',
               borderColor:     connStatus === 'connected' ? '#bbf7d0' : connStatus === 'disconnected' ? '#fecaca' : '#fef08a',

@@ -93,7 +93,7 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
             key: 'fullName',
             width: 250,
             render: (_: any, record: User) => (
-                <Text className="font-semibold text-slate-800 uppercase text-[11px] truncate block">
+                <Text className="font-semibold text-slate-800 uppercase fz-caption truncate block">
                     {record.firstName} {record.lastName}
                 </Text>
             ),
@@ -106,7 +106,7 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
             render: (text: string) => (
                 <Badge
                     status={text === 'SYSTEM' || text === 'ADMINISTRATOR' ? 'processing' : 'default'}
-                    text={<Text className="text-[10px] font-black uppercase tracking-tighter text-slate-500">{text}</Text>}
+                    text={<Text className="fz-small font-black uppercase tracking-tighter text-slate-500">{text}</Text>}
                 />
             ),
         },
@@ -138,7 +138,7 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
                             <h1 className="text-base font-black text-slate-800 tracking-tight m-0 leading-none uppercase">Identity Directory</h1>
                             <div className="flex items-center gap-2 mt-1">
                                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Secure Access Registry</span>
+                                <span className="fz-small text-slate-400 font-bold uppercase tracking-widest">Secure Access Registry</span>
                             </div>
                         </div>
                     </div>
@@ -215,11 +215,11 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
             {/* Footer Info Bar */}
             <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Text className="text-[11px] text-slate-500">
+                    <Text className="fz-caption text-slate-500">
                         <span className="font-bold text-slate-700">{users.length}</span> Identities Found
                     </Text>
                 </div>
-                <Text className="text-[10px] text-slate-400 font-medium italic uppercase tracking-tighter">
+                <Text className="fz-small text-slate-400 font-medium italic uppercase tracking-tighter">
                     Double-click row to load profile • ESC to exit
                 </Text>
             </div>

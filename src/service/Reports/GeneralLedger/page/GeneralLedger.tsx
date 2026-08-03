@@ -164,7 +164,7 @@ const GeneralLedger: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-sm font-black ${text} tracking-tight leading-none uppercase`}>General Ledger</h1>
-              <div className={`flex items-center gap-1 mt-0.5 text-[9px] font-bold ${muted} uppercase tracking-wide`}>
+              <div className={`flex items-center gap-1 mt-0.5 fz-tiny font-bold ${muted} uppercase tracking-wide`}>
                 <ShieldCheck size={9} className="text-emerald-500" /> Head-wise Account Statement
               </div>
             </div>
@@ -175,9 +175,9 @@ const GeneralLedger: React.FC = () => {
               {isDark ? <Sun size={13} className="text-yellow-400" /> : <Moon size={13} className="text-slate-500" />}
             </button>
             <Button size="small" icon={<Printer size={11} />} onClick={() => window.print()}
-              className="h-7 px-2 text-[10px] font-bold uppercase">Print</Button>
+              className="h-7 px-2 fz-small font-bold uppercase">Print</Button>
             <Button size="small" type="primary" icon={<FileDown size={11} />} onClick={handleExportCSV}
-              className="h-7 px-2 text-[10px] font-bold uppercase bg-emerald-600 border-0 hover:!bg-emerald-700">Export CSV</Button>
+              className="h-7 px-2 fz-small font-bold uppercase bg-emerald-600 border-0 hover:!bg-emerald-700">Export CSV</Button>
           </div>
         </div>
 
@@ -185,7 +185,7 @@ const GeneralLedger: React.FC = () => {
         <div className={`${panel} border-b ${panelBdr} px-4 py-2 flex items-end gap-3 shrink-0`}>
           {/* Head */}
           <div className="flex flex-col gap-0.5 min-w-[220px] max-w-[320px] flex-1">
-            <label className={`text-[9px] font-bold ${muted} uppercase tracking-wide`}>Head Name</label>
+            <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>Head Name</label>
             <Select
               value={headCode || undefined}
               onChange={setHeadCode}
@@ -203,8 +203,8 @@ const GeneralLedger: React.FC = () => {
             >
               {headMasters.map(h => (
                 <Option key={h.code} value={h.code} label={`${h.code} ${h.headName}`}>
-                  <span className="text-[10px] font-black text-emerald-600 mr-2">{h.code}</span>
-                  <span className="text-[10px] text-slate-500">{h.headName}</span>
+                  <span className="fz-small font-black text-emerald-600 mr-2">{h.code}</span>
+                  <span className="fz-small text-slate-500">{h.headName}</span>
                 </Option>
               ))}
             </Select>
@@ -212,18 +212,18 @@ const GeneralLedger: React.FC = () => {
 
           {/* From */}
           <div className="flex flex-col gap-0.5">
-            <label className={`text-[9px] font-bold ${muted} uppercase tracking-wide`}>From</label>
+            <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>From</label>
             <DatePicker size="small" value={fromDate} onChange={setFromDate} format="DD-MMM-YYYY" className="w-32" />
           </div>
 
           {/* To */}
           <div className="flex flex-col gap-0.5">
-            <label className={`text-[9px] font-bold ${muted} uppercase tracking-wide`}>To</label>
+            <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>To</label>
             <DatePicker size="small" value={toDate} onChange={setToDate} format="DD-MMM-YYYY" className="w-32" />
           </div>
 
           <Button type="primary" size="small" icon={<RefreshCw size={12} />} onClick={generateReport} loading={isLoading}
-            className="h-[30px] px-4 text-[10px] font-bold uppercase bg-emerald-600 border-0 hover:!bg-emerald-700 shrink-0">
+            className="h-[30px] px-4 fz-small font-bold uppercase bg-emerald-600 border-0 hover:!bg-emerald-700 shrink-0">
             Generate
           </Button>
         </div>
@@ -239,13 +239,13 @@ const GeneralLedger: React.FC = () => {
               { label: 'Closing',      value: ledgerData.closingBalance,  color: 'text-teal-400' },
             ].map(s => (
               <div key={s.label}>
-                <div className={`text-[9px] font-bold ${muted} uppercase tracking-wide leading-none`}>{s.label}</div>
-                <div className={`text-[11px] font-black font-mono ${s.color} leading-tight`}>₹{fmt(s.value)}</div>
+                <div className={`fz-tiny font-bold ${muted} uppercase tracking-wide leading-none`}>{s.label}</div>
+                <div className={`fz-caption font-black font-mono ${s.color} leading-tight`}>₹{fmt(s.value)}</div>
               </div>
             ))}
             <div className="ml-auto">
-              <div className={`text-[9px] font-bold ${muted} uppercase tracking-wide leading-none`}>Transactions</div>
-              <div className={`text-[11px] font-black font-mono ${text} leading-tight`}>{ledgerData.totalTransactions}</div>
+              <div className={`fz-tiny font-bold ${muted} uppercase tracking-wide leading-none`}>Transactions</div>
+              <div className={`fz-caption font-black font-mono ${text} leading-tight`}>{ledgerData.totalTransactions}</div>
             </div>
           </motion.div>
         )}
@@ -254,13 +254,13 @@ const GeneralLedger: React.FC = () => {
         <div className="flex-1 overflow-auto p-3 custom-scrollbar-emerald">
           <Spin spinning={isLoading} tip="Loading…" size="small">
             {ledgerData && ledgerData.entries.length > 0 ? (
-              <div className="font-mono text-[10px]">
+              <div className="font-mono fz-small">
                 {/* Company header */}
                 <div className={`text-center mb-2 pb-2 border-b border-dashed ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
-                  <div className={`text-[11px] font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                  <div className={`text-[9px] ${muted}`}>Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
-                  <div className="text-[10px] font-bold text-emerald-500 mt-0.5">General Ledger Report</div>
-                  <div className={`text-[9px] ${muted}`}>Head: {headCode} – {headName} &nbsp;|&nbsp; Period: {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}</div>
+                  <div className={`fz-caption font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
+                  <div className={`fz-tiny ${muted}`}>Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+                  <div className="fz-small font-bold text-emerald-500 mt-0.5">General Ledger Report</div>
+                  <div className={`fz-tiny ${muted}`}>Head: {headCode} – {headName} &nbsp;|&nbsp; Period: {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}</div>
                 </div>
 
                 {/* Table */}
@@ -328,13 +328,13 @@ const GeneralLedger: React.FC = () => {
                   </tbody>
                 </table>
 
-                <div className={`text-center mt-2 text-[9px] ${muted}`}>* Report As Per Data Available</div>
+                <div className={`text-center mt-2 fz-tiny ${muted}`}>* Report As Per Data Available</div>
               </div>
             ) : !isLoading ? (
               <div className="h-full flex flex-col items-center justify-center py-24 select-none opacity-40">
                 <FileText size={52} className="text-slate-400 mb-3" />
                 <h3 className={`text-xs font-black ${muted} uppercase tracking-widest`}>No Data</h3>
-                <p className={`text-[10px] font-bold ${muted} uppercase mt-1 text-center`}>Select head code and date range, then Generate</p>
+                <p className={`fz-small font-bold ${muted} uppercase mt-1 text-center`}>Select head code and date range, then Generate</p>
               </div>
             ) : null}
           </Spin>

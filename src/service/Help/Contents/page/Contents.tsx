@@ -285,7 +285,7 @@ const Contents: React.FC = () => {
                 <Input
                   placeholder="Search topics..."
                   prefix={<Search size={12} className="text-slate-400" />}
-                  className="h-7 text-[10px] font-bold"
+                  className="h-7 fz-small font-bold"
                   value={searchQuery}
                   onChange={e => handleSearch(e.target.value)}
                   allowClear
@@ -399,7 +399,7 @@ const Contents: React.FC = () => {
                               <Tag color={section.color} className="fz-body font-black uppercase m-0 px-1.5 py-0 leading-none h-4 flex items-center">
                                 {section.icon}
                               </Tag>
-                              <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{section.title}</span>
+                              <span className="fz-small font-black text-slate-700 uppercase tracking-tight">{section.title}</span>
                               <Tag className="fz-label font-bold m-0 px-1 py-0 leading-none h-3.5 flex items-center bg-slate-100 border-0">
                                 {section.items.length}
                               </Tag>
@@ -442,7 +442,7 @@ const Contents: React.FC = () => {
                     className="h-[400px] flex flex-col items-center justify-center opacity-30 grayscale"
                   >
                     <Search size={60} className="text-slate-200 mb-4" />
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Results Found</h3>
+                    <h3 className="fz-small font-black text-slate-400 uppercase tracking-widest">No Results Found</h3>
                     <p className="fz-body font-bold text-slate-300 uppercase mt-1.5">Try a different search term</p>
                   </motion.div>
                 )}

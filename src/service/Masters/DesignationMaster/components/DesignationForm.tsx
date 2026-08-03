@@ -9,8 +9,8 @@ import {
 import dayjs from 'dayjs';
 import { DesignationHookReturn } from '../interfaces/interface';
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const DesignationForm: React.FC<DesignationHookReturn> = ({
     formData,
@@ -33,34 +33,34 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
 
     const columns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Code</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Code</span>,
             dataIndex: 'code',
             key: 'code',
             width: 110,
             render: (text: string) => (
-                <span className="text-[10px] font-mono font-black text-indigo-700 uppercase">{text}</span>
+                <span className="fz-small font-mono font-black text-indigo-700 uppercase">{text}</span>
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Designation Name</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Designation Name</span>,
             dataIndex: 'name',
             key: 'name',
             render: (text: string) => (
-                <span className="text-[10px] font-semibold text-slate-800">{text || <span className="text-slate-400 italic">— unnamed —</span>}</span>
+                <span className="fz-small font-semibold text-slate-800">{text || <span className="text-slate-400 italic">— unnamed —</span>}</span>
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide text-center block">Level</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide text-center block">Level</span>,
             dataIndex: 'level',
             key: 'level',
             width: 70,
             align: 'center' as const,
             render: (text: string) => (
-                <span className="text-[10px] font-bold text-slate-600">{text || '—'}</span>
+                <span className="fz-small font-bold text-slate-600">{text || '—'}</span>
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide text-center block">Actions</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide text-center block">Actions</span>,
             key: 'action',
             width: 80,
             align: 'center' as const,
@@ -90,21 +90,21 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                             <Briefcase size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Designation Master</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Designation Master</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> Organizational Hierarchy
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleCancel} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleCancel} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Reset
                         </button>
-                        <button onClick={handleSave} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
+                        <button onClick={handleSave} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
                             <Save size={11} /> Save
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={onExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={onExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -118,8 +118,8 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Briefcase size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Designation Details</span>
-                                <span className={`ml-auto text-[8px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Designation Details</span>
+                                <span className={`ml-auto fz-mini font-black uppercase tracking-wide px-2 py-0.5 rounded-full ${
                                     isExisting ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
                                 }`}>
                                     {isExisting ? `Editing ${formData.code}` : 'New Entry'}
@@ -170,10 +170,10 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Building2 size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Designations</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Designations</span>
                                 </div>
                                 {designations.length > 0 && (
-                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wide">
+                                    <span className="fz-mini font-black text-slate-400 uppercase tracking-wide">
                                         {designations.length} entries
                                     </span>
                                 )}
@@ -186,7 +186,7 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                                     size="small"
                                     className="desig-table"
                                     rowKey="code"
-                                    locale={{ emptyText: <span className="text-[9px] text-slate-400 py-4 block text-center font-bold uppercase">No designations yet</span> }}
+                                    locale={{ emptyText: <span className="fz-tiny text-slate-400 py-4 block text-center font-bold uppercase">No designations yet</span> }}
                                     rowClassName={(_, i) => i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}
                                 />
                             </div>
@@ -199,17 +199,17 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Designation Registry</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Designation Registry</span>
                         {formData.name && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">{formData.name}</span>
+                                <span className="fz-mini font-black text-indigo-500">{formData.name}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

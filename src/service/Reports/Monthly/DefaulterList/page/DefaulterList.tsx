@@ -389,7 +389,7 @@ const DefaulterList: React.FC = () => {
 
                     {/* Enhanced Report Title */}
                     <div className="text-center mb-5">
-                      <div className="text-[13px] font-black text-red-800 mb-2">
+                      <div className="fz-body font-black text-red-800 mb-2">
                         DEFAULTER LIST REPORT
                       </div>
                       <div className="fz-label text-slate-700 font-semibold">
@@ -440,13 +440,13 @@ const DefaulterList: React.FC = () => {
                           </tr>
                         ))}
                         <tr style={{ backgroundColor: isDark ? '#1e293b' : '#fef2f2' }}>
-                          <td colSpan={5} className="py-3 px-4 text-right font-black text-red-900 text-[14px]" style={{ border: '2px solid #dc2626' }}>
+                          <td colSpan={5} className="py-3 px-4 text-right font-black text-red-900 fz-heading" style={{ border: '2px solid #dc2626' }}>
                             PAGE TOTAL:
                           </td>
-                          <td className="text-right py-3 px-4 font-black text-slate-800 text-[14px]" style={{ border: '2px solid #dc2626' }}>
+                          <td className="text-right py-3 px-4 font-black text-slate-800 fz-heading" style={{ border: '2px solid #dc2626' }}>
                             {formatCurrency(totalLoanAmount)}
                           </td>
-                          <td className="text-right py-3 px-4 font-black text-red-800 text-[14px]" style={{ border: '2px solid #dc2626' }}>
+                          <td className="text-right py-3 px-4 font-black text-red-800 fz-heading" style={{ border: '2px solid #dc2626' }}>
                             {formatCurrency(totalOutstanding)}
                           </td>
                         </tr>

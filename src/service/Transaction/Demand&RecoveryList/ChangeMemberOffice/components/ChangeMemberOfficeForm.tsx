@@ -7,9 +7,9 @@ import { ChangeMemberOfficeHookReturn } from '../interface/ChangeMemberOfficeInt
 
 const { Option } = Select;
 
-const lbl = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inp = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
-const roInp = "h-7 text-[11px] font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
+const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inp = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
+const roInp = "h-7 fz-caption font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
 
 const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
     formData, updateField, handleTransfer, handleCancel, handleExit, isProcessing,
@@ -25,25 +25,25 @@ const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
                             <ArrowRightLeft size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Change Member Office</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Demand &amp; Recovery</p>
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Change Member Office</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Demand &amp; Recovery</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleCancel} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-white/20 uppercase tracking-wide transition-all">
+                        <button onClick={handleCancel} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-white/20 uppercase tracking-wide transition-all">
                             <RotateCcw size={11} /> Reset
                         </button>
                         <button
                             onClick={handleTransfer}
                             disabled={isProcessing}
-                            className={`h-7 px-3 rounded-lg text-[9px] font-black flex items-center gap-1.5 uppercase tracking-wide transition-all shadow-lg ${
+                            className={`h-7 px-3 rounded-lg fz-tiny font-black flex items-center gap-1.5 uppercase tracking-wide transition-all shadow-lg ${
                                 isProcessing ? 'bg-slate-700 text-slate-400 cursor-wait border border-slate-600' : 'bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400'
                             }`}
                         >
                             <UserCheck size={11} /> {isProcessing ? 'Processing...' : 'Save'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide transition-all">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide transition-all">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -55,7 +55,7 @@ const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
                     {/* Period card */}
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
                         <div className="px-3 py-1.5 border-b border-slate-100">
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Period</span>
+                            <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Period</span>
                         </div>
                         <div className="px-3 py-2 grid grid-cols-[130px_110px_1fr] gap-3 items-end">
                             <div>
@@ -76,7 +76,7 @@ const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
                     {/* Member card */}
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
                         <div className="px-3 py-1.5 border-b border-slate-100">
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member</span>
+                            <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member</span>
                         </div>
                         <div className="px-3 py-2 grid grid-cols-2 gap-3">
                             <div>
@@ -94,7 +94,7 @@ const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
                     <div className="bg-white rounded-xl border border-indigo-200 shadow-sm shrink-0">
                         <div className="px-3 py-1.5 border-b border-indigo-100 flex items-center gap-1.5">
                             <ArrowRightLeft size={10} className="text-indigo-500" />
-                            <span className="text-[8px] font-black text-indigo-600 uppercase tracking-widest">Change To New Branch</span>
+                            <span className="fz-mini font-black text-indigo-600 uppercase tracking-widest">Change To New Branch</span>
                         </div>
                         <div className="px-3 py-2">
                             <label className={lbl}>New Branch</label>
@@ -109,15 +109,15 @@ const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
                     </div>
 
                     <div className="text-center pt-1">
-                        <p className="text-[9px] font-bold text-indigo-500 italic">Total Divisions &amp; Branches (N) &nbsp; 1 &nbsp; 1 &nbsp; 1</p>
+                        <p className="fz-tiny font-bold text-indigo-500 italic">Total Divisions &amp; Branches (N) &nbsp; 1 &nbsp; 1 &nbsp; 1</p>
                     </div>
 
                 </div>
 
                 {/* Footer */}
                 <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-1.5"><Building2 size={9} className="text-slate-400" /><span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">HR &amp; Admin</span></div>
-                    <span className="text-[8px] font-black text-indigo-400 uppercase tracking-wide">Edit Mode</span>
+                    <div className="flex items-center gap-1.5"><Building2 size={9} className="text-slate-400" /><span className="fz-mini font-black text-slate-500 uppercase tracking-wide">HR &amp; Admin</span></div>
+                    <span className="fz-mini font-black text-indigo-400 uppercase tracking-wide">Edit Mode</span>
                 </div>
             </div>
             <style>{`

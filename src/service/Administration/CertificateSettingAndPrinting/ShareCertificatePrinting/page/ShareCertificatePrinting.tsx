@@ -82,7 +82,7 @@ const ShareCertificatePrinting: React.FC = () => {
             <div className="bg-emerald-600 p-2 rounded-xl shadow-lg shadow-emerald-500/30"><Share2 size={18} className="text-white" /></div>
             <div>
               <h1 className="text-sm font-black text-white uppercase">Share Certificate Printing</h1>
-              <p className="text-[10px] text-slate-400 mt-0.5">Enter share details and print the share certificate</p>
+              <p className="fz-small text-slate-400 mt-0.5">Enter share details and print the share certificate</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ const ShareCertificatePrinting: React.FC = () => {
           {/* Certificate Preview */}
           <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
             className="print:hidden md:w-[58%] flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/40">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-4 font-bold">Certificate Preview</p>
+            <p className="fz-small text-slate-500 uppercase tracking-widest mb-4 font-bold">Certificate Preview</p>
             <div className="w-full max-w-md bg-white shadow-2xl rounded-sm overflow-hidden p-10 border-8 border-double border-slate-800 relative">
               <div className="absolute inset-2 border border-slate-100 pointer-events-none opacity-40" />
               <div className="relative z-10 text-slate-900">
@@ -182,34 +182,34 @@ const ShareCertificatePrinting: React.FC = () => {
                     <Building size={22} className="text-white" />
                   </div>
                   <h1 className="text-lg font-black tracking-widest uppercase">Share Certificate</h1>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Co-operative Credit Society</p>
+                  <p className="fz-tiny font-black text-slate-400 uppercase tracking-widest">Co-operative Credit Society</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-y-6 gap-x-8 text-[11px]">
+                <div className="grid grid-cols-2 gap-y-6 gap-x-8 fz-caption">
                   <div className="col-span-2 flex justify-between items-end border-b border-slate-100 pb-3">
                     <div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Serial Number</span>
+                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Serial Number</span>
                       <p className="font-mono text-lg font-black text-slate-900">{form.certificateNo || 'SH-REF-000'}</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Member</span>
+                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Member</span>
                       <p className="font-black text-indigo-600 italic">{form.memberNo || '—'}</p>
-                      {memberName && <p className="text-[10px] font-bold text-slate-600">{memberName}</p>}
+                      {memberName && <p className="fz-small font-bold text-slate-600">{memberName}</p>}
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Total Capital</span>
+                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Total Capital</span>
                       <p className="text-2xl font-black text-slate-900">₹ {form.shareAmount.toLocaleString('en-IN')}</p>
                     </div>
                     <div className="flex gap-5">
                       <div>
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Units</span>
+                        <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Units</span>
                         <p className="font-black text-slate-900 text-base">{form.noOfShares || '—'}</p>
                       </div>
                       <div>
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Face Value</span>
+                        <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Face Value</span>
                         <p className="font-black text-slate-900 text-base">₹ {form.shareValue}</p>
                       </div>
                     </div>
@@ -217,14 +217,14 @@ const ShareCertificatePrinting: React.FC = () => {
 
                   <div className="space-y-4 pl-6 border-l border-slate-100">
                     <div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Share Range</span>
+                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Share Range</span>
                       <div className="flex items-center gap-2 font-black text-indigo-600">
                         {form.distFromNo || '000'} <ArrowRightLeft size={12} /> {form.distUptoNo || '000'}
                       </div>
                     </div>
                     <div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Certified On</span>
-                      <p className="font-black text-slate-900 text-[10px] uppercase">
+                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Certified On</span>
+                      <p className="font-black text-slate-900 fz-small uppercase">
                         {form.certificateDate ? dayjs(form.certificateDate).format('DD MMM YYYY') : 'PENDING'}
                       </p>
                     </div>
@@ -232,8 +232,8 @@ const ShareCertificatePrinting: React.FC = () => {
                 </div>
 
                 <div className="mt-14 flex justify-between px-3">
-                  <div className="text-center"><div className="w-28 h-px bg-slate-200 mb-1.5" /><span className="text-[8px] font-black text-slate-400 uppercase">Official Seal</span></div>
-                  <div className="text-center"><div className="w-28 h-px bg-slate-900 mb-1.5" /><span className="text-[8px] font-black text-slate-900 uppercase">Managing Director</span></div>
+                  <div className="text-center"><div className="w-28 h-px bg-slate-200 mb-1.5" /><span className="fz-mini font-black text-slate-400 uppercase">Official Seal</span></div>
+                  <div className="text-center"><div className="w-28 h-px bg-slate-900 mb-1.5" /><span className="fz-mini font-black text-slate-900 uppercase">Managing Director</span></div>
                 </div>
               </div>
             </div>

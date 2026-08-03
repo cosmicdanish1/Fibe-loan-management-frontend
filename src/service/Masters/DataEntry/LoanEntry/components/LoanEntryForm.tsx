@@ -13,8 +13,8 @@ import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLo
 const { Option } = Select;
 const { TextArea } = Input;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const LOAN_TYPES = [
     { id: 'ALN', label: 'Advance Loan (ALN)' },
@@ -48,7 +48,7 @@ const MemberField: React.FC<{
         {valueName && (
             <div className="flex items-center gap-1 mt-1">
                 <Users size={9} className="text-indigo-400" />
-                <span className="text-[9px] font-black text-indigo-700">{valueName}</span>
+                <span className="fz-tiny font-black text-indigo-700">{valueName}</span>
             </div>
         )}
     </div>
@@ -83,23 +83,23 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                             <TrendingDown size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Loan Entry</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Loan Entry</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> loan_master + suretymaster
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleClear} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleClear} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Clear
                         </button>
                         <button onClick={handleSave} disabled={isLoading || isCheckingEligibility || (eligibilityStatus && !eligibilityStatus.isEligible) ? true : false}
-                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${(isLoading || isCheckingEligibility || (eligibilityStatus && !eligibilityStatus.isEligible)) ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${(isLoading || isCheckingEligibility || (eligibilityStatus && !eligibilityStatus.isEligible)) ? 'opacity-60 cursor-not-allowed' : ''}`}>
                             {isLoading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
                             {isLoading ? 'Saving…' : 'Save'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -113,7 +113,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Users size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member & Loan Type</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member & Loan Type</span>
                             </div>
                             <div className="p-3 grid grid-cols-2 gap-x-4 gap-y-2">
                                 <MemberField label="Member No." valueNo={formData.memberNo} valueName={formData.memberName}
@@ -139,21 +139,21 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                                 <div className={`px-3 py-1.5 border-b flex items-center justify-between ${eligibilityStatus && !eligibilityStatus.isEligible ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-emerald-100'}`}>
                                     <div className="flex items-center gap-1.5">
                                         <ShieldCheck size={11} className={eligibilityStatus && !eligibilityStatus.isEligible ? 'text-rose-500' : 'text-emerald-500'} />
-                                        <span className={`text-[8px] font-black uppercase tracking-widest ${eligibilityStatus && !eligibilityStatus.isEligible ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                        <span className={`fz-mini font-black uppercase tracking-widest ${eligibilityStatus && !eligibilityStatus.isEligible ? 'text-rose-600' : 'text-emerald-600'}`}>
                                             5% Eligibility Rules
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         {isCheckingEligibility ? (
-                                            <span className="text-[9px] font-bold text-slate-500 flex items-center gap-1">
+                                            <span className="fz-tiny font-bold text-slate-500 flex items-center gap-1">
                                                 <RotateCcw size={10} className="animate-spin" /> Checking...
                                             </span>
                                         ) : eligibilityStatus?.isEligible ? (
-                                            <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[8px] font-black uppercase tracking-widest border border-emerald-200">
+                                            <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 fz-mini font-black uppercase tracking-widest border border-emerald-200">
                                                 Eligible
                                             </span>
                                         ) : (
-                                            <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 text-[8px] font-black uppercase tracking-widest border border-rose-200">
+                                            <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 fz-mini font-black uppercase tracking-widest border border-rose-200">
                                                 Not Eligible
                                             </span>
                                         )}
@@ -164,17 +164,17 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                                         <div className="grid grid-cols-2 gap-4">
                                             {/* Share Value Box */}
                                             <div className="bg-slate-50 border border-slate-200 p-2 rounded relative">
-                                                <div className="text-[9px] font-bold text-slate-500 uppercase mb-1">Share Requirements</div>
-                                                <div className="flex justify-between text-[11px]">
+                                                <div className="fz-tiny font-bold text-slate-500 uppercase mb-1">Share Requirements</div>
+                                                <div className="flex justify-between fz-caption">
                                                     <span className="text-slate-600">Current Share:</span>
                                                     <span className="font-mono font-bold">₹{eligibilityStatus.currentShare.toLocaleString('en-IN')}</span>
                                                 </div>
-                                                <div className="flex justify-between text-[11px] mt-0.5">
+                                                <div className="flex justify-between fz-caption mt-0.5">
                                                     <span className="text-slate-600">Required (5%):</span>
                                                     <span className="font-mono font-bold text-indigo-600">₹{eligibilityStatus.requiredShare.toLocaleString('en-IN')}</span>
                                                 </div>
                                                 {eligibilityStatus.additionalShareRequired > 0 && (
-                                                    <div className="mt-1 pt-1 border-t border-rose-200 flex justify-between text-[11px]">
+                                                    <div className="mt-1 pt-1 border-t border-rose-200 flex justify-between fz-caption">
                                                         <span className="text-rose-600 font-bold">Shortfall:</span>
                                                         <span className="font-mono font-black text-rose-600">₹{eligibilityStatus.additionalShareRequired.toLocaleString('en-IN')}</span>
                                                     </div>
@@ -183,17 +183,17 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                                             
                                             {/* FD Balance Box */}
                                             <div className="bg-slate-50 border border-slate-200 p-2 rounded relative">
-                                                <div className="text-[9px] font-bold text-slate-500 uppercase mb-1">FD Requirements</div>
-                                                <div className="flex justify-between text-[11px]">
+                                                <div className="fz-tiny font-bold text-slate-500 uppercase mb-1">FD Requirements</div>
+                                                <div className="flex justify-between fz-caption">
                                                     <span className="text-slate-600">Current FD:</span>
                                                     <span className="font-mono font-bold">₹{eligibilityStatus.currentFd.toLocaleString('en-IN')}</span>
                                                 </div>
-                                                <div className="flex justify-between text-[11px] mt-0.5">
+                                                <div className="flex justify-between fz-caption mt-0.5">
                                                     <span className="text-slate-600">Required (5%):</span>
                                                     <span className="font-mono font-bold text-indigo-600">₹{eligibilityStatus.requiredFd.toLocaleString('en-IN')}</span>
                                                 </div>
                                                 {eligibilityStatus.additionalFdRequired > 0 && (
-                                                    <div className="mt-1 pt-1 border-t border-rose-200 flex justify-between text-[11px]">
+                                                    <div className="mt-1 pt-1 border-t border-rose-200 flex justify-between fz-caption">
                                                         <span className="text-rose-600 font-bold">Shortfall:</span>
                                                         <span className="font-mono font-black text-rose-600">₹{eligibilityStatus.additionalFdRequired.toLocaleString('en-IN')}</span>
                                                     </div>
@@ -209,7 +209,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <IndianRupee size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Loan Details</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Loan Details</span>
                             </div>
                             <div className="p-3 grid grid-cols-3 gap-x-4 gap-y-2">
 
@@ -257,7 +257,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                                         value={formData.paymentDate ? dayjs(formData.paymentDate) : null}
                                         onChange={d => updateField('paymentDate', d ? d.format('YYYY-MM-DD') : '')}
                                         format="DD-MMM-YY"
-                                        className="w-full h-7 text-[11px]" />
+                                        className="w-full h-7 fz-caption" />
                                 </div>
 
                                 <div>
@@ -274,7 +274,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                                         onChange={e => updateField('purpose', e.target.value)}
                                         placeholder="Enter loan purpose…"
                                         rows={2}
-                                        className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none" />
+                                        className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
                                 </div>
 
                             </div>
@@ -284,7 +284,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Users size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Guarantors (Surety)</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Guarantors (Surety)</span>
                             </div>
                             <div className="p-3 grid grid-cols-2 gap-x-4 gap-y-2">
                                 <MemberField label="Guarantor 1 (G1)"
@@ -305,19 +305,19 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">
                             {LOAN_TYPES.find(t => t.id === formData.loanType)?.label || 'Loan Entry'}
                         </span>
                         {formData.memberName && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">{formData.memberName}</span>
+                                <span className="fz-mini font-black text-indigo-500">{formData.memberName}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

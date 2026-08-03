@@ -241,7 +241,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                   ₹{parseInt(loanDetails.loanAmount || '0').toLocaleString('en-IN')}
                 </p>
                 {loanDetails.loanType && (
-                  <p className="text-slate-500 text-[10px]">
+                  <p className="text-slate-500 fz-small">
                     {loanDetails.loanType.toUpperCase() === 'ALN' &&
                       'Emergency Loan - Max: ₹5,00,000'}
                     {loanDetails.loanType.toUpperCase() === 'RLN' &&
@@ -260,21 +260,21 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               <div className={`px-2 py-1 border-b flex items-center justify-between ${eligibilityStatus && !eligibilityStatus.isEligible ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-emerald-100'}`}>
                 <div className="flex items-center gap-1">
                   <ShieldCheck size={10} className={eligibilityStatus && !eligibilityStatus.isEligible ? 'text-rose-500' : 'text-emerald-500'} />
-                  <span className={`text-[7px] font-black uppercase tracking-widest ${eligibilityStatus && !eligibilityStatus.isEligible ? 'text-rose-600' : 'text-emerald-600'}`}>
+                  <span className={`fz-micro font-black uppercase tracking-widest ${eligibilityStatus && !eligibilityStatus.isEligible ? 'text-rose-600' : 'text-emerald-600'}`}>
                     5% Eligibility
                   </span>
                 </div>
                 <div>
                   {isCheckingEligibility ? (
-                    <span className="text-[8px] font-bold text-slate-500 flex items-center gap-1">
+                    <span className="fz-mini font-bold text-slate-500 flex items-center gap-1">
                       <RotateCcw size={8} className="animate-spin" /> Checking...
                     </span>
                   ) : eligibilityStatus?.isEligible ? (
-                    <span className="px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[7px] font-black uppercase tracking-widest border border-emerald-200">
+                    <span className="px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 fz-micro font-black uppercase tracking-widest border border-emerald-200">
                       Eligible
                     </span>
                   ) : (
-                    <span className="px-1 py-0.5 rounded bg-rose-100 text-rose-700 text-[7px] font-black uppercase tracking-widest border border-rose-200">
+                    <span className="px-1 py-0.5 rounded bg-rose-100 text-rose-700 fz-micro font-black uppercase tracking-widest border border-rose-200">
                       Not Eligible
                     </span>
                   )}
@@ -284,17 +284,17 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                 <div className="p-2 space-y-1.5">
                   {/* Share */}
                   <div className="bg-slate-50 border border-slate-200 p-1.5 rounded">
-                    <div className="text-[8px] font-bold text-slate-500 uppercase mb-0.5">Share</div>
-                    <div className="flex justify-between text-[10px]">
+                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">Share</div>
+                    <div className="flex justify-between fz-small">
                       <span className="text-slate-600">Current:</span>
                       <span className="font-mono font-bold">₹{eligibilityStatus.currentShare.toLocaleString('en-IN')}</span>
                     </div>
-                    <div className="flex justify-between text-[10px]">
+                    <div className="flex justify-between fz-small">
                       <span className="text-slate-600">Required (5%):</span>
                       <span className="font-mono font-bold text-indigo-600">₹{eligibilityStatus.requiredShare.toLocaleString('en-IN')}</span>
                     </div>
                     {eligibilityStatus.additionalShareRequired > 0 && (
-                      <div className="mt-0.5 pt-0.5 border-t border-rose-200 flex justify-between text-[10px]">
+                      <div className="mt-0.5 pt-0.5 border-t border-rose-200 flex justify-between fz-small">
                         <span className="text-rose-600 font-bold">Shortfall:</span>
                         <span className="font-mono font-black text-rose-600">₹{eligibilityStatus.additionalShareRequired.toLocaleString('en-IN')}</span>
                       </div>
@@ -302,17 +302,17 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                   </div>
                   {/* FD */}
                   <div className="bg-slate-50 border border-slate-200 p-1.5 rounded">
-                    <div className="text-[8px] font-bold text-slate-500 uppercase mb-0.5">FD Balance</div>
-                    <div className="flex justify-between text-[10px]">
+                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">FD Balance</div>
+                    <div className="flex justify-between fz-small">
                       <span className="text-slate-600">Current:</span>
                       <span className="font-mono font-bold">₹{eligibilityStatus.currentFd.toLocaleString('en-IN')}</span>
                     </div>
-                    <div className="flex justify-between text-[10px]">
+                    <div className="flex justify-between fz-small">
                       <span className="text-slate-600">Required (5%):</span>
                       <span className="font-mono font-bold text-indigo-600">₹{eligibilityStatus.requiredFd.toLocaleString('en-IN')}</span>
                     </div>
                     {eligibilityStatus.additionalFdRequired > 0 && (
-                      <div className="mt-0.5 pt-0.5 border-t border-rose-200 flex justify-between text-[10px]">
+                      <div className="mt-0.5 pt-0.5 border-t border-rose-200 flex justify-between fz-small">
                         <span className="text-rose-600 font-bold">Shortfall:</span>
                         <span className="font-mono font-black text-rose-600">₹{eligibilityStatus.additionalFdRequired.toLocaleString('en-IN')}</span>
                       </div>
@@ -359,7 +359,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                 <p className="text-white font-semibold text-sm truncate">{selectedMember.name}</p>
                 <p className="text-blue-200 text-xs font-mono">{selectedMember.memberNo}</p>
               </div>
-              <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${selectedMember.isRetired ? 'bg-amber-400/20 text-amber-200' : 'bg-emerald-400/20 text-emerald-200'}`}>
+              <div className={`px-2 py-0.5 rounded-full fz-small font-bold uppercase tracking-wider ${selectedMember.isRetired ? 'bg-amber-400/20 text-amber-200' : 'bg-emerald-400/20 text-emerald-200'}`}>
                 {selectedMember.isRetired ? 'Retired' : 'Active'}
               </div>
             </div>
@@ -369,33 +369,33 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               {/* Employment Row */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="loan-member-card bg-white rounded-lg p-2 border border-slate-200">
-                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Office</p>
+                  <p className="fz-small text-slate-400 font-medium uppercase tracking-wide">Office</p>
                   <p className="text-xs font-semibold text-slate-800 mt-0.5">{selectedMember.officeName || selectedMember.officeNo || '—'}</p>
                 </div>
                 <div className="loan-member-card bg-white rounded-lg p-2 border border-slate-200">
-                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Basic Pay</p>
+                  <p className="fz-small text-slate-400 font-medium uppercase tracking-wide">Basic Pay</p>
                   <p className="text-xs font-semibold text-emerald-600 mt-0.5">{selectedMember.basicPay ? `₹${Number(selectedMember.basicPay).toLocaleString('en-IN')}` : '—'}</p>
                 </div>
                 <div className="loan-member-card bg-white rounded-lg p-2 border border-slate-200">
-                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Retire Date</p>
+                  <p className="fz-small text-slate-400 font-medium uppercase tracking-wide">Retire Date</p>
                   <p className="text-xs font-semibold text-slate-700 mt-0.5">{selectedMember.dateOfRetire || 'N/A'}</p>
                 </div>
               </div>
 
               {/* Financial Summary */}
               <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5">Financial Summary</p>
+                <p className="fz-small text-slate-400 font-bold uppercase tracking-widest mb-1.5">Financial Summary</p>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="loan-member-card bg-white rounded-lg p-2.5 border border-slate-200 text-center">
-                    <p className="text-[10px] text-slate-400 font-medium uppercase">Shares</p>
+                    <p className="fz-small text-slate-400 font-medium uppercase">Shares</p>
                     <p className="text-sm font-bold text-blue-600 mt-1">{selectedMember.shareBalance ? `₹${Number(selectedMember.shareBalance).toLocaleString('en-IN')}` : '₹0'}</p>
                   </div>
                   <div className="loan-member-card bg-white rounded-lg p-2.5 border border-orange-200 text-center">
-                    <p className="text-[10px] text-orange-400 font-medium uppercase">Regular Loan</p>
+                    <p className="fz-small text-orange-400 font-medium uppercase">Regular Loan</p>
                     <p className="text-sm font-bold text-orange-600 mt-1">{selectedMember.regularLoanBal ? `₹${Number(selectedMember.regularLoanBal).toLocaleString('en-IN')}` : '₹0'}</p>
                   </div>
                   <div className="loan-member-card bg-white rounded-lg p-2.5 border border-red-200 text-center">
-                    <p className="text-[10px] text-red-400 font-medium uppercase">Emergency Loan</p>
+                    <p className="fz-small text-red-400 font-medium uppercase">Emergency Loan</p>
                     <p className="text-sm font-bold text-red-600 mt-1">{selectedMember.emergencyLoanBal ? `₹${Number(selectedMember.emergencyLoanBal).toLocaleString('en-IN')}` : '₹0'}</p>
                   </div>
                 </div>
@@ -404,7 +404,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               {/* Address */}
               {(selectedMember.presentAddress || selectedMember.permanentAddress) && (
                 <div className="loan-member-card bg-white rounded-lg p-2.5 border border-slate-200">
-                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Address</p>
+                  <p className="fz-small text-slate-400 font-medium uppercase tracking-wide">Address</p>
                   <p className="text-xs text-slate-700 mt-0.5 leading-relaxed">{selectedMember.presentAddress || selectedMember.permanentAddress}</p>
                 </div>
               )}

@@ -111,7 +111,7 @@ const FixedDepositCertificatePrinting: React.FC = () => {
             <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/30"><Printer size={18} className="text-white" /></div>
             <div>
               <h1 className="text-sm font-black text-white uppercase">Fixed Deposit Certificate Printing</h1>
-              <p className="text-[10px] text-slate-400 mt-0.5">Search member, select FD account and print certificate</p>
+              <p className="fz-small text-slate-400 mt-0.5">Search member, select FD account and print certificate</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -136,7 +136,7 @@ const FixedDepositCertificatePrinting: React.FC = () => {
               <div className="px-5 py-3.5 border-b border-slate-700 flex items-center gap-2.5">
                 <FileText size={15} className="text-indigo-400" />
                 <h2 className="text-xs font-black text-white uppercase tracking-wider">Account Details</h2>
-                {form.id && <span className="ml-auto text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold"><CheckCircle2 size={9} /> Ready</span>}
+                {form.id && <span className="ml-auto fz-small bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold"><CheckCircle2 size={9} /> Ready</span>}
               </div>
               <div className="p-5 space-y-4">
                 {/* Member search */}
@@ -198,7 +198,7 @@ const FixedDepositCertificatePrinting: React.FC = () => {
           {/* Certificate Preview */}
           <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
             className="md:w-7/12 flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/40">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-4 font-bold">Certificate Preview</p>
+            <p className="fz-small text-slate-500 uppercase tracking-widest mb-4 font-bold">Certificate Preview</p>
             <motion.div
               animate={{ y: form.id ? 0 : 4 }} transition={{ duration: 0.4, ease: 'easeOut' }}
               className="w-full max-w-sm bg-white shadow-2xl rounded-md overflow-hidden p-8 border-8 border-double border-slate-800 relative print:shadow-none">
@@ -209,35 +209,35 @@ const FixedDepositCertificatePrinting: React.FC = () => {
                     <Building size={18} className="text-white" />
                   </div>
                   <h1 className="text-base font-black tracking-widest uppercase text-slate-900">Deposit Certificate</h1>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Co-operative Credit Society</p>
+                  <p className="fz-tiny text-slate-400 font-bold uppercase tracking-widest">Co-operative Credit Society</p>
                 </div>
-                <div className="grid grid-cols-2 gap-y-4 text-[11px]">
+                <div className="grid grid-cols-2 gap-y-4 fz-caption">
                   <div>
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Cert No</span>
+                    <span className="fz-mini font-black text-slate-400 uppercase tracking-widest block">Cert No</span>
                     <p className="font-mono font-black text-slate-900">{form.certificateNo || '— —'}</p>
                   </div>
                   <div>
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Member</span>
+                    <span className="fz-mini font-black text-slate-400 uppercase tracking-widest block">Member</span>
                     <p className="font-bold text-slate-700">{form.memberNo || '— —'}</p>
                   </div>
                   <div className="col-span-2 border-t border-slate-100 pt-3">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Principal Amount</span>
+                    <span className="fz-mini font-black text-slate-400 uppercase tracking-widest block">Principal Amount</span>
                     <p className="text-xl font-black text-indigo-600">₹ {form.depositAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                   </div>
                   <div>
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Rate</span>
+                    <span className="fz-mini font-black text-slate-400 uppercase tracking-widest block">Rate</span>
                     <p className="font-black text-slate-900">{form.interestRate}%</p>
                   </div>
                   <div>
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Maturity</span>
-                    <p className="font-black text-slate-900 uppercase text-[10px]">
+                    <span className="fz-mini font-black text-slate-400 uppercase tracking-widest block">Maturity</span>
+                    <p className="font-black text-slate-900 uppercase fz-small">
                       {form.maturityDate ? dayjs(form.maturityDate).format('DD MMM YYYY') : '— —'}
                     </p>
                   </div>
                 </div>
                 <div className="mt-10 flex justify-between px-2">
-                  <div className="text-center"><div className="w-20 h-px bg-slate-200 mb-1" /><span className="text-[8px] font-black text-slate-400 uppercase">Secretary</span></div>
-                  <div className="text-center"><div className="w-20 h-px bg-slate-800 mb-1" /><span className="text-[8px] font-black text-slate-900 uppercase">Authorized</span></div>
+                  <div className="text-center"><div className="w-20 h-px bg-slate-200 mb-1" /><span className="fz-mini font-black text-slate-400 uppercase">Secretary</span></div>
+                  <div className="text-center"><div className="w-20 h-px bg-slate-800 mb-1" /><span className="fz-mini font-black text-slate-900 uppercase">Authorized</span></div>
                 </div>
               </div>
             </motion.div>

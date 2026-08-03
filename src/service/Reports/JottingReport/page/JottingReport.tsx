@@ -413,7 +413,7 @@ const JottingReport: React.FC = () => {
                   onChange={setSelectedHead}
                   placeholder="Select Head"
                   size="small"
-                  className="w-full h-7 text-[10px] font-semibold"
+                  className="w-full h-7 fz-small font-semibold"
                   showSearch
                   optionFilterProp="children"
                   suffixIcon={<ChevronDown size={12} />}
@@ -421,7 +421,7 @@ const JottingReport: React.FC = () => {
                   {headList.map(head => (
                     <Option key={head.code} value={head.code}>
                       <div className="flex items-center justify-between gap-1">
-                        <span className="text-[10px]">{head.headName}</span>
+                        <span className="fz-small">{head.headName}</span>
                         <span className="fz-body text-slate-400 font-mono">{head.code}</span>
                       </div>
                     </Option>
@@ -438,7 +438,7 @@ const JottingReport: React.FC = () => {
               </div>
               <div className="p-2">
                 <DatePicker
-                  className="w-full h-7 text-[10px] font-semibold"
+                  className="w-full h-7 fz-small font-semibold"
                   value={asOnDate}
                   onChange={v => v && setAsOnDate(v)}
                   format="DD-MMM-YY"
@@ -458,7 +458,7 @@ const JottingReport: React.FC = () => {
                   onChange={setSelectedWing}
                   placeholder="All Wings"
                   size="small"
-                  className="w-full h-7 text-[10px] font-semibold"
+                  className="w-full h-7 fz-small font-semibold"
                   allowClear
                   suffixIcon={<ChevronDown size={12} />}
                 >
@@ -481,7 +481,7 @@ const JottingReport: React.FC = () => {
                   onChange={setSelectedOffice}
                   placeholder="All Offices"
                   size="small"
-                  className="w-full h-7 text-[10px] font-semibold"
+                  className="w-full h-7 fz-small font-semibold"
                   allowClear
                   suffixIcon={<ChevronDown size={12} />}
                 >
@@ -503,7 +503,7 @@ const JottingReport: React.FC = () => {
                   value={sortBy}
                   onChange={setSortBy}
                   size="small"
-                  className="w-full h-7 text-[10px] font-semibold"
+                  className="w-full h-7 fz-small font-semibold"
                   suffixIcon={<ChevronDown size={12} />}
                 >
                   <Option value="MBNO">Member Number</Option>
@@ -534,7 +534,7 @@ const JottingReport: React.FC = () => {
                   <FileText size={12} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-[10px] font-black text-white uppercase tracking-wide leading-none">Jotting Report</h3>
+                  <h3 className="fz-small font-black text-white uppercase tracking-wide leading-none">Jotting Report</h3>
                   <p className="fz-body font-bold text-amber-200 uppercase mt-0.5 tracking-tight leading-none">
                     {selectedHeadName} - {asOnDate.format('DD-MMM-YY')}
                   </p>
@@ -621,7 +621,7 @@ const JottingReport: React.FC = () => {
                       <FileText className="text-4xl text-amber-200" />
                     </div>
                     <h4 className="text-slate-400 font-black text-xs uppercase tracking-wider">No Data</h4>
-                    <p className="text-slate-300 text-[10px] mt-1 font-semibold">Select head code and generate report</p>
+                    <p className="text-slate-300 fz-small mt-1 font-semibold">Select head code and generate report</p>
                   </div>
                 )}
               </Spin>

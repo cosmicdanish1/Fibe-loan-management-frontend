@@ -28,12 +28,40 @@
 .fz-button  { font-size: var(--fz-button)  !important; }
 .fz-heading { font-size: var(--fz-heading) !important; }
 
+/* ── Dense scale ──────────────────────────────────────────────────────
+   The voucher / ledger grids fit many columns and use type below the
+   semantic scale. They previously hardcoded text-[7px]…text-[10px], which
+   ignored Settings → Text Size entirely.
+
+   The offsets are chosen so that at the DEFAULT 13px base each class
+   reproduces its old hardcoded size exactly — so migrating a screen is a
+   pixel-for-pixel no-op until the user actually changes Text Size.
+
+     class        default   small(12px)   large(15px)
+     .fz-nano       6px        5px          8px
+     .fz-micro      7px        6px          9px
+     .fz-mini       8px        7px         10px
+     .fz-tiny       9px        8px         11px
+     .fz-small     10px        9px         12px
+     .fz-caption   11px       10px         13px   (existing)
+   ------------------------------------------------------------------- */
+.fz-nano  { font-size: calc(var(--fz-base) - 7px) !important; }
+.fz-micro { font-size: calc(var(--fz-base) - 6px) !important; }
+.fz-mini  { font-size: calc(var(--fz-base) - 5px) !important; }
+.fz-tiny  { font-size: calc(var(--fz-base) - 4px) !important; }
+.fz-small { font-size: calc(var(--fz-base) - 3px) !important; }
+
 /* Bold text mode — toggled by Settings → Bold Text */
 .bold-text .fz-caption,
 .bold-text .fz-label,
 .bold-text .fz-body,
 .bold-text .fz-button,
-.bold-text .fz-heading {
+.bold-text .fz-heading,
+.bold-text .fz-nano,
+.bold-text .fz-micro,
+.bold-text .fz-mini,
+.bold-text .fz-tiny,
+.bold-text .fz-small {
   font-weight: 600 !important;
 }
 

@@ -396,7 +396,7 @@ const BankDetailLedger: React.FC = () => {
 
                     {/* Enhanced Report Title */}
                     <div className="text-center mb-5">
-                      <div className="text-[13px] font-black text-amber-800 mb-2">
+                      <div className="fz-body font-black text-amber-800 mb-2">
                         Bank Account: <span className="text-blue-800">{selectedBank} - {bankName}</span>
                       </div>
                       <div className="fz-label text-slate-700 font-semibold">
@@ -440,16 +440,16 @@ const BankDetailLedger: React.FC = () => {
                           </tr>
                         ))}
                         <tr style={{ backgroundColor: isDark ? '#1e293b' : '#fef3c7' }}>
-                          <td colSpan={3} className="py-3 px-4 text-right font-black text-amber-900 text-[14px]" style={{ border: '2px solid #d97706' }}>
+                          <td colSpan={3} className="py-3 px-4 text-right font-black text-amber-900 fz-heading" style={{ border: '2px solid #d97706' }}>
                             TOTAL:
                           </td>
-                          <td className="text-right py-3 px-4 font-black text-emerald-800 text-[14px]" style={{ border: '2px solid #d97706' }}>
+                          <td className="text-right py-3 px-4 font-black text-emerald-800 fz-heading" style={{ border: '2px solid #d97706' }}>
                             {formatCurrency(totalDebit)}
                           </td>
-                          <td className="text-right py-3 px-4 font-black text-rose-800 text-[14px]" style={{ border: '2px solid #d97706' }}>
+                          <td className="text-right py-3 px-4 font-black text-rose-800 fz-heading" style={{ border: '2px solid #d97706' }}>
                             {formatCurrency(totalCredit)}
                           </td>
-                          <td className="text-right py-3 px-4 font-black text-slate-900 text-[14px]" style={{ border: '2px solid #d97706' }}>
+                          <td className="text-right py-3 px-4 font-black text-slate-900 fz-heading" style={{ border: '2px solid #d97706' }}>
                             {formatCurrency(Math.abs(closingBalance))} {closingBalance >= 0 ? 'DR' : 'CR'}
                           </td>
                         </tr>

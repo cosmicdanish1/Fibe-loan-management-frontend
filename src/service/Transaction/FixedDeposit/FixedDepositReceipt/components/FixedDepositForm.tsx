@@ -13,9 +13,9 @@ import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLo
 
 const { Option } = Select;
 
-const labelCls = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-6 text-[11px] font-semibold bg-white border-slate-300 rounded";
-const roInputCls = "h-6 text-[11px] font-semibold bg-slate-50 border-slate-200 rounded";
+const labelCls = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-6 fz-caption font-semibold bg-white border-slate-300 rounded";
+const roInputCls = "h-6 fz-caption font-semibold bg-slate-50 border-slate-200 rounded";
 
 const RELATIONS = ['Son','Daughter','Wife','Husband','Father','Mother','Brother','Sister','Grandson','Granddaughter','Other'];
 
@@ -55,19 +55,19 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
 
     const nomineeColumns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase">Name</span>, dataIndex: 'name', key: 'name', width: '28%',
-            render: (t: string, r: any) => <Input value={t} onChange={e => updateNominee(r.key, 'name', e.target.value)} placeholder="Name..." className="h-6 text-[10px] font-semibold" />,
+            title: <span className="fz-mini font-black text-slate-600 uppercase">Name</span>, dataIndex: 'name', key: 'name', width: '28%',
+            render: (t: string, r: any) => <Input value={t} onChange={e => updateNominee(r.key, 'name', e.target.value)} placeholder="Name..." className="h-6 fz-small font-semibold" />,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase">Address</span>, dataIndex: 'address', key: 'address', width: '34%',
-            render: (t: string, r: any) => <Input value={t} onChange={e => updateNominee(r.key, 'address', e.target.value)} placeholder="Address..." className="h-6 text-[10px]" />,
+            title: <span className="fz-mini font-black text-slate-600 uppercase">Address</span>, dataIndex: 'address', key: 'address', width: '34%',
+            render: (t: string, r: any) => <Input value={t} onChange={e => updateNominee(r.key, 'address', e.target.value)} placeholder="Address..." className="h-6 fz-small" />,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase">Age</span>, dataIndex: 'age', key: 'age', width: '12%', align: 'center' as const,
-            render: (t: number, r: any) => <Input type="number" value={t || ''} onChange={e => updateNominee(r.key, 'age', e.target.value)} placeholder="0" className="h-6 text-[10px] text-center" />,
+            title: <span className="fz-mini font-black text-slate-600 uppercase">Age</span>, dataIndex: 'age', key: 'age', width: '12%', align: 'center' as const,
+            render: (t: number, r: any) => <Input type="number" value={t || ''} onChange={e => updateNominee(r.key, 'age', e.target.value)} placeholder="0" className="h-6 fz-small text-center" />,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase">Relation</span>, dataIndex: 'relation', key: 'relation', width: '20%',
+            title: <span className="fz-mini font-black text-slate-600 uppercase">Relation</span>, dataIndex: 'relation', key: 'relation', width: '20%',
             render: (t: string, r: any) => <Select value={t || undefined} onChange={v => updateNominee(r.key, 'relation', v)} placeholder="..." size="small" className="w-full fd-sm-select" style={{ height: 24 }} options={RELATIONS.map(rel => ({ value: rel, label: rel }))} />,
         },
         {
@@ -87,26 +87,26 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                             <Landmark size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Fixed Deposit Receipt</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Fixed Deposit Receipt</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> fdmaster + ledger CR A003/FD
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Reset
                         </button>
-                        <button onClick={handlePrint} className="h-7 px-3 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-amber-500/30 uppercase tracking-wide">
+                        <button onClick={handlePrint} className="h-7 px-3 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-amber-500/30 uppercase tracking-wide">
                             <Printer size={11} /> Print
                         </button>
                         <button onClick={handleSave} disabled={isLoading}
-                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
                             {isLoading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
                             {isLoading ? 'Saving…' : 'Save'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -123,21 +123,21 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                                     <Save size={12} className="text-amber-600" />
                                     <div className="flex items-center gap-4">
                                         <div>
-                                            <span className="text-[8px] font-black text-amber-500 uppercase tracking-wide">Certificate</span>
-                                            <p className="text-[10px] font-black text-amber-800">{lastSaved.certificateNo}</p>
+                                            <span className="fz-mini font-black text-amber-500 uppercase tracking-wide">Certificate</span>
+                                            <p className="fz-small font-black text-amber-800">{lastSaved.certificateNo}</p>
                                         </div>
                                         <div>
-                                            <span className="text-[8px] font-black text-amber-500 uppercase tracking-wide">Member</span>
-                                            <p className="text-[10px] font-bold text-amber-800">{lastSaved.memberNo}</p>
+                                            <span className="fz-mini font-black text-amber-500 uppercase tracking-wide">Member</span>
+                                            <p className="fz-small font-bold text-amber-800">{lastSaved.memberNo}</p>
                                         </div>
                                         <div>
-                                            <span className="text-[8px] font-black text-amber-500 uppercase tracking-wide">Amount</span>
-                                            <p className="text-[10px] font-black text-amber-800">₹{lastSaved.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                                            <span className="fz-mini font-black text-amber-500 uppercase tracking-wide">Amount</span>
+                                            <p className="fz-small font-black text-amber-800">₹{lastSaved.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                                         </div>
                                     </div>
                                 </div>
                                 <button onClick={() => { handleReset(); setLastSaved(null); }}
-                                    className="text-[8px] font-black text-amber-600 hover:text-amber-800 uppercase tracking-wide flex items-center gap-1">
+                                    className="fz-mini font-black text-amber-600 hover:text-amber-800 uppercase tracking-wide flex items-center gap-1">
                                     <RotateCcw size={9} /> New
                                 </button>
                             </div>
@@ -147,7 +147,7 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-2.5 py-1 border-b border-slate-100 flex items-center gap-1.5">
                                 <Users size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member & Applicant</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member & Applicant</span>
                             </div>
                             <div className="p-2 space-y-1.5">
                                 {/* Row 1: Member No + Ref Member No */}
@@ -224,11 +224,11 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                             <div className="px-2.5 py-1 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Landmark size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Deposit Details</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Deposit Details</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Checkbox checked={formData.isModify} onChange={e => updateField('isModify', e.target.checked)}
-                                        className="text-[9px] font-black text-slate-700">Modify</Checkbox>
+                                        className="fz-tiny font-black text-slate-700">Modify</Checkbox>
                                     {formData.isModify && (
                                         <div className="flex gap-2">
                                             {['adjustment','renewal'].map(v => (
@@ -236,7 +236,7 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                                                     updateField('isAdjustment', v === 'adjustment');
                                                     updateField('isRenewal', v === 'renewal');
                                                 }}
-                                                    className={`h-6 px-2.5 rounded-lg text-[8px] font-black uppercase transition-all border ${
+                                                    className={`h-6 px-2.5 rounded-lg fz-mini font-black uppercase transition-all border ${
                                                         (v === 'adjustment' && formData.isAdjustment) || (v === 'renewal' && formData.isRenewal)
                                                             ? 'bg-amber-500 text-white border-amber-400'
                                                             : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -261,7 +261,7 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                                     <label className={labelCls}>Deposit Date <span className="text-rose-500">*</span></label>
                                     <DatePicker value={formData.depositDate ? dayjs(formData.depositDate) : null}
                                         onChange={d => updateField('depositDate', d)}
-                                        className="w-full h-6 text-[11px]" format="DD-MMM-YY" />
+                                        className="w-full h-6 fz-caption" format="DD-MMM-YY" />
                                 </div>
                                 <div>
                                     <label className={labelCls}>Rate (%)</label>
@@ -284,7 +284,7 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                                     <label className={labelCls}>Maturity Date <span className="text-rose-500">*</span></label>
                                     <DatePicker value={formData.maturityDate ? dayjs(formData.maturityDate) : null}
                                         onChange={d => updateField('maturityDate', d)}
-                                        className="w-full h-6 text-[11px]" format="DD-MMM-YY" />
+                                        className="w-full h-6 fz-caption" format="DD-MMM-YY" />
                                 </div>
                                 <div className="col-span-2">
                                     <label className={labelCls}>Int. Calculation Method</label>
@@ -340,16 +340,16 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                                 <div className="px-2.5 py-1 border-b border-slate-100 flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
                                         <Users size={11} className="text-slate-400" />
-                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Nominee Details</span>
+                                        <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Nominee Details</span>
                                     </div>
                                     <button onClick={addNominee}
-                                        className="h-5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[8px] font-black flex items-center gap-1 transition-colors uppercase">
+                                        className="h-5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded fz-mini font-black flex items-center gap-1 transition-colors uppercase">
                                         <Plus size={9} /> Add Nominee
                                     </button>
                                 </div>
                                 <Table columns={nomineeColumns} dataSource={nomineeData} pagination={false}
                                     size="small" className="fd-nom-table" rowKey="key" scroll={{ y: 100 }}
-                                    locale={{ emptyText: <span className="text-[9px] text-slate-400 py-3 block text-center font-bold uppercase">Click "Add Nominee" to add</span> }} />
+                                    locale={{ emptyText: <span className="fz-tiny text-slate-400 py-3 block text-center font-bold uppercase">Click "Add Nominee" to add</span> }} />
                             </div>
 
                             {/* Mode of Receipt */}
@@ -357,18 +357,18 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                                 <div className="px-2.5 py-1 border-b border-slate-100 flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
                                         <Building2 size={11} className="text-slate-400" />
-                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Mode of Receipt</span>
+                                        <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Mode of Receipt</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                                        <span className="text-[8px] font-black text-slate-500 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
-                                        <span className={`text-[9px] font-black ${bankBalance < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{bankBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="fz-mini font-black text-slate-500 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
+                                        <span className={`fz-tiny font-black ${bankBalance < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{bankBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
                                 <div className="p-2 space-y-1.5">
                                     <div className="flex gap-2">
                                         {['cash','bank'].map(mode => (
                                             <button key={mode} onClick={() => updateField('paymentMode', mode)}
-                                                className={`h-7 px-4 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all border ${
+                                                className={`h-7 px-4 rounded-lg fz-tiny font-black uppercase tracking-wide transition-all border ${
                                                     formData.paymentMode === mode
                                                         ? mode === 'cash' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-blue-600 text-white border-blue-500'
                                                         : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -379,7 +379,7 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                                     </div>
                                     {formData.paymentMode === 'bank' && (
                                         <div className="space-y-2 pt-2 border-t border-slate-100">
-                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Cheque Details</p>
+                                            <p className="fz-mini font-black text-slate-500 uppercase tracking-widest">Cheque Details</p>
                                             <div className="grid grid-cols-2 gap-x-3">
                                                 <div>
                                                     <label className={labelCls}>Date</label>
@@ -416,17 +416,17 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Fixed Deposit Receipt</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Fixed Deposit Receipt</span>
                         {formData.memberNo && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">Member: {formData.memberNo}</span>
+                                <span className="fz-mini font-black text-indigo-500">Member: {formData.memberNo}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

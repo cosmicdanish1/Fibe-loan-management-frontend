@@ -147,7 +147,7 @@ const DayBookSB: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Day Book [Saving]</h1>
-              <div className={`flex items-center gap-1.5 mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${muted}`}>
+              <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
                 <ShieldCheck size={10} className="text-sky-400" /> Savings Bank Ledger
               </div>
             </div>
@@ -174,7 +174,7 @@ const DayBookSB: React.FC = () => {
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
               className={`rounded-xl overflow-hidden ${panel}`}>
               <div className={`px-3 py-2 flex items-center justify-between ${panelHd}`}>
-                <h3 className={`text-[11px] font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
+                <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
                   <Settings size={11} className="text-sky-400" /> Parameters
                 </h3>
                 <Tooltip title="Reload">
@@ -183,7 +183,7 @@ const DayBookSB: React.FC = () => {
               </div>
               <div className="p-3 space-y-3">
                 <div className="space-y-1">
-                  <label className={`text-[10px] font-bold uppercase tracking-tight ${muted}`}>Date</label>
+                  <label className={`fz-small font-bold uppercase tracking-tight ${muted}`}>Date</label>
                   <DatePicker className="w-full h-8 text-xs font-semibold" value={selectedDate}
                     onChange={v => v && setSelectedDate(v)} format="DD-MMM-YYYY" />
                 </div>
@@ -201,27 +201,27 @@ const DayBookSB: React.FC = () => {
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col gap-2">
                   <div className={`rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening [SB]</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening [SB]</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.openingBalance)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-sky-600/20 border border-sky-500/30' : 'bg-sky-50 border border-sky-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-sky-400' : 'text-sky-600'}`}>Total Deposit</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-sky-400' : 'text-sky-600'}`}>Total Deposit</div>
                     <div className={`text-sm font-black font-mono ${isDark ? 'text-sky-300' : 'text-sky-700'}`}>{fmt(data.totalDeposit)}</div>
-                    <div className={`text-[9px] mt-1 ${isDark ? 'text-sky-500' : 'text-sky-500'}`}>Cash: {fmt(data.totalDepositCash)} | Trf: {fmt(data.totalDepositTransfer)}</div>
+                    <div className={`fz-tiny mt-1 ${isDark ? 'text-sky-500' : 'text-sky-500'}`}>Cash: {fmt(data.totalDepositCash)} | Trf: {fmt(data.totalDepositTransfer)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${muted}`}>Cash In Hand</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${muted}`}>Cash In Hand</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmt(data.totalCashInHand)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-rose-600/20 border border-rose-500/30' : 'bg-rose-50 border border-rose-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Total Withdrawal</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Total Withdrawal</div>
                     <div className={`text-sm font-black font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalWithdrawal)}</div>
-                    <div className={`text-[9px] mt-1 ${isDark ? 'text-rose-500' : 'text-rose-500'}`}>Cash: {fmt(data.totalWithdrawalCash)} | Trf: {fmt(data.totalWithdrawalTransfer)}</div>
+                    <div className={`fz-tiny mt-1 ${isDark ? 'text-rose-500' : 'text-rose-500'}`}>Cash: {fmt(data.totalWithdrawalCash)} | Trf: {fmt(data.totalWithdrawalTransfer)}</div>
                   </div>
                   <div className={`border rounded-lg p-3 ${data.closingBalance >= 0
                     ? (isDark ? 'bg-sky-600/20 border-sky-500/30' : 'bg-sky-50 border-sky-200')
                     : (isDark ? 'bg-rose-900/30 border-rose-700/40' : 'bg-rose-50 border-rose-200')}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-sky-400' : 'text-sky-600'}`}>Closing [SB]</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-sky-400' : 'text-sky-600'}`}>Closing [SB]</div>
                     <div className={`text-sm font-black font-mono ${data.closingBalance >= 0
                       ? (isDark ? 'text-sky-300' : 'text-sky-700')
                       : (isDark ? 'text-rose-300' : 'text-rose-700')}`}>
@@ -229,7 +229,7 @@ const DayBookSB: React.FC = () => {
                     </div>
                   </div>
                   <div className={`rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${muted}`}>Transactions</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Transactions</div>
                     <div className={`text-lg font-black font-mono ${text}`}>{data.totalTransactions}</div>
                   </div>
                 </motion.div>
@@ -244,7 +244,7 @@ const DayBookSB: React.FC = () => {
                 Day Book [Saving] — {selectedDate.format('DD-MMM-YYYY')}
               </span>
               {data && (
-                <span className={`text-[10px] font-mono ${subtle}`}>{data.totalTransactions} entries</span>
+                <span className={`fz-small font-mono ${subtle}`}>{data.totalTransactions} entries</span>
               )}
             </div>
 
@@ -255,13 +255,13 @@ const DayBookSB: React.FC = () => {
                     {/* Company header */}
                     <div className={`text-center mb-4 pb-3 ${compBdr}`}>
                       <div className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className={`text-[11px] ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                      <div className={`text-[10px] mt-0.5 ${subtle}`}>Day Book [Saving] for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
+                      <div className={`fz-caption ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
+                      <div className={`fz-small mt-0.5 ${subtle}`}>Day Book [Saving] for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
                     </div>
 
                     {/* Main table */}
                     <div className="overflow-x-auto">
-                      <table className={`w-full text-[11px] font-mono border-collapse border ${tblBdrFull}`}>
+                      <table className={`w-full fz-caption font-mono border-collapse border ${tblBdrFull}`}>
                         <thead>
                           <tr>
                             <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left w-12 align-bottom ${tblHd}`}>Tr No</th>
@@ -336,7 +336,7 @@ const DayBookSB: React.FC = () => {
                       </table>
                     </div>
 
-                    <div className={`mt-3 text-[10px] italic ${subtle}`}>
+                    <div className={`mt-3 fz-small italic ${subtle}`}>
                       * Report As Per Data Available ..
                     </div>
                   </div>
@@ -356,9 +356,9 @@ const DayBookSB: React.FC = () => {
         <div className={`px-4 py-1.5 flex items-center justify-between shrink-0 ${ftrBg}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse" />
-            <span className={`text-[10px] font-bold uppercase tracking-wide ${muted}`}>Day Book [SB] · Savings Ledger</span>
+            <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Day Book [SB] · Savings Ledger</span>
           </div>
-          <span className={`text-[10px] font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
+          <span className={`fz-small font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
         </div>
       </div>
     </ConfigProvider>

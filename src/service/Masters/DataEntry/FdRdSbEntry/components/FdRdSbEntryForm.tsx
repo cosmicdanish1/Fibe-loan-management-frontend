@@ -14,8 +14,8 @@ import { FdRdSbEntryHookReturn } from '../interface/FdRdSbEntryInterfaces';
 const { Option } = Select;
 const { TextArea } = Input;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const ENTRY_TYPES = [
     { id: 'FD', label: 'Compulsory Deposit (CD)', accType: 'CD', code: 'L1004' },
@@ -76,8 +76,8 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                                 <Database size={13} className="text-white" />
                             </div>
                             <div>
-                                <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">FD / RD / SB Entry</h1>
-                                <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                                <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">FD / RD / SB Entry</h1>
+                                <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                     <ShieldCheck size={7} className="text-indigo-400" /> Writes to ledger
                                 </p>
                             </div>
@@ -89,7 +89,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                                 <button
                                     key={tab.id}
                                     onClick={() => updateField('entryType', tab.id)}
-                                    className={`relative px-2.5 h-6 text-[8px] font-black uppercase tracking-wide transition-all rounded-md ${
+                                    className={`relative px-2.5 h-6 fz-mini font-black uppercase tracking-wide transition-all rounded-md ${
                                         formData.entryType === tab.id
                                             ? 'bg-indigo-600 text-white shadow-lg'
                                             : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
@@ -102,16 +102,16 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleClear} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleClear} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Clear
                         </button>
                         <button onClick={handleSave} disabled={isLoading}
-                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
                             {isLoading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
                             {isLoading ? 'Saving…' : 'Save'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -125,9 +125,9 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Users size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member</span>
                                 {formData.memberName && (
-                                    <span className="ml-auto text-[9px] font-black text-indigo-600">{formData.memberName}</span>
+                                    <span className="ml-auto fz-tiny font-black text-indigo-600">{formData.memberName}</span>
                                 )}
                             </div>
                             <div className="p-3">
@@ -159,8 +159,8 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Database size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Transaction Details</span>
-                                <span className="ml-auto text-[8px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Transaction Details</span>
+                                <span className="ml-auto fz-mini font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
                                     {activeType.accType} / {activeType.code}
                                 </span>
                             </div>
@@ -172,7 +172,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                                         value={formData.transDate ? dayjs(formData.transDate) : null}
                                         onChange={d => updateField('transDate', d ? d.format('YYYY-MM-DD') : '')}
                                         format="DD-MMM-YY"
-                                        className="w-full h-7 text-[11px]"
+                                        className="w-full h-7 fz-caption"
                                     />
                                 </div>
 
@@ -180,7 +180,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                                     <label className={labelCls}>Transaction Type</label>
                                     <div className="flex gap-1">
                                         <button onClick={() => updateField('transType', 'CR')}
-                                            className={`flex-1 h-7 rounded-lg text-[9px] font-black flex items-center justify-center gap-1 transition-all border ${
+                                            className={`flex-1 h-7 rounded-lg fz-tiny font-black flex items-center justify-center gap-1 transition-all border ${
                                                 formData.transType === 'CR'
                                                     ? 'bg-emerald-600 text-white border-emerald-500'
                                                     : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -188,7 +188,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                                             <ArrowDownCircle size={11} /> CR
                                         </button>
                                         <button onClick={() => updateField('transType', 'DR')}
-                                            className={`flex-1 h-7 rounded-lg text-[9px] font-black flex items-center justify-center gap-1 transition-all border ${
+                                            className={`flex-1 h-7 rounded-lg fz-tiny font-black flex items-center justify-center gap-1 transition-all border ${
                                                 formData.transType === 'DR'
                                                     ? 'bg-rose-600 text-white border-rose-500'
                                                     : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -247,7 +247,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                                     onChange={e => updateField('narration', e.target.value)}
                                     placeholder="Enter narration / remarks…"
                                     rows={2}
-                                    className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none" />
+                                    className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
                             </div>
                         </div>
 
@@ -258,17 +258,17 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">{activeType.label}</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">{activeType.label}</span>
                         {formData.memberName && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">{formData.memberName}</span>
+                                <span className="fz-mini font-black text-indigo-500">{formData.memberName}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

@@ -443,7 +443,7 @@ const HeadAdditionModification: React.FC = () => {
                   <th className="px-3 py-2 text-left text-xs font-black text-white uppercase tracking-wider">
                     Code — Head Name
                     {flatData.length > 0 && (
-                      <span className="ml-2 text-purple-300 font-black normal-case text-[10px]">
+                      <span className="ml-2 text-purple-300 font-black normal-case fz-small">
                         {flatData.length} heads
                       </span>
                     )}
@@ -623,7 +623,7 @@ const HeadAdditionModification: React.FC = () => {
                   <th className="px-2 py-2" />
                   <th className="px-3 py-2 text-left text-xs font-black text-white uppercase tracking-widest">
                     Grand Total
-                    <span className="ml-2 text-[10px] text-purple-300 font-normal normal-case">
+                    <span className="ml-2 fz-small text-purple-300 font-normal normal-case">
                       {flatData.filter(e => !SECTION_ROOTS.includes(e.code) && e.code !== 'M1000').length} accounts
                     </span>
                   </th>
@@ -658,7 +658,7 @@ const HeadAdditionModification: React.FC = () => {
         okButtonProps={{ disabled: saving, style: { background: '#7c3aed', borderColor: '#7c3aed' } }}
         cancelButtonProps={{ disabled: saving }}
         title={
-          <div className="flex items-center gap-2 text-[11px] font-black text-slate-800 uppercase tracking-wider">
+          <div className="flex items-center gap-2 fz-caption font-black text-slate-800 uppercase tracking-wider">
             {formMode === 'add' ? <Plus size={12} className="text-emerald-600" /> : <Pencil size={12} className="text-indigo-600" />}
             {formMode === 'add' ? 'Add New Account Head' : `Edit — ${formData.code}`}
           </div>
@@ -669,13 +669,13 @@ const HeadAdditionModification: React.FC = () => {
         <div className="grid grid-cols-2 gap-x-3 gap-y-2 pt-2">
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Code *</label>
+            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Code *</label>
             <input
               value={formData.code}
               onChange={e => setField('code', e.target.value)}
               readOnly={formMode === 'edit'}
               placeholder="e.g. L1005"
-              className={`h-7 px-2 text-[10px] font-mono border rounded outline-none transition-colors
+              className={`h-7 px-2 fz-small font-mono border rounded outline-none transition-colors
                 ${formMode === 'edit'
                   ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed'
                   : 'border-slate-300 focus:border-purple-400 bg-white'}`}
@@ -683,11 +683,11 @@ const HeadAdditionModification: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Parent Code *</label>
+            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Parent Code *</label>
             <select
               value={formData.parentCode}
               onChange={e => setField('parentCode', e.target.value)}
-              className="h-7 px-2 text-[10px] font-mono border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
+              className="h-7 px-2 fz-small font-mono border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
             >
               <option value="">— select —</option>
               {[...flatData]
@@ -702,43 +702,43 @@ const HeadAdditionModification: React.FC = () => {
           </div>
 
           <div className="col-span-2 flex flex-col gap-0.5">
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Head Name *</label>
+            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Head Name *</label>
             <input
               value={formData.headName}
               onChange={e => setField('headName', e.target.value)}
               placeholder="e.g. Share Capital"
-              className="h-7 px-2 text-[10px] border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
+              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
             />
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Position (Sort)</label>
+            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Position (Sort)</label>
             <input
               type="number"
               value={formData.hposition}
               onChange={e => setField('hposition', e.target.value)}
               placeholder="e.g. 1000"
-              className="h-7 px-2 text-[10px] border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
+              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
             />
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Opening Balance</label>
+            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Opening Balance</label>
             <input
               type="number"
               step="0.01"
               value={formData.opBal}
               onChange={e => setField('opBal', e.target.value)}
-              className="h-7 px-2 text-[10px] border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
+              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
             />
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Interest</label>
+            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Interest</label>
             <select
               value={formData.interest}
               onChange={e => setField('interest', e.target.value)}
-              className="h-7 px-2 text-[10px] border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
+              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
             >
               <option value="N">N — None</option>
               <option value="Y">Y — Yes</option>
@@ -746,11 +746,11 @@ const HeadAdditionModification: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">P Flag</label>
+            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">P Flag</label>
             <select
               value={formData.pflag}
               onChange={e => setField('pflag', e.target.value)}
-              className="h-7 px-2 text-[10px] border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
+              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
             >
               <option value="L">L — Left</option>
               <option value="R">R — Right</option>
@@ -760,7 +760,7 @@ const HeadAdditionModification: React.FC = () => {
         </div>
 
         {formMode === 'add' && (
-          <p className="mt-3 text-[8px] text-slate-400 leading-relaxed">
+          <p className="mt-3 fz-mini text-slate-400 leading-relaxed">
             Code prefix must match the parent section:&nbsp;
             <strong>L</strong>iabilities · <strong>A</strong>ssets · <strong>E</strong>xpenditure · <strong>I</strong>ncome.
             After adding, click <strong>Build Tree</strong> to recalculate balances.

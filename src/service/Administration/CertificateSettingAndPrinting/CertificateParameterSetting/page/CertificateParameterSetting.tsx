@@ -188,7 +188,7 @@ const CertificateParameterSetting: React.FC = () => {
             </div>
             <div>
               <h1 className="text-sm font-black text-white tracking-tight uppercase">Certificate Parameter Setting</h1>
-              <p className="text-[10px] text-slate-400 mt-0.5">Configure certificate layout fields and format</p>
+              <p className="fz-small text-slate-400 mt-0.5">Configure certificate layout fields and format</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

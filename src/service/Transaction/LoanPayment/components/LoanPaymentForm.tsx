@@ -11,9 +11,9 @@ import dayjs from 'dayjs';
 
 const { Option } = Select;
 
-const lbl = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inp = "h-6 text-[10px] font-semibold bg-white border-slate-300 rounded";
-const roInp = "h-6 text-[10px] font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
+const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inp = "h-6 fz-small font-semibold bg-white border-slate-300 rounded";
+const roInp = "h-6 fz-small font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
 
 const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
     formData, modalData, loanCases, isLoadingCases,
@@ -39,21 +39,21 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                             <CreditCard size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Loan Payment</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Loan Payment</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> Loan Disbursement
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Reset
                         </button>
-                        <button onClick={handleSave} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
+                        <button onClick={handleSave} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
                             <Save size={11} /> Save
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -66,7 +66,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                     <div className="bg-white rounded-lg border border-slate-200 shadow-md shrink-0">
                         <div className="px-2 py-0.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center gap-1.5">
                             <Hash size={9} className="text-indigo-400" />
-                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Loan Case</span>
+                            <span className="fz-mini font-black text-slate-600 uppercase tracking-widest">Loan Case</span>
                         </div>
                         <div className="px-2 py-1.5 flex items-center gap-2">
                             <div className="shrink-0 w-40">
@@ -92,8 +92,8 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                     }}>
                                     {loanCases.map(loan => (
                                         <Option key={loan.loanCaseNo} value={loan.loanCaseNo}>
-                                            <span className="text-[10px] font-bold text-slate-700">{loan.loanCaseNo}</span>
-                                            <span className="text-[9px] text-slate-400 ml-2">{loan.memberName}</span>
+                                            <span className="fz-small font-bold text-slate-700">{loan.loanCaseNo}</span>
+                                            <span className="fz-tiny text-slate-400 ml-2">{loan.memberName}</span>
                                         </Option>
                                     ))}
                                 </Select>
@@ -101,16 +101,16 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                             {formData.noOfInstallments && (
                                 <div className="flex items-center gap-1.5 shrink-0">
                                     <div className="flex items-center gap-1 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
-                                        <span className="text-[7px] font-black text-indigo-400 uppercase">Inst.</span>
-                                        <span className="text-[10px] font-black text-indigo-700">{formData.noOfInstallments}</span>
+                                        <span className="fz-micro font-black text-indigo-400 uppercase">Inst.</span>
+                                        <span className="fz-small font-black text-indigo-700">{formData.noOfInstallments}</span>
                                     </div>
                                     <div className="flex items-center gap-1 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg">
-                                        <span className="text-[7px] font-black text-emerald-400 uppercase">Amt</span>
-                                        <span className="text-[10px] font-black text-emerald-700">₹{installmentAmt}</span>
+                                        <span className="fz-micro font-black text-emerald-400 uppercase">Amt</span>
+                                        <span className="fz-small font-black text-emerald-700">₹{installmentAmt}</span>
                                     </div>
                                 </div>
                             )}
-                            <button onClick={openSanctionWindow} className={`h-6 px-3 rounded-lg text-[8px] font-black uppercase tracking-wide flex items-center gap-1 transition-all border shrink-0 ${
+                            <button onClick={openSanctionWindow} className={`h-6 px-3 rounded-lg fz-mini font-black uppercase tracking-wide flex items-center gap-1 transition-all border shrink-0 ${
                                 formData.sanctionLoanAmount
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                                     : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-500'
@@ -125,29 +125,29 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                     <div className="bg-white rounded-lg border border-slate-200 shadow-md shrink-0">
                         <div className="px-2 py-0.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center gap-1.5">
                             <Building2 size={9} className="text-indigo-400" />
-                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Member</span>
+                            <span className="fz-mini font-black text-slate-600 uppercase tracking-widest">Member</span>
                         </div>
                         <div className="px-2 py-1.5">
                             {/* Row 1: MemberNo, Name, Sanction, Office, SubDiv — like legacy label:value side by side */}
                             <div className="grid grid-cols-12 gap-x-2 gap-y-0.5 items-center">
-                                <span className="col-span-1 text-[8px] font-black text-purple-700">Member No</span>
-                                <span className="col-span-1 text-[10px] font-black text-blue-700">{formData.memberNo || '—'}</span>
-                                <span className="col-span-3 text-[10px] font-black text-slate-800 truncate">{formData.memberName || '—'}</span>
-                                <span className="col-span-1 text-[8px] font-black text-purple-700">Sanction</span>
-                                <span className="col-span-2 text-[10px] font-black text-emerald-700">₹{parseFloat(formData.sanctionLoanAmount || '0').toLocaleString('en-IN')}</span>
-                                <span className="col-span-1 text-[8px] font-black text-purple-700">Office No</span>
-                                <span className="col-span-1 text-[10px] font-semibold text-slate-700">{formData.officeNo || '—'}</span>
-                                <span className="col-span-2 text-[10px] font-semibold text-slate-600 truncate">{formData.subDivision || '—'}</span>
+                                <span className="col-span-1 fz-mini font-black text-purple-700">Member No</span>
+                                <span className="col-span-1 fz-small font-black text-blue-700">{formData.memberNo || '—'}</span>
+                                <span className="col-span-3 fz-small font-black text-slate-800 truncate">{formData.memberName || '—'}</span>
+                                <span className="col-span-1 fz-mini font-black text-purple-700">Sanction</span>
+                                <span className="col-span-2 fz-small font-black text-emerald-700">₹{parseFloat(formData.sanctionLoanAmount || '0').toLocaleString('en-IN')}</span>
+                                <span className="col-span-1 fz-mini font-black text-purple-700">Office No</span>
+                                <span className="col-span-1 fz-small font-semibold text-slate-700">{formData.officeNo || '—'}</span>
+                                <span className="col-span-2 fz-small font-semibold text-slate-600 truncate">{formData.subDivision || '—'}</span>
                             </div>
                             {/* Row 2: Head, Loan Type */}
                             <div className="grid grid-cols-12 gap-x-2 items-center mt-1 pt-1 border-t border-slate-100">
-                                <span className="col-span-1 text-[8px] font-black text-purple-700">Head</span>
-                                <span className="col-span-1 text-[10px] font-black text-blue-700 font-mono">{formData.hCode || '—'}</span>
-                                <span className="col-span-3 text-[10px] font-black text-slate-800">{formData.hName || 'LOAN DISBURSEMENT'}</span>
-                                <span className="col-span-1 text-[8px] font-black text-purple-700">Loan Type</span>
-                                <span className="col-span-2 text-[10px] font-black text-indigo-700">{modalData.loanType || '—'}</span>
-                                <span className="col-span-1 text-[8px] font-black text-purple-700">Inst. Amt</span>
-                                <span className="col-span-3 text-[10px] font-black text-slate-700 font-mono">₹{installmentAmt}</span>
+                                <span className="col-span-1 fz-mini font-black text-purple-700">Head</span>
+                                <span className="col-span-1 fz-small font-black text-blue-700 font-mono">{formData.hCode || '—'}</span>
+                                <span className="col-span-3 fz-small font-black text-slate-800">{formData.hName || 'LOAN DISBURSEMENT'}</span>
+                                <span className="col-span-1 fz-mini font-black text-purple-700">Loan Type</span>
+                                <span className="col-span-2 fz-small font-black text-indigo-700">{modalData.loanType || '—'}</span>
+                                <span className="col-span-1 fz-mini font-black text-purple-700">Inst. Amt</span>
+                                <span className="col-span-3 fz-small font-black text-slate-700 font-mono">₹{installmentAmt}</span>
                             </div>
                         </div>
                     </div>
@@ -157,18 +157,18 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                         <div className="px-2 py-0.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
                                 <Banknote size={9} className="text-indigo-400" />
-                                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Mode of Payment</span>
+                                <span className="fz-mini font-black text-slate-600 uppercase tracking-widest">Mode of Payment</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg">
-                                    <span className="text-[9px] font-black text-emerald-600 uppercase">Actual Amount</span>
-                                    <span className="text-[13px] font-black text-emerald-700 font-mono">
+                                    <span className="fz-tiny font-black text-emerald-600 uppercase">Actual Amount</span>
+                                    <span className="fz-body font-black text-emerald-700 font-mono">
                                         ₹{(actualAmount > 0 ? actualAmount : parseFloat(formData.sanctionLoanAmount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                                    <span className="text-[7px] font-black text-slate-400 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
-                                    <span className={`text-[9px] font-black ${(bankBalance || 0) < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{(bankBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                    <span className="fz-micro font-black text-slate-400 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
+                                    <span className={`fz-tiny font-black ${(bankBalance || 0) < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{(bankBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
                         </div>
@@ -179,7 +179,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                 <div className="flex gap-1">
                                     {['cash', 'bank'].map(mode => (
                                         <button key={mode} onClick={() => updateField('paymentMode', mode)}
-                                            className={`h-6 px-3 rounded-lg text-[8px] font-black uppercase tracking-wide transition-all border ${
+                                            className={`h-6 px-3 rounded-lg fz-mini font-black uppercase tracking-wide transition-all border ${
                                                 formData.paymentMode === mode
                                                     ? mode === 'cash' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-blue-600 text-white border-blue-500'
                                                     : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -194,7 +194,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                 <label className={lbl}>{formData.paymentMode === 'bank' ? 'Cheque Date' : 'Payment Date'}</label>
                                 <DatePicker value={formData.chequeDate ? dayjs(formData.chequeDate) : null}
                                     onChange={d => updateField('chequeDate', d)}
-                                    className="h-6 w-32 text-[10px] lp-dp" format="DD-MMM-YY" />
+                                    className="h-6 w-32 fz-small lp-dp" format="DD-MMM-YY" />
                             </div>
                             {/* Bank-only fields */}
                             {formData.paymentMode === 'bank' && (
@@ -221,11 +221,11 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                         <div className="px-2 py-0.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-1.5">
                                 <FileText size={9} className="text-indigo-400" />
-                                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Transaction Breakdown</span>
-                                <span className="text-[7px] font-black text-slate-400 ml-1">{data.length} row(s)</span>
+                                <span className="fz-mini font-black text-slate-600 uppercase tracking-widest">Transaction Breakdown</span>
+                                <span className="fz-micro font-black text-slate-400 ml-1">{data.length} row(s)</span>
                             </div>
                             <button onClick={addVoucherEntry}
-                                className="h-5 px-2 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 rounded text-[8px] font-black uppercase tracking-wide flex items-center gap-1 transition-colors border border-emerald-200">
+                                className="h-5 px-2 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 rounded fz-mini font-black uppercase tracking-wide flex items-center gap-1 transition-colors border border-emerald-200">
                                 <Plus size={9} /> Add Row
                             </button>
                         </div>
@@ -233,18 +233,18 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                             <table className="w-full text-left border-collapse">
                                 <thead className="sticky top-0 bg-slate-50 z-10">
                                     <tr className="border-b border-slate-200">
-                                        <th className="py-1 px-2 text-[8px] font-black text-slate-500 uppercase tracking-wide w-8 text-center">Sr</th>
-                                        <th className="py-1 px-2 text-[8px] font-black text-slate-500 uppercase tracking-wide w-24">Code</th>
-                                        <th className="py-1 px-2 text-[8px] font-black text-slate-500 uppercase tracking-wide">Name</th>
-                                        <th className="py-1 px-2 text-[8px] font-black text-slate-500 uppercase tracking-wide w-24">R/P</th>
-                                        <th className="py-1 px-2 text-[8px] font-black text-slate-500 uppercase tracking-wide w-28 text-right">Amount</th>
+                                        <th className="py-1 px-2 fz-mini font-black text-slate-500 uppercase tracking-wide w-8 text-center">Sr</th>
+                                        <th className="py-1 px-2 fz-mini font-black text-slate-500 uppercase tracking-wide w-24">Code</th>
+                                        <th className="py-1 px-2 fz-mini font-black text-slate-500 uppercase tracking-wide">Name</th>
+                                        <th className="py-1 px-2 fz-mini font-black text-slate-500 uppercase tracking-wide w-24">R/P</th>
+                                        <th className="py-1 px-2 fz-mini font-black text-slate-500 uppercase tracking-wide w-28 text-right">Amount</th>
                                         <th className="py-1 px-2 w-7"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {data && data.length > 0 ? data.map((entry: PaymentEntry, index: number) => (
                                         <tr key={entry.key || index} className="border-b border-slate-100 hover:bg-slate-50 group">
-                                            <td className="py-0.5 px-2 text-center text-[10px] font-bold text-slate-500">{index + 1}</td>
+                                            <td className="py-0.5 px-2 text-center fz-small font-bold text-slate-500">{index + 1}</td>
                                             <td className="py-0.5 px-1.5">
                                                 <Select showSearch value={entry.code || undefined}
                                                     onChange={val => updateVoucherEntry(index, 'code', val)}
@@ -253,7 +253,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                                     options={headList.map(h => ({ value: h.code, label: `${h.code} - ${h.name}` }))} />
                                             </td>
                                             <td className="py-0.5 px-1.5">
-                                                <span className="text-[10px] font-bold text-slate-600 truncate block" title={entry.name}>{entry.name || '—'}</span>
+                                                <span className="fz-small font-bold text-slate-600 truncate block" title={entry.name}>{entry.name || '—'}</span>
                                             </td>
                                             <td className="py-0.5 px-1.5">
                                                 <Select value={entry.rp || undefined}
@@ -264,7 +264,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                             <td className="py-0.5 px-1.5">
                                                 <Input type="number" value={entry.amount}
                                                     onChange={e => updateVoucherEntry(index, 'amount', e.target.value)}
-                                                    className="h-5 text-[10px] font-black border-slate-300 rounded text-right font-mono px-1.5"
+                                                    className="h-5 fz-small font-black border-slate-300 rounded text-right font-mono px-1.5"
                                                     placeholder="0.00" />
                                             </td>
                                             <td className="py-0.5 px-1 text-center">
@@ -276,7 +276,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={6} className="py-4 text-center text-[9px] font-black text-slate-400 uppercase">
+                                            <td colSpan={6} className="py-4 text-center fz-tiny font-black text-slate-400 uppercase">
                                                 No entries — select a loan case to begin
                                             </td>
                                         </tr>
@@ -291,18 +291,18 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                         <div className="px-2 py-1.5 flex items-center gap-3">
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <FileText size={9} className="text-indigo-400" />
-                                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Narration</span>
+                                <span className="fz-mini font-black text-slate-600 uppercase tracking-widest">Narration</span>
                             </div>
                             <Input value={formData.narration} onChange={e => updateField('narration', e.target.value)}
                                 placeholder="Enter narration / remarks…" className={`${inp} flex-1`} />
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg">
-                                    <span className="text-[7px] font-black text-emerald-400 uppercase tracking-wide">Total Receipt</span>
-                                    <span className="text-[11px] font-black text-emerald-700 font-mono">₹{totalReceipt.toFixed(2)}</span>
+                                    <span className="fz-micro font-black text-emerald-400 uppercase tracking-wide">Total Receipt</span>
+                                    <span className="fz-caption font-black text-emerald-700 font-mono">₹{totalReceipt.toFixed(2)}</span>
                                 </div>
                                 <div className="flex items-center gap-2 bg-rose-50 border border-rose-200 px-3 py-1 rounded-lg">
-                                    <span className="text-[7px] font-black text-rose-400 uppercase tracking-wide">Total Payment</span>
-                                    <span className="text-[11px] font-black text-rose-700 font-mono">₹{totalPayment.toFixed(2)}</span>
+                                    <span className="fz-micro font-black text-rose-400 uppercase tracking-wide">Total Payment</span>
+                                    <span className="fz-caption font-black text-rose-700 font-mono">₹{totalPayment.toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
@@ -314,23 +314,23 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                 <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <CreditCard size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Loan Payment</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Loan Payment</span>
                         {formData.loanCaseNo && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">Case: {formData.loanCaseNo}</span>
+                                <span className="fz-mini font-black text-indigo-500">Case: {formData.loanCaseNo}</span>
                             </>
                         )}
                         {formData.memberNo && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-slate-500">Member: {formData.memberNo}</span>
+                                <span className="fz-mini font-black text-slate-500">Member: {formData.memberNo}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-400">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 
@@ -341,7 +341,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                 title={
                     <div className="flex items-center gap-2">
                         <ShieldCheck size={13} className="text-indigo-500" />
-                        <span className="text-[11px] font-black text-slate-800 uppercase tracking-wide">Sanction Authorization</span>
+                        <span className="fz-caption font-black text-slate-800 uppercase tracking-wide">Sanction Authorization</span>
                     </div>
                 }
                 open={modalData.isOpen} onCancel={closeModal} footer={null}
@@ -355,8 +355,8 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                         ['Share Capital', `₹${modalData.shareAmount}`, 'text-emerald-700'],
                     ] as const).map(([label, val, cls]) => (
                         <div key={label}>
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-wide block mb-0.5">{label}</span>
-                            <span className={`text-[11px] font-black ${cls}`}>{val}</span>
+                            <span className="fz-mini font-black text-slate-400 uppercase tracking-wide block mb-0.5">{label}</span>
+                            <span className={`fz-caption font-black ${cls}`}>{val}</span>
                         </div>
                     ))}
                 </div>
@@ -366,7 +366,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                         <div className="relative">
                             <IndianRupee size={9} className="absolute left-1.5 top-1/2 -translate-y-1/2 text-emerald-400" />
                             <Input value={modalData.sanctionedAmount} onChange={e => updateModalField('sanctionedAmount', e.target.value)}
-                                className="h-6 text-[10px] font-black bg-emerald-50 border-emerald-200 rounded pl-5 text-emerald-700" />
+                                className="h-6 fz-small font-black bg-emerald-50 border-emerald-200 rounded pl-5 text-emerald-700" />
                         </div>
                     </div>
                     <div>
@@ -376,21 +376,21 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                     <div>
                         <label className={lbl}>Interest Rate (%)</label>
                         <Input value={modalData.rate} onChange={e => updateModalField('rate', e.target.value)}
-                            className="h-6 text-[10px] font-black bg-indigo-50 border-indigo-200 rounded text-indigo-700" />
+                            className="h-6 fz-small font-black bg-indigo-50 border-indigo-200 rounded text-indigo-700" />
                     </div>
                     <div>
                         <label className={lbl}>Penal Rate (%)</label>
                         <Input value={modalData.penalRate} onChange={e => updateModalField('penalRate', e.target.value)}
-                            className="h-6 text-[10px] font-black bg-rose-50 border-rose-200 rounded text-rose-700" />
+                            className="h-6 fz-small font-black bg-rose-50 border-rose-200 rounded text-rose-700" />
                     </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-2.5 border-t border-slate-200">
                     <button onClick={closeModal}
-                        className="h-6 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[8px] font-black uppercase tracking-wide transition-colors">
+                        className="h-6 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg fz-mini font-black uppercase tracking-wide transition-colors">
                         Cancel
                     </button>
                     <button onClick={handleModalSave}
-                        className="h-6 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[8px] font-black uppercase tracking-wide flex items-center gap-1.5 shadow border border-indigo-500 transition-colors">
+                        className="h-6 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-mini font-black uppercase tracking-wide flex items-center gap-1.5 shadow border border-indigo-500 transition-colors">
                         <ShieldCheck size={10} /> Confirm Sanction
                     </button>
                 </div>

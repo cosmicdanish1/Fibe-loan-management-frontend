@@ -125,7 +125,7 @@ const AdHocReports: React.FC = () => {
     const firstRow = reportData.data[0];
     return Object.keys(firstRow).map(key => ({
       title: (
-        <span className="text-[10px] font-black uppercase tracking-tight text-slate-500">
+        <span className="fz-small font-black uppercase tracking-tight text-slate-500">
           {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
         </span>
       ),
@@ -140,7 +140,7 @@ const AdHocReports: React.FC = () => {
           return <span className="text-slate-500">{dayjs(value).format('DD MMM YYYY')}</span>;
         }
         if (key.toLowerCase() === 'status') {
-          return <Tag color={statusColorMap(value)} className="rounded-full px-3 text-[10px] font-bold uppercase">{value}</Tag>;
+          return <Tag color={statusColorMap(value)} className="rounded-full px-3 fz-small font-bold uppercase">{value}</Tag>;
         }
         return <span className="text-slate-600">{value?.toString() || '-'}</span>;
       }
@@ -194,7 +194,7 @@ const AdHocReports: React.FC = () => {
                 <Button
                   icon={<Download size={14} />}
                   onClick={exportCSV}
-                  className="rounded-xl font-black text-[10px] h-10 border-slate-200 transition-all hover:border-indigo-500 hover:text-indigo-600 shadow-sm uppercase tracking-widest"
+                  className="rounded-xl font-black fz-small h-10 border-slate-200 transition-all hover:border-indigo-500 hover:text-indigo-600 shadow-sm uppercase tracking-widest"
                 >
                   EXPORT CSV
                 </Button>
@@ -215,12 +215,12 @@ const AdHocReports: React.FC = () => {
             <Card className="rounded-2xl border-slate-200 shadow-sm overflow-hidden" bodyStyle={{ padding: 16 }}>
               <div className="flex items-center gap-2 mb-6">
                 <Filter size={16} className="text-indigo-500" />
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Configuration</h3>
+                <h3 className="fz-small font-black text-slate-400 uppercase tracking-widest leading-none">Configuration</h3>
               </div>
 
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Report Explorer</label>
+                  <label className="fz-small font-black text-slate-500 uppercase ml-1">Report Explorer</label>
                   <div className="grid grid-cols-1 gap-2">
                     {reportTypes.map(type => (
                       <button
@@ -238,7 +238,7 @@ const AdHocReports: React.FC = () => {
                             {type.icon}
                           </div>
                           <div>
-                            <div className={`text-[11px] font-black ${reportType === type.value ? 'text-indigo-900' : 'text-slate-700'} uppercase leading-none mb-1`}>
+                            <div className={`fz-caption font-black ${reportType === type.value ? 'text-indigo-900' : 'text-slate-700'} uppercase leading-none mb-1`}>
                               {type.label}
                             </div>
                             <div className="fz-body text-slate-400 font-medium uppercase tracking-tighter">{type.desc}</div>
@@ -260,7 +260,7 @@ const AdHocReports: React.FC = () => {
                   >
                     {['member_wise', 'transaction_wise', 'account_wise'].includes(reportType) && (
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Member Reference</label>
+                        <label className="fz-small font-black text-slate-500 uppercase ml-1">Member Reference</label>
                         <div className="relative group">
                           <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
                           <Input
@@ -282,7 +282,7 @@ const AdHocReports: React.FC = () => {
                     {['transaction_wise', 'account_wise'].includes(reportType) && (
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Start Date</label>
+                          <label className="fz-small font-black text-slate-500 uppercase ml-1">Start Date</label>
                           <DatePicker
                             value={fromDate}
                             onChange={d => setFromDate(d || dayjs())}
@@ -292,7 +292,7 @@ const AdHocReports: React.FC = () => {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-500 uppercase ml-1">End Date</label>
+                          <label className="fz-small font-black text-slate-500 uppercase ml-1">End Date</label>
                           <DatePicker
                             value={toDate}
                             onChange={d => setToDate(d || dayjs())}
@@ -307,7 +307,7 @@ const AdHocReports: React.FC = () => {
                     {reportType === 'custom' && (
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between ml-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">SQL Pipeline</label>
+                          <label className="fz-small font-black text-slate-500 uppercase tracking-widest">SQL Pipeline</label>
                           <Tooltip title="ReadOnly SELECT statements are mandatory. System enforcement active.">
                             <AlertCircle size={10} className="text-slate-300" />
                           </Tooltip>
@@ -317,7 +317,7 @@ const AdHocReports: React.FC = () => {
                           onChange={e => setCustomQuery(e.target.value)}
                           placeholder="SELECT * FROM main_ledger WHERE amount > 5000..."
                           rows={6}
-                          className="rounded-xl border-slate-200 text-[11px] font-mono bg-slate-900 text-indigo-300 selection:bg-indigo-500 selection:text-white p-4"
+                          className="rounded-xl border-slate-200 fz-caption font-mono bg-slate-900 text-indigo-300 selection:bg-indigo-500 selection:text-white p-4"
                         />
                       </div>
                     )}
@@ -328,7 +328,7 @@ const AdHocReports: React.FC = () => {
                   type="primary"
                   onClick={handleGenerate}
                   loading={loading}
-                  className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 border-0 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 mt-4"
+                  className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 border-0 rounded-xl font-black fz-small uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 mt-4"
                 >
                   {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Activity size={16} />}
                   EXECUTE SYNC
@@ -341,7 +341,7 @@ const AdHocReports: React.FC = () => {
                 <ShieldCheck size={16} />
               </div>
               <div>
-                <div className="text-[10px] font-black text-slate-700 uppercase tracking-tight">ENCRYPTED CHANNEL</div>
+                <div className="fz-small font-black text-slate-700 uppercase tracking-tight">ENCRYPTED CHANNEL</div>
                 <div className="fz-body text-slate-500 uppercase tracking-tighter">Query execution is isolated and audit-ready.</div>
               </div>
             </div>
@@ -361,10 +361,10 @@ const AdHocReports: React.FC = () => {
                       <TableIcon size={18} />
                     </div>
                     <div>
-                      <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-tight leading-none mb-1">
+                      <h3 className="fz-label font-black text-slate-800 uppercase tracking-tight leading-none mb-1">
                         {reportTypes.find(t => t.value === reportData.reportType)?.label} Preview
                       </h3>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                      <p className="fz-small text-slate-400 font-bold uppercase tracking-tighter">
                         Archival Synchronized: <span className="text-indigo-600">{reportData.totalRecords}</span> Reference points found
                       </p>
                     </div>
@@ -372,7 +372,7 @@ const AdHocReports: React.FC = () => {
                   <div className="flex items-center gap-4 no-print">
                     <div className="text-right">
                       <div className="fz-body font-black text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Last Archive Sync</div>
-                      <div className="text-[11px] font-black text-slate-700 leading-none">{dayjs(reportData.generatedAt).format('HH:mm:ss')}</div>
+                      <div className="fz-caption font-black text-slate-700 leading-none">{dayjs(reportData.generatedAt).format('HH:mm:ss')}</div>
                     </div>
                     <div className="w-px h-8 bg-slate-100" />
                     <Button
@@ -380,7 +380,7 @@ const AdHocReports: React.FC = () => {
                       size="small"
                       onClick={() => window.print()}
                       icon={<Printer size={12} />}
-                      className="rounded-lg h-9 px-4 font-black text-[10px] bg-slate-900 border-0 uppercase tracking-widest shadow-md shadow-slate-200"
+                      className="rounded-lg h-9 px-4 font-black fz-small bg-slate-900 border-0 uppercase tracking-widest shadow-md shadow-slate-200"
                     >
                       PRINT
                     </Button>

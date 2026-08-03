@@ -155,7 +155,7 @@ const DayBook: React.FC = () => {
             <span className={`text-xs font-bold uppercase ${grpName}`}>{group.headName}</span>
           </div>
 
-          <table className={`w-full text-[11px] font-mono ${groupTbl}`}>
+          <table className={`w-full fz-caption font-mono ${groupTbl}`}>
             <tbody>
               {group.entries.map((e, i) => (
                 <tr key={i} className={`${tblBdr} border-b ${rowHov} transition-colors ${i % 2 === 0 ? rowEven : rowOdd}`}>
@@ -166,7 +166,7 @@ const DayBook: React.FC = () => {
                     ${section === 'Payment' ? (isDark ? 'text-rose-300' : 'text-rose-600') : (isDark ? 'text-emerald-300' : 'text-emerald-600')}`}>
                     {fmt(e.amount)}
                   </td>
-                  <td className={`py-0.5 px-2 w-36 text-[10px] ${subtle}`}>{e.username}</td>
+                  <td className={`py-0.5 px-2 w-36 fz-small ${subtle}`}>{e.username}</td>
                 </tr>
               ))}
             </tbody>
@@ -206,7 +206,7 @@ const DayBook: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Day Book</h1>
-              <div className={`flex items-center gap-1.5 mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${muted}`}>
+              <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
                 <ShieldCheck size={10} className="text-indigo-400" /> Daily Transaction Journal
               </div>
             </div>
@@ -233,7 +233,7 @@ const DayBook: React.FC = () => {
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
               className={`rounded-xl overflow-hidden ${panel}`}>
               <div className={`px-3 py-2 flex items-center justify-between ${panelHd}`}>
-                <h3 className={`text-[11px] font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
+                <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
                   <Settings size={11} className="text-indigo-400" /> Parameters
                 </h3>
                 <Tooltip title="Reload">
@@ -242,7 +242,7 @@ const DayBook: React.FC = () => {
               </div>
               <div className="p-3 space-y-3">
                 <div className="space-y-1">
-                  <label className={`text-[10px] font-bold uppercase tracking-tight ${muted}`}>Date</label>
+                  <label className={`fz-small font-bold uppercase tracking-tight ${muted}`}>Date</label>
                   <DatePicker className="w-full h-8 text-xs font-semibold" value={selectedDate}
                     onChange={v => v && setSelectedDate(v)} format="DD-MMM-YYYY" />
                 </div>
@@ -260,21 +260,21 @@ const DayBook: React.FC = () => {
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col gap-2">
                   <div className={`rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.openingBalance)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-emerald-600/20 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Receipts</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Receipts</div>
                     <div className={`text-sm font-black font-mono ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceipts)}</div>
                   </div>
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-rose-600/20 border border-rose-500/30' : 'bg-rose-50 border border-rose-200'}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Payments</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Payments</div>
                     <div className={`text-sm font-black font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPayments)}</div>
                   </div>
                   <div className={`border rounded-lg p-3 ${data.closingBalance >= 0
                     ? (isDark ? 'bg-indigo-600/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200')
                     : (isDark ? 'bg-rose-900/30 border-rose-700/40' : 'bg-rose-50 border-rose-200')}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Closing</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Closing</div>
                     <div className={`text-sm font-black font-mono ${data.closingBalance >= 0
                       ? (isDark ? 'text-indigo-300' : 'text-indigo-700')
                       : (isDark ? 'text-rose-300' : 'text-rose-700')}`}>
@@ -282,7 +282,7 @@ const DayBook: React.FC = () => {
                     </div>
                   </div>
                   <div className={`rounded-lg p-3 ${panel}`}>
-                    <div className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${muted}`}>Transactions</div>
+                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Transactions</div>
                     <div className={`text-lg font-black font-mono ${text}`}>{data.totalTransactions}</div>
                   </div>
                 </motion.div>
@@ -297,7 +297,7 @@ const DayBook: React.FC = () => {
                 Day Book — {selectedDate.format('DD-MMM-YYYY')}
               </span>
               {data && (
-                <span className={`text-[10px] font-mono ${subtle}`}>
+                <span className={`fz-small font-mono ${subtle}`}>
                   {data.totalTransactions} entries
                 </span>
               )}
@@ -310,12 +310,12 @@ const DayBook: React.FC = () => {
                     {/* Company header */}
                     <div className={`text-center mb-4 pb-3 ${compBdr}`}>
                       <div className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className={`text-[11px] ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                      <div className={`text-[10px] mt-0.5 ${subtle}`}>DAY BOOK — {selectedDate.format('DD-MMM-YYYY')}</div>
+                      <div className={`fz-caption ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
+                      <div className={`fz-small mt-0.5 ${subtle}`}>DAY BOOK — {selectedDate.format('DD-MMM-YYYY')}</div>
                     </div>
 
                     {/* Column header hint */}
-                    <div className={`grid font-mono text-[10px] uppercase tracking-wide mb-1 px-2 ${subtle}`}
+                    <div className={`grid font-mono fz-small uppercase tracking-wide mb-1 px-2 ${subtle}`}
                       style={{ gridTemplateColumns: '6rem 1fr 5rem 7rem 9rem' }}>
                       <span>MB No</span><span>Name</span><span>Voucher</span><span className="text-right">Amount</span><span>User</span>
                     </div>
@@ -360,9 +360,9 @@ const DayBook: React.FC = () => {
         <div className={`px-4 py-1.5 flex items-center justify-between shrink-0 ${ftrBg}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-            <span className={`text-[10px] font-bold uppercase tracking-wide ${muted}`}>Day Book · Daily Journal</span>
+            <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Day Book · Daily Journal</span>
           </div>
-          <span className={`text-[10px] font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
+          <span className={`fz-small font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
         </div>
       </div>
     </ConfigProvider>

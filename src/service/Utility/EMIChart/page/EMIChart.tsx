@@ -149,16 +149,16 @@ const EMIChart: React.FC = () => {
               <Calculator size={13} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">
-                EMI Intelligence <span className="px-1 py-0.5 bg-white/10 text-[7px] rounded-full border border-white/20 align-middle">PRO</span>
+              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">
+                EMI Intelligence <span className="px-1 py-0.5 bg-white/10 fz-micro rounded-full border border-white/20 align-middle">PRO</span>
               </h1>
-              <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Amortization &amp; Recovery Protocol</p>
+              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Amortization &amp; Recovery Protocol</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-1 bg-slate-700/50 px-1.5 py-0.5 rounded-lg border border-white/10">
               <div className="w-1 h-1 bg-slate-400 rounded-full animate-pulse" />
-              <span className="text-[7px] font-black text-slate-300 uppercase">System Online</span>
+              <span className="fz-micro font-black text-slate-300 uppercase">System Online</span>
             </div>
             <button onClick={() => window.close()} className="p-1 text-slate-300 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all">
               <X size={12} />
@@ -178,13 +178,13 @@ const EMIChart: React.FC = () => {
                 <div className="bg-slate-900 rounded-xl p-2.5 shadow-xl">
                   <div className="flex items-center gap-1.5 mb-2">
                     <div className="p-1 bg-white/10 rounded-lg"><User className="text-indigo-400" size={11} /></div>
-                    <h2 className="text-white font-black text-[9px] uppercase tracking-wider">Member Terminal</h2>
+                    <h2 className="text-white font-black fz-tiny uppercase tracking-wider">Member Terminal</h2>
                   </div>
                   <div className="space-y-1.5">
                     <div className="relative">
                       <input type="text" value={memberNumber} onChange={handleMemberNumberChange}
                         placeholder="ENTER MB NO"
-                        className="w-full bg-slate-800 border-2 border-slate-700 rounded-lg px-2 py-1 text-white font-bold text-[9px] outline-none focus:border-slate-600 placeholder:text-slate-600 uppercase tracking-widest h-6 pr-8" />
+                        className="w-full bg-slate-800 border-2 border-slate-700 rounded-lg px-2 py-1 text-white font-bold fz-tiny outline-none focus:border-slate-600 placeholder:text-slate-600 uppercase tracking-widest h-6 pr-8" />
                       <button onClick={() => setShowMemberLookup(true)}
                         className="absolute right-1 top-1 p-1 bg-slate-700 hover:bg-slate-600 text-white rounded transition-all">
                         <Search size={9} />
@@ -194,19 +194,19 @@ const EMIChart: React.FC = () => {
                       <div className="bg-slate-700 text-white p-2 rounded-lg space-y-1">
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="text-[7px] font-black text-slate-400 uppercase">Identified Member</p>
-                            <h3 className="font-black text-[9px] leading-tight mt-0.5">{selectedMember.memberName}</h3>
+                            <p className="fz-micro font-black text-slate-400 uppercase">Identified Member</p>
+                            <h3 className="font-black fz-tiny leading-tight mt-0.5">{selectedMember.memberName}</h3>
                           </div>
                           <ShieldCheck size={10} className="text-white" />
                         </div>
-                        <div className="pt-1 border-t border-white/10 flex justify-between text-[8px] font-bold">
+                        <div className="pt-1 border-t border-white/10 flex justify-between fz-mini font-bold">
                           <span className="text-slate-400">ID: {selectedMember.memberNo}</span>
-                          <span className="bg-white/10 px-1 rounded text-[7px] uppercase">Active</span>
+                          <span className="bg-white/10 px-1 rounded fz-micro uppercase">Active</span>
                         </div>
                       </div>
                     ) : (
                       <div className="bg-slate-800/50 border border-dashed border-slate-700/50 rounded-lg p-2 text-center">
-                        <p className="text-[8px] font-black text-slate-500 uppercase italic">Awaiting member auth...</p>
+                        <p className="fz-mini font-black text-slate-500 uppercase italic">Awaiting member auth...</p>
                       </div>
                     )}
                   </div>
@@ -216,8 +216,8 @@ const EMIChart: React.FC = () => {
                 {selectedMember && memberLoans.length > 0 && (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between px-1">
-                      <h3 className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Active Liabilities</h3>
-                      <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-[8px] font-black rounded-full uppercase">{memberLoans.length} Cases</span>
+                      <h3 className="fz-mini font-black text-slate-400 uppercase tracking-widest">Active Liabilities</h3>
+                      <span className="px-2 py-0.5 bg-slate-200 text-slate-600 fz-mini font-black rounded-full uppercase">{memberLoans.length} Cases</span>
                     </div>
                     <div className="space-y-1.5 max-h-[50vh] overflow-y-auto pr-0.5">
                       {memberLoans.map((loan) => (
@@ -226,21 +226,21 @@ const EMIChart: React.FC = () => {
                             ? 'bg-white border-indigo-600 shadow-lg ring-2 ring-indigo-50'
                             : 'bg-white border-transparent hover:border-slate-200 shadow-sm'}`}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black text-slate-900 uppercase">{loan.loanCaseNo}</span>
-                            <span className={`px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase border ${loan.loanType === 'RLN' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                            <span className="fz-small font-black text-slate-900 uppercase">{loan.loanCaseNo}</span>
+                            <span className={`px-1.5 py-0.5 rounded-full fz-micro font-black uppercase border ${loan.loanType === 'RLN' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
                               {loan.loanType}
                             </span>
                           </div>
-                          <div className="grid grid-cols-2 gap-1 text-[9px]">
+                          <div className="grid grid-cols-2 gap-1 fz-tiny">
                             <div>
-                              <p className="text-slate-400 uppercase text-[7px]">Liability</p>
+                              <p className="text-slate-400 uppercase fz-micro">Liability</p>
                               <p className="font-bold text-slate-700">{formatCurrency(loan.loanAmount)}</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-slate-400 uppercase text-[7px]">Balance</p>
+                              <p className="text-slate-400 uppercase fz-micro">Balance</p>
                               <p className="font-bold text-rose-600">{formatCurrency(loan.balance)}</p>
                             </div>
-                            <div className="col-span-2 pt-1.5 border-t border-slate-50 flex justify-between text-[9px] font-black text-slate-400 uppercase">
+                            <div className="col-span-2 pt-1.5 border-t border-slate-50 flex justify-between fz-tiny font-black text-slate-400 uppercase">
                               <span>Instal: {formatCurrency(loan.installmentAmount)}</span>
                               <ArrowRight size={10} />
                             </div>
@@ -260,10 +260,10 @@ const EMIChart: React.FC = () => {
                   <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-3">
                     <div className="p-2 bg-rose-500 text-white rounded-lg shrink-0"><AlertCircle size={14} /></div>
                     <div>
-                      <h5 className="text-[9px] font-black text-rose-900 uppercase tracking-wider">Access Interrupted</h5>
-                      <p className="text-[10px] font-bold text-rose-700 mt-0.5">{error}</p>
+                      <h5 className="fz-tiny font-black text-rose-900 uppercase tracking-wider">Access Interrupted</h5>
+                      <p className="fz-small font-bold text-rose-700 mt-0.5">{error}</p>
                       <button onClick={() => selectedMember && fetchMemberLoans(selectedMember.memberNo)}
-                        className="mt-1.5 flex items-center gap-1 text-[9px] font-black text-rose-500 uppercase">
+                        className="mt-1.5 flex items-center gap-1 fz-tiny font-black text-rose-500 uppercase">
                         <RefreshCw size={10} /> Retry Protocol
                       </button>
                     </div>
@@ -278,7 +278,7 @@ const EMIChart: React.FC = () => {
                       <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100"><PieChart size={14} /></div>
-                          <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Debt Clearance</h4>
+                          <h4 className="fz-mini font-black text-slate-400 uppercase tracking-widest">Debt Clearance</h4>
                         </div>
                         <p className="text-2xl font-black text-slate-800 leading-none">{summaryStats.completionPercentage.toFixed(1)}<span className="text-sm text-slate-400">%</span></p>
                         <div className="mt-2 h-2 bg-slate-50 rounded-full border border-slate-100 overflow-hidden">
@@ -288,20 +288,20 @@ const EMIChart: React.FC = () => {
                       <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100"><TrendingUp size={14} /></div>
-                          <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Cleared Principal</h4>
+                          <h4 className="fz-mini font-black text-slate-400 uppercase tracking-widest">Cleared Principal</h4>
                         </div>
                         <p className="text-xl font-black text-slate-800 leading-none">{formatCurrency(summaryStats.totalPrincipalPaid)}</p>
-                        <div className="flex items-center gap-1 mt-2 text-[9px] font-black text-emerald-600 uppercase">
+                        <div className="flex items-center gap-1 mt-2 fz-tiny font-black text-emerald-600 uppercase">
                           <ArrowUpRight size={11} /><span>Reduction relative to gross</span>
                         </div>
                       </div>
                       <div className="bg-slate-900 rounded-xl p-3 shadow-xl">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="p-2 bg-slate-800 text-rose-400 rounded-xl border border-slate-700"><Clock size={14} /></div>
-                          <h4 className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Residual Exposure</h4>
+                          <h4 className="fz-mini font-black text-slate-500 uppercase tracking-widest">Residual Exposure</h4>
                         </div>
                         <p className="text-xl font-black text-white leading-none">{formatCurrency(selectedLoan.balance)}</p>
-                        <div className="flex items-center gap-1 mt-2 text-[9px] font-black text-slate-500 uppercase">
+                        <div className="flex items-center gap-1 mt-2 fz-tiny font-black text-slate-500 uppercase">
                           <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                           <span>Awaiting Recovery ({summaryStats.pendingInstallments} inst.)</span>
                         </div>
@@ -314,12 +314,12 @@ const EMIChart: React.FC = () => {
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center"><FileText size={18} className="text-slate-600" /></div>
                           <div>
-                            <h3 className="text-[11px] font-black text-slate-800 uppercase">Amortization Ledger</h3>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Official Payment Manifest</p>
+                            <h3 className="fz-caption font-black text-slate-800 uppercase">Amortization Ledger</h3>
+                            <p className="fz-mini font-bold text-slate-400 uppercase tracking-widest">Official Payment Manifest</p>
                           </div>
                         </div>
                         <button onClick={handleExportPDF}
-                          className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[9px] font-black hover:bg-slate-800 transition-all">
+                          className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1.5 rounded-lg fz-tiny font-black hover:bg-slate-800 transition-all">
                           <Printer size={11} /> Official Printout
                         </button>
                       </div>
@@ -329,21 +329,21 @@ const EMIChart: React.FC = () => {
                           <thead className="bg-[#f8fafc] sticky top-0">
                             <tr>
                               {['Seq', 'Due Date', 'Installment', 'Principal', 'Service Fee', 'Balance', 'Status'].map((h, i) => (
-                                <th key={h} className={`px-3 py-2 text-[8px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-200 ${i >= 2 && i <= 5 ? 'text-right' : i === 6 ? 'text-center' : ''}`}>{h}</th>
+                                <th key={h} className={`px-3 py-2 fz-mini font-black text-slate-400 uppercase tracking-wider border-b border-slate-200 ${i >= 2 && i <= 5 ? 'text-right' : i === 6 ? 'text-center' : ''}`}>{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-50">
                             {paginatedSchedule.map((item) => (
                               <tr key={item.month} className="hover:bg-indigo-50/30 transition-colors">
-                                <td className="px-3 py-2 text-[9px] font-bold text-slate-400">#{item.month.toString().padStart(2, '0')}</td>
-                                <td className="px-3 py-2 text-[10px] font-black text-slate-700">{item.dueDate}</td>
-                                <td className="px-3 py-2 text-[10px] font-black text-slate-900 text-right">{formatCurrency(item.emiAmount)}</td>
-                                <td className="px-3 py-2 text-[10px] font-bold text-indigo-600 text-right">{formatCurrency(item.principalAmount)}</td>
-                                <td className="px-3 py-2 text-[10px] font-bold text-amber-600 text-right">{formatCurrency(item.interestAmount)}</td>
-                                <td className="px-3 py-2 text-[10px] font-black text-slate-900 text-right">{formatCurrency(item.balance)}</td>
+                                <td className="px-3 py-2 fz-tiny font-bold text-slate-400">#{item.month.toString().padStart(2, '0')}</td>
+                                <td className="px-3 py-2 fz-small font-black text-slate-700">{item.dueDate}</td>
+                                <td className="px-3 py-2 fz-small font-black text-slate-900 text-right">{formatCurrency(item.emiAmount)}</td>
+                                <td className="px-3 py-2 fz-small font-bold text-indigo-600 text-right">{formatCurrency(item.principalAmount)}</td>
+                                <td className="px-3 py-2 fz-small font-bold text-amber-600 text-right">{formatCurrency(item.interestAmount)}</td>
+                                <td className="px-3 py-2 fz-small font-black text-slate-900 text-right">{formatCurrency(item.balance)}</td>
                                 <td className="px-3 py-2 text-center">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${item.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : item.status === 'Overdue' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full fz-mini font-black uppercase border ${item.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : item.status === 'Overdue' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
                                     {item.status}
                                   </span>
                                 </td>
@@ -355,7 +355,7 @@ const EMIChart: React.FC = () => {
 
                       {totalPages > 1 && (
                         <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 shrink-0">
-                          <p className="text-[9px] font-black text-slate-400 uppercase">
+                          <p className="fz-tiny font-black text-slate-400 uppercase">
                             {((currentPage - 1) * itemsPerPage) + 1}–{Math.min(currentPage * itemsPerPage, emiSchedule.length)} of {emiSchedule.length}
                           </p>
                           <div className="flex items-center gap-2">
@@ -363,7 +363,7 @@ const EMIChart: React.FC = () => {
                               className="p-1.5 text-slate-400 hover:text-indigo-600 disabled:opacity-30 border border-slate-200 rounded-lg hover:bg-white shadow-sm">
                               <ChevronDown className="rotate-90" size={14} />
                             </button>
-                            <span className="text-[10px] font-black text-slate-800">{currentPage} / {totalPages}</span>
+                            <span className="fz-small font-black text-slate-800">{currentPage} / {totalPages}</span>
                             <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}
                               className="p-1.5 text-slate-400 hover:text-indigo-600 disabled:opacity-30 border border-slate-200 rounded-lg hover:bg-white shadow-sm">
                               <ChevronDown className="-rotate-90" size={14} />
@@ -380,14 +380,14 @@ const EMIChart: React.FC = () => {
                       <Calculator className="text-indigo-600 w-9 h-9" />
                     </div>
                     <h3 className="text-base font-black text-slate-800 uppercase">Intelligence Module Idle</h3>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1 text-center max-w-xs leading-relaxed px-4">
+                    <p className="fz-tiny font-bold text-slate-400 uppercase tracking-wider mt-1 text-center max-w-xs leading-relaxed px-4">
                       Select member and liability case to generate amortization schedule
                     </p>
                     <div className="mt-6 grid grid-cols-4 gap-3 px-8 w-full max-w-lg">
                       {[{ icon: User, label: 'Member Profile', c: 'text-indigo-400' }, { icon: Database, label: 'Master Sync', c: 'text-amber-400' }, { icon: TrendingUp, label: 'Projection Logic', c: 'text-emerald-400' }, { icon: Printer, label: 'Secure Export', c: 'text-indigo-400' }].map(({ icon: Icon, label, c }) => (
                         <div key={label} className="p-3 bg-slate-50 rounded-xl text-center border border-slate-100 hover:border-indigo-200 hover:bg-white transition-all">
                           <Icon size={14} className={`mx-auto mb-1.5 ${c}`} />
-                          <p className="text-[8px] font-black text-slate-500 uppercase leading-tight">{label}</p>
+                          <p className="fz-mini font-black text-slate-500 uppercase leading-tight">{label}</p>
                         </div>
                       ))}
                     </div>
@@ -402,8 +402,8 @@ const EMIChart: React.FC = () => {
         {/* Footer */}
         <div className="px-3 py-1 border-t border-slate-200 bg-white shrink-0">
           <div className="flex items-center justify-between">
-            <p className="text-[7px] font-black text-slate-300 uppercase tracking-wider">Matrix v4.2.0 • Secured Amortization Engine</p>
-            <div className="flex items-center gap-2 text-[7px] font-black text-slate-400 uppercase tracking-widest">
+            <p className="fz-micro font-black text-slate-300 uppercase tracking-wider">Matrix v4.2.0 • Secured Amortization Engine</p>
+            <div className="flex items-center gap-2 fz-micro font-black text-slate-400 uppercase tracking-widest">
               <span>Documentation</span><span className="w-0.5 h-0.5 bg-slate-300 rounded-full" /><span>Support</span>
             </div>
           </div>
@@ -420,7 +420,7 @@ const EMIChart: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-white font-black text-sm uppercase tracking-tight">Select Member</h3>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Cross-referencing Global Ledger</p>
+                    <p className="fz-mini font-bold text-slate-500 uppercase tracking-widest mt-0.5">Cross-referencing Global Ledger</p>
                   </div>
                 </div>
                 <button onClick={() => setShowMemberLookup(false)} className="p-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all">

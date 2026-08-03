@@ -199,8 +199,8 @@ const DemandPrintOrder: React.FC = () => {
               <Settings size={12} />
             </div>
             <div>
-              <h1 className="text-[10px] font-black text-white tracking-tight leading-none uppercase">Demand Print Matrix</h1>
-              <div className="flex items-center gap-1 mt-0.5 text-[7px] font-bold text-slate-300 tracking-widest uppercase leading-none">
+              <h1 className="fz-small font-black text-white tracking-tight leading-none uppercase">Demand Print Matrix</h1>
+              <div className="flex items-center gap-1 mt-0.5 fz-micro font-bold text-slate-300 tracking-widest uppercase leading-none">
                 <Database size={7} className="text-indigo-300" /> Administrative Logic Terminal
               </div>
             </div>
@@ -213,7 +213,7 @@ const DemandPrintOrder: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search matrix..."
-                className="dpo-search-input h-6 pl-7 pr-2 bg-white/10 border border-white/10 rounded-lg text-[8px] font-bold text-white placeholder-white/30 w-32 focus:w-40 focus:bg-white/20 transition-all outline-none"
+                className="dpo-search-input h-6 pl-7 pr-2 bg-white/10 border border-white/10 rounded-lg fz-mini font-bold text-white placeholder-white/30 w-32 focus:w-40 focus:bg-white/20 transition-all outline-none"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -225,7 +225,7 @@ const DemandPrintOrder: React.FC = () => {
             </button>
             {/* Add */}
             <button onClick={handleAddRow} disabled={saving}
-              className="h-5 px-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-[7px] font-black transition-all flex items-center gap-1 active:scale-95 uppercase tracking-widest">
+              className="h-5 px-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg fz-micro font-black transition-all flex items-center gap-1 active:scale-95 uppercase tracking-widest">
               <Plus size={10} /> Add
             </button>
             {/* Close */}
@@ -251,7 +251,7 @@ const DemandPrintOrder: React.FC = () => {
                   { label: 'Commands',         icon: <ShieldCheck size={9} /> },
                 ].map((th, i) => (
                   <th key={i} className="bg-slate-900 px-2 py-1 text-left border-b border-white/5 first:rounded-tl-lg last:rounded-tr-lg">
-                    <div className="flex items-center gap-1 text-[7px] font-black text-slate-400 uppercase tracking-widest">
+                    <div className="flex items-center gap-1 fz-micro font-black text-slate-400 uppercase tracking-widest">
                       <span className="text-indigo-400">{th.icon}</span> {th.label}
                     </div>
                   </th>
@@ -277,7 +277,7 @@ const DemandPrintOrder: React.FC = () => {
                   <td colSpan={7} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-40">
                       <AlertCircle size={28} className="text-slate-400" />
-                      <p className="dpo-loading text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                      <p className="dpo-loading fz-small font-black text-slate-500 uppercase tracking-widest">
                         {searchTerm ? 'No matching rows' : 'No rows configured'}
                       </p>
                     </div>
@@ -303,7 +303,7 @@ const DemandPrintOrder: React.FC = () => {
                             <input className={editInputCls} value={editedData.headCode}
                               onChange={e => handleInputChange('headCode', e.target.value)} />
                             <button onClick={() => setShowHeadLookup(true)} title="List of Heads"
-                              className="px-1.5 h-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[7px] font-black uppercase tracking-widest transition-all flex items-center gap-0.5 shrink-0">
+                              className="px-1.5 h-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-micro font-black uppercase tracking-widest transition-all flex items-center gap-0.5 shrink-0">
                               <List size={9} />
                             </button>
                           </div>
@@ -323,10 +323,10 @@ const DemandPrintOrder: React.FC = () => {
                         {/* Registry Column + MD lookup */}
                         <td className="dpo-cell px-2 py-1 border-b border-slate-100">
                           <div className="flex gap-1 items-center">
-                            <input className={`${editInputCls} text-[9px]`} value={editedData.mapColName}
+                            <input className={`${editInputCls} fz-tiny`} value={editedData.mapColName}
                               onChange={e => handleInputChange('mapColName', e.target.value)} />
                             <button onClick={() => setShowMDAmountModal(true)} title="MD Column Registry"
-                              className="px-1.5 h-6 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0">
+                              className="px-1.5 h-6 bg-slate-700 hover:bg-slate-600 text-white rounded-lg fz-micro font-black uppercase tracking-widest transition-all shrink-0">
                               MD
                             </button>
                           </div>
@@ -340,7 +340,7 @@ const DemandPrintOrder: React.FC = () => {
                         <td className="dpo-cell px-2 py-1 border-b border-slate-100">
                           <div className="flex items-center gap-1">
                             <button onClick={() => handleSave(index)} disabled={saving}
-                              className="h-5 px-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-[7px] font-black flex items-center gap-1 transition-all">
+                              className="h-5 px-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg fz-micro font-black flex items-center gap-1 transition-all">
                               {saving
                                 ? <div className="w-2 h-2 border border-white border-t-transparent rounded-full animate-spin" />
                                 : <Save size={9} />}
@@ -357,24 +357,24 @@ const DemandPrintOrder: React.FC = () => {
                       <>
                         <td className="dpo-cell dpo-cell-code px-2 py-1.5 border-b border-slate-50 font-mono fz-body font-black text-slate-800 tracking-tighter">{row.headCode}</td>
                         <td className="dpo-cell px-2 py-1.5 border-b border-slate-50">
-                          <span className="dpo-badge px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border-2 border-slate-100">
+                          <span className="dpo-badge px-1.5 py-0.5 rounded-full fz-micro font-black uppercase tracking-widest bg-slate-50 text-slate-400 border-2 border-slate-100">
                             {row.headType || 'STD'}
                           </span>
                         </td>
                         <td className="dpo-cell dpo-cell-desc px-2 py-1.5 border-b border-slate-50 fz-body font-bold text-slate-600">{row.description}</td>
-                        <td className="dpo-cell dpo-cell-intt px-2 py-1.5 border-b border-slate-50 text-[8px] font-black text-slate-300 uppercase">{row.inttType || '—'}</td>
+                        <td className="dpo-cell dpo-cell-intt px-2 py-1.5 border-b border-slate-50 fz-mini font-black text-slate-300 uppercase">{row.inttType || '—'}</td>
                         <td className="dpo-cell px-2 py-1.5 border-b border-slate-50">
-                          <span className="dpo-mapcol-badge font-mono text-[8px] font-black text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded-lg border-2 border-slate-200">{row.mapColName}</span>
+                          <span className="dpo-mapcol-badge font-mono fz-mini font-black text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded-lg border-2 border-slate-200">{row.mapColName}</span>
                         </td>
                         <td className="dpo-cell px-2 py-1.5 border-b border-slate-50">
-                          <div className="dpo-order-num w-6 h-6 mx-auto flex items-center justify-center bg-slate-100 text-slate-500 rounded-lg text-[9px] font-black group-hover:bg-slate-700 group-hover:text-white transition-all shadow-inner">
+                          <div className="dpo-order-num w-6 h-6 mx-auto flex items-center justify-center bg-slate-100 text-slate-500 rounded-lg fz-tiny font-black group-hover:bg-slate-700 group-hover:text-white transition-all shadow-inner">
                             {row.printOrder}
                           </div>
                         </td>
                         <td className="dpo-cell px-2 py-1.5 border-b border-slate-50">
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => handleEdit(index)}
-                              className="h-5 px-2 bg-white border-2 border-slate-200 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white text-slate-400 rounded-lg text-[7px] font-black flex items-center gap-1 transition-all">
+                              className="h-5 px-2 bg-white border-2 border-slate-200 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white text-slate-400 rounded-lg fz-micro font-black flex items-center gap-1 transition-all">
                               <Edit3 size={9} /> Edit
                             </button>
                             <button onClick={() => handleDeleteRow(index)}
@@ -396,13 +396,13 @@ const DemandPrintOrder: React.FC = () => {
         <div className="dpo-footer px-2 py-1 bg-white border-t border-slate-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-1.5">
             <Building2 size={9} className="text-slate-300" />
-            <span className="dpo-footer-left text-[7px] font-black text-slate-800 uppercase tracking-tight">Trust Ledger Matrix Control</span>
+            <span className="dpo-footer-left fz-micro font-black text-slate-800 uppercase tracking-tight">Trust Ledger Matrix Control</span>
             <div className="w-px h-3 bg-slate-200" />
-            <span className="dpo-footer-left text-[7px] font-bold text-slate-400 uppercase tracking-wider">{filteredRows.length} row{filteredRows.length !== 1 ? 's' : ''}</span>
+            <span className="dpo-footer-left fz-micro font-bold text-slate-400 uppercase tracking-wider">{filteredRows.length} row{filteredRows.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="flex items-center gap-1 text-slate-600">
             <ShieldCheck size={9} />
-            <span className="dpo-footer-right text-[7px] font-black uppercase tracking-widest">Protocol v2.9.2</span>
+            <span className="dpo-footer-right fz-micro font-black uppercase tracking-widest">Protocol v2.9.2</span>
           </div>
         </div>
 
@@ -426,7 +426,7 @@ const DemandPrintOrder: React.FC = () => {
                     <div className="bg-white/10 p-1 rounded-lg text-indigo-400 border border-white/10">
                       <Database size={10} />
                     </div>
-                    <h2 className="text-[9px] font-black text-white uppercase tracking-widest">MD Column Registry</h2>
+                    <h2 className="fz-tiny font-black text-white uppercase tracking-widest">MD Column Registry</h2>
                   </div>
                   <button onClick={() => setShowMDAmountModal(false)}
                     className="w-6 h-6 rounded-lg bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-white flex items-center justify-center transition-all border border-white/5">
@@ -463,7 +463,7 @@ const DemandPrintOrder: React.FC = () => {
                     <div className="bg-white/10 p-1 rounded-lg text-indigo-400 border border-white/10">
                       <List size={10} />
                     </div>
-                    <h2 className="text-[9px] font-black text-white uppercase tracking-widest">List of Heads</h2>
+                    <h2 className="fz-tiny font-black text-white uppercase tracking-widest">List of Heads</h2>
                   </div>
                   <button onClick={() => setShowHeadLookup(false)}
                     className="w-6 h-6 rounded-lg bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-white flex items-center justify-center transition-all border border-white/5">

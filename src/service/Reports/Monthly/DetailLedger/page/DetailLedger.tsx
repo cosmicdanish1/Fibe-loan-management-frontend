@@ -417,13 +417,13 @@ const DetailLedger: React.FC = () => {
                           <td colSpan={3} className="py-2 px-3 text-right font-bold text-slate-700" style={{ border: '1px solid #999' }}>
                             TOTAL:
                           </td>
-                          <td className="text-right py-2 px-3 font-black text-red-700 text-[13px]" style={{ border: '1px solid #999' }}>
+                          <td className="text-right py-2 px-3 font-black text-red-700 fz-body" style={{ border: '1px solid #999' }}>
                             {formatCurrency(totalDebit)}
                           </td>
-                          <td className="text-right py-2 px-3 font-black text-red-700 text-[13px]" style={{ border: '1px solid #999' }}>
+                          <td className="text-right py-2 px-3 font-black text-red-700 fz-body" style={{ border: '1px solid #999' }}>
                             {formatCurrency(totalCredit)}
                           </td>
-                          <td className="text-right py-2 px-3 font-black text-slate-800 text-[13px]" style={{ border: '1px solid #999' }}>
+                          <td className="text-right py-2 px-3 font-black text-slate-800 fz-body" style={{ border: '1px solid #999' }}>
                             {formatCurrency(Math.abs(closingBalance))} {closingBalance >= 0 ? 'DR' : 'CR'}
                           </td>
                         </tr>

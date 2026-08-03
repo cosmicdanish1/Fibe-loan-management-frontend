@@ -84,19 +84,19 @@ const PermList: React.FC<PermListProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between px-1">
+    <div className="flex flex-col gap-1 min-h-0 h-full">
+      <div className="flex items-center justify-between px-1 shrink-0">
         <label className="cmu-label fz-caption font-black text-slate-600 uppercase tracking-wider">{label}</label>
-        <span className="cmu-badge fz-caption font-black bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">{count}</span>
+        <span className={`cmu-badge fz-caption font-black px-1.5 py-0.5 rounded-full ${side === 'right' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>{count}</span>
       </div>
       <div
         ref={scrollRef}
-        className="cmu-rights-list relative w-full h-64 bg-slate-50 border-2 border-slate-200 rounded-lg overflow-y-auto overflow-x-hidden perm-scroll"
+        className={`cmu-rights-list relative w-full flex-1 min-h-[9.5rem] border-2 rounded-lg overflow-y-auto overflow-x-hidden perm-scroll ${side === 'right' ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}
       >
         {items.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full opacity-30 select-none">
+          <div className={`flex flex-col items-center justify-center h-full select-none ${side === 'right' ? 'text-indigo-300' : 'opacity-30'}`}>
             <ShieldCheck size={28} strokeWidth={1} />
-            <span className="fz-caption font-black uppercase mt-1">Empty</span>
+            <span className="fz-caption font-black uppercase mt-1">{side === 'right' ? 'No Privileges Yet' : 'Empty'}</span>
           </div>
         )}
         {items.map((item) => {
@@ -326,10 +326,10 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
         html.dark .cmu-page .cmu-pw-hint        { color: #374151 !important; }
       `}</style>
 
-      <div className={`cmu-page min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-50 font-sans ${className}`}>
+      <div className={`cmu-page h-screen overflow-hidden flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-50 font-sans ${className}`}>
 
         {/* ── Header ─────────────────────────────────────────────────────────── */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 border-b border-slate-700 px-2 py-1 flex items-center justify-between gap-1.5 sticky top-0 z-10 shadow-lg">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-indigo-500/30 px-2 py-1 flex items-center justify-between gap-1.5 sticky top-0 z-10 shadow-lg">
           <div className="flex items-center gap-2">
             <div className="bg-white/10 p-1 rounded-lg text-white backdrop-blur-sm">
               <ShieldCheck size={14} />
@@ -374,17 +374,17 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
           </div>
         )}
 
-        <div className="flex-1 overflow-auto p-2">
-          <div className="max-w-6xl mx-auto space-y-2">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 items-start">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2">
+          <div className="max-w-6xl mx-auto min-h-full flex flex-col gap-2">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 items-stretch flex-1 min-h-0">
 
               {/* ── Left: Identity + Level ── */}
-              <div className="lg:col-span-5 space-y-2">
+              <div className="lg:col-span-5 flex flex-col gap-2 min-h-0">
 
-                <div className="cmu-card bg-white border-2 border-slate-200 rounded-lg p-2 shadow-md relative overflow-hidden">
+                <div className="cmu-card bg-white border border-slate-200 rounded-xl p-2 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-2 opacity-[0.04] pointer-events-none"><User size={60} strokeWidth={1} /></div>
                   <div className="flex items-center gap-1.5 mb-2">
-                    <div className="cmu-card-icon bg-slate-50 p-1 rounded-md text-slate-600"><UserCheck size={12} /></div>
+                    <div className="cmu-card-icon bg-indigo-50 p-1 rounded-md text-indigo-600"><UserCheck size={12} /></div>
                     <h3 className="cmu-section-title fz-caption font-black text-slate-900 tracking-tight uppercase">Identity Profile</h3>
                   </div>
                   <div className="space-y-2">
@@ -419,7 +419,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                       </div>
                       <div>
                         <p className="fz-caption font-black text-slate-700 uppercase">{formData.username || 'New User'}</p>
-                        <p className="text-[8px] text-slate-400 cursor-pointer hover:text-indigo-500"
+                        <p className="fz-mini text-slate-400 cursor-pointer hover:text-indigo-500"
                           onClick={() => document.getElementById('user-avatar-upload')?.click()}>
                           Click photo to change
                         </p>
@@ -476,7 +476,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   </div>
                 </div>
 
-                <div className="cmu-card bg-white border-2 border-slate-200 rounded-lg p-2 shadow-md">
+                <div className="cmu-card bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
                   <div className="grid grid-cols-2 gap-2 items-center">
                     <div className="space-y-0.5">
                       <label className="cmu-label fz-caption font-black text-slate-600 uppercase tracking-wider flex items-center gap-1 ml-0.5">
@@ -505,13 +505,13 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
               </div>
 
               {/* ── Right: Access Privilege Matrix ── */}
-              <div className="lg:col-span-7 cmu-card bg-white border-2 border-slate-200 rounded-lg p-2 shadow-md relative overflow-hidden">
+              <div className="lg:col-span-7 cmu-card bg-white border border-slate-200 rounded-xl p-2 shadow-sm relative overflow-hidden flex flex-col min-h-0">
                 <div className="absolute top-0 right-0 m-4 opacity-[0.03] pointer-events-none">
                   <ShieldCheck size={120} strokeWidth={1} />
                 </div>
 
                 <div className="flex items-center gap-1.5 mb-2">
-                  <div className="cmu-card-icon bg-slate-50 p-1 rounded-md text-slate-600"><Settings2 size={12} /></div>
+                  <div className="cmu-card-icon bg-indigo-50 p-1 rounded-md text-indigo-600"><Settings2 size={12} /></div>
                   <div>
                     <h3 className="cmu-section-title fz-caption font-black text-slate-900 tracking-tight uppercase">Access Privilege Matrix</h3>
                     <p className="cmu-section-sub fz-caption text-slate-600 font-bold uppercase tracking-wider">
@@ -520,7 +520,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   </div>
                 </div>
 
-                <div className="grid grid-cols-12 gap-2 items-center">
+                <div className="grid grid-cols-12 gap-2 items-stretch flex-1 min-h-0">
 
                   {/* Available pool */}
                   <div className="col-span-5">
@@ -537,7 +537,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   </div>
 
                   {/* Transfer buttons */}
-                  <div className="col-span-2 flex flex-col items-center justify-center gap-1 pt-4">
+                  <div className="col-span-2 flex flex-col items-center justify-center gap-1">
                     <div className="cmu-transfer-panel bg-slate-50 p-1 rounded-lg border-2 border-slate-200 flex flex-col gap-1 shadow-sm">
                       <Tooltip title="Grant selected →" placement="right">
                         <button onClick={handleMoveSelectedRight}
@@ -585,25 +585,6 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* ── Info tiles ── */}
-            <div className="cmu-card bg-white border-2 border-slate-200 rounded-lg p-2 shadow-sm">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                {[
-                  { icon: <ShieldCheck size={14} />, title: 'Access Control', body: 'User levels define scope. Administrators override globally; lower roles get targeted, least-privilege access.' },
-                  { icon: <Fingerprint size={14} />, title: 'Transaction Verification', body: "Enabling 'Transaction Auth' lets the user bypass multi-step verification for financial record posting." },
-                  { icon: <LockKeyhole size={14} />, title: 'Security Policy', body: 'Unique usernames and passwords of min 6 characters are required. All identity changes are logged for audit.' },
-                ].map(({ icon, title, body }) => (
-                  <div key={title} className="cmu-info-tile flex gap-1.5">
-                    <div className="cmu-info-icon bg-slate-50 p-1 rounded-md h-fit text-slate-600">{icon}</div>
-                    <div className="space-y-0.5">
-                      <p className="cmu-info-title fz-caption font-black text-slate-600 uppercase tracking-wider leading-none">{title}</p>
-                      <p className="cmu-info-body fz-caption text-slate-600 leading-tight font-bold">{body}</p>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </div>

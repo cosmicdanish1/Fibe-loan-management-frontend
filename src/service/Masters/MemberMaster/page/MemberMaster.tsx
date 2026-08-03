@@ -678,7 +678,7 @@ const MemberMaster: React.FC = () => {
                 <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
                   <Camera size={13} className="text-white" />
                 </div>
-                {mediaQueue.profile && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[6px] font-black text-amber-600 bg-white px-1 rounded whitespace-nowrap shadow">on save</span>}
+                {mediaQueue.profile && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 fz-nano font-black text-amber-600 bg-white px-1 rounded whitespace-nowrap shadow">on save</span>}
               </div>
 
               <span className="bg-blue-600 text-white px-2 py-1 rounded fz-caption font-black shadow-md inline-block uppercase tracking-wide">
@@ -715,7 +715,7 @@ const MemberMaster: React.FC = () => {
                 </button>
               </div>
 
-              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide ${formData.memberNumber
+              <span className={`fz-tiny font-black px-1.5 py-0.5 rounded uppercase tracking-wide ${formData.memberNumber
                 ? 'bg-green-100 text-green-800 border-2 border-green-400'
                 : 'bg-blue-100 text-blue-800 border-2 border-blue-400'
                 }`}>
@@ -755,7 +755,7 @@ const MemberMaster: React.FC = () => {
             {/* Name Fields Row */}
             <div className="grid grid-cols-12 gap-1.5">
               <div className="col-span-2">
-                <label className="text-blue-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Title</label>
+                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Title</label>
                 <select
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
@@ -769,7 +769,7 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div className="col-span-3">
-                <label className="text-blue-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">First Name *</label>
+                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">First Name *</label>
                 <input
                   type="text"
                   value={formData.firstName}
@@ -779,7 +779,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-blue-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Middle Name</label>
+                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Middle Name</label>
                 <input
                   type="text"
                   value={formData.middleName}
@@ -789,7 +789,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-4">
-                <label className="text-blue-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Last Name *</label>
+                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Last Name *</label>
                 <input
                   type="text"
                   value={formData.lastName}
@@ -802,7 +802,7 @@ const MemberMaster: React.FC = () => {
             {/* Father's Name Row */}
             <div className="grid grid-cols-12 gap-1.5 mt-1.5">
               <div className="col-span-12">
-                <label className="text-blue-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Father's Name</label>
+                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Father's Name</label>
                 <input
                   type="text"
                   value={formData.fatherName}
@@ -817,13 +817,13 @@ const MemberMaster: React.FC = () => {
           {/* Personal & Employment Details Card */}
           <div className="border-2 border-purple-500 rounded p-1.5 bg-gradient-to-r from-purple-50 to-pink-50 shadow-md mb-1.5">
             <h3 className="fz-caption font-black text-purple-900 mb-1.5 flex items-center gap-1.5">
-              <span className="bg-purple-600 text-white px-2 py-1 rounded text-[9px] uppercase tracking-wide">Personal & Employment</span>
+              <span className="bg-purple-600 text-white px-2 py-1 rounded fz-tiny uppercase tracking-wide">Personal & Employment</span>
             </h3>
 
             {/* Row 1: Gender, DOB, Age, Monthly Contribution, Compulsary Deposit */}
             <div className="grid grid-cols-12 gap-1.5 mb-1.5">
               <div className="col-span-2">
-                <label className="text-purple-800 font-black text-[9px] block mb-1 uppercase tracking-wide">Gender</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-1 uppercase tracking-wide">Gender</label>
                 <div className="flex gap-1.5">
                   <label className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border-2 border-purple-400 shadow-sm">
                     <input
@@ -834,7 +834,7 @@ const MemberMaster: React.FC = () => {
                       onChange={() => handleInputChange('gender', 'male')}
                       className="w-2.5 h-2.5 text-purple-600 border-slate-300 focus:ring-purple-500"
                     />
-                    <span className="text-purple-800 font-black text-[9px] uppercase">Male</span>
+                    <span className="text-purple-800 font-black fz-tiny uppercase">Male</span>
                   </label>
                   <label className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border-2 border-purple-400 shadow-sm">
                     <input
@@ -845,12 +845,12 @@ const MemberMaster: React.FC = () => {
                       onChange={() => handleInputChange('gender', 'female')}
                       className="w-2.5 h-2.5 text-purple-600 border-slate-300 focus:ring-purple-500"
                     />
-                    <span className="text-purple-800 font-black text-[9px] uppercase">Female</span>
+                    <span className="text-purple-800 font-black fz-tiny uppercase">Female</span>
                   </label>
                 </div>
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Date Of Birth</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Date Of Birth</label>
                 <input
                   type="date"
                   value={formData.dateOfBirth}
@@ -876,7 +876,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-1">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Age</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Age</label>
                 <input
                   type="number"
                   value={formData.age}
@@ -887,7 +887,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Monthly Contrib.</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Monthly Contrib.</label>
                 <input
                   type="number"
                   min="0"
@@ -899,7 +899,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-4">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Compulsary Dep.</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Compulsary Dep.</label>
                 <input
                   type="number"
                   min="0"
@@ -915,7 +915,7 @@ const MemberMaster: React.FC = () => {
             {/* Row 2: Sr.No, Designation, Basic Pay, ShareAmt, Insurance */}
             <div className="grid grid-cols-12 gap-1.5 mb-1.5">
               <div className="col-span-2">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Sr.No/EPF/P.NO</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Sr.No/EPF/P.NO</label>
                 <input
                   type="text"
                   value={formData.srNoEpfPfNo}
@@ -924,7 +924,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Designation</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Designation</label>
                 <select
                   value={formData.designation}
                   onChange={(e) => handleInputChange('designation', e.target.value)}
@@ -1210,7 +1210,7 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Basic Pay</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Basic Pay</label>
                 <input
                   type="number"
                   min="0"
@@ -1222,7 +1222,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">ShareAmt</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">ShareAmt</label>
                 <input
                   type="number"
                   min="0"
@@ -1250,13 +1250,13 @@ const MemberMaster: React.FC = () => {
                     }}
                     className="w-3 h-3 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
                   />
-                  <label className="text-orange-800 font-black text-[9px] uppercase tracking-wide">
+                  <label className="text-orange-800 font-black fz-tiny uppercase tracking-wide">
                     Insured {formData.isInsured && '✓'}
                   </label>
                 </div>
               </div>
               <div className="col-span-2">
-                <label className={`font-black text-[9px] block mb-0.5 uppercase tracking-wide ${formData.isInsured ? 'text-purple-800' : 'text-gray-400'
+                <label className={`font-black fz-tiny block mb-0.5 uppercase tracking-wide ${formData.isInsured ? 'text-purple-800' : 'text-gray-400'
                   }`}>
                   Insurance Amt {formData.isInsured && <span className="text-red-500">*</span>}
                 </label>
@@ -1275,7 +1275,7 @@ const MemberMaster: React.FC = () => {
                   title={formData.isInsured ? "Enter the insurance amount" : "Please check 'Insured' checkbox first"}
                 />
                 {!formData.isInsured && (
-                  <p className="text-[8px] text-gray-500 mt-0.5">
+                  <p className="fz-mini text-gray-500 mt-0.5">
                     💡 Check "Insured" to enable
                   </p>
                 )}
@@ -1285,7 +1285,7 @@ const MemberMaster: React.FC = () => {
             {/* Row 3: Membership Date, Retirement Date, Department */}
             <div className="grid grid-cols-3 gap-1.5">
               <div>
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Membership Date</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Membership Date</label>
                 <input
                   type="date"
                   value={formData.membershipDate}
@@ -1294,7 +1294,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Retirement Date</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Retirement Date</label>
                 <input
                   type="date"
                   value={formData.retirementDate}
@@ -1303,7 +1303,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Department</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Department</label>
                 <input
                   type="text"
                   value={formData.department}
@@ -1316,7 +1316,7 @@ const MemberMaster: React.FC = () => {
             {/* Row 4: PanCard, Aadhar, Phone, FRS, BranchMS */}
             <div className="grid grid-cols-12 gap-1.5 mt-1.5">
               <div className="col-span-2">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">PanCard No</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">PanCard No</label>
                 <input
                   type="text"
                   value={formData.panCardNo}
@@ -1327,7 +1327,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Aadhar No</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Aadhar No</label>
                 <input
                   type="text"
                   value={formData.aadharNo}
@@ -1338,7 +1338,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Phone Number</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Phone Number</label>
                 <input
                   type="text"
                   value={formData.phoneNumber}
@@ -1349,7 +1349,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">F.R.S. Number</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">F.R.S. Number</label>
                 <input
                   type="text"
                   value={formData.frsNumber}
@@ -1359,7 +1359,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-purple-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Branch MS No</label>
+                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Branch MS No</label>
                 <input
                   type="text"
                   value={formData.branchMsNo}
@@ -1374,13 +1374,13 @@ const MemberMaster: React.FC = () => {
           {/* Address & Status Details Card */}
           <div className="border-2 border-green-500 rounded p-1.5 bg-gradient-to-r from-green-50 to-emerald-50 shadow-md mb-1.5">
             <h3 className="fz-caption font-black text-green-900 mb-1.5 flex items-center gap-1.5">
-              <span className="bg-green-600 text-white px-2 py-1 rounded text-[9px] uppercase tracking-wide">Address & Status</span>
+              <span className="bg-green-600 text-white px-2 py-1 rounded fz-tiny uppercase tracking-wide">Address & Status</span>
             </h3>
 
             {/* Row 1: Home Address, Status, Date Withdrawl/Retire */}
             <div className="grid grid-cols-12 gap-1.5 mb-1.5">
               <div className="col-span-6">
-                <label className="text-green-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Home Address</label>
+                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Home Address</label>
                 <textarea
                   value={formData.homeAddress}
                   onChange={(e) => handleInputChange('homeAddress', e.target.value)}
@@ -1389,7 +1389,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-green-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Status</label>
+                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) => handleInputChange('status', e.target.value)}
@@ -1402,7 +1402,7 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div className="col-span-3">
-                <label className="text-green-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Date Withdrawl/Retire</label>
+                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Date Withdrawl/Retire</label>
                 <input
                   type="date"
                   value={formData.dateOfWithdrawRetire}
@@ -1415,7 +1415,7 @@ const MemberMaster: React.FC = () => {
             {/* Row 2: Cast Category and Member Type */}
             <div className="grid grid-cols-2 gap-1.5">
               <div>
-                <label className="text-green-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Cast Category</label>
+                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Cast Category</label>
                 <select
                   value={formData.castCategory}
                   onChange={(e) => handleInputChange('castCategory', e.target.value)}
@@ -1428,7 +1428,7 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-green-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Member Type</label>
+                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Member Type</label>
                 <select
                   value={formData.memberType}
                   onChange={(e) => handleInputChange('memberType', e.target.value)}
@@ -1447,13 +1447,13 @@ const MemberMaster: React.FC = () => {
           {/* Organization & Nominee Details Card */}
           <div className="border-2 border-orange-500 rounded p-1.5 bg-gradient-to-r from-orange-50 to-amber-50 shadow-md mb-1.5">
             <h3 className="fz-caption font-black text-orange-900 mb-1.5 flex items-center gap-1.5">
-              <span className="bg-orange-600 text-white px-2 py-1 rounded text-[9px] uppercase tracking-wide">Organization & Nominee</span>
+              <span className="bg-orange-600 text-white px-2 py-1 rounded fz-tiny uppercase tracking-wide">Organization & Nominee</span>
             </h3>
 
             {/* Division/RO and Branch */}
             <div className="grid grid-cols-2 gap-1.5 mb-1.5">
               <div>
-                <label className="text-orange-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Division/RO *</label>
+                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Division/RO *</label>
                 <select
                   value={formData.divisionRo}
                   onChange={(e) => handleInputChange('divisionRo', e.target.value)}
@@ -1463,7 +1463,7 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-orange-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Branch</label>
+                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Branch</label>
                 <select
                   value={formData.branch}
                   onChange={(e) => handleInputChange('branch', e.target.value)}
@@ -1483,7 +1483,7 @@ const MemberMaster: React.FC = () => {
             {/* Nominee Section */}
             <div className="grid grid-cols-12 gap-1.5">
               <div className="col-span-3">
-                <label className="text-orange-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Nominee's Name</label>
+                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Nominee's Name</label>
                 <input
                   type="text"
                   value={formData.nomineeName}
@@ -1492,7 +1492,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-orange-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Nominee Address</label>
+                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Nominee Address</label>
                 <input
                   type="text"
                   value={formData.nomineeAddress}
@@ -1501,7 +1501,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-orange-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Relation</label>
+                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Relation</label>
                 <select
                   value={formData.relationWithNominee}
                   onChange={(e) => handleInputChange('relationWithNominee', e.target.value)}
@@ -1521,7 +1521,7 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="text-orange-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Declaration Date</label>
+                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Declaration Date</label>
                 <input
                   type="date"
                   value={formData.declarationDate}
@@ -1530,7 +1530,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-orange-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Remarks</label>
+                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Remarks</label>
                 <input
                   type="text"
                   value={formData.remarks}
@@ -1545,13 +1545,13 @@ const MemberMaster: React.FC = () => {
           {/* Documents & Media Card */}
           <div className="border-2 border-indigo-500 rounded p-1.5 bg-gradient-to-r from-indigo-50 to-violet-50 shadow-md mb-1.5">
             <h3 className="fz-caption font-black text-indigo-900 mb-1.5 flex items-center gap-1.5">
-              <span className="bg-indigo-600 text-white px-2 py-1 rounded text-[9px] uppercase tracking-wide">Documents & Media</span>
+              <span className="bg-indigo-600 text-white px-2 py-1 rounded fz-tiny uppercase tracking-wide">Documents & Media</span>
             </h3>
 
             {/* Mobile + Email */}
             <div className="grid grid-cols-2 gap-1.5 mb-2">
               <div>
-                <label className="text-indigo-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Mobile No</label>
+                <label className="text-indigo-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Mobile No</label>
                 <input type="tel" value={formData.mobileNumber}
                   onChange={(e) => handleInputChange('mobileNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
                   className="w-full px-1.5 py-1 border-2 border-indigo-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 fz-caption font-bold"
@@ -1559,7 +1559,7 @@ const MemberMaster: React.FC = () => {
                   maxLength={10} />
               </div>
               <div>
-                <label className="text-indigo-800 font-black text-[9px] block mb-0.5 uppercase tracking-wide">Email Address</label>
+                <label className="text-indigo-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Email Address</label>
                 <input type="email" value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   className="w-full px-1.5 py-1 border-2 border-indigo-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 fz-caption font-bold"
@@ -1574,7 +1574,7 @@ const MemberMaster: React.FC = () => {
                 const preview = mediaPreviews[type] || mediaSavedUrls[type] || '';
                 return (
                   <div key={type} className="border-2 border-indigo-300 rounded bg-white p-1.5 flex flex-col items-center gap-1">
-                    <span className="text-[8px] font-black text-indigo-700 uppercase tracking-wide">{labels[type]}</span>
+                    <span className="fz-mini font-black text-indigo-700 uppercase tracking-wide">{labels[type]}</span>
                     {preview ? (
                       <div className="relative">
                         <img src={preview} alt={labels[type]}
@@ -1594,16 +1594,16 @@ const MemberMaster: React.FC = () => {
                       <div className="w-20 h-20 border-2 border-dashed border-indigo-200 rounded flex flex-col items-center justify-center text-indigo-300 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50"
                         onClick={() => document.getElementById(`photo-${type}`)?.click()}>
                         <UploadIcon size={16} />
-                        <span className="text-[7px] mt-0.5">Click to upload</span>
+                        <span className="fz-micro mt-0.5">Click to upload</span>
                       </div>
                     )}
                     <input id={`photo-${type}`} type="file" accept="image/jpeg,image/png" className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoSelect(type, f); e.target.value = ''; }} />
                     <button onClick={() => document.getElementById(`photo-${type}`)?.click()}
-                      className="text-[7px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wide px-2 py-0.5 border border-indigo-300 rounded hover:bg-indigo-50">
+                      className="fz-micro font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wide px-2 py-0.5 border border-indigo-300 rounded hover:bg-indigo-50">
                       {preview ? 'Change' : 'Browse'}
                     </button>
-                    {mediaQueue[type] && <span className="text-[6px] text-amber-600 font-black">⏳ Will upload on save</span>}
+                    {mediaQueue[type] && <span className="fz-nano text-amber-600 font-black">⏳ Will upload on save</span>}
                   </div>
                 );
               })}
@@ -1612,35 +1612,35 @@ const MemberMaster: React.FC = () => {
             {/* KYC Documents — typed, multi-upload */}
             <div id="kyc-section" className="border-2 border-indigo-300 rounded bg-white p-2 mb-2">
               <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
-                <span className="text-[9px] font-black text-indigo-800 uppercase tracking-wide flex items-center gap-1">
+                <span className="fz-tiny font-black text-indigo-800 uppercase tracking-wide flex items-center gap-1">
                   KYC Documents
-                  {kycDocuments.length > 0 && <span className="bg-indigo-100 text-indigo-700 px-1.5 rounded-full text-[8px]">{kycDocuments.length}</span>}
+                  {kycDocuments.length > 0 && <span className="bg-indigo-100 text-indigo-700 px-1.5 rounded-full fz-mini">{kycDocuments.length}</span>}
                 </span>
                 <div className="flex items-center gap-1.5">
                   <select value={kycDocType} onChange={(e) => setKycDocType(e.target.value)}
-                    className="px-1.5 py-1 border-2 border-indigo-400 rounded bg-white fz-caption font-bold text-[10px] focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                    className="px-1.5 py-1 border-2 border-indigo-400 rounded bg-white fz-caption font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600">
                     {DOC_TYPES.map((d) => <option key={d} value={d}>{d}</option>)}
                   </select>
                   <input id="kyc-file" type="file" accept="image/jpeg,image/png,application/pdf" className="hidden"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleKycUpload(f); e.target.value = ''; }} />
                   <button onClick={() => document.getElementById('kyc-file')?.click()} disabled={kycUploading || !formData.memberNumber}
-                    className="text-[9px] font-black text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed px-2.5 py-1 rounded uppercase tracking-wide flex items-center gap-1 transition-colors">
+                    className="fz-tiny font-black text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed px-2.5 py-1 rounded uppercase tracking-wide flex items-center gap-1 transition-colors">
                     <UploadIcon size={10} /> {kycUploading ? 'Uploading…' : 'Add Document'}
                   </button>
                 </div>
               </div>
               {!formData.memberNumber && (
-                <p className="text-[8px] text-amber-600 font-bold mb-1">💡 Save the member first to attach KYC documents.</p>
+                <p className="fz-mini text-amber-600 font-bold mb-1">💡 Save the member first to attach KYC documents.</p>
               )}
               {kycDocuments.length === 0 ? (
-                <p className="text-[8px] text-slate-400 font-bold text-center py-2 uppercase tracking-wide">No documents uploaded</p>
+                <p className="fz-mini text-slate-400 font-bold text-center py-2 uppercase tracking-wide">No documents uploaded</p>
               ) : (
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5">
                   {kycDocuments.map((doc) => (
                     <div key={doc.id} className="border border-indigo-200 rounded bg-indigo-50/40 p-1.5 flex items-center justify-between gap-1">
                       <a href={`${getApiBaseUrlSync()}/members/master/${formData.memberNumber}/document/${doc.id}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1">
-                        <span className="block text-[8px] font-black text-indigo-700 uppercase truncate">{doc.docType}</span>
-                        <span className="block text-[7px] text-slate-500 truncate" title={doc.fileName}>{doc.fileName || 'View'}</span>
+                        <span className="block fz-mini font-black text-indigo-700 uppercase truncate">{doc.docType}</span>
+                        <span className="block fz-micro text-slate-500 truncate" title={doc.fileName}>{doc.fileName || 'View'}</span>
                       </a>
                       <button onClick={() => handleKycDelete(doc.id)}
                         className="bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center hover:bg-red-600 shrink-0">
@@ -1655,11 +1655,11 @@ const MemberMaster: React.FC = () => {
             {/* Signature */}
             <div className="border-2 border-indigo-300 rounded bg-white overflow-hidden">
               <div className="bg-indigo-600 px-2 py-0.5 flex items-center justify-between">
-                <span className="text-[8px] font-black text-white uppercase tracking-wide flex items-center gap-1"><PenTool size={9} /> Signature</span>
+                <span className="fz-mini font-black text-white uppercase tracking-wide flex items-center gap-1"><PenTool size={9} /> Signature</span>
                 <div className="flex gap-1">
                   {(['draw', 'upload'] as const).map(m => (
                     <button key={m} onClick={() => setSigMode(m)}
-                      className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-wide transition-all ${sigMode === m ? 'bg-white text-indigo-700' : 'text-indigo-200 hover:text-white'}`}>
+                      className={`fz-micro font-black px-2 py-0.5 rounded uppercase tracking-wide transition-all ${sigMode === m ? 'bg-white text-indigo-700' : 'text-indigo-200 hover:text-white'}`}>
                       {m === 'draw' ? '✏ Draw' : '⬆ Upload'}
                     </button>
                   ))}
@@ -1676,22 +1676,22 @@ const MemberMaster: React.FC = () => {
                       onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={stopDrawing} onMouseLeave={stopDrawing} />
                     {!hasDrawing && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Sign here with mouse or touch</span>
+                        <span className="fz-mini font-black text-slate-300 uppercase tracking-widest">Sign here with mouse or touch</span>
                       </div>
                     )}
                   </div>
                   <div className="px-2 py-1 bg-slate-50 flex items-center justify-between border-t border-indigo-100">
                     <button onClick={clearCanvas} disabled={!hasDrawing}
-                      className="text-[7px] font-black px-2 py-0.5 border-2 border-slate-300 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-30 uppercase">
+                      className="fz-micro font-black px-2 py-0.5 border-2 border-slate-300 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-30 uppercase">
                       Clear
                     </button>
                     <div className="flex items-center gap-2">
-                      {sigQueue && <span className="text-[6px] text-amber-600 font-black">⏳ Will upload on save</span>}
+                      {sigQueue && <span className="fz-nano text-amber-600 font-black">⏳ Will upload on save</span>}
                       {savedSigUrl && !sigQueue && (
-                        <span className="text-[6px] text-emerald-600 font-black flex items-center gap-0.5"><CheckCircle2 size={8} /> Saved</span>
+                        <span className="fz-nano text-emerald-600 font-black flex items-center gap-0.5"><CheckCircle2 size={8} /> Saved</span>
                       )}
                       <button onClick={queueDrawing} disabled={!hasDrawing}
-                        className="text-[7px] font-black px-3 py-0.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded uppercase tracking-wide">
+                        className="fz-micro font-black px-3 py-0.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded uppercase tracking-wide">
                         Use This Signature
                       </button>
                     </div>
@@ -1705,8 +1705,8 @@ const MemberMaster: React.FC = () => {
                   <div className="border-2 border-dashed border-indigo-300 rounded p-4 flex flex-col items-center gap-1 cursor-pointer hover:border-indigo-500 hover:bg-indigo-50"
                     onClick={() => document.getElementById('sig-upload')?.click()}>
                     <UploadIcon size={20} className="text-indigo-300" />
-                    <span className="text-[8px] font-black text-indigo-700 uppercase">Click to upload signature (JPG/PNG)</span>
-                    {sigQueue && <span className="text-[7px] text-amber-600 font-black">⏳ {sigQueue.name} — will upload on save</span>}
+                    <span className="fz-mini font-black text-indigo-700 uppercase">Click to upload signature (JPG/PNG)</span>
+                    {sigQueue && <span className="fz-micro text-amber-600 font-black">⏳ {sigQueue.name} — will upload on save</span>}
                   </div>
                   <input id="sig-upload" type="file" accept="image/jpeg,image/png" className="hidden"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSigQueue(f); } e.target.value = ''; }} />
@@ -1717,7 +1717,7 @@ const MemberMaster: React.FC = () => {
               {savedSigUrl && !sigQueue && (
                 <div className="border-t-2 border-indigo-100 px-2 py-1 bg-emerald-50 flex items-center gap-2">
                   <CheckCircle2 size={10} className="text-emerald-600" />
-                  <span className="text-[7px] font-black text-emerald-700 uppercase">Saved Signature:</span>
+                  <span className="fz-micro font-black text-emerald-700 uppercase">Saved Signature:</span>
                   <img src={savedSigUrl} alt="Saved signature"
                     className="max-h-10 max-w-32 object-contain bg-white border border-emerald-200 rounded p-0.5"
                     onError={() => setSavedSigUrl('')} />

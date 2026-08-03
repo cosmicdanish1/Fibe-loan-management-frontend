@@ -259,7 +259,7 @@ const CommunicationCenter: React.FC = () => {
             <div className="p-2 rounded-xl bg-indigo-600 shadow-lg shadow-indigo-900/50 relative" style={{ animation: stats.totalPending > 0 ? 'ch-pulse-ring 2s infinite' : 'none' }}>
               <MessageSquare size={16} className="text-white" />
               {stats.totalPending > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center text-[7px] font-black text-white shadow-lg">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center fz-micro font-black text-white shadow-lg">
                   <span className="absolute inset-0 rounded-full bg-amber-500" style={{ animation: 'ch-ping 1.5s cubic-bezier(0,0,0.2,1) infinite' }} />
                   <span className="relative">{stats.totalPending > 99 ? '99' : stats.totalPending}</span>
                 </span>
@@ -268,10 +268,10 @@ const CommunicationCenter: React.FC = () => {
             <div>
               <h1 className="text-xs font-black text-white uppercase tracking-widest leading-none">Communication Hub</h1>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <p className="text-[8px] font-bold text-indigo-300 uppercase tracking-widest">Queue → Review → Send</p>
+                <p className="fz-mini font-bold text-indigo-300 uppercase tracking-widest">Queue → Review → Send</p>
                 <div className="flex items-center gap-0.5">
                   <div className="w-1 h-1 rounded-full bg-emerald-400 ch-live-indicator" />
-                  <span className="text-[7px] font-bold text-emerald-400 uppercase">Live</span>
+                  <span className="fz-micro font-bold text-emerald-400 uppercase">Live</span>
                 </div>
               </div>
             </div>
@@ -284,7 +284,7 @@ const CommunicationCenter: React.FC = () => {
                     {channels[ch] ? <Wifi size={10} className="text-emerald-400 transition-transform group-hover:scale-110" /> : <WifiOff size={10} className="text-slate-500" />}
                     {channels[ch] && <div className="absolute inset-0 rounded-full bg-emerald-400/30" style={{ animation: 'ch-breathe 2s ease-in-out infinite' }} />}
                   </div>
-                  <span className={`text-[8px] font-bold uppercase ${channels[ch] ? 'text-emerald-300' : 'text-slate-500'}`}>{ch}</span>
+                  <span className={`fz-mini font-bold uppercase ${channels[ch] ? 'text-emerald-300' : 'text-slate-500'}`}>{ch}</span>
                 </div>
               ))}
             </div>
@@ -314,7 +314,7 @@ const CommunicationCenter: React.FC = () => {
                 { label: 'Failed', value: stats.totalFailed, color: '#ef4444', bg: isDark ? 'bg-rose-950/40' : 'bg-rose-50', border: isDark ? 'border-rose-800/50' : 'border-rose-200', text: isDark ? 'text-rose-400' : 'text-rose-700' },
               ].map((s, i) => (
                 <div key={i} className={`ch-stat flex-1 ${s.bg} border ${s.border} rounded-xl p-2 text-center ch-glow`}>
-                  <div className="text-[7px] font-black uppercase tracking-wider" style={{ color: s.color }}>{s.label}</div>
+                  <div className="fz-micro font-black uppercase tracking-wider" style={{ color: s.color }}>{s.label}</div>
                   <div className={`text-lg font-black ${s.text} ch-badge leading-tight`}>{s.value}</div>
                 </div>
               ))}
@@ -324,7 +324,7 @@ const CommunicationCenter: React.FC = () => {
             <div className={`flex rounded-lg border p-0.5 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
               {(['queue', 'compose'] as const).map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-1.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${activeTab === tab ? 'bg-indigo-600 text-white shadow-md' : isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}>
+                  className={`flex-1 py-1.5 rounded-md fz-tiny font-black uppercase tracking-wider transition-all ${activeTab === tab ? 'bg-indigo-600 text-white shadow-md' : isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}>
                   {tab === 'queue' ? 'Auto Generate' : 'Compose Message'}
                 </button>
               ))}
@@ -335,19 +335,19 @@ const CommunicationCenter: React.FC = () => {
               <div className={`rounded-xl border shadow-sm ch-glow overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className={`px-3 py-2 border-b flex items-center gap-1.5 ${isDark ? 'bg-amber-900/20 border-amber-800/30' : 'bg-gradient-to-r from-amber-50 to-amber-100/50 border-amber-200/50'}`}>
                   <Zap size={11} className="text-amber-500" />
-                  <span className={`text-[9px] font-black uppercase tracking-wider ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>Auto-Generate Queue</span>
+                  <span className={`fz-tiny font-black uppercase tracking-wider ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>Auto-Generate Queue</span>
                 </div>
                 <div className="p-3 space-y-2">
                   <Button block size="small" icon={<AlertCircle size={11} />} onClick={() => handleTrigger('emi')}
-                    className={`h-8 font-bold text-[10px] hover:shadow-md transition-all ${isDark ? 'bg-rose-900/30 text-rose-400 border-rose-800/50' : 'bg-gradient-to-r from-rose-50 to-rose-100 text-rose-700 border-rose-200'}`}>
+                    className={`h-8 font-bold fz-small hover:shadow-md transition-all ${isDark ? 'bg-rose-900/30 text-rose-400 border-rose-800/50' : 'bg-gradient-to-r from-rose-50 to-rose-100 text-rose-700 border-rose-200'}`}>
                     Generate EMI Deficit Alerts
                   </Button>
                   <Button block size="small" icon={<Clock size={11} />} onClick={() => handleTrigger('maturity')}
-                    className={`h-8 font-bold text-[10px] hover:shadow-md transition-all ${isDark ? 'bg-blue-900/30 text-blue-400 border-blue-800/50' : 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'}`}>
+                    className={`h-8 font-bold fz-small hover:shadow-md transition-all ${isDark ? 'bg-blue-900/30 text-blue-400 border-blue-800/50' : 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'}`}>
                     Generate Maturity Alerts
                   </Button>
                   <div className={`rounded-lg p-2 border ${isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-100'}`}>
-                    <p className={`text-[8px] text-center leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <p className={`fz-mini text-center leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       Messages are <span className="font-bold text-amber-600">queued only</span> — they will NOT be sent until you review and click Send.
                       Duplicate messages are automatically prevented.
                     </p>
@@ -359,33 +359,33 @@ const CommunicationCenter: React.FC = () => {
               <div className={`rounded-xl border shadow-sm ch-glow overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className={`px-3 py-2 border-b flex items-center gap-1.5 ${isDark ? 'bg-indigo-900/20 border-indigo-800/30' : 'bg-gradient-to-r from-indigo-50 to-indigo-100/50 border-indigo-200/50'}`}>
                   <Send size={11} className="text-indigo-500" />
-                  <span className={`text-[9px] font-black uppercase tracking-wider ${isDark ? 'text-indigo-400' : 'text-indigo-700'}`}>Compose & Queue</span>
+                  <span className={`fz-tiny font-black uppercase tracking-wider ${isDark ? 'text-indigo-400' : 'text-indigo-700'}`}>Compose & Queue</span>
                 </div>
                 <div className="p-3 space-y-2">
                   <div>
-                    <div className="text-[8px] font-bold uppercase mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}">Member</div>
+                    <div className="fz-mini font-bold uppercase mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}">Member</div>
                     <Input.Search value={form.memberNo} onChange={e => setForm(p => ({ ...p, memberNo: e.target.value }))}
                       onSearch={() => setShowLookup(true)} size="small" className="h-7 fz-caption font-semibold" placeholder="Member No" />
-                    {form.memberName && <div className="text-[9px] text-indigo-600 font-semibold mt-0.5">{form.memberName}</div>}
+                    {form.memberName && <div className="fz-tiny text-indigo-600 font-semibold mt-0.5">{form.memberName}</div>}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <div className="text-[8px] font-bold uppercase mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}">Channel</div>
+                      <div className="fz-mini font-bold uppercase mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}">Channel</div>
                       <Select value={form.channel} onChange={v => setForm(p => ({ ...p, channel: v }))} size="small" className="w-full"
                         options={[{ value: 'SMS', label: 'SMS' }, { value: 'WHATSAPP', label: 'WhatsApp' }, { value: 'EMAIL', label: 'Email' }]} />
                     </div>
                     <div>
-                      <div className="text-[8px] font-bold uppercase mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}">Recipient</div>
+                      <div className="fz-mini font-bold uppercase mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}">Recipient</div>
                       <Input value={form.recipient} onChange={e => setForm(p => ({ ...p, recipient: e.target.value }))} size="small" placeholder="Phone/Email" className="fz-caption" />
                     </div>
                   </div>
                   <div>
-                    <div className="text-[8px] font-bold uppercase mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}">Message</div>
+                    <div className="fz-mini font-bold uppercase mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}">Message</div>
                     <TextArea value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
-                      rows={3} placeholder="Type message..." className="text-[10px] resize-none" />
+                      rows={3} placeholder="Type message..." className="fz-small resize-none" />
                   </div>
                   <Button type="primary" block size="small" icon={<Inbox size={11} />} onClick={handleQueueManual}
-                    className="h-8 bg-gradient-to-r from-indigo-600 to-indigo-700 font-bold text-[10px] uppercase shadow-md hover:shadow-lg transition-all">
+                    className="h-8 bg-gradient-to-r from-indigo-600 to-indigo-700 font-bold fz-small uppercase shadow-md hover:shadow-lg transition-all">
                     Queue for Review
                   </Button>
                 </div>
@@ -401,7 +401,7 @@ const CommunicationCenter: React.FC = () => {
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
                   <Inbox size={12} className="text-indigo-500" />
-                  <span className="text-[10px] font-black text-slate-700 uppercase">Message Queue</span>
+                  <span className="fz-small font-black text-slate-700 uppercase">Message Queue</span>
                   <Badge count={filtered.length} showZero overflowCount={999}
                     style={{ backgroundColor: '#6366f1', fontSize: 9, fontWeight: 800, boxShadow: '0 2px 6px rgba(99,102,241,0.3)' }} />
                 </div>
@@ -411,7 +411,7 @@ const CommunicationCenter: React.FC = () => {
                 {/* Search */}
                 <Input size="small" prefix={<Search size={10} className="text-slate-300" />}
                   value={searchText} onChange={e => setSearchText(e.target.value)}
-                  placeholder="Search..." className="w-[140px] h-6 text-[10px]" allowClear />
+                  placeholder="Search..." className="w-[140px] h-6 fz-small" allowClear />
 
                 {/* Filters */}
                 <Select value={statusFilter} onChange={setStatusFilter} size="small" className="w-[85px]" style={{ fontSize: 9 }}
@@ -426,17 +426,17 @@ const CommunicationCenter: React.FC = () => {
               <div className="flex items-center gap-1.5">
                 {selectedIds.size > 0 ? (
                   <>
-                    <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{selectedIds.size} selected</span>
+                    <span className="fz-tiny font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{selectedIds.size} selected</span>
                     <Button size="small" type="primary" icon={<Send size={10} />} onClick={handleSendBatch} loading={sending}
-                      className="h-6 text-[9px] font-bold bg-emerald-600 hover:bg-emerald-500 border-0 shadow-sm">Send</Button>
+                      className="h-6 fz-tiny font-bold bg-emerald-600 hover:bg-emerald-500 border-0 shadow-sm">Send</Button>
                     <Button size="small" danger icon={<XCircle size={10} />} onClick={handleCancelBatch}
-                      className="h-6 text-[9px] font-bold">Cancel</Button>
+                      className="h-6 fz-tiny font-bold">Cancel</Button>
                     <Button size="small" icon={<Square size={10} />} onClick={clearSelection}
-                      className="h-6 text-[9px] font-bold text-slate-400">Clear</Button>
+                      className="h-6 fz-tiny font-bold text-slate-400">Clear</Button>
                   </>
                 ) : pendingFiltered.length > 0 ? (
                   <Button size="small" icon={<CheckSquare size={10} />} onClick={selectAllPending}
-                    className="h-6 text-[9px] font-bold text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100">
+                    className="h-6 fz-tiny font-bold text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100">
                     Select All Pending ({pendingFiltered.length})
                   </Button>
                 ) : null}
@@ -475,19 +475,19 @@ const CommunicationCenter: React.FC = () => {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-[10px] font-black ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>MB: {log.memberNo}</span>
-                        <span className="text-[8px] font-bold px-1.5 py-0 rounded-full uppercase" style={{ color: chClr(log.channel), backgroundColor: `${chClr(log.channel)}12` }}>{log.channel}</span>
-                        <span className="text-[8px] font-bold px-1.5 py-0 rounded-full uppercase" style={{ color: stClr(log.status), backgroundColor: `${stClr(log.status)}12` }}>{log.status}</span>
-                        <span className="text-[8px] font-semibold text-slate-400 uppercase">{log.type?.replace(/_/g, ' ')}</span>
-                        {log.msgRef && <span className="text-[7px] font-mono text-slate-300">{log.msgRef}</span>}
+                        <span className={`fz-small font-black ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>MB: {log.memberNo}</span>
+                        <span className="fz-mini font-bold px-1.5 py-0 rounded-full uppercase" style={{ color: chClr(log.channel), backgroundColor: `${chClr(log.channel)}12` }}>{log.channel}</span>
+                        <span className="fz-mini font-bold px-1.5 py-0 rounded-full uppercase" style={{ color: stClr(log.status), backgroundColor: `${stClr(log.status)}12` }}>{log.status}</span>
+                        <span className="fz-mini font-semibold text-slate-400 uppercase">{log.type?.replace(/_/g, ' ')}</span>
+                        {log.msgRef && <span className="fz-micro font-mono text-slate-300">{log.msgRef}</span>}
                       </div>
-                      <div className={`text-[10px] leading-snug line-clamp-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} title={log.message}>
+                      <div className={`fz-small leading-snug line-clamp-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} title={log.message}>
                         <span className="text-indigo-400 font-semibold">{log.recipient}</span> — {log.message}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[8px] text-slate-400">{dayjs(log.createdAt).format('DD-MMM-YY HH:mm')}</span>
-                        {log.sentAt && <span className="text-[8px] text-emerald-500 font-semibold">Sent {dayjs(log.sentAt).format('DD-MMM HH:mm')}</span>}
-                        {log.errorMessage && <span className="text-[8px] text-rose-500" title={log.errorMessage}>Error: {log.errorMessage.substring(0, 50)}</span>}
+                        <span className="fz-mini text-slate-400">{dayjs(log.createdAt).format('DD-MMM-YY HH:mm')}</span>
+                        {log.sentAt && <span className="fz-mini text-emerald-500 font-semibold">Sent {dayjs(log.sentAt).format('DD-MMM HH:mm')}</span>}
+                        {log.errorMessage && <span className="fz-mini text-rose-500" title={log.errorMessage}>Error: {log.errorMessage.substring(0, 50)}</span>}
                       </div>
                     </div>
 
@@ -496,14 +496,14 @@ const CommunicationCenter: React.FC = () => {
                       {log.status === 'PENDING' && (
                         <Button size="small" type="primary" icon={<Send size={9} />}
                           onClick={() => handleSendOne(log.id)} loading={sending}
-                          className="ch-send-btn h-6 px-2 text-[8px] font-bold bg-emerald-600 hover:bg-emerald-500 border-0 shadow-sm">
+                          className="ch-send-btn h-6 px-2 fz-mini font-bold bg-emerald-600 hover:bg-emerald-500 border-0 shadow-sm">
                           Send
                         </Button>
                       )}
                       {log.status === 'FAILED' && (
                         <Button size="small" icon={<RefreshCw size={9} />}
                           onClick={() => handleSendOne(log.id)} loading={sending}
-                          className="ch-retry-btn h-6 px-2 text-[8px] font-bold text-amber-600 border-amber-200">
+                          className="ch-retry-btn h-6 px-2 fz-mini font-bold text-amber-600 border-amber-200">
                           Retry
                         </Button>
                       )}
@@ -514,8 +514,8 @@ const CommunicationCenter: React.FC = () => {
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner ${isDark ? 'bg-slate-700' : 'bg-indigo-50'}`}>
                       <Inbox size={28} className={isDark ? 'text-slate-500' : 'text-indigo-200'} />
                     </div>
-                    <p className={`text-[11px] font-black uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Message queue is empty</p>
-                    <p className={`text-[9px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Generate auto-alerts or compose a message to get started</p>
+                    <p className={`fz-caption font-black uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Message queue is empty</p>
+                    <p className={`fz-tiny mt-1 ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Generate auto-alerts or compose a message to get started</p>
                   </div>
                 )}
               </Spin>
@@ -526,17 +526,17 @@ const CommunicationCenter: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 ch-live-indicator" />
-                  <span className="text-[8px] font-bold text-emerald-600">LIVE</span>
+                  <span className="fz-mini font-bold text-emerald-600">LIVE</span>
                 </div>
-                <span className="text-[8px] text-slate-400">
+                <span className="fz-mini text-slate-400">
                   {filtered.length} of {logs.length} messages
                   {searchText && ` · "${searchText}"`}
                   {' · Auto-refresh 30s'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[8px] text-slate-400">{dayjs().format('DD-MMM-YYYY HH:mm')}</span>
-                <span className="text-[8px] font-bold text-indigo-400">Paper White Technology</span>
+                <span className="fz-mini text-slate-400">{dayjs().format('DD-MMM-YYYY HH:mm')}</span>
+                <span className="fz-mini font-bold text-indigo-400">Paper White Technology</span>
               </div>
             </div>
           </div>
@@ -572,9 +572,9 @@ const CommunicationCenter: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-black text-sm text-slate-800">Email (Gmail SMTP)</span>
-                <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded uppercase">Free</span>
+                <span className="fz-tiny font-black bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded uppercase">Free</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">Send via configured Gmail account. No cost.</p>
+              <p className="fz-small text-slate-500 mt-0.5">Send via configured Gmail account. No cost.</p>
             </div>
             {selectedChannel === 'EMAIL' && <CheckCircle size={18} className="text-indigo-600 shrink-0" />}
           </button>
@@ -593,9 +593,9 @@ const CommunicationCenter: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-black text-sm text-slate-800">SMS</span>
-                <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase">Paid Service</span>
+                <span className="fz-tiny font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase">Paid Service</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">Contact PaperWhite Technology to activate SMS gateway.</p>
+              <p className="fz-small text-slate-500 mt-0.5">Contact PaperWhite Technology to activate SMS gateway.</p>
             </div>
           </button>
 
@@ -613,9 +613,9 @@ const CommunicationCenter: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-black text-sm text-slate-800">WhatsApp</span>
-                <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase">Paid Service</span>
+                <span className="fz-tiny font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase">Paid Service</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">Contact PaperWhite Technology to activate WhatsApp Business API.</p>
+              <p className="fz-small text-slate-500 mt-0.5">Contact PaperWhite Technology to activate WhatsApp Business API.</p>
             </div>
           </button>
 

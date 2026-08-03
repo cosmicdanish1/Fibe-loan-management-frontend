@@ -362,7 +362,7 @@ const AccountBalance: React.FC = () => {
                 <FileText size={12} className="text-white" />
               </div>
               <div>
-                <h3 className="text-[10px] font-black text-white uppercase tracking-wide leading-none">Account Balance</h3>
+                <h3 className="fz-small font-black text-white uppercase tracking-wide leading-none">Account Balance</h3>
                 <p className="fz-body font-bold text-sky-200 uppercase mt-0.5 tracking-tight leading-none">
                   {fromNo && toNo ? `${fromNo} – ${toNo}` : 'Enter member range'}
                 </p>
@@ -392,7 +392,7 @@ const AccountBalance: React.FC = () => {
                       <Calendar className="text-4xl text-sky-200" />
                     </div>
                     <h4 className="text-slate-400 font-black text-xs uppercase tracking-wider">No Data</h4>
-                    <p className="text-slate-300 text-[10px] mt-1 font-semibold">Enter member range and click Generate</p>
+                    <p className="text-slate-300 fz-small mt-1 font-semibold">Enter member range and click Generate</p>
                   </div>
                 )}
               </Spin>

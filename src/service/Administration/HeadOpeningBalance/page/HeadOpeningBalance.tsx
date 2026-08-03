@@ -352,20 +352,20 @@ const HeadOpeningBalance: React.FC = () => {
                       </td>
                       <td className="px-3 py-1.5 font-black text-slate-800">
                         {SECTION_LABELS[row.rootCode]}
-                        <span className="ml-2 text-[11px]" style={{ color: CODE_COLORS[row.rootCode.charAt(0)] }}>
+                        <span className="ml-2 fz-caption" style={{ color: CODE_COLORS[row.rootCode.charAt(0)] }}>
                           {row.entry.code}
                         </span>
                       </td>
                       <td className="px-3 py-1.5 text-right font-mono font-black text-amber-700">
                         {!isOpen ? fmt(sectionTotals[row.rootCode]) : ''}
                       </td>
-                      <td className="px-3 py-1.5 text-center text-slate-500 text-[11px]">
+                      <td className="px-3 py-1.5 text-center text-slate-500 fz-caption">
                         {activeYear?.startDate ?? '—'}
                       </td>
-                      <td className="px-3 py-1.5 text-center text-slate-500 text-[11px]">
+                      <td className="px-3 py-1.5 text-center text-slate-500 fz-caption">
                         {activeYear?.endDate ?? '—'}
                       </td>
-                      <td className="px-3 py-1.5 text-center text-slate-500 text-[11px]">
+                      <td className="px-3 py-1.5 text-center text-slate-500 fz-caption">
                         {activeYear?.yearcode ?? '—'}
                       </td>
                     </tr>
@@ -382,7 +382,7 @@ const HeadOpeningBalance: React.FC = () => {
                     <td className="px-3 py-1">
                       <span className="font-bold mr-2" style={{ color: cColor }}>{e.code}</span>
                       <span className={e.edited ? 'text-amber-600' : 'text-slate-700'}>{e.headName}</span>
-                      {e.edited && <span className="ml-1 text-amber-500 text-[10px]">*</span>}
+                      {e.edited && <span className="ml-1 text-amber-500 fz-small">*</span>}
                     </td>
                     <td className="px-2 py-1 text-right font-mono">
                       <input
@@ -394,13 +394,13 @@ const HeadOpeningBalance: React.FC = () => {
                         onChange={ev => handleBalChange(e.code, ev.target.value)}
                       />
                     </td>
-                    <td className="px-3 py-1 text-center text-slate-500 text-[11px]">
+                    <td className="px-3 py-1 text-center text-slate-500 fz-caption">
                       {activeYear?.startDate ?? '—'}
                     </td>
-                    <td className="px-3 py-1 text-center text-slate-500 text-[11px]">
+                    <td className="px-3 py-1 text-center text-slate-500 fz-caption">
                       {activeYear?.endDate ?? '—'}
                     </td>
-                    <td className="px-3 py-1 text-center text-slate-500 text-[11px]">
+                    <td className="px-3 py-1 text-center text-slate-500 fz-caption">
                       {activeYear?.yearcode ?? '—'}
                     </td>
                   </tr>
@@ -417,13 +417,13 @@ const HeadOpeningBalance: React.FC = () => {
                 <td className="px-3 py-1.5 text-right font-mono font-black text-base text-amber-300">
                   {fmt(grandTotal)}
                 </td>
-                <td className="px-3 py-1.5 text-center text-purple-300 text-[11px]">
+                <td className="px-3 py-1.5 text-center text-purple-300 fz-caption">
                   {activeYear?.startDate ?? '—'}
                 </td>
-                <td className="px-3 py-1.5 text-center text-purple-300 text-[11px]">
+                <td className="px-3 py-1.5 text-center text-purple-300 fz-caption">
                   {activeYear?.endDate ?? '—'}
                 </td>
-                <td className="px-3 py-1.5 text-center text-purple-300 text-[11px]">
+                <td className="px-3 py-1.5 text-center text-purple-300 fz-caption">
                   {activeYear?.yearcode ?? '—'}
                 </td>
               </tr>

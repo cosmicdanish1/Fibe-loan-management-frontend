@@ -87,7 +87,6 @@ interface AppSettings {
 
   // System
   notifications: boolean;
-  syncAcrossWindows: boolean;
   soundEffects: boolean;
   showChatbot: boolean;
 
@@ -122,7 +121,6 @@ const defaultSettings: AppSettings = {
   boldText: false,
 
   notifications: true,
-  syncAcrossWindows: true,
   soundEffects: true,
   showChatbot: true,
 
@@ -247,25 +245,25 @@ const LicenseSection: React.FC = () => {
         <div className="grid grid-cols-2 gap-4 text-sm">
           {customerName && (
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Customer</span>
+              <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Customer</span>
               <span className="font-semibold text-slate-700">{customerName}</span>
             </div>
           )}
           {expiresAt && (
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Expires</span>
+              <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Expires</span>
               <span className="font-semibold text-slate-700">{new Date(expiresAt).toLocaleDateString()}</span>
             </div>
           )}
           {status === 'active' && (
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Days Remaining</span>
+              <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Days Remaining</span>
               <span className={`font-bold text-lg ${daysRemaining <= 30 ? 'text-amber-600' : 'text-emerald-600'}`}>{daysRemaining}</span>
             </div>
           )}
           {status === 'grace' && (
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Grace Days Left</span>
+              <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Grace Days Left</span>
               <span className="font-bold text-lg text-red-600">{graceDaysRemaining}</span>
             </div>
           )}
@@ -284,7 +282,7 @@ const LicenseSection: React.FC = () => {
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">
               {status === 'not_activated' ? 'Activate Software' : 'Renew License'}
             </h3>
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest">Enter your license key</p>
+            <p className="fz-small text-slate-400 uppercase tracking-widest">Enter your license key</p>
           </div>
         </div>
 
@@ -445,7 +443,6 @@ const SettingsPage: React.FC = () => {
             backgroundImage: remotePrefs.backgroundImage || prev.backgroundImage,
             textColor: remotePrefs.textColor || prev.textColor,
             notifications: remotePrefs.notifications !== undefined ? remotePrefs.notifications : prev.notifications,
-            syncAcrossWindows: remotePrefs.syncAcrossWindows !== undefined ? remotePrefs.syncAcrossWindows : prev.syncAcrossWindows,
             soundEffects: remotePrefs.soundEffects !== undefined ? remotePrefs.soundEffects : prev.soundEffects,
             showChatbot: remotePrefs.showChatbot !== undefined ? remotePrefs.showChatbot : prev.showChatbot,
             dashboardWidgets: remotePrefs.dashboardWidgets !== undefined ? remotePrefs.dashboardWidgets : prev.dashboardWidgets,
@@ -532,7 +529,6 @@ const SettingsPage: React.FC = () => {
       backgroundImage: settings.backgroundImage,
       textColor: settings.textColor,
       notifications: settings.notifications,
-      syncAcrossWindows: settings.syncAcrossWindows,
       soundEffects: settings.soundEffects,
       showChatbot: settings.showChatbot,
       dashboardWidgets: settings.dashboardWidgets,
@@ -619,14 +615,14 @@ const SettingsPage: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Theme & Colors</h3>
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Global palette settings</p>
+              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Global palette settings</p>
             </div>
           </div>
 
           <div className="space-y-6">
             {/* Theme Mode */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Interface Mode</label>
+              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Interface Mode</label>
               <div className="flex bg-slate-100 p-1 rounded-lg">
                 {['light', 'dark', 'system'].map(mode => (
                   <button
@@ -642,7 +638,7 @@ const SettingsPage: React.FC = () => {
                       }
                       try { const bc = new BroadcastChannel('theme_sync'); bc.postMessage(payload); bc.close(); } catch { }
                     }}
-                    className={`flex-1 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${settings.themeMode === mode
+                    className={`flex-1 py-1.5 rounded-md fz-small font-bold uppercase tracking-widest transition-all ${settings.themeMode === mode
                       ? 'bg-white text-indigo-600 shadow-sm'
                       : 'text-slate-400 hover:text-slate-600'
                       }`}
@@ -655,7 +651,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Accent Color */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accent Color</label>
+              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Accent Color</label>
               <div className="flex flex-wrap gap-3">
                 {ACCENT_PRESETS.map(color => (
                   <button
@@ -680,7 +676,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Header Gradient */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Header Gradient</label>
+              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Header Gradient</label>
               {/* Live preview */}
               <div className="h-7 w-full rounded-lg border border-slate-200 mb-1" style={{ backgroundImage: headerGradient }} />
               <div className="flex flex-wrap gap-2 items-center">
@@ -715,7 +711,7 @@ const SettingsPage: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Layout & Type</h3>
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Density and scaling</p>
+              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Density and scaling</p>
             </div>
           </div>
 
@@ -723,8 +719,8 @@ const SettingsPage: React.FC = () => {
             {/* Text Size */}
             <div className="space-y-3">
               <div className="flex justify-between">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Text Size</label>
-                <span className="text-[10px] font-bold text-indigo-600 uppercase bg-indigo-50 px-2 rounded-full">{settings.fontSize}</span>
+                <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Text Size</label>
+                <span className="fz-small font-bold text-indigo-600 uppercase bg-indigo-50 px-2 rounded-full">{settings.fontSize}</span>
               </div>
               <div className="px-2">
                 <Slider
@@ -752,7 +748,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Font Style */}
             <div className="space-y-2 pt-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Font Style</label>
+              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Font Style</label>
               <div className="grid grid-cols-2 gap-2">
                 {FONT_OPTIONS.map(font => (
                   <div
@@ -775,11 +771,11 @@ const SettingsPage: React.FC = () => {
                       }`}
                   >
                     {/* Previewed in its own face so the choice is visible before applying */}
-                    <div className="text-[13px] font-bold text-slate-700 leading-tight" style={{ fontFamily: font.value }}>
+                    <div className="fz-body font-bold text-slate-700 leading-tight" style={{ fontFamily: font.value }}>
                       {font.label}
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">{font.hint}</div>
-                    <div className="text-[11px] text-slate-500 mt-1 truncate" style={{ fontFamily: font.value }}>
+                    <div className="fz-small text-slate-400 mt-0.5">{font.hint}</div>
+                    <div className="fz-caption text-slate-500 mt-1 truncate" style={{ fontFamily: font.value }}>
                       Member 1043 · ₹ 24,850.00
                     </div>
                   </div>
@@ -790,8 +786,8 @@ const SettingsPage: React.FC = () => {
             {/* Bold Text */}
             <div className="flex items-center justify-between pt-2">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bold Text</label>
-                <p className="text-[10px] text-slate-400 mt-0.5">Make all labelled text heavier</p>
+                <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Bold Text</label>
+                <p className="fz-small text-slate-400 mt-0.5">Make all labelled text heavier</p>
               </div>
               <Switch
                 checked={settings.boldText}
@@ -806,7 +802,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Density Toggle */}
             <div className="space-y-2 pt-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Layout Density</label>
+              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Layout Density</label>
               <div className="grid grid-cols-2 gap-3">
                 {['compact', 'comfortable'].map(d => (
                   <div
@@ -830,7 +826,7 @@ const SettingsPage: React.FC = () => {
             {/* Border Radius */}
             <div className="space-y-2 pt-2">
               <div className="flex justify-between">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Corner Radius: {settings.borderRadius}px</label>
+                <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Corner Radius: {settings.borderRadius}px</label>
               </div>
               <Slider
                 min={0}
@@ -851,9 +847,20 @@ const SettingsPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Background</h3>
-            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Canvas appearance</p>
+            <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Canvas appearance</p>
           </div>
         </div>
+
+        {/* Dark mode keeps its own canvas so the navbar and toolbars stay
+            readable, which means these controls have no visible effect while
+            it is on. Say so rather than letting them look broken. */}
+        {settings.themeMode === 'dark' && (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
+            <p className="fz-caption font-bold text-amber-700">
+              Dark mode uses its own canvas colour — these background settings apply in Light mode.
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-5">
@@ -864,7 +871,7 @@ const SettingsPage: React.FC = () => {
                   <button
                     key={mode}
                     onClick={() => setSettings(prev => ({ ...prev, backgroundType: mode as any }))}
-                    className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${settings.backgroundType === mode
+                    className={`flex-1 py-1.5 rounded-lg fz-small font-bold uppercase tracking-widest border transition-all ${settings.backgroundType === mode
                       ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-200'
                       : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-white'
                       }`}
@@ -878,7 +885,7 @@ const SettingsPage: React.FC = () => {
             {/* Solid/Gradient Controls */}
             {settings.backgroundType !== 'image' && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <label className="fz-small font-black text-slate-400 uppercase tracking-widest">
                   {settings.backgroundType === 'gradient' ? 'Colors' : 'Color Selection'}
                 </label>
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -979,9 +986,9 @@ const SettingsPage: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Dashboard Widgets</h3>
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Choose which panels are visible on your dashboard</p>
+              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Choose which panels are visible on your dashboard</p>
             </div>
-            <span className="ml-auto px-2 py-1 bg-indigo-50 text-indigo-600 text-[9px] font-black rounded-full uppercase tracking-widest">
+            <span className="ml-auto px-2 py-1 bg-indigo-50 text-indigo-600 fz-tiny font-black rounded-full uppercase tracking-widest">
               {Object.values(widgetConfig).filter(Boolean).length} / 4 on
             </span>
           </div>
@@ -1003,7 +1010,7 @@ const SettingsPage: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`text-xs font-black uppercase tracking-wide leading-none ${isOn ? 'text-slate-800' : 'text-slate-400'}`}>{label}</p>
-                    <p className="text-[9px] text-slate-400 mt-1 truncate">{desc}</p>
+                    <p className="fz-tiny text-slate-400 mt-1 truncate">{desc}</p>
                   </div>
                   <div className={`w-9 h-5 rounded-full shrink-0 relative transition-all ${isOn ? 'bg-indigo-600' : 'bg-slate-200'}`}>
                     <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${isOn ? 'right-0.5' : 'left-0.5'}`} />
@@ -1025,10 +1032,10 @@ const SettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Quick Actions Bar</h3>
-                  <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Choose which windows appear in the dashboard quick actions</p>
+                  <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Choose which windows appear in the dashboard quick actions</p>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
-                  <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-full uppercase tracking-widest">
+                  <span className="px-2 py-1 bg-emerald-50 text-emerald-600 fz-tiny font-black rounded-full uppercase tracking-widest">
                     {enabledQaIds.length} / {ALL_QUICK_ACTION_DEFS.length} enabled
                   </span>
                   {enabledQaIds.length !== DEFAULT_ENABLED_QA_IDS.length && (
@@ -1038,7 +1045,7 @@ const SettingsPage: React.FC = () => {
                         localStorage.setItem(QA_STORAGE_KEY, JSON.stringify(DEFAULT_ENABLED_QA_IDS));
                         try { const bc = new BroadcastChannel(QA_BROADCAST_CHANNEL); bc.postMessage({ enabledIds: DEFAULT_ENABLED_QA_IDS }); bc.close(); } catch { }
                       }}
-                      className="px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all"
+                      className="px-2 py-1 fz-mini font-black uppercase tracking-widest text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all"
                     >
                       Reset
                     </button>
@@ -1053,9 +1060,9 @@ const SettingsPage: React.FC = () => {
                   return (
                     <div key={cat}>
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{cat}</span>
+                        <span className="fz-tiny font-black text-slate-500 uppercase tracking-widest">{cat}</span>
                         <div className="flex-1 h-px bg-slate-100" />
-                        <span className="text-[8px] text-slate-400">{enabledInCat}/{items.length}</span>
+                        <span className="fz-mini text-slate-400">{enabledInCat}/{items.length}</span>
                       </div>
                       <div className="grid grid-cols-5 gap-2">
                         {items.map((item: QuickActionDef) => {
@@ -1100,9 +1107,9 @@ const SettingsPage: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">FY Banner Transparency</h3>
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Control how opaque the glass banner appears</p>
+              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Control how opaque the glass banner appears</p>
             </div>
-            <span className="ml-auto px-2 py-1 text-[10px] font-black rounded-full uppercase tracking-widest"
+            <span className="ml-auto px-2 py-1 fz-small font-black rounded-full uppercase tracking-widest"
               style={{ background: bannerOpacity === 0 ? '#fef2f2' : '#f0fdf4', color: bannerOpacity === 0 ? '#dc2626' : '#16a34a' }}>
               {bannerOpacity === 0 ? 'Invisible' : bannerOpacity === 100 ? 'Solid' : `${bannerOpacity}% opaque`}
             </span>
@@ -1119,7 +1126,7 @@ const SettingsPage: React.FC = () => {
                 { label: 'Solid',       value: 100,cls: 'border-slate-700 text-slate-700 hover:bg-slate-100' },
               ].map(p => (
                 <button key={p.value} onClick={() => applyBannerOpacity(p.value)}
-                  className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${
+                  className={`flex-1 py-1.5 rounded-lg fz-tiny font-black uppercase tracking-widest border transition-all ${
                     bannerOpacity === p.value ? 'ring-2 ring-indigo-400 scale-105 shadow-sm' : ''
                   } ${p.cls}`}>
                   {p.label}
@@ -1130,8 +1137,8 @@ const SettingsPage: React.FC = () => {
             {/* Slider */}
             <div className="px-1">
               <div className="flex justify-between mb-2">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><EyeOff size={10} /> 0% — Invisible</span>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">100% — Solid <Eye size={10} /></span>
+                <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><EyeOff size={10} /> 0% — Invisible</span>
+                <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">100% — Solid <Eye size={10} /></span>
               </div>
               <Slider
                 min={0}
@@ -1141,12 +1148,12 @@ const SettingsPage: React.FC = () => {
                 tooltip={{ formatter: (v) => `${v}% opacity` }}
                 trackStyle={{ background: 'linear-gradient(to right, transparent, #6366f1)' }}
               />
-              <p className="text-center text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-1">{bannerOpacity}%</p>
+              <p className="text-center fz-tiny font-black text-indigo-600 uppercase tracking-widest mt-1">{bannerOpacity}%</p>
             </div>
 
             {/* Live banner preview */}
             <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Live Preview</p>
+              <p className="fz-tiny font-black text-slate-400 uppercase tracking-widest mb-2">Live Preview</p>
               <div className="relative rounded-xl overflow-hidden h-16"
                 style={{ background: settings.dashboardBg || '#f5f6fa' }}>
                 {/* Simulated blobs behind */}
@@ -1156,25 +1163,25 @@ const SettingsPage: React.FC = () => {
                 <div className="absolute inset-2 rounded-lg flex items-center px-4 gap-3" style={bannerPreviewStyle}>
                   <Calendar size={14} className="text-slate-300 shrink-0" />
                   <div>
-                    <p className="text-[7px] text-slate-400 uppercase tracking-widest font-black">Current Financial Year</p>
-                    <p className="text-white font-black text-[12px] leading-tight">FY 2026–27</p>
+                    <p className="fz-micro text-slate-400 uppercase tracking-widest font-black">Current Financial Year</p>
+                    <p className="text-white font-black fz-label leading-tight">FY 2026–27</p>
                   </div>
                   <div className="ml-auto flex items-center gap-3">
                     <div className="text-right">
-                      <p className="text-[6px] text-slate-400 uppercase">Days Left</p>
+                      <p className="fz-nano text-slate-400 uppercase">Days Left</p>
                       <p className="text-amber-300 font-black text-sm leading-none">292</p>
                     </div>
                     <div className="w-16">
                       <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                         <div className="h-full bg-emerald-500 rounded-full" style={{ width: '20%' }} />
                       </div>
-                      <p className="text-[6px] text-slate-400 uppercase mt-0.5 text-right">20%</p>
+                      <p className="fz-nano text-slate-400 uppercase mt-0.5 text-right">20%</p>
                     </div>
                   </div>
                 </div>
                 {bannerOpacity === 0 && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Banner hidden (opacity 0)</span>
+                    <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest">Banner hidden (opacity 0)</span>
                   </div>
                 )}
               </div>
@@ -1190,7 +1197,7 @@ const SettingsPage: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Dashboard Background</h3>
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Canvas colour for the home screen</p>
+              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Canvas colour for the home screen</p>
             </div>
           </div>
 
@@ -1204,16 +1211,16 @@ const SettingsPage: React.FC = () => {
                 }`}>
                 <div className="w-full h-10 rounded-lg border border-slate-200"
                   style={{ backgroundColor: opt.preview }} />
-                <span className="text-[9px] font-black text-slate-600 uppercase tracking-wider">{opt.label}</span>
+                <span className="fz-tiny font-black text-slate-600 uppercase tracking-wider">{opt.label}</span>
                 {settings.dashboardBg === opt.value && (
-                  <span className="text-[8px] font-black text-indigo-600 uppercase">Active</span>
+                  <span className="fz-mini font-black text-indigo-600 uppercase">Active</span>
                 )}
               </button>
             ))}
           </div>
 
           <div className="mt-4 flex items-center gap-3">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Custom colour</span>
+            <span className="fz-small font-black text-slate-400 uppercase tracking-widest">Custom colour</span>
             <ColorPicker
               value={settings.dashboardBg}
               onChange={(c) => applyDashboardBg(c.toHexString())}
@@ -1230,7 +1237,7 @@ const SettingsPage: React.FC = () => {
           </div>
           <div className="rounded-xl border border-slate-200 overflow-hidden h-24 flex items-center justify-center"
             style={{ backgroundColor: settings.dashboardBg }}>
-            <span className="text-[10px] font-black uppercase tracking-widest"
+            <span className="fz-small font-black uppercase tracking-widest"
               style={{ color: settings.dashboardBg.startsWith('#0') || settings.dashboardBg === '#1e1b4b' ? '#94a3b8' : '#64748b' }}>
               Dashboard background preview
             </span>
@@ -1249,26 +1256,15 @@ const SettingsPage: React.FC = () => {
         </div>
         <div>
           <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">System & Windows</h3>
-          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Global behavior</p>
+          <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Global behavior</p>
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-700 block">Sync All Windows</span>
-            <span className="text-[10px] text-slate-400 block">Apply settings updates to all open windows immediately</span>
-          </div>
-          <Switch
-            checked={settings.syncAcrossWindows}
-            onChange={(c) => setSettings(prev => ({ ...prev, syncAcrossWindows: c }))}
-          />
-        </div>
-
-        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-          <div className="space-y-1">
             <span className="text-xs font-bold text-slate-700 block">Notifications</span>
-            <span className="text-[10px] text-slate-400 block">Enable system alerts and toast messages</span>
+            <span className="fz-small text-slate-400 block">Show success and info toasts — errors and warnings always appear</span>
           </div>
           <Switch
             checked={settings.notifications}
@@ -1279,7 +1275,7 @@ const SettingsPage: React.FC = () => {
         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-700 block">Sound Effects</span>
-            <span className="text-[10px] text-slate-400 block">Play audio cues for interactions</span>
+            <span className="fz-small text-slate-400 block">Play audio cues for interactions</span>
           </div>
           <Switch
             checked={settings.soundEffects}
@@ -1290,7 +1286,7 @@ const SettingsPage: React.FC = () => {
         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-700 block">AI Assistant (Chatbot)</span>
-            <span className="text-[10px] text-slate-400 block">Show FIBE AI assistant bubble for app help</span>
+            <span className="fz-small text-slate-400 block">Show FIBE AI assistant bubble for app help</span>
           </div>
           <Switch
             checked={settings.showChatbot}
@@ -1322,7 +1318,7 @@ const SettingsPage: React.FC = () => {
             <h3 className="text-sm font-black text-white uppercase tracking-wide">Developer Console</h3>
             <div className="flex items-center gap-2 mt-1">
               <Badge status="processing" color="#10b981" />
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Access Granted: Root Level</p>
+              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Access Granted: Root Level</p>
             </div>
           </div>
         </div>
@@ -1365,19 +1361,19 @@ const SettingsPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Environment State</h3>
-            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Window geometry & layout</p>
+            <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Window geometry & layout</p>
           </div>
         </div>
 
         <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-700 block">Reset Window Layouts</span>
-            <span className="text-[10px] text-slate-400 block">Restore all windows to default dimensions</span>
+            <span className="fz-small text-slate-400 block">Restore all windows to default dimensions</span>
           </div>
           <Button
             onClick={resetWindowStates}
             icon={<RotateCcw size={14} />}
-            className="text-[10px] font-bold uppercase tracking-widest border-slate-300 text-slate-600"
+            className="fz-small font-bold uppercase tracking-widest border-slate-300 text-slate-600"
           >
             Reset Geometry
           </Button>
@@ -1420,7 +1416,7 @@ const SettingsPage: React.FC = () => {
 
             <button
               onClick={handleDeveloperModeToggle}
-              className={`h-9 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${isDeveloperMode
+              className={`h-9 px-4 rounded-lg fz-small font-black uppercase tracking-widest flex items-center gap-2 transition-all ${isDeveloperMode
                 ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20'
                 : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/5'
                 }`}
@@ -1434,7 +1430,7 @@ const SettingsPage: React.FC = () => {
             <button
               onClick={handleSaveWithAnimation}
               disabled={isSaving}
-              className="h-9 px-5 text-white rounded-lg text-[10px] font-black shadow-lg transition-all flex items-center gap-2 transform active:scale-95 uppercase tracking-widest"
+              className="h-9 px-5 text-white rounded-lg fz-small font-black shadow-lg transition-all flex items-center gap-2 transform active:scale-95 uppercase tracking-widest"
               style={{ backgroundColor: settings.accentColor }}
             >
               {isSaving ? <RotateCcw className="animate-spin" size={14} /> : <Save size={14} />}
@@ -1443,7 +1439,7 @@ const SettingsPage: React.FC = () => {
 
             <button
               onClick={() => window.close()}
-              className="h-9 px-4 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg text-[10px] font-black transition-all flex items-center gap-2 transform active:scale-95 uppercase tracking-widest border border-rose-500/10"
+              className="h-9 px-4 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg fz-small font-black transition-all flex items-center gap-2 transform active:scale-95 uppercase tracking-widest border border-rose-500/10"
             >
               <X size={14} /> Close
             </button>
@@ -1457,7 +1453,7 @@ const SettingsPage: React.FC = () => {
             <nav className="flex-1 px-4 space-y-1">
               <button
                 onClick={() => setActiveTab('appearance')}
-                className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'appearance'
+                className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'appearance'
                   ? 'bg-slate-50 text-indigo-600 shadow-sm ring-1 ring-slate-100'
                   : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                   }`}
@@ -1467,7 +1463,7 @@ const SettingsPage: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'dashboard'
+                className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'dashboard'
                   ? 'bg-slate-50 text-indigo-600 shadow-sm ring-1 ring-slate-100'
                   : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                   }`}
@@ -1477,7 +1473,7 @@ const SettingsPage: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('system')}
-                className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'system'
+                className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'system'
                   ? 'bg-slate-50 text-indigo-600 shadow-sm ring-1 ring-slate-100'
                   : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                   }`}
@@ -1494,7 +1490,7 @@ const SettingsPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setActiveTab('developer')}
-                    className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'developer'
+                    className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'developer'
                       ? 'bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-emerald-100'
                       : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                       }`}
@@ -1510,7 +1506,7 @@ const SettingsPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setActiveTab('license')}
-                className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'license'
+                className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'license'
                   ? 'bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-indigo-100'
                   : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                   }`}
@@ -1548,7 +1544,7 @@ const SettingsPage: React.FC = () => {
           className="compact-modal"
         >
           <div className="space-y-4 pt-4">
-            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest text-center">
+            <p className="fz-small font-medium text-slate-500 uppercase tracking-widest text-center">
               Enter Restricted PIN to Unlock
             </p>
             <Input.Password
@@ -1566,7 +1562,7 @@ const SettingsPage: React.FC = () => {
               block
               size="large"
               onClick={handlePinSubmit}
-              className="bg-indigo-600 font-bold uppercase tracking-widest text-[10px]"
+              className="bg-indigo-600 font-bold uppercase tracking-widest fz-small"
             >
               Authenticate
             </Button>

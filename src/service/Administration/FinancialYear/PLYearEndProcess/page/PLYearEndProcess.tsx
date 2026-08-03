@@ -56,7 +56,7 @@ const PLYearEndProcessContent: React.FC = () => {
             <h1 className="text-sm font-bold text-slate-800 tracking-tight leading-none uppercase">
               P and L Year End Process
             </h1>
-            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mt-1">
+            <p className="fz-small font-medium text-slate-400 uppercase tracking-widest mt-1">
               Fiscal Finalization Terminal
             </p>
           </div>
@@ -81,11 +81,11 @@ const PLYearEndProcessContent: React.FC = () => {
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Ready</span>
+                  <span className="fz-small font-black text-slate-400 uppercase tracking-widest">System Ready</span>
                 </div>
                 <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
                   <ShieldCheck size={12} className="text-indigo-500" />
-                  <span className="text-[9px] font-bold text-slate-500 uppercase">Verified</span>
+                  <span className="fz-tiny font-bold text-slate-500 uppercase">Verified</span>
                 </div>
               </div>
 
@@ -99,23 +99,23 @@ const PLYearEndProcessContent: React.FC = () => {
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <div className="flex items-center gap-2 mb-2">
                     <Database size={14} className="text-indigo-500" />
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Scope</span>
+                    <span className="fz-tiny font-black text-slate-400 uppercase tracking-tighter">Scope</span>
                   </div>
-                  <p className="text-[11px] font-bold text-slate-700">All Modules</p>
+                  <p className="fz-caption font-bold text-slate-700">All Modules</p>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <div className="flex items-center gap-2 mb-2">
                     <FileText size={14} className="text-indigo-500" />
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Log Type</span>
+                    <span className="fz-tiny font-black text-slate-400 uppercase tracking-tighter">Log Type</span>
                   </div>
-                  <p className="text-[11px] font-bold text-slate-700">Full Audit</p>
+                  <p className="fz-caption font-bold text-slate-700">Full Audit</p>
                 </div>
               </div>
 
               {/* Irreversible Note */}
               <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex gap-3">
                 <AlertCircle size={16} className="text-amber-500 shrink-0" />
-                <p className="text-[10px] text-amber-800 font-semibold leading-relaxed uppercase tracking-tighter">
+                <p className="fz-small text-amber-800 font-semibold leading-relaxed uppercase tracking-tighter">
                   Critical: This process will finalize fiscal ledgers. All transactions will be locked post-execution.
                 </p>
               </div>
@@ -136,7 +136,7 @@ const PLYearEndProcessContent: React.FC = () => {
                 className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isProcessing ? (
-                  <span className="uppercase tracking-widest text-[10px]">Processing...</span>
+                  <span className="uppercase tracking-widest fz-small">Processing...</span>
                 ) : (
                   <>
                     <Play size={14} className="fill-current" />
@@ -154,11 +154,11 @@ const PLYearEndProcessContent: React.FC = () => {
       <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between opacity-60">
         <div className="flex items-center gap-2">
           <Building2 size={12} className="text-slate-400" />
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Trust Nagpur - Financial Systems</span>
+          <span className="fz-small font-bold text-slate-500 uppercase tracking-tight">Trust Nagpur - Financial Systems</span>
         </div>
         <div className="flex items-center gap-3">
           <ShieldCheck size={12} className="text-emerald-500" />
-          <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter">Verified Protocol</span>
+          <span className="fz-tiny font-medium text-slate-400 uppercase tracking-tighter">Verified Protocol</span>
         </div>
       </div>
     </div>

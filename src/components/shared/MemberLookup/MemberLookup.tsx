@@ -105,14 +105,14 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
             dataIndex: 'memberName',
             key: 'memberName',
             width: 250,
-            render: (text: string) => <Text className="font-semibold text-slate-800 uppercase text-[11px] truncate block">{text}</Text>,
+            render: (text: string) => <Text className="font-semibold text-slate-800 uppercase fz-caption truncate block">{text}</Text>,
         },
         {
             title: 'ACCOUNT NO',
             key: 'accountNo',
             width: 120,
             render: (_: any, record: Member) => (
-                <Text className="text-slate-500 font-mono text-[11px]">{record.memberNo}</Text>
+                <Text className="text-slate-500 font-mono fz-caption">{record.memberNo}</Text>
             ),
         },
         {
@@ -122,8 +122,8 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
             width: 200,
             render: (text: string, record: Member) => (
                 <div className="flex flex-col">
-                    <Text className="text-[11px] text-slate-700 font-bold uppercase truncate">{text || 'GENERAL OFFICE'}</Text>
-                    <Text className="text-[9px] text-slate-400 font-medium tracking-tighter">OFFICE CODE: {record.officeNo}</Text>
+                    <Text className="fz-caption text-slate-700 font-bold uppercase truncate">{text || 'GENERAL OFFICE'}</Text>
+                    <Text className="fz-tiny text-slate-400 font-medium tracking-tighter">OFFICE CODE: {record.officeNo}</Text>
                 </div>
             ),
         },
@@ -142,7 +142,7 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
                             <h1 className="text-base font-black text-slate-800 tracking-tight m-0 leading-none">MEMBER DIRECTORY</h1>
                             <div className="flex items-center gap-2 mt-1">
                                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Live Lookup System</span>
+                                <span className="fz-small text-slate-400 font-bold uppercase tracking-widest">Live Lookup System</span>
                             </div>
                         </div>
                     </div>
@@ -220,7 +220,7 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
             {/* Footer Info Bar */}
             <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Text className="text-[11px] text-slate-500">
+                    <Text className="fz-caption text-slate-500">
                         <span className="font-bold text-slate-700">{members.length}</span> Records Found
                     </Text>
                     {searchTerm && (
@@ -230,7 +230,7 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
                         />
                     )}
                 </div>
-                <Text className="text-[10px] text-slate-400 font-medium italic">
+                <Text className="fz-small text-slate-400 font-medium italic">
                     Tip: Double-click row to select • ESC to exit
                 </Text>
             </div>

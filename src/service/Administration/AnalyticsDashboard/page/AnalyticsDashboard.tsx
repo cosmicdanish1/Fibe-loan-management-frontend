@@ -134,11 +134,11 @@ const AnalyticsDashboard: React.FC = () => {
           <Icon size={20} />
         </div>
         <div className="space-y-1">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">{title}</span>
+          <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">{title}</span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-800 tracking-tight">{value}</span>
             {trend && (
-              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-1">
+              <span className="fz-small font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-1">
                 <TrendingUp size={10} /> {trend}
               </span>
             )}
@@ -175,7 +175,7 @@ const AnalyticsDashboard: React.FC = () => {
             </div>
             <div>
               <h1 className="text-base font-black text-white uppercase tracking-tight leading-none">Analytics Hub</h1>
-              <div className="flex items-center gap-2 mt-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+              <div className="flex items-center gap-2 mt-1.5 fz-tiny font-bold text-slate-400 uppercase tracking-widest leading-none">
                 <ShieldCheck size={10} className="text-emerald-400" /> System Metrics v2.4
               </div>
             </div>
@@ -196,14 +196,14 @@ const AnalyticsDashboard: React.FC = () => {
               icon={<RotateCcw size={14} />}
               onClick={loadDashboardData}
               loading={loading}
-              className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white text-[10px] font-bold uppercase tracking-widest border-0 h-9"
+              className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white fz-small font-bold uppercase tracking-widest border-0 h-9"
             >
               Refresh
             </Button>
             <Button
               type="primary"
               icon={<Download size={14} />}
-              className="bg-indigo-600 hover:bg-indigo-500 text-[10px] font-bold uppercase tracking-widest h-9 border-0 shadow-lg shadow-indigo-600/20"
+              className="bg-indigo-600 hover:bg-indigo-500 fz-small font-bold uppercase tracking-widest h-9 border-0 shadow-lg shadow-indigo-600/20"
             >
               Export
             </Button>
@@ -267,7 +267,7 @@ const AnalyticsDashboard: React.FC = () => {
                         {['Sessions', 'Users'].map(t => (
                           <div key={t} className="flex items-center gap-1.5">
                             <div className={`w-2 h-2 rounded-full ${t === 'Sessions' ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t}</span>
+                            <span className="fz-tiny font-bold text-slate-400 uppercase tracking-widest">{t}</span>
                           </div>
                         ))}
                       </div>
@@ -283,7 +283,7 @@ const AnalyticsDashboard: React.FC = () => {
                               animate={{ height: `${(item.sessions / 80) * 100}%` }}
                               className="w-3 bg-indigo-500/20 group-hover:bg-indigo-500 rounded-t-sm transition-colors relative"
                             >
-                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-600 text-white fz-tiny font-bold px-1.5 py-0.5 rounded shadow-sm">
                                 {item.sessions}
                               </div>
                             </motion.div>
@@ -293,12 +293,12 @@ const AnalyticsDashboard: React.FC = () => {
                               animate={{ height: `${(item.users / 80) * 100}%` }}
                               className="w-3 bg-emerald-500/20 group-hover:bg-emerald-500 rounded-t-sm transition-colors relative"
                             >
-                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-600 text-white fz-tiny font-bold px-1.5 py-0.5 rounded shadow-sm">
                                 {item.users}
                               </div>
                             </motion.div>
                           </div>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase">{item.date}</span>
+                          <span className="fz-tiny font-bold text-slate-400 uppercase">{item.date}</span>
                         </div>
                       ))}
                     </div>
@@ -311,8 +311,8 @@ const AnalyticsDashboard: React.FC = () => {
                       {dashboardData.performanceMetrics.map((item, i) => (
                         <div key={i}>
                           <div className="flex justify-between items-end mb-1">
-                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">{item.feature}</span>
-                            <span className={`text-[10px] font-black ${item.avgTime > 2 ? 'text-amber-500' : 'text-emerald-500'}`}>{item.avgTime}s</span>
+                            <span className="fz-small font-bold text-slate-600 uppercase tracking-wide">{item.feature}</span>
+                            <span className={`fz-small font-black ${item.avgTime > 2 ? 'text-amber-500' : 'text-emerald-500'}`}>{item.avgTime}s</span>
                           </div>
                           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <motion.div
@@ -334,7 +334,7 @@ const AnalyticsDashboard: React.FC = () => {
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab.toLowerCase())}
-                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg ${activeTab === tab.toLowerCase() ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                        className={`flex-1 py-2 fz-small font-black uppercase tracking-widest transition-all rounded-lg ${activeTab === tab.toLowerCase() ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'
                           }`}
                       >
                         {tab}
@@ -349,12 +349,12 @@ const AnalyticsDashboard: React.FC = () => {
                           {dashboardData.topPages.map((page, i) => (
                             <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg group transition-colors cursor-default border border-transparent hover:border-slate-100">
                               <div className="flex items-center gap-3 overflow-hidden">
-                                <span className="text-[9px] font-black text-slate-300 w-4">{i + 1}</span>
+                                <span className="fz-tiny font-black text-slate-300 w-4">{i + 1}</span>
                                 <div className="flex flex-col min-w-0">
                                   <span className="text-xs font-bold text-slate-700 truncate block max-w-[180px]">{page.page}</span>
                                 </div>
                               </div>
-                              <div className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-1 rounded group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                              <div className="bg-slate-100 text-slate-600 fz-small font-black px-2 py-1 rounded group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
                                 {page.visits}
                               </div>
                             </div>
@@ -369,7 +369,7 @@ const AnalyticsDashboard: React.FC = () => {
                                 <div className="p-1.5 bg-purple-50 text-purple-600 rounded-md"><Zap size={12} /></div>
                                 <span className="text-xs font-bold text-slate-700">{feat.feature}</span>
                               </div>
-                              <div className="text-[10px] font-black text-slate-400">
+                              <div className="fz-small font-black text-slate-400">
                                 {feat.usage} uses
                               </div>
                             </div>
@@ -384,7 +384,7 @@ const AnalyticsDashboard: React.FC = () => {
                                 <AlertTriangle size={14} className="text-rose-500" />
                                 <span className="text-xs font-bold text-rose-700">{err.type}</span>
                               </div>
-                              <span className="text-[10px] font-black text-white bg-rose-500 px-2 py-0.5 rounded-full">
+                              <span className="fz-small font-black text-white bg-rose-500 px-2 py-0.5 rounded-full">
                                 {err.count}
                               </span>
                             </div>
@@ -404,17 +404,17 @@ const AnalyticsDashboard: React.FC = () => {
                     <Clock size={20} className="text-indigo-300" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Avg. Session Time</span>
+                    <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Avg. Session Time</span>
                     <span className="text-xl font-black tracking-tight">{dashboardData.avgSessionDuration} Min</span>
                   </div>
                 </div>
                 <div className="flex gap-8">
                   <div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase block text-right">Server Load</span>
+                    <span className="fz-tiny font-bold text-slate-500 uppercase block text-right">Server Load</span>
                     <span className="text-sm font-black text-emerald-400">12% Idle</span>
                   </div>
                   <div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase block text-right">Database</span>
+                    <span className="fz-tiny font-bold text-slate-500 uppercase block text-right">Database</span>
                     <span className="text-sm font-black text-indigo-400">Connected</span>
                   </div>
                 </div>

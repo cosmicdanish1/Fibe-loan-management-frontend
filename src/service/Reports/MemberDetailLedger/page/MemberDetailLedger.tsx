@@ -402,7 +402,7 @@ const MemberDetailLedger: React.FC = () => {
                   <FileText size={12} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-[10px] font-black text-white uppercase tracking-wide leading-none">Detail Ledger</h3>
+                  <h3 className="fz-small font-black text-white uppercase tracking-wide leading-none">Detail Ledger</h3>
                   <p className="fz-body font-bold text-violet-200 uppercase mt-0.5 tracking-tight leading-none">
                     {fromDate.format('DD-MMM-YY')} – {toDate.format('DD-MMM-YY')}
                   </p>
@@ -433,7 +433,7 @@ const MemberDetailLedger: React.FC = () => {
                       <FileText className="text-4xl text-violet-200" />
                     </div>
                     <h4 className="text-slate-400 font-black text-xs uppercase tracking-wider">No Data</h4>
-                    <p className="text-slate-300 text-[10px] mt-1 font-semibold">
+                    <p className="text-slate-300 fz-small mt-1 font-semibold">
                       Select a member and click Generate
                     </p>
                   </div>

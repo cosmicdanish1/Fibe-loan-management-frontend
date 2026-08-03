@@ -11,8 +11,8 @@ import dayjs from 'dayjs';
 
 const { TextArea } = Input;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
     formData,
@@ -74,26 +74,26 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
     const columns = [
         ...(isMemberMode ? [
             {
-                title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">MBNO</span>,
+                title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">MBNO</span>,
                 dataIndex: 'mbno',
                 key: 'mbno',
                 width: '10%',
                 render: (text: string) => (
-                    <span className="text-[10px] font-black text-indigo-600 font-mono">{text || '—'}</span>
+                    <span className="fz-small font-black text-indigo-600 font-mono">{text || '—'}</span>
                 ),
             },
             {
-                title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Name</span>,
+                title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Name</span>,
                 dataIndex: 'name',
                 key: 'name',
                 width: '15%',
                 render: (text: string) => (
-                    <span className="text-[10px] font-semibold text-slate-600 truncate block max-w-full" title={text}>{text || '—'}</span>
+                    <span className="fz-small font-semibold text-slate-600 truncate block max-w-full" title={text}>{text || '—'}</span>
                 ),
             },
         ] : []),
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Code</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Code</span>,
             dataIndex: 'code',
             key: 'code',
             width: isMemberMode ? '10%' : '12%',
@@ -112,7 +112,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Name</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Name</span>,
             dataIndex: 'accountName',
             key: 'accountName',
             width: isMemberMode ? '15%' : '25%',
@@ -131,7 +131,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-rose-600 uppercase tracking-wide">Debit</span>,
+            title: <span className="fz-mini font-black text-rose-600 uppercase tracking-wide">Debit</span>,
             dataIndex: 'debit',
             key: 'debit',
             width: '12%',
@@ -146,7 +146,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-emerald-600 uppercase tracking-wide">Credit</span>,
+            title: <span className="fz-mini font-black text-emerald-600 uppercase tracking-wide">Credit</span>,
             dataIndex: 'credit',
             key: 'credit',
             width: '12%',
@@ -161,7 +161,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">RD / SD Sr No</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">RD / SD Sr No</span>,
             dataIndex: 'rdSdSrNo',
             key: 'rdSdSrNo',
             width: '13%',
@@ -199,19 +199,19 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                             <ArrowLeftRight size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Journal / Transfer Entry</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Journal / Transfer Entry</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> Double Entry Ledger
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <button onClick={handleReset} disabled={isLoading}
-                            className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide disabled:opacity-50">
+                            className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide disabled:opacity-50">
                             <RotateCcw size={11} /> Clear
                         </button>
                         <button onClick={handleSave} disabled={isLoading || !isBalanced || totalDebit <= 0}
-                            className={`h-7 px-3 rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 shadow-lg uppercase tracking-wide border ${
+                            className={`h-7 px-3 rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 shadow-lg uppercase tracking-wide border ${
                                 isBalanced && totalDebit > 0
                                     ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-400'
                                     : 'bg-slate-600/50 text-slate-300 border-slate-500/50 cursor-not-allowed'
@@ -221,7 +221,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                         </button>
                         <div className="h-4 w-px bg-white/20" />
                         <button onClick={handleExit}
-                            className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                            className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -236,11 +236,11 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Hash size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Journal Entry</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Journal Entry</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-indigo-400">
                                     <Calendar size={9} />
-                                    <span className="text-[8px] font-black text-indigo-500 uppercase">{dayjs().format('DD-MMM-YY')}</span>
+                                    <span className="fz-mini font-black text-indigo-500 uppercase">{dayjs().format('DD-MMM-YY')}</span>
                                 </div>
                             </div>
                             <div className="p-3">
@@ -254,7 +254,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                                             value={formData.voucherNo || undefined}
                                             onChange={v => handleVoucherSelect(v || '')}
                                             placeholder="Select existing voucher..."
-                                            className="w-full h-7 text-[11px]"
+                                            className="w-full h-7 fz-caption"
                                             optionFilterProp="label"
                                             options={voucherList.map(v => ({
                                                 value: v.voucherNo,
@@ -266,14 +266,14 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                                     {/* Totals + Balance */}
                                     <div className="flex items-center gap-2 flex-1">
                                         <div className="flex-1 h-7 flex items-center justify-between px-3 bg-rose-50 border border-rose-200 rounded-lg">
-                                            <span className="text-[8px] font-black text-rose-400 uppercase tracking-wide">Total Debit</span>
-                                            <span className="text-[12px] font-black text-rose-600 font-mono">₹{totalDebit.toFixed(2)}</span>
+                                            <span className="fz-mini font-black text-rose-400 uppercase tracking-wide">Total Debit</span>
+                                            <span className="fz-label font-black text-rose-600 font-mono">₹{totalDebit.toFixed(2)}</span>
                                         </div>
                                         <div className="flex-1 h-7 flex items-center justify-between px-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                                            <span className="text-[8px] font-black text-emerald-400 uppercase tracking-wide">Total Credit</span>
-                                            <span className="text-[12px] font-black text-emerald-600 font-mono">₹{totalCredit.toFixed(2)}</span>
+                                            <span className="fz-mini font-black text-emerald-400 uppercase tracking-wide">Total Credit</span>
+                                            <span className="fz-label font-black text-emerald-600 font-mono">₹{totalCredit.toFixed(2)}</span>
                                         </div>
-                                        <div className={`h-7 px-3 flex items-center justify-center rounded-lg border text-[9px] font-black uppercase tracking-wide min-w-28 ${
+                                        <div className={`h-7 px-3 flex items-center justify-center rounded-lg border fz-tiny font-black uppercase tracking-wide min-w-28 ${
                                             isBalanced
                                                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                                                 : 'bg-rose-50 border-rose-200 text-rose-600'
@@ -292,7 +292,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                                             { val: 'memberToMember', label: 'Member-To-Member Transfer' },
                                         ] as const).map(opt => (
                                             <button key={opt.val} onClick={() => updateField('transferType', opt.val)}
-                                                className={`h-7 px-4 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all border ${
+                                                className={`h-7 px-4 rounded-lg fz-tiny font-black uppercase tracking-wide transition-all border ${
                                                     formData.transferType === opt.val
                                                         ? 'bg-indigo-600 text-white border-indigo-500'
                                                         : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -310,11 +310,11 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <FileText size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Ledger Matrix</span>
-                                    <span className="text-[8px] font-black text-slate-400 uppercase ml-2">{data.length} row(s)</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Ledger Matrix</span>
+                                    <span className="fz-mini font-black text-slate-400 uppercase ml-2">{data.length} row(s)</span>
                                 </div>
                                 <button type="button" onClick={addRow}
-                                    className="h-6 px-2.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 rounded text-[8px] font-black uppercase tracking-wide flex items-center gap-1 transition-colors border border-emerald-200">
+                                    className="h-6 px-2.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 rounded fz-mini font-black uppercase tracking-wide flex items-center gap-1 transition-colors border border-emerald-200">
                                     <Plus size={10} /> Add Row
                                 </button>
                             </div>
@@ -328,8 +328,8 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                                 scroll={{ y: 'calc(100vh - 390px)' }}
                                 locale={{ emptyText: (
                                     <div className="py-6 text-center">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide">No rows yet</p>
-                                        <button onClick={addRow} className="mt-2 text-[9px] font-black text-indigo-500 hover:text-indigo-700 uppercase flex items-center gap-1 mx-auto">
+                                        <p className="fz-tiny font-black text-slate-400 uppercase tracking-wide">No rows yet</p>
+                                        <button onClick={addRow} className="mt-2 fz-tiny font-black text-indigo-500 hover:text-indigo-700 uppercase flex items-center gap-1 mx-auto">
                                             <Plus size={10} /> Add First Row
                                         </button>
                                     </div>
@@ -341,14 +341,14 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <FileText size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Narration & Cheque</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Narration & Cheque</span>
                             </div>
                             <div className="p-3 grid grid-cols-[1fr_220px] gap-4 items-start">
                                 <div>
                                     <label className={labelCls}>Narration</label>
                                     <TextArea value={formData.narration} onChange={e => updateField('narration', e.target.value)}
                                         placeholder="Enter narration…" rows={2}
-                                        className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none" />
+                                        className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
                                 </div>
                                 <div>
                                     <label className={labelCls}>Cheque No.</label>
@@ -365,21 +365,21 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Journal / Transfer Entry</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Journal / Transfer Entry</span>
                         {formData.voucherNo && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">Voucher: {formData.voucherNo}</span>
+                                <span className="fz-mini font-black text-indigo-500">Voucher: {formData.voucherNo}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className={`text-[8px] font-black uppercase tracking-wide px-2 py-0.5 rounded ${
+                        <span className={`fz-mini font-black uppercase tracking-wide px-2 py-0.5 rounded ${
                             isBalanced ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
                         }`}>
                             {isBalanced ? 'Balanced' : 'Pending Balance'}
                         </span>
-                        <span className="text-[8px] font-black text-slate-400 uppercase">{formData.transferType === 'headToHead' ? 'Head-To-Head' : 'Member-To-Member'}</span>
+                        <span className="fz-mini font-black text-slate-400 uppercase">{formData.transferType === 'headToHead' ? 'Head-To-Head' : 'Member-To-Member'}</span>
                     </div>
                 </div>
 

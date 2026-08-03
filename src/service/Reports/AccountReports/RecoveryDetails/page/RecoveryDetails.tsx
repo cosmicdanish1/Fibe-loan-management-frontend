@@ -320,7 +320,7 @@ const RecoveryDetails: React.FC = () => {
             <div className={`flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
               <Spin spinning={loading} size="small">
                 {reportText ? (
-                  <pre className={`font-mono text-[10px] leading-[1.5] whitespace-pre select-text ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
+                  <pre className={`font-mono fz-small leading-[1.5] whitespace-pre select-text ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
                     {reportText}
                   </pre>
                 ) : (

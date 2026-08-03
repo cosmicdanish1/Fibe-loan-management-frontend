@@ -189,7 +189,7 @@ const MemberLedgerReport: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-xs font-black tracking-tight leading-none ${text}`}>Member Ledger</h1>
-              <div className={`flex items-center gap-1 mt-0.5 text-[9px] font-bold uppercase tracking-wider leading-none ${muted}`}>
+              <div className={`flex items-center gap-1 mt-0.5 fz-tiny font-bold uppercase tracking-wider leading-none ${muted}`}>
                 <ShieldCheck size={8} className="text-cyan-500" /> Ledger Report (Personal)
               </div>
             </div>
@@ -198,11 +198,11 @@ const MemberLedgerReport: React.FC = () => {
             <Button type="text" size="small" icon={isDark ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-slate-400" />}
               onClick={toggleTheme} className="h-7 w-7 rounded-lg" />
             <Button icon={<RotateCcw size={11} />} size="small" onClick={handleReset}
-              className="h-7 px-2 rounded-lg text-[10px] font-bold uppercase">Reset</Button>
+              className="h-7 px-2 rounded-lg fz-small font-bold uppercase">Reset</Button>
             <Button icon={<Printer size={11} />} size="small" onClick={handlePrint}
-              disabled={!data} className="h-7 px-2 rounded-lg text-[10px] font-bold uppercase">Print</Button>
+              disabled={!data} className="h-7 px-2 rounded-lg fz-small font-bold uppercase">Print</Button>
             <Button type="primary" icon={<FileDown size={11} />} size="small" onClick={handleExportCSV}
-              disabled={!data} className="h-7 px-2 rounded-lg text-[10px] font-bold uppercase">CSV</Button>
+              disabled={!data} className="h-7 px-2 rounded-lg fz-small font-bold uppercase">CSV</Button>
           </div>
         </div>
 
@@ -216,11 +216,11 @@ const MemberLedgerReport: React.FC = () => {
             <div className={`border rounded-lg overflow-hidden ${panel}`}>
               <div className={`px-2 py-1 flex items-center gap-1 ${isDark ? 'bg-cyan-800/50' : 'bg-cyan-600'}`}>
                 <User size={10} className="text-white" />
-                <h3 className="text-[10px] font-black text-white uppercase tracking-wide">Member</h3>
+                <h3 className="fz-small font-black text-white uppercase tracking-wide">Member</h3>
               </div>
               <div className="p-2 space-y-1.5">
                 <div>
-                  <label className={`text-[9px] font-bold uppercase tracking-tight block mb-0.5 ${muted}`}>Member No</label>
+                  <label className={`fz-tiny font-bold uppercase tracking-tight block mb-0.5 ${muted}`}>Member No</label>
                   <Input.Group compact>
                     <Input
                       size="small"
@@ -230,7 +230,7 @@ const MemberLedgerReport: React.FC = () => {
                       onKeyDown={handleMemberKeyDown}
                       placeholder="e.g. 61002684"
                       suffix={validatingMember ? <Spin size="small" /> : null}
-                      className="h-7 text-[10px] font-semibold"
+                      className="h-7 fz-small font-semibold"
                       style={{ width: 'calc(100% - 28px)' }}
                     />
                     <Button
@@ -243,7 +243,7 @@ const MemberLedgerReport: React.FC = () => {
                   </Input.Group>
                 </div>
                 {memberName && (
-                  <div className={`text-[10px] font-bold px-2 py-1 rounded ${isDark ? 'bg-cyan-900/40 text-cyan-300' : 'bg-cyan-50 text-cyan-700'}`}>
+                  <div className={`fz-small font-bold px-2 py-1 rounded ${isDark ? 'bg-cyan-900/40 text-cyan-300' : 'bg-cyan-50 text-cyan-700'}`}>
                     {memberName}
                   </div>
                 )}
@@ -254,7 +254,7 @@ const MemberLedgerReport: React.FC = () => {
             <div className={`border rounded-lg overflow-hidden ${panel}`}>
               <div className={`px-2 py-1 flex items-center gap-1 ${isDark ? 'bg-cyan-800/50' : 'bg-cyan-600'}`}>
                 <List size={10} className="text-white" />
-                <h3 className="text-[10px] font-black text-white uppercase tracking-wide">Account Head</h3>
+                <h3 className="fz-small font-black text-white uppercase tracking-wide">Account Head</h3>
               </div>
               <div className="p-2">
                 <Select
@@ -277,22 +277,22 @@ const MemberLedgerReport: React.FC = () => {
             <div className={`border rounded-lg overflow-hidden ${panel}`}>
               <div className={`px-2 py-1 flex items-center gap-1 ${isDark ? 'bg-cyan-800/50' : 'bg-cyan-600'}`}>
                 <Calendar size={10} className="text-white" />
-                <h3 className="text-[10px] font-black text-white uppercase tracking-wide">Date Range</h3>
+                <h3 className="fz-small font-black text-white uppercase tracking-wide">Date Range</h3>
               </div>
               <div className="p-2 space-y-1.5">
                 <div>
-                  <label className={`text-[9px] font-bold uppercase tracking-tight block mb-0.5 ${muted}`}>From</label>
-                  <DatePicker className="w-full h-7 text-[10px] font-semibold" value={fromDate}
+                  <label className={`fz-tiny font-bold uppercase tracking-tight block mb-0.5 ${muted}`}>From</label>
+                  <DatePicker className="w-full h-7 fz-small font-semibold" value={fromDate}
                     onChange={v => setFromDate(v)} format="DD-MMM-YYYY" />
                 </div>
                 <div>
-                  <label className={`text-[9px] font-bold uppercase tracking-tight block mb-0.5 ${muted}`}>To</label>
-                  <DatePicker className="w-full h-7 text-[10px] font-semibold" value={toDate}
+                  <label className={`fz-tiny font-bold uppercase tracking-tight block mb-0.5 ${muted}`}>To</label>
+                  <DatePicker className="w-full h-7 fz-small font-semibold" value={toDate}
                     onChange={v => setToDate(v)} format="DD-MMM-YYYY" />
                 </div>
                 <Button type="primary" block size="small" icon={<Search size={11} />}
                   onClick={generateReport} loading={loading}
-                  className="h-8 font-black uppercase tracking-wider text-[10px] mt-1">
+                  className="h-8 font-black uppercase tracking-wider fz-small mt-1">
                   Generate
                 </Button>
               </div>
@@ -308,12 +308,12 @@ const MemberLedgerReport: React.FC = () => {
                   { label: 'Closing', value: balLabel(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-cyan-300' : 'text-cyan-700') : (isDark ? 'text-rose-300' : 'text-rose-600') },
                 ].map(({ label, value, cls }) => (
                   <div key={label} className={`border rounded-lg px-3 py-1.5 ${panel}`}>
-                    <div className={`text-[9px] font-bold uppercase tracking-wide ${muted}`}>{label}</div>
-                    <div className={`text-[11px] font-black font-mono ${cls}`}>{value}</div>
+                    <div className={`fz-tiny font-bold uppercase tracking-wide ${muted}`}>{label}</div>
+                    <div className={`fz-caption font-black font-mono ${cls}`}>{value}</div>
                   </div>
                 ))}
                 <div className={`border rounded-lg px-3 py-1.5 ${panel}`}>
-                  <div className={`text-[9px] font-bold uppercase tracking-wide ${muted}`}>Entries</div>
+                  <div className={`fz-tiny font-bold uppercase tracking-wide ${muted}`}>Entries</div>
                   <div className={`text-base font-black font-mono ${text}`}>{data.totalTransactions}</div>
                 </div>
               </div>
@@ -323,10 +323,10 @@ const MemberLedgerReport: React.FC = () => {
           {/* Report panel */}
           <div className={`flex-1 border rounded-lg flex flex-col overflow-hidden ${panel}`}>
             <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-cyan-900/40 border-slate-700' : 'bg-cyan-600'}`}>
-              <span className="text-[11px] font-black text-white uppercase tracking-wide">
+              <span className="fz-caption font-black text-white uppercase tracking-wide">
                 Ledger Report (Personal) — {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}
               </span>
-              {data && <span className="text-[10px] text-cyan-200 font-mono">{data.totalTransactions} entries</span>}
+              {data && <span className="fz-small text-cyan-200 font-mono">{data.totalTransactions} entries</span>}
             </div>
 
             <div className={`flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
@@ -336,12 +336,12 @@ const MemberLedgerReport: React.FC = () => {
                     {/* Company header */}
                     <div className={`text-center mb-3 pb-2 border-b ${border}`}>
                       <div className={`text-xs font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className={`text-[10px] ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                      <div className={`text-[10px] font-bold mt-1 ${text}`}>Ledger Report (Personal)</div>
+                      <div className={`fz-small ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
+                      <div className={`fz-small font-bold mt-1 ${text}`}>Ledger Report (Personal)</div>
                     </div>
 
                     {/* Report meta */}
-                    <div className={`mb-3 text-[10px] space-y-0.5 border-b pb-2 ${border} ${muted}`}>
+                    <div className={`mb-3 fz-small space-y-0.5 border-b pb-2 ${border} ${muted}`}>
                       <div>Head Name : <span className={`font-bold ${text}`}>{data.headName}</span> :CODE :{data.headCode}</div>
                       <div className="border-t border-dashed mt-1 pt-1 ${border}" />
                       <div>Member Number : <span className={`font-bold ${text}`}>{data.memberNumber}</span></div>
@@ -351,11 +351,11 @@ const MemberLedgerReport: React.FC = () => {
                     </div>
 
                     {/* Table */}
-                    <table className="w-full text-[10px]" style={{ borderCollapse: 'collapse' }}>
+                    <table className="w-full fz-small" style={{ borderCollapse: 'collapse' }}>
                       <thead>
                         <tr className={`border-b-2 ${isDark ? 'border-slate-500' : 'border-slate-400'}`}>
                           {['Date', 'Particulars', 'Voucher No', 'Payment', 'Receipt', 'Balance'].map(h => (
-                            <th key={h} className={`py-1 px-2 text-left font-black text-[10px] uppercase ${text}
+                            <th key={h} className={`py-1 px-2 text-left font-black fz-small uppercase ${text}
                               ${['Payment', 'Receipt', 'Balance'].includes(h) ? 'text-right' : ''}`}>
                               {h}
                             </th>
@@ -392,9 +392,9 @@ const MemberLedgerReport: React.FC = () => {
 
                         {/* Total Amount */}
                         <tr className={isDark ? 'bg-slate-900/60' : 'bg-slate-50'}>
-                          <td colSpan={3} className={`py-1 px-2 font-black text-[10px] ${text}`}>Total Amount :-</td>
-                          <td className={`py-1 px-2 text-right font-black text-[10px] ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalDebits)}</td>
-                          <td className={`py-1 px-2 text-right font-black text-[10px] ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalCredits)}</td>
+                          <td colSpan={3} className={`py-1 px-2 font-black fz-small ${text}`}>Total Amount :-</td>
+                          <td className={`py-1 px-2 text-right font-black fz-small ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalDebits)}</td>
+                          <td className={`py-1 px-2 text-right font-black fz-small ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalCredits)}</td>
                           <td />
                         </tr>
 
@@ -403,7 +403,7 @@ const MemberLedgerReport: React.FC = () => {
                     </table>
 
                     {/* Footer notes */}
-                    <div className={`mt-3 text-[9px] space-y-0.5 ${muted}`}>
+                    <div className={`mt-3 fz-tiny space-y-0.5 ${muted}`}>
                       <div>* Report As Per Data Available ..</div>
                       <div>* Note&nbsp;&nbsp; D-Demand&nbsp;&nbsp; R-Receipt&nbsp;&nbsp; P-Payment&nbsp;&nbsp; J-Jouneral Transfer Entry</div>
                     </div>
@@ -426,9 +426,9 @@ const MemberLedgerReport: React.FC = () => {
         <div className={`border-t px-3 py-1.5 flex items-center justify-between shrink-0 ${panel}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" />
-            <span className={`text-[9px] font-bold uppercase tracking-wide ${muted}`}>Member Ledger · Personal Account</span>
+            <span className={`fz-tiny font-bold uppercase tracking-wide ${muted}`}>Member Ledger · Personal Account</span>
           </div>
-          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+          <span className={`fz-tiny font-bold px-1.5 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
             {isDark ? '◐ DARK' : '◑ LIGHT'}
           </span>
         </div>

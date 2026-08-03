@@ -21,8 +21,10 @@ const themePersistConfig = {
         'backgroundImage',
         'textColor',
         'notifications',
-        'syncAcrossWindows',
         'soundEffects',
+        // Was absent, so the chatbot reappeared on every launch until the
+        // backend preferences finished loading and corrected it.
+        'showChatbot',
     ],
 };
 

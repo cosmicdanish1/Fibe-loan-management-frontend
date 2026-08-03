@@ -13,7 +13,7 @@ import MemberLookupInput from '../../../../components/shared/MemberLookup/Member
 
 const { Option } = Select;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
 
 // Inline number input matching our standard style
 const AmtInput: React.FC<{
@@ -32,7 +32,7 @@ const AmtInput: React.FC<{
             onKeyDown={e => { if (['e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
             onWheel={e => (e.target as HTMLInputElement).blur()}
             placeholder={placeholder}
-            className={`w-full h-7 pl-6 pr-2 text-[11px] font-semibold text-right border rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 transition-all ${
+            className={`w-full h-7 pl-6 pr-2 fz-caption font-semibold text-right border rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 transition-all ${
                 accent ? 'border-indigo-300 text-indigo-700' : 'border-slate-300 text-slate-700'
             }`}
         />
@@ -68,21 +68,21 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                             <Activity size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Modify Member Balance</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Modify Member Balance</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> fundsmaster — Edit Balances
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={reset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={reset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Revert
                         </button>
-                        <button onClick={save} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
+                        <button onClick={save} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
                             <Save size={11} /> Save
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -96,9 +96,9 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Users size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member Selection</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member Selection</span>
                                 {memberTotal > 0 && (
-                                    <span className="ml-auto text-[8px] font-black text-indigo-500 uppercase tracking-wide">
+                                    <span className="ml-auto fz-mini font-black text-indigo-500 uppercase tracking-wide">
                                         {memberIndex > 0 ? `${memberIndex} / ${memberTotal}` : `${memberTotal} members`}
                                     </span>
                                 )}
@@ -162,7 +162,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                         {memberName && (
                                             <div className="mt-1 flex items-center gap-1">
                                                 <Users size={9} className="text-indigo-400" />
-                                                <span className="text-[10px] font-black text-indigo-700">{memberName}</span>
+                                                <span className="fz-small font-black text-indigo-700">{memberName}</span>
                                             </div>
                                         )}
                                     </div>
@@ -174,21 +174,21 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <IndianRupee size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Balances</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Balances</span>
                             </div>
                             <div className="p-3">
                                 {/* Column headers */}
                                 <div className="grid grid-cols-[1fr_160px_160px] gap-x-4 mb-1.5">
                                     <div />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-wider text-right">Opening Balance</span>
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-wider text-right">Install / Contri Amt</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-wider text-right">Opening Balance</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-wider text-right">Install / Contri Amt</span>
                                 </div>
                                 <div className="space-y-1.5">
                                     {/* Shares */}
                                     <div className="grid grid-cols-[1fr_160px_160px] gap-x-4 items-center">
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                                            <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide">Shares</span>
+                                            <span className="fz-small font-black text-slate-700 uppercase tracking-wide">Shares</span>
                                         </div>
                                         <AmtInput value={formData.shareOpBal} onChange={upd('shareOpBal')} />
                                         <AmtInput value={formData.shareAmt} onChange={upd('shareAmt')} />
@@ -198,7 +198,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                     <div className="grid grid-cols-[1fr_160px_160px] gap-x-4 items-center">
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                            <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide">Monthly Contribution</span>
+                                            <span className="fz-small font-black text-slate-700 uppercase tracking-wide">Monthly Contribution</span>
                                         </div>
                                         <AmtInput value={formData.mdOpBal} onChange={upd('mdOpBal')} />
                                         <AmtInput value={formData.mdAmt} onChange={upd('mdAmt')} />
@@ -208,7 +208,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                     <div className="grid grid-cols-[1fr_160px_160px] gap-x-4 items-center">
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                                            <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide">Compulsory Deposit</span>
+                                            <span className="fz-small font-black text-slate-700 uppercase tracking-wide">Compulsory Deposit</span>
                                         </div>
                                         <AmtInput value={formData.cdOpBal} onChange={upd('cdOpBal')} />
                                         <AmtInput value={formData.cdAmt} onChange={upd('cdAmt')} />
@@ -218,7 +218,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                     <div className="grid grid-cols-[1fr_160px_160px] gap-x-4 items-center">
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Loan Exec. Receipt</span>
+                                            <span className="fz-small font-black text-slate-500 uppercase tracking-wide">Loan Exec. Receipt</span>
                                         </div>
                                         <AmtInput value={formData.lnExecRec} onChange={upd('lnExecRec')} />
                                         <div /> {/* no install amt for this row */}
@@ -229,7 +229,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                 <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                                        <span className="text-[10px] font-black text-rose-600 uppercase tracking-wide">Suspense Balance</span>
+                                        <span className="fz-small font-black text-rose-600 uppercase tracking-wide">Suspense Balance</span>
                                     </div>
                                     <div className="w-40">
                                         <AmtInput value={formData.suspBal} onChange={upd('suspBal')} accent />
@@ -244,7 +244,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                     <TrendingDown size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Regular Loan</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Regular Loan</span>
                                 </div>
                                 <div className="p-3 grid grid-cols-2 gap-x-3 gap-y-2">
                                     <div>
@@ -262,7 +262,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                     <TrendingDown size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Emergency Loan</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Emergency Loan</span>
                                 </div>
                                 <div className="p-3 grid grid-cols-2 gap-x-3 gap-y-2">
                                     <div>
@@ -284,17 +284,17 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Modify Balance Registry</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Modify Balance Registry</span>
                         {memberName && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500 uppercase tracking-wide">{memberName}</span>
+                                <span className="fz-mini font-black text-indigo-500 uppercase tracking-wide">{memberName}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

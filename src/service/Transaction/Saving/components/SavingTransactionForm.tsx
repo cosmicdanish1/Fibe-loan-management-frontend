@@ -12,8 +12,8 @@ import dayjs from 'dayjs';
 const { Option } = Select;
 const { TextArea } = Input;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
     formData,
@@ -38,31 +38,31 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
 
     const historyColumns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Trans Date</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Trans Date</span>,
             dataIndex: 'transDate', key: 'transDate', width: '20%',
-            render: (t: string) => <span className="text-[10px] font-mono text-slate-700">{t}</span>,
+            render: (t: string) => <span className="fz-small font-mono text-slate-700">{t}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Voucher No</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Voucher No</span>,
             dataIndex: 'voucherNo', key: 'voucherNo', width: '20%',
-            render: (t: string) => <span className="text-[10px] font-mono font-bold text-slate-700">{t}</span>,
+            render: (t: string) => <span className="fz-small font-mono font-bold text-slate-700">{t}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Acc Type</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Acc Type</span>,
             dataIndex: 'accType', key: 'accType', width: '15%',
-            render: (t: string) => <span className="text-[10px] font-mono text-slate-600">{t}</span>,
+            render: (t: string) => <span className="fz-small font-mono text-slate-600">{t}</span>,
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Trans Type</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Trans Type</span>,
             dataIndex: 'transType', key: 'transType', width: '15%',
             render: (t: string) => (
-                <span className={`text-[10px] font-black ${t === 'CR' ? 'text-emerald-600' : 'text-rose-600'}`}>{t}</span>
+                <span className={`fz-small font-black ${t === 'CR' ? 'text-emerald-600' : 'text-rose-600'}`}>{t}</span>
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Amount</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Amount</span>,
             dataIndex: 'amount', key: 'amount', width: '30%', align: 'right' as const,
-            render: (v: number) => <span className="text-[10px] font-black text-slate-700">₹{v.toFixed(2)}</span>,
+            render: (v: number) => <span className="fz-small font-black text-slate-700">₹{v.toFixed(2)}</span>,
         },
     ];
 
@@ -77,23 +77,23 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                             <PiggyBank size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Saving Voucher</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Saving Voucher</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> Deposit / Withdrawal
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Reset
                         </button>
                         <button onClick={handleSave} disabled={isLoading}
-                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
                             {isLoading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
                             {isLoading ? 'Saving…' : 'Save'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={onExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={onExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -110,20 +110,20 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                     <Save size={12} className="text-emerald-600" />
                                     <div className="flex items-center gap-4">
                                         <div>
-                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wide">{lastSaved.type === 'deposit' ? 'Deposit' : 'Withdrawal'}</span>
-                                            <p className="text-[10px] font-black text-emerald-800">{lastSaved.voucherNo}</p>
+                                            <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">{lastSaved.type === 'deposit' ? 'Deposit' : 'Withdrawal'}</span>
+                                            <p className="fz-small font-black text-emerald-800">{lastSaved.voucherNo}</p>
                                         </div>
                                         <div>
-                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wide">A/C No</span>
-                                            <p className="text-[10px] font-bold text-emerald-800">{lastSaved.accountNo}</p>
+                                            <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">A/C No</span>
+                                            <p className="fz-small font-bold text-emerald-800">{lastSaved.accountNo}</p>
                                         </div>
                                         <div>
-                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wide">Amount</span>
-                                            <p className="text-[10px] font-black text-emerald-800">₹{lastSaved.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                                            <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">Amount</span>
+                                            <p className="fz-small font-black text-emerald-800">₹{lastSaved.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={handleReset} className="text-[8px] font-black text-emerald-600 hover:text-emerald-800 uppercase tracking-wide flex items-center gap-1">
+                                <button onClick={handleReset} className="fz-mini font-black text-emerald-600 hover:text-emerald-800 uppercase tracking-wide flex items-center gap-1">
                                     <RotateCcw size={9} /> New
                                 </button>
                             </div>
@@ -133,7 +133,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Hash size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Account</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Account</span>
                             </div>
                             <div className="p-3 grid grid-cols-4 gap-x-4">
                                 <div className="col-span-3">
@@ -161,7 +161,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                     <DatePicker
                                         value={formData.transDate ? dayjs(formData.transDate) : null}
                                         onChange={d => updateField('transDate', d)}
-                                        className="w-full h-7 text-[11px] sv-dp"
+                                        className="w-full h-7 fz-caption sv-dp"
                                         format="DD-MMM-YY"
                                     />
                                 </div>
@@ -172,7 +172,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <IndianRupee size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Account Balances</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Account Balances</span>
                             </div>
                             <div className="p-3 grid grid-cols-6 gap-x-4 gap-y-1">
                                 {[
@@ -184,8 +184,8 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                     { label: 'Withdrawable', val: formData.withdrawableBalance, cls: 'text-violet-700' },
                                 ].map(item => (
                                     <div key={item.label} className="text-center bg-slate-50 rounded-lg p-2 border border-slate-100">
-                                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-wide leading-tight mb-1">{item.label}</p>
-                                        <p className={`text-[11px] font-black ${item.cls}`}>₹{item.val.toFixed(2)}</p>
+                                        <p className="fz-mini font-black text-slate-500 uppercase tracking-wide leading-tight mb-1">{item.label}</p>
+                                        <p className={`fz-caption font-black ${item.cls}`}>₹{item.val.toFixed(2)}</p>
                                     </div>
                                 ))}
                             </div>
@@ -195,7 +195,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <FileText size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Transaction</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Transaction</span>
                             </div>
                             <div className="p-3 grid grid-cols-2 gap-x-4">
                                 <div>
@@ -227,16 +227,16 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Banknote size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Mode of Payment</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Mode of Payment</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                                        <span className="text-[8px] font-black text-slate-500 uppercase">Actual Amt</span>
-                                        <span className="text-[9px] font-black text-slate-700">₹{formData.actualAmount.toFixed(2)}</span>
+                                        <span className="fz-mini font-black text-slate-500 uppercase">Actual Amt</span>
+                                        <span className="fz-tiny font-black text-slate-700">₹{formData.actualAmount.toFixed(2)}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                                        <span className="text-[8px] font-black text-slate-500 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
-                                        <span className={`text-[9px] font-black ${formData.bankBal < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{formData.bankBal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                        <span className="fz-mini font-black text-slate-500 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
+                                        <span className={`fz-tiny font-black ${formData.bankBal < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{formData.bankBal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
                             </div>
@@ -244,7 +244,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                 <div className="flex gap-2">
                                     {['cash', 'bank'].map(mode => (
                                         <button key={mode} onClick={() => updateField('paymentMode', mode)}
-                                            className={`h-7 px-4 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all border ${
+                                            className={`h-7 px-4 rounded-lg fz-tiny font-black uppercase tracking-wide transition-all border ${
                                                 formData.paymentMode === mode
                                                     ? mode === 'cash' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-blue-600 text-white border-blue-500'
                                                     : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
@@ -256,7 +256,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
 
                                 {formData.paymentMode === 'bank' && (
                                     <div className="mt-3 pt-3 border-t border-slate-100">
-                                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">Cheque Details</p>
+                                        <p className="fz-mini font-black text-slate-500 uppercase tracking-widest mb-2">Cheque Details</p>
                                         <div className="grid grid-cols-4 gap-x-4">
                                             <div>
                                                 <label className={labelCls}>Bank A/C</label>
@@ -271,7 +271,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                                 <DatePicker
                                                     value={formData.chequeDate ? dayjs(formData.chequeDate) : null}
                                                     onChange={d => updateField('chequeDate', d)}
-                                                    className="w-full h-7 text-[11px] sv-dp" format="DD-MMM-YY" />
+                                                    className="w-full h-7 fz-caption sv-dp" format="DD-MMM-YY" />
                                             </div>
                                             <div>
                                                 <label className={labelCls}>Cheque No</label>
@@ -293,7 +293,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <FileText size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Transaction History</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Transaction History</span>
                             </div>
                             <Table
                                 columns={historyColumns}
@@ -304,7 +304,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                 rowKey={(r, i) => `${r.voucherNo}-${i}`}
                                 scroll={{ y: 150 }}
                                 loading={isLoadingAccount}
-                                locale={{ emptyText: <span className="text-[9px] text-slate-400 py-4 block text-center font-bold uppercase">Enter A/C No to view history</span> }}
+                                locale={{ emptyText: <span className="fz-tiny text-slate-400 py-4 block text-center font-bold uppercase">Enter A/C No to view history</span> }}
                             />
                         </div>
 
@@ -313,18 +313,18 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                     <Building2 size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Account Operations</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Account Operations</span>
                                 </div>
                                 <div className="p-3 grid grid-cols-2 gap-x-4">
                                     <div>
                                         <label className={labelCls}>Mode of Operation</label>
-                                        <div className="h-7 flex items-center px-2 bg-slate-50 border border-slate-200 rounded text-[11px] font-semibold text-slate-700">
+                                        <div className="h-7 flex items-center px-2 bg-slate-50 border border-slate-200 rounded fz-caption font-semibold text-slate-700">
                                             {formData.modeOfOperation || '—'}
                                         </div>
                                     </div>
                                     <div>
                                         <label className={labelCls}>Operators</label>
-                                        <div className="h-7 flex items-center px-2 bg-slate-50 border border-slate-200 rounded text-[11px] font-semibold text-slate-700">
+                                        <div className="h-7 flex items-center px-2 bg-slate-50 border border-slate-200 rounded fz-caption font-semibold text-slate-700">
                                             {formData.operators || '—'}
                                         </div>
                                     </div>
@@ -336,12 +336,12 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <FileText size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Narration <span className="text-rose-500">*</span></span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Narration <span className="text-rose-500">*</span></span>
                             </div>
                             <div className="p-3">
                                 <TextArea value={formData.narration} onChange={e => updateField('narration', e.target.value)}
                                     placeholder="Enter narration…" rows={2}
-                                    className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none" />
+                                    className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
                             </div>
                         </div>
 
@@ -352,17 +352,17 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Saving Voucher</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Saving Voucher</span>
                         {formData.accountNo && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">A/C: {formData.accountNo}</span>
+                                <span className="fz-mini font-black text-indigo-500">A/C: {formData.accountNo}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

@@ -9,8 +9,8 @@ import dayjs from 'dayjs';
 
 const { Option } = Select;
 
-const lbl = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inp = "h-6 text-[10px] font-semibold bg-white border-slate-300 rounded";
+const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inp = "h-6 fz-small font-semibold bg-white border-slate-300 rounded";
 
 const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
     formData,
@@ -31,37 +31,37 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
 
     const columns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">MBNO</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">MBNO</span>,
             dataIndex: 'memberNo',
             key: 'memberNo',
             width: '10%',
             render: (val: number) => (
-                <span className="text-[10px] font-mono font-black text-indigo-700">{val}</span>
+                <span className="fz-small font-mono font-black text-indigo-700">{val}</span>
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Name</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Name</span>,
             dataIndex: 'memberName',
             key: 'memberName',
             width: '42%',
             render: (val: string) => (
-                <span className="text-[10px] font-semibold text-slate-700 truncate block" title={val}>{val}</span>
+                <span className="fz-small font-semibold text-slate-700 truncate block" title={val}>{val}</span>
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Current CD Balance</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Current CD Balance</span>,
             dataIndex: 'currentBalance',
             key: 'currentBalance',
             width: '26%',
             align: 'right' as const,
             render: (val: number) => (
-                <span className="text-[10px] font-black text-emerald-600">
+                <span className="fz-small font-black text-emerald-600">
                     ₹{Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Post Amount</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Post Amount</span>,
             key: 'postAmount',
             width: '22%',
             align: 'right' as const,
@@ -87,29 +87,29 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                             <Landmark size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Compulsory Deposit Transaction</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Compulsory Deposit Transaction</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> Bulk CD Posting
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <button onClick={distributeEqually} disabled={isLoading || isPosting}
-                            className="h-7 px-3 bg-violet-600/80 hover:bg-violet-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-violet-400/50 uppercase tracking-wide disabled:opacity-50">
+                            className="h-7 px-3 bg-violet-600/80 hover:bg-violet-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-violet-400/50 uppercase tracking-wide disabled:opacity-50">
                             <ArrowRightLeft size={11} /> Distribute
                         </button>
                         <button onClick={handleReset} disabled={isPosting}
-                            className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide disabled:opacity-50">
+                            className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide disabled:opacity-50">
                             <RotateCcw size={11} /> Clear
                         </button>
                         <button onClick={handleSave} disabled={isPosting || isLoading}
-                            className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed">
+                            className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed">
                             {isPosting ? <Spin size="small" /> : <Save size={11} />}
                             {isPosting ? 'Posting…' : 'Post'}
                         </button>
                         <div className="h-4 w-px bg-white/20" />
                         <button onClick={handleExit}
-                            className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                            className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -123,9 +123,9 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                         <div className="px-2 py-1 border-b border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
                                 <FileText size={10} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Deposit Configuration</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Deposit Configuration</span>
                             </div>
-                            <span className="text-[7px] font-black text-slate-400 uppercase">{members.length} member(s)</span>
+                            <span className="fz-micro font-black text-slate-400 uppercase">{members.length} member(s)</span>
                         </div>
                         <div className="px-2 py-1.5 grid grid-cols-[140px_1fr_1fr] gap-3 items-end">
                             <div>
@@ -136,7 +136,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                                         value={formData.amount}
                                         onChange={e => updateField('amount', e.target.value)}
                                         placeholder="0.00"
-                                        className="h-6 text-[10px] font-black bg-indigo-50 border-indigo-200 rounded pl-5 text-indigo-700 text-right"
+                                        className="h-6 fz-small font-black bg-indigo-50 border-indigo-200 rounded pl-5 text-indigo-700 text-right"
                                     />
                                 </div>
                             </div>
@@ -176,11 +176,11 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                         <div className="px-2 py-1 border-b border-slate-100 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-1.5">
                                 <LayoutGrid size={10} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member Distribution Matrix</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member Distribution Matrix</span>
                             </div>
                             <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
-                                <span className="text-[7px] font-black text-indigo-400 uppercase">Distributed</span>
-                                <span className="text-[10px] font-black text-indigo-700 font-mono">
+                                <span className="fz-micro font-black text-indigo-400 uppercase">Distributed</span>
+                                <span className="fz-small font-black text-indigo-700 font-mono">
                                     ₹{distributedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
@@ -197,7 +197,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                                 scroll={{ y: 'calc(100vh - 210px)' }}
                                 locale={{
                                     emptyText: (
-                                        <span className="text-[9px] font-black text-slate-400 uppercase py-4 block text-center">
+                                        <span className="fz-tiny font-black text-slate-400 uppercase py-4 block text-center">
                                             No active members found
                                         </span>
                                     ),
@@ -212,17 +212,17 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                 <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Compulsory Deposit Transaction</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Compulsory Deposit Transaction</span>
                         {formData.amount && (
                             <>
                                 <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="text-[8px] font-black text-indigo-500">Amount: ₹{formData.amount}</span>
+                                <span className="fz-mini font-black text-indigo-500">Amount: ₹{formData.amount}</span>
                             </>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-indigo-400">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

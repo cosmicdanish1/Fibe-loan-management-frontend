@@ -17,7 +17,7 @@ const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detai
 
 interface StatementData { key: string; demandForMonth: string; balanceForMonth: number; interestReceived: number; interestReceivable: number; amount: number; month: number; year: number; }
 
-const lbl = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
 
 const InterestReceivableReceivedStatement: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -102,12 +102,12 @@ const InterestReceivableReceivedStatement: React.FC = () => {
   }), { receivable: 0, received: 0, total: 0 }), [data]);
 
   const columns = [
-    { title: <span className="text-[8px] font-black text-slate-500 uppercase">Month / Cycle</span>, dataIndex: 'demandForMonth', key: 'demandForMonth', render: (v: string) => <span className="text-[10px] font-black text-slate-800">{v}</span> },
-    { title: <span className="text-[8px] font-black text-slate-500 uppercase">Int. Receivable</span>, dataIndex: 'interestReceivable', key: 'interestReceivable', align: 'right' as const, render: (v: number) => <span className="text-[10px] font-black text-blue-600">₹{formatCurrency(v)}</span> },
-    { title: <span className="text-[8px] font-black text-slate-500 uppercase">Int. Received</span>, dataIndex: 'interestReceived', key: 'interestReceived', align: 'right' as const, render: (v: number) => <span className="text-[10px] font-black text-emerald-600">₹{formatCurrency(v)}</span> },
-    { title: <span className="text-[8px] font-black text-slate-500 uppercase">Variance</span>, key: 'variance', align: 'right' as const, render: (_: any, r: StatementData) => {
+    { title: <span className="fz-mini font-black text-slate-500 uppercase">Month / Cycle</span>, dataIndex: 'demandForMonth', key: 'demandForMonth', render: (v: string) => <span className="fz-small font-black text-slate-800">{v}</span> },
+    { title: <span className="fz-mini font-black text-slate-500 uppercase">Int. Receivable</span>, dataIndex: 'interestReceivable', key: 'interestReceivable', align: 'right' as const, render: (v: number) => <span className="fz-small font-black text-blue-600">₹{formatCurrency(v)}</span> },
+    { title: <span className="fz-mini font-black text-slate-500 uppercase">Int. Received</span>, dataIndex: 'interestReceived', key: 'interestReceived', align: 'right' as const, render: (v: number) => <span className="fz-small font-black text-emerald-600">₹{formatCurrency(v)}</span> },
+    { title: <span className="fz-mini font-black text-slate-500 uppercase">Variance</span>, key: 'variance', align: 'right' as const, render: (_: any, r: StatementData) => {
         const v = r.interestReceived - r.interestReceivable;
-        return <span className={`text-[10px] font-black ${v >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{v >= 0 ? '+' : ''}{formatCurrency(v)}</span>;
+        return <span className={`fz-small font-black ${v >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{v >= 0 ? '+' : ''}{formatCurrency(v)}</span>;
       }
     },
   ];
@@ -123,17 +123,17 @@ const InterestReceivableReceivedStatement: React.FC = () => {
               <Calculator size={13} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Interest Statement</h1>
-              <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Loan Asset Performance Monitoring</p>
+              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Interest Statement</h1>
+              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Loan Asset Performance Monitoring</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <button onClick={() => window.print()}
-              className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 border border-white/20 uppercase transition-all">
+              className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-white/20 uppercase transition-all">
               <Printer size={11} /> Print Report
             </button>
             <button onClick={handleExportCSV}
-              className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black flex items-center gap-1.5 uppercase transition-all">
+              className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 uppercase transition-all">
               <FileDown size={11} /> Export CSV
             </button>
           </div>
@@ -149,7 +149,7 @@ const InterestReceivableReceivedStatement: React.FC = () => {
                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Settings size={10} className="text-slate-400" />
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Parameters</span>
+                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Parameters</span>
                   </div>
                   <Tooltip title="Reset Filters">
                     <button onClick={() => setFilters({ fromMonth: 1, fromYear: 2020, toMonth: 12, toYear: 2025, branch: undefined, fromMember: '', toMember: '', wingNo: undefined })}
@@ -211,27 +211,27 @@ const InterestReceivableReceivedStatement: React.FC = () => {
                     <div>
                       <label className={lbl}>From Member</label>
                       <input value={filters.fromMember} onChange={e => setFilters(f => ({ ...f, fromMember: e.target.value }))}
-                        placeholder="MB No..." className="h-6 px-2 text-[9px] bg-white border border-slate-200 rounded w-full focus:outline-none focus:border-indigo-400" />
+                        placeholder="MB No..." className="h-6 px-2 fz-tiny bg-white border border-slate-200 rounded w-full focus:outline-none focus:border-indigo-400" />
                     </div>
                     <div>
                       <label className={lbl}>To Member</label>
                       <input value={filters.toMember} onChange={e => setFilters(f => ({ ...f, toMember: e.target.value }))}
-                        placeholder="MB No..." className="h-6 px-2 text-[9px] bg-white border border-slate-200 rounded w-full focus:outline-none focus:border-indigo-400" />
+                        placeholder="MB No..." className="h-6 px-2 fz-tiny bg-white border border-slate-200 rounded w-full focus:outline-none focus:border-indigo-400" />
                     </div>
                   </div>
 
                   <button onClick={handleSearch} disabled={loading}
-                    className="w-full h-7 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded text-[9px] font-black uppercase flex items-center justify-center gap-1.5 transition-all">
+                    className="w-full h-7 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded fz-tiny font-black uppercase flex items-center justify-center gap-1.5 transition-all">
                     <Search size={11} /> Generate Statement
                   </button>
 
                   {data.length > 0 && (
                     <div className="space-y-1 pt-1 border-t border-slate-100">
-                      <div className="flex justify-between text-[9px]">
+                      <div className="flex justify-between fz-tiny">
                         <span className="font-black text-slate-400 uppercase">Total Receivable</span>
                         <span className="font-black text-blue-600">₹{formatCurrency(totals.receivable)}</span>
                       </div>
-                      <div className="flex justify-between text-[9px]">
+                      <div className="flex justify-between fz-tiny">
                         <span className="font-black text-slate-400 uppercase">Total Received</span>
                         <span className="font-black text-emerald-600">₹{formatCurrency(totals.received)}</span>
                       </div>
@@ -246,10 +246,10 @@ const InterestReceivableReceivedStatement: React.FC = () => {
               <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-1.5">
                   <FileText size={10} className="text-slate-400" />
-                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Interest Statement</span>
-                  {data.length > 0 && <span className="text-[8px] font-black text-indigo-600">{data.length} rows</span>}
+                  <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Interest Statement</span>
+                  {data.length > 0 && <span className="fz-mini font-black text-indigo-600">{data.length} rows</span>}
                 </div>
-                <span className="text-[8px] font-black text-slate-400 uppercase">Ref: {stableId.current}</span>
+                <span className="fz-mini font-black text-slate-400 uppercase">Ref: {stableId.current}</span>
               </div>
               <div className="flex-1 min-h-0 overflow-auto">
                 <Table
@@ -261,16 +261,16 @@ const InterestReceivableReceivedStatement: React.FC = () => {
                   scroll={{ y: 'calc(100vh - 170px)' }}
                   summary={() => data.length > 0 ? (
                     <Table.Summary.Row className="bg-indigo-50 font-black">
-                      <Table.Summary.Cell index={0}><span className="text-[9px] font-black text-slate-700 uppercase">Grand Total</span></Table.Summary.Cell>
-                      <Table.Summary.Cell index={1} align="right"><span className="text-[10px] font-black text-blue-700">₹{formatCurrency(totals.receivable)}</span></Table.Summary.Cell>
-                      <Table.Summary.Cell index={2} align="right"><span className="text-[10px] font-black text-emerald-700">₹{formatCurrency(totals.received)}</span></Table.Summary.Cell>
-                      <Table.Summary.Cell index={3} align="right"><span className={`text-[10px] font-black ${totals.received - totals.receivable >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>₹{formatCurrency(totals.received - totals.receivable)}</span></Table.Summary.Cell>
+                      <Table.Summary.Cell index={0}><span className="fz-tiny font-black text-slate-700 uppercase">Grand Total</span></Table.Summary.Cell>
+                      <Table.Summary.Cell index={1} align="right"><span className="fz-small font-black text-blue-700">₹{formatCurrency(totals.receivable)}</span></Table.Summary.Cell>
+                      <Table.Summary.Cell index={2} align="right"><span className="fz-small font-black text-emerald-700">₹{formatCurrency(totals.received)}</span></Table.Summary.Cell>
+                      <Table.Summary.Cell index={3} align="right"><span className={`fz-small font-black ${totals.received - totals.receivable >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>₹{formatCurrency(totals.received - totals.receivable)}</span></Table.Summary.Cell>
                     </Table.Summary.Row>
                   ) : null}
                   locale={{ emptyText: (
                     <div className="py-12 flex flex-col items-center">
                       <TrendingUp size={32} className="text-slate-200 mb-2" />
-                      <p className="text-[9px] font-black text-slate-400 uppercase">No statement data — configure filters and generate</p>
+                      <p className="fz-tiny font-black text-slate-400 uppercase">No statement data — configure filters and generate</p>
                     </div>
                   )}}
                 />

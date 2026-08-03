@@ -13,8 +13,8 @@ import { SavingAccountHookReturn } from '../interfaces/interface';
 const { Option } = Select;
 const { TextArea } = Input;
 
-const labelCls = "block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 text-[11px] font-semibold bg-white border-slate-300 rounded";
+const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 // Keep money fields numeric: digits + a single decimal point.
 const numeric = (v: string) => {
@@ -79,33 +79,33 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
 
     const nomineeColumns = [
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Nominee Name</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Nominee Name</span>,
             dataIndex: 'name',
             key: 'name',
             render: (text: string, record: any) => (
                 <Input
                     value={text}
                     onChange={(e) => updateNominee(record.id, 'name', e.target.value)}
-                    className="h-6 text-[10px] font-semibold bg-white border-slate-300 rounded px-1.5"
+                    className="h-6 fz-small font-semibold bg-white border-slate-300 rounded px-1.5"
                     placeholder="Full name"
                 />
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Address</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Address</span>,
             dataIndex: 'address',
             key: 'address',
             render: (text: string, record: any) => (
                 <Input
                     value={text}
                     onChange={(e) => updateNominee(record.id, 'address', e.target.value)}
-                    className="h-6 text-[10px] font-semibold bg-white border-slate-300 rounded px-1.5"
+                    className="h-6 fz-small font-semibold bg-white border-slate-300 rounded px-1.5"
                     placeholder="Address"
                 />
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide text-center block">Age</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide text-center block">Age</span>,
             dataIndex: 'age',
             key: 'age',
             width: 70,
@@ -114,13 +114,13 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                 <Input
                     value={text}
                     onChange={(e) => updateNominee(record.id, 'age', e.target.value)}
-                    className="h-6 text-[10px] font-semibold bg-white border-slate-300 rounded text-center px-1"
+                    className="h-6 fz-small font-semibold bg-white border-slate-300 rounded text-center px-1"
                     placeholder="Age"
                 />
             ),
         },
         {
-            title: <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide text-center block">Relation</span>,
+            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide text-center block">Relation</span>,
             dataIndex: 'relation',
             key: 'relation',
             width: 130,
@@ -163,21 +163,21 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                             <BookOpen size={13} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Saving Account Opening</h1>
-                            <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Saving Account Opening</h1>
+                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                 <ShieldCheck size={7} className="text-indigo-400" /> New Account Registration
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <button onClick={reset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+                        <button onClick={reset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
                             <RotateCcw size={11} /> Purge
                         </button>
-                        <button onClick={save} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
+                        <button onClick={save} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide">
                             <Save size={11} /> Save
                         </button>
                         <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
+                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
                             <X size={11} /> Exit
                         </button>
                     </div>
@@ -191,9 +191,9 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <User size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Member Details</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member Details</span>
                                 {(data.firstName || data.lastName) && (
-                                    <span className="ml-auto text-[9px] font-black text-indigo-600">
+                                    <span className="ml-auto fz-tiny font-black text-indigo-600">
                                         {[data.prefix, data.firstName, data.middleName, data.lastName].filter(Boolean).join(' ')}
                                     </span>
                                 )}
@@ -285,7 +285,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Landmark size={11} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Account Details</span>
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Account Details</span>
                             </div>
                             <div className="p-3 grid grid-cols-4 gap-x-4 gap-y-2">
                                 <div>
@@ -294,7 +294,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                                         value={data.openingDate ? dayjs(data.openingDate) : null}
                                         onChange={(d) => updateField('openingDate', d ? d.format('YYYY-MM-DD') : '')}
                                         format="DD-MMM-YY"
-                                        className="w-full h-7 text-[11px]"
+                                        className="w-full h-7 fz-caption"
                                     />
                                 </div>
                                 <div>
@@ -331,18 +331,18 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Users size={11} className="text-slate-400" />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Nominee Details</span>
+                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Nominee Details</span>
                                 </div>
                                 <button
                                     onClick={addNominee}
-                                    className="h-6 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded text-[9px] font-black uppercase tracking-wide flex items-center gap-1 transition-colors border border-indigo-200"
+                                    className="h-6 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded fz-tiny font-black uppercase tracking-wide flex items-center gap-1 transition-colors border border-indigo-200"
                                 >
                                     <Plus size={9} /> Add Nominee
                                 </button>
                             </div>
                             <div className="max-h-[160px] overflow-auto">
                                 {data.nominees.length === 0 ? (
-                                    <div className="py-6 text-center text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                                    <div className="py-6 text-center fz-tiny font-bold text-slate-400 uppercase tracking-wider">
                                         No nominees added — click Add Nominee
                                     </div>
                                 ) : (
@@ -370,7 +370,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                                 onChange={(e) => updateField('specialInstructions', e.target.value)}
                                 rows={3}
                                 placeholder="Additional notes or instructions…"
-                                className="text-[10px] font-medium bg-slate-50 border-slate-200 rounded resize-none mt-1"
+                                className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none mt-1"
                             />
                         </div>
 
@@ -381,13 +381,13 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                 <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Saving Account Registry</span>
+                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Saving Account Registry</span>
                         <div className="w-px h-2.5 bg-slate-300" />
-                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-wide">Authorized</span>
+                        <span className="fz-mini font-black text-slate-400 uppercase tracking-wide">Authorized</span>
                     </div>
                     <div className="flex items-center gap-1 text-indigo-500">
                         <Calendar size={9} />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
+                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
                     </div>
                 </div>
 

@@ -328,29 +328,29 @@ const Dashboard: React.FC = () => {
                 <Calendar size={16} style={{ color: bt.icon }} />
               </div>
               <div>
-                <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: bt.label }}>Current Financial Year</p>
+                <p className="fz-mini font-black uppercase tracking-widest leading-none" style={{ color: bt.label }}>Current Financial Year</p>
                 <p className="font-black text-[15px] leading-tight mt-0.5" style={{ color: bt.value }}>{fy.label}</p>
               </div>
             </div>
             <div className="flex items-center gap-5">
               <div className="text-center">
-                <p className="text-[7px] font-black uppercase tracking-wider" style={{ color: bt.label }}>Started</p>
-                <p className="text-[11px] font-black" style={{ color: bt.value }}>{fy.startDate}</p>
+                <p className="fz-micro font-black uppercase tracking-wider" style={{ color: bt.label }}>Started</p>
+                <p className="fz-caption font-black" style={{ color: bt.value }}>{fy.startDate}</p>
               </div>
               <div className="w-px h-8" style={{ background: bt.divider }} />
               <div className="text-center">
-                <p className="text-[7px] font-black uppercase tracking-wider" style={{ color: bt.label }}>Ends</p>
-                <p className="text-[11px] font-black" style={{ color: bt.value }}>{fy.endDate}</p>
+                <p className="fz-micro font-black uppercase tracking-wider" style={{ color: bt.label }}>Ends</p>
+                <p className="fz-caption font-black" style={{ color: bt.value }}>{fy.endDate}</p>
               </div>
               <div className="w-px h-8" style={{ background: bt.divider }} />
               <div className="rounded-xl px-4 py-2 text-center min-w-[72px]" style={{ background: bt.chipBg, border: `1px solid ${bt.chipBdr}` }}>
                 <p className="font-black text-2xl leading-none" style={{ color: bt.accent }}>{fy.remaining}</p>
-                <p className="text-[7px] font-black uppercase tracking-wider mt-0.5" style={{ color: bt.label }}>days left</p>
+                <p className="fz-micro font-black uppercase tracking-wider mt-0.5" style={{ color: bt.label }}>days left</p>
               </div>
               <div className="w-28">
                 <div className="flex justify-between mb-1">
-                  <span className="text-[7px] font-black uppercase tracking-wider" style={{ color: bt.label }}>Progress</span>
-                  <span className="text-[9px] font-black" style={{ color: bt.value }}>{fy.progress}%</span>
+                  <span className="fz-micro font-black uppercase tracking-wider" style={{ color: bt.label }}>Progress</span>
+                  <span className="fz-tiny font-black" style={{ color: bt.value }}>{fy.progress}%</span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: bt.track }}>
                   <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${fy.progress}%` }} />
@@ -365,10 +365,10 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
             <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2">
               <LayoutGrid size={11} className="text-slate-400" />
-              <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Quick Actions</span>
-              <span className="text-[7px] text-slate-400 ml-1">— one click to open</span>
+              <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Quick Actions</span>
+              <span className="fz-micro text-slate-400 ml-1">— one click to open</span>
               {visibleActions.length > 0 && (
-                <span className="ml-auto text-[7px] text-slate-400">{visibleActions.length} configured</span>
+                <span className="ml-auto fz-micro text-slate-400">{visibleActions.length} configured</span>
               )}
             </div>
             <div className={`p-3 gap-2 ${
@@ -379,8 +379,8 @@ const Dashboard: React.FC = () => {
               {visibleActions.length === 0 ? (
                 <div className="flex-1 py-6 text-center text-slate-300">
                   <LayoutGrid size={24} className="mx-auto mb-2" />
-                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">No quick actions configured</p>
-                  <p className="text-[8px] text-slate-400 mt-1">Go to Settings → Dashboard to add some</p>
+                  <p className="fz-tiny font-black uppercase tracking-wider text-slate-400">No quick actions configured</p>
+                  <p className="fz-mini text-slate-400 mt-1">Go to Settings → Dashboard to add some</p>
                 </div>
               ) : visibleActions.map(qa => {
                 const IconComp = ICON_MAP[qa.iconName] ?? Zap;
@@ -410,13 +410,13 @@ const Dashboard: React.FC = () => {
                 <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2">
                     <Bell size={11} className="text-slate-400" />
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Notice Board</span>
+                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Notice Board</span>
                     {notices.length > 0 && (
-                      <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-600 text-[7px] font-black rounded-full leading-none">{notices.length}</span>
+                      <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-600 fz-micro font-black rounded-full leading-none">{notices.length}</span>
                     )}
                   </div>
                   <button onClick={() => setShowAddForm(v => !v)}
-                    className="flex items-center gap-1 px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[8px] font-black uppercase transition-all">
+                    className="flex items-center gap-1 px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded fz-mini font-black uppercase transition-all">
                     <Plus size={9} /> Add Notice
                   </button>
                 </div>
@@ -427,16 +427,16 @@ const Dashboard: React.FC = () => {
                     <div className="grid grid-cols-3 gap-1.5">
                       <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
                         placeholder="Notice title..."
-                        className="col-span-2 h-6 px-2 text-[9px] bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400" />
+                        className="col-span-2 h-6 px-2 fz-tiny bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400" />
                       <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as Notice['type'] }))}
-                        className="h-6 px-1 text-[9px] bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400">
+                        className="h-6 px-1 fz-tiny bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400">
                         <option value="info">Info</option>
                         <option value="warning">Warning</option>
                         <option value="success">Success</option>
                       </select>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[7px] font-black text-slate-400 uppercase tracking-wider shrink-0">Style:</span>
+                      <span className="fz-micro font-black text-slate-400 uppercase tracking-wider shrink-0">Style:</span>
                       <button onClick={() => setForm(p => ({ ...p, noticeStyle: 'card' }))}
                         className={`flex items-center gap-1 px-2 py-0.5 rounded text-[7.5px] font-black uppercase border transition-all ${form.noticeStyle === 'card' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200'}`}>
                         <Info size={8} /> Card
@@ -459,11 +459,11 @@ const Dashboard: React.FC = () => {
                     {form.image && <img src={form.image} alt="preview" className="h-10 rounded border border-slate-200 object-cover" />}
                     <textarea value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
                       placeholder="Notice message..." rows={2}
-                      className="w-full px-2 py-1 text-[9px] bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400 resize-none" />
+                      className="w-full px-2 py-1 fz-tiny bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400 resize-none" />
                     <div className="flex gap-1.5">
-                      <button onClick={addNotice} className="h-6 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[8px] font-black uppercase transition-all">Post</button>
+                      <button onClick={addNotice} className="h-6 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded fz-mini font-black uppercase transition-all">Post</button>
                       <button onClick={closeForm}
-                        className="h-6 px-3 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded text-[8px] font-black uppercase transition-all">Cancel</button>
+                        className="h-6 px-3 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded fz-mini font-black uppercase transition-all">Cancel</button>
                     </div>
                   </div>
                   </div>
@@ -473,8 +473,8 @@ const Dashboard: React.FC = () => {
                   {notices.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center py-8 text-slate-300">
                       <Bell size={28} className="mb-2" />
-                      <p className="text-[9px] font-black uppercase tracking-wider">No notices posted yet</p>
-                      <p className="text-[8px] mt-1">Click "Add Notice" to post one</p>
+                      <p className="fz-tiny font-black uppercase tracking-wider">No notices posted yet</p>
+                      <p className="fz-mini mt-1">Click "Add Notice" to post one</p>
                     </div>
                   ) : notices.map((n, idx) => {
                     if (n.noticeStyle === 'sticky') {
@@ -485,11 +485,11 @@ const Dashboard: React.FC = () => {
                           <div className="flex items-start justify-between gap-1">
                             <div className="flex items-center gap-1.5 min-w-0">
                               <StickyNote size={11} className="text-amber-600 shrink-0" />
-                              <span className="text-[10px] font-bold text-slate-800 truncate">{n.title}</span>
+                              <span className="fz-small font-bold text-slate-800 truncate">{n.title}</span>
                             </div>
                             <button onClick={() => deleteNotice(n.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-rose-500 shrink-0"><X size={10} /></button>
                           </div>
-                          <p className="text-[9px] text-slate-700 mt-1 leading-snug">{n.message}</p>
+                          <p className="fz-tiny text-slate-700 mt-1 leading-snug">{n.message}</p>
                           {n.image && <img src={n.image} alt="" className="mt-1.5 w-full max-h-20 rounded object-cover" />}
                           <p className="text-[7.5px] text-slate-500 mt-1.5 uppercase tracking-wide">{n.postedBy} · {dayjs(n.postedAt).format('D MMM, h:mm A')}</p>
                         </div>
@@ -501,11 +501,11 @@ const Dashboard: React.FC = () => {
                         <div className="flex items-start justify-between gap-1">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <s.Icon size={11} className={s.title} />
-                            <span className={`text-[10px] font-black ${s.title} truncate`}>{n.title}</span>
+                            <span className={`fz-small font-black ${s.title} truncate`}>{n.title}</span>
                           </div>
                           <button onClick={() => deleteNotice(n.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-rose-500 shrink-0"><X size={10} /></button>
                         </div>
-                        <p className={`text-[9px] ${s.body} mt-0.5 leading-snug`}>{n.message}</p>
+                        <p className={`fz-tiny ${s.body} mt-0.5 leading-snug`}>{n.message}</p>
                         {n.image && <img src={n.image} alt="" className="mt-1.5 w-full max-h-20 rounded object-cover" />}
                         <p className={`text-[7.5px] ${s.meta} mt-1 uppercase tracking-wide`}>{n.postedBy} · {dayjs(n.postedAt).format('D MMM, h:mm A')}</p>
                       </div>
@@ -519,17 +519,17 @@ const Dashboard: React.FC = () => {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
                 <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2 shrink-0">
                   <Command size={11} className="text-slate-400" />
-                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Keyboard Shortcuts</span>
+                  <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Keyboard Shortcuts</span>
                 </div>
                 <div className="p-2 flex-1 divide-y divide-slate-50">
                   {SHORTCUTS.map(s => (
                     <div key={s.label} className="flex items-center justify-between py-1.5">
-                      <span className="text-[10px] text-slate-600 font-semibold">{s.label}</span>
+                      <span className="fz-small text-slate-600 font-semibold">{s.label}</span>
                       <div className="flex items-center gap-1">
                         {s.keys.map((k, i) => (
                           <React.Fragment key={k}>
-                            {i > 0 && <span className="text-[8px] text-slate-300">+</span>}
-                            <kbd className="bg-slate-100 border border-slate-200 rounded text-[9px] font-black text-slate-700 px-1.5 py-0.5 leading-none">{k}</kbd>
+                            {i > 0 && <span className="fz-mini text-slate-300">+</span>}
+                            <kbd className="bg-slate-100 border border-slate-200 rounded fz-tiny font-black text-slate-700 px-1.5 py-0.5 leading-none">{k}</kbd>
                           </React.Fragment>
                         ))}
                       </div>
@@ -548,8 +548,8 @@ const Dashboard: React.FC = () => {
         {!anyVisible && (
           <div className="flex flex-col items-center justify-center py-24 text-slate-300">
             <EyeOff size={40} className="mb-3 text-slate-200" />
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">All widgets hidden</p>
-            <p className="text-[9px] mt-1.5 text-slate-400">Go to Settings → Dashboard to turn them back on</p>
+            <p className="fz-caption font-black uppercase tracking-widest text-slate-400">All widgets hidden</p>
+            <p className="fz-tiny mt-1.5 text-slate-400">Go to Settings → Dashboard to turn them back on</p>
           </div>
         )}
 

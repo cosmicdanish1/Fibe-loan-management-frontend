@@ -22,7 +22,7 @@ interface SearchResult {
   details: string;
 }
 
-const lbl = "block text-[8px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
+const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
 
 const SEARCH_TYPE_LABELS: Record<string, string> = {
   memberNo: 'Member No',
@@ -116,13 +116,13 @@ const Find: React.FC = () => {
               <Search size={13} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[11px] font-black text-white tracking-wider uppercase leading-none">Find</h1>
-              <p className="text-[7px] font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Global Member &amp; Account Search</p>
+              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Find</h1>
+              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Global Member &amp; Account Search</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <button onClick={clearSearch}
-              className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
+              className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
               <RefreshCw size={11} /> Clear
             </button>
           </div>
@@ -136,7 +136,7 @@ const Find: React.FC = () => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
               <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                 <Search size={10} className="text-slate-400" />
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Search Parameters</span>
+                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Search Parameters</span>
               </div>
               <div className="p-2.5 space-y-2">
                 <div>
@@ -146,7 +146,7 @@ const Find: React.FC = () => {
                       <button
                         key={opt.value}
                         onClick={() => setSearchType(opt.value)}
-                        className={`h-6 px-3 rounded text-[9px] font-black uppercase tracking-wide transition-all border ${
+                        className={`h-6 px-3 rounded fz-tiny font-black uppercase tracking-wide transition-all border ${
                           searchType === opt.value
                             ? 'bg-indigo-600 text-white border-indigo-600'
                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'
@@ -164,17 +164,17 @@ const Find: React.FC = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleKeyPress}
                     placeholder="Enter search term..."
-                    className="flex-1 h-7 px-3 text-[11px] font-semibold bg-white border border-slate-300 rounded focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100"
+                    className="flex-1 h-7 px-3 fz-caption font-semibold bg-white border border-slate-300 rounded focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100"
                   />
                   <button
                     onClick={handleSearch}
                     disabled={!searchQuery.trim()}
-                    className="h-7 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded text-[9px] font-black uppercase tracking-wide flex items-center gap-1.5 transition-all">
+                    className="h-7 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded fz-tiny font-black uppercase tracking-wide flex items-center gap-1.5 transition-all">
                     <Search size={11} /> Find
                   </button>
                 </div>
                 {error && (
-                  <div className="text-[9px] font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded px-2 py-1">
+                  <div className="fz-tiny font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded px-2 py-1">
                     {error}
                   </div>
                 )}
@@ -187,28 +187,28 @@ const Find: React.FC = () => {
                 <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-1.5">
                     <FileText size={10} className="text-slate-400" />
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Results</span>
+                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Results</span>
                   </div>
-                  <span className="text-[8px] font-black text-indigo-600 uppercase">{results.length} record(s)</span>
+                  <span className="fz-mini font-black text-indigo-600 uppercase">{results.length} record(s)</span>
                 </div>
                 <div className="flex-1 min-h-0 overflow-auto">
                   <table className="w-full">
                     <thead className="sticky top-0 bg-[#f8fafc]">
                       <tr>
                         {['MB No', 'Name', 'Wing', 'Division', 'A/C No', 'SR No'].map(h => (
-                          <th key={h} className="px-3 py-2 text-left text-[8px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">{h}</th>
+                          <th key={h} className="px-3 py-2 text-left fz-mini font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {results.map((result, index) => (
                         <tr key={result.id + index} className="border-b border-slate-100 hover:bg-[#eef2ff] transition-colors cursor-pointer">
-                          <td className="px-3 py-1.5 text-[10px] font-black text-indigo-600">{result.memberNo || '—'}</td>
-                          <td className="px-3 py-1.5 text-[10px] font-semibold text-slate-700">{result.name || result.title}</td>
-                          <td className="px-3 py-1.5 text-[10px] text-slate-600">{result.wing || '—'}</td>
-                          <td className="px-3 py-1.5 text-[10px] text-slate-600">{result.division || '—'}</td>
-                          <td className="px-3 py-1.5 text-[10px] text-slate-600">{result.accountNo || '—'}</td>
-                          <td className="px-3 py-1.5 text-[10px] text-slate-600">{result.srNo || '—'}</td>
+                          <td className="px-3 py-1.5 fz-small font-black text-indigo-600">{result.memberNo || '—'}</td>
+                          <td className="px-3 py-1.5 fz-small font-semibold text-slate-700">{result.name || result.title}</td>
+                          <td className="px-3 py-1.5 fz-small text-slate-600">{result.wing || '—'}</td>
+                          <td className="px-3 py-1.5 fz-small text-slate-600">{result.division || '—'}</td>
+                          <td className="px-3 py-1.5 fz-small text-slate-600">{result.accountNo || '—'}</td>
+                          <td className="px-3 py-1.5 fz-small text-slate-600">{result.srNo || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -220,14 +220,14 @@ const Find: React.FC = () => {
                 {searchQuery ? (
                   <>
                     <Search size={32} className="text-slate-200 mb-3" />
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">No Results Found</p>
-                    <p className="text-[9px] text-slate-400 mt-1">Try adjusting your search criteria</p>
+                    <p className="fz-small font-black text-slate-500 uppercase tracking-wider">No Results Found</p>
+                    <p className="fz-tiny text-slate-400 mt-1">Try adjusting your search criteria</p>
                   </>
                 ) : (
                   <>
                     <FileText size={32} className="text-slate-200 mb-3" />
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Ready to Search</p>
-                    <p className="text-[9px] text-slate-400 mt-1">Select a search type and enter your query</p>
+                    <p className="fz-small font-black text-slate-500 uppercase tracking-wider">Ready to Search</p>
+                    <p className="fz-tiny text-slate-400 mt-1">Select a search type and enter your query</p>
                   </>
                 )}
               </div>

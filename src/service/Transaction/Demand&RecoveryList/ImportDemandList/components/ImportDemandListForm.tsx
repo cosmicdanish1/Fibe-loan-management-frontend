@@ -10,7 +10,7 @@ const { Option } = Select;
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const YEARS = Array.from({ length: 30 }, (_, i) => (2020 + i).toString());
 
-const lbl = "text-[9px] font-bold text-slate-600 uppercase tracking-wide";
+const lbl = "fz-tiny font-bold text-slate-600 uppercase tracking-wide";
 
 const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
     importConfig, previewData, branches, isImporting, isSaving, recordCount,
@@ -27,21 +27,21 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                 <div className="flex items-center gap-2">
                     <FileSpreadsheet size={14} className="text-emerald-400" />
                     <div>
-                        <h1 className="text-[11px] font-black text-white uppercase tracking-wider leading-none">Import Demand</h1>
-                        <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Demand &amp; Recovery List</p>
+                        <h1 className="fz-caption font-black text-white uppercase tracking-wider leading-none">Import Demand</h1>
+                        <p className="fz-micro font-bold text-slate-400 uppercase tracking-widest mt-0.5">Demand &amp; Recovery List</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <button onClick={handleSave} disabled={isSaving || previewData.length === 0}
-                        className={`px-3 py-1 text-[9px] font-bold uppercase tracking-wide rounded flex items-center gap-1 transition-colors ${previewData.length > 0 && !isSaving ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`}>
+                        className={`px-3 py-1 fz-tiny font-bold uppercase tracking-wide rounded flex items-center gap-1 transition-colors ${previewData.length > 0 && !isSaving ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`}>
                         <Save size={10} /> {isSaving ? 'Saving...' : 'Save'}
                     </button>
                     <button onClick={handleClear}
-                        className="px-3 py-1 text-[9px] font-bold uppercase tracking-wide rounded bg-slate-600 hover:bg-slate-500 text-slate-200 flex items-center gap-1">
+                        className="px-3 py-1 fz-tiny font-bold uppercase tracking-wide rounded bg-slate-600 hover:bg-slate-500 text-slate-200 flex items-center gap-1">
                         <RotateCcw size={10} /> Clear
                     </button>
                     <button onClick={handleExit}
-                        className="px-3 py-1 text-[9px] font-bold uppercase tracking-wide rounded bg-rose-700 hover:bg-rose-600 text-white flex items-center gap-1">
+                        className="px-3 py-1 fz-tiny font-bold uppercase tracking-wide rounded bg-rose-700 hover:bg-rose-600 text-white flex items-center gap-1">
                         <X size={10} /> Exit
                     </button>
                 </div>
@@ -52,7 +52,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                 <div>
                     <div className={lbl}>Division/RO</div>
                     <input type="text" value={importConfig.divisionRO} readOnly
-                        className="w-36 h-7 px-2 border border-slate-300 rounded text-[11px] font-bold bg-slate-100" />
+                        className="w-36 h-7 px-2 border border-slate-300 rounded fz-caption font-bold bg-slate-100" />
                 </div>
                 <div>
                     <div className={lbl}>Branch</div>
@@ -81,13 +81,13 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                     </Select>
                 </div>
                 <button onClick={handleImport} disabled={isImporting}
-                    className={`h-7 px-4 text-[10px] font-bold uppercase tracking-wide rounded border flex items-center gap-1.5 transition-colors ${isImporting ? 'bg-slate-200 text-slate-500 cursor-wait border-slate-300' : 'bg-white hover:bg-indigo-50 text-indigo-700 border-indigo-300 hover:border-indigo-500'}`}>
+                    className={`h-7 px-4 fz-small font-bold uppercase tracking-wide rounded border flex items-center gap-1.5 transition-colors ${isImporting ? 'bg-slate-200 text-slate-500 cursor-wait border-slate-300' : 'bg-white hover:bg-indigo-50 text-indigo-700 border-indigo-300 hover:border-indigo-500'}`}>
                     {isImporting ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
                     {isImporting ? 'Importing...' : 'Import Demand'}
                 </button>
 
                 {recordCount > 0 && (
-                    <div className="ml-auto flex items-center gap-3 text-[9px] font-bold uppercase tracking-wide">
+                    <div className="ml-auto flex items-center gap-3 fz-tiny font-bold uppercase tracking-wide">
                         <span className="text-slate-500">{recordCount} Record(s)</span>
                         {validCount > 0 && <span className="text-emerald-600 flex items-center gap-0.5"><CheckCircle2 size={9} /> {validCount} Valid</span>}
                         {errorCount > 0 && <span className="text-rose-600 flex items-center gap-0.5"><AlertCircle size={9} /> {errorCount} Error</span>}
@@ -103,27 +103,27 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                             <div className="w-16 h-16 border-4 border-indigo-200 rounded-full animate-spin border-t-indigo-600" />
                             <FileSpreadsheet size={20} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600" />
                         </div>
-                        <p className="text-[12px] font-bold text-indigo-700 uppercase tracking-wide animate-pulse">Importing Records...</p>
-                        <p className="text-[9px] text-slate-500 mt-1">Reading Excel file, validating members, checking columns...</p>
+                        <p className="fz-label font-bold text-indigo-700 uppercase tracking-wide animate-pulse">Importing Records...</p>
+                        <p className="fz-tiny text-slate-500 mt-1">Reading Excel file, validating members, checking columns...</p>
                     </div>
                 ) : previewData.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center text-slate-400">
                         <FileSpreadsheet size={40} className="mb-2 text-slate-300" />
-                        <p className="text-[11px] font-bold uppercase tracking-wide">No Data Loaded</p>
-                        <p className="text-[9px] mt-1">Select Branch, Month, Year and click "Import Demand" to load an Excel file</p>
+                        <p className="fz-caption font-bold uppercase tracking-wide">No Data Loaded</p>
+                        <p className="fz-tiny mt-1">Select Branch, Month, Year and click "Import Demand" to load an Excel file</p>
                         <div className="mt-4 p-3 bg-slate-50 rounded border border-slate-200 text-left max-w-md">
-                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-wider mb-1">Expected Excel Format</p>
-                            <p className="text-[9px] text-slate-600 leading-relaxed">
+                            <p className="fz-mini font-black text-slate-500 uppercase tracking-wider mb-1">Expected Excel Format</p>
+                            <p className="fz-tiny text-slate-600 leading-relaxed">
                                 S.NO. | YYMM | CODE | MS.NO. | PS.NO. | NAME | TOTAL | F/D | R/LOAN | E/LOAN | INTT.
                             </p>
                         </div>
                     </div>
                 ) : (
-                    <table className="w-full text-[10px] border-collapse">
+                    <table className="w-full fz-small border-collapse">
                         <thead className="sticky top-0 z-10">
                             <tr className="bg-slate-100 border-b border-slate-300">
                                 {['Period', 'Branch', 'Member No', 'Personal No', 'Member Name', 'Total Amount', 'RD Amount', 'Regular Loan', 'Emergency Loan', 'Loan Interest', 'IFRS Amt', 'FRS 1 Amt', 'Status'].map(h => (
-                                    <th key={h} className="px-2 py-1.5 text-left text-[8px] font-black text-slate-600 uppercase tracking-wide whitespace-nowrap border-r border-slate-200 last:border-r-0">
+                                    <th key={h} className="px-2 py-1.5 text-left fz-mini font-black text-slate-600 uppercase tracking-wide whitespace-nowrap border-r border-slate-200 last:border-r-0">
                                         {h}
                                     </th>
                                 ))}
@@ -149,7 +149,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                                             <CheckCircle2 size={11} className="text-emerald-500 inline" />
                                         ) : (
                                             <span className="text-rose-500 flex items-center gap-0.5 justify-center" title={row.remarks}>
-                                                <AlertCircle size={11} /> <span className="text-[8px]">{row.remarks}</span>
+                                                <AlertCircle size={11} /> <span className="fz-mini">{row.remarks}</span>
                                             </span>
                                         )}
                                     </td>
@@ -162,10 +162,10 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
 
             {/* ── Footer ── */}
             <div className="idl-footer bg-slate-50 border-t border-slate-200 px-4 py-1 flex items-center justify-between shrink-0">
-                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">
+                <span className="fz-mini font-bold text-slate-500 uppercase tracking-widest">
                     Import Demand | {importConfig.divisionRO}
                 </span>
-                <span className="text-[8px] font-bold text-slate-400">
+                <span className="fz-mini font-bold text-slate-400">
                     {importConfig.monthStr}-{importConfig.yearStr}
                 </span>
             </div>

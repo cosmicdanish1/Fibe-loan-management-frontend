@@ -5,7 +5,7 @@ import * as os from 'os';
 import * as https from 'https';
 import * as http from 'http';
 import { randomUUID } from 'crypto';
-import { initMainLogger } from './logger';
+import { initMainLogger, resolveLogDir } from './logger';
 
 // Dev vs packaged — use Electron's built-in flag instead of the external
 // `electron-is-dev` module (which isn't a production dep, so it's absent from
@@ -82,24 +82,50 @@ function readServerConfig(): ServerConfig | null {
     path.join(__dirname, '..', '..', SERVER_CONFIG_FILENAME),       // project root
   ];
 
+  // Collect addresses from EVERY config file found, not just the first one
+  // that happens to have a serverIP. Previously this returned on the first
+  // match, so an old userData file (e.g. a serverIP saved on a different
+  // network months ago) silently beat the install-folder file the installer
+  // writes and the technician edits — the app then talked to a dead address
+  // and ignored the address that actually worked. Everything found here is
+  // raced in resolveConfiguredOrigin(), so extra/stale entries are harmless:
+  // whichever address genuinely answers wins.
+  let primary: string | null = null;
+  const extras: string[] = [];
+
   for (const candidate of candidates) {
     try {
-      if (fs.existsSync(candidate)) {
-        const raw = fs.readFileSync(candidate, 'utf-8');
-        const parsed = JSON.parse(raw);
-        // Empty serverIP ("") is the "not configured yet" sentinel written by
-        // the installer — falsy, so this correctly falls through to null and
-        // the app shows the first-launch Setup screen.
-        if (parsed?.serverIP && typeof parsed.serverIP === 'string') {
-          const serverIPs = Array.isArray(parsed.serverIPs)
-            ? parsed.serverIPs.filter((ip: unknown): ip is string => typeof ip === 'string' && ip.trim() !== '')
-            : undefined;
-          return { serverIP: parsed.serverIP, serverIPs };
+      if (!fs.existsSync(candidate)) continue;
+      const parsed = JSON.parse(fs.readFileSync(candidate, 'utf-8'));
+
+      // Empty serverIP ("") is the "not configured yet" sentinel written by
+      // the installer, so it is skipped rather than treated as an address.
+      if (parsed?.serverIP && typeof parsed.serverIP === 'string' && parsed.serverIP.trim()) {
+        const ip = parsed.serverIP.trim();
+        // First file wins as primary — INSTALL_CONFIG_PATH is listed first and
+        // is the authoritative one the installer creates.
+        if (!primary) primary = ip; else extras.push(ip);
+      }
+
+      if (Array.isArray(parsed?.serverIPs)) {
+        for (const ip of parsed.serverIPs) {
+          if (typeof ip === 'string' && ip.trim()) extras.push(ip.trim());
         }
       }
-    } catch { /* try next */ }
+    } catch { /* unreadable or bad JSON — try next */ }
   }
-  return null;
+
+  if (!primary) {
+    // No address anywhere. If some file listed only serverIPs, still use those
+    // rather than declaring the app unconfigured.
+    if (extras.length === 0) return null;
+    primary = extras.shift() as string;
+  }
+
+  const serverIPs = Array.from(new Set(extras.filter((ip) => ip !== primary)));
+  // Built conditionally: exactOptionalPropertyTypes forbids assigning an
+  // explicit `undefined` to an optional property.
+  return serverIPs.length ? { serverIP: primary, serverIPs } : { serverIP: primary };
 }
 
 /** Probe one address: does it answer on :3001? Resolves the address back so
@@ -135,20 +161,29 @@ function raceServerIPs(ips: string[], timeoutMs = 2500): Promise<string | null> 
 /**
  * Turns a saved config into a live backend origin. Tries serverIP AND every
  * entry in serverIPs at once — LAN + WiFi, a second NIC on the server,
- * whatever's listed — and uses whichever answers first. If none answer right
- * now, still returns the primary serverIP so the app attempts a real
- * connection (and shows a normal network error) instead of silently
- * pretending to be unconfigured.
+ * whatever's listed — and uses whichever answers first.
+ *
+ * localhost is ALWAYS part of the race. On the server PC the backend is on
+ * this machine, so localhost is the correct answer, but it used to be
+ * unreachable as an option: any saved serverIP short-circuited the localhost
+ * path entirely. A stale IP left over from an earlier setup (or a laptop that
+ * moved networks) then pinned the app to an address that no longer answers,
+ * and every request timed out even though the backend was running locally.
+ *
+ * If nothing answers we fall back to localhost rather than a known-dead
+ * configured IP — on the server PC that recovers by itself, and on a client PC
+ * it fails fast with a normal connection error instead of a 2.5 s timeout.
  */
+const LOCAL_ORIGIN = 'localhost';
+
 async function resolveConfiguredOrigin(cfg: ServerConfig): Promise<string> {
   const candidates = Array.from(new Set(
-    [cfg.serverIP, ...(cfg.serverIPs ?? [])]
+    [cfg.serverIP, ...(cfg.serverIPs ?? []), LOCAL_ORIGIN]
       .map((ip) => (ip || '').trim())
       .filter(Boolean)
   ));
-  if (candidates.length === 0) return `http://${cfg.serverIP}:3001`;
   const working = await raceServerIPs(candidates);
-  return `http://${working ?? candidates[0]}:3001`;
+  return `http://${working ?? LOCAL_ORIGIN}:3001`;
 }
 
 /**
@@ -1794,7 +1829,8 @@ ipcMain.on('update-license-cache', (_event, data) => {
 // Receive renderer logs via IPC and write to renderer.log file
 ipcMain.on('renderer-logs', (_event, entries) => {
   if (!Array.isArray(entries)) return;
-  const logDir = path.join(app.getPath('userData'), 'logs');
+  // Same folder as main.log — see resolveLogDir() in logger.ts for why.
+  const logDir = resolveLogDir();
   try { if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true }); } catch { /* ok */ }
   const logFile = path.join(logDir, 'renderer.log');
   const lines = entries

@@ -171,7 +171,7 @@ const PassbookParameterSetting: React.FC = () => {
             <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/30"><Book size={18} className="text-white" /></div>
             <div>
               <h1 className="text-sm font-black text-white uppercase">Passbook Parameter Setting</h1>
-              <p className="text-[10px] text-slate-400 mt-0.5">Configure passbook layout, page settings and field positions</p>
+              <p className="fz-small text-slate-400 mt-0.5">Configure passbook layout, page settings and field positions</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
