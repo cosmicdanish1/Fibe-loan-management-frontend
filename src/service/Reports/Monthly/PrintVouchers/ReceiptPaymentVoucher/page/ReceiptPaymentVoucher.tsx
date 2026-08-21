@@ -147,7 +147,7 @@ const ReceiptPaymentVoucher: React.FC = () => {
     <ConfigProvider theme={{ algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 12 } }}>
     <div className={`h-screen flex flex-col ${bg} font-sans overflow-hidden`}>
       {/* Header */}
-      <div className={`${panel} backdrop-blur-sm border-b px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0`}>
+      <div className={`${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'} backdrop-blur-sm border-b px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0`}>
         <div className="flex items-center gap-2.5">
           <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-2 rounded-xl text-white shadow-md">
             <Wallet size={16} />
@@ -328,12 +328,12 @@ const ReceiptPaymentVoucher: React.FC = () => {
                         <span className="font-bold text-pink-500 w-24">Narration</span>
                         <span className={`font-semibold ${isDark ? 'text-rose-400' : 'text-red-700'}`}>{narration || 'N/A'}</span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-pink-500 w-24">Cheque No</span>
+                        <span className={`font-semibold ${text}`}>{chequeNo || '-'}</span>
+                      </div>
                       {chequeNo && (
                         <>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-pink-500 w-24">Cheque No</span>
-                            <span className={`font-semibold ${text}`}>{chequeNo}</span>
-                          </div>
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-pink-500 w-24">Bank</span>
                             <span className={`font-semibold ${isDark ? 'text-rose-400' : 'text-red-700'} uppercase`}>{bank}</span>

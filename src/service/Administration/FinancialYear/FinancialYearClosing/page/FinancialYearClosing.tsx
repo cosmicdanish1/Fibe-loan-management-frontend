@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calendar, Building2, ShieldCheck, CalendarRange,
-  Clock, ArrowDown, Lock, X, AlertTriangle, CheckCircle2,
+  Clock, ArrowDown, Lock, X, AlertTriangle, CheckCircle2, Plus,
 } from 'lucide-react';
 import { ConfigProvider } from 'antd';
 import { apiService } from '../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 interface FYState {
   startDate: string;
@@ -47,10 +48,17 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
   const [isLoading, setIsLoading] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [noYearFound, setNoYearFound] = useState(false);
+
+  // Genesis create-year form — shown when yearend has no rows at all
+  const [newStart, setNewStart] = useState('');
+  const [newEnd, setNewEnd] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
   const fetchCurrentYear = async () => {
     setIsLoading(true);
     setLoadError(null);
+    setNoYearFound(false);
     try {
       const response = await apiService.getCurrentFinancialYear();
       if (response.success && response.data) {
@@ -63,6 +71,7 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
         });
       } else {
         setLoadError('No active financial year found.');
+        setNoYearFound(true);
       }
     } catch {
       setLoadError('Unable to connect to server. Please retry.');
@@ -72,6 +81,33 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
   };
 
   useEffect(() => { fetchCurrentYear(); }, []);
+
+  const handleCreateYear = async () => {
+    if (!newStart || !newEnd) {
+      await showDialog('warning', 'Required', 'Please enter both a start date and an end date.', '');
+      return;
+    }
+    if (newStart >= newEnd) {
+      await showDialog('warning', 'Invalid Range', 'Start date must be before end date.', '');
+      return;
+    }
+    setIsCreating(true);
+    try {
+      const response = await apiService.createFinancialYear(newStart, newEnd);
+      if (response.success) {
+        await showDialog('info', 'Financial Year Created', 'The financial year has been created.', `Period: ${newStart} → ${newEnd}`);
+        setNewStart('');
+        setNewEnd('');
+        await fetchCurrentYear();
+      } else {
+        await showDialog('error', 'Create Failed', response.error || 'Failed to create financial year.', '');
+      }
+    } catch (err: any) {
+      await showDialog('error', 'System Error', 'Unable to create financial year.', err?.message || 'Check server connection.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const handleCloseYear = async () => {
     if (!fy.yearCode) {
@@ -123,6 +159,12 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
       setIsClosing(false);
     }
   };
+
+  usePageToolbarActions({
+    onSave: handleCloseYear,
+    saveLabel: isClosing ? 'Closing...' : fy.isAlreadyClosed ? 'Year Already Closed' : 'Close Financial Year',
+    saveEnabled: !(isLoading || fy.isAlreadyClosed || isClosing || !fy.yearCode),
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#f59e0b', borderRadius: 8 } }}>
@@ -190,7 +232,7 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
             )}
 
             {/* Load error */}
-            {!isLoading && loadError && (
+            {!isLoading && loadError && !noYearFound && (
               <div className="fyc-error-box bg-red-50 border-2 border-red-100 rounded-xl p-4 flex flex-col items-center gap-2 text-center">
                 <AlertTriangle size={20} className="text-red-400" />
                 <p className="fyc-error-text fz-caption font-bold text-red-700">{loadError}</p>
@@ -198,6 +240,43 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
                   className="mt-1 px-3 h-6 bg-red-100 hover:bg-red-200 text-red-700 rounded fz-caption font-black transition-all">
                   Retry
                 </button>
+              </div>
+            )}
+
+            {/* No financial year exists yet — genesis create form */}
+            {!isLoading && noYearFound && (
+              <div className="fyc-card bg-white border-2 border-amber-200 rounded-xl shadow-md overflow-hidden">
+                <div className="bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-2">
+                  <h2 className="fz-caption font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Plus size={10} className="text-amber-100" />
+                    No Financial Year Set Up Yet
+                  </h2>
+                </div>
+                <div className="p-3 space-y-2">
+                  <p className="fz-caption text-slate-500 font-semibold leading-snug">
+                    No financial year exists yet. Create the first one to begin using Transfer Entries and Financial Year Closing.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-0.5">
+                      <label className="fyc-date-label fz-caption font-black text-slate-600 uppercase tracking-tight">Start Date</label>
+                      <input type="date" value={newStart} onChange={e => setNewStart(e.target.value)}
+                        disabled={isCreating}
+                        className="w-full h-8 bg-amber-50 border-2 border-amber-200 rounded-lg px-2 fz-caption font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-60" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="fyc-date-label fz-caption font-black text-slate-600 uppercase tracking-tight">End Date</label>
+                      <input type="date" value={newEnd} onChange={e => setNewEnd(e.target.value)}
+                        disabled={isCreating}
+                        className="w-full h-8 bg-amber-50 border-2 border-amber-200 rounded-lg px-2 fz-caption font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-60" />
+                    </div>
+                  </div>
+                  <button onClick={handleCreateYear} disabled={isCreating || !newStart || !newEnd}
+                    className="w-full h-8 bg-amber-500 hover:bg-amber-400 disabled:bg-slate-300 disabled:text-slate-400 text-white font-black rounded-lg fz-caption shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:cursor-not-allowed">
+                    {isCreating
+                      ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /><span className="uppercase tracking-wider">Creating...</span></>
+                      : <><Plus size={12} /><span className="uppercase tracking-wider">Create Financial Year</span></>}
+                  </button>
+                </div>
               </div>
             )}
 

@@ -6,6 +6,7 @@ import LoanAgainstDepositTab from '../components/tabs/LoanAgainstDepositTab';
 import { useLoanApplication } from '../hooks';
 import type { LoanDetails, NomineeDetail, FDRDetail } from '../types';
 import { API_ROUTES, API_BASE_URL, getApiBaseUrl } from '../../../../../services/apiVersionConfig';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 interface LoanEligibilityStatus {
   isEligible: boolean;
@@ -50,7 +51,11 @@ const LoanApplication: React.FC = () => {
     const amount = parseFloat(state.loanDetails.loanAmount) || 0;
     const memberNo = state.loanDetails.memberNo;
 
-    if (!memberNo || amount <= 500000) {
+    // BUG FIX 40 (frontend half — backend's loan-eligibility.service.ts fixed the same
+    // boundary): was `<= 500000`, so a loan of exactly ₹5,00,000 never even fired this check —
+    // no badge shown, Save stayed enabled, and the rejection would only surface late, from the
+    // backend, after the user already tried to save.
+    if (!memberNo || amount < 500000) {
       setEligibilityStatus(null);
       setIsCheckingEligibility(false);
       return;
@@ -695,6 +700,14 @@ const LoanApplication: React.FC = () => {
         return null;
     }
   };
+
+  // Legacy parity: mirrors this screen's own Save button (label + disabled
+  // state) in the global toolbar, same handler either way.
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: isSaving ? 'Saving...' : isCheckingEligibility ? 'Checking Eligibility...' : 'Save',
+    saveEnabled: !isSaving && !isCheckingEligibility && !(eligibilityStatus != null && !eligibilityStatus.isEligible),
+  });
 
   return (
     <div className="loan-app h-screen flex flex-col bg-white">

@@ -175,6 +175,9 @@ const AdHocReports: React.FC = () => {
 
   return (
     <div className="h-screen bg-slate-50 font-sans p-4 overflow-hidden flex flex-col">
+      <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+        <h1 className="fz-caption font-black text-white tracking-tight uppercase">ADHOC REPORTING ENGINE</h1>
+      </div>
       <div className="max-w-[1400px] mx-auto w-full flex-1 flex flex-col gap-4 overflow-hidden">
 
         {/* Header Section */}

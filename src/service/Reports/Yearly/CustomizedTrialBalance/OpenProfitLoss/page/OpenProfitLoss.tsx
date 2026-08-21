@@ -216,7 +216,7 @@ const OpenProfitLoss: React.FC = () => {
         `}</style>
 
         {/* Header */}
-        <div className={`px-5 py-3 flex items-center justify-between z-20 shadow-sm shrink-0 no-print border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className={`px-5 py-3 flex items-center justify-between z-20 shadow-sm shrink-0 no-print border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100 ring-4 ring-indigo-50">
               <TrendingUp className="text-white" size={20} />

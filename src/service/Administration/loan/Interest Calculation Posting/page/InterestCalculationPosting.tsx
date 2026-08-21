@@ -10,6 +10,7 @@ import DataTable from '../components/DataTable';
 import dayjs from 'dayjs';
 import { useInterestCalculation } from '../hooks/useInterestCalculation';
 import { interestCalculationOptions, accountTypeOptions } from '../constants/options';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const InterestCalculationPosting: React.FC = () => {
   const {
@@ -28,6 +29,12 @@ const InterestCalculationPosting: React.FC = () => {
 
   const isYearly = formData.calcInterestFor === 'yearly_fund_process';
   const isSpecific = formData.calcInterestFor === 'specific_member';
+
+  usePageToolbarActions({
+    onSave: handlePost,
+    saveLabel: 'Post Transaction',
+    saveEnabled: !(memberRecords.length === 0 || isLoading),
+  });
 
   return (
     <div className="int-calc h-screen flex flex-col bg-slate-50 font-sans selection:bg-indigo-100 overflow-hidden">

@@ -7,6 +7,7 @@ import {
     Search, Users, Building2, Calendar, Hash, IndianRupee, Plus, Trash2,
 } from 'lucide-react';
 import { FixedDepositHookReturn } from '../interface/FixedDepositReceiptInterfaces';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
@@ -75,6 +76,12 @@ const FixedDepositForm: React.FC<FixedDepositHookReturn> = ({
             render: (_: any, r: any) => <button onClick={() => removeNominee(r.key)} className="p-0.5 text-rose-400 hover:text-white hover:bg-rose-500 rounded transition-all"><Trash2 size={11} /></button>,
         },
     ];
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: isLoading ? 'Saving…' : 'Save',
+        saveEnabled: !isLoading,
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

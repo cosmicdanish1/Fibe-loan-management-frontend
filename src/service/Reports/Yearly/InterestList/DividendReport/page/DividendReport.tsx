@@ -230,8 +230,12 @@ const DividendReport: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-        
+      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+          <h1 className="fz-caption font-black text-white tracking-tight uppercase">5.3.1 Dividend Report</h1>
+        </div>
+        <div className="flex-1 flex overflow-hidden">
+
         {/* Compact Sidebar */}
         <div className={`w-80 flex flex-col shrink-0 border-r ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           {/* Header */}
@@ -524,6 +528,7 @@ const DividendReport: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
         </div>
       </div>
 

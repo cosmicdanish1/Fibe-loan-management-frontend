@@ -10,6 +10,7 @@ export interface DayendData {
     receiptVouchers?: number;
     journalVouchers?: number;
     dayendFlag?: string;
+    noWorkingDateSet?: boolean;
   }
   
   export interface DayendDisplayProps {
@@ -37,4 +38,6 @@ export interface DayendData {
     refreshData: () => Promise<void>;
     formatAmount: (amount: number) => string;
     formatDate: (date: string) => string;
+    initializeWorkingDate: (workingDate: string) => Promise<void>;
+    isInitializing: boolean;
   }

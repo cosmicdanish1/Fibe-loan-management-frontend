@@ -4,7 +4,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { apiService } from '../../../../../services/api';
 import {
     ChangeMemberOfficeFormData,
-    ChangeMemberOfficeHookReturn
+    ChangeMemberOfficeHookReturn,
+    OfficeOption
 } from '../interface/ChangeMemberOfficeInterfaces';
 
 // BUG FIX: removed 'message' from antd — silently fails in Electron renderer windows.
@@ -52,6 +53,23 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
     });
 
     const [isProcessing, setIsProcessing] = useState(false);
+    // BUG FIX: "New Branch" was a hardcoded 5-item fake list (BR-001..BR-005)
+    // that didn't match any real office_master code — confirmed the backend's
+    // real offices use plain integer codes (e.g. 1, 2). Loaded from the same
+    // /admin/offices endpoint already used (and tested) by Wing/Office Master.
+    const [offices, setOffices] = useState<OfficeOption[]>([]);
+
+    useEffect(() => {
+        apiService.getOffices()
+            .then(response => {
+                const raw = Array.isArray(response.data) ? response.data : [];
+                setOffices(raw.map((o: any) => ({
+                    officeId: String(o.officeId ?? o.officeno ?? ''),
+                    officeName: o.officeName || o.office_name || `Office ${o.officeId}`,
+                })));
+            })
+            .catch(err => console.error('[ChangeMemberOffice] Failed to load offices:', err));
+    }, []);
 
     const updateField = useCallback((field: keyof ChangeMemberOfficeFormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -168,5 +186,6 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
         handleCancel,
         handleExit,
         isProcessing,
+        offices,
     };
 };

@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { ReceiptHookReturn, ReceiptRow } from '../interfaces/ReceiptInterfaces';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { apiService } from '../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -131,6 +132,12 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
     ];
 
     const isGeneral = formData.receiptType === 'general';
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: isLoading ? 'Saving…' : 'Save',
+        saveEnabled: !isLoading,
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

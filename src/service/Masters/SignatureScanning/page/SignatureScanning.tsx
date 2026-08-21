@@ -18,6 +18,7 @@ import {
 import { useSignatureScanning } from '../hook/useSignatureScanning';
 import MemberLookupInput from '../../../../components/shared/MemberLookup/MemberLookupInput';
 import type { MemberLookupData } from '../../../../components/shared/MemberLookup/MemberLookupInput';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 type SigMode = 'draw' | 'upload';
 
@@ -200,6 +201,12 @@ const SignatureScanning: React.FC = () => {
       window.electron.ipcRenderer.send('window-close');
     }
   };
+
+  usePageToolbarActions({
+    onSave: saveDrawing,
+    saveLabel: data.loading ? 'Saving…' : 'Save Signature',
+    saveEnabled: !(!hasDrawing || !data.memberId || data.loading),
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 8 } }}>

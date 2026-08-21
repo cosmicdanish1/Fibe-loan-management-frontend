@@ -8,6 +8,11 @@ export interface ChangeMemberOfficeFormData {
     newBranchNo: string;
 }
 
+export interface OfficeOption {
+    officeId: string;
+    officeName: string;
+}
+
 export interface ChangeMemberOfficeHookReturn {
     formData: ChangeMemberOfficeFormData;
     updateField: (field: keyof ChangeMemberOfficeFormData, value: any) => void;
@@ -15,4 +20,5 @@ export interface ChangeMemberOfficeHookReturn {
     handleCancel: () => void;
     handleExit: () => void;
     isProcessing: boolean;
+    offices: OfficeOption[];
 }

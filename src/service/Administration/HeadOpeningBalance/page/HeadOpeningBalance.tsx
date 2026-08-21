@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Loader2, Save, RefreshCw, GitBranch, CheckCircle2 } from 'lucide-react';
 import { message, Popconfirm } from 'antd';
 import apiService from '../../../../services/api';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const SOCIETY_NAME    = 'Espat Karmchari Co-Operative Credit Society Limited.';
 const SOCIETY_ADDRESS = 'Avenue A, Sahakari Sadan, Sector-6, AT Post:Bhilai Nagar, Dist:DURG-490006';
@@ -182,6 +183,12 @@ const HeadOpeningBalance: React.FC = () => {
 
   // Leaf row counter (reset per render)
   let leafCounter = 0;
+
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: 'Save',
+    saveEnabled: !(saving || !selectedYear),
+  });
 
   return (
     <div className="hob-page min-h-screen flex flex-col bg-white text-slate-800 font-sans text-sm">

@@ -3,6 +3,25 @@
 ;  Included via package.json → build.nsis.include
 ; ============================================================
 
+; ==================== RELEASE NOTES ============================
+; EDIT THIS BLOCK FOR EVERY NEW VERSION — nothing else does it for
+; you. Shown as the very first screen a user sees, before Next is
+; even clicked, so a stale entry here silently ships wrong changelog
+; text with a perfectly successful build (see deploy\HOW_TO_BUILD_INSTALLERS.md §3).
+;
+; NSIS string rules: newline is $\r$\n (not \n). A literal double
+; quote is $\". A literal dollar sign is $$.
+; ${VERSION} is set by electron-builder from package.json — no need
+; to hardcode it here.
+!define RELEASE_NOTES "- Separate login screen before the dashboard opens; you're now asked to log in again each time the app is closed and reopened.$\r$\n- New Settings: notifications, sound effects, density, corner radius, background, and font style.$\r$\n- All Exit buttons across the app now actually close their window.$\r$\n- Large batch of accuracy and stability fixes across Member Master, Loan, Savings/RD/FD, Day-End, Financial Year, vouchers, and ledger reports.$\r$\n- App and log files now live in the install folder (C:\Program Files\Fibe Loan Management\logs) instead of the hidden AppData folder, matching how the backend server stores its logs."
+; ================================================================
+
+!macro customWelcomePage
+  !define MUI_WELCOMEPAGE_TITLE "Fibe Loan Management ${VERSION}"
+  !define MUI_WELCOMEPAGE_TEXT "This will install Fibe Loan Management version ${VERSION} on your computer.$\r$\n$\r$\nWhat's new in this version:$\r$\n$\r$\n${RELEASE_NOTES}$\r$\n$\r$\nClick Next to continue."
+  !insertmacro MUI_PAGE_WELCOME
+!macroend
+
 !macro customInstall
   ; Create server-config.json right in the install folder so it is easy to
   ; find and edit, e.g.:

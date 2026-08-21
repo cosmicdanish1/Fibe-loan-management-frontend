@@ -4,6 +4,7 @@ import React from 'react';
 import { Select } from 'antd';
 import { BookOpenCheck, RotateCcw, X, Loader2, Send } from 'lucide-react';
 import { UpdationLedgerPostingHookReturn } from '../interface/UpdationLedgerPostingInterfaces';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -16,6 +17,12 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
     updateField, handleLoad, handlePosting, handleReset, handleExit,
 }) => {
     const totalsMatch = grandTotalSend > 0 && grandTotalSend === grandTotalReceived;
+
+    usePageToolbarActions({
+        onSave: handlePosting,
+        saveLabel: isPosting ? 'Posting...' : 'Post',
+        saveEnabled: !(isPosting || !totalsMatch),
+    });
 
     return (
         <div className="ulp-root h-screen flex flex-col bg-white font-sans text-slate-900 overflow-hidden">

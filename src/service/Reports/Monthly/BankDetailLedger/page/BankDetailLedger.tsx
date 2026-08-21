@@ -194,7 +194,7 @@ const BankDetailLedger: React.FC = () => {
     >
       <div className={`h-screen flex flex-col font-sans selection:bg-amber-200/60 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/40 to-orange-50/30'}`}>
         {/* Enhanced Header with Better Typography */}
-        <div className={`px-5 py-3 flex items-center justify-between z-10 shadow-lg shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
+        <div className={`px-5 py-3 flex items-center justify-between z-10 shadow-lg shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
           <div className="flex items-center gap-4">
             <div className="bg-gradient-to-br from-amber-600 via-amber-700 to-orange-700 p-2.5 rounded-xl text-white shadow-lg shadow-amber-600/30">
               <Landmark size={20} className="drop-shadow-sm" />

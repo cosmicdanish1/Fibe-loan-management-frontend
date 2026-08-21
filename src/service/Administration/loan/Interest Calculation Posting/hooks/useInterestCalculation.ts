@@ -26,8 +26,13 @@ export const useInterestCalculation = () => {
       try {
         const response = await fetch(`${await getApiBaseUrl()}/interest/current-rate`);
         if (response.ok) {
-          const data = await response.json();
-          if (data.rate) setFormData(prev => ({ ...prev, interestRate: data.rate }));
+          const body = await response.json();
+          // BUG FIX 53: every response is wrapped as {success, data, ...} by the
+          // global TransformInterceptor — this read body.rate directly, which was
+          // always undefined (the real value is body.data.rate), so the current
+          // rate never prefilled.
+          const rate = body?.data?.rate;
+          if (rate !== undefined) setFormData(prev => ({ ...prev, interestRate: rate }));
         }
       } catch (err) {
         console.error('Error fetching interest rate:', err);
@@ -107,7 +112,11 @@ export const useInterestCalculation = () => {
         throw new Error(err.message || 'Failed to fetch preview');
       }
 
-      const data = await response.json();
+      const body = await response.json();
+      // BUG FIX 53: same envelope-unwrap issue — data.memberCalculations was always
+      // undefined (real path is body.data.memberCalculations), so Preview always
+      // rendered "no eligible members" regardless of what the backend computed.
+      const data = body?.data ?? {};
       const records = mapResponseToRecords(data.memberCalculations ?? []);
       setMemberRecords(records);
 
@@ -148,7 +157,10 @@ export const useInterestCalculation = () => {
         throw new Error(err.message || 'Failed to post interest');
       }
 
-      const data = await response.json();
+      const body = await response.json();
+      // BUG FIX 53: same envelope-unwrap issue as above — real fields live under
+      // body.data, not body directly.
+      const data = body?.data ?? {};
       const postedAmt = Number(data.totalInterestAmount).toLocaleString('en-IN');
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({

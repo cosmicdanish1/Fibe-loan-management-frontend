@@ -1,15 +1,17 @@
 // page/BalanceTransfer.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X, Building2, IndianRupee, Calendar, CheckCircle,
   ShieldCheck, Send, RotateCcw, Database, Info,
-  ChevronRight, ShieldAlert, ArrowRight, Search,
+  ChevronRight, ShieldAlert, ArrowRight,
 } from 'lucide-react';
-import { ConfigProvider, DatePicker, Modal } from 'antd';
+import { ConfigProvider, DatePicker, Select } from 'antd';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
-import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+
+interface HeadOption { code: string; headName: string; }
 
 interface BalanceTransferProps {
   className?: string;
@@ -32,20 +34,6 @@ interface FormErrors {
   general?: string;
 }
 
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail = '',
-) => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}${detail ? '\n\n' + detail : ''}`);
-  }
-};
-
 const closeWindow = () => {
   const api = (window as any).electronAPI;
   if (api?.ipcRenderer?.send) api.ipcRenderer.send('window-close');
@@ -63,7 +51,22 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [lastTransfer, setLastTransfer] = useState<TransferData | null>(null);
-  const [lookupTarget, setLookupTarget] = useState<'from' | 'to' | null>(null);
+  const [headOptions, setHeadOptions] = useState<HeadOption[]>([]);
+  const [loadingHeads, setLoadingHeads] = useState(false);
+
+  useEffect(() => {
+    const loadHeads = async () => {
+      setLoadingHeads(true);
+      try {
+        const res = await apiService.getHeadMasters();
+        if (res.success && Array.isArray(res.data)) {
+          setHeadOptions(res.data as HeadOption[]);
+        }
+      } catch { /* silent — user can still type isn't possible with a Select, but avoid a hard crash */ }
+      finally { setLoadingHeads(false); }
+    };
+    loadHeads();
+  }, []);
 
   const updateField = (field: keyof TransferData, value: string) => {
     setTransferData(prev => ({ ...prev, [field]: value }));
@@ -147,6 +150,12 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
     setLastTransfer(null);
     handleReset();
   };
+
+  usePageToolbarActions({
+    onSave: handleTransfer,
+    saveLabel: 'Process',
+    saveEnabled: !(!isFormValid() || isLoading),
+  });
 
   // ── Success Screen ──
   if (showSuccess && lastTransfer) {
@@ -334,34 +343,48 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
 
                       {/* From Account */}
                       <div className="space-y-0.5">
-                        <label className="bt-input-label fz-caption font-black text-slate-400 uppercase tracking-widest">From Account</label>
+                        <label className="bt-input-label fz-caption font-black text-slate-400 uppercase tracking-widest">From Account (GL Head)</label>
                         <div className="relative">
-                          <Database size={9} className="bt-input-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300" />
-                          <input type="text" value={transferData.fromAccount}
-                            onChange={e => updateField('fromAccount', e.target.value)}
-                            className={`bt-input w-full h-6 bg-slate-50 border-2 border-slate-200 rounded-lg pl-6 pr-6 fz-caption font-bold text-slate-700 outline-none transition-all focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-300 ${errors.fromAccount ? 'border-rose-400' : ''}`}
-                            placeholder="Source account" />
-                          <button type="button" onClick={() => setLookupTarget('from')}
-                            className="bt-search-btn absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-emerald-600 transition-colors">
-                            <Search size={10} />
-                          </button>
+                          <Database size={9} className="bt-input-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 z-10" />
+                          <Select
+                            value={transferData.fromAccount || undefined}
+                            onChange={(v) => updateField('fromAccount', v || '')}
+                            loading={loadingHeads}
+                            showSearch
+                            allowClear
+                            onClear={() => updateField('fromAccount', '')}
+                            placeholder="Search source GL head..."
+                            className={`bt-input w-full ${errors.fromAccount ? 'bt-input-error' : ''}`}
+                            style={{ width: '100%' }}
+                            filterOption={(input, option) =>
+                              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                            options={headOptions.map(h => ({ value: h.code, label: `${h.code} - ${h.headName}` }))}
+                          />
                         </div>
                         {errors.fromAccount && <p className="fz-caption font-bold text-rose-500 ml-0.5">{errors.fromAccount}</p>}
                       </div>
 
                       {/* To Account */}
                       <div className="space-y-0.5">
-                        <label className="bt-input-label fz-caption font-black text-slate-400 uppercase tracking-widest">To Account</label>
+                        <label className="bt-input-label fz-caption font-black text-slate-400 uppercase tracking-widest">To Account (GL Head)</label>
                         <div className="relative">
-                          <Database size={9} className="bt-input-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300" />
-                          <input type="text" value={transferData.toAccount}
-                            onChange={e => updateField('toAccount', e.target.value)}
-                            className={`bt-input w-full h-6 bg-slate-50 border-2 border-slate-200 rounded-lg pl-6 pr-6 fz-caption font-bold text-slate-700 outline-none transition-all focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-300 ${errors.toAccount ? 'border-rose-400' : ''}`}
-                            placeholder="Destination account" />
-                          <button type="button" onClick={() => setLookupTarget('to')}
-                            className="bt-search-btn absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-emerald-600 transition-colors">
-                            <Search size={10} />
-                          </button>
+                          <Database size={9} className="bt-input-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 z-10" />
+                          <Select
+                            value={transferData.toAccount || undefined}
+                            onChange={(v) => updateField('toAccount', v || '')}
+                            loading={loadingHeads}
+                            showSearch
+                            allowClear
+                            onClear={() => updateField('toAccount', '')}
+                            placeholder="Search destination GL head..."
+                            className={`bt-input w-full ${errors.toAccount ? 'bt-input-error' : ''}`}
+                            style={{ width: '100%' }}
+                            filterOption={(input, option) =>
+                              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                            options={headOptions.map(h => ({ value: h.code, label: `${h.code} - ${h.headName}` }))}
+                          />
                         </div>
                         {errors.toAccount && <p className="fz-caption font-bold text-rose-500 ml-0.5">{errors.toAccount}</p>}
                       </div>
@@ -445,21 +468,6 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
             <span className="bt-footer-text fz-caption font-bold text-slate-400 uppercase tracking-tight" style={{ fontSize: '9px' }}>Verified Protocol</span>
           </div>
         </div>
-
-        {/* ── Member Lookup Modal ── */}
-        <Modal open={!!lookupTarget} onCancel={() => setLookupTarget(null)}
-          footer={null} width={800} styles={{ body: { padding: 0 } }}
-          closable={false} centered>
-          <MemberLookup
-            isModal
-            onSelect={member => {
-              if (lookupTarget === 'from') updateField('fromAccount', member.memberNo);
-              else if (lookupTarget === 'to') updateField('toAccount', member.memberNo);
-              setLookupTarget(null);
-            }}
-            onClose={() => setLookupTarget(null)}
-          />
-        </Modal>
 
       </div>
     </ConfigProvider>

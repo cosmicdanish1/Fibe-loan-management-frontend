@@ -16,6 +16,7 @@ import OfficeMaster from '../components/OfficeMaster';
 import WingMaster from '../components/WingMaster';
 import { useOfficeMaster } from '../hook/useOfficeMaster';
 import { useWingMaster } from '../hook/useWingMaster';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const WingOfficeMaster: React.FC = () => {
   const [showWingMaster, setShowWingMaster] = useState(false);
@@ -43,6 +44,11 @@ const WingOfficeMaster: React.FC = () => {
       officeProps.reset();
     }
   };
+
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: 'Save',
+  });
 
   return (
     <ConfigProvider

@@ -6,6 +6,7 @@ import { ConfigProvider, Input, Select, DatePicker, Table, Checkbox, Modal } fro
 import { Landmark, User, Save, RotateCcw, Plus, Search, ShieldCheck, Building2, X, Hash } from 'lucide-react';
 import type { RDMasterHookReturn } from '../interfaces/interface';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -135,6 +136,11 @@ const RDMasterForm: React.FC<RDMasterFormProps> = ({
 
   const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
   const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
+
+  usePageToolbarActions({
+    onSave: save,
+    saveLabel: 'Save',
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

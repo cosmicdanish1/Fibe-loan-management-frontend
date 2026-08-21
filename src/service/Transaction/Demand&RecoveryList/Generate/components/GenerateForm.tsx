@@ -2,6 +2,7 @@ import React from 'react';
 import { ConfigProvider, Select } from 'antd';
 import { Building2, CalendarDays, RotateCcw, ServerCog, X, Zap } from 'lucide-react';
 import { GenerateHookReturn } from '../interface/GenerateInterfaces';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 
@@ -20,6 +21,11 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
     const divisionCode = divisions.find((d) => d.value === formData.divisionRO)?.code || '—';
     const fromCode = branches.find((d) => d.value === formData.from)?.code || '—';
     const toCode = branches.find((d) => d.value === formData.to)?.code || '—';
+
+    usePageToolbarActions({
+        onSave: generateDemand,
+        saveLabel: 'Generate',
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6, fontSize: 11 } }}>

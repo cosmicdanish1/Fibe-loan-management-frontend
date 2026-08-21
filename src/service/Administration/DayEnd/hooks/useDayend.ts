@@ -22,6 +22,7 @@ export const useDayend = (): UseDayendReturn => {
   const [dayendData, setDayendData] = useState<DayendData>(initialDayendData);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Format currency amount
@@ -82,6 +83,7 @@ export const useDayend = (): UseDayendReturn => {
         receiptVouchers: Number(raw.receiptVouchers ?? 0),
         journalVouchers: Number(raw.journalVouchers ?? 0),
         dayendFlag: raw.dayendFlag || 'N',
+        noWorkingDateSet: Boolean(raw.noWorkingDateSet),
       };
 
       return data;
@@ -106,6 +108,39 @@ export const useDayend = (): UseDayendReturn => {
       setIsLoading(false);
     }
   }, [fetchDayendData]);
+
+  // Create the genesis getworkingdate row — see backend DayEndService.initializeWorkingDate
+  const initializeWorkingDate = useCallback(async (workingDate: string): Promise<void> => {
+    setIsInitializing(true);
+    try {
+      const response = await fetch(`${await getApiBaseUrl()}/admin/day-end/initialize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workingDate }),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        let userMessage = 'Failed to initialize working date';
+        try { userMessage = JSON.parse(errorText).message || errorText; } catch { userMessage = errorText; }
+        throw new Error(userMessage);
+      }
+      await refreshData();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize working date';
+      setError(errorMessage);
+      if (window.electronAPI?.showMessageBox) {
+        await window.electronAPI.showMessageBox({
+          type: 'error',
+          title: 'Initialization Failed',
+          message: 'Could not set the initial working date',
+          detail: errorMessage,
+          buttons: ['OK'],
+        });
+      }
+    } finally {
+      setIsInitializing(false);
+    }
+  }, [refreshData]);
 
   // Poll for day-end process completion (non-blocking)
   const pollForCompletion = useCallback((processId: number): Promise<string> => {
@@ -242,6 +277,8 @@ export const useDayend = (): UseDayendReturn => {
     refreshData,
     formatAmount,
     formatDate,
+    initializeWorkingDate,
+    isInitializing,
   };
 };
 

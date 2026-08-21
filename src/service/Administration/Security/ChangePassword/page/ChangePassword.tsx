@@ -9,6 +9,7 @@ import {
 import { ConfigProvider } from 'antd';
 import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 import { useChangePassword } from '../hook/useChangePassword';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 interface ChangePasswordProps {
   className?: string;
@@ -120,6 +121,12 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
   const pwMatch = formData.confirmPassword
     ? formData.newPassword === formData.confirmPassword
     : null;
+
+  usePageToolbarActions({
+    onSave: handleSubmit,
+    saveLabel: isLoading ? 'Saving...' : 'Change',
+    saveEnabled: isFormReady && !isLoading,
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#4f46e5', borderRadius: 8 } }}>

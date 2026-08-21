@@ -32,14 +32,103 @@ function createEntry(level: LogLevel, message: string, data?: any): LogEntry {
   };
 }
 
+// Populated by installConsoleCapture() with the pristine console methods, so
+// writeToConsole prints through the untouched function instead of the patched
+// one below — otherwise every rendererLogger.* call would get buffered twice
+// (once here, once by the console interceptor it would otherwise trigger).
+const originalConsole: Partial<Record<'log' | 'warn' | 'error', (...args: any[]) => void>> = {};
+
 function writeToConsole(entry: LogEntry): void {
   const prefix = `[${entry.timestamp.slice(11, 23)}] [${entry.level}] [${entry.route}]`;
   const method = entry.level === 'error' ? 'error' : entry.level === 'warn' ? 'warn' : 'log';
+  const fn = originalConsole[method] || console[method];
   if (entry.data !== undefined) {
-    console[method](prefix, entry.message, entry.data);
+    fn(prefix, entry.message, entry.data);
   } else {
-    console[method](prefix, entry.message);
+    fn(prefix, entry.message);
   }
+}
+
+/** JSON.stringify that survives circular refs, DOM nodes, functions, and
+ *  Errors — console.log gets called with all of those across this codebase. */
+function safeSerialize(value: any): any {
+  const seen = new WeakSet();
+  const replacer = (_key: string, val: any) => {
+    if (val instanceof Error) return { name: val.name, message: val.message, stack: val.stack };
+    if (typeof val === 'function') return `[Function ${val.name || 'anonymous'}]`;
+    if (typeof Node !== 'undefined' && val instanceof Node) return `[DOMNode ${val.nodeName}]`;
+    if (typeof val === 'object' && val !== null) {
+      if (seen.has(val)) return '[Circular]';
+      seen.add(val);
+    }
+    return val;
+  };
+  try {
+    const json = JSON.stringify(value, replacer);
+    if (json === undefined) return String(value);
+    return json.length > 20000 ? json.slice(0, 20000) + '…[truncated]' : JSON.parse(json);
+  } catch {
+    try {
+      return String(value);
+    } catch {
+      return '[unserializable]';
+    }
+  }
+}
+
+function formatConsoleMessage(args: any[]): string {
+  return args
+    .map((a) => {
+      if (typeof a === 'string') return a;
+      if (a instanceof Error) return `${a.name}: ${a.message}`;
+      try {
+        return JSON.stringify(safeSerialize(a));
+      } catch {
+        return String(a);
+      }
+    })
+    .join(' ')
+    .slice(0, 4000);
+}
+
+const CONSOLE_LEVEL: Record<'log' | 'info' | 'debug' | 'warn' | 'error', LogLevel> = {
+  log: 'info',
+  info: 'info',
+  debug: 'debug',
+  warn: 'warn',
+  error: 'error',
+};
+let consoleCaptureInstalled = false;
+
+/** Patches window.console so every raw console.log/info/debug/warn/error call
+ *  anywhere in the app — not just calls through rendererLogger — gets shipped
+ *  the same way. Installed once; the original methods still run first, so
+ *  DevTools output is unchanged. */
+function installConsoleCapture(): void {
+  if (consoleCaptureInstalled || typeof window === 'undefined' || typeof console === 'undefined') return;
+  consoleCaptureInstalled = true;
+
+  (['log', 'info', 'debug', 'warn', 'error'] as const).forEach((method) => {
+    const original = console[method]?.bind(console);
+    if (!original) return;
+    if (method === 'log' || method === 'warn' || method === 'error') {
+      originalConsole[method] = original;
+    }
+
+    console[method] = (...args: any[]) => {
+      original(...args);
+      try {
+        const entry = createEntry(
+          CONSOLE_LEVEL[method],
+          formatConsoleMessage(args),
+          args.length > 0 ? args.map(safeSerialize) : undefined,
+        );
+        bufferForShipping(entry);
+      } catch {
+        /* logging must never break the app */
+      }
+    };
+  });
 }
 
 function bufferForShipping(entry: LogEntry): void {
@@ -71,7 +160,7 @@ async function flushLogs(): Promise<void> {
     // silently fail — logs already printed to console
   }
 
-  // Ship error/warn logs to backend server
+  // Ship every log level to the backend server
   try {
     const baseUrl = await getApiBaseUrl();
     fetch(`${baseUrl}/client-logs`, {
@@ -84,8 +173,9 @@ async function flushLogs(): Promise<void> {
   }
 }
 
-// Periodic flush
+// Periodic flush + capture every raw console.* call app-wide
 if (typeof window !== 'undefined') {
+  installConsoleCapture();
   setInterval(flushLogs, FLUSH_INTERVAL);
   window.addEventListener('beforeunload', () => flushLogs());
 }
@@ -94,11 +184,13 @@ export const rendererLogger = {
   debug(message: string, data?: any): void {
     const entry = createEntry('debug', message, data);
     writeToConsole(entry);
+    bufferForShipping(entry);
   },
 
   info(message: string, data?: any): void {
     const entry = createEntry('info', message, data);
     writeToConsole(entry);
+    bufferForShipping(entry);
   },
 
   warn(message: string, data?: any): void {
@@ -113,16 +205,23 @@ export const rendererLogger = {
     bufferForShipping(entry);
   },
 
-  apiCall(method: string, endpoint: string, status: number, duration: number, requestId?: string): void {
+  /** Every API call — request and response in full, not just failures. */
+  apiCall(
+    method: string,
+    endpoint: string,
+    status: number,
+    duration: number,
+    requestId?: string,
+    requestBody?: any,
+    responseBody?: any,
+  ): void {
     const entry = createEntry(
       status >= 400 ? 'error' : 'info',
       `API ${method} ${endpoint} → ${status} (${duration}ms)`,
-      { requestId },
+      { requestId, requestBody, responseBody },
     );
     writeToConsole(entry);
-    if (status >= 400) {
-      bufferForShipping(entry);
-    }
+    bufferForShipping(entry);
   },
 };
 

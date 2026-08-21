@@ -9,6 +9,7 @@ import {
 import dayjs from 'dayjs';
 import { LoanEntryHookReturn } from '../interface/LoanEntryInterfaces';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -71,6 +72,12 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
         else if (lookupTarget === 'g2') handleG2Select(no, d);
         setLookupTarget(null);
     };
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: isLoading ? 'Saving…' : 'Save',
+        saveEnabled: !(isLoading || isCheckingEligibility || (eligibilityStatus && !eligibilityStatus.isEligible)),
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

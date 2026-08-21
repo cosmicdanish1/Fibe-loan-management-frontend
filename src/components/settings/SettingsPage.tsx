@@ -352,10 +352,15 @@ const SettingsPage: React.FC = () => {
   // Dashboard customisation state
   const [widgetConfig, setWidgetConfig] = useState<{
     fyBanner: boolean; quickActions: boolean; noticeBoard: boolean; shortcuts: boolean;
+    activeMembers: boolean; sanctionedLoans: boolean; monthEndOutstanding: boolean; balanceDistribution: boolean;
   }>(() => {
+    const defaults = {
+      fyBanner: true, quickActions: true, noticeBoard: true, shortcuts: true,
+      activeMembers: true, sanctionedLoans: true, monthEndOutstanding: true, balanceDistribution: true,
+    };
     try {
-      return { fyBanner: true, quickActions: true, noticeBoard: true, shortcuts: true, ...JSON.parse(localStorage.getItem('lms-dashboard-widgets') || '{}') };
-    } catch { return { fyBanner: true, quickActions: true, noticeBoard: true, shortcuts: true }; }
+      return { ...defaults, ...JSON.parse(localStorage.getItem('lms-dashboard-widgets') || '{}') };
+    } catch { return defaults; }
   });
 
   const [bannerOpacity, setBannerOpacity] = useState<number>(() => {
@@ -966,6 +971,10 @@ const SettingsPage: React.FC = () => {
       { key: 'quickActions' as const, label: 'Quick Actions',     desc: 'Configurable one-click shortcut buttons', Icon: Zap },
       { key: 'noticeBoard'  as const, label: 'Notice Board',      desc: 'Admin notices & sticky notes',          Icon: Bell },
       { key: 'shortcuts'    as const, label: 'Keyboard Shortcuts',desc: 'Hotkey reference panel',                Icon: Command },
+      { key: 'activeMembers'        as const, label: 'Active Members',        desc: 'Current active member count',        Icon: Users },
+      { key: 'sanctionedLoans'      as const, label: 'Sanctioned Loans',      desc: 'Pending disbursal, by loan type',    Icon: Landmark },
+      { key: 'monthEndOutstanding'  as const, label: 'Loan Outstanding',      desc: 'This month’s regular vs emergency split', Icon: TrendingUp },
+      { key: 'balanceDistribution' as const, label: 'Balance Distribution', desc: 'Members grouped by net balance',     Icon: PiggyBank },
     ];
 
     const bannerBgAlpha = (bannerOpacity / 100).toFixed(2);
@@ -989,7 +998,7 @@ const SettingsPage: React.FC = () => {
               <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Choose which panels are visible on your dashboard</p>
             </div>
             <span className="ml-auto px-2 py-1 bg-indigo-50 text-indigo-600 fz-tiny font-black rounded-full uppercase tracking-widest">
-              {Object.values(widgetConfig).filter(Boolean).length} / 4 on
+              {Object.values(widgetConfig).filter(Boolean).length} / {WIDGET_DEFS.length} on
             </span>
           </div>
 

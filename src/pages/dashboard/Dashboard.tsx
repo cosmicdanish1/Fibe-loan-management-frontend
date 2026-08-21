@@ -8,29 +8,32 @@ import {
   Users, BookOpen, PiggyBank, ArrowDownLeft, Printer, Database,
   FileDown, Zap, Calendar, Plus, X, Bell,
   AlertTriangle, Info, CheckCircle, Command, LayoutGrid,
-  StickyNote, ImageIcon, EyeOff,
+  EyeOff, GripVertical,
   BookMarked, Building2, FilePen, Scale, Tag, Briefcase,
   FileText, ArrowLeftRight, Wallet, ArrowRightLeft, CreditCard, RotateCcw,
   Layers, CheckSquare, Receipt, ReceiptText, DollarSign, Landmark,
   PenLine, Moon, Calculator, TrendingUp, Star, Settings2, ListOrdered,
   ShieldCheck, Lock, Hash, BarChart2, Banknote, MessageSquare,
-  Award, Medal, type LucideIcon,
+  Award, Medal, FlagOff, type LucideIcon,
 } from 'lucide-react';
 import {
   ALL_QUICK_ACTION_DEFS, DEFAULT_ENABLED_QA_IDS,
   QA_STORAGE_KEY, QA_BROADCAST_CHANNEL,
 } from '../../config/quickActions.config';
+import {
+  ActiveMembersWidget, SanctionedLoansWidget,
+  MonthEndOutstandingWidget, MemberBalanceDistributionWidget,
+} from './AnalyticsWidgets';
+import apiService from '../../services/api';
 import dayjs from 'dayjs';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 interface Notice {
-  id: string;
+  id: number;
   title: string;
   message: string;
   type: 'info' | 'warning' | 'success';
-  noticeStyle: 'card' | 'sticky';
-  image?: string;
   postedAt: string;
   postedBy: string;
 }
@@ -40,13 +43,20 @@ interface WidgetConfig {
   quickActions: boolean;
   noticeBoard: boolean;
   shortcuts: boolean;
+  activeMembers: boolean;
+  sanctionedLoans: boolean;
+  monthEndOutstanding: boolean;
+  balanceDistribution: boolean;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const WIDGET_CONFIG_KEY = 'lms-dashboard-widgets';
 const BANNER_OPACITY_KEY = 'lms-fy-banner-opacity';
-const DEFAULT_WIDGETS: WidgetConfig = { fyBanner: true, quickActions: true, noticeBoard: true, shortcuts: true };
+const DEFAULT_WIDGETS: WidgetConfig = {
+  fyBanner: true, quickActions: true, noticeBoard: true, shortcuts: true,
+  activeMembers: true, sanctionedLoans: true, monthEndOutstanding: true, balanceDistribution: true,
+};
 
 const loadWidgetConfig = (): WidgetConfig => {
   try { return { ...DEFAULT_WIDGETS, ...JSON.parse(localStorage.getItem(WIDGET_CONFIG_KEY) || '{}') }; }
@@ -87,22 +97,6 @@ const getFYInfo = () => {
   };
 };
 
-const NOTICES_KEY = 'lms_dashboard_notices';
-// Base64 images live in localStorage (~5MB total budget), so cap the source
-// file to keep a few notices from blowing the quota.
-const MAX_IMAGE_BYTES = 1_000_000; // 1 MB
-
-const loadNotices = (): Notice[] => {
-  try { return JSON.parse(localStorage.getItem(NOTICES_KEY) || '[]'); }
-  catch { return []; }
-};
-// Returns false when the write fails (e.g. localStorage quota exceeded) so the
-// caller can warn the user instead of throwing out of a click handler.
-const saveNotices = (n: Notice[]): boolean => {
-  try { localStorage.setItem(NOTICES_KEY, JSON.stringify(n)); return true; }
-  catch { return false; }
-};
-
 const getCurrentUserName = (): string => {
   try {
     const u = JSON.parse(localStorage.getItem('user') || '{}');
@@ -118,7 +112,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   FileText, ArrowLeftRight, Wallet, ArrowRightLeft, CreditCard, RotateCcw,
   Layers, CheckSquare, Receipt, ReceiptText, DollarSign, Landmark,
   PenLine, Moon, Calculator, TrendingUp, Star, Settings2, ListOrdered,
-  ShieldCheck, Lock, Hash, BarChart2, Banknote, MessageSquare, Award, Medal,
+  ShieldCheck, Lock, Hash, BarChart2, Banknote, MessageSquare, Award, Medal, FlagOff,
 };
 
 // ─── Keyboard Shortcuts ──────────────────────────────────────────────────────
@@ -140,12 +134,6 @@ const NOTICE_STYLES = {
   info:    { border: 'border-indigo-400', bg: 'bg-indigo-50',  title: 'text-indigo-800',  body: 'text-indigo-600',  meta: 'text-indigo-400',  Icon: Info },
   warning: { border: 'border-amber-400',  bg: 'bg-amber-50',   title: 'text-amber-800',   body: 'text-amber-600',   meta: 'text-amber-400',   Icon: AlertTriangle },
   success: { border: 'border-emerald-400',bg: 'bg-emerald-50', title: 'text-emerald-800', body: 'text-emerald-600', meta: 'text-emerald-400', Icon: CheckCircle },
-};
-
-const STICKY_COLORS: Record<Notice['type'], string> = {
-  info:    'bg-yellow-100 border-yellow-300',
-  warning: 'bg-orange-100 border-orange-300',
-  success: 'bg-lime-100 border-lime-300',
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -197,30 +185,26 @@ const Dashboard: React.FC = () => {
     [enabledQaIds]
   );
 
-  // Notice board
-  const [notices, setNotices] = useState<Notice[]>(loadNotices);
+  // Notice board — shared across every PC via the backend, not localStorage.
+  const [notices, setNotices] = useState<Notice[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [form, setForm] = useState({
-    title: '', message: '', type: 'info' as Notice['type'],
-    noticeStyle: 'card' as 'card' | 'sticky', image: '',
-  });
-  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [form, setForm] = useState({ title: '', message: '', type: 'info' as Notice['type'] });
   // Ids currently animating out before removal — lets the delete fade play.
-  const [removingIds, setRemovingIds] = useState<string[]>([]);
+  const [removingIds, setRemovingIds] = useState<number[]>([]);
+  // Dragged notice id, tracked outside state so drag-over doesn't re-render.
+  const dragIdRef = useRef<number | null>(null);
 
-  const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_IMAGE_BYTES) {
-      message.warning('Image is too large — please pick one under 1 MB.');
-      e.target.value = ''; // allow re-selecting the same file after resizing
-      return;
+  const refreshNotices = useCallback(async () => {
+    const res = await apiService.getDashboardNotices();
+    if (res.success && Array.isArray(res.data)) {
+      setNotices(res.data.map((n: any) => ({
+        id: n.id, title: n.title, message: n.message, type: n.type,
+        postedAt: n.createdAt, postedBy: n.postedBy,
+      })));
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => setForm(p => ({ ...p, image: ev.target?.result as string || '' }));
-    reader.onerror = () => message.error('Could not read that image.');
-    reader.readAsDataURL(file);
   }, []);
+
+  useEffect(() => { refreshNotices(); }, [refreshNotices]);
 
   // Ctrl+N → New Member
   useEffect(() => {
@@ -231,42 +215,57 @@ const Dashboard: React.FC = () => {
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
-  const addNotice = useCallback(() => {
+  const addNotice = useCallback(async () => {
     if (!form.title.trim() || !form.message.trim()) return;
-    const updated: Notice[] = [{
-      id: Date.now().toString(),
+    const res = await apiService.createDashboardNotice({
       title: form.title.trim(), message: form.message.trim(),
-      type: form.type, noticeStyle: form.noticeStyle,
-      ...(form.image ? { image: form.image } : {}),
-      postedAt: new Date().toISOString(), postedBy: getCurrentUserName(),
-    }, ...notices];
-    // Persist first — if storage is full, warn and keep the form open so the
-    // user can drop the image / trim old notices instead of losing their input.
-    if (!saveNotices(updated)) {
-      message.error('Could not save — storage is full. Try removing the image or deleting old notices.');
+      type: form.type, postedBy: getCurrentUserName(),
+    });
+    if (!res.success) {
+      message.error('Could not post the notice — please try again.');
       return;
     }
-    setNotices(updated);
-    setForm({ title: '', message: '', type: 'info', noticeStyle: 'card', image: '' });
+    await refreshNotices();
+    setForm({ title: '', message: '', type: 'info' });
     setShowAddForm(false);
-  }, [form, notices]);
+  }, [form, refreshNotices]);
 
-  const deleteNotice = useCallback((id: string) => {
+  const deleteNotice = useCallback((id: number) => {
     // Play the fade-out, then commit the removal.
     setRemovingIds(prev => [...prev, id]);
-    setTimeout(() => {
-      setNotices(prev => {
-        const updated = prev.filter(n => n.id !== id);
-        saveNotices(updated);
-        return updated;
-      });
+    setTimeout(async () => {
+      const res = await apiService.deleteDashboardNotice(id);
+      if (res.success) {
+        setNotices(prev => prev.filter(n => n.id !== id));
+      } else {
+        message.error('Could not delete the notice — please try again.');
+      }
       setRemovingIds(prev => prev.filter(x => x !== id));
     }, 200);
   }, []);
 
   const closeForm = useCallback(() => {
     setShowAddForm(false);
-    setForm({ title: '', message: '', type: 'info', noticeStyle: 'card', image: '' });
+    setForm({ title: '', message: '', type: 'info' });
+  }, []);
+
+  // Drag-and-drop reorder — optimistic locally, persisted in the background
+  // so one user's reordering doesn't block on the network.
+  const handleNoticeDrop = useCallback((targetId: number) => {
+    const draggedId = dragIdRef.current;
+    dragIdRef.current = null;
+    if (draggedId === null || draggedId === targetId) return;
+    setNotices(prev => {
+      const list = [...prev];
+      const fromIdx = list.findIndex(n => n.id === draggedId);
+      const toIdx = list.findIndex(n => n.id === targetId);
+      if (fromIdx === -1 || toIdx === -1) return prev;
+      const [moved] = list.splice(fromIdx, 1);
+      if (!moved) return prev;
+      list.splice(toIdx, 0, moved);
+      apiService.reorderDashboardNotices(list.map(n => n.id)).catch(() => {});
+      return list;
+    });
   }, []);
 
   // Enter posts (Ctrl/⌘+Enter inside the textarea, where Enter is a newline);
@@ -435,28 +434,6 @@ const Dashboard: React.FC = () => {
                         <option value="success">Success</option>
                       </select>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="fz-micro font-black text-slate-400 uppercase tracking-wider shrink-0">Style:</span>
-                      <button onClick={() => setForm(p => ({ ...p, noticeStyle: 'card' }))}
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded text-[7.5px] font-black uppercase border transition-all ${form.noticeStyle === 'card' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200'}`}>
-                        <Info size={8} /> Card
-                      </button>
-                      <button onClick={() => setForm(p => ({ ...p, noticeStyle: 'sticky' }))}
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded text-[7.5px] font-black uppercase border transition-all ${form.noticeStyle === 'sticky' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-500 border-slate-200'}`}>
-                        <StickyNote size={8} /> Sticky
-                      </button>
-                      <button onClick={() => imageInputRef.current?.click()}
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded text-[7.5px] font-black uppercase border transition-all ml-auto ${form.image ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-500 border-slate-200'}`}>
-                        <ImageIcon size={8} /> {form.image ? 'Image ✓' : '+ Image'}
-                      </button>
-                      <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                      {form.image && (
-                        <button onClick={() => setForm(p => ({ ...p, image: '' }))} className="text-slate-400 hover:text-rose-500 transition-colors">
-                          <X size={10} />
-                        </button>
-                      )}
-                    </div>
-                    {form.image && <img src={form.image} alt="preview" className="h-10 rounded border border-slate-200 object-cover" />}
                     <textarea value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
                       placeholder="Notice message..." rows={2}
                       className="w-full px-2 py-1 fz-tiny bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400 resize-none" />
@@ -476,37 +453,24 @@ const Dashboard: React.FC = () => {
                       <p className="fz-tiny font-black uppercase tracking-wider">No notices posted yet</p>
                       <p className="fz-mini mt-1">Click "Add Notice" to post one</p>
                     </div>
-                  ) : notices.map((n, idx) => {
-                    if (n.noticeStyle === 'sticky') {
-                      const stickyBg = STICKY_COLORS[n.type];
-                      const tilt = idx % 2 === 0 ? 'rotate-[-1deg]' : 'rotate-[1deg]';
-                      return (
-                        <div key={n.id} className={`relative p-2.5 rounded shadow-md border-b-4 ${stickyBg} ${tilt} hover:rotate-0 transition-all duration-200 group ${removingIds.includes(n.id) ? 'opacity-0' : 'animate-[noticeIn_0.25s_ease-out]'}`} style={{ fontFamily: 'cursive, sans-serif' }}>
-                          <div className="flex items-start justify-between gap-1">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <StickyNote size={11} className="text-amber-600 shrink-0" />
-                              <span className="fz-small font-bold text-slate-800 truncate">{n.title}</span>
-                            </div>
-                            <button onClick={() => deleteNotice(n.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-rose-500 shrink-0"><X size={10} /></button>
-                          </div>
-                          <p className="fz-tiny text-slate-700 mt-1 leading-snug">{n.message}</p>
-                          {n.image && <img src={n.image} alt="" className="mt-1.5 w-full max-h-20 rounded object-cover" />}
-                          <p className="text-[7.5px] text-slate-500 mt-1.5 uppercase tracking-wide">{n.postedBy} · {dayjs(n.postedAt).format('D MMM, h:mm A')}</p>
-                        </div>
-                      );
-                    }
+                  ) : notices.map((n) => {
                     const s = NOTICE_STYLES[n.type];
                     return (
-                      <div key={n.id} className={`border-l-[3px] ${s.border} ${s.bg} rounded-r-lg p-2 relative group transition-all duration-200 ${removingIds.includes(n.id) ? 'opacity-0 -translate-y-1' : 'animate-[noticeIn_0.25s_ease-out]'}`}>
+                      <div key={n.id}
+                        draggable
+                        onDragStart={() => { dragIdRef.current = n.id; }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => handleNoticeDrop(n.id)}
+                        className={`border-l-[3px] ${s.border} ${s.bg} rounded-r-lg p-2 relative group transition-all duration-200 ${removingIds.includes(n.id) ? 'opacity-0 -translate-y-1' : 'animate-[noticeIn_0.25s_ease-out]'}`}>
                         <div className="flex items-start justify-between gap-1">
                           <div className="flex items-center gap-1.5 min-w-0">
+                            <GripVertical size={11} className="text-slate-300 cursor-grab shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                             <s.Icon size={11} className={s.title} />
                             <span className={`fz-small font-black ${s.title} truncate`}>{n.title}</span>
                           </div>
                           <button onClick={() => deleteNotice(n.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-rose-500 shrink-0"><X size={10} /></button>
                         </div>
                         <p className={`fz-tiny ${s.body} mt-0.5 leading-snug`}>{n.message}</p>
-                        {n.image && <img src={n.image} alt="" className="mt-1.5 w-full max-h-20 rounded object-cover" />}
                         <p className={`text-[7.5px] ${s.meta} mt-1 uppercase tracking-wide`}>{n.postedBy} · {dayjs(n.postedAt).format('D MMM, h:mm A')}</p>
                       </div>
                     );
@@ -541,6 +505,16 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Analytics widgets */}
+        {(widgets.activeMembers || widgets.sanctionedLoans || widgets.monthEndOutstanding || widgets.balanceDistribution) && (
+          <div className="grid grid-cols-2 gap-3">
+            {widgets.activeMembers && <ActiveMembersWidget />}
+            {widgets.sanctionedLoans && <SanctionedLoansWidget />}
+            {widgets.monthEndOutstanding && <MonthEndOutstandingWidget />}
+            {widgets.balanceDistribution && <MemberBalanceDistributionWidget />}
           </div>
         )}
 

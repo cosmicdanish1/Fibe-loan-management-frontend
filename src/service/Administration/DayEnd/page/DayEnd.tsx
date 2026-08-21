@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useDayend, useDayendCalculations } from '../hooks/useDayend';
 import type { DayendDisplayProps } from '../interface/dayend';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const MetricCard: React.FC<DayendDisplayProps & { icon: React.ReactNode }> = ({
   label,
@@ -54,12 +55,15 @@ const MetricCard: React.FC<DayendDisplayProps & { icon: React.ReactNode }> = ({
 };
 
 const DayEnd: React.FC = () => {
-  const { dayendData, isProcessing, isLoading, error, processDayend, refreshData } = useDayend();
+  const { dayendData, isProcessing, isLoading, error, processDayend, refreshData, initializeWorkingDate, isInitializing } = useDayend();
   const { isBalanced, difference } = useDayendCalculations(dayendData);
 
   // "Select Next Working Date" modal state
   const [showNextDateModal, setShowNextDateModal] = React.useState(false);
   const [nextWorkingDate, setNextWorkingDate] = React.useState('');
+
+  // Genesis "set initial working date" state — shown when getworkingdate has no rows yet
+  const [initDate, setInitDate] = React.useState(() => new Date().toISOString().split('T')[0] || '');
 
   const getDefaultNextDate = () => {
     const d = new Date(dayendData.date);
@@ -86,10 +90,53 @@ const DayEnd: React.FC = () => {
   const voucherSyncOk = !error && (dayendData.paymentVouchers ?? 0) >= 0 && (dayendData.receiptVouchers ?? 0) >= 0;
   const dateAlignmentOk = dayendData.dayendFlag === 'N';
 
+  usePageToolbarActions({
+    onSave: handleCloseDayClick,
+    saveLabel: isProcessing ? 'Closing...' : 'Close Day',
+    saveEnabled: !(!isBalanced || isProcessing || isLoading || dayendData.noWorkingDateSet),
+  });
+
   if (isLoading && !isProcessing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      </div>
+    );
+  }
+
+  // No working date exists yet (fresh install) — nothing else can create it,
+  // and Day-End would fail at its final step if run against this state.
+  if (dayendData.noWorkingDateSet) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full space-y-4 border-2 border-amber-200">
+          <div className="flex items-center gap-2 text-amber-600">
+            <Clock size={20} />
+            <h2 className="fz-body font-black uppercase tracking-tight">No Working Date Set</h2>
+          </div>
+          <p className="fz-small text-slate-600 leading-relaxed">
+            Day-End has never been initialized on this system. Choose the current business date to get started —
+            this only needs to be done once.
+          </p>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Current Working Date</label>
+            <input
+              type="date"
+              value={initDate}
+              onChange={(e) => setInitDate(e.target.value)}
+              className="w-full h-9 px-3 border-2 border-slate-200 rounded-lg text-sm font-semibold text-slate-800 outline-none focus:border-amber-500 transition-colors"
+            />
+          </div>
+          <button
+            onClick={() => initializeWorkingDate(initDate)}
+            disabled={isInitializing || !initDate}
+            className="w-full h-9 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg font-black text-sm uppercase tracking-wide transition-all flex items-center justify-center gap-1.5"
+          >
+            {isInitializing ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+            {isInitializing ? 'Initializing...' : 'Set Working Date'}
+          </button>
+          {error && <p className="text-xs text-rose-600 font-bold">{error}</p>}
+        </div>
       </div>
     );
   }

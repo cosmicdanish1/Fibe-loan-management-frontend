@@ -19,6 +19,11 @@ export interface ModifyShortRecoveryFormData {
     adjustmentReason: string;
 }
 
+export interface WingOption {
+    id: string;
+    name: string;
+}
+
 export interface ModifyShortRecoveryHookReturn {
     formData: ModifyShortRecoveryFormData;
     updateField: (field: keyof ModifyShortRecoveryFormData, value: any) => void;
@@ -28,4 +33,5 @@ export interface ModifyShortRecoveryHookReturn {
     handleSaveAdjustment: () => void;
     handleRefresh: () => void;
     handleExit: () => void;
+    wings: WingOption[];
 }

@@ -4,20 +4,24 @@ import {
   User,
   AlertCircle,
   CheckCircle,
-  RefreshCw,
-  X,
-  Search
+  RefreshCw
 } from 'lucide-react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, Select } from 'antd';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
-import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 
 interface MemberData {
   memberNo: string;
   name: string;
   basicPay: number;
   officeName: string;
+}
+
+interface RdHolder {
+  memberNo: string;
+  memberName: string;
+  accountNumber: string;
+  monthlyInstallment: string;
 }
 
 interface RDAccountData {
@@ -52,64 +56,46 @@ const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detai
 
 const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
 const inp = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
-const roInp = "h-7 fz-caption font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
 
 const PrematureInformationRD: React.FC = () => {
-  const [memberNo, setMemberNo] = useState('');
   const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
   const [rdAccounts, setRdAccounts] = useState<RDAccountData[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<RDAccountData | null>(null);
   const [calculationResult, setCalculationResult] = useState<PrematureCalculation | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showMemberLookup, setShowMemberLookup] = useState(false);
 
-  const handleMemberSelect = useCallback(async (member: any) => {
+  // BUG FIX 52: this used to be a free-text Member No. field that only told you
+  // "no accounts found" after typing a full member number — worse, it opened a
+  // generic member lookup with no RD scoping at all. Loading only members who
+  // actually have an active RD account up front makes the dropdown itself the
+  // filter, so there's nothing to guess.
+  const [rdHolders, setRdHolders] = useState<RdHolder[]>([]);
+  const [holdersLoading, setHoldersLoading] = useState(false);
+
+  useEffect(() => {
+    setHoldersLoading(true);
+    apiService.listRdAccountHolders()
+      .then((response: any) => {
+        const holders = response?.data?.data || response?.data || [];
+        setRdHolders(Array.isArray(holders) ? holders : []);
+      })
+      .catch(() => setRdHolders([]))
+      .finally(() => setHoldersLoading(false));
+  }, []);
+
+  const handleMemberSelect = useCallback(async (memberNo: string) => {
+    const holder = rdHolders.find(h => h.memberNo === memberNo);
+    if (!holder) return;
     const memberData: MemberData = {
-      memberNo: member.memberNo,
-      name: member.memberName || member.name,
-      basicPay: parseFloat(member.basicPay || '0'),
-      officeName: member.officeName || ''
+      memberNo: holder.memberNo,
+      name: holder.memberName,
+      basicPay: 0,
+      officeName: ''
     };
     setSelectedMember(memberData);
-    setMemberNo(member.memberNo);
-    setShowMemberLookup(false);
-    await fetchRDAccounts(member.memberNo);
-  }, []);
-
-  const handleMemberNumberChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
-    setMemberNo(value);
-    if (!value) resetData();
-  }, []);
-
-  const handleMemberNumberBlur = useCallback(async () => {
-    if (memberNo && !selectedMember) await validateMember(memberNo);
-  }, [memberNo, selectedMember]);
-
-  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && memberNo.trim()) validateMember(memberNo);
-  }, [memberNo]);
-
-  const validateMember = useCallback(async (memberNumber: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiService.validateMember(memberNumber);
-      if (response.success && response.data) {
-        const memberInfo = response.data.data || response.data;
-        if (memberInfo.exists) {
-          setSelectedMember({ memberNo: memberNumber, name: memberInfo.memberName || '', basicPay: parseFloat(memberInfo.basicPay || '0'), officeName: memberInfo.officeName || '' });
-          await fetchRDAccounts(memberNumber);
-        } else {
-          setError('Member not found. Please check the member number.');
-          resetData();
-          await showDialog('warning', 'Member Not Found', 'No member exists with that number.');
-        }
-      }
-    } catch { setError('Failed to validate member.'); }
-    finally { setLoading(false); }
-  }, []);
+    await fetchRDAccounts(holder.memberNo);
+  }, [rdHolders]);
 
   const fetchRDAccounts = useCallback(async (memberNumber: string) => {
     setLoading(true); setError(null);
@@ -168,15 +154,7 @@ const PrematureInformationRD: React.FC = () => {
     setCalculationResult(null); setError(null);
   }, []);
 
-  const resetForm = useCallback(() => { setMemberNo(''); resetData(); }, [resetData]);
-
-  useEffect(() => {
-    if (window.electronAPI) {
-      const handler = (_event: any, memberData: any) => handleMemberSelect(memberData);
-      window.electronAPI.ipcRenderer?.on('member-selected', handler);
-      return () => { window.electronAPI.ipcRenderer?.removeAllListeners('member-selected'); };
-    }
-  }, [handleMemberSelect]);
+  const resetForm = resetData;
 
   const formatCurrency = useMemo(() => (amount: number) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(amount)
@@ -225,19 +203,24 @@ const PrematureInformationRD: React.FC = () => {
               </div>
               <div className="p-2.5 space-y-2 flex-1">
                 <div>
-                  <label className={lbl}>Member No.</label>
-                  <div className="flex gap-1">
-                    <input
-                      type="text" value={memberNo} onChange={handleMemberNumberChange}
-                      onBlur={handleMemberNumberBlur} onKeyDown={handleKeyPress}
-                      placeholder="Member no..."
-                      className={`${inp} flex-1 px-2 border focus:outline-none focus:border-indigo-400`}
-                    />
-                    <button onClick={() => setShowMemberLookup(true)}
-                      className="h-7 w-7 bg-slate-100 hover:bg-indigo-600 hover:text-white rounded text-slate-500 flex items-center justify-center transition-colors shrink-0">
-                      <Search size={12} />
-                    </button>
-                  </div>
+                  <label className={lbl}>RD Account Holder</label>
+                  <Select
+                    showSearch
+                    value={selectedMember?.memberNo || undefined}
+                    onChange={handleMemberSelect}
+                    loading={holdersLoading}
+                    placeholder={holdersLoading ? 'Loading account holders...' : 'Search member no. or name...'}
+                    className="w-full"
+                    style={{ height: 28 }}
+                    filterOption={(input, option) =>
+                      (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    notFoundContent={holdersLoading ? 'Loading...' : 'No members with an active RD account'}
+                    options={rdHolders.map(h => ({
+                      value: h.memberNo,
+                      label: `${h.memberNo} — ${h.memberName} (₹${h.monthlyInstallment}/m)`,
+                    }))}
+                  />
                 </div>
                 {selectedMember && (
                   <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-2 space-y-1">
@@ -380,27 +363,6 @@ const PrematureInformationRD: React.FC = () => {
 
           </div>
         </div>
-
-        {/* Member Lookup Modal */}
-        {showMemberLookup && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl h-4/5 flex flex-col overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-4 py-3 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                  <User size={14} className="text-indigo-300" />
-                  <h2 className="fz-caption font-black text-white uppercase tracking-wider">Select Member</h2>
-                </div>
-                <button onClick={() => setShowMemberLookup(false)}
-                  className="w-7 h-7 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center justify-center transition-colors">
-                  <X size={14} />
-                </button>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowMemberLookup(false)} />
-              </div>
-            </div>
-          </div>
-        )}
 
       </div>
     </ConfigProvider>

@@ -1,6 +1,6 @@
 // hook/useLoanPayment.ts
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import {
     LoanPaymentData,
@@ -380,11 +380,24 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
         }
     };
 
+    // Holds the previous listener's own unsubscribe fn so re-opening the
+    // sanction window (e.g. for a different loan case) doesn't stack up
+    // stale listeners that never get removed.
+    const sanctionListenerCleanupRef = useRef<(() => void) | null>(null);
+
     const openSanctionWindow = useCallback(() => {
         if ((window as any).electronAPI) {
             (window as any).electronAPI.send('open-window', { route: '/loan-sanction' });
             if ((window as any).electronAPI.on) {
-                (window as any).electronAPI.on('loan-sanctioned', (data: any) => {
+                sanctionListenerCleanupRef.current?.();
+                // The shared IPC bridge always calls listeners as
+                // (event, ...args) — the actual payload is the SECOND
+                // argument, not the first. A single-argument callback here
+                // silently bound to the Electron event object instead of the
+                // sanctioned-loan data, so the loanCaseNo check below always
+                // failed and this never refreshed until the window was
+                // manually closed and reopened.
+                sanctionListenerCleanupRef.current = (window as any).electronAPI.on('loan-sanctioned', (_event: any, data: any) => {
                     if (data.loanCaseNo === formData.loanCaseNo) {
                         updateField('sanctionLoanAmount', data.sanctionedAmount);
                         showDialog('info', 'electron-react-ts', 'Loan Sanctioned', `Loan Case ${data.loanCaseNo} has been sanctioned for ₹${parseFloat(data.sanctionedAmount).toLocaleString('en-IN')}.`);

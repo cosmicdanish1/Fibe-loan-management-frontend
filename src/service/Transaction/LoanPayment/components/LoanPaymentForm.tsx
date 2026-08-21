@@ -7,6 +7,7 @@ import {
     Calendar, FileText, IndianRupee, Hash, CreditCard, Plus, Trash2,
 } from 'lucide-react';
 import { LoanPaymentHookReturn, PaymentEntry } from '../interface/LoanPaymentInterfaces';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -27,6 +28,11 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
     const installmentAmt = formData.sanctionLoanAmount
         ? (parseFloat(formData.sanctionLoanAmount) / (parseInt(formData.noOfInstallments) || 1)).toFixed(2)
         : '0.00';
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: 'Save',
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
@@ -249,11 +255,29 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                                 <Select showSearch value={entry.code || undefined}
                                                     onChange={val => updateVoucherEntry(index, 'code', val)}
                                                     className="w-full lp-tbl-sel" style={{ height: 22 }}
-                                                    placeholder="Code..." optionFilterProp="label" optionLabelProp="value"
+                                                    placeholder="Code..." optionLabelProp="value"
+                                                    /* Legacy's combo filters by "starts with", not "contains" —
+                                                       a plain substring match barely narrows anything since most
+                                                       names contain any given letter somewhere. */
+                                                    filterOption={(input, option) =>
+                                                        String(option?.value ?? '').toLowerCase().startsWith(input.toLowerCase())}
+                                                    popupMatchSelectWidth={false} dropdownStyle={{ minWidth: 280 }}
+                                                    listHeight={300} virtual
                                                     options={headList.map(h => ({ value: h.code, label: `${h.code} - ${h.name}` }))} />
                                             </td>
                                             <td className="py-0.5 px-1.5">
-                                                <span className="fz-small font-bold text-slate-600 truncate block" title={entry.name}>{entry.name || '—'}</span>
+                                                {/* Same underlying value as Code (the code) — head names aren't
+                                                    unique (e.g. two heads are both "Cash in Hand"), so the code
+                                                    stays canonical; this just searches/displays by name instead. */}
+                                                <Select showSearch value={entry.code || undefined}
+                                                    onChange={val => updateVoucherEntry(index, 'code', val)}
+                                                    className="w-full lp-tbl-sel" style={{ height: 22 }}
+                                                    placeholder="Name..." optionLabelProp="displayName"
+                                                    filterOption={(input, option) =>
+                                                        String((option as any)?.displayName ?? '').toLowerCase().startsWith(input.toLowerCase())}
+                                                    popupMatchSelectWidth={false} dropdownStyle={{ minWidth: 280 }}
+                                                    listHeight={300} virtual
+                                                    options={headList.map(h => ({ value: h.code, label: `${h.name} - ${h.code}`, displayName: h.name }))} />
                                             </td>
                                             <td className="py-0.5 px-1.5">
                                                 <Select value={entry.rp || undefined}

@@ -48,7 +48,7 @@ const DayBookSB: React.FC = () => {
 
   // Theme variables
   const bg        = isDark ? 'bg-[#0f172a]'                             : 'bg-slate-50';
-  const header    = isDark ? 'bg-slate-800 border-b border-slate-700'   : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
+  const header    = isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5' : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
   const panel     = isDark ? 'bg-slate-800 border border-slate-700'     : 'bg-white border border-slate-200';
   const panelHd   = isDark ? 'bg-slate-900/50 border-b border-slate-700': 'bg-slate-50 border-b border-slate-100';
   const panelHdTx = isDark ? 'text-slate-300'                           : 'text-slate-700';

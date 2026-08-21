@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { CastCategoryHookReturn } from '../interface/CastCategoryInterfaces';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
 const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
@@ -30,6 +31,11 @@ const CastCategoryForm: React.FC<CastCategoryHookReturn> = ({
 
     // Editing an existing row when the current code matches one already in the list; else it's a new entry.
     const isEditing = !!data.categoryCode && categories.some(c => c.categoryCode === data.categoryCode);
+
+    usePageToolbarActions({
+        onSave: save,
+        saveLabel: 'Save',
+    });
 
     const columns = [
         {

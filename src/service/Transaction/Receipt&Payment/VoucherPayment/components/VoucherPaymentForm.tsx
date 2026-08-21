@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { VoucherPaymentHookReturn, ReceiptRow } from '../interface/VoucherPaymentInterfaces';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { apiService } from '../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 interface HeadCode { code: string; name: string; }
 
@@ -109,6 +110,12 @@ const VoucherPaymentForm: React.FC<VoucherPaymentHookReturn> = ({
             ),
         },
     ];
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: isLoading ? 'Saving…' : 'Save',
+        saveEnabled: !isLoading,
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

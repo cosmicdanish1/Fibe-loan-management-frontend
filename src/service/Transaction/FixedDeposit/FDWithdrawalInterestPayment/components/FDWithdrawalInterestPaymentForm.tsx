@@ -7,6 +7,7 @@ import {
 import dayjs from 'dayjs';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { FDWithdrawalHookReturn } from '../interface/FDWithdrawalInterestPaymentInterfaces';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -83,6 +84,12 @@ const FDWithdrawalInterestPaymentForm: React.FC<FDWithdrawalHookReturn> = ({
             render: (v: number) => <span className="fz-small font-black text-emerald-600">₹{Number(v || 0).toFixed(2)}</span>,
         },
     ];
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: loading ? 'Saving…' : 'Save',
+        saveEnabled: !loading,
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

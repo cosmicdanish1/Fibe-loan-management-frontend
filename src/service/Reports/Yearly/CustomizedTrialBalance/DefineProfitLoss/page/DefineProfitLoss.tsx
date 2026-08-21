@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ConfigProvider, Input, Button, Table, Select, Spin, Checkbox, theme as antdTheme } from 'antd';
 import { apiService } from '../../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../../utils/pageToolbarActions';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 
@@ -247,6 +248,12 @@ const DefineProfitLoss: React.FC = () => {
     }
   ];
 
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: 'Save Definition',
+    saveEnabled: !saving,
+  });
+
   return (
     <ConfigProvider
       theme={{
@@ -264,7 +271,7 @@ const DefineProfitLoss: React.FC = () => {
         <Spin spinning={loading} tip="Loading definition..." size="large">
 
           {/* Header */}
-          <div className={`px-4 py-3 flex items-center justify-between z-20 shadow-sm shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className={`px-4 py-3 flex items-center justify-between z-20 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-3">
               <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100 ring-2 ring-indigo-50">
                 <Settings size={18} />

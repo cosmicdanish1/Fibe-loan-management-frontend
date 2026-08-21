@@ -214,6 +214,9 @@ const OpenPL: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col overflow-auto bg-[#f8fafc] p-6">
+      <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5 no-print">
+        <h1 className="fz-caption font-black text-white tracking-tight uppercase">Profit & Loss Account</h1>
+      </div>
       <style>{`
         @media print { 
           @page { size: portrait; margin: 10mm; }

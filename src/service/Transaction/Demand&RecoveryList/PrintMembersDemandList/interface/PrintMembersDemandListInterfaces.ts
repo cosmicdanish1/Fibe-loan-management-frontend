@@ -12,6 +12,16 @@ export interface DemandPrintFormData {
     printPrevBalance: boolean;
 }
 
+export interface DivisionOption {
+    id: string;
+    name: string;
+}
+
+export interface BranchOption {
+    officeId: string;
+    officeName: string;
+}
+
 export interface PrintMembersDemandListHookReturn {
     formData: DemandPrintFormData;
     updateField: (field: keyof DemandPrintFormData, value: any) => void;
@@ -19,4 +29,6 @@ export interface PrintMembersDemandListHookReturn {
     handleExport: () => void;
     handleReset: () => void;
     handleExit: () => void;
+    divisions: DivisionOption[];
+    branches: BranchOption[];
 }

@@ -99,13 +99,13 @@ const About: React.FC = () => {
     >
       <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 font-sans selection:bg-blue-100 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-white via-blue-50/20 to-white border-b border-blue-100/50 px-3 py-2 flex items-center justify-between z-10 shadow-sm shadow-blue-100/20 backdrop-blur-sm">
+        <div className="bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-3 py-2 flex items-center justify-between z-10 shadow-lg">
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-blue-600 via-sky-600 to-blue-700 p-1.5 rounded-lg text-white shadow-lg shadow-blue-300/50 ring-2 ring-blue-100">
               <Info size={16} />
             </div>
             <div>
-              <h1 className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-800 via-blue-900 to-slate-800 tracking-tight leading-none uppercase">About System</h1>
+              <h1 className="text-sm font-black text-white tracking-tight leading-none uppercase">About System</h1>
               <div className="flex items-center gap-1 mt-0.5 fz-body font-bold text-slate-400 uppercase tracking-widest leading-none">
                 <Zap size={9} className="text-blue-500" /> Loan Management System Information
               </div>

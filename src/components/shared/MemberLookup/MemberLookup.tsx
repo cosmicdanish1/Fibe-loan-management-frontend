@@ -28,8 +28,16 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const inputRef = useRef<any>(null);
+    // Tracks the in-flight request so a slower, stale response (e.g. from a
+    // search term the user already changed) can never overwrite a newer one.
+    const abortRef = useRef<AbortController | null>(null);
 
     const fetchMembers = useCallback(async (search: string = '') => {
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         setIsLoading(true);
         setError(null);
         try {
@@ -41,7 +49,7 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
             }
             url.searchParams.append('limit', '500');
 
-            const response = await fetch(url.toString());
+            const response = await fetch(url.toString(), { signal: controller.signal });
             if (response.ok) {
                 const result = await response.json();
                 const data = result.data || result || [];
@@ -53,12 +61,20 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
             } else {
                 throw new Error(`Server error: ${response.status}`);
             }
-        } catch (err) {
+        } catch (err: any) {
+            // Superseded by a newer search — not a real failure, stay quiet.
+            if (err?.name === 'AbortError' && abortRef.current !== controller) return;
+            if (err?.name === 'AbortError') {
+                setError('Request timed out. Please check your connection and try again.');
+                message.error('Request timed out');
+                return;
+            }
             console.error('Fetch error:', err);
             setError('Failed to load members. Please try again.');
             message.error('Failed to load members');
         } finally {
-            setIsLoading(false);
+            clearTimeout(timeoutId);
+            if (abortRef.current === controller) setIsLoading(false);
         }
     }, []);
 
@@ -68,6 +84,9 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
         setTimeout(() => {
             inputRef.current?.focus();
         }, 100);
+        return () => {
+            abortRef.current?.abort();
+        };
     }, [fetchMembers]);
 
     useEffect(() => {

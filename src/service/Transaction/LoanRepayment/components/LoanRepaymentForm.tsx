@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Modal } from 'antd';
+import { Search } from 'lucide-react';
 import type { useLoanRepayment } from '../hooks/useLoanRepayment';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
 
 type Props = ReturnType<typeof useLoanRepayment>;
 
@@ -18,22 +22,36 @@ const fmt = (n: number | string) =>
     Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const LoanRepaymentForm: React.FC<Props> = ({
-    form, activeLoans, repaymentHistory, loading, historyLoading,
+    form, activeLoans, dueStatus, dueStatusLoading, repaymentHistory, loading, historyLoading,
     message, updateForm, handleMemberLookup, handleLoanSelect, handleSubmit, handleReset,
 }) => {
     const selectedLoan = activeLoans.find(l => l.loancaseno === form.selectedLoanCase);
+    const [showLookup, setShowLookup] = useState(false);
+
+    const onMemberSelected = (member: any) => {
+        const memberNo = String(member.memberNo || '');
+        const memberName = member.memberName || member.name || '';
+        handleMemberLookup(memberNo, memberName);
+        setShowLookup(false);
+    };
+
+    usePageToolbarActions({
+        onSave: handleSubmit,
+        saveLabel: loading ? 'Recording...' : 'Record Repayment',
+        saveEnabled: !(loading || form.paymentAmount <= 0),
+    });
 
     return (
         <div className="flex flex-col h-full bg-slate-50 overflow-auto">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
                 <div>
-                    <h1 className="fz-heading font-semibold text-slate-800">Loan Repayment</h1>
-                    <p className="fz-caption text-slate-500">Record monthly installment payments against active loans</p>
+                    <h1 className="fz-heading font-semibold text-white">Loan Repayment</h1>
+                    <p className="fz-caption text-slate-400">Record monthly installment payments against active loans</p>
                 </div>
                 <button
                     onClick={handleReset}
-                    className="fz-button px-4 py-1.5 border border-slate-300 rounded text-slate-600 hover:bg-slate-50"
+                    className="fz-button px-4 py-1.5 border border-white/20 rounded text-slate-200 hover:bg-white/10"
                 >
                     Reset
                 </button>
@@ -67,6 +85,14 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                 className="fz-button px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                             >
                                 Search
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowLookup(true)}
+                                title="Member Lookup"
+                                className="fz-button px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-indigo-600 hover:text-white transition-colors flex items-center justify-center shrink-0"
+                            >
+                                <Search size={14} />
                             </button>
                         </div>
                     </div>
@@ -119,29 +145,28 @@ const LoanRepaymentForm: React.FC<Props> = ({
                     {form.selectedLoanCase && (
                         <div className="bg-white border border-slate-200 rounded-lg p-4">
                             <h2 className="fz-label font-semibold text-slate-700 mb-3">Payment Details</h2>
+
+                            {/* Compact summary only — the itemized installment
+                                breakdown lives in the right panel so it doesn't push
+                                Amount/Submit below the fold on loans with many
+                                overdue installments. */}
+                            {dueStatusLoading ? (
+                                <div className="fz-caption text-slate-400 mb-3">Checking outstanding dues…</div>
+                            ) : dueStatus && dueStatus.unpaidInstallments.length > 0 ? (
+                                <div className="mb-3 flex justify-between items-center border border-amber-200 bg-amber-50 rounded-md px-3 py-2">
+                                    <span className="fz-caption font-semibold text-amber-800">
+                                        {dueStatus.unpaidInstallments.length} overdue — oldest recovered first
+                                    </span>
+                                    <span className="fz-body font-semibold text-amber-900">₹{fmt(dueStatus.totalDue)}</span>
+                                </div>
+                            ) : dueStatus ? (
+                                <div className="mb-3 fz-caption text-green-700 bg-green-50 border border-green-200 rounded-md p-2">
+                                    No installment currently overdue — payment will be applied as an advance against principal.
+                                </div>
+                            ) : null}
+
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="fz-caption text-slate-500 block mb-1">Month</label>
-                                    <select
-                                        value={form.paymentMonth}
-                                        onChange={e => updateForm('paymentMonth', Number(e.target.value))}
-                                        className="fz-body border border-slate-300 rounded px-2 py-1.5 w-full focus:outline-none focus:border-blue-400"
-                                    >
-                                        {MONTHS.map(m => (
-                                            <option key={m.value} value={m.value}>{m.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="fz-caption text-slate-500 block mb-1">Year</label>
-                                    <input
-                                        type="number"
-                                        value={form.paymentYear}
-                                        onChange={e => updateForm('paymentYear', Number(e.target.value))}
-                                        className="fz-body border border-slate-300 rounded px-2 py-1.5 w-full focus:outline-none focus:border-blue-400"
-                                    />
-                                </div>
-                                <div>
+                                <div className="col-span-2">
                                     <label className="fz-caption text-slate-500 block mb-1">Amount (₹)</label>
                                     <input
                                         type="number"
@@ -160,7 +185,7 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                         className="fz-body border border-slate-300 rounded px-2 py-1.5 w-full focus:outline-none focus:border-blue-400"
                                     />
                                 </div>
-                                <div className="col-span-2">
+                                <div>
                                     <label className="fz-caption text-slate-500 block mb-1">Narration</label>
                                     <input
                                         type="text"
@@ -180,7 +205,14 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                     <div className="flex justify-between fz-caption text-slate-500 mt-1">
                                         <span>Balance After Payment</span>
                                         <span className="font-medium text-green-700">
-                                            ₹{fmt(Math.max(0, parseFloat(selectedLoan.balance as any) - form.paymentAmount))}
+                                            ₹{fmt(Math.max(
+                                                0,
+                                                parseFloat(selectedLoan.balance as any) -
+                                                    // Only the principal portion pays down the balance — interest and
+                                                    // penal are collected separately. Approximate here (server does the
+                                                    // exact oldest-first waterfall) by taking non-principal dues off first.
+                                                    Math.max(0, form.paymentAmount - (dueStatus ? dueStatus.totalInterestDue + dueStatus.totalPenalDue : 0))
+                                            ))}
                                         </span>
                                     </div>
                                 </div>
@@ -214,8 +246,46 @@ const LoanRepaymentForm: React.FC<Props> = ({
                     )}
                 </div>
 
-                {/* Right Panel — Repayment History */}
-                <div className="flex-1 bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+                {/* Right Panel — Installments Due + Repayment History */}
+                <div className="flex-1 flex flex-col gap-4 min-w-0">
+                    {form.selectedLoanCase && dueStatus && dueStatus.unpaidInstallments.length > 0 && (
+                        <div className="bg-white border border-amber-200 rounded-lg overflow-hidden flex flex-col shrink-0" style={{ maxHeight: '340px' }}>
+                            <div className="px-4 py-3 border-b border-amber-100 bg-amber-50 flex items-center justify-between shrink-0">
+                                <h2 className="fz-label font-semibold text-amber-900">
+                                    {dueStatus.unpaidInstallments.length} Installment(s) Overdue — Oldest Recovered First
+                                </h2>
+                                <span className="fz-body font-semibold text-amber-900">₹{fmt(dueStatus.totalDue)}</span>
+                            </div>
+                            <div className="overflow-auto">
+                                <table className="w-full">
+                                    <thead className="bg-slate-50 sticky top-0">
+                                        <tr>
+                                            {['#', 'Month', 'Overdue', 'Principal', 'Interest', 'Penal', 'Total'].map(h => (
+                                                <th key={h} className="px-3 py-1.5 text-left fz-caption font-semibold text-slate-600 border-b border-slate-200">{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {dueStatus.unpaidInstallments.map(inst => (
+                                            <tr key={inst.installmentNo} className="border-b border-slate-100">
+                                                <td className="px-3 py-1.5 fz-caption text-slate-700">{inst.installmentNo}</td>
+                                                <td className="px-3 py-1.5 fz-caption text-slate-600">
+                                                    {MONTHS[new Date(inst.dueDate).getMonth()]?.label?.slice(0, 3)} {new Date(inst.dueDate).getFullYear()}
+                                                </td>
+                                                <td className="px-3 py-1.5 fz-caption text-red-600">{inst.monthsOverdue > 0 ? `${inst.monthsOverdue}mo` : 'current'}</td>
+                                                <td className="px-3 py-1.5 fz-caption text-slate-700">₹{fmt(inst.principalDue)}</td>
+                                                <td className="px-3 py-1.5 fz-caption text-slate-700">₹{fmt(inst.interestDue)}</td>
+                                                <td className="px-3 py-1.5 fz-caption text-red-600">{inst.penalDue > 0 ? `₹${fmt(inst.penalDue)}` : '—'}</td>
+                                                <td className="px-3 py-1.5 fz-caption font-medium text-slate-800">₹{fmt(inst.principalDue + inst.interestDue + inst.penalDue)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex-1 min-h-0 bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
                     <div className="px-4 py-3 border-b border-slate-100">
                         <h2 className="fz-label font-semibold text-slate-700">Repayment History</h2>
                         {form.memberName && <p className="fz-caption text-slate-500">{form.memberName} — #{form.mbno}</p>}
@@ -252,8 +322,21 @@ const LoanRepaymentForm: React.FC<Props> = ({
                             </table>
                         )}
                     </div>
+                    </div>
                 </div>
             </div>
+
+            {/* Member Lookup Modal */}
+            <Modal
+                open={showLookup}
+                onCancel={() => setShowLookup(false)}
+                footer={null}
+                width={800}
+                styles={{ body: { padding: 0 } }}
+                destroyOnClose
+            >
+                <MemberLookup isModal onSelect={onMemberSelected} onClose={() => setShowLookup(false)} />
+            </Modal>
         </div>
     );
 };

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useDefaultRights } from '../hook/useDefaultRights';
 import type { MenuRight } from '../interface/types';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import { ConfigProvider, Tooltip } from 'antd';
 
 interface RoleManagementProps {
@@ -93,6 +94,12 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
     setNewRoleName('');
     setIsCreateModalOpen(false);
   };
+
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: 'Authorize',
+    saveEnabled: !!selectedUserLevel,
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#4f46e5', borderRadius: 6 } }}>

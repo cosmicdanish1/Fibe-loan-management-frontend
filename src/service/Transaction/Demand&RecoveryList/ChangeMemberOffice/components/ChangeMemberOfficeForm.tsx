@@ -4,6 +4,7 @@ import React from 'react';
 import { ConfigProvider, Select, Input } from 'antd';
 import { ArrowRightLeft, UserCheck, RotateCcw, X, Building2 } from 'lucide-react';
 import { ChangeMemberOfficeHookReturn } from '../interface/ChangeMemberOfficeInterfaces';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 
@@ -12,8 +13,14 @@ const inp = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 const roInp = "h-7 fz-caption font-semibold bg-slate-50 border-slate-200 rounded text-slate-600";
 
 const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
-    formData, updateField, handleTransfer, handleCancel, handleExit, isProcessing,
+    formData, updateField, handleTransfer, handleCancel, handleExit, isProcessing, offices,
 }) => {
+    usePageToolbarActions({
+        onSave: handleTransfer,
+        saveLabel: isProcessing ? 'Processing...' : 'Save',
+        saveEnabled: !isProcessing,
+    });
+
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
             <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
@@ -98,12 +105,8 @@ const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
                         </div>
                         <div className="px-3 py-2">
                             <label className={lbl}>New Branch</label>
-                            <Select value={formData.newBranchNo} onChange={(v) => updateField('newBranchNo', v)} size="small" className="cmo-sel-hi w-full" placeholder="Select New Branch...">
-                                <Option value="BR-001">Main Head Office (001)</Option>
-                                <Option value="BR-002">North Regional (002)</Option>
-                                <Option value="BR-003">South Regional (003)</Option>
-                                <Option value="BR-004">East Wing (004)</Option>
-                                <Option value="BR-005">West Wing (005)</Option>
+                            <Select value={formData.newBranchNo || undefined} onChange={(v) => updateField('newBranchNo', v)} size="small" className="cmo-sel-hi w-full" placeholder="Select New Branch...">
+                                {offices.map(o => <Option key={o.officeId} value={o.officeId}>{o.officeName} ({o.officeId})</Option>)}
                             </Select>
                         </div>
                     </div>

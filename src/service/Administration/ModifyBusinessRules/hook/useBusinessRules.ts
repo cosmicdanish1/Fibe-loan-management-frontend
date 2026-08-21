@@ -6,6 +6,7 @@ export interface LoanType {
   rate: number;
   numberOfInstallments: number;
   numberOfGuarantors: number;
+  penalRate?: number;
 }
 
 export interface LoanAgainstDeposits {
@@ -61,11 +62,11 @@ const initialData: BusinessRulesData = {
   // Loan Against R  (legacy: 1,000,000 / 7% / 120 install / 0 gr)
   loanAgainstR: { maxAmount: 1000000, rate: 7, numberOfInstallments: 120, numberOfGuarantors: 0 },
   // Regular Loan mapped as Long Term  (legacy: 1,000,000 / 12% / 50 / 2 gr)
-  longTermLoan: { maxAmount: 1000000, rate: 12, numberOfInstallments: 50, numberOfGuarantors: 2 },
+  longTermLoan: { maxAmount: 1000000, rate: 12, numberOfInstallments: 50, numberOfGuarantors: 2, penalRate: 2 },
   // Grain Loan mapped as Medium Term  (legacy: 25,000 / 13% / 10 / 0 gr)
   mediumTermLoan: { maxAmount: 25000, rate: 13, numberOfInstallments: 10, numberOfGuarantors: 0 },
   // Emergency Loan  (legacy: 300,000 / 12% / 80 / 0 gr)
-  emergencyLoan: { maxAmount: 300000, rate: 12, numberOfInstallments: 80, numberOfGuarantors: 0 },
+  emergencyLoan: { maxAmount: 300000, rate: 12, numberOfInstallments: 80, numberOfGuarantors: 0, penalRate: 2 },
   // Additional Loan  (legacy: 4th unnamed section — all 0)
   additionalLoan: { maxAmount: 0, rate: 0, numberOfInstallments: 0, numberOfGuarantors: 0 },
   // Loan On Deposit  (legacy: 500,000 / 2% / 50 / 0 gr)
@@ -132,6 +133,7 @@ export const useBusinessRules = () => {
             rate: d.RULE_LOAN_LT_RATE || def.longTermLoan.rate,
             numberOfInstallments: d.RULE_LOAN_LT_INSTALLMENTS || def.longTermLoan.numberOfInstallments,
             numberOfGuarantors: d.RULE_LOAN_LT_GUARANTORS ?? def.longTermLoan.numberOfGuarantors,
+            penalRate: d.RULE_LOAN_LT_PENAL_RATE ?? def.longTermLoan.penalRate,
           },
           mediumTermLoan: {
             maxAmount: d.RULE_LOAN_MT_MAX_AMT || def.mediumTermLoan.maxAmount,
@@ -144,6 +146,7 @@ export const useBusinessRules = () => {
             rate: d.RULE_LOAN_EMG_RATE || def.emergencyLoan.rate,
             numberOfInstallments: d.RULE_LOAN_EMG_INSTALLMENTS || def.emergencyLoan.numberOfInstallments,
             numberOfGuarantors: d.RULE_LOAN_EMG_GUARANTORS ?? def.emergencyLoan.numberOfGuarantors,
+            penalRate: d.RULE_LOAN_EMG_PENAL_RATE ?? def.emergencyLoan.penalRate,
           },
           additionalLoan: {
             maxAmount: d.RULE_LOAN_ADD_MAX_AMT ?? def.additionalLoan.maxAmount,
@@ -214,6 +217,7 @@ export const useBusinessRules = () => {
         RULE_LOAN_LT_RATE: currentData.longTermLoan.rate,
         RULE_LOAN_LT_INSTALLMENTS: currentData.longTermLoan.numberOfInstallments,
         RULE_LOAN_LT_GUARANTORS: currentData.longTermLoan.numberOfGuarantors,
+        RULE_LOAN_LT_PENAL_RATE: currentData.longTermLoan.penalRate,
 
         // Medium Term Loan
         RULE_LOAN_MT_MAX_AMT: currentData.mediumTermLoan.maxAmount,
@@ -226,6 +230,7 @@ export const useBusinessRules = () => {
         RULE_LOAN_EMG_RATE: currentData.emergencyLoan.rate,
         RULE_LOAN_EMG_INSTALLMENTS: currentData.emergencyLoan.numberOfInstallments,
         RULE_LOAN_EMG_GUARANTORS: currentData.emergencyLoan.numberOfGuarantors,
+        RULE_LOAN_EMG_PENAL_RATE: currentData.emergencyLoan.penalRate,
 
         // Additional Loan
         RULE_LOAN_ADD_MAX_AMT: currentData.additionalLoan.maxAmount,

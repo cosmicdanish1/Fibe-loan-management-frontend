@@ -38,6 +38,8 @@ interface DefaulterRecord {
   balance: number;
   installments: number;
   lastPaymentDate: string;
+  monthsOverdue: number;
+  penalDue: number;
 }
 
 interface DefaulterResponse {
@@ -109,10 +111,11 @@ const DefaulterList: React.FC = () => {
   };
 
   // Memoized calculations for performance
-  const { totalLoanAmount, totalOutstanding } = useMemo(() => {
+  const { totalLoanAmount, totalOutstanding, totalPenalDue } = useMemo(() => {
     const totalLoanAmount = data.reduce((sum, item) => sum + (Number(item.loanAmount) || 0), 0);
     const totalOutstanding = data.reduce((sum, item) => sum + (Number(item.balance) || 0), 0);
-    return { totalLoanAmount, totalOutstanding };
+    const totalPenalDue = data.reduce((sum, item) => sum + (Number(item.penalDue) || 0), 0);
+    return { totalLoanAmount, totalOutstanding, totalPenalDue };
   }, [data]);
 
   const formatCurrency = useCallback((amount: number) => {
@@ -154,13 +157,13 @@ const DefaulterList: React.FC = () => {
       csvContent += `Minimum Balance: ₹${formatCurrency(minBalance)}\n`;
       csvContent += `Page: ${currentPage} of ${Math.ceil(totalCount / pageSize)}\n\n`;
       
-      csvContent += 'Member No,Member Name,Office,Loan Type,Case No,Loan Amount,Outstanding Balance,Installments\n';
-      
+      csvContent += 'Member No,Member Name,Office,Loan Type,Case No,Loan Amount,Outstanding Balance,Installments,Months Overdue,Penal Due\n';
+
       data.forEach(item => {
-        csvContent += `${item.memberNo},"${item.memberName}","${item.officeName || ''}",${item.loanType},${item.loanCaseNo},${item.loanAmount},${item.balance},${item.installments}\n`;
+        csvContent += `${item.memberNo},"${item.memberName}","${item.officeName || ''}",${item.loanType},${item.loanCaseNo},${item.loanAmount},${item.balance},${item.installments},${item.monthsOverdue || 0},${item.penalDue || 0}\n`;
       });
-      
-      csvContent += `\nPage Total,,,,${totalLoanAmount},${totalOutstanding},\n`;
+
+      csvContent += `\nPage Total,,,,${totalLoanAmount},${totalOutstanding},,,${totalPenalDue}\n`;
       csvContent += `Total Records: ${totalCount}\n`;
       
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -180,7 +183,7 @@ const DefaulterList: React.FC = () => {
       await showDialog('error', 'Export Error', 'Failed to export CSV');
       console.error('Export error:', error);
     }
-  }, [data, formatCurrency, minBalance, currentPage, totalCount, pageSize, totalLoanAmount, totalOutstanding]);
+  }, [data, formatCurrency, minBalance, currentPage, totalCount, pageSize, totalLoanAmount, totalOutstanding, totalPenalDue]);
 
   return (
     <ConfigProvider
@@ -197,7 +200,7 @@ const DefaulterList: React.FC = () => {
     >
       <div className={`h-screen flex flex-col font-sans selection:bg-red-200/60 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-red-50/40 to-rose-50/30'}`}>
         {/* Enhanced Header with Better Typography */}
-        <div className={`px-5 py-3 flex items-center justify-between z-10 shadow-lg shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-md border-red-200/60 shadow-red-100/20'}`}>
+        <div className={`px-5 py-3 flex items-center justify-between z-10 shadow-lg shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-md border-red-200/60 shadow-red-100/20'}`}>
           <div className="flex items-center gap-4">
             <div className="bg-gradient-to-br from-red-600 via-red-700 to-rose-700 p-2.5 rounded-xl text-white shadow-lg shadow-red-600/30">
               <ShieldAlert size={20} className="drop-shadow-sm" />
@@ -411,6 +414,8 @@ const DefaulterList: React.FC = () => {
                           <th className="text-left py-3 px-4 font-black text-red-900" style={{ border: '1px solid #dc2626', width: '100px' }}>CASE NO</th>
                           <th className="text-right py-3 px-4 font-black text-red-900" style={{ border: '1px solid #dc2626', width: '130px' }}>LOAN AMOUNT</th>
                           <th className="text-right py-3 px-4 font-black text-red-900" style={{ border: '1px solid #dc2626', width: '130px' }}>OUTSTANDING</th>
+                          <th className="text-center py-3 px-4 font-black text-red-900" style={{ border: '1px solid #dc2626', width: '90px' }}>OVERDUE</th>
+                          <th className="text-right py-3 px-4 font-black text-red-900" style={{ border: '1px solid #dc2626', width: '110px' }}>PENAL DUE</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -437,6 +442,12 @@ const DefaulterList: React.FC = () => {
                             <td className="text-right py-2.5 px-4 font-bold text-red-700" style={{ border: '1px solid #e5e7eb' }}>
                               {formatCurrency(item.balance)}
                             </td>
+                            <td className="text-center py-2.5 px-4 font-bold text-orange-700" style={{ border: '1px solid #e5e7eb' }}>
+                              {item.monthsOverdue > 0 ? `${item.monthsOverdue}mo` : '—'}
+                            </td>
+                            <td className="text-right py-2.5 px-4 font-bold text-red-700" style={{ border: '1px solid #e5e7eb' }}>
+                              {item.penalDue > 0 ? formatCurrency(item.penalDue) : '—'}
+                            </td>
                           </tr>
                         ))}
                         <tr style={{ backgroundColor: isDark ? '#1e293b' : '#fef2f2' }}>
@@ -448,6 +459,10 @@ const DefaulterList: React.FC = () => {
                           </td>
                           <td className="text-right py-3 px-4 font-black text-red-800 fz-heading" style={{ border: '2px solid #dc2626' }}>
                             {formatCurrency(totalOutstanding)}
+                          </td>
+                          <td className="py-3 px-4" style={{ border: '2px solid #dc2626' }}></td>
+                          <td className="text-right py-3 px-4 font-black text-red-800 fz-heading" style={{ border: '2px solid #dc2626' }}>
+                            {formatCurrency(totalPenalDue)}
                           </td>
                         </tr>
                       </tbody>
@@ -473,6 +488,12 @@ const DefaulterList: React.FC = () => {
                             <td className="text-right py-2 px-5 font-black text-red-800">Page Outstanding:</td>
                             <td className="text-right py-2 px-5 font-black text-red-800">
                               ₹{formatCurrency(totalOutstanding)}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="text-right py-2 px-5 font-black text-red-800">Page Penal Due:</td>
+                            <td className="text-right py-2 px-5 font-black text-red-800">
+                              ₹{formatCurrency(totalPenalDue)}
                             </td>
                           </tr>
                         </tbody>

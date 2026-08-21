@@ -34,9 +34,9 @@ const MemberLoanSearch: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Member Loan Search</h1>
-        <p className="text-gray-600">Search for member loans from loan_master and loan_pending tables</p>
+      <div className="bg-gradient-to-r from-slate-900 to-slate-900 rounded-lg shadow-lg p-6">
+        <h1 className="text-2xl font-bold text-white mb-2">Member Loan Search</h1>
+        <p className="text-slate-400">Search for member loans from loan_master and loan_pending tables</p>
       </div>
 
       {/* Search Form */}

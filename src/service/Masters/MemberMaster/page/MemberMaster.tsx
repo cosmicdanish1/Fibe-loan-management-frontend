@@ -6,6 +6,7 @@ import { useMemberForm } from '../Hook/useMemberForm';
 import { Modal } from 'antd';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
 import { API_BASE_URL, getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const MemberMaster: React.FC = () => {
   const { formData, handleInputChange, resetForm, setFormValues } = useMemberForm();
@@ -33,6 +34,25 @@ const MemberMaster: React.FC = () => {
 
   const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
     setNotification({ type, message });
+  };
+
+  // BUG FIX 18: errors were shown as a dismissable banner/toast that looked and behaved
+  // differently from every other error path in this app (Loan Application, and this file's
+  // own save-success case) — all of which use the native OS dialog via electronAPI.showMessageBox.
+  // Routes every error through the same native dialog for consistency; falls back to the old
+  // toast only if the Electron bridge isn't available (e.g. running in a plain browser).
+  const showErrorDialog = async (title: string, detail: string) => {
+    if (window.electronAPI?.showMessageBox) {
+      await window.electronAPI.showMessageBox({
+        type: 'warning',
+        title: 'Input Validation Error',
+        message: title,
+        detail,
+        buttons: ['OK'],
+      });
+    } else {
+      showNotification('error', detail);
+    }
   };
 
   // ── Documents & Media state ───────────────────────────────────────────────
@@ -162,13 +182,13 @@ const MemberMaster: React.FC = () => {
 
   const handleKycUpload = async (file: File) => {
     const mbno = formData.memberNumber;
-    if (!mbno) { showNotification('error', 'Please save the member first, then add KYC documents.'); return; }
+    if (!mbno) { await showErrorDialog('Member Not Saved', 'Please save the member first, then add KYC documents.'); return; }
     setKycUploading(true);
     try {
       const res = await apiService.uploadMemberDocument(mbno, kycDocType, file);
       if (res.success) { showNotification('success', `${kycDocType} uploaded successfully.`); await loadKycDocuments(mbno); }
-      else showNotification('error', res.message || 'Document upload failed.');
-    } catch (e: any) { showNotification('error', `Document upload failed: ${e.message}`); }
+      else await showErrorDialog('Document Upload Failed', res.message || 'Document upload failed.');
+    } catch (e: any) { await showErrorDialog('Document Upload Failed', e.message); }
     finally { setKycUploading(false); }
   };
 
@@ -214,10 +234,6 @@ const MemberMaster: React.FC = () => {
     // Mobile: exactly 10 digits, starts with 6-9
     const mobile = formData.mobileNumber?.trim() || '';
     if (mobile && !/^[6-9]\d{9}$/.test(mobile)) errors.push('Mobile must be 10 digits starting with 6-9');
-
-    // Phone: 6-12 digits (landline with STD code, optional hyphen)
-    const phone = formData.phoneNumber?.trim() || '';
-    if (phone && !/^[\d-]{6,12}$/.test(phone)) errors.push('Phone Number must be 6-12 digits');
 
     // Email
     const email = formData.email?.trim() || '';
@@ -274,7 +290,7 @@ const MemberMaster: React.FC = () => {
       // Validate form
       const validationErrors = validateForm();
       if (validationErrors.length > 0) {
-        showNotification('error', 'Please fix the following errors:\n' + validationErrors.join('\n'));
+        await showErrorDialog('Please Fix The Following Errors', validationErrors.join('\n'));
         return;
       }
 
@@ -300,8 +316,18 @@ const MemberMaster: React.FC = () => {
       // BUG FIX 6: age used `formData.age || ''` — falsy for 0 → '' saved. Now uses String().
       // BUG FIX 9: wingno/officeno were mapped from non-existent wingNo/officeNo fields.
       //   Now derived from divisionRo (e.g. "1-BHILAI" → officeno=1, wingno="BHILAI").
-      const [divisionPrefix, ...divisionRest] = formData.divisionRo.split('-');
-      const parsedOfficeNo = parseInt(divisionPrefix, 10) || 0;
+      // BUG FIX 13: officeno was derived from `divisionRo`, whose dropdown has exactly one
+      //   possible option ("1-BHILAI") — every member got officeno=1 regardless of which of
+      //   the 6 real offices was picked in the "Branch" dropdown (which correctly lists all
+      //   office_master rows, e.g. "6-MECON-BHILAI-90"). officeno is now derived from `branch`
+      //   instead, falling back to divisionRo only if branch wasn't set.
+      // wingno is intentionally left as-is: neither field's option strings encode a value that
+      // corresponds to any real wing_master row (wing_master currently only has codes '1'/'50',
+      // unrelated to these office names) — deriving it from `branch` would just be a different
+      // wrong guess. Needs real wing reference data before this can be fixed correctly.
+      const officeSource = formData.branch || formData.divisionRo;
+      const [, ...divisionRest] = formData.divisionRo.split('-');
+      const parsedOfficeNo = parseInt(officeSource.split('-')[0] || '', 10) || 0;
       const parsedWingNo = divisionRest.join('-').substring(0, 6) || formData.divisionRo.substring(0, 6) || '';
 
       const memberPayload: any = {
@@ -344,7 +370,11 @@ const MemberMaster: React.FC = () => {
         pan_no: formData.panCardNo || '',
         frs_no: formData.frsNumber || '',
         fathers_name: formData.fatherName || '',
-        branchmsno: formData.branchMsNo || formData.branch || '',
+        // BUG FIX 14: branchMsNo (free-text, unvalidated) was taking priority over branch
+        //   (the structured dropdown matching real office_master rows), so any stray text
+        //   typed into "Branch MS No" silently overrode a correct "Branch" selection.
+        //   branch now wins; branchMsNo is only used as a fallback when branch is empty.
+        branchmsno: formData.branch || formData.branchMsNo || '',
         email: formData.email || '',
       };
 
@@ -483,10 +513,10 @@ const MemberMaster: React.FC = () => {
         }
       } else {
         const error = await response.json();
-        showNotification('error', 'Failed to save member: ' + (error.message || 'Unknown error'));
+        await showErrorDialog('Failed To Save Member', Array.isArray(error.message) ? error.message.join('\n') : (error.message || 'Unknown error'));
       }
     } catch (error) {
-      showNotification('error', 'Error saving member. Please try again.');
+      await showErrorDialog('Error Saving Member', 'Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -594,17 +624,28 @@ const MemberMaster: React.FC = () => {
         loadKycDocuments(memberNo);
       } else {
         const errorText = await response.text();
-        showNotification('error', 'Failed to fetch member details: ' + errorText);
+        await showErrorDialog('Failed To Fetch Member Details', errorText);
       }
     } catch (error) {
-      showNotification('error', 'Error fetching member details: ' + (error as Error).message);
+      await showErrorDialog('Error Fetching Member Details', (error as Error).message);
     } finally {
       setIsLoadingMember(false);
     }
   };
 
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: isSaving ? 'Saving…' : formData.memberNumber ? 'Update' : 'Create',
+    saveEnabled: !isSaving,
+  });
+
   return (
     <div className="mm-form h-screen flex flex-col overflow-auto bg-white">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg border-b border-white/5">
+        <h1 className="fz-caption font-black text-white tracking-tight uppercase">Member Master</h1>
+      </div>
+
       {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-xl border-l-4 ${notification.type === 'success'
@@ -1337,17 +1378,10 @@ const MemberMaster: React.FC = () => {
                   maxLength={12}
                 />
               </div>
-              <div className="col-span-2">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Phone Number</label>
-                <input
-                  type="text"
-                  value={formData.phoneNumber}
-                  onChange={(e) => handleInputChange('phoneNumber', e.target.value.replace(/[^\d-]/g, '').slice(0, 12))}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
-                  placeholder="STD-Number"
-                  maxLength={12}
-                />
-              </div>
+              {/* BUG FIX 15: removed the "Phone Number" (landline/STD) field — it was captured
+                  and validated but had no matching column in member_master, so it was silently
+                  discarded on every save. No landline column exists to wire it to; adding one
+                  needs a deliberate decision, not a silent schema change. */}
               <div className="col-span-2">
                 <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">F.R.S. Number</label>
                 <input

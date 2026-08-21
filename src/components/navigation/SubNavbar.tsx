@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Save, X, Trash2, RefreshCw, Printer, Search, LogOut, type LucideIcon } from 'lucide-react';
+
+interface RemoteToolbarState {
+  saveLabel?: string;
+  saveEnabled?: boolean;
+  hasSave: boolean;
+}
 
 interface SubNavbarProps {
   onSave?: () => void;
@@ -16,6 +22,10 @@ interface NavItem {
   icon: LucideIcon;
   label: string;
   onClick: (() => void) | undefined;
+  /** Whether this action genuinely does something right now — drives the
+   * enabled/disabled look. Kept separate from onClick so a button never
+   * *looks* clickable while silently doing nothing. */
+  enabled: boolean;
 }
 
 const SubNavbar: React.FC<SubNavbarProps> = ({
@@ -28,6 +38,21 @@ const SubNavbar: React.FC<SubNavbarProps> = ({
   onExit,
 }) => {
   const location = useLocation();
+  // Whichever tool window last had focus reports its Save state here via the
+  // main process (see main.ts "TOOLBAR REMOTE CONTROL") — this window (the
+  // Dashboard) can't read that window's state directly, they're separate
+  // Electron processes.
+  const [remoteState, setRemoteState] = useState<RemoteToolbarState | null>(null);
+
+  useEffect(() => {
+    const api = (window as any).electronAPI;
+    if (!api?.onToolbarStateChanged) return;
+    return api.onToolbarStateChanged((state: RemoteToolbarState | null) => setRemoteState(state));
+  }, []);
+
+  const handleTriggerSave = () => {
+    (window as any).electronAPI?.triggerToolbarSave?.();
+  };
 
   const handleGlobalExit = () => {
     // Accurate check using Router location
@@ -37,10 +62,7 @@ const SubNavbar: React.FC<SubNavbarProps> = ({
     // Fallback hash check just in case Router isn't mounted or using hash unexpectedly
     const isHashDashboard = window.location.hash === '#/' || window.location.hash === '#/dashboard';
 
-    console.log('[DEBUG] Global Exit Triggered. Path:', currentPath, 'Hash:', window.location.hash);
-
     if (isDashboard || isHashDashboard) {
-      console.log('[DEBUG] On Dashboard. Attempting to close latest child window via IPC.');
       // Send command to backend to close the latest active child window
       if ((window as any).electron?.ipcRenderer) {
         (window as any).electron.ipcRenderer.send('close-latest-window');
@@ -58,37 +80,68 @@ const SubNavbar: React.FC<SubNavbarProps> = ({
       (window as any).electron.ipcRenderer.send('window-close');
     }
     else {
-      console.log('Window close requested (Web Mode)');
       window.close();
     }
   };
 
+  const handleFind = () => {
+    // Same destination as the global F2 shortcut (renderer/App.tsx).
+    if (window.electronAPI?.openNewWindow) {
+      window.electronAPI.openNewWindow('/utility/find');
+    }
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  // No page has registered its own print — fall back to the browser/Electron
+  // print dialog for whatever is currently on screen, rather than doing
+  // nothing.
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // No page has registered its own Cancel — closing the window is the
+  // sensible universal fallback for "back out of this without saving" in a
+  // single-purpose tool window (same underlying action as Exit).
+  const handleCancel = () => {
+    handleGlobalExit();
+  };
+
+  // Legacy windows call their primary action Save/Sanction/Post/whatever the
+  // screen needs — mirror whichever tool window last had focus instead of
+  // hardcoding "Save". No tool window has focused yet (or none is open) ⇒
+  // remoteState is null ⇒ stays disabled.
+  const hasSaveHandler = !!onSave || !!remoteState?.hasSave;
+  const saveLabel = remoteState?.saveLabel ?? 'Save';
+  const saveEnabled = hasSaveHandler && (remoteState?.saveEnabled ?? true);
+
   const navItems: NavItem[] = [
-    { icon: Save, label: 'Save', onClick: onSave },
-    { icon: X, label: 'Cancel', onClick: onCancel },
-    { icon: Trash2, label: 'Delete', onClick: onDelete },
-    { icon: RefreshCw, label: 'Refresh', onClick: onRefresh },
-    { icon: Printer, label: 'Print', onClick: onPrint },
-    { icon: Search, label: 'Find', onClick: onFind },
-    { icon: LogOut, label: 'Exit', onClick: onExit || handleGlobalExit },
-  ].map(item => ({
-    ...item,
-    onClick: item.onClick || (() => { })
-  }));
+    // Delete stays disabled — no cross-window wiring for it yet.
+    { icon: Save, label: saveLabel, onClick: onSave ?? handleTriggerSave, enabled: saveEnabled },
+    { icon: X, label: 'Cancel', onClick: onCancel ?? handleCancel, enabled: true },
+    { icon: Trash2, label: 'Delete', onClick: onDelete, enabled: !!onDelete },
+    { icon: RefreshCw, label: 'Refresh', onClick: onRefresh ?? handleRefresh, enabled: true },
+    { icon: Printer, label: 'Print', onClick: onPrint ?? handlePrint, enabled: true },
+    { icon: Search, label: 'Find', onClick: onFind ?? handleFind, enabled: true },
+    { icon: LogOut, label: 'Exit', onClick: onExit ?? handleGlobalExit, enabled: true },
+  ];
 
   return (
-    <div className=" border-b px-4 py-2 shadow-md">
+    <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2 shadow-md">
       <div className="flex items-center space-x-1">
         {navItems.map((item, index) => {
           const IconComponent = item.icon;
           return (
             <button
               key={index}
-              onClick={item.onClick}
+              onClick={item.enabled ? item.onClick : undefined}
+              disabled={!item.enabled}
               type="button"
-              className={`flex items-center space-x-2 px-3 py-2 text-sm rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${item.onClick
-                ? 'text-gray-700 hover:bg-gray-200 hover:text-gray-900 cursor-pointer'
-                : 'text-gray-400 cursor-not-allowed'
+              className={`flex items-center space-x-2 px-3 py-2 text-sm rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${item.enabled
+                ? 'text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white cursor-pointer'
+                : 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
                 }`}
             >
               <IconComponent size={16} />

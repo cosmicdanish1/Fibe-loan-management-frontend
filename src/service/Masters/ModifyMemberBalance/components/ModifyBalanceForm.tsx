@@ -10,6 +10,7 @@ import {
 import dayjs from 'dayjs';
 import type { MemberBalanceHookReturn, MemberBalanceData } from '../interfaces/interface';
 import MemberLookupInput from '../../../../components/shared/MemberLookup/MemberLookupInput';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 
@@ -56,6 +57,11 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
 
     const upd = (key: keyof MemberBalanceData) => (val: string) =>
         setFormData(prev => ({ ...prev, [key]: val }));
+
+    usePageToolbarActions({
+        onSave: save,
+        saveLabel: 'Save',
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

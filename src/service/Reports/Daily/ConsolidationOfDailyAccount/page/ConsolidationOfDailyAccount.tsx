@@ -176,7 +176,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
       <div className={`h-screen flex flex-col font-sans overflow-hidden ${text} ${bg}`}>
 
         {/* Header */}
-        <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${panel}`}>
+        <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center gap-3">
             <div className="bg-violet-600 p-2 rounded-lg shadow-lg shadow-violet-500/30">
               <Layers size={18} className="text-white" />

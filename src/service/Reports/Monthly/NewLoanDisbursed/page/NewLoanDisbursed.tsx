@@ -8,12 +8,14 @@ import {
   FileCheck,
   Activity,
   Briefcase,
-  Search
+  Search,
+  User
 } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
+import { MemberLookupInput, MemberLookupData } from '../../../../../components/shared/MemberLookup';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -49,6 +51,8 @@ const NewLoanDisbursed: React.FC = () => {
   const [toDate, setToDate] = useState<Dayjs | null>(dayjs());
   const [loanTypes, setLoanTypes] = useState<LoanType[]>([]);
   const [selectedLoanType, setSelectedLoanType] = useState<string>('');
+  const [memberNo, setMemberNo] = useState<string>('');
+  const [memberName, setMemberName] = useState<string>('');
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark' ||
@@ -84,7 +88,8 @@ const NewLoanDisbursed: React.FC = () => {
       const response = await apiService.getNewLoanDisbursed(
         fromDate.format('YYYY-MM-DD'),
         toDate.format('YYYY-MM-DD'),
-        selectedLoanType || undefined
+        selectedLoanType || undefined,
+        memberNo || undefined
       );
 
       if (response.success && response.data && Array.isArray(response.data.data)) {
@@ -179,8 +184,13 @@ const NewLoanDisbursed: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-        
+      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+          <h1 className="fz-caption font-black text-white tracking-tight uppercase">New Loan Disbursed</h1>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
         {/* Compact Sidebar - 280px */}
         <div className={`w-[280px] border-r flex flex-col shrink-0 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           {/* Header */}
@@ -230,6 +240,31 @@ const NewLoanDisbursed: React.FC = () => {
                     placeholder="Select to date"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Member Filter */}
+            <div className={`rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+              <div className={`border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
+                <User size={12} className="text-emerald-600" />
+                <span className={`fz-label font-black uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Member</span>
+              </div>
+
+              <div className="p-3">
+                <label className="block fz-label font-bold text-slate-500 uppercase tracking-wider mb-1">Member No (optional)</label>
+                <MemberLookupInput
+                  value={memberNo}
+                  onChange={(no: string, data?: MemberLookupData) => {
+                    setMemberNo(no);
+                    setMemberName(data?.memberName || '');
+                  }}
+                  placeholder="Type to search member..."
+                />
+                {memberName && (
+                  <div className={`mt-1 fz-label font-semibold truncate ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    {memberName}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -356,6 +391,9 @@ const NewLoanDisbursed: React.FC = () => {
                     {selectedLoanType && (
                       <div className={`fz-label mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Loan Type: {loanTypes.find(t => t.code === selectedLoanType)?.name || selectedLoanType}</div>
                     )}
+                    {memberNo && (
+                      <div className={`fz-label mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Member: {memberNo}{memberName ? ` - ${memberName}` : ''}</div>
+                    )}
                   </div>
 
                   {/* Legacy Table */}
@@ -425,6 +463,7 @@ const NewLoanDisbursed: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
         </div>
       </div>
 

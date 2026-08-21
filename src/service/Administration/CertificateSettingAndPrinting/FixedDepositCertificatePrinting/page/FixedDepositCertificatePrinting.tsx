@@ -9,7 +9,7 @@ import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 const { Option } = Select;
 
 interface FormData {
-  id?: number;
+  id?: string;
   memberNo: string;
   memberName: string;
   accountNumber: string;
@@ -63,7 +63,7 @@ const FixedDepositCertificatePrinting: React.FC = () => {
     finally { setLoading(false); }
   };
 
-  const handleAccountSelect = (accId: number) => {
+  const handleAccountSelect = (accId: string) => {
     const acc = fdAccounts.find(a => a.id === accId);
     if (!acc) return;
     set('id', acc.id);
@@ -75,7 +75,7 @@ const FixedDepositCertificatePrinting: React.FC = () => {
       interestRate: Number(acc.interestRate ?? acc.rate ?? 0),
       depositPeriod: `${acc.tenureMonths ?? acc.depperiod ?? ''} Months`,
       maturityDate: acc.maturityDate ?? acc.matdate ?? '',
-      certificateNo: (acc.accountNumber || '').replace('FD', 'CERT'),
+      certificateNo: acc.certificateNo || (acc.accountNumber || '').replace('FD', 'CERT'),
     }));
   };
 

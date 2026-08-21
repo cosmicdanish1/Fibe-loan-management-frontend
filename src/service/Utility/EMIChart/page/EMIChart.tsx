@@ -126,16 +126,17 @@ const EMIChart: React.FC = () => {
   const paginatedSchedule = useMemo(() => emiSchedule.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage), [emiSchedule, currentPage]);
   const totalPages = useMemo(() => Math.ceil(emiSchedule.length / itemsPerPage), [emiSchedule.length]);
 
-  const handleExportPDF = useCallback(async () => {
+  // BUG FIX 48: this called emiService.exportEMISchedulePDF(), which hits
+  // GET /loans/master/:caseNo/emi-schedule/export — a route that doesn't exist
+  // anywhere in the backend (confirmed via full-repo grep), so this button always
+  // failed. No PDF-generation library exists in this frontend, and no other
+  // screen in the app calls a backend PDF endpoint either — every other
+  // print/export button here (e.g. FixedDepositReceipt's handlePrint) just calls
+  // window.print() on the already-rendered page. Matching that convention instead
+  // of a backend feature that was never actually built.
+  const handleExportPDF = useCallback(() => {
     if (!selectedLoan) return;
-    try {
-      const blob = await emiService.exportEMISchedulePDF(selectedLoan.loanCaseNo);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url; link.download = `EMI_Schedule_${selectedLoan.loanCaseNo}.pdf`;
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch { await showDialog('error', 'Export Failed', 'Export service temporarily unavailable.'); }
+    window.print();
   }, [selectedLoan]);
 
   return (
@@ -328,7 +329,7 @@ const EMIChart: React.FC = () => {
                         <table className="w-full text-left">
                           <thead className="bg-[#f8fafc] sticky top-0">
                             <tr>
-                              {['Seq', 'Due Date', 'Installment', 'Principal', 'Service Fee', 'Balance', 'Status'].map((h, i) => (
+                              {['Seq', 'Due Date', 'Installment', 'Principal', 'Interest', 'Balance', 'Status'].map((h, i) => (
                                 <th key={h} className={`px-3 py-2 fz-mini font-black text-slate-400 uppercase tracking-wider border-b border-slate-200 ${i >= 2 && i <= 5 ? 'text-right' : i === 6 ? 'text-center' : ''}`}>{h}</th>
                               ))}
                             </tr>

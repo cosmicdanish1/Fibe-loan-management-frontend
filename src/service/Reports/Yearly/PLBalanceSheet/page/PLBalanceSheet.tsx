@@ -127,7 +127,7 @@ const PLBalanceSheet: React.FC = () => {
         {/* Main Content - Full Width Legacy Style */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className={`border-b px-4 py-2 shrink-0 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className={`border-b px-4 py-2 shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-3">
               <div className="bg-purple-600 p-2 rounded-lg text-white shadow-lg">
                 <Scale size={18} />

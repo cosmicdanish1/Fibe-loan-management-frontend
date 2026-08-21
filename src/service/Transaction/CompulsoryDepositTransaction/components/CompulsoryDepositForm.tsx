@@ -5,6 +5,7 @@ import {
     X, ArrowRightLeft, IndianRupee, FileText, Building2, Calendar,
 } from 'lucide-react';
 import { CompulsoryDepositHookReturn } from '../interface/CompulsoryDepositInterfaces';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -75,6 +76,12 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
             ),
         },
     ];
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: 'Save',
+        saveEnabled: !(isPosting || isLoading),
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

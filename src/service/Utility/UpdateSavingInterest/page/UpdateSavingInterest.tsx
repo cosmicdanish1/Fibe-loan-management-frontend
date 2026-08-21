@@ -4,6 +4,7 @@ import {
   Play, Eye, RefreshCw, Info, ShieldCheck, Building2, Calendar, Settings
 } from 'lucide-react';
 import { apiService } from '../../../../services/api';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 import { ConfigProvider, Spin, Input, Table, Tag, DatePicker, Select } from 'antd';
 
@@ -127,6 +128,12 @@ const UpdateSavingInterest: React.FC = () => {
     { title: <span className="fz-mini font-black text-slate-500 uppercase">Days</span>, dataIndex: 'days', key: 'days', align: 'center' as const, render: (v: number) => <span className="fz-small font-semibold text-slate-600">{v}</span> },
     { title: <span className="fz-mini font-black text-slate-500 uppercase">Interest</span>, dataIndex: 'interestAmount', key: 'interestAmount', align: 'right' as const, render: (v: number) => <span className="fz-small font-black text-emerald-600">₹{formatCurrency(v)}</span> },
   ];
+
+  usePageToolbarActions({
+    onSave: processInterest,
+    saveLabel: 'Execute Posting',
+    saveEnabled: !isProcessing && !!validationResult?.valid,
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

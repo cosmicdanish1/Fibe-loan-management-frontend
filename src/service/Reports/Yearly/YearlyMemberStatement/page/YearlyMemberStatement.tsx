@@ -391,7 +391,7 @@ const YearlyMemberStatement: React.FC = () => {
 
             <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-purple-50/20 to-slate-50'}`}>
                 {/* Ultra-Compact Header */}
-                <div className={`px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b no-print ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+                <div className={`px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b no-print ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
                     <div className="flex items-center gap-2">
                         <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-1.5 rounded-lg text-white shadow-md">
                             <BookOpen size={14} />

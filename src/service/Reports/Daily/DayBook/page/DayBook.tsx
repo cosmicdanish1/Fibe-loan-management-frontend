@@ -49,7 +49,7 @@ const DayBook: React.FC = () => {
 
   // Theme variables
   const bg        = isDark ? 'bg-[#0f172a]'                                  : 'bg-slate-50';
-  const header    = isDark ? 'bg-slate-800 border-b border-slate-700'         : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
+  const header    = isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5' : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
   const panel     = isDark ? 'bg-slate-800 border border-slate-700'           : 'bg-white border border-slate-200';
   const panelHd   = isDark ? 'bg-slate-900/50 border-b border-slate-700'      : 'bg-slate-50 border-b border-slate-100';
   const panelHdTx = isDark ? 'text-slate-300'                                 : 'text-slate-700';
@@ -110,6 +110,31 @@ const DayBook: React.FC = () => {
   .total-row td { font-weight:bold; }
   .section-title { font-size:11pt; font-weight:bold; margin:8px 0 4px; }
   .summary { margin-top:12px; }
+
+  /* The screen view's Tailwind utility classes come through on the cloned
+     markup as class names, but their CSS isn't loaded in this standalone
+     document, so flex/grid rows collapse and lose their gaps/alignment
+     (e.g. the column-header hint and summary rows print as one run-on
+     line). Re-declare just the layout-affecting utilities actually used
+     inside #db-print-area so it lays out the same as on screen. */
+  .text-center { text-align:center; }
+  .text-right { text-align:right; }
+  .grid { display:grid; }
+  .flex { display:flex; }
+  .items-center { align-items:center; }
+  .justify-between { justify-content:space-between; }
+  .gap-2 { gap:0.5rem; }
+  .mt-4 { margin-top:1rem; }
+  .mt-0\\.5 { margin-top:0.125rem; }
+  .mb-1 { margin-bottom:0.25rem; }
+  .mb-2 { margin-bottom:0.5rem; }
+  .mb-3 { margin-bottom:0.75rem; }
+  .mb-4 { margin-bottom:1rem; }
+  .pb-3 { padding-bottom:0.75rem; }
+  .px-2 { padding-left:0.5rem; padding-right:0.5rem; }
+  .px-3 { padding-left:0.75rem; padding-right:0.75rem; }
+  .px-4 { padding-left:1rem; padding-right:1rem; }
+  .py-1\\.5 { padding-top:0.375rem; padding-bottom:0.375rem; }
 </style></head><body>${content}</body></html>`);
       doc.close();
       setTimeout(() => {

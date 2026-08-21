@@ -56,16 +56,53 @@ class EMIService {
         memberNumber,
         status: 'all',
       });
-      
+
       if (!response.success || !response.data) {
         console.warn('Loan search API returned no data');
         return { activeLoans: [], pendingLoans: [] };
       }
-      
-      return {
-        activeLoans: response.data.activeLoans || [],
-        pendingLoans: response.data.pendingLoans || [],
-      };
+
+      // BUG FIX 49: the real endpoint (GET /loans/search/member-loans) returns a
+      // flat array of raw rows (loancaseno, loan_amt, member_name, source:
+      // 'loan_master'|'loan_pending', ...), not {activeLoans, pendingLoans} —
+      // confirmed live. response.data.activeLoans was always undefined (arrays
+      // have no such property), so this fell through to `|| []` for both lists on
+      // every single call regardless of real data — confirmed live against two
+      // members who each have a real, active, fully-disbursed loan; the EMI Chart
+      // screen reported "No Loans Found" for both. Map the real shape here.
+      const rows: any[] = Array.isArray(response.data) ? response.data : [];
+      const toLoanData = (r: any): LoanData => ({
+        loanCaseNo: r.loancaseno?.toString() ?? '',
+        loanType: r.loantype ?? '',
+        loanAmount: parseFloat(r.loan_amt) || 0,
+        rate: 0,
+        noOfInstallments: 0,
+        installmentAmount: 0,
+        balance: parseFloat(r.balance) || 0,
+        purpose: '',
+        paymentDate: '',
+        memberName: r.member_name ?? '',
+        memberNumber: r.mbno?.toString() ?? memberNumber,
+        officeName: '',
+        basicPay: 0,
+      });
+
+      // loan_master rows are the real, disbursed loans with an actual EMI
+      // schedule to generate. loan_pending rows mirror status through the
+      // Application->Sanction->Disbursement pipeline — once DISBURSED they're
+      // redundant with the loan_master row for the same case (both appear in
+      // `rows`), so only genuinely not-yet-disbursed ones are shown as pending.
+      const masterCaseNos = new Set(
+        rows.filter(r => r.source === 'loan_master').map(r => r.loancaseno?.toString())
+      );
+      const activeLoans = rows.filter(r => r.source === 'loan_master').map(toLoanData);
+      const pendingLoans = rows
+        .filter(r => r.source === 'loan_pending'
+          && !masterCaseNos.has(r.loancaseno?.toString())
+          && (r.status === 'PENDING' || r.status === 'SANCTIONED'))
+        .map(toLoanData);
+
+      return { activeLoans, pendingLoans };
     } catch (error) {
       console.error('Error fetching member loans:', error);
       return { activeLoans: [], pendingLoans: [] };

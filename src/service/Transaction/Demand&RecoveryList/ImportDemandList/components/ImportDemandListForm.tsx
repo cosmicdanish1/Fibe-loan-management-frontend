@@ -4,6 +4,7 @@ import React from 'react';
 import { Select } from 'antd';
 import { Upload, Save, RotateCcw, X, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { ImportDemandListHookReturn } from '../interface/ImportDemandListInterfaces';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 
@@ -18,6 +19,12 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
 }) => {
     const validCount = previewData.filter(r => r.status === 'Valid').length;
     const errorCount = previewData.filter(r => r.status === 'Error').length;
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: isSaving ? 'Saving...' : 'Save',
+        saveEnabled: !(isSaving || previewData.length === 0),
+    });
 
     return (
         <div className="idl-root h-screen flex flex-col bg-white font-sans text-slate-900 overflow-hidden">

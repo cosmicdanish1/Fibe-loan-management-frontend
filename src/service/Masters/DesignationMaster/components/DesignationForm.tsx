@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { DesignationHookReturn } from '../interfaces/interface';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
 const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
@@ -30,6 +31,11 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
             handleExit();
         }
     };
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: 'Save',
+    });
 
     const columns = [
         {

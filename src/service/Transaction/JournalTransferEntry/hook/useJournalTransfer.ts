@@ -64,37 +64,24 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
         } catch (e) { console.error('Head list fetch error:', e); }
     };
 
+    // BUG FIX: the primary lookup hit `/search?type=member` — a route that doesn't
+    // exist (404) — and since a 404 doesn't make fetch() throw, the catch-block
+    // fallback never actually ran. That fallback (`/members?limit=300`) was itself
+    // broken too: 300 exceeds the endpoint's max limit (400 Bad Request), and its
+    // response shape/field names don't match what the mapping expected anyway.
+    // Both replaced with apiService.lookupMembers(), already proven working
+    // elsewhere in this app with exactly the memberNo/memberName shape this
+    // screen expects.
     const fetchMemberList = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
-            const response = await fetch(`${await getApiBaseUrl()}/search?query=&type=member&limit=300`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            if (response.ok) {
-                const result = await response.json();
-                const rawList = Array.isArray(result) ? result : (result.data || []);
-                setMemberList(rawList.map((m: any) => ({
-                    mbno: String(m.mbno || m.memberNo || m.id || ''),
-                    name: (m.name || m.memberName || m.fullName || `${m.f_name || ''} ${m.l_name || ''}`).trim(),
+            const response = await apiService.lookupMembers(undefined, 100);
+            if (response.success && Array.isArray(response.data)) {
+                setMemberList(response.data.map((m: any) => ({
+                    mbno: String(m.memberNo || m.mbno || ''),
+                    name: (m.memberName || m.name || '').trim(),
                 })).filter((m: any) => m.mbno));
             }
-        } catch (e) {
-            console.error('Member list fetch error, trying fallback:', e);
-            try {
-                const token = localStorage.getItem('accessToken');
-                const res = await fetch(`${await getApiBaseUrl()}/members?limit=300`, {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                });
-                if (res.ok) {
-                    const result = await res.json();
-                    const rawList = Array.isArray(result) ? result : (result.data || []);
-                    setMemberList(rawList.map((m: any) => ({
-                        mbno: String(m.mbno || m.memberNo || ''),
-                        name: (m.name || m.memberName || `${m.f_name || ''} ${m.l_name || ''}`).trim(),
-                    })).filter((m: any) => m.mbno));
-                }
-            } catch (e2) { console.error('Member fallback also failed:', e2); }
-        }
+        } catch (e) { console.error('Member list fetch error:', e); }
     };
 
     const fetchVoucherList = async () => {

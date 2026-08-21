@@ -120,7 +120,7 @@ const GeneralLedger: React.FC = () => {
 
   const handleExportCSV = async () => {
     if (!ledgerData?.entries?.length) { await showDialog('warning', 'No Data', 'No data to export'); return; }
-    const headers = ['Date', 'MB No', 'Voucher', 'Narration', 'Debit', 'Credit', 'Balance'];
+    const headers = ['Date', 'MB No', 'Voucher', 'Narration', 'Payment', 'Receipt', 'Balance'];
     const rows = ledgerData.entries.map(e => [
       dayjs(e.transactionDate).format('DD-MMM-YYYY'),
       e.memberNumber || '',
@@ -157,7 +157,7 @@ const GeneralLedger: React.FC = () => {
       <div className={`h-screen flex flex-col ${bg} font-sans overflow-hidden`}>
 
         {/* ── Header ── */}
-        <div className={`${panel} border-b ${panelBdr} px-4 py-2 flex items-center justify-between shrink-0 shadow-sm`}>
+        <div className={`${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'} border-b px-4 py-2 flex items-center justify-between shrink-0 shadow-sm`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-1.5 rounded-lg text-white shadow">
               <BookOpen size={15} />
@@ -234,8 +234,8 @@ const GeneralLedger: React.FC = () => {
             className={`${panel} border-b ${panelBdr} px-4 py-1.5 flex items-center gap-6 shrink-0`}>
             {[
               { label: 'Opening',      value: ledgerData.openingBalance,  color: text },
-              { label: 'Total Debits', value: ledgerData.totalDebits,     color: 'text-rose-500' },
-              { label: 'Total Credits',value: ledgerData.totalCredits,    color: 'text-emerald-500' },
+              { label: 'Total Payments', value: ledgerData.totalDebits,   color: 'text-rose-500' },
+              { label: 'Total Receipts',value: ledgerData.totalCredits,   color: 'text-emerald-500' },
               { label: 'Closing',      value: ledgerData.closingBalance,  color: 'text-teal-400' },
             ].map(s => (
               <div key={s.label}>
@@ -271,8 +271,8 @@ const GeneralLedger: React.FC = () => {
                       <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold w-20`}>MB No</th>
                       <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold w-20`}>Voucher</th>
                       <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold`}>Narration</th>
-                      <th className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold w-28`}>Debit</th>
-                      <th className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold w-28`}>Credit</th>
+                      <th className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold w-28`}>Payment</th>
+                      <th className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold w-28`}>Receipt</th>
                       <th className={`text-right py-1.5 px-2 font-bold w-32`}>Balance</th>
                     </tr>
                   </thead>
@@ -311,12 +311,12 @@ const GeneralLedger: React.FC = () => {
                       <td className="py-1.5 px-2" />
                     </tr>
                     <tr className={`border-b ${tblBdr} ${sumRow}`}>
-                      <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Debits :</td>
+                      <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Payments :</td>
                       <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-rose-500`}>{fmt(ledgerData.totalDebits)}</td>
                       <td className="py-1.5 px-2" />
                     </tr>
                     <tr className={`border-b ${tblBdr} ${sumRow}`}>
-                      <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Credits :</td>
+                      <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Receipts :</td>
                       <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-emerald-500`}>{fmt(ledgerData.totalCredits)}</td>
                       <td className="py-1.5 px-2" />
                     </tr>

@@ -182,7 +182,7 @@ const MemberLedgerReport: React.FC = () => {
       <div className={`h-screen flex flex-col font-sans overflow-hidden ${text} ${bg}`}>
 
         {/* Header */}
-        <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${panel}`}>
+        <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-cyan-600 p-1.5 rounded-lg text-white shadow-md">
               <BookOpen size={14} />

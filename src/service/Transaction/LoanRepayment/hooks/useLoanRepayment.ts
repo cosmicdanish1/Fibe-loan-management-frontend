@@ -10,25 +10,38 @@ export interface ActiveLoan {
     instal_amt: number;
 }
 
+export interface UnpaidInstallment {
+    installmentNo: number;
+    dueDate: string;
+    principalDue: number;
+    interestDue: number;
+    penalDue: number;
+    monthsOverdue: number;
+}
+
+export interface DueStatus {
+    loanCaseNo: string;
+    oldestUnpaidInstallment: number | null;
+    unpaidInstallments: UnpaidInstallment[];
+    totalPrincipalDue: number;
+    totalInterestDue: number;
+    totalPenalDue: number;
+    totalDue: number;
+}
+
 export interface RepaymentForm {
     mbno: string;
     memberName: string;
     selectedLoanCase: string;
-    paymentMonth: number;
-    paymentYear: number;
     paymentAmount: number;
     receiptNo: string;
     narration: string;
 }
 
-const currentDate = new Date();
-
 const defaultForm: RepaymentForm = {
     mbno: '',
     memberName: '',
     selectedLoanCase: '',
-    paymentMonth: currentDate.getMonth() + 1,
-    paymentYear: currentDate.getFullYear(),
     paymentAmount: 0,
     receiptNo: '',
     narration: 'Loan Repayment',
@@ -37,6 +50,8 @@ const defaultForm: RepaymentForm = {
 export const useLoanRepayment = () => {
     const [form, setForm] = useState<RepaymentForm>(defaultForm);
     const [activeLoans, setActiveLoans] = useState<ActiveLoan[]>([]);
+    const [dueStatus, setDueStatus] = useState<DueStatus | null>(null);
+    const [dueStatusLoading, setDueStatusLoading] = useState(false);
     const [repaymentHistory, setRepaymentHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -81,20 +96,47 @@ export const useLoanRepayment = () => {
         }
     }, []);
 
+    // Server always recovers the oldest unpaid installment first regardless of
+    // what's asked for, so the form shows what's actually due (with penal)
+    // instead of letting the operator pick an arbitrary month.
+    const fetchDueStatus = useCallback(async (loancaseno: string): Promise<DueStatus | null> => {
+        if (!loancaseno) return null;
+        setDueStatusLoading(true);
+        try {
+            const base = await getApiBaseUrl();
+            const res = await fetch(`${base}/loans/case/${loancaseno}/due-status`);
+            if (!res.ok) throw new Error('Failed to load due status');
+            const data = await res.json();
+            const status: DueStatus = data.data || data;
+            setDueStatus(status);
+            return status;
+        } catch {
+            setDueStatus(null);
+            return null;
+        } finally {
+            setDueStatusLoading(false);
+        }
+    }, []);
+
     const handleMemberLookup = useCallback(async (mbno: string, memberName: string) => {
         setForm(prev => ({ ...prev, mbno, memberName, selectedLoanCase: '', paymentAmount: 0 }));
+        setDueStatus(null);
         await fetchMemberLoans(mbno);
         await fetchRepaymentHistory(mbno);
     }, [fetchMemberLoans, fetchRepaymentHistory]);
 
-    const handleLoanSelect = useCallback((loancaseno: string) => {
+    const handleLoanSelect = useCallback(async (loancaseno: string) => {
         const loan = activeLoans.find(l => l.loancaseno === loancaseno);
-        setForm(prev => ({
-            ...prev,
-            selectedLoanCase: loancaseno,
-            paymentAmount: loan ? parseFloat(loan.instal_amt as any) || 0 : 0,
-        }));
-    }, [activeLoans]);
+        setForm(prev => ({ ...prev, selectedLoanCase: loancaseno, paymentAmount: 0 }));
+        const status = await fetchDueStatus(loancaseno);
+        // Default the payment amount to what's actually owed (principal + interest
+        // + penal across every unpaid installment); fall back to the plain EMI
+        // when nothing is overdue yet (e.g. paying the very first installment on time).
+        const defaultAmount = status && status.totalDue > 0
+            ? status.totalDue
+            : (loan ? parseFloat(loan.instal_amt as any) || 0 : 0);
+        setForm(prev => ({ ...prev, paymentAmount: defaultAmount }));
+    }, [activeLoans, fetchDueStatus]);
 
     const handleSubmit = async () => {
         if (!form.mbno || !form.selectedLoanCase || form.paymentAmount <= 0) {
@@ -111,8 +153,6 @@ export const useLoanRepayment = () => {
                 body: JSON.stringify({
                     mbno: form.mbno,
                     loancaseno: form.selectedLoanCase,
-                    paymentMonth: form.paymentMonth,
-                    paymentYear: form.paymentYear,
                     paymentAmount: form.paymentAmount,
                     receiptNo: form.receiptNo,
                     narration: form.narration,
@@ -121,9 +161,10 @@ export const useLoanRepayment = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Repayment failed');
             setMessage({ type: 'success', text: data.message });
-            // Refresh loans and history after successful repayment
+            // Refresh loans, due status and history after successful repayment
             await fetchMemberLoans(form.mbno);
             await fetchRepaymentHistory(form.mbno);
+            await fetchDueStatus(form.selectedLoanCase);
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
         } finally {
@@ -134,6 +175,7 @@ export const useLoanRepayment = () => {
     const handleReset = () => {
         setForm(defaultForm);
         setActiveLoans([]);
+        setDueStatus(null);
         setRepaymentHistory([]);
         setMessage(null);
     };
@@ -141,6 +183,8 @@ export const useLoanRepayment = () => {
     return {
         form,
         activeLoans,
+        dueStatus,
+        dueStatusLoading,
         repaymentHistory,
         loading,
         historyLoading,

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LoanSanctionHookReturn } from '../interface/LoanSanctionInterfaces';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -48,6 +49,14 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
     formatCurrency,
     handleExit,
 }) => {
+    // Legacy parity: the global toolbar's Save slot becomes "Sanction" here,
+    // triggers the same handler, and mirrors this screen's own disabled state.
+    usePageToolbarActions({
+        onSave: handleSanctionSave,
+        saveLabel: isSaving ? 'Processing...' : 'Sanction',
+        saveEnabled: !!selectedLoanCase && !isSaving,
+    });
+
     return (
         <ConfigProvider
             theme={{
@@ -60,7 +69,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
             <div className="h-screen flex flex-col bg-slate-50 font-sans selection:bg-green-100 overflow-hidden text-slate-900">
 
                 {/* Compact Admin Header */}
-                <div className="bg-slate-900 px-2 py-1 flex items-center justify-between z-10 shrink-0 shadow-lg border-b border-white/5">
+                <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-2 py-1 flex items-center justify-between z-10 shrink-0 shadow-lg border-b border-white/5">
                     <div className="flex items-center gap-1.5">
                         <div className="bg-emerald-600 p-1 rounded-lg text-white shadow-lg shadow-emerald-600/20">
                             <BadgeCheck size={14} />

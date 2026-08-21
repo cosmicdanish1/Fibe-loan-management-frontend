@@ -195,3 +195,6 @@ junit.xml
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Generated API test-run output (large, regenerated per run)
+tests/api-test-reports/

@@ -11,6 +11,7 @@ import { usePassRdAccount } from '../hooks/usePassRdAccount';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 import { Modal } from 'antd';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -84,6 +85,11 @@ const PassRdAccount: React.FC = () => {
 
   const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
   const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
+
+  usePageToolbarActions({
+    onSave: save,
+    saveLabel: 'Save',
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

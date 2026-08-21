@@ -116,6 +116,7 @@ const DefaulterList = lazy(() => import('../service/Reports/Monthly/DefaulterLis
 // Lazy load more monthly report components
 const NewLoanDisbursed = lazy(() => import('../service/Reports/Monthly/NewLoanDisbursed/page/NewLoanDisbursed'));
 const MemberLoanLedger = lazy(() => import('../service/Reports/Monthly/MemberLoanLedger/page/MemberLoanLedger'));
+const LoanStatement = lazy(() => import('../service/Reports/AccountReports/LoanStatement/page/LoanStatement'));
 
 // Lazy load print voucher components
 const ReceiptPaymentVoucher = lazy(() => import('../service/Reports/Monthly/PrintVouchers/ReceiptPaymentVoucher/page/ReceiptPaymentVoucher'));
@@ -185,6 +186,7 @@ const Saving = lazy(() => import('../service/Transaction/Saving/page/Saving'));
 const JournalTransferEntry = lazy(() => import('../service/Transaction/JournalTransferEntry/page/JournalTransferEntry'));
 const LoanPayment = lazy(() => import('../service/Transaction/LoanPayment/page/LoanPayment'));
 const LoanRepayment = lazy(() => import('../service/Transaction/LoanRepayment/page/LoanRepaymentPage'));
+const LoanEarlyClosure = lazy(() => import('../service/Transaction/LoanEarlyClosure/page/LoanEarlyClosurePage'));
 const LoanSanction = lazy(() => import('../service/Transaction/LoanSanction/page/LoanSanction'));
 const CompulsoryDepositTransaction = lazy(() => import('../service/Transaction/CompulsoryDepositTransaction/page/CompulsoryDepositTransaction'));
 const MemberBalanceTransfer = lazy(() => import('../service/Transaction/MemberBalanceTransfer/page/MemberBalanceTransfer'));
@@ -403,6 +405,7 @@ const App: React.FC = () => {
                   <Route path="/reports/monthly/defaulter-list" element={<DefaulterList />} />
                   <Route path="/reports/monthly/new-loan-disbursed" element={<NewLoanDisbursed />} />
                   <Route path="/reports/monthly/member-loan-ledger" element={<MemberLoanLedger />} />
+                  <Route path="/reports/account-reports/loan-statement" element={<LoanStatement />} />
 
                   {/* Reports - Print Vouchers */}
                   <Route path="/reports/monthly/print-vouchers/receipt-payment" element={<ReceiptPaymentVoucher />} />
@@ -481,6 +484,7 @@ const App: React.FC = () => {
                   <Route path="/transaction/journal-transfer" element={<JournalTransferEntry />} />
                   <Route path="/transaction/loan-payment" element={<LoanPayment />} />
                   <Route path="/transaction/loan-repayment" element={<LoanRepayment />} />
+                  <Route path="/transaction/loan-early-closure" element={<LoanEarlyClosure />} />
                   <Route path="/loan-sanction" element={<LoanSanction />} />
                   <Route path="/transaction/compulsory-deposit" element={<CompulsoryDepositTransaction />} />
                   <Route path="/transaction/member-balance-transfer" element={<MemberBalanceTransfer />} />

@@ -36,14 +36,18 @@ const validSendChannels = [
   'member-selected',
   'loan-sanctioned',
   'update-license-cache',
-  'renderer-logs'
+  'renderer-logs',
+  'toolbar-register-state',
+  'toolbar-trigger-save'
 ];
 
 const validReceiveChannels = [
   'message',
   'settings-updated',
   'member-selected',
-  'loan-sanctioned'
+  'loan-sanctioned',
+  'toolbar-state-changed',
+  'toolbar-do-save'
 ];
 
 const validInvokeChannels = [
@@ -52,6 +56,7 @@ const validInvokeChannels = [
   'get-window-states',
   'print-content',
   'get-printers',
+  'print-window-silent',
   'passbook-render-pdf',
   'passbook-print',
   'show-message-box',
@@ -185,6 +190,29 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => { }; // Return empty cleanup function for invalid callbacks
   },
 
+  // Toolbar remote control — lets a tool window report its Save button's
+  // label/enabled state to the Dashboard, and lets the Dashboard relay a
+  // Save click back to whichever tool window last had focus.
+  registerToolbarState: (state: { saveLabel?: string; saveEnabled?: boolean; hasSave: boolean }) => {
+    if (state && typeof state === 'object') {
+      secureIpcRenderer.send('toolbar-register-state', state);
+    }
+  },
+
+  triggerToolbarSave: () => secureIpcRenderer.send('toolbar-trigger-save'),
+
+  onToolbarStateChanged: (callback: (state: { saveLabel?: string; saveEnabled?: boolean; hasSave: boolean } | null) => void) => {
+    if (typeof callback !== 'function') return () => { };
+    return secureIpcRenderer.on('toolbar-state-changed', (_event, state) => {
+      callback((state as any) ?? null);
+    });
+  },
+
+  onToolbarDoSave: (callback: () => void) => {
+    if (typeof callback !== 'function') return () => { };
+    return secureIpcRenderer.on('toolbar-do-save', () => callback());
+  },
+
   // Window control methods for frameless windows
   minimizeWindow: () => secureIpcRenderer.send('window-minimize'),
   maximizeWindow: () => secureIpcRenderer.send('window-maximize'),
@@ -212,6 +240,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Passbook printing — fixed physical page size, silent print to a chosen printer
   getPrinters: () => secureIpcRenderer.invoke('get-printers'),
+
+  // Silently prints the calling window's own current content (governed by
+  // its @media print CSS) to a chosen printer — skips Windows' native print
+  // dialog, so its printer-driver-dependent preview bug never shows up.
+  printWindowSilent: (options: { deviceName: string; copies?: number; landscape?: boolean }) => {
+    if (options && typeof options.deviceName === 'string') {
+      return secureIpcRenderer.invoke('print-window-silent', options);
+    }
+    return Promise.reject(new Error('printWindowSilent requires a deviceName'));
+  },
   passbookRenderPdf: (payload: { html: string; widthMm: number; heightMm: number }) => {
     if (payload && typeof payload.html === 'string') {
       return secureIpcRenderer.invoke('passbook-render-pdf', payload);

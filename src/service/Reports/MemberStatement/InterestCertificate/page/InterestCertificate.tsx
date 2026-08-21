@@ -165,7 +165,7 @@ const InterestCertificate: React.FC = () => {
     >
       <div className={`h-screen flex flex-col overflow-hidden ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 via-cyan-50/20 to-slate-50'}`}>
         {/* Header */}
-        <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-cyan-600 to-cyan-700 p-1.5 rounded-lg text-white shadow-md">
               <BadgePercent size={14} />

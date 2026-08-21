@@ -9,6 +9,7 @@ import {
 import { ConfigProvider, Switch } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBusinessRules, BusinessRulesData, GeneralSettings, LoanType } from '../hook/useBusinessRules';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 type TabType = 'loanParameters' | 'generalSettings' | 'fundManagement';
 
@@ -94,6 +95,12 @@ const ModifyBusinessRules: React.FC = () => {
     }
   };
 
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: 'Save Rules',
+    saveEnabled: !(saving || loading),
+  });
+
   // ── Loan section renderer ──
   const renderLoanSection = (title: string, loanType: keyof BusinessRulesData, data: LoanType) => (
     <div className="mbr-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden hover:border-slate-400 transition-all shadow-sm">
@@ -136,6 +143,17 @@ const ModifyBusinessRules: React.FC = () => {
               className={inputIconCls} />
           </div>
         </div>
+        {data.penalRate !== undefined && (
+          <div className="space-y-0.5">
+            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Penal Rate (%)</label>
+            <div className="relative">
+              <Percent size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+              <input type="number" step="0.01" value={data.penalRate}
+                onChange={e => updateLoanType(loanType, 'penalRate', parseFloat(e.target.value) || 0)}
+                className={inputIconCls} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -348,7 +366,7 @@ const ModifyBusinessRules: React.FC = () => {
                       ))}
                       <div className="space-y-0.5">
                         <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5 whitespace-nowrap flex items-center gap-1">
-                          <Percent size={8} /> Penal Rate (%)
+                          <Percent size={8} /> Loan Against R Penal Rate (%)
                         </label>
                         <input type="number" step="0.01" value={businessRules.penalRate}
                           onChange={e => setBusinessRules(prev => ({ ...prev, penalRate: parseFloat(e.target.value) || 0 }))}

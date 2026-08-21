@@ -3,6 +3,7 @@ import { Input, Button, Card, Typography, Table, Checkbox, Select, Row, Col, Spa
 import { SettingOutlined, PlusOutlined, SaveOutlined, FileAddOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { apiService } from '../../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../../utils/pageToolbarActions';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -273,8 +274,17 @@ const DefinePL: React.FC = () => {
     },
   ];
 
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: 'Save Definition',
+    saveEnabled: !saving,
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 p-6">
+      <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+        <h1 className="fz-caption font-black text-white tracking-tight uppercase">P & L Account Definition</h1>
+      </div>
       <div className="max-w-5xl mx-auto w-full">
         {/* Professional Header */}
         <div className="flex items-center justify-between mb-6">

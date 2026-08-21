@@ -23,6 +23,31 @@ export function resolveLogDir(): string {
   return path.join(app.getPath('userData'), 'logs');
 }
 
+/**
+ * Main-process code has ~70 raw console.log/warn/error calls that previously
+ * went nowhere once packaged (no attached terminal). Patch the global console
+ * once so every one of them also lands in main.log — same technique as the
+ * renderer's installConsoleCapture() in services/logger.ts. electron-log's own
+ * console transport is disabled so output isn't printed twice.
+ */
+function installConsoleCapture(): void {
+  log.transports.console.level = false;
+
+  (['log', 'info', 'debug', 'warn', 'error'] as const).forEach((method) => {
+    const original = console[method].bind(console);
+    const logMethod = method === 'log' ? 'info' : method;
+
+    console[method] = (...args: any[]) => {
+      original(...args);
+      try {
+        (log as any)[logMethod](...args);
+      } catch {
+        /* logging must never crash the app */
+      }
+    };
+  });
+}
+
 export function initMainLogger(): typeof log {
   const logDir = resolveLogDir();
 
@@ -36,6 +61,8 @@ export function initMainLogger(): typeof log {
   log.transports.console.format = '{h}:{i}:{s} [{level}] {text}';
 
   log.errorHandler.startCatching();
+
+  installConsoleCapture();
 
   log.info('=== Application starting ===');
   log.info(`Log directory: ${logDir}`);

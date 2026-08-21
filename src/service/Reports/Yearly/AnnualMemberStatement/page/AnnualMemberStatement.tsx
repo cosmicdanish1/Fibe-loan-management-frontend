@@ -241,7 +241,7 @@ const AnnualMemberStatement: React.FC = () => {
       <div className={`h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
 
         {/* Header */}
-        <div className={`px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${hdr}`}>
+        <div className={`px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-2 rounded-lg text-white shadow-md">
               <FileText size={18} />

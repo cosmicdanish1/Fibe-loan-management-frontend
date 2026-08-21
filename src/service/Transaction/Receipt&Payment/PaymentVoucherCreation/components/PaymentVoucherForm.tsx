@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import { PaymentVoucherHookReturn, RowData } from '../interface/PaymentVoucherInterfaces';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { apiService } from '../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { TextArea } = Input;
 
@@ -110,16 +111,22 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
         },
     ];
 
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: isLoading ? 'Saving…' : 'Save',
+        saveEnabled: !isLoading,
+    });
+
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#1e40af', borderRadius: 3, fontSize: 12 } }}>
             <div className="h-screen flex flex-col bg-white font-sans overflow-hidden text-gray-800">
 
                 {/* ── Title bar ── */}
-                <div className="bg-gray-100 border-b border-gray-300 px-3 py-1.5 flex items-center justify-between shrink-0">
-                    <span className="fz-body font-semibold text-gray-700">Voucher Creation</span>
+                <div className="bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg">
+                    <span className="fz-body font-semibold text-white">Voucher Creation</span>
                     <div className="flex items-center gap-1.5">
                         <button onClick={handleClear}
-                            className="flex items-center gap-1 px-3 py-1 fz-caption bg-white border border-gray-300 hover:bg-gray-50 rounded text-gray-600 transition-colors">
+                            className="flex items-center gap-1 px-3 py-1 fz-caption bg-white/10 border border-white/20 hover:bg-white/20 rounded text-slate-200 transition-colors">
                             <RotateCcw size={11} /> Clear
                         </button>
                         <button onClick={handleSave} disabled={isLoading}
@@ -128,7 +135,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                             {isLoading ? 'Saving…' : 'Save'}
                         </button>
                         <button onClick={handleExit}
-                            className="flex items-center gap-1 px-3 py-1 fz-caption bg-white border border-gray-300 hover:bg-red-50 hover:border-red-400 hover:text-red-600 rounded text-gray-600 transition-colors">
+                            className="flex items-center gap-1 px-3 py-1 fz-caption bg-white/10 border border-white/20 hover:bg-red-500/20 hover:border-red-400 hover:text-red-300 rounded text-slate-200 transition-colors">
                             <X size={11} /> Exit
                         </button>
                     </div>

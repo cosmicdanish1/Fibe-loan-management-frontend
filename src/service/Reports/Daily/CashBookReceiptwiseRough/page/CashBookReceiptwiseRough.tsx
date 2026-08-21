@@ -137,7 +137,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
 
   // Theme variables
   const bg        = isDark ? 'bg-[#0f172a]'                             : 'bg-slate-50';
-  const header    = isDark ? 'bg-slate-800 border-b border-slate-700'   : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
+  const header    = isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5' : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
   const panel     = isDark ? 'bg-slate-800 border border-slate-700'     : 'bg-white border border-slate-200';
   const panelHd   = isDark ? 'bg-slate-900/50 border-b border-slate-700': 'bg-slate-50 border-b border-slate-100';
   const panelHdTx = isDark ? 'text-slate-300'                           : 'text-slate-700';
@@ -188,8 +188,14 @@ const CashBookReceiptwiseRough: React.FC = () => {
       doc.write(`<!DOCTYPE html><html><head><title>Cash Book Receiptwise Rough</title>
 <style>
   @page { size: A4 portrait; margin: 12mm; }
-  body { font-family: 'Courier New', Courier, monospace; font-size: 9pt; white-space: pre; }
-</style></head><body>${lines.join('\n')}</body></html>`);
+  body { margin: 0; }
+  /* The report text has a fixed width (LINE_W monospace chars) narrower than
+     the page's content area — with no width/centering rule, it sat flush at
+     the left margin with all the leftover space on the right. fit-content +
+     auto margins center the block as a whole while individual lines inside
+     stay left-aligned relative to each other, preserving column alignment. */
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 9pt; white-space: pre; width: fit-content; margin: 0 auto; }
+</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -338,7 +344,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
             <div className={`flex-1 overflow-auto p-4 ${contentBg}`} ref={printRef}>
               <Spin spinning={loading} tip="Loading...">
                 {reportLines.length > 0 ? (
-                  <pre className={`font-mono text-[11.5px] leading-[1.55] whitespace-pre select-text ${lineDefault}`}>
+                  <pre className={`font-mono text-[11.5px] leading-[1.55] whitespace-pre select-text w-fit mx-auto ${lineDefault}`}>
                     {reportLines.map((line, i) => {
                       const isDash = line.trim().startsWith('─') || line.trim().startsWith('-');
                       const isVoucherNo = line.startsWith('Voucher No');

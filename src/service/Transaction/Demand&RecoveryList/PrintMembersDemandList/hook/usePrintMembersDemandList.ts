@@ -1,10 +1,12 @@
 // hook/usePrintMembersDemandList.ts
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { apiService } from '../../../../../services/api';
 import {
     DemandPrintFormData,
-    PrintMembersDemandListHookReturn
+    PrintMembersDemandListHookReturn,
+    DivisionOption,
+    BranchOption
 } from '../interface/PrintMembersDemandListInterfaces';
 
 // BUG FIX: removed 'message' from antd — silently fails in Electron renderer windows.
@@ -37,6 +39,35 @@ export const usePrintMembersDemandList = (): PrintMembersDemandListHookReturn =>
         printEmpNo: false,
         printPrevBalance: false
     });
+
+    // BUG FIX: Division/RO and Branch were both hardcoded fake dropdown lists
+    // (DIV-01/RO-01/RO-02, BR-01/BR-02) that never matched any real division
+    // (wingno) or office code, so the required Division filter — silently
+    // ignored server-side until this fix — could never actually scope
+    // anything even after the backend started respecting it. Loaded from the
+    // same endpoints already proven working elsewhere (member-funds/wings,
+    // admin/offices).
+    const [divisions, setDivisions] = useState<DivisionOption[]>([]);
+    const [branches, setBranches] = useState<BranchOption[]>([]);
+
+    useEffect(() => {
+        apiService.get('/admin/member-funds/wings')
+            .then(response => {
+                const raw = Array.isArray(response.data) ? response.data : [];
+                setDivisions(raw.map((w: any) => ({ id: String(w.id), name: w.name || `Wing ${w.id}` })));
+            })
+            .catch(err => console.error('[PrintMembersDemandList] Failed to load divisions:', err));
+
+        apiService.getOffices()
+            .then(response => {
+                const raw = Array.isArray(response.data) ? response.data : [];
+                setBranches(raw.map((o: any) => ({
+                    officeId: String(o.officeId ?? o.officeno ?? ''),
+                    officeName: o.officeName || o.office_name || `Office ${o.officeId}`,
+                })));
+            })
+            .catch(err => console.error('[PrintMembersDemandList] Failed to load branches:', err));
+    }, []);
 
     const updateField = useCallback((field: keyof DemandPrintFormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -131,6 +162,8 @@ export const usePrintMembersDemandList = (): PrintMembersDemandListHookReturn =>
         handlePrint,
         handleExport,
         handleReset,
-        handleExit
+        handleExit,
+        divisions,
+        branches,
     };
 };

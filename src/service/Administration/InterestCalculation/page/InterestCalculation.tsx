@@ -22,6 +22,7 @@ import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { useInterestCalculator } from '../hook/useIntresterCal';
 import apiService from '../../../../services/api';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 import type {
   InterestCalculatorProps as IInterestCalculatorProps
@@ -185,6 +186,12 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
       window.close();
     }
   };
+
+  usePageToolbarActions({
+    onSave: handlePost,
+    saveLabel: isPosting ? 'POSTING...' : 'POST TRANSACTION',
+    saveEnabled: !(disabled || !calculationResult || isPosting),
+  });
 
   return (
     <ConfigProvider

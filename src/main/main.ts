@@ -883,6 +883,15 @@ const updateActiveWindow = (route: string, window: BrowserWindow) => {
   // Push to top
   windowStack.push({ route, window });
   if (DEBUG_LOGGING) console.log('[DEBUG] Active Window Stack Updated:', windowStack.map(i => i.route));
+
+  // A tool window taking focus becomes the Dashboard toolbar's target.
+  // Focusing the Dashboard itself does NOT clear it — you should be able to
+  // click back into the Dashboard's toolbar and still act on the tool
+  // window you were just working in.
+  if (window !== mainWindow) {
+    toolbarTargetWindow = window;
+    relayToolbarStateToDashboard();
+  }
 };
 
 // Remove window from active stack
@@ -893,7 +902,58 @@ const removeActiveWindow = (window: BrowserWindow) => {
     const route = removed[0] ? removed[0].route : 'unknown';
     if (DEBUG_LOGGING) console.log(`[DEBUG] Window Removed from Stack (${route}). Remaining:`, windowStack.map(i => i.route));
   }
+  toolbarStateByWindow.delete(window);
+  if (window === toolbarTargetWindow) {
+    toolbarTargetWindow = null;
+    relayToolbarStateToDashboard();
+  }
 };
+
+// ===== TOOLBAR REMOTE CONTROL =====
+// The Dashboard has one toolbar (Save/Cancel/...), but the actual save logic
+// lives in whichever tool window is open — each tool window is its own
+// Electron process, so the Dashboard can't just call a function in it. Tool
+// windows report their current Save label/enabled state here; the Dashboard
+// mirrors whatever the "target" window last reported, and clicking Save in
+// the Dashboard is relayed back to that same window.
+interface ToolbarState {
+  saveLabel?: string;
+  saveEnabled?: boolean;
+  hasSave: boolean;
+}
+const toolbarStateByWindow = new Map<BrowserWindow, ToolbarState>();
+// The tool window the Dashboard's toolbar currently acts on. Only ever set to
+// a *tool* window (never the Dashboard itself) — clicking back into the
+// Dashboard to press Save shouldn't lose track of the window you were
+// actually working in.
+let toolbarTargetWindow: BrowserWindow | null = null;
+
+const relayToolbarStateToDashboard = () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const state = (toolbarTargetWindow && !toolbarTargetWindow.isDestroyed())
+    ? toolbarStateByWindow.get(toolbarTargetWindow) ?? null
+    : null;
+  mainWindow.webContents.send('toolbar-state-changed', state);
+};
+
+ipcMain.on('toolbar-register-state', (event, state: ToolbarState) => {
+  const senderWindow = BrowserWindow.fromWebContents(event.sender);
+  if (!senderWindow) return;
+  toolbarStateByWindow.set(senderWindow, state);
+  if (senderWindow === toolbarTargetWindow) relayToolbarStateToDashboard();
+});
+
+ipcMain.on('toolbar-trigger-save', () => {
+  if (toolbarTargetWindow && !toolbarTargetWindow.isDestroyed()) {
+    toolbarTargetWindow.webContents.send('toolbar-do-save');
+    // Clicking Save in the Dashboard means clicking into the Dashboard
+    // first, which naturally pushes the tool window behind it — bring it
+    // back to the front so the action's result is visible immediately
+    // instead of leaving you looking at the Dashboard.
+    toolbarTargetWindow.show();
+    toolbarTargetWindow.focus();
+  }
+});
 
 // ===== WINDOW STATE PERSISTENCE =====
 
@@ -1144,12 +1204,17 @@ const setupWindowEventHandlers = (window: BrowserWindow, route: string) => {
           }, 100);
         }
       } else {
-        // For other windows, briefly focus main window then let user control
+        // Only bring the Dashboard forward if this was the LAST open tool
+        // window — otherwise it shouldn't jump in front of whatever else
+        // you still have open just because one window closed.
         setTimeout(() => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
+          const otherWindowsStillOpen = BrowserWindow.getAllWindows().some(w =>
+            w !== mainWindow && !w.isDestroyed() && w.isVisible()
+          );
+          if (!otherWindowsStillOpen && mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.show();
             mainWindow.focus();
-            if (DEBUG_LOGGING) console.log('[DEBUG] Main window focused after child window closed');
+            if (DEBUG_LOGGING) console.log('[DEBUG] Main window focused after last child window closed');
           }
         }, 100);
       }
@@ -1201,7 +1266,13 @@ const createWindowWithConfig = (route: string, config: any): BrowserWindow => {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
-      preload: PRELOAD_PATH
+      preload: PRELOAD_PATH,
+      // Chromium's built-in PDF viewer (what actually renders the preview
+      // pane in the native print dialog) is implemented as a plugin — off
+      // by default, which is why window.print() opened the dialog but showed
+      // "This app doesn't support print preview" instead of a real preview.
+      // Printing itself still worked; only the preview rendering was affected.
+      plugins: true,
     }
   };
 
@@ -1418,8 +1489,12 @@ ipcMain.on('open-new-window', (_event, route: string) => {
           return;
         }
 
-        // For other windows, focus main window
-        if (mainWindow && !mainWindow.isDestroyed()) {
+        // Only bring the Dashboard forward if this was the LAST open tool
+        // window — see the matching check in setupWindowEventHandlers.
+        const otherWindowsStillOpen = BrowserWindow.getAllWindows().some(w =>
+          w !== mainWindow && !w.isDestroyed() && w.isVisible()
+        );
+        if (!otherWindowsStillOpen && mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.focus();
         }
       });
@@ -1693,6 +1768,42 @@ ipcMain.handle('get-printers', async (event) => {
     displayName: p.displayName,
     isDefault: (p as unknown as { isDefault?: boolean }).isDefault === true,
   }));
+});
+
+// Prints the CALLING window's own content (whatever it's currently showing,
+// governed by that page's @media print CSS) directly to a chosen printer,
+// bypassing Windows' native print dialog entirely. That dialog's preview
+// pane depends on the selected printer's driver class and shows "This app
+// doesn't support print preview" for many generic/IPP drivers — a Windows
+// limitation that hits any app, not something this app's code can fix once
+// that dialog is shown. Never showing it avoids the bug for every printer.
+ipcMain.handle('print-window-silent', async (event, options: { deviceName: string; copies?: number; landscape?: boolean }) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return { success: false, error: 'Window not found' };
+  return new Promise<{ success: boolean; error?: string }>((resolve) => {
+    win.webContents.print({
+      silent: true,
+      deviceName: options.deviceName,
+      copies: options.copies && options.copies > 0 ? options.copies : 1,
+      landscape: options.landscape || false,
+      printBackground: true,
+      // These legacy reports position/center themselves via their own
+      // @page + CSS rules (A4, 0.5in margins baked into the layout math).
+      // Without pinning the actual page size/margins here, Chromium falls
+      // back to whatever the selected printer driver defaults to, which can
+      // differ from what the CSS assumed — throwing off the centering.
+      // Zero print-job margins hands full control back to the page's own
+      // @page/padding rules instead of double-applying driver margins.
+      pageSize: 'A4',
+      // No margins override here — these reports already declare their own
+      // @page { margin: 0.5in } in CSS. Forcing a job-level margin fought
+      // with that instead of cooperating, which is what was throwing off
+      // centering. Letting the page's own CSS be the single source of truth
+      // for margins avoids the conflict.
+    }, (success, failureReason) => {
+      resolve(success ? { success: true } : { success: false, error: failureReason });
+    });
+  });
 });
 
 ipcMain.handle('passbook-render-pdf', async (_event, payload: { html: string; widthMm: number; heightMm: number }) => {

@@ -282,7 +282,7 @@ const JournalTransferVoucher: React.FC = () => {
       <div className={`h-screen flex flex-col ${bg}`}>
         
         {/* Compact Header */}
-        <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 px-3 py-2 flex items-center justify-between shadow-xl shrink-0 border-b-2 border-amber-800/50">
+        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-2 flex items-center justify-between shadow-xl shrink-0 border-b border-white/5">
           <div className="flex items-center gap-2">
             <div className="bg-white/20 backdrop-blur-sm p-1.5 rounded-lg shadow-inner">
               <BookOpen size={16} className="text-white" />

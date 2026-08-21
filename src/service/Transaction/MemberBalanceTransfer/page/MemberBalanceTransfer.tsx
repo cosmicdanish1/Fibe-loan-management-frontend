@@ -4,6 +4,7 @@ import { ArrowRightLeft, RotateCcw, Zap, Send, X, ShieldCheck, Building2, Calend
 import dayjs from 'dayjs';
 import { apiService } from '../../../../services/api';
 import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 
@@ -85,6 +86,8 @@ const MemberBalanceTransfer: React.FC = () => {
           entries, debitHead, creditHead,
           excessHead: excessHead || '',
           postedBy: 'admin',
+          creditLimit: parseFloat(creditLimit) || 999999999,
+          balanceAsOn,
         }),
       });
       if (res.ok) {
@@ -135,6 +138,12 @@ const MemberBalanceTransfer: React.FC = () => {
     { title: 'CR Amt', dataIndex: 'crAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono font-bold text-emerald-600">{fmt(v)}</span> },
     { title: 'Ex.CR Amt', dataIndex: 'exCrAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono text-amber-600">{v > 0 ? fmt(v) : ''}</span> },
   ];
+
+  usePageToolbarActions({
+    onSave: handlePost,
+    saveLabel: posting ? 'Posting...' : 'Post Transaction',
+    saveEnabled: !(posting || entries.length === 0),
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

@@ -5,6 +5,7 @@ import {
 import { DatePicker, ConfigProvider } from 'antd';
 import dayjs from 'dayjs';
 import apiService from '../../../../services/api';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 // ── Type definitions ──────────────────────────────────────────────────────────
 
@@ -243,6 +244,12 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
   const avgRate = totalRows > 0
     ? (rows.reduce((s, r) => s + Number(r.interestRate), 0) / totalRows).toFixed(2)
     : '—';
+
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: 'Save Slabs',
+    saveEnabled: !(saving || rows.length === 0),
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#4f46e5', borderRadius: 4 } }}>

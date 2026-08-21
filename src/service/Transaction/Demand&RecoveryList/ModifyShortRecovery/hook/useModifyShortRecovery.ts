@@ -5,7 +5,8 @@ import { apiService } from '../../../../../services/api';
 import {
     ModifyShortRecoveryFormData,
     ShortRecoveryRecord,
-    ModifyShortRecoveryHookReturn
+    ModifyShortRecoveryHookReturn,
+    WingOption
 } from '../interface/ModifyShortRecoveryInterfaces';
 
 // BUG FIX: removed 'message' from antd — silently fails in Electron renderer windows.
@@ -45,7 +46,7 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
 
 export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
     const [formData, setFormData] = useState<ModifyShortRecoveryFormData>({
-        wing: 'Wing A',
+        wing: '',
         month: 'APR',
         year: new Date().getFullYear().toString(),
         selectedMemberId: '',
@@ -54,6 +55,21 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
 
     const [shortRecoveryList, setShortRecoveryList] = useState<ShortRecoveryRecord[]>([]);
     const [selectedRecord, setSelectedRecord] = useState<ShortRecoveryRecord | null>(null);
+    // BUG FIX: "Select Wing" was a hardcoded 3-item fake list (Wing A/B/C) that
+    // never matched any real wingno, so the backend's wing filter — silently
+    // ignored server-side until this fix — could never actually scope anything
+    // even after it started being applied. Loaded from the same endpoint
+    // already proven working elsewhere (member-funds/wings).
+    const [wings, setWings] = useState<WingOption[]>([]);
+
+    useEffect(() => {
+        apiService.get('/admin/member-funds/wings')
+            .then(response => {
+                const raw = Array.isArray(response.data) ? response.data : [];
+                setWings(raw.map((w: any) => ({ id: String(w.id), name: w.name || `Wing ${w.id}` })));
+            })
+            .catch(err => console.error('[ModifyShortRecovery] Failed to load wings:', err));
+    }, []);
 
     const fetchRecoveries = useCallback(async () => {
         try {
@@ -167,6 +183,7 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
         handleSelectRecord,
         handleSaveAdjustment,
         handleRefresh,
-        handleExit
+        handleExit,
+        wings,
     };
 };

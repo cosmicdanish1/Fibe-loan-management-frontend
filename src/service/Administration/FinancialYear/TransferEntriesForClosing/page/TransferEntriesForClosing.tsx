@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Lock, ChevronRight, Database, Building2,
-  Calendar, X, CheckCircle2, AlertCircle, RefreshCw,
+  Calendar, X, CheckCircle2, AlertCircle, RefreshCw, Plus,
 } from 'lucide-react';
 import { ConfigProvider } from 'antd';
 import { apiService } from '../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 interface FinancialYear {
   yearCode: number;
@@ -59,6 +60,11 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
   const [isLoadingYears, setIsLoadingYears] = useState(true);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Genesis create-year form — shown when no financial years exist at all
+  const [newStart, setNewStart] = useState('');
+  const [newEnd, setNewEnd] = useState('');
+  const [isCreatingYear, setIsCreatingYear] = useState(false);
+
   const loadYears = async () => {
     setIsLoadingYears(true);
     try {
@@ -77,6 +83,33 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
   };
 
   useEffect(() => { loadYears(); }, []);
+
+  const handleCreateYear = async () => {
+    if (!newStart || !newEnd) {
+      await showDialog('warning', 'Required', 'Please enter both a start date and an end date.', '');
+      return;
+    }
+    if (newStart >= newEnd) {
+      await showDialog('warning', 'Invalid Range', 'Start date must be before end date.', '');
+      return;
+    }
+    setIsCreatingYear(true);
+    try {
+      const response = await apiService.createFinancialYear(newStart, newEnd);
+      if (response.success) {
+        await showDialog('info', 'Financial Year Created', 'The financial year has been created.', `Period: ${newStart} → ${newEnd}`);
+        setNewStart('');
+        setNewEnd('');
+        await loadYears();
+      } else {
+        await showDialog('error', 'Create Failed', response.error || 'Failed to create financial year.', '');
+      }
+    } catch (err: any) {
+      await showDialog('error', 'System Error', 'Unable to create financial year.', err?.message || 'Check server connection.');
+    } finally {
+      setIsCreatingYear(false);
+    }
+  };
 
   const selectedYear = years.find(y => String(y.yearCode) === selectedCode);
 
@@ -143,6 +176,12 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
       setIsLoading(false);
     }
   };
+
+  usePageToolbarActions({
+    onSave: handleSubmit,
+    saveLabel: 'Initiate Transfer',
+    saveEnabled: !(!selectedCode || isLoading || isLoadingYears),
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 8 } }}>
@@ -254,6 +293,43 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
                 </div>
               </div>
             </div>
+
+            {/* No financial year exists yet — genesis create form */}
+            {!isLoadingYears && years.length === 0 && (
+              <div className="tefc-card bg-white rounded-xl border-2 border-indigo-100 shadow-md overflow-hidden">
+                <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-3 py-2">
+                  <h2 className="fz-caption font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Plus size={10} className="text-indigo-200" />
+                    No Financial Year Set Up Yet
+                  </h2>
+                </div>
+                <div className="p-3 space-y-2">
+                  <p className="fz-caption text-slate-500 font-semibold leading-snug">
+                    No financial year exists yet. Create the first one to begin using Transfer Entries and Financial Year Closing.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-0.5">
+                      <label className="fz-caption font-black text-slate-600 uppercase tracking-tight">Start Date</label>
+                      <input type="date" value={newStart} onChange={e => setNewStart(e.target.value)}
+                        disabled={isCreatingYear}
+                        className="w-full h-8 bg-indigo-50 border-2 border-indigo-200 rounded-lg px-2 fz-caption font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-60" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="fz-caption font-black text-slate-600 uppercase tracking-tight">End Date</label>
+                      <input type="date" value={newEnd} onChange={e => setNewEnd(e.target.value)}
+                        disabled={isCreatingYear}
+                        className="w-full h-8 bg-indigo-50 border-2 border-indigo-200 rounded-lg px-2 fz-caption font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-60" />
+                    </div>
+                  </div>
+                  <button onClick={handleCreateYear} disabled={isCreatingYear || !newStart || !newEnd}
+                    className="w-full h-8 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-400 text-white font-black rounded-lg fz-caption shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:cursor-not-allowed">
+                    {isCreatingYear
+                      ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /><span className="uppercase tracking-wider">Creating...</span></>
+                      : <><Plus size={12} /><span className="uppercase tracking-wider">Create Financial Year</span></>}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Action buttons */}
             <div className="flex gap-2">

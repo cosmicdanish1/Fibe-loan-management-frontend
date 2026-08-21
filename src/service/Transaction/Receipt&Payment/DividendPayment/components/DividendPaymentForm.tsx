@@ -9,6 +9,7 @@ import {
 import dayjs from 'dayjs';
 import { DividendPaymentHookReturn } from '../interface/DividendPaymentInterfaces';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { TextArea } = Input;
 
@@ -51,6 +52,12 @@ const DividendPaymentForm: React.FC<DividendPaymentHookReturn> = ({
             render: (v: number) => <span className="fz-small font-black text-emerald-600">₹{v.toFixed(2)}</span>,
         },
     ];
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: isLoading ? 'Processing…' : 'Disburse',
+        saveEnabled: !isLoading,
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

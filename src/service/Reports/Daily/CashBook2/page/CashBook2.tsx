@@ -22,12 +22,20 @@ interface CashBookEntry {
   headName: string;
   receipt: number;
   payment: number;
+  receiptCash: number;
+  receiptTransfer: number;
+  paymentCash: number;
+  paymentTransfer: number;
 }
 
 interface CashBook2Summary {
   date: string;
   totalReceipts: number;
   totalPayments: number;
+  totalReceiptsCash: number;
+  totalReceiptsTransfer: number;
+  totalPaymentsCash: number;
+  totalPaymentsTransfer: number;
   openingBalance: number;
   closingBalance: number;
   entries: CashBookEntry[];
@@ -47,7 +55,7 @@ const CashBook2: React.FC = () => {
 
   // Theme variables
   const bg        = isDark ? 'bg-[#0f172a]'                             : 'bg-slate-50';
-  const header    = isDark ? 'bg-slate-800 border-b border-slate-700'   : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
+  const header    = isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5' : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
   const panel     = isDark ? 'bg-slate-800 border border-slate-700'     : 'bg-white border border-slate-200';
   const panelHd   = isDark ? 'bg-slate-900/50 border-b border-slate-700': 'bg-slate-50 border-b border-slate-100';
   const panelHdTx = isDark ? 'text-slate-300'                           : 'text-slate-700';
@@ -90,8 +98,8 @@ const CashBook2: React.FC = () => {
   const handleExportCSV = () => {
     if (!data?.entries?.length) { message.warning('No data to export'); return; }
     let csv = 'Espat Karmchari Co-Operative Credit Society Limited\nCASH-BOOK REPORT\n';
-    csv += `Date: ${selectedDate.format('DD-MMM-YYYY')}\n\nHead Code,Head Name,Receipt,Payment\n`;
-    data.entries.forEach(e => { csv += `${e.headCode},"${e.headName}",${e.receipt},${e.payment}\n`; });
+    csv += `Date: ${selectedDate.format('DD-MMM-YYYY')}\n\nHead Code,Head Name,Receipt Cash,Receipt Transfer,Payment Cash,Payment Transfer\n`;
+    data.entries.forEach(e => { csv += `${e.headCode},"${e.headName}",${e.receiptCash},${e.receiptTransfer},${e.paymentCash},${e.paymentTransfer}\n`; });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     a.download = `CashBook2_${selectedDate.format('YYYY-MM-DD')}.csv`;
@@ -114,7 +122,7 @@ const CashBook2: React.FC = () => {
         {/* Header */}
         <div className={`px-4 py-2.5 flex items-center justify-between z-10 shrink-0 ${header}`}>
           <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-500/30">
+            <div className="bg-indigo-600 p-2 rounded-lg text-white">
               <BookOpen size={18} />
             </div>
             <div>
@@ -142,7 +150,7 @@ const CashBook2: React.FC = () => {
         <div className="flex-1 overflow-hidden p-3 flex gap-3">
 
           {/* Left panel */}
-          <div className="w-[260px] flex flex-col gap-3 shrink-0">
+          <div className="cb2-no-print w-[260px] flex flex-col gap-3 shrink-0">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
               className={`rounded-xl overflow-hidden ${panel}`}>
               <div className={`px-3 py-2 flex items-center justify-between ${panelHd}`}>
@@ -209,7 +217,7 @@ const CashBook2: React.FC = () => {
             <div className="flex-1 overflow-auto p-3">
               <Spin spinning={loading} tip="Loading...">
                 {data?.entries?.length ? (
-                  <div className="font-mono text-xs">
+                  <div className="cb2-print-report font-mono text-xs">
                     <div className={`text-center mb-3 border-b border-dashed pb-2 ${tblBdr}`}>
                       <div className={`text-sm font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
                       <div className={`fz-caption ${muted}`}>Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
@@ -219,10 +227,16 @@ const CashBook2: React.FC = () => {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className={`border-b ${tblBdr} ${tblHd}`}>
-                            <th className={`text-left py-2 px-3 border-r font-bold w-20 ${tblBdr} ${tblHdTx}`}>CODE</th>
-                            <th className={`text-left py-2 px-3 border-r font-bold ${tblBdr} ${tblHdTx}`}>HEAD NAME</th>
-                            <th className={`text-right py-2 px-3 border-r font-bold w-32 ${isDark ? 'text-emerald-400' : 'text-emerald-600'} ${tblBdr}`}>RECEIPT</th>
-                            <th className={`text-right py-2 px-3 font-bold w-32 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>PAYMENT</th>
+                            <th rowSpan={2} className={`text-left py-2 px-3 border-r font-bold w-20 align-bottom ${tblBdr} ${tblHdTx}`}>CODE</th>
+                            <th rowSpan={2} className={`cb2-wrap text-left py-2 px-3 border-r font-bold align-bottom ${tblBdr} ${tblHdTx}`}>HEAD NAME</th>
+                            <th colSpan={2} className={`text-center py-1 px-3 border-r font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'} ${tblBdr}`}>RECEIPT</th>
+                            <th colSpan={2} className={`text-center py-1 px-3 font-bold ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>PAYMENT</th>
+                          </tr>
+                          <tr className={`border-b ${tblBdr} ${tblHd}`}>
+                            <th className={`text-right py-1 px-3 border-r font-bold w-24 ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>CASH</th>
+                            <th className={`text-right py-1 px-3 border-r font-bold w-24 ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>TRANSFER</th>
+                            <th className={`text-right py-1 px-3 border-r font-bold w-24 ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>CASH</th>
+                            <th className={`text-right py-1 px-3 font-bold w-24 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>TRANSFER</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -231,12 +245,18 @@ const CashBook2: React.FC = () => {
                               className={`border-b border-slate-700/50 transition-colors ${rowHov} ${i % 2 === 0 ? rowEven : rowOdd}`}
                               initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
                               <td className={`py-1 px-3 border-r font-semibold ${tblBdr} ${codeTx}`}>{entry.headCode}</td>
-                              <td className={`py-1 px-3 border-r ${tblBdr} ${headTx}`}>{entry.headName}</td>
+                              <td className={`cb2-wrap py-1 px-3 border-r ${tblBdr} ${headTx}`}>{entry.headName}</td>
                               <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                                {entry.receipt > 0 ? fmt(entry.receipt) : ''}
+                                {entry.receiptCash > 0 ? fmt(entry.receiptCash) : ''}
+                              </td>
+                              <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                {entry.receiptTransfer > 0 ? fmt(entry.receiptTransfer) : ''}
+                              </td>
+                              <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>
+                                {entry.paymentCash > 0 ? fmt(entry.paymentCash) : ''}
                               </td>
                               <td className={`text-right py-1 px-3 font-semibold ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>
-                                {entry.payment > 0 ? fmt(entry.payment) : ''}
+                                {entry.paymentTransfer > 0 ? fmt(entry.paymentTransfer) : ''}
                               </td>
                             </motion.tr>
                           ))}
@@ -244,13 +264,15 @@ const CashBook2: React.FC = () => {
                           {/* Totals */}
                           <tr className={`border-b-2 font-bold ${totalRow}`}>
                             <td colSpan={2} className={`py-1.5 px-3 border-r ${tblBdr} ${totalTx}`}>TOTAL</td>
-                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceipts)}</td>
-                            <td className={`text-right py-1.5 px-3 ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPayments)}</td>
+                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceiptsCash)}</td>
+                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceiptsTransfer)}</td>
+                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPaymentsCash)}</td>
+                            <td className={`text-right py-1.5 px-3 ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPaymentsTransfer)}</td>
                           </tr>
 
                           {/* Balance summary */}
                           <tr className={`border-b ${tblBdr} ${summaryBg}`}>
-                            <td colSpan={2} className={`py-1 px-3 border-r ${tblBdr}`} />
+                            <td colSpan={4} className={`py-1 px-3 border-r ${tblBdr}`} />
                             <td className={`text-center py-1 px-3 border-r font-bold fz-small ${tblBdr} ${muted}`}>Cash In Hand</td>
                             <td className={`text-center py-1 px-3 border-r font-bold fz-small ${tblBdr} ${muted}`}>Saving Balance</td>
                             <td className={`text-center py-1 px-3 font-bold fz-small ${muted}`}>Clearing</td>
@@ -262,14 +284,14 @@ const CashBook2: React.FC = () => {
                             { label: 'Total Debit :', v1: data.totalPayments, col: isDark ? 'text-rose-300' : 'text-rose-700' },
                           ].map(({ label, v1, col }, i) => (
                             <tr key={i} className={`border-b ${tblBdr}`}>
-                              <td colSpan={2} className={`text-right py-1 px-3 border-r font-bold ${tblBdr} ${totalTx}`}>{label}</td>
+                              <td colSpan={4} className={`text-right py-1 px-3 border-r font-bold ${tblBdr} ${totalTx}`}>{label}</td>
                               <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${col}`}>{fmt(v1)}</td>
                               <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${subtle}`}>0.00</td>
                               <td className={`text-right py-1 px-3 font-semibold ${subtle}`}>0.00</td>
                             </tr>
                           ))}
                           <tr className={`border-b-2 font-bold ${totalRow}`}>
-                            <td colSpan={2} className={`text-right py-1.5 px-3 border-r ${tblBdr} ${totalTx}`}>Closing Balance :</td>
+                            <td colSpan={4} className={`text-right py-1.5 px-3 border-r ${tblBdr} ${totalTx}`}>Closing Balance :</td>
                             <td className={`text-right py-1.5 px-3 border-r font-black ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>{fmt(data.closingBalance)}</td>
                             <td className={`text-right py-1.5 px-3 border-r font-semibold ${tblBdr} ${subtle}`}>0.00</td>
                             <td className={`text-right py-1.5 px-3 font-semibold ${subtle}`}>0.00</td>
@@ -307,10 +329,37 @@ const CashBook2: React.FC = () => {
         @media print {
           * { margin:0; padding:0; box-sizing:border-box; }
           body * { visibility:hidden; }
-          .font-mono, .font-mono * { visibility:visible; }
-          .font-mono { position:absolute; left:50%; top:0; transform:translateX(-50%);
-            width:7.5in; max-width:7.5in; padding:0.5in; font-size:10pt; background:white !important;
-            color:black !important; }
+
+          /* This used to key off ".font-mono" — a generic utility class that
+             the sidebar's "Opening" balance card ALSO carries, so that stat
+             card was legitimately matched by ".font-mono, .font-mono *" and
+             printed as a stray number above the report. A class unique to
+             this one element removes the collision entirely. */
+          .cb2-print-report, .cb2-print-report * { visibility:visible; }
+          .cb2-no-print { display:none !important; }
+
+          .cb2-print-report {
+            /* fixed (not absolute): antd's Spin wrapper around this element
+               sets position:relative for its loading overlay, which would
+               become the containing block for an absolutely-positioned child
+               and anchor top:0 to the Spin wrapper's flow position instead of
+               the actual page top, leaving a blank gap above the report. */
+            position:fixed; left:50%; top:0; transform:translateX(-50%);
+            /* A4 is 8.27in wide; @page below reserves 0.5in per side, leaving
+               7.27in. 7.5in overflowed that budget, which is what threw off
+               centering and clipped content at both page edges. */
+            width:7in; max-width:7in; padding:0.25in; font-size:10pt;
+            background:white !important; color:black !important;
+          }
+
+          /* An official statement's figures must never break mid-number —
+             that's the "-1,01,76,954.0 / 0" wrap the user flagged. Default
+             every cell to nowrap; only HEAD NAME (free text, unbounded
+             width) opts back into wrapping via .cb2-wrap. */
+          .cb2-print-report table { table-layout:fixed !important; width:100% !important; }
+          .cb2-print-report td, .cb2-print-report th { white-space:nowrap !important; }
+          .cb2-print-report .cb2-wrap { white-space:normal !important; overflow-wrap:break-word !important; word-break:break-word !important; }
+
           @page { margin:0.5in; size:A4 portrait; }
         }
       `}</style>

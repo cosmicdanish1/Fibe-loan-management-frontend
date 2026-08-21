@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { ConfigProvider, App } from 'antd';
 import { apiService } from '../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const PLYearEndProcessContent: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -39,6 +40,12 @@ const PLYearEndProcessContent: React.FC = () => {
       setIsProcessing(false);
     }
   };
+
+  usePageToolbarActions({
+    onSave: startProcess,
+    saveLabel: 'Execute Process',
+    saveEnabled: !isProcessing,
+  });
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 font-sans selection:bg-indigo-100 overflow-hidden border border-slate-200">

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { ConfigProvider, message, Modal, Popconfirm } from 'antd';
 import apiService from '../../../../services/api';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ interface FormState {
 
 const BLANK_FORM: FormState = {
   code: '', parentCode: '', headName: '', headType: '',
-  interest: 'N', pflag: 'L', hposition: '', opBal: '0',
+  interest: 'N', pflag: '', hposition: '', opBal: '0',
 };
 
 // Section roots in display order (matches legacy: L → A → I → E)
@@ -154,7 +155,7 @@ const HeadAdditionModification: React.FC = () => {
       headName:  e.headName,
       headType:  e.headType  || '',
       interest:  e.interest  || 'N',
-      pflag:     e.pflag     || 'L',
+      pflag:     e.pflag     || '',
       hposition: e.hposition || '',
       opBal:     String(e.opBal || 0),
     });
@@ -166,6 +167,7 @@ const HeadAdditionModification: React.FC = () => {
     if (!formData.code.trim())       { message.error('Code is required');        return; }
     if (!formData.parentCode.trim()) { message.error('Parent code is required'); return; }
     if (!formData.headName.trim())   { message.error('Head name is required');   return; }
+    if (!formData.pflag.trim())      { message.error('P Flag is required');      return; }
     setSaving(true);
     try {
       const res = await apiService.saveHeadMaster({
@@ -323,6 +325,15 @@ const HeadAdditionModification: React.FC = () => {
   };
 
   // ─── Render ──────────────────────────────────────────────────────────────────
+
+  // The Save action here belongs to the Add/Edit modal, not the page itself —
+  // only expose it to the global toolbar while that modal is actually open,
+  // mirroring its own okButtonProps.disabled = saving.
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: saving ? 'Saving…' : formMode === 'add' ? 'Add Head' : 'Save Changes',
+    saveEnabled: formOpen && !saving,
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#7c3aed' } }}>
@@ -752,8 +763,12 @@ const HeadAdditionModification: React.FC = () => {
               onChange={e => setField('pflag', e.target.value)}
               className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
             >
-              <option value="L">L — Left</option>
-              <option value="R">R — Right</option>
+              <option value="">— select —</option>
+              <option value="A">A — Asset</option>
+              <option value="L">L — Liability</option>
+              <option value="I">I — Income</option>
+              <option value="E">E — Expenditure</option>
+              <option value="R">R — Root (section headers only)</option>
             </select>
           </div>
 

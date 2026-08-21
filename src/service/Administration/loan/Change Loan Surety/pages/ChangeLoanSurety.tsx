@@ -2,6 +2,7 @@
 import { Save, Search, Database, User, ShieldCheck, Info, Users, Calendar, IndianRupee, Loader2, RefreshCcw, X } from 'lucide-react';
 import MemberLookup from '@/components/shared/MemberLookup/MemberLookup';
 import { useChangeLoanSuretyForm } from '../hooks/useChangeLoanSuretyForm';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const ChangeLoanSuretyForm: React.FC = () => {
   const {
@@ -20,6 +21,12 @@ const ChangeLoanSuretyForm: React.FC = () => {
     fetchLoanDetails,
     fetchMemberLoans,
   } = useChangeLoanSuretyForm();
+
+  usePageToolbarActions({
+    onSave: handleSubmit,
+    saveLabel: isSubmitting ? 'Processing...' : 'Commit Changes',
+    saveEnabled: !isSubmitting,
+  });
 
   return (
     <div className="surety-form h-screen flex flex-col bg-slate-50 font-sans selection:bg-indigo-100 overflow-hidden text-slate-900 border border-slate-200">

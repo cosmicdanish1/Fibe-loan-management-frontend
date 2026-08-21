@@ -4,6 +4,7 @@ import { SettingOutlined, BarChartOutlined, BugOutlined, ClockCircleOutlined, Da
 import { apiService } from '../../../../services/api';
 import { useComponentAnalytics } from '../../../../hooks/useAnalytics';
 import { AnalyticsErrorBoundary } from '../../../../components/analytics/AnalyticsErrorBoundary';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -193,6 +194,12 @@ const DeveloperAnalytics: React.FC = () => {
     
     analytics.trackButtonClick('Reset to Defaults', 'Analytics');
   };
+
+  usePageToolbarActions({
+    onSave: saveSettings,
+    saveLabel: 'Save Settings',
+    saveEnabled: !saving,
+  });
 
   return (
     <AnalyticsErrorBoundary componentName="DeveloperAnalytics">

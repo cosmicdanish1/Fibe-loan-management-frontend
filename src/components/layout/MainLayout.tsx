@@ -29,11 +29,14 @@ const MainLayout: React.FC = () => {
             className="relative flex flex-col min-h-screen font-sans overflow-hidden"
             style={{ background: 'transparent' }}
         >
-            {/* Top Navigation Bar - Only show on Dashboard */}
-            {showNavbar && <Navbar />}
-
-            {/* Sub Navigation Bar */}
-            <SubNavbar />
+            {/* Top Navigation Bar + Sub Navigation Bar — pinned together so
+                neither scrolls out of view when the page content underneath
+                scrolls (a page's own layout shouldn't be able to carry the
+                toolbar away with it). */}
+            <div className="sticky top-0 z-40 shrink-0">
+                {showNavbar && <Navbar />}
+                <SubNavbar />
+            </div>
 
             {/* Main Content Area - Render Outlet for child routes */}
             <div className="flex-grow flex flex-col overflow-auto">

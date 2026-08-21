@@ -74,8 +74,9 @@ class ApiService {
 
   public async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit & { timeoutMs?: number } = {}
   ): Promise<ApiResponse<T>> {
+    const { timeoutMs = 30000, ...fetchOptions } = options;
     const baseURL = await this.getBaseURL();
     const url = `${baseURL}${endpoint}`;
 
@@ -86,15 +87,26 @@ class ApiService {
     // incoming X-Request-Id, so the UI click and all server logs share one id.
     const requestId = newRequestId();
 
-    const isFormData = options.body instanceof FormData;
+    const isFormData = fetchOptions.body instanceof FormData;
+
+    // A stuck LAN connection used to hang forever with no feedback. Callers
+    // that already pass their own `signal` keep full control; everyone else
+    // gets a default cutoff so a dead backend surfaces as a clear error.
+    const usesOwnSignal = !!fetchOptions.signal;
+    const controller = usesOwnSignal ? null : new AbortController();
+    const timeoutId = controller && timeoutMs > 0
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : null;
+
     const config: RequestInit = {
       headers: {
         ...(!isFormData && { 'Content-Type': 'application/json' }),
         ...(currentToken && { Authorization: `Bearer ${currentToken}` }),
         'X-Request-Id': requestId,
-        ...options.headers,
+        ...fetchOptions.headers,
       },
-      ...options,
+      ...fetchOptions,
+      ...(controller && { signal: controller.signal }),
     };
 
     const startTime = Date.now();
@@ -116,16 +128,22 @@ class ApiService {
         }
       }
 
+      const requestBody = isFormData
+        ? '[FormData]'
+        : typeof config.body === 'string'
+        ? (() => { try { return JSON.parse(config.body as string); } catch { return config.body; } })()
+        : undefined;
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const duration = Date.now() - startTime;
-        rendererLogger.apiCall(options.method || 'GET', endpoint, response.status, duration, requestId);
+        rendererLogger.apiCall(options.method || 'GET', endpoint, response.status, duration, requestId, requestBody, errorData);
         throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
       const duration = Date.now() - startTime;
-      rendererLogger.apiCall(options.method || 'GET', endpoint, response.status, duration, requestId);
+      rendererLogger.apiCall(options.method || 'GET', endpoint, response.status, duration, requestId, requestBody, data);
 
       // NestJS standard response format: { success, statusCode, message, data, timestamp }
       // Unwrap to get the actual data payload
@@ -147,10 +165,15 @@ class ApiService {
     } catch (error) {
       const duration = Date.now() - startTime;
       rendererLogger.apiCall(options.method || 'GET', endpoint, 0, duration);
+      const timedOut = !usesOwnSignal && (error as any)?.name === 'AbortError';
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: timedOut
+          ? `Request timed out after ${Math.round(timeoutMs / 1000)}s. Please check your connection and try again.`
+          : error instanceof Error ? error.message : 'Unknown error occurred',
       };
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 
@@ -413,6 +436,14 @@ class ApiService {
     });
   }
 
+  async getSanctionedLoans(): Promise<ApiResponse> {
+    return this.request('/loans/sanctioned');
+  }
+
+  async getMonthEndLoanReport(month: number, year: number): Promise<ApiResponse> {
+    return this.request(`/loans/month-end/report?month=${month}&year=${year}`);
+  }
+
   async exportEMISchedulePDF(loanCaseNo: string): Promise<Blob> {
     const baseURL = await this.getBaseURL();
     const url = `${baseURL}/loans/master/${loanCaseNo}/emi-schedule/export`;
@@ -441,6 +472,7 @@ class ApiService {
     return this.request('/backup/create', {
       method: 'POST',
       body: JSON.stringify(options),
+      timeoutMs: 300000, // a full DB backup can legitimately take minutes
     });
   }
 
@@ -471,6 +503,7 @@ class ApiService {
     return this.request('/backup/cleanup', {
       method: 'POST',
       body: JSON.stringify(options || {}),
+      timeoutMs: 300000, // may scan/delete many backup files
     });
   }
 
@@ -581,7 +614,8 @@ class ApiService {
 
   async generateReport(reportType: string, params?: Record<string, any>): Promise<ApiResponse> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.request(`/reports/${reportType}${queryString}`);
+    // Large date ranges / whole-office reports can take a while to compile.
+    return this.request(`/reports/${reportType}${queryString}`, { timeoutMs: 120000 });
   }
 
   async getInterestReceivableReceivedStatement(options: {
@@ -705,6 +739,34 @@ class ApiService {
 
   async getDayBookActiveMembers(): Promise<ApiResponse> {
     return this.request('/daybook/active-members');
+  }
+
+  // Dashboard Notice Board — shared across every PC, not localStorage
+  async getDashboardNotices(): Promise<ApiResponse> {
+    return this.request('/dashboard-notices');
+  }
+
+  async createDashboardNotice(data: {
+    title: string;
+    message: string;
+    type: 'info' | 'warning' | 'success';
+    postedBy: string;
+  }): Promise<ApiResponse> {
+    return this.request('/dashboard-notices', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async reorderDashboardNotices(orderedIds: number[]): Promise<ApiResponse> {
+    return this.request('/dashboard-notices/reorder', {
+      method: 'PUT',
+      body: JSON.stringify({ orderedIds }),
+    });
+  }
+
+  async deleteDashboardNotice(id: number): Promise<ApiResponse> {
+    return this.request(`/dashboard-notices/${id}`, { method: 'DELETE' });
   }
 
   // Consolidation methods
@@ -1090,6 +1152,7 @@ class ApiService {
     return this.request<any>('/transactions/demand-generation/generate', {
       method: 'POST',
       body: JSON.stringify(data),
+      timeoutMs: 300000, // demand generation across a whole division can be slow
     });
   }
 
@@ -1142,6 +1205,16 @@ class ApiService {
     });
   }
 
+
+  // Premature Information — account-holder dropdowns (only members who actually
+  // have the relevant account type, instead of a blind member-number search)
+  async listRdAccountHolders(): Promise<ApiResponse> {
+    return this.request('/utilities/rd-accounts/holders');
+  }
+
+  async listSbAccountHolders(): Promise<ApiResponse> {
+    return this.request('/utilities/sb-accounts/holders');
+  }
 
   // SB Premature Information methods
   async searchSBAccounts(memberNo: string): Promise<ApiResponse> {
@@ -1550,11 +1623,12 @@ class ApiService {
     return this.request('/reports/loan-types');
   }
 
-  async getNewLoanDisbursed(fromDate: string, toDate: string, loanType?: string): Promise<ApiResponse> {
-    return this.post('/reports/loans/new-disbursed', { 
-      fromDate, 
-      toDate, 
-      loanType: loanType || undefined 
+  async getNewLoanDisbursed(fromDate: string, toDate: string, loanType?: string, memberNo?: string): Promise<ApiResponse> {
+    return this.post('/reports/loans/new-disbursed', {
+      fromDate,
+      toDate,
+      loanType: loanType || undefined,
+      memberNo: memberNo || undefined
     });
   }
 
@@ -1960,7 +2034,7 @@ class ApiService {
     return this.request(`/deposits/member/${memberNo}`);
   }
 
-  async generateFDCertificate(id: number): Promise<ApiResponse> {
+  async generateFDCertificate(id: string): Promise<ApiResponse> {
     return this.request(`/deposits/fixed-deposits/${id}/certificate`, {
       method: 'POST'
     });
@@ -2323,6 +2397,13 @@ class ApiService {
 
   async getFinancialYears(): Promise<ApiResponse<any[]>> {
     return this.request<any[]>('/admin/financial-year/list');
+  }
+
+  async createFinancialYear(startDate: string, endDate: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/admin/financial-year/create', {
+      method: 'POST',
+      body: JSON.stringify({ startDate, endDate }),
+    });
   }
 
   async getCurrentFinancialYear(): Promise<ApiResponse<any>> {

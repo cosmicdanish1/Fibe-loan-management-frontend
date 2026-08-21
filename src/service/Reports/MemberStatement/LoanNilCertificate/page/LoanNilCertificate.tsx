@@ -104,13 +104,13 @@ const LoanNilCertificate: React.FC = () => {
       `}</style>
 
       <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-emerald-50/20 to-slate-50 overflow-hidden">
-        <div className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 no-print">
+        <div className="bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 no-print">
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-1.5 rounded-lg text-white shadow-md">
               <Award size={14} />
             </div>
             <div>
-              <h1 className="fz-label font-black text-slate-800 tracking-tight leading-none">Loan Nil Certificate</h1>
+              <h1 className="fz-label font-black text-white tracking-tight leading-none">Loan Nil Certificate</h1>
               <div className="flex items-center gap-1 mt-0.5 fz-caption font-bold text-slate-400 uppercase tracking-wider leading-none">
                 <User size={8} className="text-emerald-500" /> No Objection Certificate
               </div>
@@ -191,9 +191,16 @@ const LoanNilCertificate: React.FC = () => {
                       {!certificateData.isNil && certificateData.outstandingLoans && (
                         <div className="my-4 p-4 bg-red-50 rounded-lg border-2 border-red-200">
                           <h4 className="font-bold text-red-700 mb-2 flex items-center gap-2"><XCircle size={16} /> Outstanding Loans:</h4>
-                          {certificateData.outstandingLoans.map((loan: any, idx: number) => (
-                            <div key={idx} className="fz-body text-slate-700 ml-6">• {loan.headName} (Case: {loan.headCode}) — Balance: ₹{(loan.balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-                          ))}
+                          {certificateData.outstandingLoans.map((loan: any, idx: number) => {
+                            const dueBits = [
+                              loan.balance > 0 ? `Principal: ₹${(loan.balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : null,
+                              loan.interestDue > 0 ? `Interest: ₹${(loan.interestDue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : null,
+                              loan.penalDue > 0 ? `Penal: ₹${(loan.penalDue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : null,
+                            ].filter(Boolean).join(' | ');
+                            return (
+                              <div key={idx} className="fz-body text-slate-700 ml-6">• {loan.headName} (Case: {loan.headCode}) — {dueBits}</div>
+                            );
+                          })}
                         </div>
                       )}
 

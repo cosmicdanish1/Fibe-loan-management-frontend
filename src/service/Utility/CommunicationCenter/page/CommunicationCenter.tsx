@@ -237,8 +237,8 @@ const CommunicationCenter: React.FC = () => {
       <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50'}`}>
 
         {/* ── Header ── */}
-        <div className="ch-header-bg px-4 py-2.5 flex items-center justify-between shrink-0 shadow-xl relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #0f172a 0%, #312e81 30%, #1e1b4b 60%, #0f172a 100%)', backgroundSize: '200% 200%' }}>
+        <div className="ch-header-bg bg-gradient-to-r from-slate-900 to-slate-900 px-4 py-2.5 flex items-center justify-between shrink-0 shadow-xl relative overflow-hidden"
+          style={{ backgroundSize: '200% 200%' }}>
           {/* Floating particles */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             {[

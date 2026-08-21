@@ -1,12 +1,13 @@
 // components/SavingTransactionForm.tsx
 
 import React from 'react';
-import { ConfigProvider, Input, Select, Table, DatePicker, Spin } from 'antd';
+import { ConfigProvider, Input, Select, Table, DatePicker, Spin, AutoComplete } from 'antd';
 import {
     PiggyBank, RotateCcw, Save, X, ShieldCheck, Building2,
     Calendar, Banknote, Hash, FileText, IndianRupee,
 } from 'lucide-react';
 import { SavingTransactionHookReturn, TransactionHistoryRow } from '../interface/SavingTransactionInterfaces';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -18,6 +19,7 @@ const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded
 const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
     formData,
     bankAccounts,
+    sbAccounts,
     transactionHistory,
     isLoading,
     isLoadingAccount,
@@ -65,6 +67,12 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
             render: (v: number) => <span className="fz-small font-black text-slate-700">₹{v.toFixed(2)}</span>,
         },
     ];
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: isLoading ? 'Saving…' : 'Save',
+        saveEnabled: !isLoading,
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
@@ -140,15 +148,31 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                     <label className={labelCls}>A/C No <span className="text-rose-500">*</span></label>
                                     <div className="relative">
                                         <Hash size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <Input
+                                        {/* BUG FIX 21: was a plain text box — you had to already know the exact
+                                            account number by heart, no way to browse or search. Now an
+                                            AutoComplete: type to filter by account no or member no, pick from
+                                            the list, or still just type the full number directly like before. */}
+                                        <AutoComplete
                                             value={formData.accountNo}
-                                            onChange={e => {
-                                                updateField('accountNo', e.target.value);
-                                                if (e.target.value.length >= 3) handleAccountNoChange(e.target.value);
+                                            options={sbAccounts.map(a => ({
+                                                value: a.accountNo,
+                                                label: `${a.accountNo} — Member ${a.memberNo} — ₹${a.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+                                            }))}
+                                            filterOption={(input, option) =>
+                                                (option?.value as string ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                                                (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+                                            }
+                                            onChange={value => {
+                                                updateField('accountNo', value);
+                                                if (value.length >= 3) handleAccountNoChange(value);
                                             }}
-                                            placeholder="Enter account number..."
-                                            className={`${inputCls} pl-6 font-mono font-bold text-indigo-700`}
-                                        />
+                                            onSelect={value => handleAccountNoChange(String(value))}
+                                            placeholder="Enter or pick an account number..."
+                                            className="w-full"
+                                            popupMatchSelectWidth={360}
+                                        >
+                                            <Input className={`${inputCls} pl-6 font-mono font-bold text-indigo-700`} />
+                                        </AutoComplete>
                                         {isLoadingAccount && (
                                             <div className="absolute right-2 top-1/2 -translate-y-1/2">
                                                 <Spin size="small" />

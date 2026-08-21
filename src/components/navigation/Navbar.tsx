@@ -134,6 +134,7 @@ const navConfig: NavItem[] = [
       { title: 'Journal / Transfer Entry', action: 'JOURNAL_TRANSFER_ENTRY' },
       { title: 'Loan Payment', action: 'LOAN_PAYMENT' },
       { title: 'Loan Repayment', action: 'LOAN_REPAYMENT' },
+      { title: 'Loan Early Closure', action: 'LOAN_EARLY_CLOSURE' },
       { title: 'Compulsory Deposit Transaction', action: 'COMPULSORY_DEPOSIT_TRANSACTION' },
       { title: 'Member Balance Transfer', action: 'MEMBER_BALANCE_TRANSFER' },
       { title: 'Pass Transactions', action: 'PASS_TRANSACTIONS' },
@@ -182,6 +183,7 @@ const navConfig: NavItem[] = [
           { title: '4.5 Defaulter List', action: 'DEFAULTER_LIST' },
           { title: '4.6 New Loan Disbursed', action: 'NEW_LOAN_DISBURSED' },
           { title: '4.7 Member Loan Ledger', action: 'MEMBER_LOAN_LEDGER' },
+          { title: '4.8 Loan Account Statement', action: 'LOAN_ACCOUNT_STATEMENT' },
         ]
       },
       {
@@ -428,6 +430,7 @@ const Navbar: React.FC = () => {
       'JOURNAL_TRANSFER_ENTRY': { route: '/transaction/journal-transfer', electronMethod: 'openNewWindow' },
       'LOAN_PAYMENT': { route: '/transaction/loan-payment', electronMethod: 'openNewWindow' },
       'LOAN_REPAYMENT': { route: '/transaction/loan-repayment', electronMethod: 'openNewWindow' },
+      'LOAN_EARLY_CLOSURE': { route: '/transaction/loan-early-closure', electronMethod: 'openNewWindow' },
       'COMPULSORY_DEPOSIT_TRANSACTION': { route: '/transaction/compulsory-deposit', electronMethod: 'openNewWindow' },
       'MEMBER_BALANCE_TRANSFER': { route: '/transaction/member-balance-transfer', electronMethod: 'openNewWindow' },
       'PASS_TRANSACTIONS': { route: '/transaction/pass-transactions', electronMethod: 'openNewWindow' },
@@ -514,6 +517,7 @@ const Navbar: React.FC = () => {
       'DEFAULTER_LIST': { route: '/reports/monthly/defaulter-list', electronMethod: 'openNewWindow' },
       'NEW_LOAN_DISBURSED': { route: '/reports/monthly/new-loan-disbursed', electronMethod: 'openNewWindow' },
       'MEMBER_LOAN_LEDGER': { route: '/reports/monthly/member-loan-ledger', electronMethod: 'openNewWindow' },
+      'LOAN_ACCOUNT_STATEMENT': { route: '/reports/account-reports/loan-statement', electronMethod: 'openNewWindow' },
 
       // Yearly Reports
       'P_L_BALANCE_SHEET': { route: '/reports/yearly/pl-balance-sheet', electronMethod: 'openNewWindow' },

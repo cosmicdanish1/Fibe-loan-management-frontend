@@ -207,7 +207,7 @@ const RecurringDetails: React.FC = () => {
       <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-violet-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-violet-600 to-violet-700 p-1.5 rounded-lg text-white shadow-md">
               <Repeat size={14} />

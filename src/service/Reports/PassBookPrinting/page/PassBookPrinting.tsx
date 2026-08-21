@@ -221,7 +221,7 @@ const PassBookPrinting: React.FC = () => {
 
   // Theme variables
   const bg      = isDark ? 'bg-[#0f172a]'                           : 'bg-slate-50';
-  const header  = isDark ? 'border-b border-slate-700 bg-slate-800' : 'border-b border-slate-200 bg-white/80 backdrop-blur-sm';
+  const header  = isDark ? 'border-b border-white/5 bg-gradient-to-r from-slate-900 to-slate-900' : 'border-b border-slate-200 bg-white/80 backdrop-blur-sm';
   const panel   = isDark ? 'border border-slate-700 bg-slate-800'   : 'border border-slate-200 bg-white';
   const panelHd = isDark ? 'border-b border-slate-700'              : 'border-b border-slate-100 bg-slate-50';
   const text    = isDark ? 'text-white'                             : 'text-slate-800';

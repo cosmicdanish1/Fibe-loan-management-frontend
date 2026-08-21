@@ -3,6 +3,7 @@ import { ConfigProvider, Select, Checkbox, message, Modal, List, Tag, theme as a
 import { Book, Building2, FileText, Save, Search, Layers, Layout, Hash, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiService from '../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 
@@ -159,6 +160,12 @@ const PassbookParameterSetting: React.FC = () => {
     { label: 'Start Line No.',  field: 'lineStartNumber',  icon: <ChevronRight size={13} /> },
     { label: 'Increment Level', field: 'incrementLevel',   icon: <Layers size={13} /> },
   ] as const;
+
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: loading ? 'Saving…' : 'Save',
+    saveEnabled: !loading,
+  });
 
   return (
     <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 8, colorBgContainer: '#1e293b', colorBorder: '#334155' } }}>

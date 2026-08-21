@@ -11,7 +11,7 @@ const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb
 const inp = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = ({
-    formData, updateField, handlePrint, handleExport, handleReset, handleExit,
+    formData, updateField, handlePrint, handleExport, handleReset, handleExit, divisions, branches,
 }) => {
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
@@ -55,18 +55,15 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className={lbl}>Division / RO</label>
-                                    <Select value={formData.division} onChange={(v) => updateField('division', v)} size="small" className="pmd-sel w-full" placeholder="Select Division/RO...">
-                                        <Option value="DIV-01">Central Division</Option>
-                                        <Option value="RO-01">Regional Office North</Option>
-                                        <Option value="RO-02">Regional Office South</Option>
+                                    <Select value={formData.division || undefined} onChange={(v) => updateField('division', v)} size="small" className="pmd-sel w-full" placeholder="Select Division/RO...">
+                                        {divisions.map(d => <Option key={d.id} value={d.id}>{d.name}</Option>)}
                                     </Select>
                                 </div>
                                 <div>
                                     <label className={lbl}>Branch</label>
                                     <Select value={formData.branch} onChange={(v) => updateField('branch', v)} size="small" className="pmd-sel w-full" placeholder="All Branches">
                                         <Option value="">All Branches</Option>
-                                        <Option value="BR-01">Main Branch</Option>
-                                        <Option value="BR-02">City Center</Option>
+                                        {branches.map(b => <Option key={b.officeId} value={b.officeId}>{b.officeName}</Option>)}
                                     </Select>
                                 </div>
                             </div>

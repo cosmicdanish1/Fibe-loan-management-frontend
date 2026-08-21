@@ -10,6 +10,7 @@ import {
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import { FdRdSbEntryHookReturn } from '../interface/FdRdSbEntryInterfaces';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -40,7 +41,12 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
     };
 
     useEffect(() => {
-        const handler = (_: any, member: any) => {
+        // BUG FIX 19 (same as SavingAccountForm.tsx): window.electron.ipcRenderer.on strips the
+        // raw Electron event before calling back — func(data), not func(event, data) — so the
+        // two-parameter signature here always received `member === undefined` and crashed on
+        // first property access. Same root cause, same fix.
+        const handler = (member: any) => {
+            if (!member) return;
             const no = String(member.memberNo || member.mbno || '');
             const name = member.memberName || member.fullname || '';
             if (no) handleMemberSelect(no, { memberNo: no, memberName: name });
@@ -63,6 +69,12 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
     };
 
     const activeType = ENTRY_TYPES.find(t => t.id === formData.entryType) || ENTRY_TYPES[0];
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: isLoading ? 'Saving…' : 'Save',
+        saveEnabled: !isLoading,
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

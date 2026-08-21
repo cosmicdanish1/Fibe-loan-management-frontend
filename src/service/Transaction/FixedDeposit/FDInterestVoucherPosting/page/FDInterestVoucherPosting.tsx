@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { apiService } from '../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -239,6 +240,12 @@ const FDInterestVoucherPosting: React.FC = () => {
         ['Int Pay Mode', fdDetails.intPaymentMode],
         ['Maturity Amt', fdDetails.maturityAmount],
     ];
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: loading ? 'Saving…' : 'Post',
+        saveEnabled: !loading,
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

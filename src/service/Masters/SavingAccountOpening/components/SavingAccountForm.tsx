@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { SavingAccountHookReturn } from '../interfaces/interface';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -45,14 +46,27 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
     };
 
     useEffect(() => {
-        const handler = (_event: any, member: any) => {
+        // BUG FIX 19: window.electron.ipcRenderer.on (the bridge used below) strips the raw
+        // Electron event before invoking its callback — it calls func(data), not func(event, data)
+        // (see preload.ts's "legacy" electron.ipcRenderer.on, vs. the separate electronAPI.ipcRenderer.on
+        // used elsewhere, which does preserve the event). This handler was written for the latter
+        // convention, so `member` was always undefined and every selection crashed with
+        // "Cannot read properties of undefined (reading 'memberNo')" — silently, since nothing
+        // upstream surfaced the thrown error, so the form just looked like it wasn't responding.
+        const handler = (member: any) => {
+            if (!member) return;
             const mbno = String(member.memberNo || member.mbno || member.memberNumber || '');
             if (!mbno) return;
             updateField('memberNo', mbno);
             updateField('prefix', member.prefix || member.salutation || 'Mr.');
-            updateField('firstName', member.firstName || member.fname || '');
-            updateField('middleName', member.middleName || member.mname || '');
-            updateField('lastName', member.lastName || member.lname || '');
+            // BUG FIX 20: /members/lookup only returns a single combined `memberName` string
+            // (no separate firstName/middleName/lastName), so these always fell through to
+            // empty. Best-effort split of the combined name into first/middle/last.
+            const fullName = String(member.memberName || member.name || member.firstName || '').trim();
+            const parts = fullName.split(/\s+/).filter(Boolean);
+            updateField('firstName', member.firstName || member.fname || parts[0] || '');
+            updateField('middleName', member.middleName || member.mname || (parts.length > 2 ? parts.slice(1, -1).join(' ') : ''));
+            updateField('lastName', member.lastName || member.lname || (parts.length > 1 ? parts[parts.length - 1] : ''));
         };
 
         const ipc = (window as any).electron?.ipcRenderer;
@@ -151,6 +165,11 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
             ),
         },
     ];
+
+    usePageToolbarActions({
+        onSave: save,
+        saveLabel: 'Save',
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

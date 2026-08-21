@@ -165,7 +165,11 @@ const DividendPaid: React.FC = () => {
       algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
       token: { colorPrimary: '#10b981', borderRadius: 8 },
     }}>
-      <div className={`h-screen flex font-sans overflow-hidden ${bg}`}>
+      <div className={`h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
+        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+          <h1 className="fz-caption font-black text-white tracking-tight uppercase">5.3.2 Dividend Paid</h1>
+        </div>
+        <div className="flex-1 flex overflow-hidden">
 
         {/* Sidebar */}
         <div className={`w-72 flex flex-col shrink-0 border-r ${sidebar}`}>
@@ -361,6 +365,7 @@ const DividendPaid: React.FC = () => {
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
     </ConfigProvider>

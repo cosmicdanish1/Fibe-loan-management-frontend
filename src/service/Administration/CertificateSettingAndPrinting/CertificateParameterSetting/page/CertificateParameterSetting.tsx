@@ -3,6 +3,7 @@ import { ConfigProvider, Select, Table, Checkbox, message, Modal, List, Tag, the
 import { Settings, Search, Save, FileText, Layout } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiService from '../../../../../services/api';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 
@@ -173,6 +174,12 @@ const CertificateParameterSetting: React.FC = () => {
     { id: 'format', label: 'Format Identity', icon: <FileText size={14} /> },
     { id: 'detail', label: 'Field Setup',      icon: <Layout size={14} /> },
   ];
+
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: loading ? 'Saving…' : 'Save',
+    saveEnabled: !loading,
+  });
 
   return (
     <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 8, colorBgContainer: '#1e293b', colorBorder: '#334155' } }}>

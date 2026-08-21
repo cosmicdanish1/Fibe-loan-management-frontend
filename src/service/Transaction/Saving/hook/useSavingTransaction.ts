@@ -5,7 +5,8 @@ import dayjs from 'dayjs';
 import {
     SavingTransactionData,
     TransactionHistoryRow,
-    SavingTransactionHookReturn
+    SavingTransactionHookReturn,
+    SbAccountOption
 } from '../interface/SavingTransactionInterfaces';
 import { apiService } from '../../../../services/api';
 
@@ -52,6 +53,7 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
     const [formData, setFormData] = useState<SavingTransactionData>(emptyForm());
     const [transactionHistory, setTransactionHistory] = useState<TransactionHistoryRow[]>([]);
     const [bankAccounts, setBankAccounts] = useState<{ code: string; name: string }[]>([]);
+    const [sbAccounts, setSbAccounts] = useState<SbAccountOption[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingAccount, setIsLoadingAccount] = useState(false);
     const [lastSaved, setLastSaved] = useState<{ voucherNo: string; accountNo: string; amount: number; type: string } | null>(null);
@@ -65,6 +67,22 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
                 if (mapped.length > 0) setBankAccounts(mapped);
             })
             .catch(() => { /* leave empty */ });
+    }, []);
+
+    // SB accounts for the A/C No picker — the field had no way to discover an account
+    // number short of already knowing it by heart.
+    useEffect(() => {
+        apiService.getSbAccounts()
+            .then((response: any) => {
+                const raw = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+                const mapped = (Array.isArray(raw) ? raw : []).map((a: any) => ({
+                    accountNo: String(a.accountNo ?? a.acc_no ?? ''),
+                    memberNo: String(a.memberNo ?? a.mbno ?? ''),
+                    balance: Number(a.currentBalance ?? a.balance ?? 0),
+                })).filter((a: SbAccountOption) => a.accountNo);
+                setSbAccounts(mapped);
+            })
+            .catch(() => { /* leave empty — field still accepts free typing */ });
     }, []);
 
     // Live balance of the cash/bank account used for the offsetting leg
@@ -103,19 +121,28 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
             const response = await apiService.getSavingAccountDetails(accountNo);
             if (response.success && response.data) {
                 const account = response.data;
+                // BUG FIX 23: Postgres NUMERIC columns come back through node-pg as strings
+                // ("7000.00", not 7000), and until BUG FIX 22 these fields always fell back to
+                // the 0 (a real JS number) from emptyForm(), so this never surfaced. Now that
+                // real values flow through, item.val.toFixed() crashed the whole form on render
+                // because item.val was a string. Coerce every numeric field explicitly.
                 setFormData(prev => ({
                     ...prev,
                     accountNo,
-                    currentBalance: account.currentBalance || 0,
-                    minimumBalance: account.minimumBalance || 0,
-                    unpassCr: account.unpassCr || 0,
-                    unpassDr: account.unpassDr || 0,
-                    availableBalance: account.availableBalance || 0,
-                    withdrawableBalance: account.withdrawableBalance || 0,
+                    currentBalance: Number(account.currentBalance) || 0,
+                    minimumBalance: Number(account.minimumBalance) || 0,
+                    unpassCr: Number(account.unpassCr) || 0,
+                    unpassDr: Number(account.unpassDr) || 0,
+                    availableBalance: Number(account.availableBalance) || 0,
+                    withdrawableBalance: Number(account.withdrawableBalance) || 0,
                     modeOfOperation: account.modeOfOperation || '',
                     operators: account.operators || '',
                 }));
-                setTransactionHistory(account.transactionHistory || []);
+                const history = (account.transactionHistory || []).map((h: any) => ({
+                    ...h,
+                    amount: Number(h.amount) || 0,
+                }));
+                setTransactionHistory(history);
             } else {
                 await showDialog('warning', 'electron-react-ts', 'Account Not Found', `No active savings account found for A/C No: ${accountNo}`);
                 setFormData(prev => ({ ...emptyForm(), accountNo, transDate: prev.transDate, transactionType: prev.transactionType }));
@@ -212,19 +239,28 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
                 });
                 // Refresh account details to show new balance
                 await handleAccountNoChange(formData.accountNo);
-                // Reset form but keep account context
+                // BUG FIX 24: this used to rebuild from a blank emptyForm() and cherry-pick
+                // specific fields back from `prev` to "keep account context" — confirmed live,
+                // the balance panel kept showing the pre-transaction amount after a successful
+                // save even though the DB was correct (verified: sbmaster.balance and the ledger
+                // both had the right post-transaction values). Cherry-picking is exactly the kind
+                // of thing that's easy to get subtly wrong. Merging onto `prev` instead means
+                // every field the refresh above just set (balance, unpass cr/dr, etc.) carries
+                // through automatically — only the fields that should actually clear for the next
+                // transaction are listed here.
                 setFormData(prev => ({
-                    ...emptyForm(),
-                    accountNo: prev.accountNo,
-                    transDate: prev.transDate,
-                    currentBalance: prev.currentBalance,
-                    minimumBalance: prev.minimumBalance,
-                    unpassCr: prev.unpassCr,
-                    unpassDr: prev.unpassDr,
-                    availableBalance: prev.availableBalance,
-                    withdrawableBalance: prev.withdrawableBalance,
-                    modeOfOperation: prev.modeOfOperation,
-                    operators: prev.operators,
+                    ...prev,
+                    voucherNo: '',
+                    transactionType: 'deposit',
+                    amount: '',
+                    paymentMode: 'cash',
+                    actualAmount: 0,
+                    bankBal: 0,
+                    chequeDate: dayjs(),
+                    chequeNo: '',
+                    bankName: '',
+                    bankCode: '',
+                    narration: '',
                 }));
             } else {
                 // BUG FIX: was response.error — TransformInterceptor has no .error field; use response.message
@@ -252,6 +288,7 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
     return {
         formData,
         bankAccounts,
+        sbAccounts,
         transactionHistory,
         isLoading,
         isLoadingAccount,

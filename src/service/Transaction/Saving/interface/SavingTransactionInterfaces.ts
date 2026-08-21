@@ -32,9 +32,16 @@ export interface TransactionHistoryRow {
     amount: number;
 }
 
+export interface SbAccountOption {
+    accountNo: string;
+    memberNo: string;
+    balance: number;
+}
+
 export interface SavingTransactionHookReturn {
     formData: SavingTransactionData;
     bankAccounts: { code: string; name: string }[];
+    sbAccounts: SbAccountOption[];
     transactionHistory: TransactionHistoryRow[];
     isLoading: boolean;
     isLoadingAccount: boolean;

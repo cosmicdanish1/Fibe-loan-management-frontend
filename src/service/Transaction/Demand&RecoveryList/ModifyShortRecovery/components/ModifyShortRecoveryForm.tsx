@@ -4,6 +4,7 @@ import React from 'react';
 import { ConfigProvider, Select, Table } from 'antd';
 import { Banknote, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, Save, Building2 } from 'lucide-react';
 import { ModifyShortRecoveryHookReturn } from '../interface/ModifyShortRecoveryInterfaces';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 
@@ -11,7 +12,7 @@ const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb
 
 const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
     formData, updateField, shortRecoveryList, selectedRecord,
-    handleSelectRecord, handleSaveAdjustment, handleRefresh, handleExit,
+    handleSelectRecord, handleSaveAdjustment, handleRefresh, handleExit, wings,
 }) => {
     const [currentIndex, setCurrentIndex] = React.useState(0);
     const total = shortRecoveryList.length;
@@ -35,6 +36,11 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
     ];
 
     const navBtn = "h-7 w-8 flex items-center justify-center bg-white border border-slate-200 hover:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-300 text-slate-500 rounded transition-all active:scale-95";
+
+    usePageToolbarActions({
+        onSave: handleSaveAdjustment,
+        saveLabel: 'Save',
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
@@ -75,11 +81,8 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
                         </div>
                         <div className="px-3 py-2">
                             <label className={lbl}>Wing</label>
-                            <Select value={formData.wing} onChange={(v) => updateField('wing', v)} size="small" className="msr-sel w-full" placeholder="Select Wing...">
-                                <Option value="BHILAI">BHILAI</Option>
-                                <Option value="Wing A">Wing A</Option>
-                                <Option value="Wing B">Wing B</Option>
-                                <Option value="Wing C">Wing C</Option>
+                            <Select value={formData.wing || undefined} onChange={(v) => updateField('wing', v)} size="small" className="msr-sel w-full" placeholder="Select Wing...">
+                                {wings.map(w => <Option key={w.id} value={w.id}>{w.name}</Option>)}
                             </Select>
                         </div>
                     </div>

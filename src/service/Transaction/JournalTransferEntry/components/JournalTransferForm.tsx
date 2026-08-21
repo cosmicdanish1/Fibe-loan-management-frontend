@@ -5,6 +5,7 @@ import {
     Search, ShieldCheck, Trash2, X, Hash, Building2, Calendar,
 } from 'lucide-react';
 import { JournalTransferHookReturn, JournalEntry } from '../interface/JournalTransferInterfaces';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
 import { apiService } from '../../../../services/api';
 import dayjs from 'dayjs';
@@ -187,6 +188,12 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
             ),
         },
     ];
+
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: 'Post',
+        saveEnabled: !(isLoading || !isBalanced || totalDebit <= 0),
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

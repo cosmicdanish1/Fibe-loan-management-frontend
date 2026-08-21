@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useUserManagement } from '../hook/useUserManagement';
 import type { UserLevel } from '../interface/types';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import { ConfigProvider, Tooltip, Modal } from 'antd';
 import UserLookup from '@/components/shared/UserLookup/UserLookup';
 
@@ -232,6 +233,12 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
     if (api?.ipcRenderer) api.ipcRenderer.send('window-close');
     else window.close();
   };
+
+  usePageToolbarActions({
+    onSave: handleSave,
+    saveLabel: isUpdating ? 'UPDATE' : 'SAVE',
+    saveEnabled: !isSaving,
+  });
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#4f46e5', borderRadius: 8 } }}>

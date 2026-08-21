@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import type { ModifyFDHookReturn } from '../interfaces/interface';
+import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 const { Option } = Select;
 
@@ -81,6 +82,11 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
             ),
         },
     ];
+
+    usePageToolbarActions({
+        onSave: save,
+        saveLabel: 'Save',
+    });
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>

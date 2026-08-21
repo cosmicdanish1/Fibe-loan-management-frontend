@@ -21,6 +21,7 @@ import {
 import { ConfigProvider, Table, Button, DatePicker, Spin, Tag, Tooltip, Radio } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '../../../../../services/api';
+import { usePrintDialog } from '../../../../../components/shared/PrintDialog/usePrintDialog';
 import dayjs from 'dayjs';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
@@ -93,9 +94,8 @@ const CashBook: React.FC = () => {
     }).format(amount);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const { openPrintDialog, PrintDialog } = usePrintDialog();
+  const handlePrint = openPrintDialog;
 
   const handleExportCSV = async () => {
     if (!data || !data.vouchers || data.vouchers.length === 0) {
@@ -213,7 +213,7 @@ const CashBook: React.FC = () => {
         <div className="flex-1 overflow-hidden p-3 flex gap-3">
 
           {/* Compact Left Panel: Controls & Stats */}
-          <div className="w-[280px] flex flex-col gap-3 shrink-0">
+          <div className="cb-no-print w-[280px] flex flex-col gap-3 shrink-0">
 
             {/* Parameters Card */}
             <motion.div
@@ -495,25 +495,56 @@ const CashBook: React.FC = () => {
              padding: 0;
            }
            
-           body * { 
-             visibility: hidden; 
+           body * {
+             visibility: hidden;
            }
-           
-           .legacy-report-compact, .legacy-report-compact * { 
-             visibility: visible; 
+
+           .legacy-report-compact, .legacy-report-compact * {
+             visibility: visible;
            }
-           
-           .legacy-report-compact { 
+
+           /* Belt-and-suspenders: the sidebar (stat cards, parameters) sits
+              outside .legacy-report-compact and should already be caught by
+              "body * { visibility: hidden }" above, but it was leaking
+              through in practice — an explicit, unambiguous rule removes any
+              doubt instead of relying on a single low-specificity selector. */
+           .cb-no-print {
+             display: none !important;
+           }
+
+           .legacy-report-compact {
              position: absolute;
              left: 50% !important;
              top: 0 !important;
              transform: translateX(-50%) !important;
-             width: 7.5in !important;
-             max-width: 7.5in !important; 
+             /* A4 is 8.27in wide; @page below reserves 0.5in on each side,
+                leaving 7.27in. This was set to 7.5in — wider than its own
+                page's content area — so it overflowed slightly and threw
+                off centering. Keeping it under budget fixes that. */
+             width: 7in !important;
+             max-width: 7in !important;
              margin: 0 auto !important;
-             padding: 0.5in !important;
+             padding: 0.25in !important;
              font-size: 10pt !important;
              background: white !important;
+           }
+
+           /* The voucher table's Description column has no fixed width, so
+              with the default table layout algorithm, long unbroken content
+              (names, narrations) forced the whole table wider than its
+              7in container instead of wrapping — it then overflowed past
+              both edges of the centered box and got clipped by the physical
+              page. Fixed layout forces columns to respect their declared
+              widths; break-word lets long text wrap instead of stretching. */
+           .legacy-report-compact table {
+             table-layout: fixed !important;
+             width: 100% !important;
+           }
+
+           .legacy-report-compact td,
+           .legacy-report-compact th {
+             overflow-wrap: break-word !important;
+             word-break: break-word !important;
            }
            
            .h-screen { 
@@ -541,6 +572,7 @@ const CashBook: React.FC = () => {
            }
         }
       `}</style>
+      {PrintDialog}
     </ConfigProvider>
   );
 };

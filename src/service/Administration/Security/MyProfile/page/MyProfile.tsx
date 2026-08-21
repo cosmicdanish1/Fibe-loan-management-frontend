@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../../../auth/context/AuthContext';
+import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
 const { TabPane } = Tabs;
 
@@ -196,6 +197,15 @@ const MyProfile: React.FC = () => {
             default: return <Activity size={14} className="text-slate-500" />;
         }
     };
+
+    // Save Changes is only the page's active action while the profile form
+    // is actually open for editing — mirrors the header button, which only
+    // renders in editMode.
+    usePageToolbarActions({
+        onSave: handleSave,
+        saveLabel: 'Save Changes',
+        saveEnabled: editMode && !loading,
+    });
 
     return (
         <ConfigProvider
