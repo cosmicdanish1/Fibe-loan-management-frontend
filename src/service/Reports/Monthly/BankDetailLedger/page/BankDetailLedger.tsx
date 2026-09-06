@@ -43,6 +43,80 @@ interface BankOption {
   name: string;
 }
 
+// Print-only layout matching the legacy report design standard used across
+// every report this session (letterhead, Date/Page Number line, dashed
+// rules, TOTAL row, summary block) — plain monospace text, not a clone of
+// the on-screen colorful UI. Feeds handlePrint only.
+const BDL_LINE_W = 94;
+const BDL_DASH = '-'.repeat(BDL_LINE_W);
+const BDL_COL_DATE = 12;
+const BDL_COL_VCHR = 12;
+const BDL_COL_NARR = 30;
+const BDL_COL_AMT = (BDL_LINE_W - BDL_COL_DATE - BDL_COL_VCHR - BDL_COL_NARR) / 3;
+
+const bdlFmt = (n: number) =>
+  Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const bdlPadL = (s: string, w: number) => s.padStart(w);
+const bdlPadR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
+const bdlCenter = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
+
+function buildBankDetailLedgerLines(
+  data: LedgerTransaction[], bankCode: string, bankName: string,
+  fromLabel: string, toLabel: string, openingBalance: number,
+  totalDebit: number, totalCredit: number, closingBalance: number,
+): string[] {
+  const lines: string[] = [];
+  const now = dayjs().format('DD-MMM-YYYY/h:mmA');
+
+  lines.push(bdlCenter('Espat Karmchari Co-Operative Credit Society Limited.', BDL_LINE_W));
+  lines.push(bdlCenter('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', BDL_LINE_W));
+  lines.push(bdlCenter('Bank Detail Ledger', BDL_LINE_W));
+  lines.push('');
+  lines.push(`Bank Account : ${bankCode} - ${bankName}`);
+  lines.push(`Period       : ${fromLabel} to ${toLabel}`);
+  lines.push(`Opening Balance : ${bdlFmt(openingBalance)} ${openingBalance >= 0 ? 'DR' : 'CR'}`);
+  const printedStr = `Printed : ${now}`;
+  const pageStr = 'Page Number :  1';
+  lines.push(`${printedStr}${bdlPadL(pageStr, BDL_LINE_W - printedStr.length)}`);
+  lines.push(BDL_DASH);
+
+  lines.push(
+    `${bdlPadR('Date', BDL_COL_DATE)}${bdlPadR('Voucher', BDL_COL_VCHR)}${bdlPadR('Narration', BDL_COL_NARR)}` +
+    `${bdlPadL('Debit', BDL_COL_AMT)}${bdlPadL('Credit', BDL_COL_AMT)}${bdlPadL('Balance', BDL_COL_AMT)}`
+  );
+  lines.push(BDL_DASH);
+
+  data.forEach(item => {
+    lines.push(
+      `${bdlPadR(dayjs(item.date).format('DD-MMM-YY'), BDL_COL_DATE)}${bdlPadR(item.voucherNo, BDL_COL_VCHR)}${bdlPadR(item.narration, BDL_COL_NARR)}` +
+      `${bdlPadL(item.debit > 0 ? bdlFmt(item.debit) : '', BDL_COL_AMT)}` +
+      `${bdlPadL(item.credit > 0 ? bdlFmt(item.credit) : '', BDL_COL_AMT)}` +
+      `${bdlPadL(`${bdlFmt(item.balance)} ${item.balance >= 0 ? 'DR' : 'CR'}`, BDL_COL_AMT)}`
+    );
+  });
+
+  lines.push(BDL_DASH);
+  lines.push(
+    `${bdlPadR('TOTAL :-', BDL_COL_DATE + BDL_COL_VCHR + BDL_COL_NARR)}` +
+    `${bdlPadL(bdlFmt(totalDebit), BDL_COL_AMT)}${bdlPadL(bdlFmt(totalCredit), BDL_COL_AMT)}${' '.repeat(BDL_COL_AMT)}`
+  );
+  lines.push(BDL_DASH);
+
+  const IND = '        ';
+  const LBL_W = 18;
+  const VAL_W = 20;
+  lines.push(`${IND}${'Opening Balance :'.padEnd(LBL_W)} ${bdlPadL(`${bdlFmt(openingBalance)} ${openingBalance >= 0 ? 'DR' : 'CR'}`, VAL_W)}`);
+  lines.push(`${IND}${'Total Debit     :'.padEnd(LBL_W)} ${bdlPadL(bdlFmt(totalDebit), VAL_W)}`);
+  lines.push(`${IND}${'Total Credit    :'.padEnd(LBL_W)} ${bdlPadL(bdlFmt(totalCredit), VAL_W)}`);
+  lines.push(`${IND}${'-'.repeat(LBL_W + VAL_W + 1)}`);
+  lines.push(`${IND}${'Closing Balance :'.padEnd(LBL_W)} ${bdlPadL(`${bdlFmt(closingBalance)} ${closingBalance >= 0 ? 'DR' : 'CR'}`, VAL_W)}`);
+  lines.push(`${IND}${'-'.repeat(LBL_W + VAL_W + 1)}`);
+  lines.push('');
+  lines.push('* Report As Per Data Available ..');
+
+  return lines;
+}
+
 const BankDetailLedger: React.FC = () => {
   const [selectedBank, setSelectedBank] = useState<string>('A1010');
   const [bankList, setBankList] = useState<BankOption[]>([]);
@@ -132,8 +206,39 @@ const BankDetailLedger: React.FC = () => {
     }).format(amount);
   };
 
+  // window.print() used to be used here with a visibility-hiding CSS hack —
+  // the print box was 8in wide inside an 8.27in-wide A4 page with 0.5in
+  // margins on both the @page rule and the box's own padding, leaving only
+  // 7.27in of usable width for an 8in box (an even larger overflow than the
+  // identical bug already confirmed live and fixed on Cash Book Monthly and
+  // Detail Ledger). Switched to the same hidden-iframe + monospace lines[]
+  // technique used everywhere else.
   const handlePrint = () => {
-    window.print();
+    if (data.length === 0) return;
+    const lines = buildBankDetailLedgerLines(
+      data, selectedBank, bankName,
+      fromDate?.format('DD-MMM-YYYY') || '', toDate?.format('DD-MMM-YYYY') || '',
+      openingBalance, totalDebit, totalCredit, closingBalance,
+    );
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`<!DOCTYPE html><html><head><title>Bank Detail Ledger</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  body { margin: 0; }
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
+</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 300);
+    }
   };
 
   const handleExportCSV = async () => {
@@ -192,9 +297,9 @@ const BankDetailLedger: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex flex-col font-sans selection:bg-amber-200/60 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/40 to-orange-50/30'}`}>
+      <div className={`bdl-page h-screen flex flex-col font-sans selection:bg-amber-200/60 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/40 to-orange-50/30'}`}>
         {/* Enhanced Header with Better Typography */}
-        <div className={`px-5 py-3 flex items-center justify-between z-10 shadow-lg shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
+        <div className={`bdl-header px-5 py-3 flex items-center justify-between z-10 shadow-lg shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
           <div className="flex items-center gap-4">
             <div className="bg-gradient-to-br from-amber-600 via-amber-700 to-orange-700 p-2.5 rounded-xl text-white shadow-lg shadow-amber-600/30">
               <Landmark size={20} className="drop-shadow-sm" />
@@ -238,8 +343,8 @@ const BankDetailLedger: React.FC = () => {
           <div className="w-[300px] flex flex-col gap-4 shrink-0">
 
             {/* Enhanced Parameters Card */}
-            <div className={`rounded-2xl overflow-hidden shadow-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
-              <div className={`border-b px-4 py-3 flex items-center justify-between ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 border-amber-100'}`}>
+            <div className={`bdl-params-card rounded-2xl overflow-hidden shadow-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
+              <div className={`bdl-card-header border-b px-4 py-3 flex items-center justify-between ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 border-amber-100'}`}>
                 <h3 className={`fz-caption font-black tracking-wider uppercase flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-amber-800'}`}>
                   <Settings size={13} className="text-amber-700" />
                   Report Parameters
@@ -339,7 +444,7 @@ const BankDetailLedger: React.FC = () => {
             {/* Enhanced Stats Grid with Better Visual Hierarchy */}
             {data.length > 0 && (
               <div className="grid grid-cols-1 gap-3">
-                <div className={`rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 group border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
+                <div className={`bdl-stat-card rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 group border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="fz-caption font-black uppercase tracking-wider text-amber-700">Closing Balance</div>
                     <Calculator size={14} className="text-amber-400 group-hover:text-amber-600 transition-colors" />
@@ -364,8 +469,8 @@ const BankDetailLedger: React.FC = () => {
           </div>
 
           {/* Enhanced Report Panel with Better Layout */}
-          <div className={`flex-1 rounded-2xl shadow-lg flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
-            <div className={`border-b px-5 py-3 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 border-amber-100'}`}>
+          <div className={`bdl-report-panel flex-1 rounded-2xl shadow-lg flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
+            <div className={`bdl-card-header border-b px-5 py-3 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 border-amber-100'}`}>
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-xl shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-amber-100'}`}>
                   <Database size={16} className="text-amber-700" />
@@ -383,7 +488,7 @@ const BankDetailLedger: React.FC = () => {
               )}
             </div>
 
-            <div className={`flex-1 overflow-auto p-4 enhanced-scrollbar ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
+            <div className={`bdl-preview-body flex-1 overflow-auto p-4 enhanced-scrollbar ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
               <Spin spinning={loading} tip="Loading ledger data..." size="large">
                 {data.length > 0 ? (
                   <div className="legacy-report-enhanced fz-label">
@@ -503,7 +608,7 @@ const BankDetailLedger: React.FC = () => {
         </div>
 
         {/* Enhanced Footer */}
-        <div className={`px-5 py-3 flex items-center justify-between shrink-0 shadow-lg border-t ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
+        <div className={`bdl-footer px-5 py-3 flex items-center justify-between shrink-0 shadow-lg border-t ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
@@ -577,63 +682,44 @@ const BankDetailLedger: React.FC = () => {
           box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2) !important;
         }
 
-        @media print {
-           * { 
-             margin: 0;
-             padding: 0;
-             box-sizing: border-box;
-           }
-           
-           body {
-             margin: 0;
-             padding: 0;
-           }
-           
-           body * { 
-             visibility: hidden; 
-           }
-           
-           .legacy-report-enhanced, .legacy-report-enhanced * { 
-             visibility: visible; 
-           }
-           
-           .legacy-report-enhanced { 
-             position: absolute;
-             left: 50% !important;
-             top: 0 !important;
-             transform: translateX(-50%) !important;
-             width: 8in !important;
-             max-width: 8in !important; 
-             margin: 0 auto !important;
-             padding: 0.5in !important;
-             font-size: 11pt !important;
-             background: white !important;
-           }
-           
-           .h-screen { 
-             height: auto !important; 
-             overflow: visible !important; 
-           }
-           
-           button, .ant-btn, .ant-spin { 
-             display: none !important; 
-           }
-           
-           @page {
-             margin: 0.5in;
-             size: A4 portrait;
-           }
-           
-           table { 
-             page-break-inside: auto;
-             width: 100%;
-           }
-           
-           tr { 
-             page-break-inside: avoid; 
-             page-break-after: auto; 
-           }
-        }
+        /* Printing now goes through a hidden iframe (see handlePrint) that
+           renders a plain monospace layout built from the report's own data
+           — no @media print rule is needed on this live page anymore;
+           window.print() is no longer called on it. */
+
+        /* ── Bank Detail Ledger — dark mode ── */
+        html.dark .bdl-page { background-color: #000000 !important; background-image: none !important; }
+        html.dark .bdl-header,
+        html.dark .bdl-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; box-shadow: none !important; }
+        html.dark .bdl-params-card,
+        html.dark .bdl-report-panel,
+        html.dark .bdl-page .bg-slate-800 { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; box-shadow: none !important; }
+        html.dark .bdl-card-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
+        html.dark .bdl-preview-body { background-color: #1c1c1e !important; }
+        html.dark .bdl-page .text-slate-100,
+        html.dark .bdl-page .text-slate-900,
+        html.dark .bdl-page h1,
+        html.dark .bdl-page h3 { color: #f5f5f7 !important; }
+        html.dark .bdl-page label,
+        html.dark .bdl-page .text-slate-600,
+        html.dark .bdl-page .text-slate-700 { color: #8e8e93 !important; }
+        html.dark .bdl-page .ant-picker,
+        html.dark .bdl-page .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .bdl-page .ant-picker input,
+        html.dark .bdl-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .bdl-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .bdl-page .legacy-report-enhanced { color: #f5f5f7 !important; }
+        html.dark .bdl-page .legacy-report-enhanced table,
+        html.dark .bdl-page .legacy-report-enhanced th,
+        html.dark .bdl-page .legacy-report-enhanced td,
+        html.dark .bdl-page .legacy-report-enhanced tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.15) !important; color: #f5f5f7 !important; }
+        html.dark .bdl-page .legacy-report-enhanced .text-blue-800,
+        html.dark .bdl-page .legacy-report-enhanced .text-blue-700 { color: #60a5fa !important; }
+        html.dark .bdl-page .legacy-report-enhanced .text-emerald-700,
+        html.dark .bdl-page .legacy-report-enhanced .text-emerald-800 { color: #34d399 !important; }
+        html.dark .bdl-page .legacy-report-enhanced .text-rose-700,
+        html.dark .bdl-page .legacy-report-enhanced .text-rose-800 { color: #ff453a !important; }
+        html.dark .bdl-page .legacy-report-enhanced .bg-amber-50\/50 { background-color: rgba(255,255,255,.05) !important; }
       `}</style>
     </ConfigProvider>
   );

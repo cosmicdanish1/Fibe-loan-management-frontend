@@ -316,55 +316,65 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                     surety2Office: loanData.surety2Office || '',
                     surety2LoanBalance: loanData.surety2LoanBalance || '0',
                 }));
-                // Auto-calculate 5% Share & FD deductions
+                // Auto-populate RD/Share shortfall deductions (Regular Loan only —
+                // the backend returns an exempt/zero result for ALN/ELN, so this
+                // is a no-op for those types without needing a client-side check).
+                //
+                // Pushing these into voucherEntries (rather than a separate
+                // read-only panel) means they show up in the existing Transaction
+                // Breakdown table AND flow through the existing
+                // `actualAmount = sanctionAmt - receipts` effect above — so
+                // "ACTUAL AMOUNT" already reflects the net payable with no extra
+                // wiring. The backend's own save-time computation
+                // (getDisbursementDeductions) recognises these by GL code and
+                // won't double them.
+                //
+                // BUG FIX: this used to omit loanType entirely, so the backend's
+                // now-type-scoped rule treated every loan as exempt and always
+                // returned zero — the deduction never appeared for a real
+                // Regular Loan. It also skipped the deduction whenever the
+                // member had ANY existing loan ("top-up detection"), which is
+                // backwards — a top-up is exactly the case this rule is for
+                // (see the matching fix in voucher.service.ts). And it hardcoded
+                // stale codes (L1001 was right, but FD/'A003' was a nonexistent
+                // head — RD has no head of its own and posts to L1004
+                // elsewhere in this app). Head codes now come from the
+                // eligibility response itself, so they always match whatever is
+                // actually configured on the Business Rules screen.
                 setVoucherEntries([]);
                 const memberNo = loanData.memberNo;
                 const loanAmount = parseFloat(sancAmt) || 0;
+                const loanType = loanData.loanType;
                 if (memberNo && loanAmount > 0) {
                     try {
-                        const eligResp = await fetch(`${await getApiBaseUrl()}/loans/eligibility/${memberNo}?amount=${loanAmount}`, {
-                            headers: token ? { Authorization: `Bearer ${token}` } : {}
-                        });
+                        const eligResp = await fetch(
+                            `${await getApiBaseUrl()}/loans/eligibility/${memberNo}?amount=${loanAmount}&loanType=${loanType}`,
+                            { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+                        );
                         if (eligResp.ok) {
                             const eligResult = await eligResp.json();
                             const elig = eligResult.data || eligResult;
                             const autoEntries: PaymentEntry[] = [];
 
-                            // Check for existing active loans (top-up detection)
-                            let hasExistingLoan = false;
-                            try {
-                                const balResp = await fetch(`${await getApiBaseUrl()}/loans/member/${memberNo}/balances`, {
-                                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                            if (elig.shareShortfall > 0) {
+                                autoEntries.push({
+                                    key: 'auto-share-' + Date.now(),
+                                    srNo: '1',
+                                    code: elig.shareHeadCode || 'L1001',
+                                    name: `SHARE VALUE (${elig.sharePct}% shortfall)`,
+                                    rp: 'Receipt',
+                                    amount: elig.shareShortfall,
                                 });
-                                if (balResp.ok) {
-                                    const balResult = await balResp.json();
-                                    const b = balResult.data || balResult;
-                                    const totalOutstanding = (parseFloat(b.regularLoanBal) || 0) + (parseFloat(b.emergencyLoanBal) || 0);
-                                    hasExistingLoan = totalOutstanding > 0;
-                                }
-                            } catch (e) { /* ignore — will proceed without top-up detection */ }
-
-                            if (!hasExistingLoan) {
-                                if (elig.additionalShareRequired > 0) {
-                                    autoEntries.push({
-                                        key: 'auto-share-' + Date.now(),
-                                        srNo: '1',
-                                        code: 'L1001',
-                                        name: 'SHARE VALUE (5% Auto)',
-                                        rp: 'Receipt',
-                                        amount: elig.additionalShareRequired,
-                                    });
-                                }
-                                if (elig.additionalFdRequired > 0) {
-                                    autoEntries.push({
-                                        key: 'auto-fd-' + Date.now(),
-                                        srNo: String(autoEntries.length + 1),
-                                        code: 'A003',
-                                        name: 'FIXED DEPOSIT (5% Auto)',
-                                        rp: 'Receipt',
-                                        amount: elig.additionalFdRequired,
-                                    });
-                                }
+                            }
+                            if (elig.rdShortfall > 0) {
+                                autoEntries.push({
+                                    key: 'auto-rd-' + Date.now(),
+                                    srNo: String(autoEntries.length + 1),
+                                    code: elig.rdHeadCode || 'L1004',
+                                    name: `RECURRING DEPOSIT (${elig.rdPct}% shortfall)`,
+                                    rp: 'Receipt',
+                                    amount: elig.rdShortfall,
+                                });
                             }
                             if (autoEntries.length > 0) {
                                 setVoucherEntries(autoEntries);

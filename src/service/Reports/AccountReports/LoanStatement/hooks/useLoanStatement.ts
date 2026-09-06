@@ -63,7 +63,10 @@ export const useLoanStatement = () => {
         setLoading(true);
         try {
             const base = await getApiBaseUrl();
-            const res = await fetch(`${base}/loans/member/${memberNo}/master`);
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch(`${base}/loans/member/${memberNo}/master`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             if (!res.ok) throw new Error('Member not found or no loans on record');
             const data = await res.json();
             const loans: ActiveLoan[] = data.data || data || [];
@@ -85,14 +88,20 @@ export const useLoanStatement = () => {
         setLoading(true);
         try {
             const base = await getApiBaseUrl();
+            const token = localStorage.getItem('accessToken');
+            const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
             const [historyRes, summaryRes] = await Promise.all([
-                fetch(`${base}/loans/member/${mbno}/repayment-history`),
-                fetch(`${base}/loans/case/${loancaseno}/repayment-summary`),
+                fetch(`${base}/loans/member/${mbno}/repayment-history`, { headers: authHeaders }),
+                fetch(`${base}/loans/case/${loancaseno}/repayment-summary`, { headers: authHeaders }),
             ]);
             const historyData = await historyRes.json();
             const summaryData = await summaryRes.json();
             const allRows: StatementRow[] = historyData.data || historyData || [];
-            setRows(allRows.filter(r => r.loancaseno === loancaseno));
+            // The API returns newest-first (for a "recent activity" list elsewhere);
+            // this statement is a running ledger, so it needs oldest-first — matching
+            // the "oldest first is at the top" caption and the remaining_balance the
+            // backend already computes in chronological (ascending id) order.
+            setRows(allRows.filter(r => r.loancaseno === loancaseno).sort((a, b) => a.id - b.id));
             setSummary(summaryData.data || summaryData || null);
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });

@@ -503,20 +503,20 @@ const SignatureScanning: React.FC = () => {
         /* Neutralise the LIGHT gradient tints only — the dark slate header keeps its gradient. */
         html.dark .sig-scan .from-indigo-50,
         html.dark .sig-scan .from-emerald-50,
-        html.dark .sig-scan .from-slate-50 { background-image: none !important; background-color: #1e293b !important; }
+        html.dark .sig-scan .from-slate-50 { background-image: none !important; background-color: #1c1c1e !important; }
         html.dark .sig-scan .text-indigo-900,
         html.dark .sig-scan .text-emerald-700,
-        html.dark .sig-scan .text-emerald-800 { color: #e2e8f0 !important; }
+        html.dark .sig-scan .text-emerald-800 { color: #f5f5f7 !important; }
         html.dark .sig-scan .text-indigo-700,
         html.dark .sig-scan .text-indigo-600,
         html.dark .sig-scan .text-emerald-600 { color: #a5b4fc !important; }
         html.dark .sig-scan .text-slate-500,
         html.dark .sig-scan .text-slate-400,
-        html.dark .sig-scan .text-slate-300 { color: #94a3b8 !important; }
+        html.dark .sig-scan .text-slate-300 { color: #8e8e93 !important; }
         html.dark .sig-scan .border-slate-200,
         html.dark .sig-scan .border-slate-300,
         html.dark .sig-scan .border-indigo-100,
-        html.dark .sig-scan .border-indigo-200 { border-color: #334155 !important; }
+        html.dark .sig-scan .border-indigo-200 { border-color: rgba(255,255,255,.08) !important; }
         /* The canvas + saved-signature image intentionally stay white — you sign in dark ink on white. */
       `}</style>
     </ConfigProvider>

@@ -227,6 +227,16 @@ export const useUserManagement = (): UseUserManagementReturn => {
       return false;
     }
 
+    // Email is optional — left blank, one is auto-generated from the
+    // username. If the admin does type one, it must actually be valid: a
+    // malformed value here used to only surface as a cryptic backend
+    // "email must be an email" error with no visible field to blame.
+    const trimmedEmail = formData.email.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      showDialog('warning', 'Validation', 'Email address is not valid', 'Leave it blank to auto-generate one, or fix the format.');
+      return false;
+    }
+
     return true;
   };
 
@@ -254,7 +264,11 @@ export const useUserManagement = (): UseUserManagementReturn => {
     if (!validateForm()) return;
 
     try {
-      const email = formData.email || `${formData.username.toLowerCase()}@bank.local`;
+      // Trim both sides: a stray leading/trailing space in either field used
+      // to produce a malformed synthesized email (e.g. "danish @bank.local")
+      // that failed backend validation with no indication the username was
+      // the actual cause, since there was no email field to look at.
+      const email = formData.email.trim() || `${formData.username.trim().toLowerCase()}@bank.local`;
       const firstName = formData.firstName || formData.username;
       const lastName = formData.lastName || 'User';
 
@@ -266,6 +280,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
         role: formData.userLevel,
         permissions: formData.assignedPermissions,
         isActive: true,
+        allowPassTransactions: formData.allowPassTransactions,
       };
 
       if (formData.password) {

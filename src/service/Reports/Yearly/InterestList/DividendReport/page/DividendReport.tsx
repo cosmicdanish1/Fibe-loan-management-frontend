@@ -230,14 +230,14 @@ const DividendReport: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+      <div className={`dividend-report-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        <div className="dividend-report-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
           <h1 className="fz-caption font-black text-white tracking-tight uppercase">5.3.1 Dividend Report</h1>
         </div>
         <div className="flex-1 flex overflow-hidden">
 
         {/* Compact Sidebar */}
-        <div className={`w-80 flex flex-col shrink-0 border-r ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className={`dividend-report-sidebar w-80 flex flex-col shrink-0 border-r ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           {/* Header */}
           <div className={`p-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
             <div className="flex items-center gap-3">
@@ -385,7 +385,7 @@ const DividendReport: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className={`px-4 py-3 shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className={`dividend-report-mainbar px-4 py-3 shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center justify-between">
               <div>
                 <h2 className={`fz-heading font-black ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Dividend Distribution Report</h2>
@@ -417,7 +417,7 @@ const DividendReport: React.FC = () => {
 
           {/* Legacy Report Table */}
           <div className="flex-1 p-4 overflow-auto">
-            <div className={`rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className={`dividend-report-card rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
               
               {loading ? (
                 <div className="flex items-center justify-center py-12">
@@ -585,6 +585,19 @@ const DividendReport: React.FC = () => {
         .ant-pagination-compact .ant-pagination-item-active a {
           color: white !important;
         }
+
+        /* ── Dividend Report — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .dividend-report-page { background-color: #000000 !important; }
+        html.dark .dividend-report-topbar { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dividend-report-sidebar,
+        html.dark .dividend-report-mainbar,
+        html.dark .dividend-report-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dividend-report-page label { color: #8e8e93 !important; }
+        html.dark .dividend-report-page .ant-select-selector,
+        html.dark .dividend-report-page .ant-input,
+        html.dark .dividend-report-page .ant-input-number,
+        html.dark .dividend-report-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .dividend-report-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
       `}</style>
     </ConfigProvider>
   );

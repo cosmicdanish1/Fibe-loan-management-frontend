@@ -35,9 +35,9 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
     });
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 overflow-auto">
+        <div className="lec-root flex flex-col h-full bg-slate-50 overflow-auto">
             {/* Header */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
+            <div className="lec-header bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
                 <div>
                     <h1 className="fz-heading font-semibold text-white">Loan Early Closure</h1>
                     <p className="fz-caption text-slate-400">Foreclose a loan — outstanding principal + reducing-balance interest + prior dues, no future interest charged</p>
@@ -300,6 +300,53 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                     This cannot be undone from this screen. Confirm ₹{quote ? fmt(quote.finalClosureAmount) : '—'} has actually been collected before proceeding.
                 </p>
             </Modal>
+
+            <style>{`
+                /* ── Dark mode ── */
+                html.dark .lec-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .lec-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .lec-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .lec-root .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .lec-root .border-slate-200,
+                html.dark .lec-root .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .lec-root .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+                html.dark .lec-root .text-slate-800,
+                html.dark .lec-root .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .lec-root .text-slate-600,
+                html.dark .lec-root .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .lec-root .text-slate-400 { color: #71717a !important; }
+                html.dark .lec-root label { color: #8e8e93 !important; }
+                html.dark .lec-root .text-green-500,
+                html.dark .lec-root .text-green-700 { color: #34d399 !important; }
+                html.dark .lec-root .bg-green-50 { background-color: rgba(52,211,153,.12) !important; }
+                html.dark .lec-root .border-green-200 { border-color: rgba(52,211,153,.3) !important; }
+                html.dark .lec-root .text-red-600 { color: #ff453a !important; }
+                html.dark .lec-root .bg-red-50 { background-color: rgba(255,69,58,.12) !important; }
+                html.dark .lec-root .border-red-200 { border-color: rgba(255,69,58,.3) !important; }
+                html.dark .lec-root .text-amber-700 { color: #fbbf24 !important; }
+                html.dark .lec-root .bg-amber-50 { background-color: rgba(251,191,36,.12) !important; }
+                html.dark .lec-root .border-amber-200 { border-color: rgba(251,191,36,.3) !important; }
+                /* violet accents kept, just adapted for dark backdrop */
+                html.dark .lec-root .bg-violet-50 { background-color: rgba(167,139,250,.14) !important; }
+                html.dark .lec-root .border-violet-200 { border-color: rgba(167,139,250,.35) !important; }
+                html.dark .lec-root .border-violet-400 { border-color: rgba(167,139,250,.6) !important; }
+                html.dark .lec-root .text-violet-900 { color: #c4b5fd !important; }
+                /* buttons */
+                html.dark .lec-root button.bg-slate-100 { background-color: #1c1c1e !important; color: #f5f5f7 !important; }
+                html.dark .lec-root button.hover\\:bg-slate-200:hover { background-color: rgba(255,255,255,.08) !important; }
+                /* form inputs */
+                html.dark .lec-root input[type=text],
+                html.dark .lec-root input[type=number] {
+                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .lec-root input[readonly] { background-color: rgba(255,255,255,.03) !important; color: #8e8e93 !important; }
+                html.dark .lec-root input::placeholder { color: #71717a !important; }
+                /* tables */
+                html.dark .lec-root table thead,
+                html.dark .lec-root table thead tr.bg-slate-50 { background-color: #1c1c1e !important; }
+                html.dark .lec-root table th { color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+                html.dark .lec-root table td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
+            `}</style>
         </div>
     );
 };

@@ -171,9 +171,9 @@ const CashBook: React.FC = () => {
         },
       }}
     >
-      <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 font-sans selection:bg-indigo-100 overflow-hidden">
+      <div className="cashbook-page h-screen flex flex-col bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 font-sans selection:bg-indigo-100 overflow-hidden">
         {/* Compact Header */}
-        <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0">
+        <div className="cashbook-header bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-2 rounded-lg text-white shadow-md">
               <BookOpen size={18} />
@@ -219,9 +219,9 @@ const CashBook: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl overflow-hidden shadow-sm"
+              className="cashbook-params-card bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl overflow-hidden shadow-sm"
             >
-              <div className="bg-gradient-to-r from-slate-50 to-indigo-50/50 border-b border-slate-100 px-3 py-2 flex items-center justify-between">
+              <div className="cashbook-card-header bg-gradient-to-r from-slate-50 to-indigo-50/50 border-b border-slate-100 px-3 py-2 flex items-center justify-between">
                 <h3 className="fz-caption font-extrabold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                   <Settings size={12} className="text-indigo-600" />
                   Parameters
@@ -277,7 +277,7 @@ const CashBook: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   className="grid grid-cols-1 gap-2"
                 >
-                  <div className="bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-lg p-3 shadow-sm hover:shadow-md transition-all group">
+                  <div className="cashbook-stat-card bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-lg p-3 shadow-sm hover:shadow-md transition-all group">
                     <div className="flex items-center justify-between mb-1">
                       <div className="fz-caption font-bold uppercase tracking-wide text-slate-500">Opening</div>
                       <Calculator size={12} className="text-slate-300 group-hover:text-indigo-400 transition-colors" />
@@ -308,8 +308,8 @@ const CashBook: React.FC = () => {
           </div>
 
           {/* Compact Report Panel with Scroll */}
-          <div className="flex-1 bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl shadow-sm flex flex-col overflow-hidden">
-            <div className="bg-gradient-to-r from-slate-50 to-indigo-50/50 border-b border-slate-100 px-4 py-2.5 flex items-center justify-between shrink-0">
+          <div className="cashbook-report-panel flex-1 bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl shadow-sm flex flex-col overflow-hidden">
+            <div className="cashbook-card-header bg-gradient-to-r from-slate-50 to-indigo-50/50 border-b border-slate-100 px-4 py-2.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <div className="bg-white p-1.5 rounded-lg shadow-sm border border-slate-100">
                   <Database size={14} className="text-indigo-600" />
@@ -321,7 +321,7 @@ const CashBook: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto p-3 custom-scrollbar-compact bg-white">
+            <div className="cashbook-report-body flex-1 overflow-auto p-3 custom-scrollbar-compact bg-white">
               <Spin spinning={loading} tip="Loading..." size="small">
                 {data && data.vouchers && data.vouchers.length > 0 ? (
                   <div className="legacy-report-compact font-mono fz-caption">
@@ -365,7 +365,7 @@ const CashBook: React.FC = () => {
                         </div>
 
                         <div className="border-t border-b border-dashed border-slate-300">
-                          <table className="w-full fz-caption">
+                          <table className="cashbook-voucher-table w-full fz-caption">
                             <thead>
                               <tr className="border-b border-dashed border-slate-300 bg-slate-50/50">
                                 <th className="text-left py-1 px-1.5 w-8 font-bold text-slate-700">#</th>
@@ -441,7 +441,7 @@ const CashBook: React.FC = () => {
         </div>
 
         {/* Compact Footer */}
-        <div className="bg-white/80 backdrop-blur-sm border-t border-slate-200/60 px-4 py-2 flex items-center justify-between shrink-0">
+        <div className="cashbook-footer bg-white/80 backdrop-blur-sm border-t border-slate-200/60 px-4 py-2 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
@@ -566,11 +566,55 @@ const CashBook: React.FC = () => {
              width: 100%;
            }
            
-           tr { 
-             page-break-inside: avoid; 
-             page-break-after: auto; 
+           tr {
+             page-break-inside: avoid;
+             page-break-after: auto;
            }
         }
+
+        /* ── Cash Book — dark mode ── */
+        html.dark .cashbook-page { background-image: none !important; background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .cashbook-header,
+        html.dark .cashbook-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cashbook-params-card,
+        html.dark .cashbook-report-panel,
+        html.dark .cashbook-stat-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cashbook-card-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cashbook-report-body { background-color: #1c1c1e !important; }
+        html.dark .cashbook-report-body .legacy-report-compact { background-color: #1c1c1e !important; }
+        html.dark .cashbook-page label { color: #8e8e93 !important; }
+        html.dark .cashbook-page .text-slate-800,
+        html.dark .cashbook-page .text-slate-700 { color: #f5f5f7 !important; }
+        html.dark .cashbook-page .text-slate-600,
+        html.dark .cashbook-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .cashbook-page .text-slate-400,
+        html.dark .cashbook-page .text-slate-300 { color: #71717a !important; }
+        html.dark .cashbook-page .border-slate-200,
+        html.dark .cashbook-page .border-slate-100,
+        html.dark .cashbook-page .border-dashed { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cashbook-page .bg-white,
+        html.dark .cashbook-page .bg-slate-50,
+        html.dark .cashbook-page .bg-slate-50\/50 { background-color: #1c1c1e !important; background-image: none !important; }
+        html.dark .cashbook-page .from-indigo-50\/30 { background-image: none !important; background-color: rgba(59,130,246,.06) !important; }
+        html.dark .cashbook-page .border-indigo-100\/50 { border-color: rgba(59,130,246,.15) !important; }
+        html.dark .cashbook-page .text-indigo-600 { color: #60a5fa !important; }
+        html.dark .cashbook-page .text-rose-600,
+        html.dark .cashbook-page .text-rose-700 { color: #ff453a !important; }
+        html.dark .cashbook-page .text-emerald-600,
+        html.dark .cashbook-page .text-emerald-700 { color: #34d399 !important; }
+        /* antd controls */
+        html.dark .cashbook-page .ant-picker,
+        html.dark .cashbook-page .ant-radio-button-wrapper { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .cashbook-page .ant-picker input,
+        html.dark .cashbook-page .ant-picker-suffix { color: #f5f5f7 !important; }
+        html.dark .cashbook-page .ant-radio-button-wrapper-checked { background-color: #3b82f6 !important; border-color: #3b82f6 !important; color: #ffffff !important; }
+        html.dark .cashbook-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        /* Voucher table */
+        html.dark .cashbook-voucher-table thead tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.07) !important; }
+        html.dark .cashbook-voucher-table th { color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+        html.dark .cashbook-voucher-table td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
+        html.dark .cashbook-voucher-table tr:hover { background-color: rgba(255,255,255,.05) !important; }
+        html.dark .cashbook-voucher-table tr.bg-slate-50 { background-color: #1c1c1e !important; }
       `}</style>
       {PrintDialog}
     </ConfigProvider>

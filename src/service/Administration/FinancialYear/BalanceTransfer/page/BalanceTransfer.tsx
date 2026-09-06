@@ -1,12 +1,11 @@
 // page/BalanceTransfer.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  X, Building2, IndianRupee, Calendar, CheckCircle,
-  ShieldCheck, Send, RotateCcw, Database, Info,
-  ChevronRight, ShieldAlert, ArrowRight,
+  X, Database, IndianRupee, Calendar, CheckCircle,
+  ShieldCheck, Send, RotateCcw, Building2, Info,
+  ChevronDown, ShieldAlert,
 } from 'lucide-react';
-import { ConfigProvider, DatePicker, Select } from 'antd';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
@@ -40,6 +39,9 @@ const closeWindow = () => {
   else window.close();
 };
 
+const fmtAmount = (n: string | number) =>
+  '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const EMPTY: TransferData = {
   fromAccount: '', toAccount: '', amount: '',
   transferDate: dayjs().format('YYYY-MM-DD'), description: '',
@@ -50,9 +52,13 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [lastTransfer, setLastTransfer] = useState<TransferData | null>(null);
   const [headOptions, setHeadOptions] = useState<HeadOption[]>([]);
   const [loadingHeads, setLoadingHeads] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<'from' | 'to' | null>(null);
+  const [glQuery, setGlQuery] = useState('');
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadHeads = async () => {
@@ -62,21 +68,38 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
         if (res.success && Array.isArray(res.data)) {
           setHeadOptions(res.data as HeadOption[]);
         }
-      } catch { /* silent — user can still type isn't possible with a Select, but avoid a hard crash */ }
+      } catch { /* silent — dropdown just stays empty, no hard crash */ }
       finally { setLoadingHeads(false); }
     };
     loadHeads();
   }, []);
 
+  useEffect(() => {
+    if (!openDropdown) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-gl-select]')) setOpenDropdown(null);
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [openDropdown]);
+
   const updateField = (field: keyof TransferData, value: string) => {
     setTransferData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }));
+    const errorKey = field as keyof FormErrors;
+    if (errors[errorKey] || errors.general) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[errorKey];
+        delete next.general;
+        return next;
+      });
+    }
   };
 
   const validateForm = (): boolean => {
     const e: FormErrors = {};
-    if (!transferData.fromAccount.trim()) e.fromAccount = 'From account is required';
-    if (!transferData.toAccount.trim()) e.toAccount = 'To account is required';
+    if (!transferData.fromAccount.trim()) e.fromAccount = 'Select a source GL head';
+    if (!transferData.toAccount.trim()) e.toAccount = 'Select a destination GL head';
     if (transferData.fromAccount && transferData.toAccount &&
         transferData.fromAccount === transferData.toAccount)
       e.toAccount = 'Source and destination must be different';
@@ -98,33 +121,42 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
        Number(transferData.amount) > 0 && transferData.transferDate &&
        transferData.description.trim());
 
+  const checksPassed = (): number => {
+    const { fromAccount, toAccount, amount, transferDate, description } = transferData;
+    return [
+      !!fromAccount,
+      !!(toAccount && toAccount !== fromAccount),
+      !!(amount && !isNaN(Number(amount)) && Number(amount) > 0),
+      !!transferDate,
+      !!description.trim(),
+    ].filter(Boolean).length;
+  };
+
+  const headLabel = (code: string): string => {
+    const h = headOptions.find(x => x.code === code);
+    return h ? `${h.code} — ${h.headName}` : code;
+  };
+
+  const filteredHeads = (() => {
+    const q = glQuery.trim().toLowerCase();
+    if (!q) return headOptions;
+    return headOptions.filter(h => h.code.toLowerCase().includes(q) || h.headName.toLowerCase().includes(q));
+  })();
+
   const handleReset = () => {
     setTransferData({ ...EMPTY, transferDate: dayjs().format('YYYY-MM-DD') });
     setErrors({});
+    setOpenDropdown(null);
+    setGlQuery('');
   };
 
-  const handleTransfer = async () => {
+  const openConfirm = () => {
     if (!validateForm()) return;
+    setShowConfirm(true);
+  };
 
-    // Confirm before processing
-    const api = (window as any).electronAPI;
-    let confirmed = false;
-    if (api?.showMessageBox) {
-      const res = await api.showMessageBox({
-        type: 'warning',
-        title: 'Confirm Transfer',
-        message: `Transfer ₹${Number(transferData.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}?`,
-        detail: `From: ${transferData.fromAccount}\nTo  : ${transferData.toAccount}\nDate: ${transferData.transferDate}\n\n${transferData.description}`,
-        buttons: ['Cancel', 'Process Transfer'],
-        defaultId: 0,
-        cancelId: 0,
-      });
-      confirmed = res.response === 1;
-    } else {
-      confirmed = window.confirm(`Transfer ₹${transferData.amount} from ${transferData.fromAccount} to ${transferData.toAccount}?`);
-    }
-    if (!confirmed) return;
-
+  const handleConfirmTransfer = async () => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       const response = await apiService.manualBalanceTransfer({
@@ -134,11 +166,14 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
 
       if (response.success) {
         setLastTransfer({ ...transferData });
+        setShowConfirm(false);
         setShowSuccess(true);
       } else {
+        setShowConfirm(false);
         setErrors({ general: response.error || 'Transfer failed. Please try again.' });
       }
     } catch (err: any) {
+      setShowConfirm(false);
       setErrors({ general: err?.message || 'Balance server unreachable. Check connection.' });
     } finally {
       setIsLoading(false);
@@ -152,325 +187,386 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
   };
 
   usePageToolbarActions({
-    onSave: handleTransfer,
+    onSave: openConfirm,
     saveLabel: 'Process',
     saveEnabled: !(!isFormValid() || isLoading),
   });
 
+  const toggleDropdown = (which: 'from' | 'to') => {
+    setOpenDropdown(prev => (prev === which ? null : which));
+    setGlQuery('');
+  };
+
+  const pickHead = (which: 'from' | 'to', code: string) => {
+    updateField(which === 'from' ? 'fromAccount' : 'toAccount', code);
+    setOpenDropdown(null);
+    setGlQuery('');
+  };
+
+  const statusLabel = isFormValid() ? 'Ready to process' : 'Incomplete';
+  const done = checksPassed();
+
   // ── Success Screen ──
   if (showSuccess && lastTransfer) {
     return (
-      <ConfigProvider theme={{ token: { colorPrimary: '#10b981', borderRadius: 8 } }}>
-        <style>{`
-          html.dark .bt-success { background: #0f172a !important; }
-          html.dark .bt-success .bt-sc { background: #1e293b !important; border-color: #065f46 !important; }
-          html.dark .bt-success .bt-sc-row { background: #0f172a !important; border-color: #334155 !important; color: #94a3b8 !important; }
-          html.dark .bt-success .bt-sc-text { color: #f1f5f9 !important; }
-          html.dark .bt-success .bt-sc-sub { color: #94a3b8 !important; }
-        `}</style>
-        <div className={`bt-success h-screen flex items-center justify-center bg-emerald-50 p-4 ${className}`}>
-          <div className="max-w-sm w-full animate-in zoom-in duration-300">
-            <div className="bt-sc bg-white rounded-2xl shadow-2xl border-2 border-emerald-200 overflow-hidden text-center">
-              <div className="bg-gradient-to-br from-emerald-400 to-emerald-600 p-8">
-                <CheckCircle className="w-14 h-14 text-white mx-auto" />
-              </div>
-              <div className="p-6 space-y-3">
-                <h1 className="bt-sc-text fz-body font-black text-slate-800 uppercase tracking-tight">Transfer Complete!</h1>
-                <p className="bt-sc-sub fz-caption text-slate-500 font-bold">
-                  ₹{Number(lastTransfer.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })} transferred successfully
-                </p>
-                <div className="bt-sc-row bg-slate-50 rounded-xl p-3 flex items-center justify-center gap-2 border border-slate-100">
-                  <span className="fz-caption font-black text-slate-700 uppercase">{lastTransfer.fromAccount}</span>
-                  <ChevronRight size={12} className="text-emerald-500 shrink-0" />
-                  <span className="fz-caption font-black text-slate-700 uppercase">{lastTransfer.toAccount}</span>
-                </div>
-                <button onClick={handleSuccessClose}
-                  className="w-full h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl fz-caption uppercase tracking-wide transition-all mt-1">
-                  Done
-                </button>
-              </div>
+      <div className={`bt-app h-screen flex items-center justify-center bg-[#0E1116] p-6 font-sans ${className}`}>
+        <div className="bt-card w-full max-w-[420px] bg-[#151A21] border border-[#232B35] rounded-xl overflow-hidden">
+          <div className="px-6 pt-8 pb-6 text-center border-b border-[#232B35]">
+            <div className="mx-auto mb-4 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 flex items-center justify-center" style={{ width: 52, height: 52 }}>
+              <CheckCircle size={24} className="text-[#34D399]" strokeWidth={2.2} />
+            </div>
+            <h2 className="fz-heading font-semibold text-[#F2F5F8]">Transfer complete</h2>
+            <p className="fz-caption text-[#7C8896] mt-1.5">
+              Posted to the ledger on {dayjs(lastTransfer.transferDate).format('DD MMM YYYY')}
+            </p>
+            <div className="font-mono text-[26px] font-semibold text-[#34D399] mt-4">
+              {fmtAmount(lastTransfer.amount)}
             </div>
           </div>
+          <div className="px-6 py-4 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-4 fz-caption">
+              <span className="text-[#7C8896]">From</span>
+              <span className="text-[#C7D0D9] text-right">{headLabel(lastTransfer.fromAccount)}</span>
+            </div>
+            <div className="flex items-start justify-between gap-4 fz-caption">
+              <span className="text-[#7C8896]">To</span>
+              <span className="text-[#C7D0D9] text-right">{headLabel(lastTransfer.toAccount)}</span>
+            </div>
+            <div className="flex items-start justify-between gap-4 fz-caption">
+              <span className="text-[#7C8896] shrink-0">Description</span>
+              <span className="text-[#C7D0D9] text-right">{lastTransfer.description}</span>
+            </div>
+          </div>
+          <div className="px-6 pb-5">
+            <button onClick={handleSuccessClose}
+              className="w-full h-9 bg-[#10B981] hover:bg-[#34D399] text-[#04231A] border-none rounded-lg fz-body font-semibold cursor-pointer transition-colors">
+              Done
+            </button>
+          </div>
         </div>
-      </ConfigProvider>
+        <style>{`
+          /* ── Balance Transfer — dark mode ── */
+          html.dark .bt-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .bt-app .bg-\\[\\#0E1116\\] { background-color: #000000 !important; }
+          html.dark .bt-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .bt-app [class*="border-[#232B35]"] { border-color: rgba(255,255,255,.07) !important; }
+          html.dark .bt-app [class*="text-[#F2F5F8]"] { color: #ffffff !important; }
+          html.dark .bt-app [class*="text-[#7C8896]"] { color: #8e8e93 !important; }
+          html.dark .bt-app [class*="text-[#C7D0D9]"] { color: #f5f5f7 !important; }
+        `}</style>
+      </div>
     );
   }
 
   // ── Main Form ──
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#10b981', borderRadius: 8 } }}>
-      <style>{`
-        html.dark .bt-page { background: #0f172a !important; }
-        html.dark .bt-page .bt-card { background: #1e293b !important; border-color: #064e3b !important; }
-        html.dark .bt-page .bt-viz { background: #0f172a !important; border-color: #334155 !important; }
-        html.dark .bt-page .bt-viz-icon { background: #1e293b !important; border-color: #334155 !important; color: #6ee7b7 !important; }
-        html.dark .bt-page .bt-viz-label { color: #6ee7b7 !important; }
-        html.dark .bt-page .bt-transit-badge { background: #064e3b !important; color: #6ee7b7 !important; }
-        html.dark .bt-page .bt-divider { background: #334155 !important; }
-        html.dark .bt-page .bt-prog-track { background: #334155 !important; }
-        html.dark .bt-page .bt-input-label { color: #64748b !important; }
-        html.dark .bt-page .bt-input { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
-        html.dark .bt-page .bt-input:focus { border-color: #10b981 !important; }
-        html.dark .bt-page .bt-input::placeholder { color: #475569 !important; }
-        html.dark .bt-page .bt-input-icon { color: #475569 !important; }
-        html.dark .bt-page .bt-search-btn { color: #475569 !important; }
-        html.dark .bt-page .bt-search-btn:hover { color: #94a3b8 !important; }
-        html.dark .bt-page .bt-textarea { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
-        html.dark .bt-page .bt-textarea::placeholder { color: #475569 !important; }
-        html.dark .bt-page .bt-note { background: #1e293b !important; border-color: #334155 !important; border-left-color: #10b981 !important; }
-        html.dark .bt-page .bt-note-icon { background: #064e3b !important; color: #6ee7b7 !important; }
-        html.dark .bt-page .bt-note-text { color: #94a3b8 !important; }
-        html.dark .bt-page .bt-note-label { color: #f1f5f9 !important; }
-        html.dark .bt-page .bt-footer { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .bt-page .bt-footer-text { color: #475569 !important; }
-        html.dark .bt-page .bt-error { background: #2d0a0a !important; border-color: #7f1d1d !important; }
-        html.dark .bt-page .bt-error-text { color: #fca5a5 !important; }
-        html.dark .bt-page .ant-picker { background: #0f172a !important; border-color: #334155 !important; }
-        html.dark .bt-page .ant-picker input { color: #f1f5f9 !important; }
-        html.dark .bt-page .ant-picker .ant-picker-suffix { color: #475569 !important; }
-        html.dark .bt-page .ant-picker-focused { border-color: #10b981 !important; }
-        html.dark .ant-picker-dropdown .ant-picker-panel-container { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .ant-picker-dropdown .ant-picker-header { background: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important; }
-        html.dark .ant-picker-dropdown .ant-picker-header button { color: #94a3b8 !important; }
-        html.dark .ant-picker-dropdown .ant-picker-content th { color: #64748b !important; }
-        html.dark .ant-picker-dropdown .ant-picker-cell { color: #94a3b8 !important; }
-        html.dark .ant-picker-dropdown .ant-picker-cell-in-view { color: #f1f5f9 !important; }
-        html.dark .ant-picker-dropdown .ant-picker-cell:hover .ant-picker-cell-inner { background: #334155 !important; }
-        html.dark .ant-picker-dropdown .ant-picker-cell-selected .ant-picker-cell-inner { background: #10b981 !important; }
-        html.dark .ant-modal-content { background: #1e293b !important; }
-        html.dark .ant-modal-close { color: #94a3b8 !important; }
-      `}</style>
+    <div ref={rootRef} className={`bt-app h-screen flex flex-col bg-[#0E1116] text-[#E6EAEF] font-sans overflow-hidden ${className}`}>
 
-      <div className={`bt-page h-screen flex flex-col bg-gradient-to-br from-emerald-50 via-white to-emerald-50 font-sans overflow-hidden ${className}`}>
+      <div className="bt-content flex-1 overflow-auto px-5 pt-5 pb-4">
+        <div className="max-w-[1080px] mx-auto flex flex-col gap-3.5">
 
-        {/* ── Main Card ── */}
-        <div className="flex-1 overflow-auto p-2 flex flex-col items-center">
-          <div className="max-w-4xl w-full space-y-2">
+          {/* Title row */}
+          <div className="flex items-end justify-between gap-5 px-0.5">
+            <div>
+              <h1 className="fz-heading font-semibold text-[#F2F5F8]" style={{ fontSize: 19 }}>Balance Transfer</h1>
+              <p className="fz-caption text-[#7C8896] mt-1">Move funds between general ledger heads. Entries post to the ledger immediately.</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={handleReset} disabled={isLoading}
+                className="h-8 px-3.5 inline-flex items-center gap-1.5 bg-transparent text-[#9AA6B2] border border-[#2A333F] rounded-lg fz-caption font-medium cursor-pointer transition-colors hover:bg-[#171E26] hover:text-[#E6EAEF] hover:border-[#3A4550] disabled:opacity-50">
+                <RotateCcw size={13} /> Reset
+              </button>
+              <button onClick={openConfirm} disabled={!isFormValid() || isLoading}
+                className="h-8 px-4 inline-flex items-center gap-2 bg-[#10B981] hover:bg-[#34D399] text-[#04231A] border-none rounded-lg fz-caption font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <Send size={13} /> Process transfer
+              </button>
+              <button onClick={closeWindow} title="Close"
+                className="h-8 w-8 inline-flex items-center justify-center bg-transparent text-[#7C8896] border border-[#2A333F] rounded-lg cursor-pointer transition-colors hover:bg-[#B4232C] hover:text-white hover:border-[#B4232C]">
+                <X size={13} />
+              </button>
+            </div>
+          </div>
 
-            <div className="bt-card bg-white border-2 border-emerald-200 rounded-xl shadow-xl overflow-hidden">
+          {/* General error */}
+          {errors.general && (
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-[#F87171]/10 border border-[#F87171]/30 rounded-lg">
+              <ShieldAlert size={15} className="text-[#F87171] shrink-0" />
+              <span className="fz-caption text-[#FCA5A5] font-medium">{errors.general}</span>
+            </div>
+          )}
 
-              {/* Card header */}
-              <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-2 py-1.5 flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Database size={10} className="text-emerald-100" />
-                  <h2 className="fz-caption font-black text-white uppercase tracking-widest">Balance Transfer</h2>
-                  <span className="fz-caption text-emerald-200 font-bold">· Fiscal System Ledger</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={handleReset} disabled={isLoading}
-                    className="px-2 py-0.5 h-5 text-emerald-100 hover:text-white hover:bg-white/10 rounded fz-caption font-bold transition-all flex items-center gap-1 uppercase disabled:opacity-50">
-                    <RotateCcw size={9} /> Reset
-                  </button>
-                  <button onClick={handleTransfer} disabled={!isFormValid() || isLoading}
-                    className="px-2 py-0.5 h-5 bg-white text-emerald-700 hover:bg-emerald-50 disabled:bg-white/30 disabled:text-white/60 rounded fz-caption font-black shadow-sm transition-all flex items-center gap-1 active:scale-95 disabled:cursor-not-allowed uppercase">
-                    {isLoading
-                      ? <div className="w-2 h-2 border border-emerald-600 border-t-transparent rounded-full animate-spin" />
-                      : <Send size={9} />}
-                    Process
-                  </button>
-                  <button onClick={closeWindow}
-                    className="text-emerald-200 hover:text-white p-1 rounded transition-all">
-                    <X size={12} />
-                  </button>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_360px] gap-3.5 items-start">
+
+            {/* Transfer details card */}
+            <div className="bt-card min-w-0 bg-[#151A21] border border-[#232B35] rounded-xl overflow-hidden">
+              <div className="py-3 border-b border-[#232B35] flex items-center gap-2.5" style={{ paddingLeft: 18, paddingRight: 18 }}>
+                <Database size={14} className="text-[#10B981]" />
+                <h2 className="fz-body font-semibold text-[#E6EAEF]">Transfer details</h2>
+                <span className="ml-auto fz-mini font-medium tracking-widest uppercase text-[#5B6775]">Step 1 of 2</span>
               </div>
 
-              <div className="p-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-start">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ padding: 18 }}>
 
-                  {/* Visualization panel */}
-                  <div className="bt-viz flex flex-col items-center p-3 bg-emerald-50 rounded-lg border-2 border-dashed border-emerald-200 space-y-2 relative overflow-hidden">
-                    <div className="flex items-center gap-3 w-full justify-around">
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="bt-viz-icon w-9 h-9 bg-white rounded-lg shadow-md flex items-center justify-center text-emerald-600 border-2 border-emerald-200">
-                          <Database size={14} />
-                        </div>
-                        <span className="bt-viz-label fz-caption font-black text-emerald-600 uppercase">Source</span>
-                        {transferData.fromAccount && (
-                          <span className="fz-caption font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded text-center max-w-[80px] truncate" style={{ fontSize: '8px' }}>
-                            {transferData.fromAccount}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col items-center gap-1">
-                        <ArrowRight size={14} className="text-emerald-400 animate-pulse" />
-                        <div className="bt-transit-badge px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full fz-caption font-black uppercase">Transit</div>
-                      </div>
-
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="bt-viz-icon w-9 h-9 bg-white rounded-lg shadow-md flex items-center justify-center text-emerald-600 border-2 border-emerald-200">
-                          <Database size={14} />
-                        </div>
-                        <span className="bt-viz-label fz-caption font-black text-emerald-600 uppercase">Destination</span>
-                        {transferData.toAccount && (
-                          <span className="fz-caption font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded text-center max-w-[80px] truncate" style={{ fontSize: '8px' }}>
-                            {transferData.toAccount}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="bt-divider w-full h-px bg-emerald-200" />
-
-                    <div className="w-full space-y-1">
-                      <div className="flex justify-between fz-caption font-bold text-emerald-600 uppercase px-0.5">
-                        <span>Verification Status</span>
-                        <span className="text-emerald-700 font-black">
-                          {isFormValid() ? 'Ready' : 'Pending'}
-                        </span>
-                      </div>
-                      <div className="bt-prog-track w-full h-1 bg-emerald-100 rounded-full overflow-hidden">
-                        <div className={`h-full bg-emerald-500 rounded-full transition-all duration-500 ${
-                          isFormValid() ? 'w-full' :
-                          (transferData.fromAccount || transferData.toAccount) ? 'w-1/2' : 'w-0'
-                        }`} />
-                      </div>
-                    </div>
-
-                    {transferData.amount && Number(transferData.amount) > 0 && (
-                      <div className="w-full text-center">
-                        <span className="fz-caption font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                          ₹{Number(transferData.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    )}
+                {/* From account */}
+                <div className="min-w-0 flex flex-col gap-1.5 relative" data-gl-select>
+                  <label className="fz-mini font-semibold tracking-widest uppercase text-[#7C8896]">From account (GL head)</label>
+                  <div onClick={() => toggleDropdown('from')}
+                    className="h-10 px-3 flex items-center gap-2.5 bg-[#0F141A] border border-[#2A333F] rounded-lg cursor-pointer transition-colors hover:border-[#3A4550]">
+                    <Database size={14} className="text-[#5B6775] shrink-0" />
+                    <span className="flex-1 fz-body overflow-hidden text-ellipsis whitespace-nowrap">
+                      {transferData.fromAccount ? headLabel(transferData.fromAccount) : 'Select source GL head'}
+                    </span>
+                    <ChevronDown size={13} className="text-[#5B6775] shrink-0" />
                   </div>
-
-                  {/* Form inputs */}
-                  <div className="space-y-1.5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-
-                      {/* From Account */}
-                      <div className="space-y-0.5">
-                        <label className="bt-input-label fz-caption font-black text-slate-400 uppercase tracking-widest">From Account (GL Head)</label>
-                        <div className="relative">
-                          <Database size={9} className="bt-input-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 z-10" />
-                          <Select
-                            value={transferData.fromAccount || undefined}
-                            onChange={(v) => updateField('fromAccount', v || '')}
-                            loading={loadingHeads}
-                            showSearch
-                            allowClear
-                            onClear={() => updateField('fromAccount', '')}
-                            placeholder="Search source GL head..."
-                            className={`bt-input w-full ${errors.fromAccount ? 'bt-input-error' : ''}`}
-                            style={{ width: '100%' }}
-                            filterOption={(input, option) =>
-                              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                            }
-                            options={headOptions.map(h => ({ value: h.code, label: `${h.code} - ${h.headName}` }))}
-                          />
-                        </div>
-                        {errors.fromAccount && <p className="fz-caption font-bold text-rose-500 ml-0.5">{errors.fromAccount}</p>}
+                  {openDropdown === 'from' && (
+                    <div className="absolute top-[72px] left-0 right-0 z-40 bg-[#141A21] border border-[#2A333F] rounded-lg shadow-2xl overflow-hidden">
+                      <div className="p-2 border-b border-[#232B35]">
+                        <input value={glQuery} onChange={e => setGlQuery(e.target.value)} placeholder="Search code or head name" autoFocus
+                          className="w-full h-8 px-2.5 bg-[#0F141A] border border-[#2A333F] rounded-md text-[#E6EAEF] fz-caption outline-none" />
                       </div>
-
-                      {/* To Account */}
-                      <div className="space-y-0.5">
-                        <label className="bt-input-label fz-caption font-black text-slate-400 uppercase tracking-widest">To Account (GL Head)</label>
-                        <div className="relative">
-                          <Database size={9} className="bt-input-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 z-10" />
-                          <Select
-                            value={transferData.toAccount || undefined}
-                            onChange={(v) => updateField('toAccount', v || '')}
-                            loading={loadingHeads}
-                            showSearch
-                            allowClear
-                            onClear={() => updateField('toAccount', '')}
-                            placeholder="Search destination GL head..."
-                            className={`bt-input w-full ${errors.toAccount ? 'bt-input-error' : ''}`}
-                            style={{ width: '100%' }}
-                            filterOption={(input, option) =>
-                              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                            }
-                            options={headOptions.map(h => ({ value: h.code, label: `${h.code} - ${h.headName}` }))}
-                          />
-                        </div>
-                        {errors.toAccount && <p className="fz-caption font-bold text-rose-500 ml-0.5">{errors.toAccount}</p>}
-                      </div>
-
-                      {/* Amount */}
-                      <div className="space-y-0.5">
-                        <label className="bt-input-label fz-caption font-black text-slate-400 uppercase tracking-widest">Amount</label>
-                        <div className="relative">
-                          <IndianRupee size={9} className="bt-input-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300" />
-                          <input type="number" step="0.01" min="0"
-                            value={transferData.amount}
-                            onChange={e => updateField('amount', e.target.value)}
-                            className={`bt-input w-full h-6 bg-slate-50 border-2 border-slate-200 rounded-lg pl-6 pr-2 fz-caption font-bold text-slate-700 outline-none transition-all focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-300 ${errors.amount ? 'border-rose-400' : ''}`}
-                            placeholder="0.00" />
-                        </div>
-                        {errors.amount && <p className="fz-caption font-bold text-rose-500 ml-0.5">{errors.amount}</p>}
-                      </div>
-
-                      {/* Transfer Date */}
-                      <div className="space-y-0.5">
-                        <label className="bt-input-label fz-caption font-black text-slate-400 uppercase tracking-widest">Transfer Date</label>
-                        <DatePicker
-                          value={transferData.transferDate ? dayjs(transferData.transferDate) : null}
-                          onChange={date => updateField('transferDate', date ? date.format('YYYY-MM-DD') : '')}
-                          className={`w-full h-6 bg-slate-50 border-2 rounded-lg fz-caption font-bold text-slate-700 outline-none transition-all ${errors.transferDate ? 'border-rose-400' : 'border-slate-200 hover:border-emerald-400'}`}
-                          format="DD-MMM-YYYY"
-                          suffixIcon={<Calendar size={10} className="text-slate-300" />}
-                          allowClear={false}
-                        />
-                        {errors.transferDate && <p className="fz-caption font-bold text-rose-500 ml-0.5">{errors.transferDate}</p>}
-                      </div>
-
-                      {/* Description */}
-                      <div className="sm:col-span-2 space-y-0.5">
-                        <label className="bt-input-label fz-caption font-black text-slate-400 uppercase tracking-widest">Description</label>
-                        <textarea
-                          value={transferData.description}
-                          onChange={e => updateField('description', e.target.value)}
-                          rows={2}
-                          className={`bt-textarea w-full p-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg fz-caption font-bold text-slate-700 outline-none transition-all resize-none focus:bg-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-300 ${errors.description ? 'border-rose-400' : ''}`}
-                          placeholder="Purpose of transfer..."
-                        />
-                        {errors.description && <p className="fz-caption font-bold text-rose-500 ml-0.5">{errors.description}</p>}
+                      <div className="max-h-[216px] overflow-auto p-1">
+                        {loadingHeads && <div className="px-2.5 py-2 fz-caption text-[#5B6775]">Loading GL heads…</div>}
+                        {!loadingHeads && filteredHeads.length === 0 && <div className="px-2.5 py-2 fz-caption text-[#5B6775]">No matching GL heads</div>}
+                        {filteredHeads.map(h => (
+                          <div key={h.code} onClick={() => pickHead('from', h.code)}
+                            className="px-2.5 py-2 rounded-md cursor-pointer flex items-baseline gap-2.5 hover:bg-[#1C242E]">
+                            <span className="font-mono fz-caption text-[#34D399] font-medium">{h.code}</span>
+                            <span className="fz-caption text-[#C7D0D9] overflow-hidden text-ellipsis whitespace-nowrap">{h.headName}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
+                  )}
+                  {errors.fromAccount && <span className="fz-caption text-[#F87171]">{errors.fromAccount}</span>}
+                </div>
 
-                    {/* General error */}
-                    {errors.general && (
-                      <div className="bt-error bg-rose-50 border-2 border-rose-200 rounded-lg p-1.5 flex items-center gap-1.5">
-                        <ShieldAlert size={10} className="text-rose-500 shrink-0" />
-                        <p className="bt-error-text fz-caption text-rose-700 font-bold">{errors.general}</p>
-                      </div>
-                    )}
+                {/* To account */}
+                <div className="min-w-0 flex flex-col gap-1.5 relative" data-gl-select>
+                  <label className="fz-mini font-semibold tracking-widest uppercase text-[#7C8896]">To account (GL head)</label>
+                  <div onClick={() => toggleDropdown('to')}
+                    className="h-10 px-3 flex items-center gap-2.5 bg-[#0F141A] border border-[#2A333F] rounded-lg cursor-pointer transition-colors hover:border-[#3A4550]">
+                    <Database size={14} className="text-[#5B6775] shrink-0" />
+                    <span className="flex-1 fz-body overflow-hidden text-ellipsis whitespace-nowrap">
+                      {transferData.toAccount ? headLabel(transferData.toAccount) : 'Select destination GL head'}
+                    </span>
+                    <ChevronDown size={13} className="text-[#5B6775] shrink-0" />
                   </div>
+                  {openDropdown === 'to' && (
+                    <div className="absolute top-[72px] left-0 right-0 z-40 bg-[#141A21] border border-[#2A333F] rounded-lg shadow-2xl overflow-hidden">
+                      <div className="p-2 border-b border-[#232B35]">
+                        <input value={glQuery} onChange={e => setGlQuery(e.target.value)} placeholder="Search code or head name" autoFocus
+                          className="w-full h-8 px-2.5 bg-[#0F141A] border border-[#2A333F] rounded-md text-[#E6EAEF] fz-caption outline-none" />
+                      </div>
+                      <div className="max-h-[216px] overflow-auto p-1">
+                        {loadingHeads && <div className="px-2.5 py-2 fz-caption text-[#5B6775]">Loading GL heads…</div>}
+                        {!loadingHeads && filteredHeads.length === 0 && <div className="px-2.5 py-2 fz-caption text-[#5B6775]">No matching GL heads</div>}
+                        {filteredHeads.map(h => (
+                          <div key={h.code} onClick={() => pickHead('to', h.code)}
+                            className="px-2.5 py-2 rounded-md cursor-pointer flex items-baseline gap-2.5 hover:bg-[#1C242E]">
+                            <span className="font-mono fz-caption text-[#34D399] font-medium">{h.code}</span>
+                            <span className="fz-caption text-[#C7D0D9] overflow-hidden text-ellipsis whitespace-nowrap">{h.headName}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {errors.toAccount && <span className="fz-caption text-[#F87171]">{errors.toAccount}</span>}
+                </div>
+
+                {/* Amount */}
+                <div className="min-w-0 flex flex-col gap-1.5">
+                  <label className="fz-mini font-semibold tracking-widest uppercase text-[#7C8896]">Amount</label>
+                  <div className="h-10 flex items-center bg-[#0F141A] border border-[#2A333F] rounded-lg overflow-hidden">
+                    <span className="w-9 h-full flex items-center justify-center text-[#7C8896] border-r border-[#232B35]">
+                      <IndianRupee size={13} />
+                    </span>
+                    <input type="number" step="0.01" min="0"
+                      value={transferData.amount}
+                      onChange={e => updateField('amount', e.target.value)}
+                      placeholder="0.00"
+                      className="font-mono flex-1 min-w-0 h-full px-3 bg-transparent border-none outline-none text-[#F2F5F8] fz-body font-medium" />
+                  </div>
+                  {errors.amount && <span className="fz-caption text-[#F87171]">{errors.amount}</span>}
+                </div>
+
+                {/* Transfer date */}
+                <div className="min-w-0 flex flex-col gap-1.5">
+                  <label className="fz-mini font-semibold tracking-widest uppercase text-[#7C8896]">Transfer date</label>
+                  <div className="h-10 flex items-center bg-[#0F141A] border border-[#2A333F] rounded-lg px-3 gap-2.5">
+                    <Calendar size={14} className="text-[#5B6775] shrink-0" />
+                    <input type="date" value={transferData.transferDate} onChange={e => updateField('transferDate', e.target.value)}
+                      className="font-mono flex-1 min-w-0 h-full bg-transparent border-none outline-none text-[#F2F5F8] fz-caption"
+                      style={{ colorScheme: 'dark' }} />
+                  </div>
+                  {errors.transferDate && <span className="fz-caption text-[#F87171]">{errors.transferDate}</span>}
+                </div>
+
+                {/* Description */}
+                <div className="sm:col-span-2 flex flex-col gap-1.5">
+                  <div className="flex items-baseline justify-between">
+                    <label className="fz-mini font-semibold tracking-widest uppercase text-[#7C8896]">Description</label>
+                    <span className="fz-mini text-[#5B6775]">{transferData.description.length}/240</span>
+                  </div>
+                  <textarea value={transferData.description}
+                    onChange={e => updateField('description', e.target.value.slice(0, 240))}
+                    rows={3}
+                    placeholder="Purpose of transfer — e.g. reallocation of Q3 maintenance budget"
+                    className="w-full px-3 py-2.5 bg-[#0F141A] border border-[#2A333F] rounded-lg text-[#E6EAEF] fz-body outline-none resize-none leading-relaxed" />
+                  {errors.description && <span className="fz-caption text-[#F87171]">{errors.description}</span>}
                 </div>
               </div>
             </div>
 
-            {/* Note */}
-            <div className="bt-note bg-white border-2 border-emerald-100 border-l-4 border-l-emerald-500 rounded-lg p-2 flex items-center gap-2 shadow-sm">
-              <div className="bt-note-icon bg-emerald-50 p-1 rounded-lg text-emerald-600 shrink-0">
-                <Info size={10} />
+            {/* Right column: review + note */}
+            <div className="flex flex-col gap-3.5">
+              <div className="bt-card bg-[#151A21] border border-[#232B35] rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#232B35] flex items-center justify-between">
+                  <h2 className="fz-body font-semibold text-[#E6EAEF]">Review</h2>
+                  <span className="px-2.5 py-0.5 rounded-full fz-mini font-semibold tracking-widest uppercase bg-[#10B981]/[.12] text-[#34D399]">
+                    {statusLabel}
+                  </span>
+                </div>
+
+                <div className="p-4">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#0F141A] border border-[#2A333F] flex items-center justify-center shrink-0">
+                        <Database size={14} className="text-[#7C8896]" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="fz-mini font-semibold tracking-widest uppercase text-[#5B6775]">Source</div>
+                        <div className="fz-caption text-[#C7D0D9] mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {transferData.fromAccount ? headLabel(transferData.fromAccount) : 'Select source GL head'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 py-1.5 pl-[15px]">
+                      <div className="w-0.5 h-[26px]" style={{ background: 'linear-gradient(#2A333F, #10B981)' }} />
+                      <span className="px-2 py-0.5 rounded fz-mini font-semibold tracking-widest uppercase bg-[#0F141A] border border-[#2A333F] text-[#7C8896]">In transit</span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#10B981]/10 border border-[#10B981]/[.35] flex items-center justify-center shrink-0">
+                        <Database size={14} className="text-[#34D399]" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="fz-mini font-semibold tracking-widest uppercase text-[#5B6775]">Destination</div>
+                        <div className="fz-caption text-[#C7D0D9] mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {transferData.toAccount ? headLabel(transferData.toAccount) : 'Select destination GL head'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3.5 border-t border-[#232B35] flex items-baseline justify-between">
+                    <span className="fz-mini font-semibold tracking-widest uppercase text-[#7C8896]">Amount</span>
+                    <span className="font-mono text-[20px] font-semibold text-[#F2F5F8]">
+                      {transferData.amount && Number(transferData.amount) > 0 ? fmtAmount(transferData.amount) : '₹0.00'}
+                    </span>
+                  </div>
+
+                  <div className="mt-3.5 flex flex-col gap-1.5">
+                    <div className="flex justify-between fz-mini font-semibold tracking-widest uppercase">
+                      <span className="text-[#7C8896]">Verification status</span>
+                      <span className="text-[#9AA6B2]">{done} of 5 checks</span>
+                    </div>
+                    <div className="w-full h-1 bg-[#232B35] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#10B981] rounded-full transition-all" style={{ width: `${(done / 5) * 100}%` }} />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="bt-note-text fz-caption text-slate-500 font-semibold leading-snug">
-                <span className="bt-note-label text-slate-900 uppercase tracking-widest font-black mr-1">Note:</span>
-                Balance transfers are processed immediately. Ensure all account details are correct before proceeding.
-              </p>
+
+              <div className="bt-card flex gap-2.5 px-3.5 py-3 bg-[#151A21] border border-[#232B35] rounded-lg" style={{ borderLeft: '2px solid #10B981' }}>
+                <Info size={15} className="text-[#34D399] shrink-0 mt-0.5" />
+                <p className="fz-caption leading-relaxed text-[#9AA6B2]">
+                  <span className="text-[#E6EAEF] font-semibold">Note:</span> Balance transfers are processed immediately and cannot be reversed from this screen. Verify both GL heads before proceeding.
+                </p>
+              </div>
             </div>
-
           </div>
         </div>
-
-        {/* ── Footer ── */}
-        <div className="bt-footer bg-white border-t border-slate-100 px-2 py-1 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-1">
-            <Building2 size={9} className="text-slate-400" />
-            <span className="bt-footer-text fz-caption font-bold text-slate-400 uppercase tracking-tight" style={{ fontSize: '9px' }}>Financial Systems</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <ShieldCheck size={9} className="text-slate-400" />
-            <span className="bt-footer-text fz-caption font-bold text-slate-400 uppercase tracking-tight" style={{ fontSize: '9px' }}>Verified Protocol</span>
-          </div>
-        </div>
-
       </div>
-    </ConfigProvider>
+
+      {/* Confirm modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[80] bg-black/60 flex items-center justify-center p-6">
+          <div className="bt-modal w-full max-w-[400px] bg-[#151A21] border border-[#2A333F] rounded-xl shadow-2xl overflow-hidden">
+            <div className="px-5 pt-5 pb-4">
+              <h3 className="fz-body font-semibold text-[#F2F5F8]">Confirm transfer</h3>
+              <p className="fz-caption leading-relaxed text-[#9AA6B2] mt-2">This posts immediately to the ledger and cannot be undone here.</p>
+            </div>
+            <div className="mx-5 p-4 bg-[#0F141A] border border-[#232B35] rounded-lg flex flex-col gap-2.5">
+              <div className="flex justify-between gap-3.5 fz-caption"><span className="text-[#7C8896]">Amount</span><span className="font-mono text-[#F2F5F8] font-semibold">{fmtAmount(transferData.amount || 0)}</span></div>
+              <div className="flex justify-between gap-3.5 fz-caption"><span className="text-[#7C8896]">From</span><span className="text-[#C7D0D9] text-right">{headLabel(transferData.fromAccount)}</span></div>
+              <div className="flex justify-between gap-3.5 fz-caption"><span className="text-[#7C8896]">To</span><span className="text-[#C7D0D9] text-right">{headLabel(transferData.toAccount)}</span></div>
+              <div className="flex justify-between gap-3.5 fz-caption"><span className="text-[#7C8896]">Date</span><span className="font-mono text-[#C7D0D9]">{transferData.transferDate}</span></div>
+            </div>
+            <div className="px-5 pt-4 pb-5 flex gap-2.5 justify-end">
+              <button onClick={() => setShowConfirm(false)} disabled={isLoading}
+                className="h-9 px-4 bg-transparent text-[#9AA6B2] border border-[#2A333F] rounded-lg fz-caption font-medium cursor-pointer transition-colors hover:bg-[#171E26] hover:text-[#E6EAEF] disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={handleConfirmTransfer} disabled={isLoading}
+                className="h-9 px-4 inline-flex items-center gap-2 bg-[#10B981] hover:bg-[#34D399] text-[#04231A] border-none rounded-lg fz-caption font-semibold cursor-pointer transition-colors disabled:opacity-70">
+                {isLoading && <div className="w-2.5 h-2.5 border border-[#04231A] border-t-transparent rounded-full animate-spin" />}
+                {isLoading ? 'Processing…' : 'Process transfer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="bt-footer shrink-0 h-[34px] flex items-center justify-between px-4 bg-[#0A0D12] border-t border-[#1B222B]">
+        <div className="flex items-center gap-1.5">
+          <Building2 size={12} className="text-[#5B6775]" />
+          <span className="fz-mini text-[#6B7885]">Financial Systems</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <ShieldCheck size={12} className="text-[#10B981]" />
+          <span className="fz-mini text-[#6B7885]">Verified protocol · Session secured</span>
+        </div>
+      </div>
+
+      <style>{`
+        /* ── Balance Transfer — dark mode (Settings-panel palette trial) ── */
+        html.dark .bt-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .bt-app [class*="bg-[#0E1116]"] { background-color: #000000 !important; }
+        html.dark .bt-content { background-color: #000000 !important; }
+        html.dark .bt-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .bt-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .bt-modal { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        /* Borders */
+        html.dark .bt-app [class*="border-[#232B35]"] { border-color: rgba(255,255,255,.07) !important; }
+        html.dark .bt-app [class*="border-[#2A333F]"] { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .bt-app [class*="border-[#1B222B]"] { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .bt-app [class*="hover:border-[#3A4550]"]:hover { border-color: rgba(255,255,255,.15) !important; }
+        /* Inputs / input-like trigger boxes / dropdown panels */
+        html.dark .bt-app input,
+        html.dark .bt-app textarea,
+        html.dark .bt-app [class*="bg-[#0F141A]"],
+        html.dark .bt-app [class*="bg-[#141A21]"] {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .bt-app [class*="hover:bg-[#1C242E]"]:hover { background-color: rgba(255,255,255,.08) !important; }
+        html.dark .bt-app [class*="hover:bg-[#171E26]"]:hover { background-color: rgba(255,255,255,.08) !important; }
+        /* Text colours */
+        html.dark .bt-app [class*="text-[#F2F5F8]"] { color: #ffffff !important; }
+        html.dark .bt-app [class*="text-[#E6EAEF]"] { color: #f5f5f7 !important; }
+        html.dark .bt-app [class*="text-[#C7D0D9]"] { color: #f5f5f7 !important; }
+        html.dark .bt-app [class*="text-[#9AA6B2]"] { color: #8e8e93 !important; }
+        html.dark .bt-app [class*="text-[#7C8896]"] { color: #8e8e93 !important; }
+        html.dark .bt-app [class*="text-[#6B7885]"] { color: #71717a !important; }
+        html.dark .bt-app [class*="text-[#5B6775]"] { color: #71717a !important; }
+        html.dark .bt-app [class*="hover:text-[#E6EAEF]"]:hover { color: #f5f5f7 !important; }
+        /* Secondary buttons (Reset / Close / Cancel) — leave the green primary action button untouched */
+        html.dark .bt-app button[class*="border-[#2A333F]"][class*="bg-transparent"] {
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important;
+        }
+      `}</style>
+    </div>
   );
 };
 

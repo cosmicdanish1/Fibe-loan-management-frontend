@@ -237,26 +237,26 @@ const SaakhScore: React.FC = () => {
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 12 } }}>
       <style>{`
-        html.dark .ss-page { background: linear-gradient(160deg, #0f172a 0%, #1a1040 50%, #12071a 100%) !important; }
+        html.dark .ss-page { background: linear-gradient(160deg, #000000 0%, #1a1040 50%, #12071a 100%) !important; }
 
         /* Search bar */
-        html.dark .ss-page .ss-searchbar { background: rgba(15,23,42,0.95) !important; border-color: #334155 !important; }
-        html.dark .ss-page .ss-input { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
-        html.dark .ss-page .ss-input::placeholder { color: #475569 !important; }
+        html.dark .ss-page .ss-searchbar { background: rgba(15,23,42,0.95) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ss-page .ss-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .ss-page .ss-input::placeholder { color: rgba(255,255,255,.08) !important; }
         html.dark .ss-page .ss-input:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 4px rgba(99,102,241,0.12) !important; }
-        html.dark .ss-page .ss-lookup-btn { background: #1e293b !important; border-color: #334155 !important; color: #94a3b8 !important; }
-        html.dark .ss-page .ss-lookup-btn:hover { background: #334155 !important; color: #f1f5f9 !important; }
+        html.dark .ss-page .ss-lookup-btn { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .ss-page .ss-lookup-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
 
         /* Factor cards */
-        html.dark .ss-page .ss-factor-card { background: rgba(30,41,59,0.9) !important; border-color: #334155 !important; box-shadow: 0 2px 12px -4px rgba(0,0,0,0.4) !important; }
-        html.dark .ss-page .ss-fc-name { color: #e2e8f0 !important; }
-        html.dark .ss-page .ss-fc-track { background: #1e293b !important; }
-        html.dark .ss-page .ss-fc-desc { color: #64748b !important; }
+        html.dark .ss-page .ss-factor-card { background: rgba(30,41,59,0.9) !important; border-color: rgba(255,255,255,.08) !important; box-shadow: 0 2px 12px -4px rgba(0,0,0,0.4) !important; }
+        html.dark .ss-page .ss-fc-name { color: #f5f5f7 !important; }
+        html.dark .ss-page .ss-fc-track { background: #1c1c1e !important; }
+        html.dark .ss-page .ss-fc-desc { color: #71717a !important; }
 
         /* Panels */
-        html.dark .ss-page .ss-panel { background: rgba(30,41,59,0.9) !important; border-color: #334155 !important; box-shadow: 0 2px 12px -4px rgba(0,0,0,0.4) !important; }
-        html.dark .ss-page .ss-panel-label { color: #475569 !important; }
-        html.dark .ss-page .ss-eligibility-reason { color: #94a3b8 !important; }
+        html.dark .ss-page .ss-panel { background: rgba(30,41,59,0.9) !important; border-color: rgba(255,255,255,.08) !important; box-shadow: 0 2px 12px -4px rgba(0,0,0,0.4) !important; }
+        html.dark .ss-page .ss-panel-label { color: rgba(255,255,255,.08) !important; }
+        html.dark .ss-page .ss-eligibility-reason { color: #8e8e93 !important; }
         html.dark .ss-page .ss-rec-panel { background: linear-gradient(135deg, rgba(55,48,163,0.25), rgba(109,40,217,0.2)) !important; border-color: rgba(99,102,241,0.35) !important; }
         html.dark .ss-page .ss-rec-label { color: #818cf8 !important; }
         html.dark .ss-page .ss-rec-val { color: #c7d2fe !important; }
@@ -264,8 +264,8 @@ const SaakhScore: React.FC = () => {
         /* Financial snapshot rows */
         html.dark .ss-page .ss-fin-row { background: rgba(15,23,42,0.7) !important; }
         html.dark .ss-page .ss-fin-row:hover { background: rgba(30,41,59,0.9) !important; }
-        html.dark .ss-page .ss-fin-label { color: #64748b !important; }
-        html.dark .ss-page .ss-fin-val { color: #e2e8f0 !important; }
+        html.dark .ss-page .ss-fin-label { color: #71717a !important; }
+        html.dark .ss-page .ss-fin-val { color: #f5f5f7 !important; }
         html.dark .ss-page .ss-fin-row-hl { background: rgba(127,29,29,0.35) !important; }
         html.dark .ss-page .ss-fin-row-hl:hover { background: rgba(127,29,29,0.5) !important; }
         html.dark .ss-page .ss-fin-val-hl { color: #fca5a5 !important; }
@@ -273,31 +273,31 @@ const SaakhScore: React.FC = () => {
         html.dark .ss-page .ss-guarantor-bad { background: rgba(120,53,15,0.35) !important; }
 
         /* Active loans panel */
-        html.dark .ss-page .ss-loans-panel { background: rgba(30,41,59,0.9) !important; border-color: #334155 !important; box-shadow: 0 2px 12px -4px rgba(0,0,0,0.4) !important; }
-        html.dark .ss-page .ss-loans-header { border-color: #334155 !important; }
-        html.dark .ss-page .ss-loan-type { color: #e2e8f0 !important; }
-        html.dark .ss-page .ss-loan-detail { color: #64748b !important; }
-        html.dark .ss-page .ss-loan-track { background: #1e293b !important; }
+        html.dark .ss-page .ss-loans-panel { background: rgba(30,41,59,0.9) !important; border-color: rgba(255,255,255,.08) !important; box-shadow: 0 2px 12px -4px rgba(0,0,0,0.4) !important; }
+        html.dark .ss-page .ss-loans-header { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ss-page .ss-loan-type { color: #f5f5f7 !important; }
+        html.dark .ss-page .ss-loan-detail { color: #71717a !important; }
+        html.dark .ss-page .ss-loan-track { background: #1c1c1e !important; }
         html.dark .ss-page .ss-loan-icon { background: linear-gradient(135deg, rgba(55,48,163,0.3), rgba(109,40,217,0.25)) !important; }
 
         /* Improvement tips */
         html.dark .ss-page .ss-tips { background: linear-gradient(120deg, rgba(55,48,163,0.22), rgba(109,40,217,0.18), rgba(157,23,77,0.12)) !important; border-color: rgba(99,102,241,0.3) !important; }
-        html.dark .ss-page .ss-tip-text { color: #94a3b8 !important; }
+        html.dark .ss-page .ss-tip-text { color: #8e8e93 !important; }
 
         /* Section labels */
-        html.dark .ss-page .ss-section-label { color: #475569 !important; }
+        html.dark .ss-page .ss-section-label { color: rgba(255,255,255,.08) !important; }
 
         /* Error state */
         html.dark .ss-page .ss-error { background: rgba(68,14,14,0.55) !important; border-color: #7f1d1d !important; }
         html.dark .ss-page .ss-error-text { color: #fca5a5 !important; }
 
         /* Empty state */
-        html.dark .ss-page .ss-empty-title { color: #94a3b8 !important; }
-        html.dark .ss-page .ss-empty-desc { color: #475569 !important; }
+        html.dark .ss-page .ss-empty-title { color: #8e8e93 !important; }
+        html.dark .ss-page .ss-empty-desc { color: rgba(255,255,255,.08) !important; }
 
         /* Footer */
-        html.dark .ss-page .ss-footer { background: rgba(15,23,42,0.95) !important; border-color: #334155 !important; }
-        html.dark .ss-page .ss-footer-left { color: #334155 !important; }
+        html.dark .ss-page .ss-footer { background: rgba(15,23,42,0.95) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ss-page .ss-footer-left { color: rgba(255,255,255,.08) !important; }
         html.dark .ss-page .ss-footer-right { color: #6366f1 !important; }
       `}</style>
 

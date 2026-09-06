@@ -4,6 +4,9 @@ export interface User {
   email?: string;
   role?: string;
   permissions?: string[];
+  /** Navbar action codes this user may open (menu-level rights from Configure
+   * UserLevel Default Rights). null/undefined means unrestricted. */
+  allowedActions?: string[] | null;
 }
 
 export interface AuthState {

@@ -3,18 +3,36 @@ import React from 'react';
 import FormField from './FormField';
 import { type LoanDetails } from '../../types';
 import { getLoanTypeOptions } from '../../utils/utilsloanApplication';
+import { handleEnterAsTab } from '../../utils/keyboardNav';
 import type { EmployeeDetail } from '../../types/employee';
 import { ShieldCheck, RotateCcw } from 'lucide-react';
 
 interface LoanEligibilityStatus {
   isEligible: boolean;
   loanAmount: number;
+
+  // Rule 1 — max limit on total exposure
+  existingOutstanding: number;
+  totalExposure: number;
+  maxLimit: number;
+  withinMaxLimit: boolean;
+
+  // Rule 2 — RD requirement
+  rdPct: number;
+  requiredRd: number;
+  currentRd: number;
+  rdShortfall: number;
+
+  // Rule 3 — Share Value requirement
+  sharePct: number;
   requiredShare: number;
   currentShare: number;
-  additionalShareRequired: number;
-  requiredFd: number;
-  currentFd: number;
-  additionalFdRequired: number;
+  shareShortfall: number;
+
+  // Rule 4 — shortfall withheld from disbursement
+  totalShortfall: number;
+  netDisbursement: number;
+
   message?: string;
 }
 
@@ -128,7 +146,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
       {/* Top row: form + member info */}
       <div className="flex gap-2 flex-1 min-h-0">
       {/* Left Panel - Form Fields */}
-      <div className="loan-left-panel w-80 bg-slate-50 p-3 rounded border border-slate-200 overflow-y-auto">
+      <div className="loan-left-panel w-80 bg-slate-50 p-3 rounded border border-slate-200 overflow-y-auto" onKeyDown={handleEnterAsTab}>
         <div className="space-y-2">
           <FormField
             label="Appl Date"
@@ -254,14 +272,20 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
             )}
           </div>
 
-          {/* ── 5% Eligibility Panel (Visible if loanAmount > 5L) ── */}
-          {(isCheckingEligibility || eligibilityStatus) && (
-            <div className={`rounded border shadow-sm ${eligibilityStatus && !eligibilityStatus.isEligible ? 'border-rose-200' : 'border-emerald-200'}`}>
-              <div className={`px-2 py-1 border-b flex items-center justify-between ${eligibilityStatus && !eligibilityStatus.isEligible ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-emerald-100'}`}>
+          {/* ── Regular Loan Eligibility Panel (RLN only) ──
+              A shortfall is NOT a rejection — it is withheld from the
+              disbursement. Only breaching the maximum limit blocks the loan. */}
+          {(isCheckingEligibility || eligibilityStatus) && (() => {
+            const blocked = !!eligibilityStatus && !eligibilityStatus.isEligible;
+            const hasShortfall = !!eligibilityStatus && eligibilityStatus.totalShortfall > 0;
+            const tone = blocked ? 'rose' : hasShortfall ? 'amber' : 'emerald';
+            return (
+            <div className={`rounded border shadow-sm ${tone === 'rose' ? 'border-rose-200' : tone === 'amber' ? 'border-amber-200' : 'border-emerald-200'}`}>
+              <div className={`px-2 py-1 border-b flex items-center justify-between ${tone === 'rose' ? 'bg-rose-50 border-rose-100' : tone === 'amber' ? 'bg-amber-50 border-amber-100' : 'bg-emerald-50 border-emerald-100'}`}>
                 <div className="flex items-center gap-1">
-                  <ShieldCheck size={10} className={eligibilityStatus && !eligibilityStatus.isEligible ? 'text-rose-500' : 'text-emerald-500'} />
-                  <span className={`fz-micro font-black uppercase tracking-widest ${eligibilityStatus && !eligibilityStatus.isEligible ? 'text-rose-600' : 'text-emerald-600'}`}>
-                    5% Eligibility
+                  <ShieldCheck size={10} className={tone === 'rose' ? 'text-rose-500' : tone === 'amber' ? 'text-amber-500' : 'text-emerald-500'} />
+                  <span className={`fz-micro font-black uppercase tracking-widest ${tone === 'rose' ? 'text-rose-600' : tone === 'amber' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                    Regular Loan Eligibility
                   </span>
                 </div>
                 <div>
@@ -269,59 +293,102 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                     <span className="fz-mini font-bold text-slate-500 flex items-center gap-1">
                       <RotateCcw size={8} className="animate-spin" /> Checking...
                     </span>
-                  ) : eligibilityStatus?.isEligible ? (
-                    <span className="px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 fz-micro font-black uppercase tracking-widest border border-emerald-200">
-                      Eligible
+                  ) : blocked ? (
+                    <span className="px-1 py-0.5 rounded bg-rose-100 text-rose-700 fz-micro font-black uppercase tracking-widest border border-rose-200">
+                      Over Limit
+                    </span>
+                  ) : hasShortfall ? (
+                    <span className="px-1 py-0.5 rounded bg-amber-100 text-amber-700 fz-micro font-black uppercase tracking-widest border border-amber-200">
+                      Shortfall
                     </span>
                   ) : (
-                    <span className="px-1 py-0.5 rounded bg-rose-100 text-rose-700 fz-micro font-black uppercase tracking-widest border border-rose-200">
-                      Not Eligible
+                    <span className="px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 fz-micro font-black uppercase tracking-widest border border-emerald-200">
+                      Eligible
                     </span>
                   )}
                 </div>
               </div>
               {eligibilityStatus && (
                 <div className="p-2 space-y-1.5">
+                  {/* Exposure vs limit */}
+                  <div className={`p-1.5 rounded border ${eligibilityStatus.withinMaxLimit ? 'bg-slate-50 border-slate-200' : 'bg-rose-50 border-rose-200'}`}>
+                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">Total Exposure</div>
+                    <div className="flex justify-between fz-small">
+                      <span className="text-slate-600">Existing Regular:</span>
+                      <span className="font-mono font-bold">₹{eligibilityStatus.existingOutstanding.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between fz-small">
+                      <span className="text-slate-600">+ New Loan:</span>
+                      <span className="font-mono font-bold">₹{eligibilityStatus.loanAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="mt-0.5 pt-0.5 border-t border-slate-200 flex justify-between fz-small">
+                      <span className="text-slate-700 font-bold">Total / Max:</span>
+                      <span className={`font-mono font-black ${eligibilityStatus.withinMaxLimit ? 'text-indigo-600' : 'text-rose-600'}`}>
+                        ₹{eligibilityStatus.totalExposure.toLocaleString('en-IN')} / ₹{eligibilityStatus.maxLimit.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Share */}
                   <div className="bg-slate-50 border border-slate-200 p-1.5 rounded">
-                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">Share</div>
+                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">Share Value</div>
                     <div className="flex justify-between fz-small">
                       <span className="text-slate-600">Current:</span>
                       <span className="font-mono font-bold">₹{eligibilityStatus.currentShare.toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex justify-between fz-small">
-                      <span className="text-slate-600">Required (5%):</span>
+                      <span className="text-slate-600">Required ({eligibilityStatus.sharePct}%):</span>
                       <span className="font-mono font-bold text-indigo-600">₹{eligibilityStatus.requiredShare.toLocaleString('en-IN')}</span>
                     </div>
-                    {eligibilityStatus.additionalShareRequired > 0 && (
-                      <div className="mt-0.5 pt-0.5 border-t border-rose-200 flex justify-between fz-small">
-                        <span className="text-rose-600 font-bold">Shortfall:</span>
-                        <span className="font-mono font-black text-rose-600">₹{eligibilityStatus.additionalShareRequired.toLocaleString('en-IN')}</span>
+                    {eligibilityStatus.shareShortfall > 0 && (
+                      <div className="mt-0.5 pt-0.5 border-t border-amber-200 flex justify-between fz-small">
+                        <span className="text-amber-700 font-bold">Shortfall:</span>
+                        <span className="font-mono font-black text-amber-700">₹{eligibilityStatus.shareShortfall.toLocaleString('en-IN')}</span>
                       </div>
                     )}
                   </div>
-                  {/* FD */}
+
+                  {/* RD */}
                   <div className="bg-slate-50 border border-slate-200 p-1.5 rounded">
-                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">FD Balance</div>
+                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">RD Balance</div>
                     <div className="flex justify-between fz-small">
                       <span className="text-slate-600">Current:</span>
-                      <span className="font-mono font-bold">₹{eligibilityStatus.currentFd.toLocaleString('en-IN')}</span>
+                      <span className="font-mono font-bold">₹{eligibilityStatus.currentRd.toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex justify-between fz-small">
-                      <span className="text-slate-600">Required (5%):</span>
-                      <span className="font-mono font-bold text-indigo-600">₹{eligibilityStatus.requiredFd.toLocaleString('en-IN')}</span>
+                      <span className="text-slate-600">Required ({eligibilityStatus.rdPct}%):</span>
+                      <span className="font-mono font-bold text-indigo-600">₹{eligibilityStatus.requiredRd.toLocaleString('en-IN')}</span>
                     </div>
-                    {eligibilityStatus.additionalFdRequired > 0 && (
-                      <div className="mt-0.5 pt-0.5 border-t border-rose-200 flex justify-between fz-small">
-                        <span className="text-rose-600 font-bold">Shortfall:</span>
-                        <span className="font-mono font-black text-rose-600">₹{eligibilityStatus.additionalFdRequired.toLocaleString('en-IN')}</span>
+                    {eligibilityStatus.rdShortfall > 0 && (
+                      <div className="mt-0.5 pt-0.5 border-t border-amber-200 flex justify-between fz-small">
+                        <span className="text-amber-700 font-bold">Shortfall:</span>
+                        <span className="font-mono font-black text-amber-700">₹{eligibilityStatus.rdShortfall.toLocaleString('en-IN')}</span>
                       </div>
                     )}
                   </div>
+
+                  {/* Net disbursement after withholding */}
+                  {hasShortfall && eligibilityStatus.withinMaxLimit && (
+                    <div className="bg-amber-50 border border-amber-200 p-1.5 rounded">
+                      <div className="fz-mini font-bold text-amber-700 uppercase mb-0.5">Disbursement</div>
+                      <div className="flex justify-between fz-small">
+                        <span className="text-slate-600">Withheld:</span>
+                        <span className="font-mono font-bold text-amber-700">− ₹{eligibilityStatus.totalShortfall.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="mt-0.5 pt-0.5 border-t border-amber-200 flex justify-between fz-small">
+                        <span className="text-slate-700 font-bold">Net Payable:</span>
+                        <span className="font-mono font-black text-emerald-700">₹{eligibilityStatus.netDisbursement.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="fz-mini text-slate-500 mt-0.5 leading-tight">
+                        Withheld towards RD/Share — not added to the loan.
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
 
           <FormField
             label="Form Number"

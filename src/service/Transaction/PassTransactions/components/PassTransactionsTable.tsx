@@ -213,10 +213,10 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
     // nothing on this screen. Inheriting lets both settings through.
     return (
         <ConfigProvider>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="pt-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* ── Header ── */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="pt-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
                             <ShieldCheck size={13} className="text-white" />
@@ -304,7 +304,7 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                 </div>
 
                 {/* ── Footer ── */}
-                <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="pt-footer px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
                         <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Accounts & Audit</span>
@@ -330,6 +330,43 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                 .pt-table .ant-table-cell-fix-left, .pt-table .ant-table-cell-fix-right { background: #fff !important; z-index: 2; }
                 .pt-table .ant-table-row:hover .ant-table-cell-fix-left,
                 .pt-table .ant-table-row:hover .ant-table-cell-fix-right { background: #f0f9ff !important; }
+
+                /* ── Dark mode ── */
+                html.dark .pt-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .pt-header { background-image: none !important; background-color: #0c0c0e !important; border-bottom: 1px solid rgba(255,255,255,.08) !important; }
+                html.dark .pt-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .pt-root .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .pt-root .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+                html.dark .pt-root .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
+                html.dark .pt-root .text-slate-900,
+                html.dark .pt-root .text-slate-800,
+                html.dark .pt-root .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .pt-root .text-slate-600,
+                html.dark .pt-root .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .pt-root .text-slate-400 { color: #71717a !important; }
+                html.dark .pt-root .text-emerald-600 { color: #34d399 !important; }
+                html.dark .pt-root .text-rose-600 { color: #ff453a !important; }
+                html.dark .pt-root .text-amber-600 { color: #fbbf24 !important; }
+                html.dark .pt-root .bg-rose-50 { background-color: rgba(255,69,58,.12) !important; }
+                html.dark .pt-root .border-rose-200 { border-color: rgba(255,69,58,.3) !important; }
+                html.dark .pt-root .bg-emerald-50 { background-color: rgba(52,211,153,.12) !important; }
+                html.dark .pt-root .border-emerald-200 { border-color: rgba(52,211,153,.3) !important; }
+                /* search box in header stays translucent-on-dark header, fine as-is */
+                /* footer strip */
+                html.dark .pt-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                /* table */
+                html.dark .pt-table .ant-table,
+                html.dark .pt-table .ant-table-container { background-color: #1c1c1e !important; color: #f5f5f7 !important; }
+                html.dark .pt-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.07) !important; }
+                html.dark .pt-table .ant-table-tbody > tr > td { background-color: #1c1c1e !important; color: #f5f5f7 !important; border-bottom-color: rgba(255,255,255,.07) !important; }
+                html.dark .pt-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
+                html.dark .pt-table .ant-table-tbody > tr > td[rowspan] { border-right-color: rgba(255,255,255,.07) !important; }
+                html.dark .pt-table .ant-table-cell-fix-left,
+                html.dark .pt-table .ant-table-cell-fix-right { background: #1c1c1e !important; }
+                html.dark .pt-table .ant-table-row:hover .ant-table-cell-fix-left,
+                html.dark .pt-table .ant-table-row:hover .ant-table-cell-fix-right { background: rgba(255,255,255,.05) !important; }
+                html.dark .pt-table .ant-table-placeholder .ant-table-cell,
+                html.dark .pt-table .ant-empty-description { background-color: #1c1c1e !important; color: #71717a !important; }
             `}</style>
         </ConfigProvider>
     );

@@ -101,7 +101,7 @@ const ExitOption1: React.FC = () => {
         },
       }}
     >
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-rose-900/30 to-slate-900 font-sans selection:bg-rose-100 overflow-hidden">
+      <div className="exit-page h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-rose-900/30 to-slate-900 font-sans selection:bg-rose-100 overflow-hidden">
         <AnimatePresence mode="wait">
           {showConfirmation && (
             <motion.div
@@ -110,7 +110,7 @@ const ExitOption1: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: -20 }}
               transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4"
+              className="exit-card bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4"
             >
               {/* Icon */}
               <motion.div
@@ -334,6 +334,21 @@ const ExitOption1: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <style>{`
+          /* ── Exit — dark mode (Settings-panel palette) ── */
+          html.dark .exit-page { background-image: none !important; background-color: #000000 !important; }
+          html.dark .exit-card { background-color: #1c1c1e !important; border: 1px solid rgba(255,255,255,.08); }
+          html.dark .exit-card .text-slate-900 { color: #f5f5f7 !important; }
+          html.dark .exit-card .text-slate-700 { color: #f5f5f7 !important; }
+          html.dark .exit-card .text-slate-500 { color: #8e8e93 !important; }
+          html.dark .exit-card .text-slate-400 { color: #71717a !important; }
+          html.dark .exit-card .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .exit-card .hover\\:bg-slate-50:hover { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.14) !important; }
+          html.dark .exit-card .bg-rose-50 { background-color: rgba(255,69,58,.12) !important; border-color: rgba(255,69,58,.3) !important; }
+          html.dark .exit-card .text-rose-900 { color: #ff453a !important; }
+          html.dark .exit-card .text-rose-700 { color: #f5f5f7 !important; }
+        `}</style>
       </div>
     </ConfigProvider>
   );

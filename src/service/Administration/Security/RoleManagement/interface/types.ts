@@ -14,6 +14,24 @@ export interface DefaultRightsFormData {
 
 export type UserLevel = 'admin' | 'manager' | 'user' | 'guest' | 'supervisor' | '';
 
+export interface RightItemView {
+  id: string;
+  name: string;
+  isSelected: boolean;
+  toggle: () => void;
+}
+
+export interface RightSectionView {
+  name: string;
+  total: number;
+  on: number;
+  open: boolean;
+  toggleOpen: () => void;
+  grant: () => void;
+  revoke: () => void;
+  items: RightItemView[];
+}
+
 export interface UseDefaultRightsReturn {
   formData: DefaultRightsFormData;
   selectedUserLevel: string;
@@ -26,6 +44,15 @@ export interface UseDefaultRightsReturn {
   getSelectedRightsCount: () => number;
   getTotalRightsCount: () => number;
   createRole: (roleName: string) => Promise<void>;
+  // Search / filter / grouping — Role Governance redesign
+  query: string;
+  setQuery: (query: string) => void;
+  onlyGranted: boolean;
+  toggleOnlyGranted: () => void;
+  sections: RightSectionView[];
+  isEmpty: boolean;
+  expandAll: () => void;
+  collapseAll: () => void;
 }
 
 export interface DefaultRightsConfig {

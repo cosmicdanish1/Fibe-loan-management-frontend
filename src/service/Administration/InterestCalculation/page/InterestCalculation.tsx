@@ -237,44 +237,44 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
         html.dark .ic-page { background: #0f0f0f; }
 
         /* Header buttons */
-        html.dark .ic-page .ic-hdr-btn { color: #e2e8f0 !important; }
+        html.dark .ic-page .ic-hdr-btn { color: #f5f5f7 !important; }
         html.dark .ic-page .ic-hdr-btn:hover { background: rgba(255,255,255,0.1) !important; }
 
         /* Cards */
         html.dark .ic-page .ic-card { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .ic-page .ic-card-icon { background: #252525 !important; color: #94a3b8 !important; }
-        html.dark .ic-page .ic-card-title { color: #94a3b8 !important; }
+        html.dark .ic-page .ic-card-icon { background: #252525 !important; color: #8e8e93 !important; }
+        html.dark .ic-page .ic-card-title { color: #8e8e93 !important; }
 
         /* Labels */
-        html.dark .ic-page .ic-label { color: #94a3b8 !important; }
+        html.dark .ic-page .ic-label { color: #8e8e93 !important; }
 
         /* Select & inputs */
         html.dark .ic-page .ic-select,
         html.dark .ic-page .ic-input {
           background: #1f1f1f !important;
           border-color: #2a2a2a !important;
-          color: #e2e8f0 !important;
+          color: #f5f5f7 !important;
         }
-        html.dark .ic-page .ic-icon { color: #64748b !important; }
+        html.dark .ic-page .ic-icon { color: #71717a !important; }
 
         /* DatePicker dark override (must beat base white !important) */
         html.dark .ic-page .interest-datepicker .ant-picker { background-color: #1f1f1f !important; border-color: #2a2a2a !important; }
-        html.dark .ic-page .interest-datepicker .ant-picker-input > input { color: #e2e8f0 !important; background: transparent !important; }
-        html.dark .ic-page .interest-datepicker .ant-picker .ant-picker-suffix { color: #64748b !important; }
+        html.dark .ic-page .interest-datepicker .ant-picker-input > input { color: #f5f5f7 !important; background: transparent !important; }
+        html.dark .ic-page .interest-datepicker .ant-picker .ant-picker-suffix { color: #71717a !important; }
         html.dark .ic-page .interest-datepicker .ant-picker:hover { border-color: #4f46e5 !important; }
 
         /* Post & report buttons */
-        html.dark .ic-page .ic-report-btn { background: #1f1f1f !important; border-color: #2a2a2a !important; color: #e2e8f0 !important; }
+        html.dark .ic-page .ic-report-btn { background: #1f1f1f !important; border-color: #2a2a2a !important; color: #f5f5f7 !important; }
         html.dark .ic-page .ic-report-btn:hover { background: #252525 !important; }
 
         /* Results area */
         html.dark .ic-page .ic-results-card { background: #1a1a1a !important; border-color: #2a2a2a !important; }
         html.dark .ic-page .ic-results-hdr { background: linear-gradient(to right,#1f1f1f,#252525) !important; border-color: #2a2a2a !important; }
-        html.dark .ic-page .ic-results-title { color: #e2e8f0 !important; }
-        html.dark .ic-page .ic-results-sub { color: #64748b !important; }
-        html.dark .ic-page .ic-results-icon { background: #252525 !important; color: #94a3b8 !important; }
-        html.dark .ic-page .ic-ready-badge { background: #1f2937 !important; color: #e2e8f0 !important; border-color: #374151 !important; }
-        html.dark .ic-page .ic-calc-indicator { color: #94a3b8 !important; }
+        html.dark .ic-page .ic-results-title { color: #f5f5f7 !important; }
+        html.dark .ic-page .ic-results-sub { color: #71717a !important; }
+        html.dark .ic-page .ic-results-icon { background: #252525 !important; color: #8e8e93 !important; }
+        html.dark .ic-page .ic-ready-badge { background: #1f2937 !important; color: #f5f5f7 !important; border-color: #374151 !important; }
+        html.dark .ic-page .ic-calc-indicator { color: #8e8e93 !important; }
 
         /* Scrollbar dark */
         html.dark .ic-page .scrollbar-thin::-webkit-scrollbar-track { background: #1f1f1f; }
@@ -283,18 +283,18 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
         /* Loading spinner */
         html.dark .ic-page .ic-loading-ring { border-color: #2a2a2a !important; border-top-color: #818cf8 !important; }
         html.dark .ic-page .ic-loading-icon { color: #818cf8 !important; }
-        html.dark .ic-page .ic-loading-txt { color: #64748b !important; }
+        html.dark .ic-page .ic-loading-txt { color: #71717a !important; }
 
         /* Table */
         html.dark .ic-page .ic-table-wrap { border-color: #2a2a2a !important; }
         html.dark .ic-page .ic-table thead tr { background: #252525 !important; border-color: #2a2a2a !important; }
-        html.dark .ic-page .ic-table thead th { color: #94a3b8 !important; }
+        html.dark .ic-page .ic-table thead th { color: #8e8e93 !important; }
         html.dark .ic-page .ic-table tbody { border-color: #222 !important; }
         html.dark .ic-page .ic-table tbody tr { border-color: #222 !important; }
         html.dark .ic-page .ic-table tbody tr:hover { background: #1f1f1f !important; }
         html.dark .ic-page .ic-table .td-mono { color: #818cf8 !important; }
-        html.dark .ic-page .ic-table .td-name { color: #cbd5e1 !important; }
-        html.dark .ic-page .ic-table .td-amt { color: #94a3b8 !important; }
+        html.dark .ic-page .ic-table .td-name { color: #f5f5f7 !important; }
+        html.dark .ic-page .ic-table .td-amt { color: #8e8e93 !important; }
         html.dark .ic-page .ic-table .td-interest { color: #60a5fa !important; }
 
         /* Empty state */
@@ -304,9 +304,9 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
 
         /* Summary cards */
         html.dark .ic-page .ic-summary-card { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .ic-page .ic-summary-icon { background: #252525 !important; color: #94a3b8 !important; }
-        html.dark .ic-page .ic-summary-label { color: #94a3b8 !important; }
-        html.dark .ic-page .ic-summary-val { color: #e2e8f0 !important; }
+        html.dark .ic-page .ic-summary-icon { background: #252525 !important; color: #8e8e93 !important; }
+        html.dark .ic-page .ic-summary-label { color: #8e8e93 !important; }
+        html.dark .ic-page .ic-summary-val { color: #f5f5f7 !important; }
       `}</style>
 
       <div className="ic-page min-h-screen flex flex-col bg-slate-50 font-sans selection:bg-indigo-100">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { DatePicker, Select, Button, ConfigProvider, theme as antdTheme } from 'antd';
-import { MemberLookupInput, MemberLookupData } from '../../../../../components/shared/MemberLookup';
+import { DatePicker, Select, Button, ConfigProvider, theme as antdTheme, Modal } from 'antd';
+import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import {
   Printer,
   FileDown,
@@ -40,6 +40,81 @@ interface MemberInfo {
   loanCaseNo: string;
 }
 
+// Print-only layout matching the legacy report design standard used across
+// every report this session (letterhead, Date/Page Number line, dashed
+// rules, TOTAL row, summary block) — plain monospace text, not a clone of
+// the on-screen colorful UI. Feeds handlePrint only.
+const MLL_LINE_W = 94;
+const MLL_DASH = '-'.repeat(MLL_LINE_W);
+const MLL_COL_DATE = 12;
+const MLL_COL_VCHR = 12;
+const MLL_COL_NARR = 30;
+const MLL_COL_AMT = (MLL_LINE_W - MLL_COL_DATE - MLL_COL_VCHR - MLL_COL_NARR) / 3;
+
+const mllFmt = (n: number) =>
+  Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const mllPadL = (s: string, w: number) => s.padStart(w);
+const mllPadR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
+const mllCenter = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
+
+function buildMemberLoanLedgerLines(
+  data: LedgerTransaction[], memberInfo: MemberInfo | null, loanCaseNo: string,
+  fromLabel: string, toLabel: string, openingBalance: number,
+  totalDebits: number, totalCredits: number, closingBalance: number,
+): string[] {
+  const lines: string[] = [];
+  const now = dayjs().format('DD-MMM-YYYY/h:mmA');
+
+  lines.push(mllCenter('Espat Karmchari Co-Operative Credit Society Limited.', MLL_LINE_W));
+  lines.push(mllCenter('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', MLL_LINE_W));
+  lines.push(mllCenter('Member Loan Ledger', MLL_LINE_W));
+  lines.push('');
+  if (memberInfo) lines.push(`Member : ${memberInfo.memberName} (${memberInfo.memberNo})${loanCaseNo ? ` | Loan Case: ${loanCaseNo}` : ''}`);
+  lines.push(`Period : ${fromLabel} to ${toLabel}`);
+  lines.push(`Opening Balance : ${mllFmt(openingBalance)}`);
+  const printedStr = `Printed : ${now}`;
+  const pageStr = 'Page Number :  1';
+  lines.push(`${printedStr}${mllPadL(pageStr, MLL_LINE_W - printedStr.length)}`);
+  lines.push(MLL_DASH);
+
+  lines.push(
+    `${mllPadR('Date', MLL_COL_DATE)}${mllPadR('Voucher', MLL_COL_VCHR)}${mllPadR('Narration', MLL_COL_NARR)}` +
+    `${mllPadL('Debit', MLL_COL_AMT)}${mllPadL('Credit', MLL_COL_AMT)}${mllPadL('Balance', MLL_COL_AMT)}`
+  );
+  lines.push(MLL_DASH);
+
+  data.forEach(item => {
+    const isDebit = item.type === 'DR' || item.type === 'D';
+    lines.push(
+      `${mllPadR(dayjs(item.date).format('DD-MMM-YY'), MLL_COL_DATE)}${mllPadR(item.voucherNo, MLL_COL_VCHR)}${mllPadR(item.narration, MLL_COL_NARR)}` +
+      `${mllPadL(isDebit ? mllFmt(item.amount) : '', MLL_COL_AMT)}` +
+      `${mllPadL(!isDebit ? mllFmt(item.amount) : '', MLL_COL_AMT)}` +
+      `${mllPadL(mllFmt(item.balance), MLL_COL_AMT)}`
+    );
+  });
+
+  lines.push(MLL_DASH);
+  lines.push(
+    `${mllPadR('TOTAL :-', MLL_COL_DATE + MLL_COL_VCHR + MLL_COL_NARR)}` +
+    `${mllPadL(mllFmt(totalDebits), MLL_COL_AMT)}${mllPadL(mllFmt(totalCredits), MLL_COL_AMT)}${mllPadL(mllFmt(closingBalance), MLL_COL_AMT)}`
+  );
+  lines.push(MLL_DASH);
+
+  const IND = '        ';
+  const LBL_W = 18;
+  const VAL_W = 20;
+  lines.push(`${IND}${'Opening Balance :'.padEnd(LBL_W)} ${mllPadL(mllFmt(openingBalance), VAL_W)}`);
+  lines.push(`${IND}${'Total Debit     :'.padEnd(LBL_W)} ${mllPadL(mllFmt(totalDebits), VAL_W)}`);
+  lines.push(`${IND}${'Total Credit    :'.padEnd(LBL_W)} ${mllPadL(mllFmt(totalCredits), VAL_W)}`);
+  lines.push(`${IND}${'-'.repeat(LBL_W + VAL_W + 1)}`);
+  lines.push(`${IND}${'Closing Balance :'.padEnd(LBL_W)} ${mllPadL(mllFmt(closingBalance), VAL_W)}`);
+  lines.push(`${IND}${'-'.repeat(LBL_W + VAL_W + 1)}`);
+  lines.push('');
+  lines.push('* Report generated as per available data in the system');
+
+  return lines;
+}
+
 const MemberLoanLedger: React.FC = () => {
   const [data, setData] = useState<LedgerTransaction[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -50,6 +125,8 @@ const MemberLoanLedger: React.FC = () => {
   const [toDate, setToDate] = useState<Dayjs | null>(dayjs());
   const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
   const [loanCases, setLoanCases] = useState<string[]>([]);
+  const [openingBalance, setOpeningBalance] = useState<number>(0);
+  const [showLookupModal, setShowLookupModal] = useState<boolean>(false);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark' ||
@@ -99,13 +176,14 @@ const MemberLoanLedger: React.FC = () => {
       );
 
       if (response.success && response.data) {
-        const { memberNo: respMemberNo, memberName, loanCaseNo: respLoanCaseNo, transactions } = response.data;
-        
+        const { memberNo: respMemberNo, memberName, loanCaseNo: respLoanCaseNo, transactions, openingBalance: respOpeningBalance } = response.data;
+
         setMemberInfo({
           memberNo: respMemberNo,
           memberName: memberName,
           loanCaseNo: respLoanCaseNo
         });
+        setOpeningBalance(respOpeningBalance || 0);
 
         if (Array.isArray(transactions)) {
           const formattedData = transactions.map((item: any, index: number) => ({
@@ -138,9 +216,12 @@ const MemberLoanLedger: React.FC = () => {
   const { totalDebits, totalCredits, closingBalance } = useMemo(() => {
     const totalDebits = data.reduce((sum, item) => sum + (item.type === 'DR' || item.type === 'D' ? item.amount : 0), 0);
     const totalCredits = data.reduce((sum, item) => sum + (item.type === 'CR' || item.type === 'C' ? item.amount : 0), 0);
-    const closingBalance = data.length > 0 ? data[data.length - 1].balance : 0;
+    // BUG FIX: used to hardcode 0 when there were no transactions in range —
+    // wrong whenever the member has a real non-zero opening balance carried
+    // in (e.g. a period with no activity but an existing loan balance).
+    const closingBalance = data.length > 0 ? data[data.length - 1]!.balance : openingBalance;
     return { totalDebits, totalCredits, closingBalance };
-  }, [data]);
+  }, [data, openingBalance]);
 
   const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -149,12 +230,40 @@ const MemberLoanLedger: React.FC = () => {
     }).format(amount);
   }, []);
 
+  // window.print() used to be used here with almost no print-specific CSS —
+  // no background/color reset, same class of bug already confirmed on New
+  // Loan Disbursed this session (would print a solid near-black page in
+  // dark mode). Switched to the same hidden-iframe + monospace lines[]
+  // technique used everywhere else.
   const handlePrint = async () => {
     if (data.length === 0) {
       await showDialog('warning', 'No Data', 'No data available for printing');
       return;
     }
-    window.print();
+    const lines = buildMemberLoanLedgerLines(
+      data, memberInfo, loanCaseNo,
+      fromDate?.format('DD-MMM-YYYY') || '', toDate?.format('DD-MMM-YYYY') || '',
+      openingBalance, totalDebits, totalCredits, closingBalance,
+    );
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`<!DOCTYPE html><html><head><title>Member Loan Ledger</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  body { margin: 0; }
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
+</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 300);
+    }
   };
 
   const exportToCSV = async () => {
@@ -173,7 +282,12 @@ const MemberLoanLedger: React.FC = () => {
       item.balance
     ]);
 
-    const csvContent = [headers, ...csvData]
+    const csvContent = [
+      [`Opening Balance:`, '', '', '', '', openingBalance],
+      headers,
+      ...csvData,
+      [`Total`, '', '', totalDebits, totalCredits, closingBalance],
+    ]
       .map(row => row.map(cell => `"${cell}"`).join(','))
       .join('\n');
 
@@ -196,15 +310,36 @@ const MemberLoanLedger: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+      <div className={`mll-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+        <div className="mll-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg border-b border-white/5">
           <h1 className="fz-caption font-black text-white tracking-tight uppercase">Member Loan Ledger</h1>
+          <div className="flex items-center gap-2">
+            <Button
+              icon={<Printer size={13} />}
+              size="small"
+              className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide"
+              onClick={handlePrint}
+              disabled={data.length === 0}
+            >
+              Print
+            </Button>
+            <Button
+              type="primary"
+              icon={<FileDown size={13} />}
+              size="small"
+              className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide bg-gradient-to-r from-emerald-600 to-emerald-700"
+              onClick={exportToCSV}
+              disabled={data.length === 0}
+            >
+              CSV
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 flex overflow-hidden">
         {/* Compact Sidebar - 280px */}
-        <div className={`w-[280px] border-r flex flex-col shrink-0 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className={`mll-sidebar w-[280px] border-r flex flex-col shrink-0 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           {/* Header */}
           <div className={`p-6 border-b ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
             <div className="flex items-center gap-3 mb-4">
@@ -224,8 +359,8 @@ const MemberLoanLedger: React.FC = () => {
           {/* Controls */}
           <div className="flex-1 p-4 space-y-4 overflow-y-auto">
             {/* Member Selection */}
-            <div className={`rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-              <div className={`border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-blue-50/50 border-slate-100'}`}>
+            <div className={`mll-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+              <div className={`mll-card-header border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-blue-50/50 border-slate-100'}`}>
                 <User size={12} className="text-blue-600" />
                 <span className={`fz-label font-black uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Member Details</span>
               </div>
@@ -233,14 +368,23 @@ const MemberLoanLedger: React.FC = () => {
               <div className="p-3 space-y-3">
                 <div>
                   <label className="block fz-label font-bold text-slate-500 uppercase tracking-wider mb-1">Member No</label>
-                  <MemberLookupInput
-                    value={memberNo}
-                    onChange={(no: string, data?: MemberLookupData) => {
-                      setMemberNo(no);
-                      if (data) setMemberName(data.memberName);
-                    }}
-                    placeholder="Type to search member..."
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={memberNo}
+                      onChange={(e) => { setMemberNo(e.target.value); setMemberName(''); }}
+                      placeholder="Member No"
+                      className={`flex-1 min-w-0 px-2 py-1.5 rounded-lg fz-caption font-semibold border focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-800'}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLookupModal(true)}
+                      className="shrink-0 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors"
+                      title="Search members"
+                    >
+                      <Search size={13} />
+                    </button>
+                  </div>
                   {memberName && (
                     <div className={`mt-1 fz-label font-semibold truncate ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                       {memberName}
@@ -269,8 +413,8 @@ const MemberLoanLedger: React.FC = () => {
             </div>
 
             {/* Date Range */}
-            <div className={`rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-              <div className={`border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-blue-50/50 border-slate-100'}`}>
+            <div className={`mll-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+              <div className={`mll-card-header border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-blue-50/50 border-slate-100'}`}>
                 <Calendar size={12} className="text-blue-600" />
                 <span className={`fz-label font-black uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Date Range</span>
               </div>
@@ -310,31 +454,15 @@ const MemberLoanLedger: React.FC = () => {
             >
               Load Ledger
             </Button>
-
-            {/* Export Actions */}
-            <div className={`space-y-2 pt-3 border-t ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
-              <Button
-                icon={<Printer size={14} />}
-                className="w-full h-10 rounded-xl fz-label font-bold"
-                onClick={handlePrint}
-                disabled={data.length === 0}
-              >
-                Print Report
-              </Button>
-              
-              <Button
-                icon={<FileDown size={14} />}
-                className="w-full h-10 rounded-xl fz-label font-bold"
-                onClick={exportToCSV}
-                disabled={data.length === 0}
-              >
-                Export CSV
-              </Button>
-            </div>
           </div>
 
           {/* Summary Cards */}
-          <div className={`p-4 border-t space-y-3 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
+          <div className={`mll-summary-panel p-4 border-t space-y-3 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
+            <div className={`p-2.5 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
+              <div className={`fz-label font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Opening Balance</div>
+              <div className={`fz-body font-black font-mono ${isDark ? 'text-slate-100' : 'text-slate-700'}`}>₹{formatCurrency(openingBalance)}</div>
+            </div>
+
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white shadow-md">
               <div className="fz-label font-bold uppercase tracking-wide opacity-90 mb-1">Closing Balance</div>
               <div className="fz-heading font-black font-mono">₹{formatCurrency(closingBalance)}</div>
@@ -357,8 +485,8 @@ const MemberLoanLedger: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Report Panel with Legacy Format */}
-          <div className={`flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden m-3 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-            <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-blue-50/50 border-slate-100'}`}>
+          <div className={`mll-report-panel flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden m-3 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+            <div className={`mll-card-header border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-blue-50/50 border-slate-100'}`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-100'}`}>
                   <CreditCard size={14} className="text-blue-600" />
@@ -372,7 +500,7 @@ const MemberLoanLedger: React.FC = () => {
               </div>
             </div>
 
-            <div className={`flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
+            <div className={`mll-preview-body flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
               {loading ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="flex items-center gap-3">
@@ -406,6 +534,9 @@ const MemberLoanLedger: React.FC = () => {
                         {loanCaseNo && ` | Loan Case: ${loanCaseNo}`}
                       </div>
                     )}
+                    <div className="fz-label text-slate-600 mt-1">
+                      Opening Balance: <span className="font-bold">{formatCurrency(openingBalance)}</span>
+                    </div>
                   </div>
 
                   {/* Legacy Table */}
@@ -482,19 +613,33 @@ const MemberLoanLedger: React.FC = () => {
         </div>
       </div>
 
+      <Modal
+        open={showLookupModal}
+        onCancel={() => setShowLookupModal(false)}
+        footer={null}
+        width={800}
+        bodyStyle={{ padding: 0 }}
+        closable={false}
+        destroyOnClose
+      >
+        <MemberLookup
+          isModal={true}
+          onSelect={(member) => {
+            setMemberNo(member.memberNo);
+            setMemberName(member.memberName || member.name || '');
+            setShowLookupModal(false);
+          }}
+          onClose={() => setShowLookupModal(false)}
+        />
+      </Modal>
+
       {/* Print Styles */}
       <style>{`
-        @media print {
-          .ant-btn, .ant-select, .ant-picker, .ant-input { display: none !important; }
-          .w-\\[280px\\] { display: none !important; }
-          .flex-1 { width: 100% !important; }
-          body { margin: 0; padding: 20px; }
-          table { page-break-inside: auto; }
-          tr { page-break-inside: avoid; page-break-after: auto; }
-          thead { display: table-header-group; }
-          tfoot { display: table-footer-group; }
-        }
-        
+        /* Printing now goes through a hidden iframe (see handlePrint) that
+           renders a plain monospace layout built from the report's own data
+           — no @media print rule is needed on this live page anymore;
+           window.print() is no longer called on it. */
+
         .ant-select-selector {
           border-radius: 8px !important;
           border-color: #e2e8f0 !important;
@@ -516,6 +661,27 @@ const MemberLoanLedger: React.FC = () => {
         .legacy-report-compact td {
           border-color: #cbd5e1;
         }
+
+        /* ── Member Loan Ledger — dark mode ── */
+        html.dark .mll-page { background-color: #000000 !important; }
+        html.dark .mll-topbar { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mll-sidebar,
+        html.dark .mll-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mll-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mll-card-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
+        html.dark .mll-preview-body { background-color: #1c1c1e !important; }
+        html.dark .mll-summary-panel { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mll-page label,
+        html.dark .mll-page .text-slate-500,
+        html.dark .mll-page .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .mll-page .ant-select-selector,
+        html.dark .mll-page .ant-picker,
+        html.dark .mll-page .ant-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .mll-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .mll-page .legacy-report-compact { color: #f5f5f7 !important; }
+        html.dark .mll-page .legacy-report-compact th,
+        html.dark .mll-page .legacy-report-compact td,
+        html.dark .mll-page .legacy-report-compact tr { color: #f5f5f7 !important; border-color: rgba(255,255,255,.15) !important; background-color: transparent !important; }
       `}</style>
     </ConfigProvider>
   );

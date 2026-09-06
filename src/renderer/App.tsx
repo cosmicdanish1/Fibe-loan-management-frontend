@@ -49,6 +49,7 @@ const LogoutUser = lazy(() => import('../service/Administration/Security/LogoutU
 const TransferEntriesForClosing = lazy(() => import('../service/Administration/FinancialYear/TransferEntriesForClosing/page/TransferEntriesForClosing'));
 const FinancialYearClosing = lazy(() => import('../service/Administration/FinancialYear/FinancialYearClosing/page/FinancialYearClosing'));
 const BalanceTransfer = lazy(() => import('../service/Administration/FinancialYear/BalanceTransfer/page/BalanceTransfer'));
+const PLYearEndProcess = lazy(() => import('../service/Administration/FinancialYear/PLYearEndProcess/page/PLYearEndProcess'));
 
 // Lazy load other administration components
 const ModifyBusinessRules = lazy(() => import('../service/Administration/ModifyBusinessRules/page/ModifyBusinessRules'));
@@ -343,6 +344,7 @@ const App: React.FC = () => {
                   <Route path="/financial-year/transfer-entries" element={<TransferEntriesForClosing />} />
                   <Route path="/financial-year/closing" element={<FinancialYearClosing />} />
                   <Route path="/financial-year/balance-transfer" element={<BalanceTransfer />} />
+                  <Route path="/financial-year/pl-process" element={<PLYearEndProcess />} />
                   <Route path="/saakh-score" element={<SaakhScore />} />
                   <Route path="/modify-business-rules" element={<ModifyBusinessRules />} />
                   <Route path="/demand-print-order" element={<DemandPrintOrder />} />

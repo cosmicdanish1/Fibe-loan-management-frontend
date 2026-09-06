@@ -150,6 +150,11 @@ const FDInterestVoucherPosting: React.FC = () => {
     };
 
     const handleSave = async () => {
+        // BUG FIX: nothing previously disabled Post while a request was in flight —
+        // the button's `loading` prop only reflected the FD-list fetch — so a
+        // double-click could fire two concurrent postFdInterestVoucher calls, each
+        // posting its own real ledger voucher.
+        if (loading) return;
         if (!memberNo || !certNo) {
             message.error('Please select Member and Certificate');
             return;
@@ -159,6 +164,7 @@ const FDInterestVoucherPosting: React.FC = () => {
         const interestAmt = parseFloat(inttToPay) || 0;
         if (interestAmt <= 0) { message.error('Please enter interest amount to pay'); return; }
 
+        setLoading(true);
         try {
             const payload = {
                 memberNo: parseInt(memberNo),
@@ -180,6 +186,8 @@ const FDInterestVoucherPosting: React.FC = () => {
         } catch (e) {
             console.error(e);
             message.error('Error posting interest voucher');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -249,10 +257,10 @@ const FDInterestVoucherPosting: React.FC = () => {
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="fdiv-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="fdiv-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-amber-400/50 bg-amber-600">
                             <Landmark size={13} className="text-white" />
@@ -489,7 +497,7 @@ const FDInterestVoucherPosting: React.FC = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="fdiv-footer px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
                         <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">FD Interest Voucher Posting</span>
@@ -535,6 +543,46 @@ const FDInterestVoucherPosting: React.FC = () => {
                 .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
                 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
                 input[type=number] { -moz-appearance: textfield; }
+
+                /* ── Dark mode ── */
+                html.dark .fdiv-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .fdiv-header { background: #0c0c0e !important; }
+                html.dark .fdiv-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .fdiv-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .fdiv-root .border-slate-200,
+                html.dark .fdiv-root .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .fdiv-root .text-slate-700,
+                html.dark .fdiv-root .text-slate-600 { color: #f5f5f7 !important; }
+                html.dark .fdiv-root .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .fdiv-root .text-slate-400,
+                html.dark .fdiv-root .text-slate-300 { color: #71717a !important; }
+                html.dark .fdiv-root .bg-slate-50,
+                html.dark .fdiv-root .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .fdiv-root .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
+                html.dark .fdiv-root .ant-input,
+                html.dark .fdiv-root .ant-picker,
+                html.dark .fdiv-root textarea {
+                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .fdiv-root .ant-picker input { color: #f5f5f7 !important; }
+                html.dark .fdiv-sel .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                html.dark .fdiv-root .bg-emerald-50 { background-color: rgba(52,211,153,.12) !important; }
+                html.dark .fdiv-root .border-emerald-200,
+                html.dark .fdiv-root .border-emerald-300 { border-color: rgba(52,211,153,.35) !important; }
+                html.dark .fdiv-root .text-emerald-700,
+                html.dark .fdiv-root .text-emerald-800 { color: #34d399 !important; }
+                html.dark .fdiv-root .bg-amber-50 { background-color: rgba(251,191,36,.12) !important; }
+                html.dark .fdiv-root .border-amber-300 { border-color: rgba(251,191,36,.35) !important; }
+                html.dark .fdiv-root .text-amber-700 { color: #fbbf24 !important; }
+                html.dark .fdiv-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+                html.dark .fdiv-table .ant-table-tbody > tr > td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; background-color: #1c1c1e !important; }
+                html.dark .fdiv-table .ant-table-tbody > tr:hover > td { background: rgba(99,102,241,.15) !important; }
+                html.dark .fdiv-row-selected > td { background: rgba(99,102,241,.25) !important; }
+                html.dark .ant-select-dropdown,
+                html.dark .ant-picker-dropdown .ant-picker-panel-container { background-color: #1c1c1e !important; }
+                html.dark .ant-select-dropdown .ant-select-item,
+                html.dark .ant-picker-dropdown .ant-picker-cell { color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
             `}</style>
         </ConfigProvider>
     );

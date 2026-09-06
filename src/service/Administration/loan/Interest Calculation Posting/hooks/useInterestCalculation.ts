@@ -24,7 +24,10 @@ export const useInterestCalculation = () => {
   useEffect(() => {
     const fetchCurrentRate = async () => {
       try {
-        const response = await fetch(`${await getApiBaseUrl()}/interest/current-rate`);
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch(`${await getApiBaseUrl()}/interest/current-rate`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (response.ok) {
           const body = await response.json();
           // BUG FIX 53: every response is wrapped as {success, data, ...} by the
@@ -101,9 +104,13 @@ export const useInterestCalculation = () => {
         ? `${await getApiBaseUrl()}/interest/preview-yearly-fund`
         : `${await getApiBaseUrl()}/interest/preview-calculation`;
 
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(buildPayload(formData)),
       });
 
@@ -146,9 +153,13 @@ export const useInterestCalculation = () => {
         ? `${await getApiBaseUrl()}/interest/process-yearly-fund`
         : `${await getApiBaseUrl()}/interest/update-saving-interest`;
 
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(buildPayload(formData)),
       });
 

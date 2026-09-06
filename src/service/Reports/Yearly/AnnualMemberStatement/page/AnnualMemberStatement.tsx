@@ -238,10 +238,10 @@ const AnnualMemberStatement: React.FC = () => {
         colorBgContainer: isDark ? '#1e293b' : '#ffffff',
         colorBorder: isDark ? '#334155' : '#e2e8f0' },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
+      <div className={`ams-page h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
 
         {/* Header */}
-        <div className={`px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`ams-header px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-2 rounded-lg text-white shadow-md">
               <FileText size={18} />
@@ -270,7 +270,7 @@ const AnnualMemberStatement: React.FC = () => {
           {/* Sidebar */}
           <div className="w-[280px] flex flex-col gap-3 shrink-0">
 
-            <div className={`rounded-xl overflow-hidden shadow-sm border ${side}`}>
+            <div className={`ams-card rounded-xl overflow-hidden shadow-sm border ${side}`}>
               <div className={`border-b px-3 py-2 flex items-center justify-between ${pHdr}`}>
                 <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   <Settings size={12} className="text-indigo-600" /> Parameters
@@ -391,7 +391,7 @@ const AnnualMemberStatement: React.FC = () => {
           </div>
 
           {/* Report Panel */}
-          <div className={`flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden border ${side}`}>
+          <div className={`ams-panel flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden border ${side}`}>
             <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${pHdr}`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-100'}`}>
@@ -416,7 +416,7 @@ const AnnualMemberStatement: React.FC = () => {
                   <span className={`font-bold ${muted}`}>Loading statement data...</span>
                 </div>
               ) : data.length > 0 ? (
-                <div className={`font-mono text-xs rounded-lg border p-4 overflow-x-auto ${rpBg}`}>
+                <div className={`ams-report font-mono text-xs rounded-lg border p-4 overflow-x-auto ${rpBg}`}>
                   <pre style={{ fontFamily: "'Courier New', Courier, monospace", lineHeight: '1.4', fontSize: '12px' }} className="whitespace-pre">{buildFullReportText(data)}</pre>
                 </div>
               ) : (
@@ -433,7 +433,7 @@ const AnnualMemberStatement: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className={`px-4 py-2 flex items-center justify-between shrink-0 border-t ${hdr}`}>
+        <div className={`ams-footer px-4 py-2 flex items-center justify-between shrink-0 border-t ${hdr}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
             <span className={`fz-caption font-bold uppercase tracking-wide ${muted}`}>Annual Reports v2</span>
@@ -449,6 +449,23 @@ const AnnualMemberStatement: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        /* ── Annual Member Statement — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .ams-page { background-color: #000000 !important; }
+        html.dark .ams-header,
+        html.dark .ams-footer { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ams-card,
+        html.dark .ams-panel,
+        html.dark .ams-report { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .ams-report pre { color: #f5f5f7 !important; }
+        html.dark .ams-page label { color: #8e8e93 !important; }
+        html.dark .ams-page .ant-select-selector,
+        html.dark .ams-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .ams-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .ams-page .ant-radio-button-wrapper { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .ams-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

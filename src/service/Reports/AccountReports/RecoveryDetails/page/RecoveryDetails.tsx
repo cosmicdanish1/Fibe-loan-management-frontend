@@ -225,10 +225,10 @@ const RecoveryDetails: React.FC = () => {
       algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
       token: { colorPrimary: '#ef4444', borderRadius: 6, fontSize: 12 },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-red-50/20 to-slate-50'}`}>
+      <div className={`rd-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-red-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`rd-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-red-600 to-red-700 p-1.5 rounded-lg text-white shadow-md">
               <IndianRupee size={14} />
@@ -253,7 +253,7 @@ const RecoveryDetails: React.FC = () => {
           {/* Sidebar LEFT */}
           <div className="w-[220px] flex flex-col gap-2 shrink-0">
 
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-red-200/60'}`}>
+            <div className={`rd-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-red-200/60'}`}>
               <div className="bg-gradient-to-r from-red-600 to-red-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Member</span>
@@ -272,7 +272,7 @@ const RecoveryDetails: React.FC = () => {
               </div>
             </div>
 
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-red-200/60'}`}>
+            <div className={`rd-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-red-200/60'}`}>
               <div className="bg-gradient-to-r from-red-600 to-red-700 px-2 py-1 flex items-center gap-1">
                 <Calendar size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Period</span>
@@ -289,7 +289,7 @@ const RecoveryDetails: React.FC = () => {
               </div>
             </div>
 
-            <div className={`border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-red-200/60'}`}>
+            <div className={`rd-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-red-200/60'}`}>
               <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
               <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
                 <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
@@ -307,7 +307,7 @@ const RecoveryDetails: React.FC = () => {
           </div>
 
           {/* Report Area RIGHT */}
-          <div className={`flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-red-200/60'}`}>
+          <div className={`rd-report-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-red-200/60'}`}>
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-3 py-1.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1.5">
                 <IndianRupee size={12} className="text-white" />
@@ -344,6 +344,42 @@ const RecoveryDetails: React.FC = () => {
       >
         <div className="p-2"><MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} /></div>
       </Modal>
+
+      <style>{`
+        /* ── Recovery Details — dark mode ── */
+        html.dark .rd-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .rd-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .rd-header h1 { color: #f5f5f7 !important; }
+        html.dark .rd-header .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .rd-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .rd-card .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .rd-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .rd-page .bg-slate-900\\/40 { background-color: rgba(255,255,255,.03) !important; }
+        html.dark .rd-page .bg-white { background-color: #1c1c1e !important; }
+        html.dark .rd-page .text-slate-900 { color: #f5f5f7 !important; }
+        html.dark .rd-page .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .rd-page .text-slate-300 { color: #71717a !important; }
+        html.dark .rd-page pre { color: #f5f5f7 !important; }
+        /* Antd controls */
+        html.dark .rd-page .ant-input,
+        html.dark .rd-page .ant-input-affix-wrapper,
+        html.dark .rd-page input.ant-input {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .rd-page .ant-input::placeholder { color: #71717a !important; }
+        html.dark .rd-page .ant-select-selector {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .rd-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .rd-page .ant-btn:not(.ant-btn-primary) {
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
+        }
+        html.dark .rd-page .ant-radio-wrapper { color: #f5f5f7 !important; }
+        html.dark .ant-modal-content, html.dark .ant-modal-header {
+          background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .ant-modal-title { color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

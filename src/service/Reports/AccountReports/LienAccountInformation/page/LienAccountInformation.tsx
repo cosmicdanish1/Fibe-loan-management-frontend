@@ -128,10 +128,10 @@ const LienAccountInformation: React.FC = () => {
       algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
       token: { colorPrimary: '#06b6d4', borderRadius: 6, fontSize: 12 },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-cyan-50/20 to-slate-50'}`}>
+      <div className={`lai-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-cyan-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`lai-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-cyan-600 to-cyan-700 p-1.5 rounded-lg text-white shadow-md">
               <Lock size={14} />
@@ -156,7 +156,7 @@ const LienAccountInformation: React.FC = () => {
           {/* Sidebar LEFT */}
           <div className="w-[220px] flex flex-col gap-2 shrink-0">
 
-            <div className={`border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-cyan-200/60'}`}>
+            <div className={`lai-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-cyan-200/60'}`}>
               <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
               <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
                 <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
@@ -180,7 +180,7 @@ const LienAccountInformation: React.FC = () => {
           </div>
 
           {/* Report Area RIGHT */}
-          <div className={`flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-cyan-200/60'}`}>
+          <div className={`lai-report-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-cyan-200/60'}`}>
             <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-3 py-1.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1.5">
                 <Lock size={12} className="text-white" />
@@ -211,6 +211,27 @@ const LienAccountInformation: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        /* ── Lien Account Information — dark mode ── */
+        html.dark .lai-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .lai-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .lai-header h1 { color: #f5f5f7 !important; }
+        html.dark .lai-header .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .lai-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .lai-card .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .lai-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .lai-page .bg-slate-900\\/40 { background-color: rgba(255,255,255,.03) !important; }
+        html.dark .lai-page .bg-white { background-color: #1c1c1e !important; }
+        html.dark .lai-page .text-slate-900 { color: #f5f5f7 !important; }
+        html.dark .lai-page .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .lai-page .text-slate-300 { color: #71717a !important; }
+        html.dark .lai-page pre { color: #f5f5f7 !important; }
+        html.dark .lai-page .ant-btn:not(.ant-btn-primary) {
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
+        }
+        html.dark .lai-page .ant-radio-wrapper { color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

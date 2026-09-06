@@ -161,9 +161,9 @@ const ShareWarrantPrinting: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50'}`}>
+      <div className={`share-warrant-page h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50'}`}>
         {/* Compact Header */}
-        <div className={`px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`share-warrant-header px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-2 rounded-lg text-white shadow-md">
               <Share2 size={18} />
@@ -196,7 +196,7 @@ const ShareWarrantPrinting: React.FC = () => {
           <div className="w-[280px] flex flex-col gap-3 shrink-0">
 
             {/* Parameters Card */}
-            <div className={`rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+            <div className={`share-warrant-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
               <div className={`border-b px-3 py-2 flex items-center justify-between ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100'}`}>
                 <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   <Settings size={12} className="text-indigo-600" />
@@ -293,7 +293,7 @@ const ShareWarrantPrinting: React.FC = () => {
           </div>
 
           {/* Compact Report Panel with Scroll */}
-          <div className={`flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+          <div className={`share-warrant-panel flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
             <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100'}`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-100'}`}>
@@ -361,7 +361,7 @@ const ShareWarrantPrinting: React.FC = () => {
         </div>
 
         {/* Compact Footer */}
-        <div className={`px-4 py-2 flex items-center justify-between shrink-0 border-t ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`share-warrant-footer px-4 py-2 flex items-center justify-between shrink-0 border-t ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
@@ -423,6 +423,29 @@ const ShareWarrantPrinting: React.FC = () => {
         .custom-scrollbar-compact::-webkit-scrollbar-thumb:hover {
           background: linear-gradient(to bottom, #c7d2fe, #a5b4fc);
         }
+
+        /* ── Share Warrant Printing — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .share-warrant-page { background-color: #000000 !important; background-image: none !important; }
+        html.dark .share-warrant-header,
+        html.dark .share-warrant-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .share-warrant-card,
+        html.dark .share-warrant-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .share-warrant-page .bg-slate-900\/50,
+        html.dark .share-warrant-page .bg-slate-900\/40 { background-color: #0c0c0e !important; }
+        html.dark .share-warrant-page .border-slate-700,
+        html.dark .share-warrant-page .border-slate-600 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .share-warrant-page .text-slate-100,
+        html.dark .share-warrant-page .text-slate-200,
+        html.dark .share-warrant-page .text-slate-300 { color: #f5f5f7 !important; }
+        html.dark .share-warrant-page .text-slate-400,
+        html.dark .share-warrant-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .share-warrant-page label { color: #8e8e93 !important; }
+        html.dark .share-warrant-page .ant-input,
+        html.dark .share-warrant-page .ant-input-affix-wrapper,
+        html.dark .share-warrant-page .ant-input-search .ant-input-group-addon .ant-btn,
+        html.dark .share-warrant-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .share-warrant-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .share-warrant-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
       `}</style>
     </ConfigProvider>
   );

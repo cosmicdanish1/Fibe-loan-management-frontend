@@ -40,10 +40,17 @@ const HeadOpeningBalance: React.FC = () => {
   const [search, setSearch]         = useState('');
   const initialLoad = useRef(false);
 
+  // BUG FIX: this used to call apiService.getFinancialYears(), which hits
+  // /admin/financial-year/list — that returns raw entities shaped
+  // {yearCode, startDate: Date, endDate: Date}, not the {yearcode, label}
+  // shape below. Every option's key/value/label came out undefined, so the
+  // dropdown rendered blank and the auto-select-last-year-on-load fired
+  // loadData(undefined) (confirmed by cross-referencing how
+  // TransferEntriesForClosing.tsx consumes the same endpoint via yearCode).
   const loadYears = useCallback(async () => {
     setLoadingYears(true);
     try {
-      const res = await apiService.getFinancialYears();
+      const res = await apiService.getHeadOpeningBalanceYears();
       if (res.success && Array.isArray(res.data) && res.data.length > 0) {
         setYears(res.data);
         return res.data;
@@ -137,6 +144,33 @@ const HeadOpeningBalance: React.FC = () => {
     }
   };
 
+  // BUG FIX: this button's confirm dialog claims it "applies this year's
+  // balances to headmaster and rebuilds the balance sheet", but it used to be
+  // wired to the exact same handler as Apply (handleApply) — it never called
+  // rebuildBalancesheet(), so the balancesheet table (source of the Balance
+  // Sheet report) stayed stale while the button implied it was current.
+  const handleBuildTree = async () => {
+    if (!selectedYear) return;
+    setApplying(true);
+    try {
+      const applyRes = await apiService.applyYearOpeningBalances(selectedYear);
+      if (!applyRes.success) {
+        message.error(applyRes.message || 'Apply failed');
+        return;
+      }
+      const buildRes = await apiService.rebuildBalancesheet();
+      if (buildRes.success) {
+        message.success(buildRes.data?.message || 'Balance sheet rebuilt');
+      } else {
+        message.error(buildRes.message || 'Build Tree failed');
+      }
+    } catch (err: any) {
+      message.error(err.message || 'Build Tree failed');
+    } finally {
+      setApplying(false);
+    }
+  };
+
   const toggleSection = (code: string) =>
     setExpandedSections(prev => { const n = new Set(prev); n.has(code) ? n.delete(code) : n.add(code); return n; });
 
@@ -201,24 +235,24 @@ const HeadOpeningBalance: React.FC = () => {
         }
         .hob-input:focus { background: rgba(99,102,241,0.1); border-radius: 3px; }
         /* ── Dark mode ── */
-        html.dark .hob-page { background: #0f172a !important; color: #e2e8f0 !important; }
-        html.dark .hob-header { background: #1e293b !important; border-color: #334155 !important; }
+        html.dark .hob-page { background: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .hob-header { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
         html.dark .hob-header .hob-title { color: #fff !important; }
-        html.dark .hob-header .hob-addr { color: #94a3b8 !important; }
-        html.dark .hob-toolbar { background: #0f172a !important; border-color: #334155 !important; }
-        html.dark .hob-toolbar input, html.dark .hob-toolbar select { background: #1e293b !important; color: #e2e8f0 !important; border-color: #475569 !important; }
-        html.dark .hob-toolbar .hob-tool-label { color: #94a3b8 !important; }
-        html.dark .hob-thead { background: #1e293b !important; }
-        html.dark .hob-thead th { color: #94a3b8 !important; border-color: #334155 !important; }
-        html.dark .hob-section-row { background: #1e293b !important; }
-        html.dark .hob-section-row td { color: #e2e8f0 !important; }
-        html.dark .hob-row { border-color: #1e293b !important; }
+        html.dark .hob-header .hob-addr { color: #8e8e93 !important; }
+        html.dark .hob-toolbar { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .hob-toolbar input, html.dark .hob-toolbar select { background: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .hob-toolbar .hob-tool-label { color: #8e8e93 !important; }
+        html.dark .hob-thead { background: #1c1c1e !important; }
+        html.dark .hob-thead th { color: #8e8e93 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .hob-section-row { background: #1c1c1e !important; }
+        html.dark .hob-section-row td { color: #f5f5f7 !important; }
+        html.dark .hob-row { border-color: #1c1c1e !important; }
         html.dark .hob-row:hover td { background: #1e1b4b !important; color: #e0e7ff !important; }
-        html.dark .hob-row td { color: #cbd5e1 !important; }
+        html.dark .hob-row td { color: #f5f5f7 !important; }
         html.dark .hob-row .hob-input { color: #6ee7b7 !important; }
         html.dark .hob-row .hob-input:focus { background: rgba(99,102,241,0.2) !important; }
-        html.dark .hob-tfoot { background: #0f172a !important; border-color: #7c3aed !important; }
-        html.dark .hob-tfoot td { color: #e2e8f0 !important; }
+        html.dark .hob-tfoot { background: #000000 !important; border-color: #7c3aed !important; }
+        html.dark .hob-tfoot td { color: #f5f5f7 !important; }
       `}</style>
 
       {/* ── Company Header ── */}
@@ -309,7 +343,7 @@ const HeadOpeningBalance: React.FC = () => {
         <Popconfirm
           title="Build Tree for this financial year?"
           description="Applies this year's balances to headmaster and rebuilds the balance sheet."
-          onConfirm={handleApply}
+          onConfirm={handleBuildTree}
           okText="Build" cancelText="Cancel"
         >
           <button

@@ -1,10 +1,12 @@
 // useDefaultRights.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { apiService } from '../../../../../services/api';
 import type {
   DefaultRightsFormData,
-  UseDefaultRightsReturn
+  UseDefaultRightsReturn,
+  RightSectionView,
 } from '../interface/types';
+import { SECTION_ORDER, sectionForDescription } from '../config/sectionCatalog';
 
 const showDialog = async (
   type: 'info' | 'warning' | 'error',
@@ -28,6 +30,10 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
 
   const [selectedUserLevel, setSelectedUserLevel] = useState<string>('');
   const [userLevels, setUserLevels] = useState<{ value: string; label: string }[]>([]);
+
+  const [query, setQuery] = useState('');
+  const [onlyGranted, setOnlyGranted] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   // 1. Initial Load: Fetch all possible user levels and all menu items
   useEffect(() => {
@@ -126,6 +132,16 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
     }));
   };
 
+  const setRightsSelected = (rightIds: string[], selected: boolean) => {
+    const idSet = new Set(rightIds);
+    setFormData(prev => ({
+      ...prev,
+      menuRights: prev.menuRights.map(right =>
+        idSet.has(right.id) ? { ...right, isSelected: selected } : right
+      )
+    }));
+  };
+
   const saveDefaultRights = async () => {
     if (!selectedUserLevel) return;
 
@@ -172,6 +188,9 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
       }))
     }));
     setSelectedUserLevel('');
+    setQuery('');
+    setOnlyGranted(false);
+    setCollapsedSections({});
   };
 
   const getSelectedRightsCount = (): number => {
@@ -203,6 +222,56 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
     }
   };
 
+  const toggleOnlyGranted = () => setOnlyGranted(prev => !prev);
+
+  const expandAll = () => setCollapsedSections({});
+  const collapseAll = () => {
+    const collapsed: Record<string, boolean> = {};
+    SECTION_ORDER.forEach(name => { collapsed[name] = true; });
+    setCollapsedSections(collapsed);
+  };
+
+  // Groups the flat menuRights list into the Navbar-style sections (see
+  // sectionCatalog.ts), applying the search/granted-only filters. A section
+  // with zero visible items after filtering is dropped entirely; while
+  // searching, every section with a match auto-expands regardless of its
+  // collapsed state, matching how filtering elsewhere in the app behaves.
+  const sections: RightSectionView[] = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const byName = new Map<string, typeof formData.menuRights>();
+    for (const right of formData.menuRights) {
+      const section = sectionForDescription(right.description);
+      if (!byName.has(section)) byName.set(section, []);
+      byName.get(section)!.push(right);
+    }
+
+    return SECTION_ORDER.filter(name => byName.has(name)).map(name => {
+      const all = byName.get(name)!;
+      const visible = all.filter(right =>
+        (!q || right.description.toLowerCase().includes(q)) &&
+        (!onlyGranted || right.isSelected)
+      );
+      const on = all.filter(right => right.isSelected).length;
+      return {
+        name,
+        total: all.length,
+        on,
+        open: q ? true : !collapsedSections[name],
+        toggleOpen: () => setCollapsedSections(prev => ({ ...prev, [name]: !prev[name] })),
+        grant: () => setRightsSelected(all.map(r => r.id), true),
+        revoke: () => setRightsSelected(all.map(r => r.id), false),
+        items: visible.map(right => ({
+          id: right.id,
+          name: right.description,
+          isSelected: right.isSelected,
+          toggle: () => toggleMenuRight(right.id),
+        })),
+      };
+    }).filter(section => section.items.length > 0);
+  }, [formData.menuRights, query, onlyGranted, collapsedSections]);
+
+  const isEmpty = formData.menuRights.length > 0 && sections.length === 0;
+
   return {
     formData,
     selectedUserLevel,
@@ -214,6 +283,14 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
     resetForm,
     getSelectedRightsCount,
     getTotalRightsCount,
-    createRole
+    createRole,
+    query,
+    setQuery,
+    onlyGranted,
+    toggleOnlyGranted,
+    sections,
+    isEmpty,
+    expandAll,
+    collapseAll,
   };
 };

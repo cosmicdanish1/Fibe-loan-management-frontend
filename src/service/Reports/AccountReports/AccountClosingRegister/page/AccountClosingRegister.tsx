@@ -175,10 +175,10 @@ const AccountClosingRegister: React.FC = () => {
       algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
       token: { colorPrimary: '#f59e0b', borderRadius: 6, fontSize: 12 },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-50'}`}>
+      <div className={`acr-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`acr-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-amber-600 to-amber-700 p-1.5 rounded-lg text-white shadow-md">
               <FolderX size={14} />
@@ -206,7 +206,7 @@ const AccountClosingRegister: React.FC = () => {
           {/* Sidebar */}
           <div className="w-[220px] flex flex-col gap-2 shrink-0">
 
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
+            <div className={`acr-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <Calendar size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Period</span>
@@ -223,7 +223,7 @@ const AccountClosingRegister: React.FC = () => {
               </div>
             </div>
 
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
+            <div className={`acr-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <FolderX size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Account Type</span>
@@ -233,7 +233,7 @@ const AccountClosingRegister: React.FC = () => {
               </div>
             </div>
 
-            <div className={`border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
+            <div className={`acr-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
               <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
               <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
                 <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
@@ -257,7 +257,7 @@ const AccountClosingRegister: React.FC = () => {
           </div>
 
           {/* Report Area */}
-          <div className={`flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
+          <div className={`acr-report-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
             <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-3 py-1.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1.5">
                 <FileText size={12} className="text-white" />
@@ -289,6 +289,32 @@ const AccountClosingRegister: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        /* ── Account Closing Register — dark mode ── */
+        html.dark .acr-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .acr-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .acr-header h1 { color: #f5f5f7 !important; }
+        html.dark .acr-header .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .acr-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .acr-card .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .acr-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .acr-page .bg-slate-900\\/40 { background-color: rgba(255,255,255,.03) !important; }
+        html.dark .acr-page .bg-white { background-color: #1c1c1e !important; }
+        html.dark .acr-page .text-slate-900 { color: #f5f5f7 !important; }
+        html.dark .acr-page .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .acr-page .text-slate-300 { color: #71717a !important; }
+        html.dark .acr-page pre { color: #f5f5f7 !important; }
+        /* Antd controls */
+        html.dark .acr-page .ant-select-selector {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .acr-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .acr-page .ant-btn:not(.ant-btn-primary) {
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
+        }
+        html.dark .acr-page .ant-radio-wrapper { color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

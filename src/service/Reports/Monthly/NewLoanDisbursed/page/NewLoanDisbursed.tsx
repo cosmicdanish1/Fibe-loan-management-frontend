@@ -36,12 +36,111 @@ interface LoanRecord {
   loanAmount: number;
   disbursementDate: string;
   installments: number;
+  installmentAmount: number;
   interestRate: number;
 }
 
 interface LoanType {
   code: string;
   name: string;
+}
+
+// Print-only layout matching the legacy report design standard used across
+// every report this session (letterhead, Date/Page Number line, dashed
+// rules, TOTAL row) — plain monospace text, not a clone of the on-screen
+// colorful UI. Feeds handlePrint only.
+const NLD_LINE_W = 97;
+const NLD_DASH = '-'.repeat(NLD_LINE_W);
+const NLD_COL_SR = 4;
+const NLD_COL_MBNO = 11;
+const NLD_COL_NAME = 18;
+const NLD_COL_TYPE = 6;
+const NLD_COL_CASE = 9;
+const NLD_COL_AMT = 12;
+const NLD_COL_DATE = 11;
+const NLD_COL_IAMT = 11;
+const NLD_COL_INST = 8;
+const NLD_COL_RATE = 6;
+
+const nldFmt = (n: number) =>
+  Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nldPadL = (s: string, w: number) => s.padStart(w);
+const nldPadR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
+const nldCenter = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
+
+// Word-wraps onto multiple lines instead of truncating — a name longer than
+// the column used to be silently cut off (e.g. "SHAILENDRA KUMAR PANDEY"
+// would have lost "PANDEY" entirely). Matches the legacy report's own
+// behavior (continuation line, indented under the Name column) rather than
+// its cramped zero-gap column spacing, which is a legacy rendering quirk
+// not worth reproducing.
+function nldWrapWords(text: string, width: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const out: string[] = [];
+  let line = '';
+  for (const w of words) {
+    const candidate = line ? `${line} ${w}` : w;
+    if (candidate.length > width && line) {
+      out.push(line);
+      line = w;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) out.push(line);
+  return out.length ? out : [''];
+}
+
+function buildNewLoanDisbursedLines(
+  data: LoanRecord[], fromLabel: string, toLabel: string,
+  loanTypeLabel: string, memberLabel: string,
+  totalAmount: number, totalLoans: number,
+): string[] {
+  const lines: string[] = [];
+  const now = dayjs().format('DD-MMM-YYYY/h:mmA');
+
+  lines.push(nldCenter('Espat Karmchari Co-Operative Credit Society Limited.', NLD_LINE_W));
+  lines.push(nldCenter('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', NLD_LINE_W));
+  lines.push(nldCenter('New Loan Disbursed Register', NLD_LINE_W));
+  lines.push('');
+  lines.push(`Period : ${fromLabel} to ${toLabel}`);
+  if (loanTypeLabel) lines.push(`Loan Type : ${loanTypeLabel}`);
+  if (memberLabel) lines.push(`Member : ${memberLabel}`);
+  const printedStr = `Printed : ${now}`;
+  const pageStr = 'Page Number :  1';
+  lines.push(`${printedStr}${nldPadL(pageStr, NLD_LINE_W - printedStr.length)}`);
+  lines.push(NLD_DASH);
+
+  lines.push(
+    `${nldPadR('Sr', NLD_COL_SR)}${nldPadR('Member No', NLD_COL_MBNO)}${nldPadR('Member Name', NLD_COL_NAME)}` +
+    `${nldPadR('Type', NLD_COL_TYPE)}${nldPadR('Case No', NLD_COL_CASE)}${nldPadL('Amount', NLD_COL_AMT)}` +
+    `${nldPadR('Date', NLD_COL_DATE)}${nldPadL('Instl Amt', NLD_COL_IAMT)}${nldPadL('Instl', NLD_COL_INST)}${nldPadL('Rate', NLD_COL_RATE)}`
+  );
+  lines.push(NLD_DASH);
+
+  data.forEach((item, i) => {
+    const nameLines = nldWrapWords(item.memberName || '', NLD_COL_NAME);
+    lines.push(
+      `${nldPadR(String(i + 1), NLD_COL_SR)}${nldPadR(item.memberNo, NLD_COL_MBNO)}${nldPadR(nameLines[0] || '', NLD_COL_NAME)}` +
+      `${nldPadR(item.loanType, NLD_COL_TYPE)}${nldPadR(item.loanCaseNo, NLD_COL_CASE)}${nldPadL(nldFmt(item.loanAmount), NLD_COL_AMT)}` +
+      `${nldPadR(dayjs(item.disbursementDate).format('DD-MM-YY'), NLD_COL_DATE)}${nldPadL(nldFmt(item.installmentAmount), NLD_COL_IAMT)}` +
+      `${nldPadL(String(item.installments ?? ''), NLD_COL_INST)}${nldPadL(`${item.interestRate}%`, NLD_COL_RATE)}`
+    );
+    for (let j = 1; j < nameLines.length; j++) {
+      lines.push(`${' '.repeat(NLD_COL_SR + NLD_COL_MBNO)}${nldPadR(nameLines[j] || '', NLD_COL_NAME)}`);
+    }
+  });
+
+  lines.push(NLD_DASH);
+  lines.push(
+    `${nldPadR(`TOTAL (${totalLoans} LOANS)`, NLD_COL_SR + NLD_COL_MBNO + NLD_COL_NAME + NLD_COL_TYPE + NLD_COL_CASE)}` +
+    `${nldPadL(nldFmt(totalAmount), NLD_COL_AMT)}${' '.repeat(NLD_COL_DATE + NLD_COL_IAMT + NLD_COL_INST + NLD_COL_RATE)}`
+  );
+  lines.push(NLD_DASH);
+  lines.push('');
+  lines.push('* Report generated as per available data in the system');
+
+  return lines;
 }
 
 const NewLoanDisbursed: React.FC = () => {
@@ -104,6 +203,7 @@ const NewLoanDisbursed: React.FC = () => {
           loanAmount: item.loanAmount,
           disbursementDate: item.disbursementDate,
           installments: item.installments,
+          installmentAmount: item.installmentAmount,
           interestRate: item.interestRate
         }));
         setData(formattedData);
@@ -134,12 +234,44 @@ const NewLoanDisbursed: React.FC = () => {
     }).format(amount);
   }, []);
 
+  // window.print() used to be used here with almost no print-specific CSS at
+  // all — no background/color reset, only the sidebar hidden. Printing while
+  // the app is in dark mode (the mode used throughout this session) would
+  // have produced a solid near-black page. Switched to the same hidden-
+  // iframe + monospace lines[] technique used everywhere else — an isolated
+  // document that can never inherit the parent page's dark styling.
   const handlePrint = async () => {
     if (data.length === 0) {
       await showDialog('warning', 'No Data', 'No data available for printing');
       return;
     }
-    window.print();
+    const loanTypeLabel = selectedLoanType
+      ? (loanTypes.find(t => t.code === selectedLoanType)?.name || selectedLoanType)
+      : '';
+    const memberLabel = memberNo ? `${memberNo}${memberName ? ` - ${memberName}` : ''}` : '';
+    const lines = buildNewLoanDisbursedLines(
+      data, fromDate?.format('DD-MMM-YYYY') || '', toDate?.format('DD-MMM-YYYY') || '',
+      loanTypeLabel, memberLabel, totalAmount, totalLoans,
+    );
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`<!DOCTYPE html><html><head><title>New Loan Disbursed</title>
+<style>
+  @page { size: A4 portrait; margin: 10mm; }
+  body { margin: 0; }
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 7.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
+</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 300);
+    }
   };
 
   const exportToCSV = async () => {
@@ -148,7 +280,7 @@ const NewLoanDisbursed: React.FC = () => {
       return;
     }
 
-    const headers = ['Member No', 'Member Name', 'Office', 'Loan Type', 'Case No', 'Amount', 'Date', 'Installments', 'Rate'];
+    const headers = ['Member No', 'Member Name', 'Office', 'Loan Type', 'Case No', 'Amount', 'Date', 'Install', 'Install Amt', 'Rate'];
     const csvData = data.map(item => [
       item.memberNo,
       item.memberName,
@@ -158,6 +290,7 @@ const NewLoanDisbursed: React.FC = () => {
       item.loanAmount,
       dayjs(item.disbursementDate).format('DD-MM-YYYY'),
       item.installments,
+      item.installmentAmount,
       item.interestRate
     ]);
 
@@ -184,15 +317,36 @@ const NewLoanDisbursed: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+      <div className={`nld-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+        <div className="nld-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg border-b border-white/5">
           <h1 className="fz-caption font-black text-white tracking-tight uppercase">New Loan Disbursed</h1>
+          <div className="flex items-center gap-2">
+            <Button
+              icon={<Printer size={13} />}
+              size="small"
+              className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide"
+              onClick={handlePrint}
+              disabled={data.length === 0}
+            >
+              Print
+            </Button>
+            <Button
+              type="primary"
+              icon={<FileDown size={13} />}
+              size="small"
+              className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide bg-gradient-to-r from-emerald-600 to-emerald-700"
+              onClick={exportToCSV}
+              disabled={data.length === 0}
+            >
+              CSV
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 flex overflow-hidden">
         {/* Compact Sidebar - 280px */}
-        <div className={`w-[280px] border-r flex flex-col shrink-0 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className={`nld-sidebar w-[280px] border-r flex flex-col shrink-0 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           {/* Header */}
           <div className={`p-6 border-b ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
             <div className="flex items-center gap-3 mb-4">
@@ -212,8 +366,8 @@ const NewLoanDisbursed: React.FC = () => {
           {/* Controls */}
           <div className="flex-1 p-4 space-y-4 overflow-y-auto">
             {/* Date Range */}
-            <div className={`rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-              <div className={`border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
+            <div className={`nld-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+              <div className={`nld-card-header border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
                 <Calendar size={12} className="text-emerald-600" />
                 <span className={`fz-label font-black uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Date Range</span>
               </div>
@@ -244,8 +398,8 @@ const NewLoanDisbursed: React.FC = () => {
             </div>
 
             {/* Member Filter */}
-            <div className={`rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-              <div className={`border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
+            <div className={`nld-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+              <div className={`nld-card-header border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
                 <User size={12} className="text-emerald-600" />
                 <span className={`fz-label font-black uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Member</span>
               </div>
@@ -269,8 +423,8 @@ const NewLoanDisbursed: React.FC = () => {
             </div>
 
             {/* Loan Type Filter */}
-            <div className={`rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-              <div className={`border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
+            <div className={`nld-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+              <div className={`nld-card-header border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
                 <Briefcase size={12} className="text-emerald-600" />
                 <span className={`fz-label font-black uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Loan Type</span>
               </div>
@@ -307,31 +461,10 @@ const NewLoanDisbursed: React.FC = () => {
             >
               Load Report
             </Button>
-
-            {/* Export Actions */}
-            <div className={`space-y-2 pt-3 border-t ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
-              <Button
-                icon={<Printer size={14} />}
-                className="w-full h-10 rounded-xl fz-label font-bold"
-                onClick={handlePrint}
-                disabled={data.length === 0}
-              >
-                Print Report
-              </Button>
-              
-              <Button
-                icon={<FileDown size={14} />}
-                className="w-full h-10 rounded-xl fz-label font-bold"
-                onClick={exportToCSV}
-                disabled={data.length === 0}
-              >
-                Export CSV
-              </Button>
-            </div>
           </div>
 
           {/* Summary Cards */}
-          <div className={`p-4 border-t space-y-3 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
+          <div className={`nld-summary-panel p-4 border-t space-y-3 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
             <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-3 text-white shadow-md">
               <div className="fz-label font-bold uppercase tracking-wide opacity-90 mb-1">Total Amount</div>
               <div className="fz-heading font-black font-mono">₹{formatCurrency(totalAmount)}</div>
@@ -347,8 +480,8 @@ const NewLoanDisbursed: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Report Panel with Legacy Format */}
-          <div className={`flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden m-3 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-            <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
+          <div className={`nld-report-panel flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden m-3 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+            <div className={`nld-card-header border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-100'}`}>
                   <TrendingUp size={14} className="text-emerald-600" />
@@ -360,7 +493,7 @@ const NewLoanDisbursed: React.FC = () => {
               </div>
             </div>
 
-            <div className={`flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
+            <div className={`nld-preview-body flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
               {loading ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="flex items-center gap-3">
@@ -408,6 +541,8 @@ const NewLoanDisbursed: React.FC = () => {
                           <th className={`text-left py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>CASE NO</th>
                           <th className={`text-right py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>AMOUNT</th>
                           <th className={`text-left py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>DATE</th>
+                          <th className={`text-right py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>INSTALL AMT</th>
+                          <th className={`text-right py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>INSTALL</th>
                           <th className={`text-right py-2 px-2 font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>RATE %</th>
                         </tr>
                       </thead>
@@ -429,6 +564,12 @@ const NewLoanDisbursed: React.FC = () => {
                             <td className={`py-2 px-2 font-medium border-r border-dashed ${isDark ? 'text-slate-300 border-slate-700' : 'text-slate-700 border-slate-200'}`}>
                               {dayjs(item.disbursementDate).format('DD-MM-YYYY')}
                             </td>
+                            <td className={`py-2 px-2 text-right font-medium border-r border-dashed ${isDark ? 'text-slate-300 border-slate-700' : 'text-slate-700 border-slate-200'}`}>
+                              {formatCurrency(item.installmentAmount)}
+                            </td>
+                            <td className={`py-2 px-2 text-right font-medium border-r border-dashed ${isDark ? 'text-slate-300 border-slate-700' : 'text-slate-700 border-slate-200'}`}>
+                              {item.installments}
+                            </td>
                             <td className={`py-2 px-2 text-right font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{item.interestRate}%</td>
                           </tr>
                         ))}
@@ -441,7 +582,7 @@ const NewLoanDisbursed: React.FC = () => {
                           <td className={`py-2 px-2 text-right border-r border-dashed ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
                             <span className="text-emerald-600 font-black">{formatCurrency(totalAmount)}</span>
                           </td>
-                          <td colSpan={2} className="py-2 px-2"></td>
+                          <td colSpan={4} className="py-2 px-2"></td>
                         </tr>
                       </tbody>
                     </table>
@@ -469,17 +610,11 @@ const NewLoanDisbursed: React.FC = () => {
 
       {/* Print Styles */}
       <style>{`
-        @media print {
-          .ant-btn, .ant-select, .ant-picker { display: none !important; }
-          .w-\\[280px\\] { display: none !important; }
-          .flex-1 { width: 100% !important; }
-          body { margin: 0; padding: 20px; }
-          table { page-break-inside: auto; }
-          tr { page-break-inside: avoid; page-break-after: auto; }
-          thead { display: table-header-group; }
-          tfoot { display: table-footer-group; }
-        }
-        
+        /* Printing now goes through a hidden iframe (see handlePrint) that
+           renders a plain monospace layout built from the report's own data
+           — no @media print rule is needed on this live page anymore;
+           window.print() is no longer called on it. */
+
         .ant-select-selector {
           border-radius: 8px !important;
           border-color: #e2e8f0 !important;
@@ -501,6 +636,24 @@ const NewLoanDisbursed: React.FC = () => {
         .legacy-report-compact td {
           border-color: #cbd5e1;
         }
+
+        /* ── New Loan Disbursed — dark mode ── */
+        html.dark .nld-page { background-color: #000000 !important; }
+        html.dark .nld-topbar { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .nld-sidebar,
+        html.dark .nld-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .nld-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .nld-card-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
+        html.dark .nld-preview-body { background-color: #1c1c1e !important; }
+        html.dark .nld-summary-panel { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .nld-page label,
+        html.dark .nld-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .nld-page .ant-select-selector,
+        html.dark .nld-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .nld-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .nld-page .legacy-report-compact th,
+        html.dark .nld-page .legacy-report-compact td,
+        html.dark .nld-page .legacy-report-compact tr { border-color: rgba(255,255,255,.15) !important; }
       `}</style>
     </ConfigProvider>
   );

@@ -1,6 +1,6 @@
 // DataTable.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { useTableData } from '../../hooks/useTableData';
 import type { TableColumn } from '../../types/table';
@@ -91,36 +91,81 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
   const { addRow, updateRow, deleteRow } = useTableData(data, onDataChange);
   const [editingCell, setEditingCell] = useState<{ id: number | null; field: keyof T | null }>({ id: null, field: null });
   const [editValue, setEditValue] = useState<any>('');
+  // Set when Tab/Enter runs off the last cell of the last row — tells the
+  // effect below which column to open once the newly-added row lands in `data`.
+  const pendingNewRowFieldRef = useRef<keyof T | null>(null);
 
-  const handleCellClick = (id: number, field: keyof T) => {
+  const editableColumns = columns.filter(c => c.type !== 'checkbox');
+
+  const openCellForEdit = (id: number, field: keyof T, value: any) => {
     setEditingCell({ id, field });
-    setEditValue(data.find(item => item.id === id)?.[field] || '');
+    setEditValue(value ?? '');
   };
 
-  const handleCellChange = (id: number, field: keyof T, value: any) => {
-    updateRow(id, field, value);
-    setEditingCell({ id: null, field: null });
+  const handleCellClick = (id: number, field: keyof T) => {
+    openCellForEdit(id, field, data.find(item => item.id === id)?.[field]);
   };
 
   const cancelEdit = () => {
     setEditingCell({ id: null, field: null });
   };
 
+  // After addRow() lands a new row in `data`, open its first editable
+  // column so Tab/Enter can keep flowing into it like a spreadsheet.
+  useEffect(() => {
+    if (!pendingNewRowFieldRef.current) return;
+    const lastRow = data[data.length - 1];
+    if (lastRow?.id !== undefined) {
+      openCellForEdit(lastRow.id as number, pendingNewRowFieldRef.current, '');
+    }
+    pendingNewRowFieldRef.current = null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.length]);
 
+  // Move focus to the next (or previous, on Shift+Tab) editable cell —
+  // wraps to the next row, and spawns a new row past the last one.
+  const moveToCell = (rowIndex: number, colIndex: number) => {
+    if (editableColumns.length === 0) return;
+    if (colIndex < 0) {
+      if (rowIndex <= 0) return;
+      rowIndex -= 1;
+      colIndex = editableColumns.length - 1;
+    } else if (colIndex >= editableColumns.length) {
+      rowIndex += 1;
+      colIndex = 0;
+    }
+    if (rowIndex < 0) return;
 
-  const handleKeyDown = (e: React.KeyboardEvent, id: number, field: keyof T) => {
-    if (e.key === 'Enter') {
-      handleCellChange(id, field, editValue);
+    if (rowIndex >= data.length) {
+      const firstCol = editableColumns[0];
+      if (!firstCol) return;
+      pendingNewRowFieldRef.current = firstCol.key;
+      addRow({} as any);
+      return;
+    }
+
+    const targetRow = data[rowIndex];
+    const targetCol = editableColumns[colIndex];
+    if (targetRow?.id === undefined || !targetCol) return;
+    openCellForEdit(targetRow.id as number, targetCol.key, targetRow[targetCol.key as keyof T]);
+  };
+
+  const handleGridKeyDown = (e: React.KeyboardEvent, rowIndex: number, colIndex: number, rowId: number, field: keyof T, value: any) => {
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      updateRow(rowId, field, value);
+      moveToCell(rowIndex, e.shiftKey ? colIndex - 1 : colIndex + 1);
     } else if (e.key === 'Escape') {
       cancelEdit();
     }
   };
 
-  const renderCell = (row: T, column: TableColumn<T>) => {
+  const renderCell = (row: T, column: TableColumn<T>, rowIndex: number) => {
     if (row.id === undefined) return null;
     const rowId = row.id as number;
-    const isEditing = editingCell.id === rowId && editingCell.field === column.key;
+    const isEditing = editingCell.id === rowId && editingCell.field === column.key && column.type !== 'checkbox';
     const value = row[column.key as keyof T];
+    const colIndex = editableColumns.indexOf(column);
 
     if (isEditing) {
       if (column.type === 'date') {
@@ -128,7 +173,8 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
           <input
             type="date"
             value={editValue}
-            onChange={(e) => { setEditValue(e.target.value); handleCellChange(rowId, column.key, e.target.value); }}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={(e) => handleGridKeyDown(e, rowIndex, colIndex, rowId, column.key, e.currentTarget.value)}
             autoFocus
             className="w-full fz-body h-8 border border-blue-400 rounded px-1 focus:outline-none"
           />
@@ -138,7 +184,8 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
         return (
           <select
             value={editValue}
-            onChange={(e) => { setEditValue(e.target.value); handleCellChange(rowId, column.key, e.target.value); }}
+            onChange={(e) => { setEditValue(e.target.value); updateRow(rowId, column.key, e.target.value); }}
+            onKeyDown={(e) => handleGridKeyDown(e, rowIndex, colIndex, rowId, column.key, editValue)}
             autoFocus
             className="w-full fz-body h-8 border border-blue-400 rounded px-1 focus:outline-none"
           >
@@ -154,7 +201,7 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
           type={column.type === 'number' ? 'number' : 'text'}
           value={editValue}
           onChange={(e) => setEditValue(column.type === 'number' ? Number(e.target.value) : e.target.value)}
-          onKeyDown={(e) => handleKeyDown(e, rowId, column.key)}
+          onKeyDown={(e) => handleGridKeyDown(e, rowIndex, colIndex, rowId, column.key, editValue)}
           autoFocus
           className="w-full fz-body h-8"
         />
@@ -234,7 +281,7 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
                 </td>
                 {columns.map((column) => (
                   <td key={String(column.key)} className="px-4 py-3 border-r border-slate-100">
-                    {renderCell(row, column)}
+                    {renderCell(row, column, index)}
                   </td>
                 ))}
               </tr>

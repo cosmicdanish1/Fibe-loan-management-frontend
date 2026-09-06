@@ -16,11 +16,11 @@ const WingMaster: React.FC<WingMasterHookReturn> = ({
   fetchWing
 }) => {
   return (
-    <div className="max-w-2xl mx-auto space-y-2">
+    <div className="wm-root max-w-2xl mx-auto space-y-2">
 
       {/* Wing Details */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
+      <div className="wm-card bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="wm-card-hdr px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
           <Layers size={11} className="text-slate-400" />
           <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Wing Details</span>
           {data.name && (
@@ -58,8 +58,8 @@ const WingMaster: React.FC<WingMasterHookReturn> = ({
       </div>
 
       {/* State */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
+      <div className="wm-card bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="wm-card-hdr px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
           <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Jurisdictional State</span>
         </div>
         <div className="p-3">
@@ -98,6 +98,50 @@ const WingMaster: React.FC<WingMasterHookReturn> = ({
           </div>
         </div>
       </div>
+
+      <style>{`
+        /* ── Wing Master — dark mode ── */
+        html.dark .wm-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .wm-card-hdr { border-color: rgba(255,255,255,.07) !important; }
+        html.dark .wm-card-hdr span.text-slate-500 { color: #8e8e93 !important; }
+        html.dark .wm-card-hdr svg.text-slate-400 { color: #71717a !important; }
+        html.dark .wm-root label.text-slate-500 { color: #8e8e93 !important; }
+        html.dark .wm-root .text-slate-400 { color: #71717a !important; }
+        html.dark .wm-root input {
+          background-color: rgba(255,255,255,.05) !important;
+          color: #f5f5f7 !important;
+          border-color: rgba(255,255,255,.08) !important;
+        }
+        /* State toggle buttons — inactive */
+        html.dark .wm-root button.bg-slate-50 {
+          background-color: rgba(255,255,255,.05) !important;
+          border-color: rgba(255,255,255,.08) !important;
+          color: #71717a !important;
+        }
+        html.dark .wm-root button.bg-slate-50:hover { border-color: rgba(255,255,255,.18) !important; }
+        html.dark .wm-root .text-slate-300 { color: #71717a !important; }
+        html.dark .wm-root .bg-slate-100 { background-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        /* State toggle buttons — active (In State) */
+        html.dark .wm-root button.bg-emerald-50 {
+          background-color: rgba(52,211,153,0.12) !important;
+          border-color: #34d399 !important;
+          color: #34d399 !important;
+        }
+        html.dark .wm-root .bg-emerald-100 { background-color: rgba(52,211,153,0.2) !important; color: #34d399 !important; }
+        html.dark .wm-root .text-emerald-500,
+        html.dark .wm-root .text-emerald-600,
+        html.dark .wm-root .text-emerald-700 { color: #34d399 !important; }
+        /* State toggle buttons — active (Out State) */
+        html.dark .wm-root button.bg-rose-50 {
+          background-color: rgba(255,69,58,0.12) !important;
+          border-color: #ff453a !important;
+          color: #ff453a !important;
+        }
+        html.dark .wm-root .bg-rose-100 { background-color: rgba(255,69,58,0.2) !important; color: #ff453a !important; }
+        html.dark .wm-root .text-rose-500,
+        html.dark .wm-root .text-rose-600,
+        html.dark .wm-root .text-rose-700 { color: #ff453a !important; }
+      `}</style>
 
     </div>
   );

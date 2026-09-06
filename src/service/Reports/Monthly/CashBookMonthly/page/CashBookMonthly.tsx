@@ -32,6 +32,75 @@ interface CashBookData {
   payment: number;
 }
 
+// Print-only layout matching the legacy report design standard used across
+// every report this session (letterhead, Date/Page Number line, dashed
+// rules, TOTAL row, summary block) — plain monospace text, not a clone of
+// the on-screen colorful UI. Feeds handlePrint only.
+const CBM_LINE_W = 78;
+const CBM_DASH = '-'.repeat(CBM_LINE_W);
+const CBM_COL_CODE = 12;
+const CBM_COL_NAME = 38;
+const CBM_COL_AMT = (CBM_LINE_W - CBM_COL_CODE - CBM_COL_NAME) / 2;
+
+const cbmFmt = (n: number) =>
+  Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const cbmFmtSigned = (n: number) => (n < 0 ? '-' : '') + cbmFmt(n);
+const cbmPadL = (s: string, w: number) => s.padStart(w);
+const cbmPadR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
+const cbmCenter = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
+
+function buildCashBookMonthlyLines(
+  data: CashBookData[], monthLabel: string,
+  openingBalance: number, totalReceipt: number, totalPayment: number, closingBalance: number,
+): string[] {
+  const lines: string[] = [];
+  const now = dayjs().format('DD-MMM-YYYY/h:mmA');
+
+  lines.push(cbmCenter('Espat Karmchari Co-Operative Credit Society Limited.', CBM_LINE_W));
+  lines.push(cbmCenter('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', CBM_LINE_W));
+  lines.push(cbmCenter('Cash Book Monthly', CBM_LINE_W));
+  lines.push('');
+  lines.push(`For the Month : ${monthLabel}`);
+  const printedStr = `Printed : ${now}`;
+  const pageStr = 'Page Number :  1';
+  lines.push(`${printedStr}${cbmPadL(pageStr, CBM_LINE_W - printedStr.length)}`);
+  lines.push(CBM_DASH);
+
+  lines.push(
+    `${cbmPadR('Code', CBM_COL_CODE)}${cbmPadR('Head Name', CBM_COL_NAME)}${cbmPadL('Receipt', CBM_COL_AMT)}${cbmPadL('Payment', CBM_COL_AMT)}`
+  );
+  lines.push(CBM_DASH);
+
+  data.forEach(item => {
+    lines.push(
+      `${cbmPadR(item.code, CBM_COL_CODE)}${cbmPadR(item.headName, CBM_COL_NAME)}` +
+      `${cbmPadL(item.receipt > 0 ? cbmFmt(item.receipt) : '', CBM_COL_AMT)}` +
+      `${cbmPadL(item.payment > 0 ? cbmFmt(item.payment) : '', CBM_COL_AMT)}`
+    );
+  });
+
+  lines.push(CBM_DASH);
+  lines.push(
+    `${cbmPadR('TOTAL :-', CBM_COL_CODE + CBM_COL_NAME)}${cbmPadL(cbmFmt(totalReceipt), CBM_COL_AMT)}${cbmPadL(cbmFmt(totalPayment), CBM_COL_AMT)}`
+  );
+  lines.push(CBM_DASH);
+
+  const IND = '        ';
+  const LBL_W = 18;
+  const VAL_W = 20;
+  lines.push(`${IND}${'Opening Balance :'.padEnd(LBL_W)} ${cbmPadL(cbmFmtSigned(openingBalance), VAL_W)}`);
+  lines.push(`${IND}${'Total Credit    :'.padEnd(LBL_W)} ${cbmPadL(cbmFmt(totalReceipt), VAL_W)}`);
+  lines.push(`${IND}${'Total           :'.padEnd(LBL_W)} ${cbmPadL(cbmFmtSigned(openingBalance + totalReceipt), VAL_W)}`);
+  lines.push(`${IND}${'Total Debit     :'.padEnd(LBL_W)} ${cbmPadL(cbmFmt(totalPayment), VAL_W)}`);
+  lines.push(`${IND}${'-'.repeat(LBL_W + VAL_W + 1)}`);
+  lines.push(`${IND}${'Closing Balance :'.padEnd(LBL_W)} ${cbmPadL(cbmFmtSigned(closingBalance), VAL_W)}`);
+  lines.push(`${IND}${'-'.repeat(LBL_W + VAL_W + 1)}`);
+  lines.push('');
+  lines.push('* Report As Per Data Available ..');
+
+  return lines;
+}
+
 const CashBookMonthly: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<Dayjs | null>(dayjs());
   const [outputType, setOutputType] = useState<'screen' | 'printer'>('screen');
@@ -92,8 +161,38 @@ const CashBookMonthly: React.FC = () => {
     }).format(amount);
   };
 
+  // window.print() used to be used here with a visibility-hiding CSS hack —
+  // the print box was 7.5in wide inside an 8.27in-wide A4 page with 0.5in
+  // margins on both the @page rule and the box's own padding, leaving only
+  // 7.27in of usable width for a 7.5in box. Confirmed live: columns clipped
+  // at the left edge and the Payment column fell off the page entirely.
+  // Switched to the same hidden-iframe + monospace lines[] technique
+  // already proven working for every other report's print this session.
   const handlePrint = () => {
-    window.print();
+    if (data.length === 0) return;
+    const lines = buildCashBookMonthlyLines(
+      data, selectedMonth?.format('MMM-YYYY') || '',
+      openingBalance, totalReceipt, totalPayment, closingBalance,
+    );
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`<!DOCTYPE html><html><head><title>Cash Book Monthly</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  body { margin: 0; }
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 9pt; white-space: pre; width: fit-content; margin: 0 auto; }
+</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 300);
+    }
   };
 
   const handleExportCSV = async () => {
@@ -154,9 +253,9 @@ const CashBookMonthly: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50'}`}>
+      <div className={`cbm-page h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50'}`}>
         {/* Compact Header */}
-        <div className={`px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`cbm-header px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-2 rounded-lg text-white shadow-md">
               <BookOpen size={18} />
@@ -199,8 +298,8 @@ const CashBookMonthly: React.FC = () => {
           <div className="w-[280px] flex flex-col gap-3 shrink-0">
 
             {/* Parameters Card */}
-            <div className={`rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-              <div className={`border-b px-3 py-2 flex items-center justify-between ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100'}`}>
+            <div className={`cbm-params-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+              <div className={`cbm-card-header border-b px-3 py-2 flex items-center justify-between ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100'}`}>
                 <h3 className={`fz-caption font-black tracking-wide uppercase flex items-center gap-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   <Settings size={12} className="text-indigo-600" />
                   Parameters
@@ -265,8 +364,8 @@ const CashBookMonthly: React.FC = () => {
           </div>
 
           {/* Compact Report Panel with Scroll */}
-          <div className={`flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-            <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100'}`}>
+          <div className={`cbm-report-panel flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+            <div className={`cbm-card-header border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100'}`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-100'}`}>
                   <Database size={14} className="text-indigo-600" />
@@ -278,7 +377,7 @@ const CashBookMonthly: React.FC = () => {
               </div>
             </div>
 
-            <div className={`flex-1 overflow-auto p-3 custom-scrollbar-compact ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
+            <div className={`cbm-preview-body flex-1 overflow-auto p-3 custom-scrollbar-compact ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
               <Spin spinning={loading} tip="Loading..." size="small">
                 {data.length > 0 ? (
                   <div className="legacy-report-compact fz-caption">
@@ -381,7 +480,7 @@ const CashBookMonthly: React.FC = () => {
         </div>
 
         {/* Compact Footer */}
-        <div className={`px-4 py-2 flex items-center justify-between shrink-0 border-t ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`cbm-footer px-4 py-2 flex items-center justify-between shrink-0 border-t ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
@@ -422,63 +521,27 @@ const CashBookMonthly: React.FC = () => {
           line-height: 26px !important;
         }
 
-        @media print {
-           * { 
-             margin: 0;
-             padding: 0;
-             box-sizing: border-box;
-           }
-           
-           body {
-             margin: 0;
-             padding: 0;
-           }
-           
-           body * { 
-             visibility: hidden; 
-           }
-           
-           .legacy-report-compact, .legacy-report-compact * { 
-             visibility: visible; 
-           }
-           
-           .legacy-report-compact { 
-             position: absolute;
-             left: 50% !important;
-             top: 0 !important;
-             transform: translateX(-50%) !important;
-             width: 7.5in !important;
-             max-width: 7.5in !important; 
-             margin: 0 auto !important;
-             padding: 0.5in !important;
-             font-size: 10pt !important;
-             background: white !important;
-           }
-           
-           .h-screen { 
-             height: auto !important; 
-             overflow: visible !important; 
-           }
-           
-           button, .ant-btn, .ant-spin { 
-             display: none !important; 
-           }
-           
-           @page {
-             margin: 0.5in;
-             size: A4 portrait;
-           }
-           
-           table { 
-             page-break-inside: auto;
-             width: 100%;
-           }
-           
-           tr { 
-             page-break-inside: avoid; 
-             page-break-after: auto; 
-           }
-        }
+        /* Printing now goes through a hidden iframe (see handlePrint) that
+           renders a plain monospace layout built from the report's own data
+           — no @media print rule is needed on this live page anymore;
+           window.print() is no longer called on it. */
+
+        /* ── Cash Book Monthly — dark mode ── */
+        html.dark .cbm-page { background-color: #000000 !important; background-image: none !important; }
+        html.dark .cbm-header,
+        html.dark .cbm-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
+        html.dark .cbm-params-card,
+        html.dark .cbm-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cbm-card-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
+        html.dark .cbm-preview-body { background-color: #1c1c1e !important; }
+        html.dark .cbm-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cbm-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .cbm-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .cbm-page .legacy-report-compact { color: #f5f5f7 !important; }
+        html.dark .cbm-page .legacy-report-compact table,
+        html.dark .cbm-page .legacy-report-compact th,
+        html.dark .cbm-page .legacy-report-compact td,
+        html.dark .cbm-page .legacy-report-compact tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.15) !important; color: #f5f5f7 !important; }
       `}</style>
     </ConfigProvider>
   );

@@ -71,7 +71,7 @@ export const useSaakhScore = () => {
       if (res.success && res.data) {
         setData(res.data as SaakhScoreData);
       } else {
-        setError('Member not found or no data available.');
+        setError(res.error || 'Member not found or no data available.');
       }
     } catch (e: any) {
       setError(e?.message || 'Failed to fetch Saakh Score.');

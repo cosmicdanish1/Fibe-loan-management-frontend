@@ -204,10 +204,10 @@ const RecurringDetails: React.FC = () => {
       algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
       token: { colorPrimary: '#8b5cf6', borderRadius: 6, fontSize: 12 },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-violet-50/20 to-slate-50'}`}>
+      <div className={`recurring-details-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-violet-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`recurring-details-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-violet-600 to-violet-700 p-1.5 rounded-lg text-white shadow-md">
               <Repeat size={14} />
@@ -232,7 +232,7 @@ const RecurringDetails: React.FC = () => {
           {/* Sidebar LEFT */}
           <div className="w-[220px] flex flex-col gap-2 shrink-0">
 
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-violet-200/60'}`}>
+            <div className={`recurring-details-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-violet-200/60'}`}>
               <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Member</span>
@@ -251,7 +251,7 @@ const RecurringDetails: React.FC = () => {
               </div>
             </div>
 
-            <div className={`border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-violet-200/60'}`}>
+            <div className={`recurring-details-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-violet-200/60'}`}>
               <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
               <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
                 <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
@@ -275,7 +275,7 @@ const RecurringDetails: React.FC = () => {
           </div>
 
           {/* Report Area RIGHT */}
-          <div className={`flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-violet-200/60'}`}>
+          <div className={`recurring-details-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-violet-200/60'}`}>
             <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-3 py-1.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1.5">
                 <Repeat size={12} className="text-white" />
@@ -314,6 +314,18 @@ const RecurringDetails: React.FC = () => {
       >
         <div className="p-2"><MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} /></div>
       </Modal>
+
+      <style>{`
+        /* ── Recurring Details — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .recurring-details-page { background-color: #000000 !important; }
+        html.dark .recurring-details-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .recurring-details-card,
+        html.dark .recurring-details-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .recurring-details-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .recurring-details-page .ant-input,
+        html.dark .recurring-details-page .ant-input-search .ant-input-group-addon .ant-btn { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .recurring-details-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

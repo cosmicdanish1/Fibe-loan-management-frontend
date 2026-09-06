@@ -147,7 +147,7 @@ const MemberBalanceTransfer: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="h-screen flex flex-col bg-white font-sans text-slate-900">
+      <div className="mbt-page h-screen flex flex-col bg-white font-sans text-slate-900">
 
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg">
@@ -179,7 +179,7 @@ const MemberBalanceTransfer: React.FC = () => {
         </div>
 
         {/* Form — compact like legacy */}
-        <div className="bg-slate-50 border-b border-slate-200 px-3 py-2">
+        <div className="mbt-form bg-slate-50 border-b border-slate-200 px-3 py-2">
           <div className="grid grid-cols-12 gap-2 items-end">
             <div className="col-span-3">
               <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Debit Head</label>
@@ -211,7 +211,7 @@ const MemberBalanceTransfer: React.FC = () => {
         </div>
 
         {/* Member List label */}
-        <div className="px-3 py-0.5 bg-white border-b border-slate-200 flex items-center gap-1.5">
+        <div className="mbt-label px-3 py-0.5 bg-white border-b border-slate-200 flex items-center gap-1.5">
           <Building2 size={9} className="text-slate-400" />
           <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member List</span>
           {entries.length > 0 && <span className="fz-mini font-bold text-indigo-500">{entries.length} members</span>}
@@ -226,7 +226,7 @@ const MemberBalanceTransfer: React.FC = () => {
         </div>
 
         {/* Footer Totals */}
-        <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center gap-6 shrink-0">
+        <div className="mbt-footer px-3 py-1.5 bg-white border-t border-slate-200 flex items-center gap-6 shrink-0">
           <div className="flex items-center gap-2">
             <span className="fz-tiny font-black text-slate-500 uppercase">Total Debit</span>
             <span className="fz-label font-black text-rose-600 font-mono">{fmt(totals.totalDebit)}</span>
@@ -244,6 +244,43 @@ const MemberBalanceTransfer: React.FC = () => {
             <span className="fz-mini font-black uppercase">{dayjs().format('DD-MMM-YY')}</span>
           </div>
         </div>
+
+        <style>{`
+          /* ── Member Balance Transfer — dark mode (Settings-panel palette) ── */
+          html.dark .mbt-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .mbt-form { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .mbt-label,
+          html.dark .mbt-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .mbt-page .text-slate-900,
+          html.dark .mbt-page .text-slate-800 { color: #f5f5f7 !important; }
+          html.dark .mbt-page .text-slate-600,
+          html.dark .mbt-page .text-slate-500 { color: #8e8e93 !important; }
+          html.dark .mbt-page .text-slate-400 { color: #71717a !important; }
+          html.dark .mbt-page label.text-purple-700 { color: #8e8e93 !important; }
+          html.dark .mbt-page .text-rose-600 { color: #ff453a !important; }
+          html.dark .mbt-page .text-emerald-600 { color: #34d399 !important; }
+          html.dark .mbt-page .text-amber-600 { color: #fbbf24 !important; }
+          /* antd inputs */
+          html.dark .mbt-page .ant-select-selector,
+          html.dark .mbt-page .ant-input,
+          html.dark .mbt-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+          html.dark .mbt-page .ant-select-selection-item,
+          html.dark .mbt-page .ant-select-selection-search-input,
+          html.dark .mbt-page .ant-picker input { color: #f5f5f7 !important; }
+          html.dark .mbt-page .ant-select-selection-placeholder,
+          html.dark .mbt-page .ant-input::placeholder,
+          html.dark .mbt-page .ant-picker input::placeholder { color: #71717a !important; }
+          html.dark .mbt-page .ant-select-arrow,
+          html.dark .mbt-page .ant-picker-suffix { color: #8e8e93 !important; }
+          /* antd table */
+          html.dark .mbt-page .ant-table,
+          html.dark .mbt-page .ant-table-container { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .mbt-page .ant-table-thead > tr > th { background-color: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+          html.dark .mbt-page .ant-table-tbody > tr > td { background-color: #000000 !important; border-color: rgba(255,255,255,.07) !important; }
+          html.dark .mbt-page .ant-table-tbody > tr:hover > td { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .mbt-page .ant-table-placeholder .ant-table-cell,
+          html.dark .mbt-page .ant-empty-description { background-color: #000000 !important; color: #71717a !important; }
+        `}</style>
       </div>
     </ConfigProvider>
   );

@@ -169,26 +169,26 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#f59e0b', borderRadius: 8 } }}>
       <style>{`
-        html.dark .fyc-page { background: #0f172a !important; }
-        html.dark .fyc-page .fyc-header { background: #1e293b !important; border-color: #334155 !important; }
+        html.dark .fyc-page { background: #000000 !important; }
+        html.dark .fyc-page .fyc-header { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
         html.dark .fyc-page .fyc-header-icon { background: #451a03 !important; color: #fbbf24 !important; }
-        html.dark .fyc-page .fyc-title { color: #f1f5f9 !important; }
+        html.dark .fyc-page .fyc-title { color: #f5f5f7 !important; }
         html.dark .fyc-page .fyc-sub { color: #fbbf24 !important; }
-        html.dark .fyc-page .fyc-card { background: #1e293b !important; border-color: #78350f !important; }
-        html.dark .fyc-page .fyc-date-row { background: #0f172a !important; border-color: #334155 !important; }
-        html.dark .fyc-page .fyc-date-icon { background: #1e293b !important; }
-        html.dark .fyc-page .fyc-date-label { color: #94a3b8 !important; }
-        html.dark .fyc-page .fyc-date-value { background: #1e293b !important; color: #fbbf24 !important; box-shadow: inset 0 0 0 1px #334155 !important; }
-        html.dark .fyc-page .fyc-card-footer { background: #0f172a !important; border-color: #334155 !important; }
+        html.dark .fyc-page .fyc-card { background: #1c1c1e !important; border-color: #78350f !important; }
+        html.dark .fyc-page .fyc-date-row { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .fyc-page .fyc-date-icon { background: #1c1c1e !important; }
+        html.dark .fyc-page .fyc-date-label { color: #8e8e93 !important; }
+        html.dark .fyc-page .fyc-date-value { background: #1c1c1e !important; color: #fbbf24 !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08) !important; }
+        html.dark .fyc-page .fyc-card-footer { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
         html.dark .fyc-page .fyc-status-dot { background: #fbbf24 !important; }
         html.dark .fyc-page .fyc-status-text { color: #fbbf24 !important; }
         html.dark .fyc-page .fyc-audit-text { color: #92400e !important; }
         html.dark .fyc-page .fyc-warning { background: #2d0a0a !important; border-color: #7f1d1d !important; }
         html.dark .fyc-page .fyc-warning-text { color: #fca5a5 !important; }
-        html.dark .fyc-page .fyc-cancel-btn { background: #1e293b !important; border-color: #334155 !important; color: #94a3b8 !important; }
-        html.dark .fyc-page .fyc-cancel-btn:hover { background: #334155 !important; color: #f1f5f9 !important; }
-        html.dark .fyc-page .fyc-footer { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .fyc-page .fyc-footer-text { color: #475569 !important; }
+        html.dark .fyc-page .fyc-cancel-btn { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .fyc-page .fyc-cancel-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .fyc-page .fyc-footer { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .fyc-page .fyc-footer-text { color: #71717a !important; }
         html.dark .fyc-page .fyc-error-box { background: #2d1515 !important; border-color: #7f1d1d !important; }
         html.dark .fyc-page .fyc-error-text { color: #fca5a5 !important; }
         html.dark .fyc-page .fyc-closed-badge { background: #064e3b !important; border-color: #065f46 !important; }

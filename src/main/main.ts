@@ -252,6 +252,10 @@ let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 // Small logon dialog shown before the dashboard exists (see createLoginWindow).
 let loginWindow: BrowserWindow | null = null;
+// Set while the dashboard is being torn down for an explicit user Logout, so
+// the mainWindow 'closed' handler reopens the login dialog instead of quitting
+// the whole app (see the 'auth-logout' IPC handler below).
+let isLoggingOut = false;
 
 // Type declarations for Electron modules
 declare global {
@@ -286,17 +290,19 @@ function createLoginWindow(): void {
   loginWindow = new BrowserWindow({
     // Snug around the form — the dialog IS the card, so there is no page
     // background or centering gutter to leave room for.
-    width: 420,
-    height: 540,
+    width: 560,
+    height: 800,
     resizable: false,
     maximizable: false,
     fullscreenable: false,
     center: true,
     // No OS chrome: the dark Windows title bar clashed with the dialog. The
-    // renderer draws its own accent-coloured bar instead (see LoginPage), which
-    // carries the title, the close button and the drag region.
+    // renderer draws its own dark title bar instead (see LoginForm), which
+    // carries the title, the minimize/close buttons and the drag region.
     frame: false,
-    backgroundColor: '#ffffff',
+    // Matches the renderer's own dark background so there is no flash of
+    // white before the bundle paints.
+    backgroundColor: '#0d131c',
     title: 'Logon To Fibe Loan Management',
     webPreferences: {
       nodeIntegration: false,
@@ -507,9 +513,11 @@ function createWindow(): void {
     console.log('[DEBUG] Dashboard window opened in maximized mode');
   })
 
-  // Handle window closed - CRITICAL: Dashboard is main window, closing it should quit entire app
+  // Handle window closed - CRITICAL: Dashboard is main window, closing it should
+  // quit entire app UNLESS this is an explicit Logout, in which case the login
+  // dialog reopens instead (see isLoggingOut / 'auth-logout' handler below).
   mainWindow.on('closed', () => {
-    console.log('[DEBUG] Main dashboard window closed - shutting down entire application');
+    console.log('[DEBUG] Main dashboard window closed');
 
     // Close all other windows immediately
     const allWindows = BrowserWindow.getAllWindows();
@@ -530,9 +538,15 @@ function createWindow(): void {
     mainWindow = null;
     settingsWindow = null;
 
-    // Force quit the application
-    console.log('[DEBUG] Forcing application quit after main window closed');
-    app.quit();
+    if (isLoggingOut) {
+      isLoggingOut = false;
+      console.log('[DEBUG] Logout in progress — reopening login window');
+      createLoginWindow();
+    } else {
+      // Force quit the application
+      console.log('[DEBUG] Forcing application quit after main window closed');
+      app.quit();
+    }
   })
 
   // Settings update handler (moved here to avoid duplication)
@@ -593,6 +607,8 @@ ipcMain.on('app-quit-force', () => {
 //   3. Localhost probe     — production with no config: if localhost:3001 answers we are ON the
 //                            server PC, so use localhost silently (no setup screen needed)
 //   4. null / unconfigured — client PC with no config → show ServerSetup screen
+ipcMain.handle('get-app-version', () => app.getVersion());
+
 ipcMain.handle('get-server-url', async () => {
   const cfg = readServerConfig();
   if (cfg) {
@@ -1896,12 +1912,18 @@ ipcMain.on('window-close', (event) => {
 // Auth logout: quit the application outright.
 //
 // Since login now happens in its own dialog before the dashboard is built, the
-// dashboard has no login form to fall back to — there is nowhere to "return
-// to" after signing out. Quitting is also what makes the next launch land on
-// the logon dialog, which is the behaviour the society software has always had.
+// dashboard closes and the login dialog reopens in the same running app, so the
+// user lands back on the logon screen without having to relaunch the app.
 ipcMain.on('auth-logout', () => {
-  if (DEBUG_LOGGING) console.log('[DEBUG] IPC auth-logout received — quitting application');
-  app.quit();
+  if (DEBUG_LOGGING) console.log('[DEBUG] IPC auth-logout received — returning to login screen');
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    isLoggingOut = true;
+    mainWindow.close();
+  } else {
+    // No dashboard open (e.g. logout raced with an already-closing window) —
+    // just make sure the login dialog is up.
+    createLoginWindow();
+  }
 });
 
 // FIXED: Handler to close the latest active window (excluding dashboard)

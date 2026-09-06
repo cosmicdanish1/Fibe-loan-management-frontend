@@ -1,5 +1,4 @@
 export interface NomineeDetail {
-  id: string;
   name: string;
   address: string;
   age: string;
@@ -32,16 +31,14 @@ export interface ModifyFDData {
   lastIntPaymentDate: string;
   interestPaid: string;
   status: string;
-  nominees: NomineeDetail[];
+  nominee: NomineeDetail;
 }
 
 export interface ModifyFDHookReturn {
   data: ModifyFDData;
   handleFdSelect: (accountNumber: string) => void;
   updateField: <K extends keyof ModifyFDData>(key: K, value: ModifyFDData[K]) => void;
-  addNominee: () => void;
-  removeNominee: (id: string) => void;
-  updateNominee: (id: string, field: keyof Omit<NomineeDetail, 'id'>, value: string) => void;
+  updateNominee: (field: keyof NomineeDetail, value: string) => void;
   save: () => void;
   reset: () => void;
 }

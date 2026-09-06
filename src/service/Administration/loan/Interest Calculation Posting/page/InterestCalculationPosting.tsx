@@ -41,32 +41,32 @@ const InterestCalculationPosting: React.FC = () => {
       <style>{`
         html.dark .int-calc { background: #0f0f0f; }
         html.dark .int-calc .int-hdr { background: #141414 !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-hdr-title { color: #f1f5f9 !important; }
-        html.dark .int-calc .int-hdr-sub { color: #64748b !important; }
+        html.dark .int-calc .int-hdr-title { color: #f5f5f7 !important; }
+        html.dark .int-calc .int-hdr-sub { color: #71717a !important; }
         html.dark .int-calc .int-version-badge { background: #1e1b4b !important; color: #a5b4fc !important; border-color: #3730a3 !important; }
-        html.dark .int-calc .int-reset-btn { color: #94a3b8 !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-reset-btn:hover { background: #1e1e1e !important; color: #cbd5e1 !important; }
-        html.dark .int-calc .int-close-btn { color: #94a3b8 !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-close-btn:hover { background: #2d1515 !important; color: #f87171 !important; border-color: #7f1d1d !important; }
+        html.dark .int-calc .int-reset-btn { color: #8e8e93 !important; border-color: #2a2a2a !important; }
+        html.dark .int-calc .int-reset-btn:hover { background: #1e1e1e !important; color: #f5f5f7 !important; }
+        html.dark .int-calc .int-close-btn { color: #8e8e93 !important; border-color: #2a2a2a !important; }
+        html.dark .int-calc .int-close-btn:hover { background: #2d1515 !important; color: #ff453a !important; border-color: #7f1d1d !important; }
 
         html.dark .int-calc .int-scope-card { background: linear-gradient(to right,#1a1f2e,#161b30) !important; border-color: #3730a3 !important; }
         html.dark .int-calc .int-scope-card label { color: #a5b4fc !important; }
         html.dark .int-calc .int-scope-card select,
         html.dark .int-calc .int-scope-card input[type="number"],
-        html.dark .int-calc .int-scope-card input[type="text"] { background: #1f1f1f !important; border-color: #3730a3 !important; color: #e2e8f0 !important; }
+        html.dark .int-calc .int-scope-card input[type="text"] { background: #1f1f1f !important; border-color: #3730a3 !important; color: #f5f5f7 !important; }
         html.dark .int-calc .int-rate-badge { background: #1e1b4b !important; border-color: #3730a3 !important; color: #a5b4fc !important; }
         html.dark .int-calc .int-all-badge { background: #022c22 !important; border-color: #14532d !important; color: #6ee7b7 !important; }
         html.dark .int-calc .int-member-chip { background: #1e1b4b !important; border-color: #3730a3 !important; color: #a5b4fc !important; }
         html.dark .int-calc .int-yearly-tip { color: #a5b4fc !important; }
         html.dark .int-calc .ant-picker { background: #1f1f1f !important; border-color: #3730a3 !important; }
-        html.dark .int-calc .ant-picker input { color: #e2e8f0 !important; background: transparent !important; }
+        html.dark .int-calc .ant-picker input { color: #f5f5f7 !important; background: transparent !important; }
         html.dark .int-calc .ant-picker .ant-picker-suffix { color: #6366f1 !important; }
         html.dark .int-calc .ant-picker-focused,
         html.dark .int-calc .ant-picker:hover { border-color: #6366f1 !important; }
 
         html.dark .int-calc .int-actions-card { background: linear-gradient(to right,#0d1f1a,#0d1c1e) !important; border-color: #065f46 !important; }
         html.dark .int-calc .int-gl-info { background: #141414 !important; border-color: #065f46 !important; }
-        html.dark .int-calc .int-gl-label { color: #94a3b8 !important; }
+        html.dark .int-calc .int-gl-label { color: #8e8e93 !important; }
         html.dark .int-calc .int-gl-value { color: #6ee7b7 !important; }
         html.dark .int-calc .int-preview-btn { background: #141414 !important; border-color: #059669 !important; color: #6ee7b7 !important; }
         html.dark .int-calc .int-preview-btn:hover:not(:disabled) { background: #059669 !important; color: #fff !important; }
@@ -74,13 +74,13 @@ const InterestCalculationPosting: React.FC = () => {
 
         html.dark .int-calc .int-table-area { background: #141414 !important; border-color: #2a2a2a !important; }
         html.dark .int-calc .int-table-hdr { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-table-hdr h2 { color: #e2e8f0 !important; }
-        html.dark .int-calc .int-db-icon-bg { background: #252525 !important; color: #94a3b8 !important; }
+        html.dark .int-calc .int-table-hdr h2 { color: #f5f5f7 !important; }
+        html.dark .int-calc .int-db-icon-bg { background: #252525 !important; color: #8e8e93 !important; }
         html.dark .int-calc .int-records-badge { background: #1e1b4b !important; color: #a5b4fc !important; border-color: #3730a3 !important; }
         html.dark .int-calc .int-loading-indicator { color: #818cf8 !important; }
         html.dark .int-calc .int-stat-box { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-stat-label { color: #64748b !important; }
-        html.dark .int-calc .int-principal-val { color: #e2e8f0 !important; }
+        html.dark .int-calc .int-stat-label { color: #71717a !important; }
+        html.dark .int-calc .int-principal-val { color: #f5f5f7 !important; }
         html.dark .int-calc .int-empty-icon { background: #1f1f1f !important; color: #4b5563 !important; }
         html.dark .int-calc .int-empty-txt { color: #4b5563 !important; }
 
@@ -89,21 +89,21 @@ const InterestCalculationPosting: React.FC = () => {
 
         html.dark .int-data-table { border-color: #2a2a2a !important; }
         html.dark .int-data-table .int-thead-row { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .int-data-table .int-th { color: #64748b !important; border-color: #2a2a2a !important; }
+        html.dark .int-data-table .int-th { color: #71717a !important; border-color: #2a2a2a !important; }
         html.dark .int-data-table .int-row { border-color: #222 !important; }
         html.dark .int-data-table .int-row.even-row { background: #141414 !important; }
         html.dark .int-data-table .int-row.odd-row { background: #1a1a1a !important; }
         html.dark .int-data-table .int-row:hover { background: rgba(79,70,229,0.12) !important; }
         html.dark .int-data-table td { border-color: #222 !important; }
-        html.dark .int-data-table .td-sr { color: #64748b !important; }
+        html.dark .int-data-table .td-sr { color: #71717a !important; }
         html.dark .int-data-table .td-mbno { color: #818cf8 !important; }
-        html.dark .int-data-table .td-name { color: #cbd5e1 !important; }
-        html.dark .int-data-table .td-obal { color: #94a3b8 !important; }
-        html.dark .int-data-table .td-debit { color: #f87171 !important; }
+        html.dark .int-data-table .td-name { color: #f5f5f7 !important; }
+        html.dark .int-data-table .td-obal { color: #8e8e93 !important; }
+        html.dark .int-data-table .td-debit { color: #ff453a !important; }
         html.dark .int-data-table .td-credit { color: #34d399 !important; }
-        html.dark .int-data-table .td-cbal { color: #e2e8f0 !important; }
-        html.dark .int-data-table .td-avg { color: #94a3b8 !important; }
-        html.dark .int-data-table .td-days { color: #94a3b8 !important; }
+        html.dark .int-data-table .td-cbal { color: #f5f5f7 !important; }
+        html.dark .int-data-table .td-avg { color: #8e8e93 !important; }
+        html.dark .int-data-table .td-days { color: #8e8e93 !important; }
         html.dark .int-data-table .td-interest { color: #60a5fa !important; }
       `}</style>
 

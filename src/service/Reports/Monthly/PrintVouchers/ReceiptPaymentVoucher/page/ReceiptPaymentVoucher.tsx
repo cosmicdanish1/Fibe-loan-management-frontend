@@ -5,6 +5,7 @@ import {
 } from 'antd';
 import {
   Printer,
+  FileDown,
   Search,
   FileText,
   Wallet,
@@ -127,7 +128,100 @@ const ReceiptPaymentVoucher: React.FC = () => {
     }).format(amount);
   };
 
-  const handlePrint = () => window.print();
+  // window.print() used to be used here — it printed the live page as-is,
+  // so the app's own inner "Voucher Preview" panel header and every
+  // on-screen accent color came through on the printed page (confirmed
+  // live). CSS-only attempts to hide/strip those kept missing elements
+  // (whack-a-mole across nested headers). Switched to the same hidden-
+  // iframe technique already proven working for every other report's
+  // print this session — the iframe only ever contains what's explicitly
+  // cloned into it, so there's no surrounding app chrome to accidentally
+  // include, and the print stylesheet redeclares just the utility classes
+  // #rpv-print-area actually uses instead of trying to override the
+  // on-screen dark-mode styling in place.
+  const handlePrint = () => {
+    const content = document.getElementById('rpv-print-area')?.innerHTML || '';
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`<!DOCTYPE html><html><head><title>Receipt/Payment Voucher</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Courier New',monospace; font-size:9pt; color:#000; background:#fff; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { padding:3px 6px; font-size:8.5pt; }
+
+  .text-center { text-align:center; }
+  .text-right { text-align:right; }
+  .mb-3 { margin-bottom:8px; }
+  .mt-1 { margin-top:3px; }
+  .mt-0\\.5 { margin-top:2px; }
+  .pb-2 { padding-bottom:6px; }
+  .p-3 { padding:8px; }
+  .px-2 { padding-left:6px; padding-right:6px; }
+  .py-1 { padding-top:3px; padding-bottom:3px; }
+  .py-1\\.5 { padding-top:4px; padding-bottom:4px; }
+  .py-0\\.5 { padding-top:1px; padding-bottom:1px; }
+  .border { border:1px solid #999; }
+  .border-b { border-bottom:1px solid #999; }
+  .border-r { border-right:1px solid #999; }
+  .border-x { border-left:1px solid #999; border-right:1px solid #999; }
+  /* Only used paired with .border-b (the company-header rule below) — a
+     plain "border-style:dashed" here would set dashed on all 4 sides, and
+     since the other 3 have no width/color declared, the browser still
+     renders default borders on them, producing an unwanted box around the
+     header instead of a single dashed line under it (confirmed live). */
+  .border-dashed { border-bottom-style:dashed; }
+  .font-bold, .font-black, .font-semibold { font-weight:bold; }
+  .uppercase { text-transform:uppercase; }
+  .tracking-tight, .tracking-wide { letter-spacing:0.02em; }
+  .rounded { border-radius:3px; }
+  .grid { display:grid; }
+  .grid-cols-2 { grid-template-columns:1fr 1fr; }
+  .gap-x-8 { column-gap:24px; }
+  .gap-y-2 { row-gap:6px; }
+  .col-span-2 { grid-column:span 2; }
+  .flex { display:flex; }
+  .items-center { align-items:center; }
+  .gap-2 { gap:6px; }
+  .w-24 { width:70px; display:inline-block; }
+  .w-16 { width:45px; }
+  .w-28 { width:80px; }
+  .ml-auto { margin-left:auto; }
+  .h-16 { height:45px; }
+  .fz-caption { font-size:8pt; }
+  .fz-label { font-size:8.5pt; }
+
+  /* This voucher's own accent colors (pink labels, indigo/rose values) are
+     for on-screen use only — a printed voucher should be plain black text. */
+  * { color:#000 !important; background:transparent !important; }
+</style></head><body>${content}</body></html>`);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 300);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (!entries.length) return;
+    let csv = 'Voucher No,Date,Type,Mode,Member No,Member Name,Narration,Srno,Head Code,Head Name,Payment,Receipt\n';
+    entries.forEach((e, idx) => {
+      const payment = vchrType === 'Payment' ? e.amount : '';
+      const receipt = vchrType === 'Receipt' ? e.amount : '';
+      csv += `${voucherNo},${date?.format('DD-MMM-YYYY') || ''},${vchrType},${mode},${memberNo},"${memberName}","${narration}",${idx + 1},${e.head_code},"${e.head_name}",${payment},${receipt}\n`;
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    a.download = `Voucher_${voucherNo}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
 
   const bg      = isDark ? 'bg-[#0f172a]'             : 'bg-gradient-to-br from-slate-50 to-indigo-50/30';
   const panel   = isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white/90 border-slate-200/60';
@@ -145,9 +239,9 @@ const ReceiptPaymentVoucher: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 12 } }}>
-    <div className={`h-screen flex flex-col ${bg} font-sans overflow-hidden`}>
+    <div className={`rpv-page h-screen flex flex-col ${bg} font-sans overflow-hidden`}>
       {/* Header */}
-      <div className={`${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'} backdrop-blur-sm border-b px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0`}>
+      <div className={`rpv-header ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'} backdrop-blur-sm border-b px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0`}>
         <div className="flex items-center gap-2.5">
           <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-2 rounded-xl text-white shadow-md">
             <Wallet size={16} />
@@ -169,7 +263,15 @@ const ReceiptPaymentVoucher: React.FC = () => {
             icon={<Printer size={12} />}
             className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide border-slate-200 hover:border-indigo-500 hover:text-indigo-600 transition-all"
             onClick={handlePrint}
+            disabled={!entries.length}
           >Print</Button>
+          <Button
+            type="primary"
+            icon={<FileDown size={12} />}
+            className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide"
+            onClick={handleExportCSV}
+            disabled={!entries.length}
+          >CSV</Button>
         </div>
       </div>
 
@@ -180,9 +282,9 @@ const ReceiptPaymentVoucher: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className={`${panel} backdrop-blur-sm border rounded-xl overflow-hidden shadow-sm`}
+            className={`rpv-panel ${panel} backdrop-blur-sm border rounded-xl overflow-hidden shadow-sm`}
           >
-            <div className={`${panelHd} border-b px-4 py-2.5`}>
+            <div className={`rpv-panel-header ${panelHd} border-b px-4 py-2.5`}>
               <h3 className={`fz-caption font-black ${text} tracking-wide uppercase flex items-center gap-1.5`}>
                 <Search size={12} className="text-indigo-500" />
                 Search Voucher
@@ -198,7 +300,14 @@ const ReceiptPaymentVoucher: React.FC = () => {
                   className="w-full voucher-select"
                   placeholder="Select Voucher"
                   showSearch
-                  optionFilterProp="children"
+                  // BUG FIX: optionFilterProp="children" compares typed text
+                  // against each Option's children — but children here is a
+                  // <span> JSX element, not plain text, so AntD's default
+                  // search can never extract a matching string from it.
+                  // Confirmed live: searching for a real, existing voucher
+                  // number ("P25888") always returned "No data". "value" is
+                  // the plain voucher-number string the user actually types.
+                  optionFilterProp="value"
                   loading={isLoading}
                   size="small"
                 >
@@ -274,8 +383,8 @@ const ReceiptPaymentVoucher: React.FC = () => {
         </div>
 
         {/* Report Panel */}
-        <div className={`flex-1 ${panel} backdrop-blur-sm border rounded-xl shadow-sm flex flex-col overflow-hidden`}>
-          <div className={`${panelHd} border-b px-4 py-2.5 flex items-center justify-between shrink-0`}>
+        <div className={`rpv-panel flex-1 ${panel} backdrop-blur-sm border rounded-xl shadow-sm flex flex-col overflow-hidden`}>
+          <div className={`rpv-panel-header ${panelHd} border-b px-4 py-2.5 flex items-center justify-between shrink-0`}>
             <div className="flex items-center gap-2">
               <div className={`${isDark ? 'bg-[#1e293b]' : 'bg-white'} p-1.5 rounded-lg shadow-sm border ${border}`}>
                 <FileText size={14} className="text-indigo-500" />
@@ -289,10 +398,10 @@ const ReceiptPaymentVoucher: React.FC = () => {
             </div>
           </div>
 
-          <div className={`flex-1 overflow-auto p-3 custom-scrollbar-indigo ${isDark ? 'bg-[#1e293b]' : 'bg-white'}`}>
+          <div className={`rpv-preview-body flex-1 overflow-auto p-3 custom-scrollbar-indigo ${isDark ? 'bg-[#1e293b]' : 'bg-white'}`}>
             <Spin spinning={isLoading} tip="Loading..." size="small">
               {entries.length > 0 ? (
-                <div className="legacy-report-compact font-mono fz-caption">
+                <div id="rpv-print-area" className="legacy-report-compact font-mono fz-caption">
                   {/* Company Header */}
                   <div className={`text-center mb-3 border-b border-dashed ${isDark ? 'border-slate-600' : 'border-slate-300'} pb-2`}>
                     <div className={`fz-label font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
@@ -419,12 +528,20 @@ const ReceiptPaymentVoucher: React.FC = () => {
           border-radius: 10px;
         }
         .legacy-report-compact table { border-collapse: collapse; }
-        @media print {
-          .h-screen { height: auto !important; overflow: visible !important; }
-          .w-\\[280px\\] { display: none !important; }
-          .flex-1 { margin: 0 !important; padding: 0 !important; overflow: visible !important; }
-          .rounded-xl { border-radius: 0 !important; }
-        }
+        /* Printing now goes through a hidden iframe (see handlePrint) that
+           clones only #rpv-print-area — no @media print rule is needed on
+           this live page anymore; window.print() is no longer called on it. */
+
+        /* ── Receipt/Payment Voucher — dark mode ── */
+        html.dark .rpv-page { background-color: #000000 !important; }
+        html.dark .rpv-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .rpv-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .rpv-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
+        html.dark .rpv-preview-body { background-color: #1c1c1e !important; }
+        html.dark .rpv-page .ant-select-selector,
+        html.dark .rpv-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .rpv-page .ant-select-selection-item,
+        html.dark .rpv-page .ant-picker input { color: #f5f5f7 !important; }
       `}</style>
     </div>
     </ConfigProvider>

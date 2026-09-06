@@ -250,7 +250,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                                         <Hash size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <Input
                                             value={data.accountNo}
-                                            onChange={(e) => updateField('accountNo', e.target.value)}
+                                            onChange={(e) => updateField('accountNo', e.target.value.replace(/\D/g, ''))}
                                             placeholder="Account no..."
                                             className={`${inputCls} pl-6 font-bold text-indigo-700`}
                                         />
@@ -428,11 +428,11 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                 .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
 
                 /* ── Dark mode: arbitrary bg hex + nominee table's own !important light styles ── */
-                html.dark .sa-form { background-color: #0f172a !important; }
+                html.dark .sa-form { background-color: #000000 !important; }
                 html.dark .sa-nominee-table .ant-table-thead > tr > th {
-                    background: #0f172a !important; color: #94a3b8 !important; border-bottom-color: #334155 !important;
+                    background: #000000 !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.08) !important;
                 }
-                html.dark .sa-nominee-table .ant-table-tbody > tr > td { border-bottom-color: #1e293b !important; }
+                html.dark .sa-nominee-table .ant-table-tbody > tr > td { border-bottom-color: rgba(255,255,255,.07) !important; }
                 html.dark .sa-form .bg-indigo-50 { background-color: #312e81 !important; }
             `}</style>
         </ConfigProvider>

@@ -85,10 +85,10 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="cdt-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* ── Header ── */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="cdt-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-amber-400/50 bg-amber-600">
                             <Landmark size={13} className="text-white" />
@@ -216,7 +216,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                 </div>
 
                 {/* ── Footer ── */}
-                <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="cdt-footer px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
                         <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Compulsory Deposit Transaction</span>
@@ -246,6 +246,36 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                 .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
                 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
                 input[type=number] { -moz-appearance: textfield; }
+
+                /* ── Dark mode ── */
+                html.dark .cdt-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .cdt-header { background: #0c0c0e !important; }
+                html.dark .cdt-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .cdt-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .cdt-root .border-slate-200,
+                html.dark .cdt-root .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .cdt-root .text-slate-900,
+                html.dark .cdt-root .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .cdt-root .text-slate-500,
+                html.dark .cdt-root .text-slate-600 { color: #8e8e93 !important; }
+                html.dark .cdt-root .text-slate-400 { color: #71717a !important; }
+                html.dark .cdt-root .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
+                html.dark .cdt-root .ant-input,
+                html.dark .cdt-root input.ant-input {
+                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .cdt-root .bg-indigo-50 { background-color: rgba(99,102,241,.12) !important; }
+                html.dark .cdt-root .border-indigo-200,
+                html.dark .cdt-root .border-indigo-100 { border-color: rgba(99,102,241,.3) !important; }
+                html.dark .cdt2-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+                html.dark .cdt2-table .ant-table-tbody > tr > td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; background-color: #1c1c1e !important; }
+                html.dark .cdt2-table .ant-table-tbody > tr:hover > td { background-color: rgba(99,102,241,.12) !important; }
+                html.dark .cdt2-amt-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                html.dark .cdt2-amt-input:focus { background: rgba(255,255,255,.08) !important; }
+                html.dark .cdt2-sel .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
+                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
             `}</style>
         </ConfigProvider>
     );

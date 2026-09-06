@@ -8,6 +8,7 @@ import {
 import { ConfigProvider } from 'antd';
 import { apiService } from '../../../../../services/api';
 import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
+import { useAuth } from '../../../../../auth/context/AuthContext';
 
 interface LogoutUserProps {
   className?: string;
@@ -40,6 +41,7 @@ const closeWindow = () => {
 };
 
 const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>({ userName: '', loginDate: '', loginTime: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [activeSessions, setActiveSessions] = useState<any[]>([]);
@@ -90,21 +92,33 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
       return;
     }
 
+    // Nothing stops an admin from picking their own currently-active account
+    // as the target — warn explicitly, since terminating your own session
+    // here has the same effect as the regular Logout button (closes the app).
+    const isSelf = !!user?.username &&
+      formData.userName.trim().toLowerCase() === user.username.trim().toLowerCase();
+
     const confirmed = await (async () => {
       const api = (window as any).electronAPI;
+      const message = isSelf
+        ? `Force logout your OWN account "${formData.userName}"?`
+        : `Force logout "${formData.userName}"?`;
+      const detail = isSelf
+        ? 'This is the account you are currently logged in as. Confirming will immediately end your session and close the application, the same as using the regular Logout button.'
+        : 'This will immediately terminate their active session.';
       if (api?.showMessageBox) {
         const res = await api.showMessageBox({
           type: 'warning',
           title: 'Confirm Logout',
-          message: `Force logout "${formData.userName}"?`,
-          detail: 'This will immediately terminate their active session.',
+          message,
+          detail,
           buttons: ['Cancel', 'Logout'],
           defaultId: 0,
           cancelId: 0,
         });
         return res.response === 1;
       }
-      return window.confirm(`Force logout "${formData.userName}"?`);
+      return window.confirm(`${message}\n\n${detail}`);
     })();
 
     if (!confirmed) return;
@@ -159,33 +173,33 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
         .lo-page .lo-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
         .lo-page .lo-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
 
-        html.dark .lo-page { background: #0f172a !important; }
-        html.dark .lo-page .lo-card { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .lo-page .lo-card-bar { background: linear-gradient(90deg,#1e293b,#283548) !important; border-color: #334155 !important; }
-        html.dark .lo-page .lo-peek-btn { background: #0f172a !important; border-color: #334155 !important; color: #94a3b8 !important; }
-        html.dark .lo-page .lo-peek-btn:hover { background: #334155 !important; color: #f1f5f9 !important; }
-        html.dark .lo-page .lo-label { color: #94a3b8 !important; }
-        html.dark .lo-page .lo-trigger { background: #0f172a !important; border-color: #334155 !important; color: #94a3b8 !important; }
-        html.dark .lo-page .lo-trigger.has-value { color: #f1f5f9 !important; }
-        html.dark .lo-page .lo-input { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+        html.dark .lo-page { background: #000000 !important; }
+        html.dark .lo-page .lo-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .lo-page .lo-card-bar { background: linear-gradient(90deg,#1c1c1e,#283548) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .lo-page .lo-peek-btn { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .lo-page .lo-peek-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .lo-page .lo-label { color: #8e8e93 !important; }
+        html.dark .lo-page .lo-trigger { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .lo-page .lo-trigger.has-value { color: #f5f5f7 !important; }
+        html.dark .lo-page .lo-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
         html.dark .lo-page .lo-input::-webkit-calendar-picker-indicator { filter: invert(1) opacity(0.5); }
-        html.dark .lo-page .lo-dropdown { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .lo-page .lo-search-bar { background: #0f172a !important; border-color: #334155 !important; }
-        html.dark .lo-page .lo-search-input { background: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important; }
-        html.dark .lo-page .lo-search-input::placeholder { color: #475569 !important; }
-        html.dark .lo-page .lo-user-item { color: #e2e8f0 !important; border-color: #334155 !important; }
+        html.dark .lo-page .lo-dropdown { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .lo-page .lo-search-bar { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .lo-page .lo-search-input { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .lo-page .lo-search-input::placeholder { color: rgba(255,255,255,.08) !important; }
+        html.dark .lo-page .lo-user-item { color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
         html.dark .lo-page .lo-user-item:hover { background: #283548 !important; }
-        html.dark .lo-page .lo-scroll::-webkit-scrollbar-track { background: #1e293b !important; }
+        html.dark .lo-page .lo-scroll::-webkit-scrollbar-track { background: #1c1c1e !important; }
 
-        html.dark .ant-modal-content { background: #1e293b !important; }
-        html.dark .ant-modal-header { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .ant-modal-title { color: #f1f5f9 !important; }
-        html.dark .ant-modal-close { color: #94a3b8 !important; }
-        html.dark .ant-table { background: #1e293b !important; color: #e2e8f0 !important; }
-        html.dark .ant-table-thead > tr > th { background: #0f172a !important; color: #94a3b8 !important; border-color: #334155 !important; }
-        html.dark .ant-table-tbody > tr > td { border-color: #334155 !important; }
+        html.dark .ant-modal-content { background: #1c1c1e !important; }
+        html.dark .ant-modal-header { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ant-modal-title { color: #f5f5f7 !important; }
+        html.dark .ant-modal-close { color: #8e8e93 !important; }
+        html.dark .ant-table { background: #1c1c1e !important; color: #f5f5f7 !important; }
+        html.dark .ant-table-thead > tr > th { background: #000000 !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ant-table-tbody > tr > td { border-color: rgba(255,255,255,.08) !important; }
         html.dark .ant-table-tbody > tr:hover > td { background: #283548 !important; }
-        html.dark .ant-pagination-item a { color: #94a3b8 !important; }
+        html.dark .ant-pagination-item a { color: #8e8e93 !important; }
         html.dark .ant-pagination-item-active { border-color: #e11d48 !important; }
       `}</style>
 

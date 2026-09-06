@@ -178,13 +178,13 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
             </div>
 
             <style>{`
-                html.dark .idl-root { background-color: #0f172a !important; color: #e2e8f0 !important; }
-                html.dark .idl-config { background-color: #1e293b !important; border-color: #334155 !important; }
-                html.dark .idl-config input { background-color: #1e293b !important; color: #e2e8f0 !important; border-color: #475569 !important; }
-                html.dark .idl-footer { background-color: #1e293b !important; border-color: #334155 !important; }
-                html.dark table thead tr { background-color: #1e293b !important; }
-                html.dark table th { color: #94a3b8 !important; border-color: #334155 !important; }
-                html.dark table td { border-color: #1e293b !important; }
+                html.dark .idl-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .idl-config { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .idl-config input { background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .idl-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark table thead tr { background-color: #1c1c1e !important; }
+                html.dark table th { color: #8e8e93 !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark table td { border-color: #1c1c1e !important; }
                 html.dark table tr:hover { background-color: rgba(59,130,246,0.08) !important; }
             `}</style>
         </div>

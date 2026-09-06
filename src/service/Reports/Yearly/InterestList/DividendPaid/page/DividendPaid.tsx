@@ -165,14 +165,14 @@ const DividendPaid: React.FC = () => {
       algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
       token: { colorPrimary: '#10b981', borderRadius: 8 },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
-        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+      <div className={`dividend-paid-page h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
+        <div className="dividend-paid-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
           <h1 className="fz-caption font-black text-white tracking-tight uppercase">5.3.2 Dividend Paid</h1>
         </div>
         <div className="flex-1 flex overflow-hidden">
 
         {/* Sidebar */}
-        <div className={`w-72 flex flex-col shrink-0 border-r ${sidebar}`}>
+        <div className={`dividend-paid-sidebar w-72 flex flex-col shrink-0 border-r ${sidebar}`}>
 
           {/* Header */}
           <div className={`p-4 border-b ${divider}`}>
@@ -271,7 +271,7 @@ const DividendPaid: React.FC = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
 
           {/* Top bar */}
-          <div className={`px-4 py-3 shrink-0 border-b flex items-center justify-between ${sidebar}`}>
+          <div className={`dividend-paid-reportbar px-4 py-3 shrink-0 border-b flex items-center justify-between ${sidebar}`}>
             <div>
               <h2 className={`fz-heading font-black ${text}`}>Dividend Payment List</h2>
               <p className={`fz-label mt-0.5 ${muted}`}>
@@ -300,7 +300,7 @@ const DividendPaid: React.FC = () => {
                 <span className={`font-bold ${muted}`}>Loading payment data...</span>
               </div>
             ) : data.length > 0 ? (
-              <div className={`font-mono text-xs rounded-lg border p-5 overflow-x-auto ${rpBg}`}>
+              <div className={`dividend-paid-report font-mono text-xs rounded-lg border p-5 overflow-x-auto ${rpBg}`}>
                 {/* Company Header */}
                 <div className={`text-center ${rpTxt} font-semibold`}>
                   Espat Karmchari Co-Operative Credit Society Limited.
@@ -368,6 +368,20 @@ const DividendPaid: React.FC = () => {
         </div>
         </div>
       </div>
+
+      <style>{`
+        /* ── Dividend Paid — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .dividend-paid-page { background-color: #000000 !important; }
+        html.dark .dividend-paid-topbar { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dividend-paid-sidebar,
+        html.dark .dividend-paid-reportbar { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dividend-paid-report { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dividend-paid-page label { color: #8e8e93 !important; }
+        html.dark .dividend-paid-page .ant-select-selector,
+        html.dark .dividend-paid-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .dividend-paid-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .dividend-paid-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

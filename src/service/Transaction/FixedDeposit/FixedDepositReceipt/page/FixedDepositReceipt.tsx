@@ -8,8 +8,11 @@ const FixedDepositReceipt: React.FC = () => {
   const depositProps = useFixedDepositReceipt();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="fd-receipt-page h-screen bg-slate-50 overflow-hidden">
       <FixedDepositForm {...depositProps} />
+      <style>{`
+        html.dark .fd-receipt-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

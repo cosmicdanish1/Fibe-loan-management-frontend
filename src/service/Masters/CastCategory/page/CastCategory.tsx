@@ -8,8 +8,12 @@ const CastCategory: React.FC = () => {
   const castCategoryProps = useCastCategory();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="cast-category-page h-screen bg-slate-50 overflow-hidden">
       <CastCategoryForm {...castCategoryProps} />
+
+      <style>{`
+        html.dark .cast-category-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

@@ -291,33 +291,33 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
 
         /* Header */
         html.dark .slab-page .slab-header { background: #111 !important; border-color: #1f1f1f !important; }
-        html.dark .slab-page .slab-title { color: #e2e8f0 !important; }
-        html.dark .slab-page .slab-subtitle { color: #64748b !important; }
+        html.dark .slab-page .slab-title { color: #f5f5f7 !important; }
+        html.dark .slab-page .slab-subtitle { color: #71717a !important; }
         html.dark .slab-page .slab-icon-bg { background: #4f46e5 !important; }
 
         /* Type tabs */
         html.dark .slab-page .slab-type-tabs { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .slab-page .slab-tab-inactive { color: #64748b !important; }
-        html.dark .slab-page .slab-tab-inactive:hover { color: #94a3b8 !important; }
+        html.dark .slab-page .slab-tab-inactive { color: #71717a !important; }
+        html.dark .slab-page .slab-tab-inactive:hover { color: #8e8e93 !important; }
 
         /* Buttons */
-        html.dark .slab-page .slab-btn-refresh { background: #1a1a1a !important; border-color: #2a2a2a !important; color: #94a3b8 !important; }
-        html.dark .slab-page .slab-btn-refresh:hover { background: #222 !important; color: #e2e8f0 !important; }
-        html.dark .slab-page .slab-hdr-btn { color: #94a3b8 !important; }
+        html.dark .slab-page .slab-btn-refresh { background: #1a1a1a !important; border-color: #2a2a2a !important; color: #8e8e93 !important; }
+        html.dark .slab-page .slab-btn-refresh:hover { background: #222 !important; color: #f5f5f7 !important; }
+        html.dark .slab-page .slab-hdr-btn { color: #8e8e93 !important; }
         html.dark .slab-page .slab-hdr-btn:hover { background: rgba(255,255,255,0.08) !important; }
 
         /* Stats bar */
         html.dark .slab-page .slab-stats-bar { background: #111 !important; border-color: #1f1f1f !important; }
-        html.dark .slab-page .slab-stat-label { color: #64748b !important; }
-        html.dark .slab-page .slab-stat-val { color: #e2e8f0 !important; }
+        html.dark .slab-page .slab-stat-label { color: #71717a !important; }
+        html.dark .slab-page .slab-stat-val { color: #f5f5f7 !important; }
         html.dark .slab-page .slab-divider { background: #2a2a2a !important; }
 
         /* Table container */
         html.dark .slab-page .slab-table-container { background: #151515 !important; border-color: #2a2a2a !important; }
         html.dark .slab-page .slab-thead-main { background: #111 !important; }
-        html.dark .slab-page .slab-thead-main th { color: #e2e8f0 !important; border-color: #2a2a2a !important; }
+        html.dark .slab-page .slab-thead-main th { color: #f5f5f7 !important; border-color: #2a2a2a !important; }
         html.dark .slab-page .slab-thead-sub { background: #1a1a1a !important; }
-        html.dark .slab-page .slab-thead-sub th { color: #64748b !important; border-color: #2a2a2a !important; }
+        html.dark .slab-page .slab-thead-sub th { color: #71717a !important; border-color: #2a2a2a !important; }
         html.dark .slab-page .slab-tbody-row { border-color: #1f1f1f !important; }
         html.dark .slab-page .slab-tbody-row:hover { background: #1c1c1c !important; }
         html.dark .slab-page .slab-tbody-row.dirty { background: rgba(180,130,0,0.07) !important; }
@@ -325,18 +325,18 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
         html.dark .slab-page .slab-cell {
           background: #1a1a1a !important;
           border-color: #2a2a2a !important;
-          color: #e2e8f0 !important;
+          color: #f5f5f7 !important;
         }
         html.dark .slab-page .slab-cell:focus { border-color: #6366f1 !important; background: #1f1f3a !important; }
         html.dark .slab-page .slab-unit-select {
           background: #1a1a1a !important;
           border-color: #2a2a2a !important;
-          color: #e2e8f0 !important;
+          color: #f5f5f7 !important;
         }
 
         /* DatePicker dark */
         html.dark .slab-page .slab-datepicker .ant-picker { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .slab-page .slab-datepicker .ant-picker-input > input { color: #e2e8f0 !important; background: transparent !important; }
+        html.dark .slab-page .slab-datepicker .ant-picker-input > input { color: #f5f5f7 !important; background: transparent !important; }
         html.dark .slab-page .slab-datepicker .ant-picker:hover { border-color: #6366f1 !important; }
         html.dark .slab-page .slab-datepicker .ant-picker-suffix { color: #374151 !important; }
 
@@ -353,7 +353,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
         html.dark .slab-page .slab-footer-code { color: #2a2a2a !important; }
 
         /* Loading */
-        html.dark .slab-page .slab-loading-text { color: #64748b !important; }
+        html.dark .slab-page .slab-loading-text { color: #71717a !important; }
       `}</style>
 
       <div className="slab-page h-screen flex flex-col bg-slate-50 font-sans overflow-hidden">

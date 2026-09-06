@@ -381,12 +381,12 @@ const RDMasterForm: React.FC<RDMasterFormProps> = ({
 
           /* ── Dark mode: cover the bits the global dark layer can't reach ──
              (arbitrary bg hex + the nominee table's own !important light styles + AUTO field tints) */
-          html.dark .rd-form { background-color: #0f172a !important; }
+          html.dark .rd-form { background-color: #000000 !important; }
           html.dark .nominee-rd-table .ant-table-thead > tr > th {
-            background: #0f172a !important; color: #94a3b8 !important; border-bottom-color: #334155 !important;
+            background: #000000 !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.08) !important;
           }
-          html.dark .nominee-rd-table .ant-table-tbody > tr > td { border-bottom-color: #1e293b !important; }
-          html.dark .nominee-rd-table .ant-table-tbody > tr:hover > td { background: #1e293b !important; }
+          html.dark .nominee-rd-table .ant-table-tbody > tr > td { border-bottom-color: rgba(255,255,255,.07) !important; }
+          html.dark .nominee-rd-table .ant-table-tbody > tr:hover > td { background: #1c1c1e !important; }
           html.dark .rd-form .bg-emerald-50 { background-color: #064e3b !important; }
           html.dark .rd-form .border-emerald-200 { border-color: #065f46 !important; }
           html.dark .rd-form .text-emerald-800,

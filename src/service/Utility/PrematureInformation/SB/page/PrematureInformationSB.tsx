@@ -154,7 +154,7 @@ const PrematureInformationSB: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+      <div className="psb-app h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
@@ -353,6 +353,42 @@ const PrematureInformationSB: React.FC = () => {
           </div>
         </div>
 
+        <style>{`
+          /* ── Premature Information (SB) — dark mode ── */
+          html.dark .psb-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .psb-app .bg-white { background-color: #1c1c1e !important; }
+          html.dark .psb-app .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .psb-app .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .psb-app .bg-slate-200 { background-color: rgba(255,255,255,.1) !important; }
+          html.dark .psb-app .bg-slate-300 { background-color: rgba(255,255,255,.15) !important; }
+          html.dark .psb-app .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+          html.dark .psb-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .psb-app .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .psb-app select,
+          html.dark .psb-app .ant-select-selector {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+          }
+          html.dark .psb-app label { color: #8e8e93 !important; }
+          html.dark .psb-app .text-slate-800 { color: #f5f5f7 !important; }
+          html.dark .psb-app .text-slate-700 { color: #f5f5f7 !important; }
+          html.dark .psb-app .text-slate-600 { color: #8e8e93 !important; }
+          html.dark .psb-app .text-slate-500 { color: #8e8e93 !important; }
+          html.dark .psb-app .text-slate-400 { color: #71717a !important; }
+          html.dark .psb-app .hover\\:bg-slate-200:hover { background-color: rgba(255,255,255,.08) !important; }
+          html.dark .psb-app .bg-emerald-50 { background-color: rgba(52,211,153,0.08) !important; }
+          html.dark .psb-app .text-emerald-600 { color: #34d399 !important; }
+          html.dark .psb-app .text-emerald-900 { color: #34d399 !important; }
+          html.dark .psb-app .border-emerald-200 { border-color: rgba(52,211,153,0.3) !important; }
+          html.dark .psb-app .bg-rose-50 { background-color: rgba(255,69,58,0.08) !important; }
+          html.dark .psb-app .text-rose-600 { color: #ff453a !important; }
+          html.dark .psb-app .text-rose-700 { color: #ff453a !important; }
+          html.dark .psb-app .text-rose-900 { color: #ff453a !important; }
+          html.dark .psb-app .border-rose-100 { border-color: rgba(255,69,58,0.3) !important; }
+          html.dark .psb-app .border-rose-200 { border-color: rgba(255,69,58,0.3) !important; }
+          html.dark .psb-app .bg-amber-50 { background-color: rgba(251,191,36,0.08) !important; }
+          html.dark .psb-app .text-amber-800 { color: #fbbf24 !important; }
+          html.dark .psb-app .border-amber-200 { border-color: rgba(251,191,36,0.3) !important; }
+        `}</style>
       </div>
     </ConfigProvider>
   );

@@ -1,11 +1,11 @@
 // components/ModifyFDForm.tsx
 
 import React from 'react';
-import { ConfigProvider, Input, Select, DatePicker, Table } from 'antd';
+import { ConfigProvider, Input, Select, DatePicker } from 'antd';
 import {
     Edit3, ShieldCheck, Building2, Save, RotateCcw, X,
-    Landmark, Users, Plus, Trash2, Calendar, Hash,
-    IndianRupee, Info
+    Landmark, Users, Calendar, Hash,
+    IndianRupee
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import type { ModifyFDHookReturn } from '../interfaces/interface';
@@ -22,8 +22,6 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
     data,
     handleFdSelect,
     updateField,
-    addNominee,
-    removeNominee,
     updateNominee,
     save,
     reset
@@ -34,55 +32,6 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
         }
     };
 
-    const nomineeColumns = [
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Name</span>,
-            dataIndex: 'name', key: 'name',
-            render: (text: string, record: any) => (
-                <Input value={text} onChange={(e) => updateNominee(record.id, 'name', e.target.value)}
-                    className="h-6 fz-small font-semibold bg-white border-slate-300 rounded px-1.5"
-                    placeholder="Full name" />
-            ),
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Address</span>,
-            dataIndex: 'address', key: 'address',
-            render: (text: string, record: any) => (
-                <Input value={text} onChange={(e) => updateNominee(record.id, 'address', e.target.value)}
-                    className="h-6 fz-small font-semibold bg-white border-slate-300 rounded px-1.5"
-                    placeholder="Address" />
-            ),
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide text-center block">Age</span>,
-            dataIndex: 'age', key: 'age', width: 70, align: 'center' as const,
-            render: (text: string, record: any) => (
-                <Input value={text} onChange={(e) => updateNominee(record.id, 'age', e.target.value)}
-                    className="h-6 fz-small font-semibold bg-white border-slate-300 rounded text-center px-1"
-                    placeholder="Age" />
-            ),
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide text-center block">Relation</span>,
-            dataIndex: 'relation', key: 'relation', width: 130, align: 'center' as const,
-            render: (text: string, record: any) => (
-                <Select value={text || undefined} onChange={(val) => updateNominee(record.id, 'relation', val)}
-                    placeholder="Select" size="small" className="w-full">
-                    {RELATIONS.map(r => <Option key={r} value={r}>{r}</Option>)}
-                </Select>
-            ),
-        },
-        {
-            title: '', key: 'action', width: 36,
-            render: (_: any, record: any) => (
-                <button onClick={() => removeNominee(record.id)}
-                    className="h-6 w-6 flex items-center justify-center rounded text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-colors">
-                    <Trash2 size={12} />
-                </button>
-            ),
-        },
-    ];
-
     usePageToolbarActions({
         onSave: save,
         saveLabel: 'Save',
@@ -90,10 +39,10 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="modifyfd-form h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="modifyfd-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
                             <Edit3 size={13} className="text-white" />
@@ -124,7 +73,7 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                     <div className="max-w-4xl mx-auto p-3 pb-4 space-y-2">
 
                         {/* ── Account Selection ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div className="modifyfd-card bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Landmark size={11} className="text-slate-400" />
                                 <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Account Selection</span>
@@ -201,7 +150,7 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                         </div>
 
                         {/* ── FD Details ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div className="modifyfd-card bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Hash size={11} className="text-slate-400" />
                                 <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">FD Details</span>
@@ -347,6 +296,8 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                                         <Option value="0">Active</Option>
                                         <Option value="1">Matured</Option>
                                         <Option value="2">Closed</Option>
+                                        <Option value="A">Active (legacy code)</Option>
+                                        <Option value="C">Closed (legacy code)</Option>
                                     </Select>
                                 </div>
 
@@ -354,34 +305,39 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                         </div>
 
                         {/* ── Nominee Details ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
-                                <div className="flex items-center gap-1.5">
-                                    <Users size={11} className="text-slate-400" />
-                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Nominee Details</span>
-                                </div>
-                                <button onClick={addNominee}
-                                    className="h-6 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded fz-tiny font-black uppercase tracking-wide flex items-center gap-1 transition-colors border border-indigo-200">
-                                    <Plus size={9} /> Add Nominee
-                                </button>
+                        <div className="modifyfd-card bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
+                                <Users size={11} className="text-slate-400" />
+                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Nominee Details</span>
+                                <span className="ml-auto fz-mini font-bold text-slate-400 normal-case tracking-normal">fdmaster supports one nominee per account</span>
                             </div>
-                            <div className="max-h-[160px] overflow-auto">
-                                {data.nominees.length === 0 ? (
-                                    <div className="py-5 text-center fz-tiny font-bold text-slate-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
-                                        <Info size={10} /> No nominees — click Add Nominee
-                                    </div>
-                                ) : (
-                                    <Table
-                                        columns={nomineeColumns}
-                                        dataSource={data.nominees}
-                                        pagination={false}
-                                        size="small"
-                                        className="mfd-nominee-table"
-                                        scroll={{ x: 'max-content' }}
-                                        rowKey="id"
-                                        rowClassName={(_, i) => i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}
-                                    />
-                                )}
+                            <div className="p-3 grid grid-cols-4 gap-x-4 gap-y-2">
+                                <div>
+                                    <label className={labelCls}>Name</label>
+                                    <Input value={data.nominee.name}
+                                        onChange={e => updateNominee('name', e.target.value)}
+                                        className={inputCls} placeholder="Full name" />
+                                </div>
+                                <div className="col-span-2">
+                                    <label className={labelCls}>Address</label>
+                                    <Input value={data.nominee.address}
+                                        onChange={e => updateNominee('address', e.target.value)}
+                                        className={inputCls} placeholder="Address" />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Age</label>
+                                    <Input value={data.nominee.age}
+                                        onChange={e => updateNominee('age', e.target.value)}
+                                        className={inputCls} placeholder="Age" />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Relation</label>
+                                    <Select value={data.nominee.relation || undefined}
+                                        onChange={v => updateNominee('relation', v)}
+                                        className="w-full" style={{ height: 28 }} placeholder="Select relation">
+                                        {RELATIONS.map(r => <Option key={r} value={r}>{r}</Option>)}
+                                    </Select>
+                                </div>
                             </div>
                         </div>
 
@@ -389,7 +345,7 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="modifyfd-footer px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
                         <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Modify FD Registry</span>
@@ -409,19 +365,51 @@ const ModifyFDForm: React.FC<ModifyFDHookReturn> = ({
             </div>
 
             <style>{`
-                .mfd-nominee-table .ant-table-thead > tr > th {
-                    background: #f8fafc !important;
-                    padding: 4px 8px !important;
-                    border-bottom: 1px solid #e2e8f0 !important;
-                    font-size: 8px !important;
-                }
-                .mfd-nominee-table .ant-table-tbody > tr > td {
-                    padding: 3px 8px !important;
-                    border-bottom: 1px solid #f1f5f9 !important;
-                }
                 .ant-select-selector { font-size: 11px !important; }
                 .ant-picker-input > input { font-size: 11px !important; font-weight: 600 !important; }
                 .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
+
+                /* ── Modify FD Account — dark mode ── */
+                html.dark .modifyfd-form { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .modifyfd-header { background-image: none !important; background-color: #0c0c0e !important; }
+                html.dark .modifyfd-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .modifyfd-card .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .modifyfd-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+
+                html.dark .modifyfd-form label,
+                html.dark .modifyfd-form span.fz-mini,
+                html.dark .modifyfd-form span.fz-tiny { color: #8e8e93 !important; }
+                html.dark .modifyfd-form .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .modifyfd-form .text-slate-400 { color: #71717a !important; }
+                html.dark .modifyfd-form .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .modifyfd-form .text-slate-900 { color: #f5f5f7 !important; }
+
+                html.dark .modifyfd-form .ant-input,
+                html.dark .modifyfd-form .ant-select-selector,
+                html.dark .modifyfd-form .ant-picker,
+                html.dark .modifyfd-form textarea {
+                    background-color: rgba(255,255,255,.05) !important;
+                    color: #f5f5f7 !important;
+                    border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .modifyfd-form .ant-input::placeholder { color: #71717a !important; }
+                html.dark .modifyfd-form .ant-picker-input > input { color: #f5f5f7 !important; }
+                html.dark .modifyfd-form .ant-picker svg { fill: #8e8e93 !important; }
+                html.dark .modifyfd-form .ant-select-selection-item { color: #f5f5f7 !important; }
+                html.dark .modifyfd-form .ant-select-arrow { color: #8e8e93 !important; }
+                html.dark .modifyfd-form .ant-select-dropdown { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+
+                html.dark .modifyfd-form .bg-slate-50 { background-color: rgba(255,255,255,.03) !important; }
+                html.dark .modifyfd-form .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .modifyfd-form .border-slate-200,
+                html.dark .modifyfd-form .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .modifyfd-form .bg-white:not(.modifyfd-card):not(.modifyfd-footer) { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .modifyfd-form .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
+
+                html.dark .modifyfd-form .bg-emerald-50 { background-color: rgba(52,211,153,.15) !important; }
+                html.dark .modifyfd-form .text-emerald-600 { color: #34d399 !important; }
+                html.dark .modifyfd-form .text-indigo-600,
+                html.dark .modifyfd-form .text-indigo-500 { color: #818cf8 !important; }
             `}</style>
         </ConfigProvider>
     );

@@ -163,10 +163,10 @@ const LoanContributionsRegister: React.FC = () => {
       algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
       token: { colorPrimary: '#0ea5e9', borderRadius: 6, fontSize: 12 },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-sky-50/20 to-slate-50'}`}>
+      <div className={`loan-contrib-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-sky-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`loan-contrib-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-sky-600 to-sky-700 p-1.5 rounded-lg text-white shadow-md">
               <Briefcase size={14} />
@@ -191,7 +191,7 @@ const LoanContributionsRegister: React.FC = () => {
           {/* Sidebar LEFT */}
           <div className="w-[220px] flex flex-col gap-2 shrink-0">
 
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
+            <div className={`loan-contrib-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
               <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Member</span>
@@ -210,7 +210,7 @@ const LoanContributionsRegister: React.FC = () => {
               </div>
             </div>
 
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
+            <div className={`loan-contrib-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
               <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
                 <Calendar size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Date Range</span>
@@ -227,7 +227,7 @@ const LoanContributionsRegister: React.FC = () => {
               </div>
             </div>
 
-            <div className={`border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
+            <div className={`loan-contrib-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
               <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
               <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
                 <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
@@ -245,7 +245,7 @@ const LoanContributionsRegister: React.FC = () => {
           </div>
 
           {/* Report Area RIGHT */}
-          <div className={`flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
+          <div className={`loan-contrib-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
             <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-3 py-1.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1.5">
                 <Briefcase size={12} className="text-white" />
@@ -282,6 +282,20 @@ const LoanContributionsRegister: React.FC = () => {
       >
         <div className="p-2"><MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} /></div>
       </Modal>
+
+      <style>{`
+        /* ── Loan Contributions Register — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .loan-contrib-page { background-color: #000000 !important; }
+        html.dark .loan-contrib-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .loan-contrib-card,
+        html.dark .loan-contrib-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .loan-contrib-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .loan-contrib-page .ant-input,
+        html.dark .loan-contrib-page .ant-input-search .ant-input-group-addon .ant-btn,
+        html.dark .loan-contrib-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .loan-contrib-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .loan-contrib-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

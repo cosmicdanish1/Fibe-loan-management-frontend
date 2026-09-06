@@ -148,14 +148,14 @@ const DayEnd: React.FC = () => {
 
         /* Processing overlay modal */
         html.dark .day-end-page .day-overlay-modal { background: #1f1f1f !important; }
-        html.dark .day-end-page .day-overlay-modal p { color: #cbd5e1 !important; }
+        html.dark .day-end-page .day-overlay-modal p { color: #f5f5f7 !important; }
         html.dark .day-end-page .day-overlay-modal .day-progress-track { background: #2a2a2a !important; }
 
         /* MetricCard */
         html.dark .day-end-page .day-metric-card { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .day-end-page .day-metric-label { color: #94a3b8 !important; }
-        html.dark .day-end-page .day-metric-value { color: #e2e8f0 !important; }
-        html.dark .day-end-page .day-metric-icon { background: #252525 !important; color: #94a3b8 !important; }
+        html.dark .day-end-page .day-metric-label { color: #8e8e93 !important; }
+        html.dark .day-end-page .day-metric-value { color: #f5f5f7 !important; }
+        html.dark .day-end-page .day-metric-icon { background: #252525 !important; color: #8e8e93 !important; }
 
         /* Status bar */
         html.dark .day-end-page .day-status-balanced { background: #0a1a0f !important; border-color: #166534 !important; }
@@ -169,18 +169,18 @@ const DayEnd: React.FC = () => {
         /* Checks table */
         html.dark .day-end-page .day-checks-card { background: #1a1a1a !important; border-color: #2a2a2a !important; }
         html.dark .day-end-page .day-checks-hdr { background: linear-gradient(to right,#1f1f1f,#252525) !important; border-color: #2a2a2a !important; }
-        html.dark .day-end-page .day-checks-hdr span { color: #94a3b8 !important; }
+        html.dark .day-end-page .day-checks-hdr span { color: #8e8e93 !important; }
         html.dark .day-end-page .day-check-row { border-color: #222 !important; }
         html.dark .day-end-page .day-check-row:hover { background: #222 !important; }
-        html.dark .day-end-page .day-check-label { color: #cbd5e1 !important; }
+        html.dark .day-end-page .day-check-label { color: #f5f5f7 !important; }
         html.dark .day-end-page .day-check-ok { background: #052e16 !important; color: #86efac !important; }
         html.dark .day-end-page .day-check-fail { background: #450a0a !important; color: #fca5a5 !important; }
 
         /* Discrepancy card */
         html.dark .day-end-page .day-disc-card { background: #1a1a1a !important; border-color: #2a2a2a !important; }
         html.dark .day-end-page .day-disc-title { color: #fca5a5 !important; }
-        html.dark .day-end-page .day-disc-body { color: #94a3b8 !important; }
-        html.dark .day-end-page .day-disc-body span { color: #e2e8f0 !important; }
+        html.dark .day-end-page .day-disc-body { color: #8e8e93 !important; }
+        html.dark .day-end-page .day-disc-body span { color: #f5f5f7 !important; }
 
         /* Header reset/close btns (header gradient is already dark) */
         html.dark .day-end-page .day-hdr-btn { color: #fff !important; }
@@ -188,10 +188,10 @@ const DayEnd: React.FC = () => {
 
         /* Next date modal */
         html.dark .day-end-page .day-next-date-modal { background: #1a1a1a !important; }
-        html.dark .day-end-page .day-next-date-modal input { background: #252525 !important; color: #e2e8f0 !important; border-color: #333 !important; }
+        html.dark .day-end-page .day-next-date-modal input { background: #252525 !important; color: #f5f5f7 !important; border-color: #333 !important; }
         html.dark .day-end-page .day-next-date-modal .bg-slate-100 { background: #252525 !important; border-color: #333 !important; }
-        html.dark .day-end-page .day-next-date-modal label { color: #64748b !important; }
-        html.dark .day-end-page .day-next-date-modal button.bg-white { background: #252525 !important; border-color: #333 !important; color: #94a3b8 !important; }
+        html.dark .day-end-page .day-next-date-modal label { color: #71717a !important; }
+        html.dark .day-end-page .day-next-date-modal button.bg-white { background: #252525 !important; border-color: #333 !important; color: #8e8e93 !important; }
       `}</style>
 
       {/* Processing overlay */}

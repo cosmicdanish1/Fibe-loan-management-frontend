@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useRef } from 'react';
 import { AuthContextType, AuthState, User, LoginCredentials } from '../types/auth.types';
 import { apiService } from '../../services/api';
+import { IS_MAIN_WINDOW } from '../../utils/windowIdentity';
 
 type AuthAction =
   | { type: 'LOGIN_REQUEST' }
@@ -121,9 +122,15 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       };
 
     case 'LOGOUT':
+      // NOT `...initialState` — that's a module-level constant captured once at
+      // app startup (whatever the session was AT THAT TIME), so spreading it
+      // here just restored the pre-logout logged-in state instead of clearing
+      // it, silently no-opping every logout.
       return {
-        ...initialState,
-        isLoading: false
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
       };
 
     case 'CLEAR_ERROR':
@@ -149,12 +156,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // session expiry), every other window flips to logged-out so the login form
   // is shown ONLY on the main dashboard window — never on a tool window.
   const authChannelRef = useRef<BroadcastChannel | null>(null);
-
-  // Ask the main (Electron) process to close all child windows and focus the
-  // dashboard. No-op in a plain browser.
-  const closeChildWindowsAndFocusMain = () => {
-    (window as any).electronAPI?.authLogout?.();
-  };
 
   // Clear any existing session
   const clearSession = () => {
@@ -184,8 +185,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const handleSessionExpired = () => {
       console.log('[Auth] Session expired — forcing logout');
       dispatch({ type: 'LOGOUT' });
-      authChannelRef.current?.postMessage({ type: 'logout' });
-      closeChildWindowsAndFocusMain();
+      // BUG FIX: this used to also call authLogout() (app.quit()) unconditionally,
+      // so a single child/tool window's own background token-refresh failure
+      // could kill the ENTIRE application out from under every other open
+      // window — reproduced via the LogOut User admin screen. ProtectedRoute's
+      // own isAuthenticated effect already does the correct per-window thing
+      // (dashboard: quit; child window: close just itself), so only broadcast
+      // to other windows when the shared session itself is what ended — i.e.
+      // this is the dashboard. A lone child window's own hiccup should only
+      // take itself down, not the whole app.
+      if (IS_MAIN_WINDOW) {
+        authChannelRef.current?.postMessage({ type: 'logout' });
+      }
     };
     window.addEventListener('auth:session-expired', handleSessionExpired);
     return () => window.removeEventListener('auth:session-expired', handleSessionExpired);
@@ -309,10 +320,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     clearSession();
     dispatch({ type: 'LOGOUT' });
 
-    // Flip every other window to logged-out, then have the main process close
-    // child windows and focus the dashboard so login shows only there.
-    authChannelRef.current?.postMessage({ type: 'logout' });
-    closeChildWindowsAndFocusMain();
+    // Flip every other window to logged-out. ProtectedRoute's own
+    // isAuthenticated effect handles this window's own teardown (quit if
+    // it's the dashboard, close if it's a child window) — this only needs
+    // to notify the others. The explicit Logout button only exists in the
+    // dashboard's UserProfileMenu today, so IS_MAIN_WINDOW is true here in
+    // practice, but the guard keeps this correct if that ever changes.
+    if (IS_MAIN_WINDOW) {
+      authChannelRef.current?.postMessage({ type: 'logout' });
+    }
 
     console.log('[Auth] User session cleared');
   };

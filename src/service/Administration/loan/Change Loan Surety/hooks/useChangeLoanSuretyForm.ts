@@ -4,7 +4,7 @@ import { API_ROUTES, API_BASE_URL, getApiBaseUrl, logApiVersion } from '../../..
 
 export const useChangeLoanSuretyForm = () => {
   const [formData, setFormData] = useState<FormData>({
-    loanType: 'ELN',
+    loanType: '',
     memberNumber: '',
     memberName: '',
     office: '',
@@ -28,7 +28,10 @@ export const useChangeLoanSuretyForm = () => {
     try {
       const endpoint = API_ROUTES.loans.caseDetails(caseNo);
       logApiVersion('Loan Details', endpoint.includes('/v2/'));
-      const response = await fetch(`${await getApiBaseUrl()}${endpoint}`);
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (response.ok) {
         const result = await response.json();
         const data = result.data || result;
@@ -61,7 +64,10 @@ export const useChangeLoanSuretyForm = () => {
       // Use suretyCases endpoint — returns ALL loan cases (pending + disbursed/active)
       const endpoint = API_ROUTES.loans.suretyCases(memberNo);
       logApiVersion('Member Surety Cases', endpoint.includes('/v2/'));
-      const response = await fetch(`${await getApiBaseUrl()}${endpoint}`);
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (response.ok) {
         const result = await response.json();
         const data = result.data || result;
@@ -124,7 +130,7 @@ export const useChangeLoanSuretyForm = () => {
 
   const resetForm = useCallback(() => {
     setFormData({
-      loanType: 'ELN',
+      loanType: '',
       memberNumber: '',
       memberName: '',
       office: '',
@@ -149,9 +155,13 @@ export const useChangeLoanSuretyForm = () => {
         // Use V2 API for changing sureties
         const endpoint = API_ROUTES.loans.changeSurety(formData.loanCaseNo);
         logApiVersion('Change Surety', endpoint.includes('/v2/'));
+        const token = localStorage.getItem('accessToken');
         const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({
             surety1: formData.surety1,
             surety2: formData.surety2

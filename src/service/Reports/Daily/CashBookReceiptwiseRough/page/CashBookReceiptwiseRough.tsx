@@ -233,10 +233,10 @@ const CashBookReceiptwiseRough: React.FC = () => {
         colorBorder: isDark ? '#334155' : '#e2e8f0',
       },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+      <div className={`cbrr-page h-screen flex flex-col font-sans overflow-hidden ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
 
         {/* Header */}
-        <div className={`px-4 py-2.5 flex items-center justify-between shrink-0 ${header}`}>
+        <div className={`cbrr-header px-4 py-2.5 flex items-center justify-between shrink-0 ${header}`}>
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-500/30">
               <BookOpen size={18} className="text-white" />
@@ -268,8 +268,8 @@ const CashBookReceiptwiseRough: React.FC = () => {
           {/* Left panel */}
           <div className="w-[240px] flex flex-col gap-3 shrink-0">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className={`rounded-xl overflow-hidden ${panel}`}>
-              <div className={`px-3 py-2 flex items-center justify-between ${panelHd}`}>
+              className={`cbrr-panel rounded-xl overflow-hidden ${panel}`}>
+              <div className={`cbrr-panel-header px-3 py-2 flex items-center justify-between ${panelHd}`}>
                 <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
                   <Settings size={11} className="text-indigo-400" /> Parameters
                 </h3>
@@ -296,11 +296,11 @@ const CashBookReceiptwiseRough: React.FC = () => {
               {data && (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col gap-2">
-                  <div className={`rounded-lg p-3 ${panel}`}>
+                  <div className={`cbrr-panel rounded-lg p-3 ${panel}`}>
                     <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Vouchers</div>
                     <div className={`text-lg font-black font-mono ${text}`}>{data.vouchers.length}</div>
                   </div>
-                  <div className={`rounded-lg p-3 ${panel}`}>
+                  <div className={`cbrr-panel rounded-lg p-3 ${panel}`}>
                     <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening Balance</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmtAmtSigned(data.openingBalance)}</div>
                   </div>
@@ -328,8 +328,8 @@ const CashBookReceiptwiseRough: React.FC = () => {
           </div>
 
           {/* Report viewer */}
-          <div className={`flex-1 rounded-xl flex flex-col overflow-hidden ${panel}`}>
-            <div className={`px-4 py-2 flex items-center justify-between shrink-0 ${panelHd}`}>
+          <div className={`cbrr-panel flex-1 rounded-xl flex flex-col overflow-hidden ${panel}`}>
+            <div className={`cbrr-panel-header px-4 py-2 flex items-center justify-between shrink-0 ${panelHd}`}>
               <span className={`text-xs font-extrabold uppercase tracking-wide ${panelHdTx}`}>
                 Cash Book — {selectedDate.format('DD-MMM-YYYY')}
               </span>
@@ -341,7 +341,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
             </div>
 
             {/* Monospace document area */}
-            <div className={`flex-1 overflow-auto p-4 ${contentBg}`} ref={printRef}>
+            <div className={`cbrr-preview-body flex-1 overflow-auto p-4 ${contentBg}`} ref={printRef}>
               <Spin spinning={loading} tip="Loading...">
                 {reportLines.length > 0 ? (
                   <pre className={`font-mono text-[11.5px] leading-[1.55] whitespace-pre select-text w-fit mx-auto ${lineDefault}`}>
@@ -382,7 +382,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className={`px-4 py-1.5 flex items-center justify-between shrink-0 ${ftrBg}`}>
+        <div className={`cbrr-footer px-4 py-1.5 flex items-center justify-between shrink-0 ${ftrBg}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
             <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Cash Book · Transaction View</span>
@@ -390,6 +390,18 @@ const CashBookReceiptwiseRough: React.FC = () => {
           <span className={`fz-small font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
         </div>
       </div>
+
+      <style>{`
+        /* ── Cash Book Receiptwise Rough — dark mode ── */
+        html.dark .cbrr-page { background-color: #000000 !important; }
+        html.dark .cbrr-header,
+        html.dark .cbrr-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cbrr-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cbrr-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cbrr-preview-body { background-color: #1c1c1e !important; }
+        html.dark .cbrr-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cbrr-page .ant-picker input { color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

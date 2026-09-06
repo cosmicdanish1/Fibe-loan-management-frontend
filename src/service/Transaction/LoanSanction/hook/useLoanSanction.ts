@@ -89,7 +89,10 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         try {
             console.log('🔍 Fetching pending loan cases for sanction...');
             const endpoint = API_ROUTES.loans.pending();
-            const response = await fetch(`${await getApiBaseUrl()}${endpoint}`);
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
 
             if (response.ok) {
                 const result = await response.json();
@@ -156,7 +159,10 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         try {
             console.log(`📋 Loading details for loan case: ${caseNo}`);
             const endpoint = API_ROUTES.loans.caseDetails(caseNo);
-            const response = await fetch(`${await getApiBaseUrl()}${endpoint}`);
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
 
             if (response.ok) {
                 const data = await response.json();

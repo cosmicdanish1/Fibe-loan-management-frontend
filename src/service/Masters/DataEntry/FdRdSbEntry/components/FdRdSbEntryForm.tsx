@@ -78,10 +78,10 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="fdrdsb-form h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="fdrdsb-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
                             <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
@@ -134,7 +134,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                     <div className="max-w-3xl mx-auto p-3 pb-4 space-y-2">
 
                         {/* ── Member ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div className="fdrdsb-card bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Users size={11} className="text-slate-400" />
                                 <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member</span>
@@ -168,7 +168,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                         </div>
 
                         {/* ── Transaction Details ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div className="fdrdsb-card bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Database size={11} className="text-slate-400" />
                                 <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Transaction Details</span>
@@ -267,7 +267,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="fdrdsb-footer px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
                         <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">{activeType.label}</span>
@@ -293,6 +293,46 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                 input[type=number]::-webkit-inner-spin-button,
                 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
                 input[type=number] { -moz-appearance: textfield; }
+
+                /* ── FD/RD/SB Entry — dark mode ── */
+                html.dark .fdrdsb-form { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .fdrdsb-header { background-image: none !important; background-color: #0c0c0e !important; }
+                html.dark .fdrdsb-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .fdrdsb-card .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .fdrdsb-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+
+                html.dark .fdrdsb-form label { color: #8e8e93 !important; }
+                html.dark .fdrdsb-form .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .fdrdsb-form .text-slate-400 { color: #71717a !important; }
+                html.dark .fdrdsb-form .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .fdrdsb-form .text-slate-900 { color: #f5f5f7 !important; }
+
+                html.dark .fdrdsb-form .ant-input,
+                html.dark .fdrdsb-form .ant-select-selector,
+                html.dark .fdrdsb-form .ant-picker,
+                html.dark .fdrdsb-form textarea {
+                    background-color: rgba(255,255,255,.05) !important;
+                    color: #f5f5f7 !important;
+                    border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .fdrdsb-form .ant-input::placeholder { color: #71717a !important; }
+                html.dark .fdrdsb-form .ant-picker-input > input { color: #f5f5f7 !important; }
+                html.dark .fdrdsb-form .ant-picker svg { fill: #8e8e93 !important; }
+                html.dark .fdrdsb-form .ant-select-selection-item { color: #f5f5f7 !important; }
+                html.dark .fdrdsb-form .ant-select-arrow { color: #8e8e93 !important; }
+
+                html.dark .fdrdsb-form .bg-slate-50 { background-color: rgba(255,255,255,.03) !important; }
+                html.dark .fdrdsb-form .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .fdrdsb-form .border-slate-200,
+                html.dark .fdrdsb-form .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .fdrdsb-form .bg-white:not(.fdrdsb-card):not(.fdrdsb-footer) { background-color: rgba(255,255,255,.05) !important; }
+
+                /* Transaction type inactive buttons */
+                html.dark .fdrdsb-form button.bg-white { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+
+                html.dark .fdrdsb-form .bg-indigo-50 { background-color: rgba(99,102,241,.15) !important; }
+                html.dark .fdrdsb-form .border-indigo-100 { border-color: rgba(99,102,241,.3) !important; }
+                html.dark .fdrdsb-form .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
             `}</style>
         </ConfigProvider>
     );

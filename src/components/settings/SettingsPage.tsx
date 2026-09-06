@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   ConfigProvider,
-  Input,
-  Button,
-  Switch,
-  ColorPicker,
+  theme as antdTheme,
   message,
-  Modal,
-  Badge,
-  Slider,
-  Tag
 } from 'antd';
 import { FONT_OPTIONS, FONT_STORAGE_KEY, FONT_SYNC_CHANNEL, applyAppFont } from '../../config/fontOptions';
 import {
@@ -41,6 +34,7 @@ import {
   Command,
   LayoutGrid,
   Layers,
+  Search,
   // Quick Actions icon set
   Users, BookOpen, PiggyBank, ArrowDownLeft, Printer, Database, FileDown,
   BookMarked, Building2, FilePen, Scale, Tag as TagIcon, Briefcase,
@@ -134,6 +128,40 @@ const defaultSettings: AppSettings = {
   dashboardBg: '#f5f6fa',
 };
 
+/* ============================================================================
+   Dark "settings window" chrome.
+
+   This window is deliberately dark regardless of the app's own Light/Dark
+   setting — it is a system panel, like the OS settings app, and the controls
+   inside it preview Light-mode colours (canvas presets, dashboard background)
+   that would be unreadable on a matching light surface.
+   ========================================================================== */
+const C = {
+  bg: '#000000',
+  bgHeader: '#0c0c0e',
+  panel: '#1c1c1e',
+  sidebar: 'rgba(20,20,22,.92)',
+  border: 'rgba(255,255,255,.08)',
+  divider: 'rgba(255,255,255,.07)',
+  fill: 'rgba(255,255,255,.05)',
+  fillSoft: 'rgba(255,255,255,.03)',
+  text: '#f5f5f7',
+  textStrong: '#ffffff',
+  dim: '#8e8e93',
+  dimmer: '#71717a',
+  green: '#34d399',
+  red: '#ff453a',
+  amber: '#fbbf24',
+} as const;
+
+const hexToRgb = (hex: string): [number, number, number] => {
+  const h = (hex || '#6366f1').replace('#', '');
+  const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const v = parseInt(n, 16);
+  if (isNaN(v)) return [99, 102, 241];
+  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+};
+
 // Preset Palettes
 const ACCENT_PRESETS = [
   '#6366f1', // Indigo (Default)
@@ -143,7 +171,7 @@ const ACCENT_PRESETS = [
   '#ef4444', // Rose
   '#8b5cf6', // Violet
   '#ec4899', // Pink
-  '#1f2937', // Gray
+  '#71717a', // Zinc — reads on the dark panel where the old #1f2937 vanished
 ];
 
 const BG_PRESETS = [
@@ -173,6 +201,27 @@ const HEADER_GRADIENT_PRESETS: { label: string; value: string }[] = [
 const DEVELOPER_PIN = '0786';
 const MAX_ATTEMPTS = 3;
 
+// Sidebar / content header copy, keyed by tab.
+const TAB_META: Record<string, { title: string; subtitle: string; keywords: string }> = {
+  appearance: { title: 'Appearance', subtitle: 'Colors, typography and canvas',      keywords: 'theme dark light accent colour color gradient font text size bold density corner radius background image' },
+  dashboard:  { title: 'Dashboard',  subtitle: 'Widgets, quick actions and layout',  keywords: 'widgets quick actions shortcuts fy banner opacity transparency background notice board' },
+  system:     { title: 'System & Window', subtitle: 'Notifications and global behavior', keywords: 'notifications toasts sound effects audio chatbot ai assistant' },
+  developer:  { title: 'Developer',  subtitle: 'Root-level diagnostics',             keywords: 'analytics realtime monitor window geometry reset layouts console' },
+  license:    { title: 'License',    subtitle: 'Activation and renewal',             keywords: 'license key activate renew expiry grace customer' },
+};
+
+// Category tints for the Quick Actions grid. The shared config carries
+// light-mode Tailwind classes (bg-indigo-50 …) that wash out on a dark panel,
+// so the dark chrome tints by category instead.
+const QA_CATEGORY_COLOR: Record<QuickActionDef['category'], string> = {
+  'Masters': '#6366f1',
+  'Transactions': '#10b981',
+  'Demand & Recovery': '#f59e0b',
+  'Administration': '#8b5cf6',
+  'Utility': '#0ea5e9',
+  'Certificates': '#ec4899',
+};
+
 // Icon map shared with Dashboard
 const QA_ICON_MAP: Record<string, LucideIcon> = {
   Users, BookOpen, PiggyBank, ArrowDownLeft, Printer, Database, FileDown, Zap,
@@ -183,8 +232,114 @@ const QA_ICON_MAP: Record<string, LucideIcon> = {
   ShieldCheck, Lock, Hash, BarChart2, Banknote, MessageSquare, Award, Medal,
 };
 
+/* --- Shared dark-chrome building blocks ---------------------------------- */
+
+/** Card with the icon-tile + title + subtitle header the design uses everywhere. */
+const Panel: React.FC<{
+  icon: React.ReactNode;
+  tint: string;
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}> = ({ icon, tint, title, subtitle, right, className = '', style, children }) => {
+  const [r, g, b] = hexToRgb(tint);
+  return (
+    <div
+      className={`rounded-2xl p-6 ${className}`}
+      style={{ background: C.panel, border: `1px solid ${C.border}`, ...style }}
+    >
+      <div className="flex items-center gap-3 pb-4 mb-5" style={{ borderBottom: `1px solid ${C.divider}` }}>
+        <div
+          className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+          style={{ background: `rgba(${r},${g},${b},.18)`, color: tint }}
+        >
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>{title}</h3>
+          {subtitle && (
+            <p className="fz-small font-medium uppercase tracking-widest" style={{ color: C.dim }}>{subtitle}</p>
+          )}
+        </div>
+        {right && <div className="ml-auto flex items-center gap-2">{right}</div>}
+      </div>
+      {children}
+    </div>
+  );
+};
+
+/** Pill badge used for the "6 / 8 on" style counters. */
+const Counter: React.FC<{ children: React.ReactNode; color?: string }> = ({ children, color = C.green }) => {
+  const [r, g, b] = hexToRgb(color);
+  return (
+    <span
+      className="px-2.5 py-1 fz-tiny font-black rounded-full uppercase tracking-widest"
+      style={{ background: `rgba(${r},${g},${b},.15)`, color }}
+    >
+      {children}
+    </span>
+  );
+};
+
+/** iOS-style switch. Replaces antd Switch, which renders light-on-dark here. */
+const Toggle: React.FC<{ on: boolean; onChange: (v: boolean) => void; accent: string; label?: string }> = ({
+  on, onChange, accent, label,
+}) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={on}
+    aria-label={label}
+    onClick={() => onChange(!on)}
+    className="relative shrink-0 border-0 cursor-pointer"
+    style={{ width: 42, height: 24, borderRadius: 12, background: on ? accent : 'rgba(255,255,255,.14)' }}
+  >
+    <span
+      className="absolute block rounded-full settings-knob"
+      style={{ width: 20, height: 20, top: 2, left: on ? 20 : 2, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.4)' }}
+    />
+  </button>
+);
+
+/** Native range input — antd's Slider cannot be themed dark from here. */
+const Range: React.FC<{
+  min: number; max: number; step?: number; value: number;
+  onChange: (v: number) => void; accent: string; ariaLabel: string;
+}> = ({ min, max, step = 1, value, onChange, accent, ariaLabel }) => (
+  <input
+    type="range"
+    aria-label={ariaLabel}
+    min={min}
+    max={max}
+    step={step}
+    value={value}
+    onChange={e => onChange(parseInt(e.target.value, 10))}
+    className="w-full settings-range"
+    style={{ accentColor: accent, background: 'rgba(255,255,255,.12)' }}
+  />
+);
+
+/** Native colour well, styled by the .settings-color rules in input.css. */
+const ColorWell: React.FC<{ value: string; onChange: (hex: string) => void; ariaLabel: string; size?: number }> = ({
+  value, onChange, ariaLabel, size = 30,
+}) => (
+  <input
+    type="color"
+    aria-label={ariaLabel}
+    value={value}
+    onChange={e => onChange(e.target.value)}
+    className="settings-color cursor-pointer"
+    style={{ width: size, height: size }}
+  />
+);
+
+const fieldLabel: React.CSSProperties = { color: C.dim };
+
 // --- License Section Component ---
-const LicenseSection: React.FC = () => {
+const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
   const { status, daysRemaining, graceDaysRemaining, message: licenseMsg, customerName, expiresAt, refresh } = useLicense();
   const [activateKey, setActivateKey] = useState('');
   const [activating, setActivating] = useState(false);
@@ -220,95 +375,103 @@ const LicenseSection: React.FC = () => {
     }
   };
 
+  // Each status keeps its own tint so the card reads at a glance, the way the
+  // light version did — just re-pitched for the dark panel.
   const statusConfig = {
-    active: { color: 'success', icon: <ShieldCheck size={16} />, label: 'Active', bg: 'bg-emerald-50 border-emerald-200' },
-    grace: { color: 'warning', icon: <AlertTriangle size={16} />, label: 'Grace Period', bg: 'bg-amber-50 border-amber-200' },
-    expired: { color: 'error', icon: <AlertTriangle size={16} />, label: 'Expired', bg: 'bg-red-50 border-red-200' },
-    not_activated: { color: 'default', icon: <KeyRound size={16} />, label: 'Not Activated', bg: 'bg-slate-50 border-slate-200' },
-    checking: { color: 'processing', icon: <Clock size={16} />, label: 'Checking...', bg: 'bg-slate-50 border-slate-200' },
+    active:        { color: '#34d399', icon: <ShieldCheck size={16} />,    label: 'Active' },
+    grace:         { color: '#fbbf24', icon: <AlertTriangle size={16} />,  label: 'Grace Period' },
+    expired:       { color: '#ff453a', icon: <AlertTriangle size={16} />,  label: 'Expired' },
+    not_activated: { color: '#8e8e93', icon: <KeyRound size={16} />,       label: 'Not Activated' },
+    checking:      { color: '#8e8e93', icon: <Clock size={16} />,          label: 'Checking...' },
   } as const;
 
   const cfg = statusConfig[status] || statusConfig.checking;
+  const [sr, sg, sb] = hexToRgb(cfg.color);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5" style={{ maxWidth: 680 }}>
       {/* Status Card */}
-      <div className={`border rounded-2xl p-6 ${cfg.bg}`}>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="bg-white p-2 rounded-lg shadow-sm">{cfg.icon}</div>
+      <div
+        className="rounded-2xl p-6"
+        style={{ background: `rgba(${sr},${sg},${sb},.09)`, border: `1px solid rgba(${sr},${sg},${sb},.2)` }}
+      >
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2 rounded-[10px]" style={{ background: C.panel, color: cfg.color }}>{cfg.icon}</div>
           <div>
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">License Status</h3>
-            <Tag color={cfg.color} className="mt-1">{cfg.label}</Tag>
+            <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>License Status</h3>
+            <span
+              className="inline-block mt-1.5 px-2.5 py-0.5 fz-tiny font-black rounded-full uppercase tracking-widest"
+              style={{ background: `rgba(${sr},${sg},${sb},.15)`, color: cfg.color }}
+            >
+              {cfg.label}
+            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-3 gap-4">
           {customerName && (
             <div>
-              <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Customer</span>
-              <span className="font-semibold text-slate-700">{customerName}</span>
+              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Customer</span>
+              <span className="fz-body font-bold" style={{ color: C.text }}>{customerName}</span>
             </div>
           )}
           {expiresAt && (
             <div>
-              <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Expires</span>
-              <span className="font-semibold text-slate-700">{new Date(expiresAt).toLocaleDateString()}</span>
+              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Expires</span>
+              <span className="fz-body font-bold" style={{ color: C.text }}>{new Date(expiresAt).toLocaleDateString()}</span>
             </div>
           )}
           {status === 'active' && (
             <div>
-              <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Days Remaining</span>
-              <span className={`font-bold text-lg ${daysRemaining <= 30 ? 'text-amber-600' : 'text-emerald-600'}`}>{daysRemaining}</span>
+              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Days Remaining</span>
+              <span className="font-black text-lg" style={{ color: daysRemaining <= 30 ? C.amber : C.green }}>{daysRemaining}</span>
             </div>
           )}
           {status === 'grace' && (
             <div>
-              <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Grace Days Left</span>
-              <span className="font-bold text-lg text-red-600">{graceDaysRemaining}</span>
+              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Grace Days Left</span>
+              <span className="font-black text-lg" style={{ color: C.red }}>{graceDaysRemaining}</span>
             </div>
           )}
         </div>
 
         {licenseMsg && (
-          <p className="mt-4 text-xs text-slate-500 bg-white/60 rounded-lg px-3 py-2">{licenseMsg}</p>
+          <p className="mt-4 fz-small rounded-lg px-3 py-2" style={{ color: C.dim, background: 'rgba(0,0,0,.35)' }}>{licenseMsg}</p>
         )}
       </div>
 
       {/* Activate / Renew */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-4 border-b border-slate-100 pb-4">
-          <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600"><KeyRound size={18} /></div>
-          <div>
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">
-              {status === 'not_activated' ? 'Activate Software' : 'Renew License'}
-            </h3>
-            <p className="fz-small text-slate-400 uppercase tracking-widest">Enter your license key</p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <Input
-            value={activateKey}
-            onChange={e => { setActivateKey(formatKey(e.target.value)); setActivateError(''); }}
-            placeholder="PWT0-XXXX-XXXX-XXXX-XXXX"
-            maxLength={24}
-            className="font-mono tracking-widest text-base"
-            style={{ letterSpacing: '0.1em', height: '44px' }}
-            onPressEnter={handleActivate}
-          />
-          {activateError && <p className="text-red-500 text-xs">{activateError}</p>}
-          <Button
-            type="primary"
-            onClick={handleActivate}
-            loading={activating}
-            disabled={activateKey.length !== 24}
-            block
-            className="h-10 font-bold"
-          >
-            {status === 'not_activated' ? 'Activate' : 'Apply New Key'}
-          </Button>
-        </div>
-      </div>
+      <Panel
+        icon={<KeyRound size={17} />}
+        tint={accent}
+        title={status === 'not_activated' ? 'Activate Software' : 'Renew License'}
+        subtitle="Enter your license key"
+      >
+        <input
+          value={activateKey}
+          onChange={e => { setActivateKey(formatKey(e.target.value)); setActivateError(''); }}
+          onKeyDown={e => { if (e.key === 'Enter') handleActivate(); }}
+          placeholder="PWT0-XXXX-XXXX-XXXX-XXXX"
+          maxLength={24}
+          className="w-full box-border px-3.5 rounded-[10px] outline-none font-mono"
+          style={{
+            height: 44, letterSpacing: '0.1em', fontSize: 14,
+            border: `1px solid rgba(255,255,255,.1)`, background: C.fill, color: C.text,
+          }}
+        />
+        {activateError && <p className="fz-small font-bold mt-2" style={{ color: C.red }}>{activateError}</p>}
+        <button
+          onClick={handleActivate}
+          disabled={activating || activateKey.length !== 24}
+          className="w-full mt-3 rounded-[10px] border-0 font-bold cursor-pointer disabled:cursor-not-allowed"
+          style={{
+            height: 40, background: accent, color: '#fff',
+            opacity: activating || activateKey.length !== 24 ? 0.45 : 1,
+          }}
+        >
+          {activating ? 'Working…' : status === 'not_activated' ? 'Activate' : 'Apply New Key'}
+        </button>
+      </Panel>
     </div>
   );
 };
@@ -339,6 +502,7 @@ const SettingsPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState('appearance');
   const [isSaving, setIsSaving] = useState(false);
+  const [navQuery, setNavQuery] = useState('');
 
   // Developer Mode State
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
@@ -348,6 +512,14 @@ const SettingsPage: React.FC = () => {
   const [attempts, setAttempts] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pinInputRef = useRef<HTMLInputElement>(null);
+
+  const accent = settings.accentColor || '#6366f1';
+  const [ar, ag, ab] = hexToRgb(accent);
+  const accentRgba = useCallback(
+    (a: number) => `rgba(${ar},${ag},${ab},${a})`,
+    [ar, ag, ab]
+  );
 
   // Dashboard customisation state
   const [widgetConfig, setWidgetConfig] = useState<{
@@ -477,6 +649,23 @@ const SettingsPage: React.FC = () => {
     }));
   }, [theme]);
 
+  // The PIN field is inside a plain overlay now (not an antd Modal), so it has
+  // to claim focus itself when the dialog opens.
+  useEffect(() => {
+    if (showPinDialog) {
+      const t = setTimeout(() => pinInputRef.current?.focus(), 0);
+      return () => clearTimeout(t);
+    }
+  }, [showPinDialog]);
+
+  // Escape closes the PIN dialog, matching what the Modal used to give us.
+  useEffect(() => {
+    if (!showPinDialog) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowPinDialog(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showPinDialog]);
+
   // --- Handlers ---
 
   const handleDeveloperModeToggle = useCallback(() => {
@@ -604,158 +793,191 @@ const SettingsPage: React.FC = () => {
     }
   }, []);
 
+  // --- Sidebar ---
+
+  // Icon tiles carry the gradient the design gives each section.
+  const NAV_ITEMS = useMemo(() => ([
+    { key: 'appearance', label: 'Appearance',      Icon: Palette,   gradient: 'linear-gradient(135deg,#6366f1,#818cf8)' },
+    { key: 'dashboard',  label: 'Dashboard',       Icon: BarChart2, gradient: 'linear-gradient(135deg,#10b981,#34d399)' },
+    { key: 'system',     label: 'System & Window', Icon: Monitor,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)' },
+    { key: 'developer',  label: 'Developer',       Icon: Code,      gradient: 'linear-gradient(135deg,#3f3f46,#71717a)', devOnly: true },
+    { key: 'license',    label: 'License',         Icon: KeyRound,  gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)', afterDivider: true },
+  ]), []);
+
+  // The search box narrows the section list by title and by the settings each
+  // section contains, so "opacity" or "chatbot" lands on the right tab.
+  const visibleNav = useMemo(() => {
+    const q = navQuery.trim().toLowerCase();
+    return NAV_ITEMS
+      .filter(item => !item.devOnly || isDeveloperMode)
+      .filter(item => {
+        if (!q) return true;
+        const meta = TAB_META[item.key];
+        return item.label.toLowerCase().includes(q)
+          || (meta ? `${meta.title} ${meta.subtitle} ${meta.keywords}`.toLowerCase().includes(q) : false);
+      });
+  }, [NAV_ITEMS, isDeveloperMode, navQuery]);
+
+  const navButtonStyle = (key: string): React.CSSProperties => ({
+    width: '100%',
+    boxSizing: 'border-box',
+    textAlign: 'left',
+    padding: '8px 10px',
+    border: 'none',
+    borderRadius: 10,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 11,
+    cursor: 'pointer',
+    background: activeTab === key ? accentRgba(0.16) : 'transparent',
+    color: activeTab === key ? C.textStrong : '#c7c7cc',
+  });
+
   // --- Render Sections ---
 
   const renderAppearance = () => (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-      {/* Theme & Typography Group */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Theme & Accent */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-            <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
-              <Palette size={20} />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Theme & Colors</h3>
-              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Global palette settings</p>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {/* Theme Mode */}
-            <div className="space-y-2">
-              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Interface Mode</label>
-              <div className="flex bg-slate-100 p-1 rounded-lg">
-                {['light', 'dark', 'system'].map(mode => (
+      {/* Theme & Accent */}
+      <Panel icon={<Palette size={17} />} tint="#818cf8" title="Theme & Colors" subtitle="Global palette settings">
+        <div className="space-y-5">
+          {/* Theme Mode */}
+          <div className="space-y-2">
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Interface Mode</label>
+            <div className="flex p-[3px] rounded-[9px]" style={{ background: 'rgba(255,255,255,.06)' }}>
+              {(['light', 'dark', 'system'] as const).map(mode => {
+                const active = settings.themeMode === mode;
+                return (
                   <button
                     key={mode}
                     onClick={() => {
-                      const m = mode as 'light' | 'dark' | 'system';
-                      setSettings(prev => ({ ...prev, themeMode: m }));
-                      dispatch(setTheme({ interfaceMode: m }));
+                      setSettings(prev => ({ ...prev, themeMode: mode }));
+                      dispatch(setTheme({ interfaceMode: mode }));
                       // Immediately propagate to main window — don't wait for Save
-                      const payload = { interfaceMode: m };
+                      const payload = { interfaceMode: mode };
                       if ((window as any).electronAPI?.send) {
                         (window as any).electronAPI.send('update-settings', payload);
                       }
                       try { const bc = new BroadcastChannel('theme_sync'); bc.postMessage(payload); bc.close(); } catch { }
                     }}
-                    className={`flex-1 py-1.5 rounded-md fz-small font-bold uppercase tracking-widest transition-all ${settings.themeMode === mode
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-600'
-                      }`}
+                    className="flex-1 py-1.5 rounded-[7px] border-0 fz-small font-bold uppercase tracking-widest cursor-pointer"
+                    style={{
+                      background: active ? (mode === 'light' ? '#fff' : accent) : 'transparent',
+                      color: active ? (mode === 'light' ? '#000' : '#fff') : C.dim,
+                    }}
                   >
                     {mode}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Accent Color */}
-            <div className="space-y-2">
-              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Accent Color</label>
-              <div className="flex flex-wrap gap-3">
-                {ACCENT_PRESETS.map(color => (
+          {/* Accent Color */}
+          <div className="space-y-2">
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Accent Color</label>
+            <div className="flex flex-wrap gap-2.5 items-center">
+              {ACCENT_PRESETS.map(color => {
+                const selected = accent.toLowerCase() === color.toLowerCase();
+                return (
                   <button
                     key={color}
+                    aria-label={`Accent ${color}`}
                     onClick={() => { setSettings(prev => ({ ...prev, accentColor: color })); dispatch(setTheme({ accentColor: color })); }}
-                    className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${settings.accentColor?.toLowerCase() === color.toLowerCase()
-                      ? 'ring-2 ring-offset-2 ring-slate-300 scale-110'
-                      : 'hover:scale-105'
-                      }`}
-                    style={{ backgroundColor: color }}
+                    className="w-7 h-7 rounded-full border-0 cursor-pointer flex items-center justify-center"
+                    style={{ background: color, boxShadow: selected ? `0 0 0 2px ${C.panel}, 0 0 0 4px ${color}` : 'none' }}
                   >
-                    {settings.accentColor?.toLowerCase() === color.toLowerCase() && <Check size={14} className="text-white" />}
+                    {selected && <Check size={12} className="text-white" strokeWidth={3} />}
                   </button>
-                ))}
-                <div className="w-px h-8 bg-slate-200 mx-2"></div>
-                <ColorPicker
-                  value={settings.accentColor}
-                  onChange={(c) => { const hex = c.toHexString(); setSettings(prev => ({ ...prev, accentColor: hex })); dispatch(setTheme({ accentColor: hex })); }}
-                />
-              </div>
+                );
+              })}
+              <div className="w-px h-6 mx-0.5" style={{ background: 'rgba(255,255,255,.12)' }} />
+              <ColorWell
+                value={accent}
+                ariaLabel="Custom accent colour"
+                size={28}
+                onChange={(hex) => { setSettings(prev => ({ ...prev, accentColor: hex })); dispatch(setTheme({ accentColor: hex })); }}
+              />
             </div>
+          </div>
 
-            {/* Header Gradient */}
-            <div className="space-y-2">
-              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Header Gradient</label>
-              {/* Live preview */}
-              <div className="h-7 w-full rounded-lg border border-slate-200 mb-1" style={{ backgroundImage: headerGradient }} />
-              <div className="flex flex-wrap gap-2 items-center">
-                {HEADER_GRADIENT_PRESETS.map(preset => (
-                  <button
-                    key={preset.label}
-                    title={preset.label}
-                    onClick={() => applyHeaderGradient(preset.value)}
-                    className={`w-9 h-7 rounded-md border transition-all ${headerGradient === preset.value
-                      ? 'ring-2 ring-offset-1 ring-slate-400 border-transparent scale-105'
-                      : 'border-slate-200 hover:scale-105'
-                      }`}
-                    style={{ backgroundImage: preset.value }}
-                  />
-                ))}
-                <div className="w-px h-7 bg-slate-200 mx-1" />
-                {/* Custom middle colour (dark slate ends preserved) */}
-                <ColorPicker
-                  value={(headerGradient.match(/#[0-9a-fA-F]{6}/g) || [])[1] || '#312e81'}
-                  onChange={(c) => applyHeaderGradient(`linear-gradient(to right, #0f172a, ${c.toHexString()}, #0f172a)`)}
+          {/* Header Gradient */}
+          <div className="space-y-2">
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Header Gradient</label>
+            {/* Live preview */}
+            <div className="h-[26px] w-full rounded-lg" style={{ backgroundImage: headerGradient, border: `1px solid rgba(255,255,255,.1)` }} />
+            <div className="flex flex-wrap gap-2 items-center">
+              {HEADER_GRADIENT_PRESETS.map(preset => (
+                <button
+                  key={preset.label}
+                  title={preset.label}
+                  aria-label={preset.label}
+                  onClick={() => applyHeaderGradient(preset.value)}
+                  className="border-0 cursor-pointer"
+                  style={{
+                    width: 34, height: 26, borderRadius: 6, backgroundImage: preset.value,
+                    boxShadow: headerGradient === preset.value ? `0 0 0 2px ${C.panel}, 0 0 0 4px ${accent}` : 'none',
+                  }}
                 />
-              </div>
+              ))}
+              <div className="w-px h-[22px] mx-0.5" style={{ background: 'rgba(255,255,255,.12)' }} />
+              {/* Custom middle colour (dark slate ends preserved) */}
+              <ColorWell
+                value={(headerGradient.match(/#[0-9a-fA-F]{6}/g) || [])[1] || '#312e81'}
+                ariaLabel="Custom header gradient colour"
+                size={28}
+                onChange={(hex) => applyHeaderGradient(`linear-gradient(to right, #0f172a, ${hex}, #0f172a)`)}
+              />
             </div>
           </div>
         </div>
+      </Panel>
 
-        {/* Layout & Type */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-            <div className="bg-pink-100 p-2 rounded-lg text-pink-600">
-              <Type size={20} />
+      {/* Layout & Type */}
+      <Panel icon={<Type size={17} />} tint="#f472b6" title="Layout & Type" subtitle="Density and scaling">
+        <div className="space-y-5">
+          {/* Text Size */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <label className="fz-small font-black uppercase tracking-widest" style={fieldLabel}>Text Size</label>
+              <span
+                className="fz-tiny font-black uppercase px-2 py-0.5 rounded-full"
+                style={{ background: accentRgba(0.15), color: accent }}
+              >
+                {settings.fontSize}
+              </span>
             </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Layout & Type</h3>
-              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Density and scaling</p>
+            <Range
+              ariaLabel="Text size"
+              min={0}
+              max={2}
+              value={settings.fontSize === 'small' ? 0 : settings.fontSize === 'medium' ? 1 : 2}
+              accent={accent}
+              onChange={(v) => {
+                const sizes: AppSettings['fontSize'][] = ['small', 'medium', 'large'];
+                const chosen = sizes[v] as AppSettings['fontSize'];
+                const pxMap: Record<AppSettings['fontSize'], string> = { small: '12px', medium: '13px', large: '15px' };
+                const px = pxMap[chosen];
+                // Apply to this window
+                document.documentElement.style.setProperty('--fz-base', px);
+                localStorage.setItem('lms-font-size', px);
+                // Broadcast to every other open window
+                try { const bc = new BroadcastChannel('lms_font_size'); bc.postMessage({ fontBase: px }); bc.close(); } catch { }
+                setSettings(prev => ({ ...prev, fontSize: chosen }));
+              }}
+            />
+            <div className="flex justify-between fz-tiny font-black" style={{ color: C.dim }}>
+              <span>A</span><span>AA</span><span>AAA</span>
             </div>
           </div>
 
-          <div className="space-y-6">
-            {/* Text Size */}
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Text Size</label>
-                <span className="fz-small font-bold text-indigo-600 uppercase bg-indigo-50 px-2 rounded-full">{settings.fontSize}</span>
-              </div>
-              <div className="px-2">
-                <Slider
-                  min={0}
-                  max={2}
-                  step={1}
-                  tooltip={{ formatter: null }}
-                  value={settings.fontSize === 'small' ? 0 : settings.fontSize === 'medium' ? 1 : 2}
-                  onChange={(v) => {
-                    const sizes: AppSettings['fontSize'][] = ['small', 'medium', 'large'];
-                    const chosen = sizes[v] as AppSettings['fontSize'];
-                    const pxMap: Record<AppSettings['fontSize'], string> = { small: '12px', medium: '13px', large: '15px' };
-                    const px = pxMap[chosen];
-                    // Apply to this window
-                    document.documentElement.style.setProperty('--fz-base', px);
-                    localStorage.setItem('lms-font-size', px);
-                    // Broadcast to every other open window
-                    try { const bc = new BroadcastChannel('lms_font_size'); bc.postMessage({ fontBase: px }); bc.close(); } catch { }
-                    setSettings(prev => ({ ...prev, fontSize: chosen }));
-                  }}
-                  marks={{ 0: 'A', 1: 'AA', 2: 'AAA' }}
-                />
-              </div>
-            </div>
-
-            {/* Font Style */}
-            <div className="space-y-2 pt-2">
-              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Font Style</label>
-              <div className="grid grid-cols-2 gap-2">
-                {FONT_OPTIONS.map(font => (
+          {/* Font Style */}
+          <div className="space-y-2">
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Font Style</label>
+            <div className="grid grid-cols-2 gap-2">
+              {FONT_OPTIONS.map(font => {
+                const selected = settings.fontFamily === font.value;
+                return (
                   <div
                     key={font.label}
                     onClick={() => {
@@ -770,180 +992,208 @@ const SettingsPage: React.FC = () => {
                       } catch { }
                       setSettings(prev => ({ ...prev, fontFamily: font.value }));
                     }}
-                    className={`cursor-pointer border rounded-xl px-3 py-2 transition-all ${settings.fontFamily === font.value
-                      ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500'
-                      : 'border-slate-200 hover:border-slate-300'
-                      }`}
+                    className="cursor-pointer rounded-[10px] px-3 py-2.5"
+                    style={{
+                      border: `1px solid ${selected ? accent : C.border}`,
+                      background: selected ? accentRgba(0.1) : C.fillSoft,
+                      boxShadow: selected ? `0 0 0 1px ${accent}` : 'none',
+                    }}
                   >
-                    {/* Previewed in its own face so the choice is visible before applying */}
-                    <div className="fz-body font-bold text-slate-700 leading-tight" style={{ fontFamily: font.value }}>
+                    {/* Previewed in its own face. The `.font-face-preview` rule in
+                        input.css is what lets this beat the global !important
+                        font-family — same trick the .font-mono override uses. */}
+                    <div
+                      className="fz-body font-bold leading-tight font-face-preview"
+                      style={{ color: C.text, ['--preview-font' as any]: font.value }}
+                    >
                       {font.label}
                     </div>
-                    <div className="fz-small text-slate-400 mt-0.5">{font.hint}</div>
-                    <div className="fz-caption text-slate-500 mt-1 truncate" style={{ fontFamily: font.value }}>
+                    <div className="fz-small mt-0.5" style={{ color: C.dim }}>{font.hint}</div>
+                    <div
+                      className="fz-caption mt-1 truncate font-face-preview"
+                      style={{ color: C.dimmer, ['--preview-font' as any]: font.value }}
+                    >
                       Member 1043 · ₹ 24,850.00
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Bold Text */}
-            <div className="flex items-center justify-between pt-2">
-              <div>
-                <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Bold Text</label>
-                <p className="fz-small text-slate-400 mt-0.5">Make all labelled text heavier</p>
-              </div>
-              <Switch
-                checked={settings.boldText}
-                onChange={(v) => {
-                  setSettings(prev => ({ ...prev, boldText: v }));
-                  document.documentElement.classList.toggle('bold-text', v);
-                  localStorage.setItem('lms-bold-text', v ? '1' : '0');
-                  try { const bc = new BroadcastChannel('lms_bold_text'); bc.postMessage({ boldText: v }); bc.close(); } catch { }
-                }}
-              />
+          {/* Bold Text */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Bold Text</label>
+              <p className="fz-small mt-0.5" style={{ color: C.dim }}>Make all labelled text heavier</p>
             </div>
+            <Toggle
+              on={settings.boldText}
+              accent={accent}
+              label="Bold text"
+              onChange={(v) => {
+                setSettings(prev => ({ ...prev, boldText: v }));
+                document.documentElement.classList.toggle('bold-text', v);
+                localStorage.setItem('lms-bold-text', v ? '1' : '0');
+                try { const bc = new BroadcastChannel('lms_bold_text'); bc.postMessage({ boldText: v }); bc.close(); } catch { }
+              }}
+            />
+          </div>
 
-            {/* Density Toggle */}
-            <div className="space-y-2 pt-2">
-              <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Layout Density</label>
-              <div className="grid grid-cols-2 gap-3">
-                {['compact', 'comfortable'].map(d => (
+          {/* Density Toggle */}
+          <div className="space-y-2">
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Layout Density</label>
+            <div className="grid grid-cols-2 gap-2.5">
+              {(['compact', 'comfortable'] as const).map(d => {
+                const selected = settings.density === d;
+                return (
                   <div
                     key={d}
-                    onClick={() => setSettings(prev => ({ ...prev, density: d as any }))}
-                    className={`cursor-pointer border rounded-xl p-3 flex flex-col items-center gap-2 transition-all ${settings.density === d
-                      ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500'
-                      : 'border-slate-200 hover:border-slate-300'
-                      }`}
+                    onClick={() => setSettings(prev => ({ ...prev, density: d }))}
+                    className="cursor-pointer rounded-[10px] p-3 flex flex-col items-center gap-2"
+                    style={{
+                      border: `1px solid ${selected ? accent : C.border}`,
+                      background: selected ? accentRgba(0.1) : C.fillSoft,
+                    }}
                   >
-                    <div className={`w-full bg-white border border-slate-200 rounded-md ${d === 'compact' ? 'space-y-1 p-1' : 'space-y-2 p-2'}`}>
-                      <div className="h-1.5 w-2/3 bg-slate-200 rounded-full"></div>
-                      <div className="h-1.5 w-full bg-slate-100 rounded-full"></div>
+                    <div
+                      className="w-full rounded-md"
+                      style={{ background: C.fill, padding: d === 'compact' ? 5 : 9 }}
+                    >
+                      <div className="h-[5px] w-2/3 rounded-full mb-1.5" style={{ background: 'rgba(255,255,255,.3)' }} />
+                      <div className="h-[5px] w-full rounded-full" style={{ background: 'rgba(255,255,255,.15)' }} />
                     </div>
-                    <span className="fz-body font-bold uppercase tracking-wider text-slate-600">{d}</span>
+                    <span className="fz-small font-bold uppercase tracking-wider" style={{ color: C.text }}>{d}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Border Radius */}
-            <div className="space-y-2 pt-2">
-              <div className="flex justify-between">
-                <label className="fz-small font-black text-slate-400 uppercase tracking-widest">Corner Radius: {settings.borderRadius}px</label>
-              </div>
-              <Slider
-                min={0}
-                max={16}
-                value={settings.borderRadius}
-                onChange={(v) => setSettings(prev => ({ ...prev, borderRadius: v }))}
-              />
+                );
+              })}
             </div>
           </div>
+
+          {/* Border Radius */}
+          <div className="space-y-2">
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>
+              Corner Radius: {settings.borderRadius}px
+            </label>
+            <Range
+              ariaLabel="Corner radius"
+              min={0}
+              max={16}
+              value={settings.borderRadius}
+              accent={accent}
+              onChange={(v) => setSettings(prev => ({ ...prev, borderRadius: v }))}
+            />
+          </div>
         </div>
-      </div>
+      </Panel>
 
       {/* Background Config */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-          <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600">
-            <ImageIcon size={20} />
-          </div>
-          <div>
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Background</h3>
-            <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Canvas appearance</p>
-          </div>
-        </div>
+      <div className="lg:col-span-2">
+        <Panel icon={<ImageIcon size={17} />} tint="#34d399" title="Background" subtitle="Canvas appearance">
+          {/* Dark mode keeps its own canvas so the navbar and toolbars stay
+              readable, which means these controls have no visible effect while
+              it is on. Say so rather than letting them look broken. */}
+          {settings.themeMode === 'dark' && (
+            <div
+              className="mb-4 px-3.5 py-2.5 rounded-[9px]"
+              style={{ background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.2)' }}
+            >
+              <p className="fz-caption font-bold" style={{ color: C.amber }}>
+                Dark mode uses its own canvas colour — these background settings apply in Light mode.
+              </p>
+            </div>
+          )}
 
-        {/* Dark mode keeps its own canvas so the navbar and toolbars stay
-            readable, which means these controls have no visible effect while
-            it is on. Say so rather than letting them look broken. */}
-        {settings.themeMode === 'dark' && (
-          <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
-            <p className="fz-caption font-bold text-amber-700">
-              Dark mode uses its own canvas colour — these background settings apply in Light mode.
-            </p>
+          {/* Background Mode */}
+          <div className="flex gap-2 mb-4" style={{ maxWidth: 420 }}>
+            {(['solid', 'gradient', 'image'] as const).map(mode => {
+              const selected = settings.backgroundType === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setSettings(prev => ({ ...prev, backgroundType: mode }))}
+                  className="flex-1 py-2 rounded-lg fz-small font-bold uppercase tracking-widest cursor-pointer"
+                  style={
+                    selected
+                      ? { background: C.green, color: '#04140d', border: 'none' }
+                      : { background: C.fill, color: C.dim, border: `1px solid ${C.border}` }
+                  }
+                >
+                  {mode}
+                </button>
+              );
+            })}
           </div>
-        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-5">
-            {/* Background Mode */}
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                {['solid', 'gradient', 'image'].map(mode => (
+          {/* Solid/Gradient Controls */}
+          {settings.backgroundType !== 'image' && (
+            <div className="space-y-3">
+              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>
+                {settings.backgroundType === 'gradient' ? 'Colors' : 'Color Selection'}
+              </label>
+              <div className="flex flex-wrap gap-2 items-center">
+                {BG_PRESETS.map(color => (
                   <button
-                    key={mode}
-                    onClick={() => setSettings(prev => ({ ...prev, backgroundType: mode as any }))}
-                    className={`flex-1 py-1.5 rounded-lg fz-small font-bold uppercase tracking-widest border transition-all ${settings.backgroundType === mode
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-200'
-                      : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-white'
-                      }`}
-                  >
-                    {mode}
-                  </button>
+                    key={color}
+                    aria-label={`Background ${color}`}
+                    onClick={() => setSettings(prev => ({ ...prev, backgroundColor1: color }))}
+                    className="border-0 cursor-pointer"
+                    style={{
+                      width: 24, height: 24, borderRadius: 6, background: color,
+                      boxShadow: settings.backgroundColor1 === color ? `0 0 0 2px ${C.green}` : '0 0 0 1px rgba(255,255,255,.15)',
+                    }}
+                  />
                 ))}
               </div>
-            </div>
-
-            {/* Solid/Gradient Controls */}
-            {settings.backgroundType !== 'image' && (
-              <div className="space-y-2">
-                <label className="fz-small font-black text-slate-400 uppercase tracking-widest">
-                  {settings.backgroundType === 'gradient' ? 'Colors' : 'Color Selection'}
-                </label>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {BG_PRESETS.map(color => (
-                    <button
-                      key={color}
-                      onClick={() => setSettings(prev => ({ ...prev, backgroundColor1: color }))}
-                      className={`w-6 h-6 rounded border transition-all ${settings.backgroundColor1 === color ? 'ring-2 ring-emerald-500 border-emerald-500' : 'border-slate-200'
-                        }`}
-                      style={{ backgroundColor: color }}
+              <div className="flex gap-3.5 items-center">
+                <ColorWell
+                  value={settings.backgroundColor1}
+                  ariaLabel="Background colour"
+                  onChange={(hex) => setSettings(prev => ({ ...prev, backgroundColor1: hex }))}
+                />
+                {settings.backgroundType === 'gradient' && (
+                  <>
+                    <span className="fz-body" style={{ color: C.dimmer }}>to</span>
+                    <ColorWell
+                      value={settings.backgroundColor2}
+                      ariaLabel="Second background colour"
+                      onChange={(hex) => setSettings(prev => ({ ...prev, backgroundColor2: hex }))}
                     />
-                  ))}
-                </div>
-                <div className="flex gap-4 items-center">
-                  <ColorPicker
-                    value={settings.backgroundColor1}
-                    onChange={(c) => setSettings(prev => ({ ...prev, backgroundColor1: c.toHexString() }))}
-                    showText
-                  />
-                  {settings.backgroundType === 'gradient' && (
-                    <>
-                      <span className="text-slate-300">to</span>
-                      <ColorPicker
-                        value={settings.backgroundColor2}
-                        onChange={(c) => setSettings(prev => ({ ...prev, backgroundColor2: c.toHexString() }))}
-                        showText
-                      />
-                    </>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Image Controls */}
-            {settings.backgroundType === 'image' && (
-              <div className="space-y-2">
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-                <div className="flex gap-2">
-                  <Button onClick={() => fileInputRef.current?.click()} icon={<UploadCloud size={14} />}>
-                    Upload
-                  </Button>
-                  {settings.backgroundImage && (
-                    <div className="absolute bottom-4 left-4 right-4 backdrop-blur-sm px-4 py-2 shadow-sm border border-white/50" style={{ borderRadius: settings.borderRadius }}>
-                      <span style={{ color: settings.textColor, fontFamily: settings.fontFamily, fontSize: settings.fontSize === 'small' ? 12 : settings.fontSize === 'large' ? 16 : 14 }} className="font-bold">
-                        Preview Text
-                      </span>
-                    </div>
-                  )}
-                </div>
+          {/* Image Controls */}
+          {settings.backgroundType === 'image' && (
+            <div>
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-[9px] fz-small font-bold flex items-center gap-2 px-4 cursor-pointer"
+                  style={{ height: 34, border: `1px solid rgba(255,255,255,.14)`, background: 'rgba(255,255,255,.06)', color: C.text }}
+                >
+                  <UploadCloud size={13} /> Upload Image
+                </button>
+                {/* Thumbnail of what was actually picked — the old build showed a
+                    stray "Preview Text" chip here instead of the image. */}
+                {settings.backgroundImage && (
+                  <div
+                    className="rounded-lg"
+                    style={{
+                      width: 120, height: 64,
+                      backgroundImage: `url(${settings.backgroundImage})`,
+                      backgroundSize: 'cover', backgroundPosition: 'center',
+                      border: '1px solid rgba(255,255,255,.15)',
+                    }}
+                  />
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          )}
+        </Panel>
       </div>
     </div>
   );
@@ -978,605 +1228,584 @@ const SettingsPage: React.FC = () => {
     ];
 
     const bannerBgAlpha = (bannerOpacity / 100).toFixed(2);
-    const bannerPreviewStyle = {
+    const bannerPreviewStyle: React.CSSProperties = {
       backdropFilter: 'blur(12px)',
       background: `rgba(15,23,42,${bannerBgAlpha})`,
       border: '1px solid rgba(255,255,255,0.10)',
     };
 
+    const categories = Array.from(new Set(ALL_QUICK_ACTION_DEFS.map(d => d.category)));
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
 
         {/* ── Widget Visibility ─────────────────────────────────────── */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-            <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
-              <LayoutGrid size={20} />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Dashboard Widgets</h3>
-              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Choose which panels are visible on your dashboard</p>
-            </div>
-            <span className="ml-auto px-2 py-1 bg-indigo-50 text-indigo-600 fz-tiny font-black rounded-full uppercase tracking-widest">
-              {Object.values(widgetConfig).filter(Boolean).length} / {WIDGET_DEFS.length} on
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {WIDGET_DEFS.map(({ key, label, desc, Icon }) => {
+        <Panel
+          icon={<LayoutGrid size={16} />}
+          tint="#818cf8"
+          title="Dashboard Widgets"
+          subtitle="Choose which panels are visible on your dashboard"
+          right={<Counter>{Object.values(widgetConfig).filter(Boolean).length} / {WIDGET_DEFS.length} on</Counter>}
+        >
+          <div className="grid grid-cols-2 gap-2.5">
+            {WIDGET_DEFS.map(({ key, label, desc, Icon }, i) => {
               const isOn = widgetConfig[key];
+              const color = ACCENT_PRESETS[i % ACCENT_PRESETS.length]!;
               return (
-                <div key={key}
+                <div
+                  key={key}
                   onClick={() => toggleWidget(key)}
-                  className={`cursor-pointer rounded-xl border-2 p-4 flex items-center gap-4 transition-all ${
+                  className="cursor-pointer rounded-xl p-3 flex items-center gap-3"
+                  style={
                     isOn
-                      ? 'border-indigo-400 bg-indigo-50/50 shadow-sm'
-                      : 'border-slate-200 bg-white hover:border-slate-300 opacity-60'
-                  }`}
+                      ? { border: `1px solid ${color}66`, background: `${color}1a` }
+                      : { border: `1px solid rgba(255,255,255,.07)`, background: 'rgba(255,255,255,.02)', opacity: 0.55 }
+                  }
                 >
-                  <div className={`p-2.5 rounded-lg shrink-0 ${isOn ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
-                    <Icon size={18} />
+                  <div
+                    className="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center shrink-0"
+                    style={{ background: isOn ? `${color}33` : 'rgba(255,255,255,.06)', color: isOn ? color : C.dimmer }}
+                  >
+                    <Icon size={17} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-black uppercase tracking-wide leading-none ${isOn ? 'text-slate-800' : 'text-slate-400'}`}>{label}</p>
-                    <p className="fz-tiny text-slate-400 mt-1 truncate">{desc}</p>
+                    <p className="fz-tiny font-black uppercase tracking-wide leading-none" style={{ color: isOn ? C.textStrong : C.dim }}>{label}</p>
+                    <p className="fz-tiny mt-1 truncate" style={{ color: C.dimmer }}>{desc}</p>
                   </div>
-                  <div className={`w-9 h-5 rounded-full shrink-0 relative transition-all ${isOn ? 'bg-indigo-600' : 'bg-slate-200'}`}>
-                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${isOn ? 'right-0.5' : 'left-0.5'}`} />
+                  <div
+                    className="relative shrink-0"
+                    style={{ width: 34, height: 19, borderRadius: 10, background: isOn ? color : 'rgba(255,255,255,.14)' }}
+                  >
+                    <span
+                      className="absolute block rounded-full settings-knob"
+                      style={{ width: 15, height: 15, top: 2, left: isOn ? 17 : 2, background: '#fff' }}
+                    />
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </Panel>
 
         {/* ── Quick Actions Configuration ───────────────────────────── */}
-        {(() => {
-          const categories = Array.from(new Set(ALL_QUICK_ACTION_DEFS.map(d => d.category)));
-          return (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-                <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600">
-                  <LayoutGrid size={20} />
+        <Panel
+          icon={<Zap size={16} />}
+          tint="#34d399"
+          title="Quick Actions Bar"
+          subtitle="Choose which windows appear in the dashboard quick actions"
+          right={
+            <>
+              <Counter>{enabledQaIds.length} / {ALL_QUICK_ACTION_DEFS.length} enabled</Counter>
+              {enabledQaIds.length !== DEFAULT_ENABLED_QA_IDS.length && (
+                <button
+                  onClick={() => {
+                    setEnabledQaIds(DEFAULT_ENABLED_QA_IDS);
+                    localStorage.setItem(QA_STORAGE_KEY, JSON.stringify(DEFAULT_ENABLED_QA_IDS));
+                    try { const bc = new BroadcastChannel(QA_BROADCAST_CHANNEL); bc.postMessage({ enabledIds: DEFAULT_ENABLED_QA_IDS }); bc.close(); } catch { }
+                  }}
+                  className="px-2.5 py-1 fz-mini font-black uppercase tracking-widest rounded-lg cursor-pointer"
+                  style={{ color: C.dim, border: `1px solid ${C.border}`, background: 'transparent' }}
+                >
+                  Reset
+                </button>
+              )}
+            </>
+          }
+        >
+          <div className="space-y-4">
+            {categories.map(cat => {
+              const items = ALL_QUICK_ACTION_DEFS.filter(d => d.category === cat);
+              const enabledInCat = items.filter(d => enabledQaIds.includes(d.id)).length;
+              const color = QA_CATEGORY_COLOR[cat] ?? '#6366f1';
+              return (
+                <div key={cat}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="fz-tiny font-black uppercase tracking-widest" style={{ color }}>{cat}</span>
+                    <div className="flex-1 h-px" style={{ background: C.divider }} />
+                    <span className="fz-mini" style={{ color: C.dimmer }}>{enabledInCat}/{items.length}</span>
+                  </div>
+                  <div className="grid grid-cols-6 gap-2">
+                    {items.map((item: QuickActionDef) => {
+                      const isOn = enabledQaIds.includes(item.id);
+                      const IconComp = QA_ICON_MAP[item.iconName] ?? Zap;
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => toggleQaItem(item.id)}
+                          className="cursor-pointer rounded-[10px] px-1.5 py-2.5 flex flex-col items-center gap-1.5"
+                          style={
+                            isOn
+                              ? { border: `1px solid ${color}66`, background: `${color}1a` }
+                              : { border: `1px solid rgba(255,255,255,.07)`, background: 'rgba(255,255,255,.02)', opacity: 0.45 }
+                          }
+                        >
+                          <div
+                            className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center"
+                            style={{ background: isOn ? `${color}33` : 'rgba(255,255,255,.06)', color: isOn ? color : C.dimmer }}
+                          >
+                            <IconComp size={13} />
+                          </div>
+                          <span
+                            className="fz-micro font-black uppercase tracking-tight text-center leading-tight"
+                            style={{ color: isOn ? '#e5e5ea' : C.dimmer }}
+                          >
+                            {item.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Quick Actions Bar</h3>
-                  <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Choose which windows appear in the dashboard quick actions</p>
-                </div>
-                <div className="ml-auto flex items-center gap-2">
-                  <span className="px-2 py-1 bg-emerald-50 text-emerald-600 fz-tiny font-black rounded-full uppercase tracking-widest">
-                    {enabledQaIds.length} / {ALL_QUICK_ACTION_DEFS.length} enabled
-                  </span>
-                  {enabledQaIds.length !== DEFAULT_ENABLED_QA_IDS.length && (
-                    <button
-                      onClick={() => {
-                        setEnabledQaIds(DEFAULT_ENABLED_QA_IDS);
-                        localStorage.setItem(QA_STORAGE_KEY, JSON.stringify(DEFAULT_ENABLED_QA_IDS));
-                        try { const bc = new BroadcastChannel(QA_BROADCAST_CHANNEL); bc.postMessage({ enabledIds: DEFAULT_ENABLED_QA_IDS }); bc.close(); } catch { }
-                      }}
-                      className="px-2 py-1 fz-mini font-black uppercase tracking-widest text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all"
-                    >
-                      Reset
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                {categories.map(cat => {
-                  const items = ALL_QUICK_ACTION_DEFS.filter(d => d.category === cat);
-                  const enabledInCat = items.filter(d => enabledQaIds.includes(d.id)).length;
-                  return (
-                    <div key={cat}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="fz-tiny font-black text-slate-500 uppercase tracking-widest">{cat}</span>
-                        <div className="flex-1 h-px bg-slate-100" />
-                        <span className="fz-mini text-slate-400">{enabledInCat}/{items.length}</span>
-                      </div>
-                      <div className="grid grid-cols-5 gap-2">
-                        {items.map((item: QuickActionDef) => {
-                          const isOn = enabledQaIds.includes(item.id);
-                          const IconComp = QA_ICON_MAP[item.iconName] ?? Zap;
-                          return (
-                            <div
-                              key={item.id}
-                              onClick={() => toggleQaItem(item.id)}
-                              className={`cursor-pointer rounded-xl border-2 p-3 flex flex-col items-center gap-2 transition-all ${
-                                isOn
-                                  ? 'border-emerald-400 bg-emerald-50/40 shadow-sm'
-                                  : 'border-slate-200 bg-white hover:border-slate-300 opacity-50'
-                              }`}
-                            >
-                              <div className={`p-2 rounded-lg border ${isOn ? item.colorCls : 'bg-slate-50 text-slate-400 border-slate-100'} transition-all`}>
-                                <IconComp size={14} />
-                              </div>
-                              <span className={`text-[7.5px] font-black uppercase tracking-tight text-center leading-tight ${isOn ? 'text-slate-700' : 'text-slate-400'}`}>
-                                {item.label}
-                              </span>
-                              <div className={`w-7 h-3.5 rounded-full relative transition-all ${isOn ? 'bg-emerald-500' : 'bg-slate-200'}`}>
-                                <div className={`absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full shadow transition-all ${isOn ? 'right-0.5' : 'left-0.5'}`} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
+              );
+            })}
+          </div>
+        </Panel>
 
         {/* ── FY Banner Transparency ────────────────────────────────── */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-            <div className="bg-violet-100 p-2 rounded-lg text-violet-600">
-              <Layers size={20} />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">FY Banner Transparency</h3>
-              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Control how opaque the glass banner appears</p>
-            </div>
-            <span className="ml-auto px-2 py-1 fz-small font-black rounded-full uppercase tracking-widest"
-              style={{ background: bannerOpacity === 0 ? '#fef2f2' : '#f0fdf4', color: bannerOpacity === 0 ? '#dc2626' : '#16a34a' }}>
+        <Panel
+          icon={<Layers size={16} />}
+          tint="#a78bfa"
+          title="FY Banner Transparency"
+          subtitle="Control how opaque the glass banner appears"
+          right={
+            <Counter color={bannerOpacity === 0 ? C.red : C.green}>
               {bannerOpacity === 0 ? 'Invisible' : bannerOpacity === 100 ? 'Solid' : `${bannerOpacity}% opaque`}
-            </span>
-          </div>
-
-          <div className="space-y-5">
+            </Counter>
+          }
+        >
+          <div className="space-y-4">
             {/* Quick presets */}
             <div className="flex gap-2">
               {[
-                { label: 'Hidden',      value: 0,  cls: 'border-red-200 text-red-500 hover:bg-red-50' },
-                { label: 'Ghost',       value: 20, cls: 'border-slate-200 text-slate-500 hover:bg-slate-50' },
-                { label: 'Glass',       value: 55, cls: 'border-violet-200 text-violet-600 hover:bg-violet-50' },
-                { label: 'Default',     value: 78, cls: 'border-indigo-200 text-indigo-600 hover:bg-indigo-50' },
-                { label: 'Solid',       value: 100,cls: 'border-slate-700 text-slate-700 hover:bg-slate-100' },
-              ].map(p => (
-                <button key={p.value} onClick={() => applyBannerOpacity(p.value)}
-                  className={`flex-1 py-1.5 rounded-lg fz-tiny font-black uppercase tracking-widest border transition-all ${
-                    bannerOpacity === p.value ? 'ring-2 ring-indigo-400 scale-105 shadow-sm' : ''
-                  } ${p.cls}`}>
-                  {p.label}
-                </button>
-              ))}
+                { label: 'Hidden', value: 0 },
+                { label: 'Ghost', value: 20 },
+                { label: 'Glass', value: 55 },
+                { label: 'Default', value: 78 },
+                { label: 'Solid', value: 100 },
+              ].map(p => {
+                const selected = bannerOpacity === p.value;
+                return (
+                  <button
+                    key={p.value}
+                    onClick={() => applyBannerOpacity(p.value)}
+                    className="flex-1 py-1.5 rounded-lg fz-tiny font-black uppercase tracking-widest cursor-pointer"
+                    style={
+                      selected
+                        ? { background: accent, color: '#fff', border: 'none' }
+                        : { background: C.fill, color: C.dim, border: `1px solid ${C.border}` }
+                    }
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Slider */}
-            <div className="px-1">
+            <div>
               <div className="flex justify-between mb-2">
-                <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><EyeOff size={10} /> 0% — Invisible</span>
-                <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">100% — Solid <Eye size={10} /></span>
+                <span className="fz-tiny font-black uppercase tracking-widest flex items-center gap-1" style={{ color: C.dimmer }}>
+                  <EyeOff size={10} /> 0% — Invisible
+                </span>
+                <span className="fz-tiny font-black uppercase tracking-widest flex items-center gap-1" style={{ color: C.dimmer }}>
+                  100% — Solid <Eye size={10} />
+                </span>
               </div>
-              <Slider
-                min={0}
-                max={100}
-                value={bannerOpacity}
-                onChange={applyBannerOpacity}
-                tooltip={{ formatter: (v) => `${v}% opacity` }}
-                trackStyle={{ background: 'linear-gradient(to right, transparent, #6366f1)' }}
-              />
-              <p className="text-center fz-tiny font-black text-indigo-600 uppercase tracking-widest mt-1">{bannerOpacity}%</p>
+              <Range ariaLabel="FY banner opacity" min={0} max={100} value={bannerOpacity} accent={accent} onChange={applyBannerOpacity} />
+              <p className="text-center fz-tiny font-black uppercase tracking-widest mt-1" style={{ color: accent }}>{bannerOpacity}%</p>
             </div>
 
             {/* Live banner preview */}
             <div>
-              <p className="fz-tiny font-black text-slate-400 uppercase tracking-widest mb-2">Live Preview</p>
-              <div className="relative rounded-xl overflow-hidden h-16"
-                style={{ background: settings.dashboardBg || '#f5f6fa' }}>
+              <p className="fz-tiny font-black uppercase tracking-widest mb-2" style={{ color: C.dimmer }}>Live Preview</p>
+              <div className="relative rounded-xl overflow-hidden h-16" style={{ background: settings.dashboardBg || '#f5f6fa' }}>
                 {/* Simulated blobs behind */}
                 <div className="absolute top-0 right-0 w-20 h-20 bg-violet-400/20 rounded-full blur-xl" />
                 <div className="absolute bottom-0 left-0 w-16 h-16 bg-emerald-400/15 rounded-full blur-xl" />
                 {/* Banner */}
                 <div className="absolute inset-2 rounded-lg flex items-center px-4 gap-3" style={bannerPreviewStyle}>
-                  <Calendar size={14} className="text-slate-300 shrink-0" />
+                  <Calendar size={14} className="shrink-0" style={{ color: '#cbd5e1' }} />
                   <div>
-                    <p className="fz-micro text-slate-400 uppercase tracking-widest font-black">Current Financial Year</p>
-                    <p className="text-white font-black fz-label leading-tight">FY 2026–27</p>
+                    <p className="fz-micro uppercase tracking-widest font-black" style={{ color: '#94a3b8' }}>Current Financial Year</p>
+                    <p className="font-black fz-label leading-tight" style={{ color: '#fff' }}>FY 2026–27</p>
                   </div>
                   <div className="ml-auto flex items-center gap-3">
                     <div className="text-right">
-                      <p className="fz-nano text-slate-400 uppercase">Days Left</p>
-                      <p className="text-amber-300 font-black text-sm leading-none">292</p>
+                      <p className="fz-nano uppercase" style={{ color: '#94a3b8' }}>Days Left</p>
+                      <p className="font-black text-sm leading-none" style={{ color: '#fcd34d' }}>292</p>
                     </div>
                     <div className="w-16">
-                      <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '20%' }} />
+                      <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,.1)' }}>
+                        <div className="h-full rounded-full" style={{ width: '20%', background: '#10b981' }} />
                       </div>
-                      <p className="fz-nano text-slate-400 uppercase mt-0.5 text-right">20%</p>
+                      <p className="fz-nano uppercase mt-0.5 text-right" style={{ color: '#94a3b8' }}>20%</p>
                     </div>
                   </div>
                 </div>
                 {bannerOpacity === 0 && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest">Banner hidden (opacity 0)</span>
+                    <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: '#64748b' }}>Banner hidden (opacity 0)</span>
                   </div>
                 )}
               </div>
             </div>
           </div>
-        </div>
+        </Panel>
 
         {/* ── Background Theme ──────────────────────────────────────── */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-            <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
-              <ImageIcon size={20} />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Dashboard Background</h3>
-              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Canvas colour for the home screen</p>
-            </div>
+        <Panel
+          icon={<ImageIcon size={16} />}
+          tint="#38bdf8"
+          title="Dashboard Background"
+          subtitle="Canvas colour for the home screen"
+        >
+          <div className="grid grid-cols-4 gap-2.5 mb-4">
+            {BG_OPTIONS.map(opt => {
+              const selected = settings.dashboardBg === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => applyDashboardBg(opt.value)}
+                  className="flex flex-col items-center gap-1.5 p-2 rounded-[10px] cursor-pointer"
+                  style={{
+                    border: `1px solid ${selected ? accent : C.border}`,
+                    background: selected ? accentRgba(0.1) : 'transparent',
+                  }}
+                >
+                  <div className="w-full h-9 rounded-[7px]" style={{ backgroundColor: opt.preview, border: '1px solid rgba(255,255,255,.1)' }} />
+                  <span className="fz-tiny font-black uppercase tracking-wider" style={{ color: '#c7c7cc' }}>{opt.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
-            {BG_OPTIONS.map(opt => (
-              <button key={opt.value} onClick={() => applyDashboardBg(opt.value)}
-                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                  settings.dashboardBg === opt.value
-                    ? 'border-indigo-500 ring-2 ring-indigo-100'
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}>
-                <div className="w-full h-10 rounded-lg border border-slate-200"
-                  style={{ backgroundColor: opt.preview }} />
-                <span className="fz-tiny font-black text-slate-600 uppercase tracking-wider">{opt.label}</span>
-                {settings.dashboardBg === opt.value && (
-                  <span className="fz-mini font-black text-indigo-600 uppercase">Active</span>
-                )}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            <span className="fz-small font-black uppercase tracking-widest" style={fieldLabel}>Custom colour</span>
+            <ColorWell value={settings.dashboardBg} ariaLabel="Dashboard background colour" onChange={applyDashboardBg} />
           </div>
-
-          <div className="mt-4 flex items-center gap-3">
-            <span className="fz-small font-black text-slate-400 uppercase tracking-widest">Custom colour</span>
-            <ColorPicker
-              value={settings.dashboardBg}
-              onChange={(c) => applyDashboardBg(c.toHexString())}
-              showText
-            />
-          </div>
-        </div>
-
-        {/* ── Preview ───────────────────────────────────────────────── */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4 border-b border-slate-100 pb-4">
-            <div className="bg-slate-100 p-2 rounded-lg text-slate-600"><Monitor size={20} /></div>
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Background Preview</h3>
-          </div>
-          <div className="rounded-xl border border-slate-200 overflow-hidden h-24 flex items-center justify-center"
-            style={{ backgroundColor: settings.dashboardBg }}>
-            <span className="fz-small font-black uppercase tracking-widest"
-              style={{ color: settings.dashboardBg.startsWith('#0') || settings.dashboardBg === '#1e1b4b' ? '#94a3b8' : '#64748b' }}>
-              Dashboard background preview
-            </span>
-          </div>
-        </div>
-
+        </Panel>
       </div>
     );
   };
 
-  const renderSystem = () => (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-        <div className="bg-amber-100 p-2 rounded-lg text-amber-600">
-          <Monitor size={20} />
-        </div>
-        <div>
-          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">System & Windows</h3>
-          <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Global behavior</p>
-        </div>
-      </div>
+  const renderSystem = () => {
+    const rows = [
+      {
+        key: 'notifications',
+        title: 'Notifications',
+        desc: 'Show success and info toasts — errors and warnings always appear',
+        value: settings.notifications,
+        onChange: (c: boolean) => setSettings(prev => ({ ...prev, notifications: c })),
+      },
+      {
+        key: 'soundEffects',
+        title: 'Sound Effects',
+        desc: 'Play audio cues for interactions',
+        value: settings.soundEffects,
+        onChange: (c: boolean) => setSettings(prev => ({ ...prev, soundEffects: c })),
+      },
+      {
+        key: 'showChatbot',
+        title: 'AI Assistant (Chatbot)',
+        desc: 'Show FIBE AI assistant bubble for app help',
+        value: settings.showChatbot,
+        onChange: (c: boolean) => {
+          setSettings(prev => ({ ...prev, showChatbot: c }));
+          dispatch(setTheme({ showChatbot: c }));
+          if ((window as any).electronAPI?.send) { (window as any).electronAPI.send('update-settings', { showChatbot: c }); }
+          try { const bc = new BroadcastChannel('theme_sync'); bc.postMessage({ showChatbot: c }); bc.close(); } catch { }
+        },
+      },
+    ];
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-700 block">Notifications</span>
-            <span className="fz-small text-slate-400 block">Show success and info toasts — errors and warnings always appear</span>
-          </div>
-          <Switch
-            checked={settings.notifications}
-            onChange={(c) => setSettings(prev => ({ ...prev, notifications: c }))}
-          />
+    return (
+      <Panel icon={<Monitor size={16} />} tint="#fbbf24" title="System & Windows" subtitle="Global behavior">
+        <div className="space-y-2.5">
+          {rows.map(row => (
+            <div
+              key={row.key}
+              className="flex items-center justify-between px-4 py-3.5 rounded-xl"
+              style={{ background: 'rgba(255,255,255,.04)' }}
+            >
+              <div>
+                <span className="fz-body font-bold block" style={{ color: C.text }}>{row.title}</span>
+                <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{row.desc}</span>
+              </div>
+              <Toggle on={row.value} accent={accent} label={row.title} onChange={row.onChange} />
+            </div>
+          ))}
         </div>
-
-        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-700 block">Sound Effects</span>
-            <span className="fz-small text-slate-400 block">Play audio cues for interactions</span>
-          </div>
-          <Switch
-            checked={settings.soundEffects}
-            onChange={(c) => setSettings(prev => ({ ...prev, soundEffects: c }))}
-          />
-        </div>
-
-        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-700 block">AI Assistant (Chatbot)</span>
-            <span className="fz-small text-slate-400 block">Show FIBE AI assistant bubble for app help</span>
-          </div>
-          <Switch
-            checked={settings.showChatbot}
-            onChange={(c) => {
-              setSettings(prev => ({ ...prev, showChatbot: c }));
-              dispatch(setTheme({ showChatbot: c }));
-              if ((window as any).electronAPI?.send) { (window as any).electronAPI.send('update-settings', { showChatbot: c }); }
-              try { const bc = new BroadcastChannel('theme_sync'); bc.postMessage({ showChatbot: c }); bc.close(); } catch {}
-            }}
-          />
-        </div>
-
-      </div>
-    </div>
-  );
+      </Panel>
+    );
+  };
 
   const renderDeveloper = () => (
-    <div className="space-y-6">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10">
+    <div className="space-y-5">
+      <div
+        className="rounded-2xl p-6 relative overflow-hidden"
+        style={{ background: 'linear-gradient(180deg,#141416,#0c0c0e)', border: '1px solid rgba(255,255,255,.09)' }}
+      >
+        <div className="absolute top-0 right-0 p-8 opacity-[0.07] pointer-events-none">
           <Code size={120} className="text-indigo-400" />
         </div>
 
-        <div className="flex items-center gap-3 mb-8 relative z-10">
-          <div className="bg-emerald-500/20 border border-emerald-500/30 p-2 rounded-lg text-emerald-400">
-            <Terminal size={20} />
+        <div className="flex items-center gap-3 mb-6 relative z-10">
+          <div className="w-9 h-9 rounded-[10px] flex items-center justify-center" style={{ background: 'rgba(16,185,129,.18)', color: C.green }}>
+            <Terminal size={18} />
           </div>
           <div>
-            <h3 className="text-sm font-black text-white uppercase tracking-wide">Developer Console</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge status="processing" color="#10b981" />
-              <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Access Granted: Root Level</p>
+            <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>Developer Console</h3>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full block" style={{ background: C.green }} />
+              <p className="fz-small font-medium uppercase tracking-widest" style={{ color: C.dim }}>Access Granted: Root Level</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative z-10">
           <button
             onClick={() => openWindow('/analytics-dashboard', 'Analytics Dashboard')}
-            className="group bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 p-4 rounded-xl text-left"
+            className="text-left rounded-xl p-4 cursor-pointer"
+            style={{ background: 'rgba(255,255,255,.04)', border: `1px solid ${C.border}`, color: C.text }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="bg-indigo-500/20 p-2 rounded-lg text-indigo-400 group-hover:text-indigo-300 group-hover:bg-indigo-500/30 transition-colors">
-                <BarChart2 size={18} />
-              </div>
-              <span className="fz-body font-black text-slate-500 uppercase tracking-widest px-2 py-1 bg-slate-900 rounded">Analysis</span>
+            <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center mb-2.5" style={{ background: 'rgba(99,102,241,.2)', color: '#818cf8' }}>
+              <BarChart2 size={15} />
             </div>
-            <h4 className="text-white font-bold text-sm mb-1">Analytics Dashboard</h4>
-            <p className="text-slate-400 text-xs text-opacity-80">View aggregated metrics.</p>
+            <h4 className="font-bold fz-body mb-1" style={{ color: C.textStrong }}>Analytics Dashboard</h4>
+            <p className="fz-small" style={{ color: C.dim }}>View aggregated metrics.</p>
           </button>
 
           <button
             onClick={() => openWindow('/analytics-realtime', 'Real-time Monitor', 1600, 1000)}
-            className="group bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-emerald-500/50 p-4 rounded-xl text-left"
+            className="text-left rounded-xl p-4 cursor-pointer"
+            style={{ background: 'rgba(255,255,255,.04)', border: `1px solid ${C.border}`, color: C.text }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="bg-emerald-500/20 p-2 rounded-lg text-emerald-400 group-hover:text-emerald-300 group-hover:bg-emerald-500/30 transition-colors">
-                <Activity size={18} />
-              </div>
-              <span className="fz-body font-black text-slate-500 uppercase tracking-widest px-2 py-1 bg-slate-900 rounded">Live</span>
+            <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center mb-2.5" style={{ background: 'rgba(16,185,129,.2)', color: C.green }}>
+              <Activity size={15} />
             </div>
-            <h4 className="text-white font-bold text-sm mb-1">Real-time Monitor</h4>
-            <p className="text-slate-400 text-xs text-opacity-80">Watch live transaction streams.</p>
+            <h4 className="font-bold fz-body mb-1" style={{ color: C.textStrong }}>Real-time Monitor</h4>
+            <p className="fz-small" style={{ color: C.dim }}>Watch live transaction streams.</p>
           </button>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-          <div className="bg-purple-100 p-2 rounded-lg text-purple-600">
-            <Monitor size={20} />
-          </div>
+      <Panel icon={<Monitor size={16} />} tint="#a78bfa" title="Environment State" subtitle="Window geometry & layout">
+        <div className="flex items-center justify-between px-4 py-3.5 rounded-xl" style={{ background: 'rgba(255,255,255,.04)' }}>
           <div>
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">Environment State</h3>
-            <p className="fz-small font-medium text-slate-400 uppercase tracking-widest">Window geometry & layout</p>
+            <span className="fz-body font-bold block" style={{ color: C.text }}>Reset Window Layouts</span>
+            <span className="fz-small block mt-0.5" style={{ color: C.dim }}>Restore all windows to default dimensions</span>
           </div>
-        </div>
-
-        <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-700 block">Reset Window Layouts</span>
-            <span className="fz-small text-slate-400 block">Restore all windows to default dimensions</span>
-          </div>
-          <Button
+          <button
             onClick={resetWindowStates}
-            icon={<RotateCcw size={14} />}
-            className="fz-small font-bold uppercase tracking-widest border-slate-300 text-slate-600"
+            className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+            style={{ height: 32, border: '1px solid rgba(255,255,255,.14)', background: C.fill, color: C.text }}
           >
-            Reset Geometry
-          </Button>
+            <RotateCcw size={12} /> Reset Geometry
+          </button>
         </div>
-      </div>
+      </Panel>
     </div>
   );
 
-  const renderLicense = () => <LicenseSection />;
+  const renderLicense = () => <LicenseSection accent={accent} />;
+
+  const tabMeta = TAB_META[activeTab] ?? TAB_META.appearance!;
 
   return (
     <ConfigProvider
       theme={{
+        algorithm: antdTheme.darkAlgorithm,
         token: {
-          colorPrimary: settings.accentColor,
+          colorPrimary: accent,
           borderRadius: settings.borderRadius,
           fontFamily: settings.fontFamily || "'Inter', sans-serif"
         }
       }}
     >
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-indigo-100 overflow-hidden"
-        style={{ fontFamily: settings.fontFamily }}
+      <div
+        className="settings-shell h-screen flex flex-col overflow-hidden"
+        style={{ background: C.bg, color: C.text }}
       >
 
         {/* Header */}
-        <div className="bg-slate-900 px-6 py-4 flex items-center justify-between shrink-0 shadow-lg z-20">
-          <div className="flex items-center gap-4">
-            <div className="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-600/20" style={{ backgroundColor: settings.accentColor }}>
+        <div
+          className="px-6 py-4 flex items-center justify-between shrink-0 z-20"
+          style={{ background: C.bgHeader, borderBottom: `1px solid rgba(255,255,255,.07)` }}
+        >
+          <div className="flex items-center gap-3.5">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+              style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, boxShadow: '0 2px 10px rgba(0,0,0,.4)' }}
+            >
               <Settings size={20} />
             </div>
             <div>
-              <h1 className="text-base font-black text-white uppercase tracking-tight leading-none">System Configuration</h1>
-              <div className="flex items-center gap-2 mt-1.5 fz-body font-bold text-slate-400 uppercase tracking-widest leading-none">
-                <ShieldCheck size={10} className="text-emerald-400" /> Administrative Panel
+              <h1 className="text-base font-black uppercase tracking-tight leading-none" style={{ color: C.textStrong }}>System Configuration</h1>
+              <div className="flex items-center gap-1.5 mt-1.5 fz-tiny font-bold uppercase tracking-widest leading-none" style={{ color: C.dim }}>
+                <ShieldCheck size={11} style={{ color: C.green }} /> Administrative Panel
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
 
             <button
               onClick={handleDeveloperModeToggle}
-              className={`h-9 px-4 rounded-lg fz-small font-black uppercase tracking-widest flex items-center gap-2 transition-all ${isDeveloperMode
-                ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20'
-                : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/5'
-                }`}
+              className="rounded-[9px] px-3.5 fz-small font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+              style={
+                isDeveloperMode
+                  ? { height: 34, background: 'rgba(52,211,153,.12)', color: C.green, border: '1px solid rgba(52,211,153,.2)' }
+                  : { height: 34, background: 'transparent', color: C.dim, border: `1px solid ${C.border}` }
+              }
             >
-              {isDeveloperMode ? <Unlock size={14} /> : <Lock size={14} />}
+              {isDeveloperMode ? <Unlock size={13} /> : <Lock size={13} />}
               {isDeveloperMode ? 'Dev Active' : 'Dev Locked'}
             </button>
 
-            <div className="h-5 w-px bg-slate-700 mx-1" />
+            <div className="w-px h-5" style={{ background: 'rgba(255,255,255,.12)' }} />
 
             <button
               onClick={handleSaveWithAnimation}
               disabled={isSaving}
-              className="h-9 px-5 text-white rounded-lg fz-small font-black shadow-lg transition-all flex items-center gap-2 transform active:scale-95 uppercase tracking-widest"
-              style={{ backgroundColor: settings.accentColor }}
+              className="rounded-[9px] border-0 text-white fz-small font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+              style={{ height: 34, paddingLeft: 18, paddingRight: 18, background: accent, boxShadow: '0 3px 12px rgba(0,0,0,.35)' }}
             >
-              {isSaving ? <RotateCcw className="animate-spin" size={14} /> : <Save size={14} />}
+              {isSaving ? <RotateCcw className="settings-spin" size={14} /> : <Save size={14} />}
               {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
 
             <button
               onClick={() => window.close()}
-              className="h-9 px-4 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg fz-small font-black transition-all flex items-center gap-2 transform active:scale-95 uppercase tracking-widest border border-rose-500/10"
+              className="rounded-[9px] px-4 fz-small font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+              style={{ height: 34, background: 'rgba(255,69,58,.12)', color: C.red, border: '1px solid rgba(255,69,58,.15)' }}
             >
-              <X size={14} /> Close
+              <X size={13} /> Close
             </button>
           </div>
         </div>
 
         {/* Main Layout */}
-        <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 overflow-hidden flex relative">
           {/* Sidebar */}
-          <div className="w-60 bg-white border-r border-slate-200 flex flex-col pt-6 shrink-0 z-10">
-            <nav className="flex-1 px-4 space-y-1">
-              <button
-                onClick={() => setActiveTab('appearance')}
-                className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'appearance'
-                  ? 'bg-slate-50 text-indigo-600 shadow-sm ring-1 ring-slate-100'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                  }`}
-                style={activeTab === 'appearance' ? { color: settings.accentColor } : {}}
-              >
-                <Palette size={16} /> Appearance
-              </button>
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'dashboard'
-                  ? 'bg-slate-50 text-indigo-600 shadow-sm ring-1 ring-slate-100'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                  }`}
-                style={activeTab === 'dashboard' ? { color: settings.accentColor } : {}}
-              >
-                <BarChart2 size={16} /> Dashboard
-              </button>
-              <button
-                onClick={() => setActiveTab('system')}
-                className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'system'
-                  ? 'bg-slate-50 text-indigo-600 shadow-sm ring-1 ring-slate-100'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                  }`}
-                style={activeTab === 'system' ? { color: settings.accentColor } : {}}
-              >
-                <Monitor size={16} /> System & Window
-              </button>
+          <div
+            className="w-[250px] shrink-0 flex flex-col px-3 py-4"
+            style={{ background: C.sidebar, backdropFilter: 'blur(20px)', borderRight: `1px solid rgba(255,255,255,.07)` }}
+          >
+            <div className="relative mb-4">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: C.dim }} />
+              <input
+                value={navQuery}
+                onChange={e => setNavQuery(e.target.value)}
+                placeholder="Search settings"
+                aria-label="Search settings"
+                className="w-full box-border rounded-[9px] outline-none pl-8 pr-3 fz-body"
+                style={{ height: 34, border: `1px solid ${C.border}`, background: 'rgba(255,255,255,.06)', color: C.text }}
+              />
+            </div>
 
-              {isDeveloperMode && (
-                <>
-                  <div className="my-4 px-2">
-                    <div className="h-px bg-slate-100 w-full" />
-                    <span className="fz-body font-black text-slate-300 uppercase tracking-widest mt-2 block pl-2">System Core</span>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('developer')}
-                    className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'developer'
-                      ? 'bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-emerald-100'
-                      : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                      }`}
-                  >
-                    <Code size={16} /> Developer
-                  </button>
-                </>
+            <nav className="flex flex-col gap-0.5">
+              {visibleNav.map((item, idx) => {
+                const { key, label, Icon, gradient } = item;
+                // Keep the divider the design puts above License, but only when
+                // something actually precedes it after filtering.
+                const showDivider = item.afterDivider && idx > 0;
+                return (
+                  <React.Fragment key={key}>
+                    {showDivider && <div className="h-px mx-1.5 my-2.5" style={{ background: 'rgba(255,255,255,.08)' }} />}
+                    <button onClick={() => setActiveTab(key)} style={navButtonStyle(key)}>
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: gradient }}
+                      >
+                        <Icon size={15} className="text-white" />
+                      </div>
+                      <span className="fz-body font-bold">{label}</span>
+                    </button>
+                  </React.Fragment>
+                );
+              })}
+              {visibleNav.length === 0 && (
+                <p className="fz-small px-2 py-3" style={{ color: C.dimmer }}>No section matches “{navQuery}”.</p>
               )}
-
-              {/* License Tab - always visible */}
-              <div className="my-4 px-2">
-                <div className="h-px bg-slate-100 w-full" />
-              </div>
-              <button
-                onClick={() => setActiveTab('license')}
-                className={`w-full text-left px-4 py-3 rounded-xl fz-small font-black uppercase tracking-widest flex items-center gap-3 transition-all ${activeTab === 'license'
-                  ? 'bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-indigo-100'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                  }`}
-              >
-                <KeyRound size={16} /> License
-              </button>
             </nav>
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 bg-slate-50/50 overflow-auto p-8 relative">
-            <div className="max-w-5xl mx-auto">
-                {activeTab === 'appearance' && renderAppearance()}
-                {activeTab === 'dashboard' && renderDashboard()}
-                {activeTab === 'system' && renderSystem()}
-                {activeTab === 'developer' && renderDeveloper()}
-                {activeTab === 'license' && renderLicense()}
+          <div className="flex-1 overflow-y-auto relative">
+            <div
+              className="sticky top-0 z-[8] px-10 pt-7 pb-3.5"
+              style={{ background: 'linear-gradient(#000 70%, rgba(0,0,0,0))' }}
+            >
+              <h2 className="m-0 text-[28px] font-black tracking-tight" style={{ color: C.textStrong }}>{tabMeta.title}</h2>
+              <p className="mt-1 fz-body" style={{ color: C.dim }}>{tabMeta.subtitle}</p>
+            </div>
+
+            <div className="px-10 pb-12 settings-enter" style={{ maxWidth: 1080 }}>
+              {activeTab === 'appearance' && renderAppearance()}
+              {activeTab === 'dashboard' && renderDashboard()}
+              {activeTab === 'system' && renderSystem()}
+              {activeTab === 'developer' && renderDeveloper()}
+              {activeTab === 'license' && renderLicense()}
             </div>
           </div>
         </div>
 
-        {/* Modals */}
-        <Modal
-          title={
-            <div className="flex items-center gap-2 text-indigo-600">
-              <Lock size={18} />
-              <span className="text-sm font-black uppercase tracking-wide">Security Access</span>
-            </div>
-          }
-          open={showPinDialog}
-          onCancel={() => setShowPinDialog(false)}
-          footer={null}
-          width={320}
-          centered
-          className="compact-modal"
-        >
-          <div className="space-y-4 pt-4">
-            <p className="fz-small font-medium text-slate-500 uppercase tracking-widest text-center">
-              Enter Restricted PIN to Unlock
-            </p>
-            <Input.Password
-              autoFocus
-              value={pinInput}
-              onChange={(e) => setPinInput(e.target.value)}
-              placeholder="••••"
-              maxLength={4}
-              onPressEnter={handlePinSubmit}
-              className="text-center font-black text-lg tracking-[0.5em] h-12"
-            />
-            {pinError && <p className="text-xs text-center text-rose-500 font-bold">{pinError}</p>}
-            <Button
-              type="primary"
-              block
-              size="large"
-              onClick={handlePinSubmit}
-              className="bg-indigo-600 font-bold uppercase tracking-widest fz-small"
+        {/* PIN dialog — a plain overlay rather than antd's Modal, which renders
+            its own light surface and fights the dark chrome. */}
+        {showPinDialog && (
+          <div
+            className="fixed inset-0 flex items-center justify-center z-[100]"
+            style={{ background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setShowPinDialog(false)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Security access"
+              onClick={e => e.stopPropagation()}
+              className="rounded-[18px] p-6 settings-pop"
+              style={{ width: 320, background: C.panel, border: '1px solid rgba(255,255,255,.1)' }}
             >
-              Authenticate
-            </Button>
+              <div className="flex items-center gap-2 mb-4" style={{ color: accent }}>
+                <Lock size={16} />
+                <span className="text-sm font-black uppercase tracking-wide">Security Access</span>
+              </div>
+              <p className="text-center fz-small font-bold uppercase tracking-widest mb-3.5" style={{ color: C.dim }}>
+                Enter Restricted PIN to Unlock
+              </p>
+              <input
+                ref={pinInputRef}
+                type="password"
+                inputMode="numeric"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handlePinSubmit(); }}
+                placeholder="••••"
+                maxLength={4}
+                className="w-full box-border text-center rounded-xl outline-none"
+                style={{
+                  height: 52, fontSize: 22, fontWeight: 800, letterSpacing: '0.5em',
+                  border: '1px solid rgba(255,255,255,.12)', background: C.fill, color: '#fff',
+                }}
+              />
+              {pinError && <p className="text-center fz-small font-bold mt-2.5" style={{ color: '#ff6961' }}>{pinError}</p>}
+              <button
+                onClick={handlePinSubmit}
+                className="w-full mt-3 rounded-[10px] border-0 fz-small font-black uppercase tracking-widest text-white cursor-pointer"
+                style={{ height: 42, background: accent }}
+              >
+                Authenticate
+              </button>
+              <button
+                onClick={() => setShowPinDialog(false)}
+                className="w-full mt-1.5 border-0 bg-transparent fz-small font-bold cursor-pointer"
+                style={{ height: 36, color: C.dim }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </Modal>
+        )}
 
       </div>
     </ConfigProvider>
@@ -1584,5 +1813,3 @@ const SettingsPage: React.FC = () => {
 };
 
 export default SettingsPage;
-
-

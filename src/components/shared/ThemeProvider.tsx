@@ -89,7 +89,8 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         if (darkMode) {
             // A configured light canvas would leave the navbar and toolbars
             // sitting on a bright background, so dark mode keeps its own.
-            body.style.backgroundColor = '#0f172a';
+            // "Fiscal ledger" navy palette — see the html.dark block below.
+            body.style.backgroundColor = '#0E1116';
         } else if (theme.backgroundType === 'gradient') {
             body.style.backgroundColor = theme.backgroundColor1 || '#ffffff';
             body.style.backgroundImage =
@@ -169,13 +170,30 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             theme={{
                 algorithm: theme.interfaceMode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
                 token: {
-                    colorPrimary: theme.accentColor,
+                    // Dark mode is the "fiscal ledger" theme: navy surfaces with a
+                    // fixed emerald accent, independent of Settings → Accent Color
+                    // (which still drives light mode).
+                    colorPrimary: theme.interfaceMode === 'dark' ? '#10B981' : theme.accentColor,
                     borderRadius: theme.cornerRadius,
                     fontSize: 14 * theme.fontScale,
                     fontFamily: theme.fontFamily || "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     motionDurationFast: '0ms',
                     motionDurationMid: '0ms',
                     motionDurationSlow: '0ms',
+                    ...(theme.interfaceMode === 'dark' ? {
+                        colorBgBase: '#0E1116',
+                        colorBgContainer: '#151A21',
+                        colorBgElevated: '#151A21',
+                        colorBgLayout: '#0E1116',
+                        colorBgSpotlight: '#1C2530',
+                        colorBorder: '#232B36',
+                        colorBorderSecondary: '#1C2530',
+                        colorText: '#E6E9EF',
+                        colorTextSecondary: '#8B95A5',
+                        colorTextTertiary: '#8B95A5',
+                        colorFillSecondary: '#1C2530',
+                        colorFillTertiary: '#1C2530',
+                    } : {}),
                 },
             }}
         >
@@ -183,9 +201,9 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                 className="theme-transition-wrapper h-full w-full"
                 style={{
                     fontSize: 'var(--base-font-size)',
-                    '--accent-color': theme.accentColor,
+                    '--accent-color': theme.interfaceMode === 'dark' ? '#10B981' : theme.accentColor,
                     '--corner-radius': `${theme.cornerRadius}px`,
-                    '--accent-bg': `${theme.accentColor}10`,
+                    '--accent-bg': theme.interfaceMode === 'dark' ? '#10B98110' : `${theme.accentColor}10`,
                 } as React.CSSProperties}
             >
                 {children}
@@ -197,6 +215,19 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           --accent-glow: ${theme.accentColor}33;
           --corner-radius: ${theme.cornerRadius}px;
           --font-family: ${theme.fontFamily || 'Inter, sans-serif'};
+        }
+
+        /* Dark mode locks the accent to the fiscal-ledger emerald, overriding
+           whatever Settings → Accent Color has picked (that setting still
+           drives light mode via the :root block above). !important beats the
+           inline --accent-color/--accent-glow set on <html> by ThemeProvider's
+           JS effect, since both target the same element. */
+        html.dark {
+          --accent-color: #10B981 !important;
+          --accent-glow: #10B98133 !important;
+        }
+        html.dark .theme-transition-wrapper {
+          --accent-bg: #10B98110 !important;
         }
         
         html {
@@ -322,35 +353,39 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         .border-indigo-100, .border-indigo-200 { border-color: color-mix(in srgb, var(--accent-color) 25%, white) !important; }
         .text-indigo-300, .text-indigo-400 { color: color-mix(in srgb, var(--accent-color) 65%, white) !important; }
 
-        /* ── Dark mode baseline ───────────────────────────────────────────
-           antd components are themed via darkAlgorithm; this layer darkens the
+        /* ── Dark mode baseline: "fiscal ledger" theme ─────────────────────
+           Dark-navy surfaces (#0E1116 base / #151A21 elevated / #1C2530
+           hover-secondary) with an emerald accent, replacing the previous
+           slate/indigo dark palette. antd components are themed via
+           darkAlgorithm + the token overrides above; this layer darkens the
            Tailwind-styled containers (canvases, cards, text, borders) so the
            Interface Mode → Dark toggle visibly takes effect across all screens.
-           Dark slate headers (bg-slate-900) already look correct in dark mode. */
-        html.dark body { background-color: #0f172a; color: #e2e8f0; }
-        html.dark .bg-white { background-color: #1e293b !important; }
+           Dark slate headers (bg-slate-900) are left untouched — they already
+           read as "navy" against the new palette. */
+        html.dark body { background-color: #0E1116; color: #E6E9EF; }
+        html.dark .bg-white { background-color: #151A21 !important; }
         html.dark .bg-slate-50,
         html.dark .bg-slate-50\\/50,
         html.dark .bg-\\[\\#f5f6fa\\],
-        html.dark .bg-\\[\\#f8fafc\\] { background-color: #0f172a !important; }
-        html.dark .bg-slate-100 { background-color: #334155 !important; }
+        html.dark .bg-\\[\\#f8fafc\\] { background-color: #0E1116 !important; }
+        html.dark .bg-slate-100 { background-color: #1C2530 !important; }
         html.dark .text-slate-900,
         html.dark .text-slate-800,
-        html.dark .text-slate-700 { color: #e2e8f0 !important; }
+        html.dark .text-slate-700 { color: #E6E9EF !important; }
         html.dark .text-slate-600,
         html.dark .text-slate-500,
-        html.dark .text-slate-400 { color: #94a3b8 !important; }
+        html.dark .text-slate-400 { color: #8B95A5 !important; }
         html.dark .border-slate-200,
-        html.dark .border-slate-100 { border-color: #334155 !important; }
+        html.dark .border-slate-100 { border-color: #232B36 !important; }
 
         /* gray-* variants (the top menu bar / toolbar use text-gray / bg-gray) */
-        html.dark .bg-gray-50, html.dark .bg-gray-100 { background-color: #0f172a !important; }
-        html.dark .bg-gray-200 { background-color: #334155 !important; }
-        html.dark .text-gray-900, html.dark .text-gray-800, html.dark .text-gray-700 { color: #e2e8f0 !important; }
-        html.dark .text-gray-600, html.dark .text-gray-500, html.dark .text-gray-400 { color: #94a3b8 !important; }
-        html.dark .border-gray-200, html.dark .border-gray-100 { border-color: #334155 !important; }
-        html.dark .hover\\:bg-gray-50:hover, html.dark .hover\\:bg-gray-100:hover, html.dark .hover\\:bg-gray-200:hover { background-color: #334155 !important; }
-        html.dark .hover\\:bg-blue-50:hover { background-color: #1e3a5f !important; }
+        html.dark .bg-gray-50, html.dark .bg-gray-100 { background-color: #0E1116 !important; }
+        html.dark .bg-gray-200 { background-color: #1C2530 !important; }
+        html.dark .text-gray-900, html.dark .text-gray-800, html.dark .text-gray-700 { color: #E6E9EF !important; }
+        html.dark .text-gray-600, html.dark .text-gray-500, html.dark .text-gray-400 { color: #8B95A5 !important; }
+        html.dark .border-gray-200, html.dark .border-gray-100 { border-color: #232B36 !important; }
+        html.dark .hover\\:bg-gray-50:hover, html.dark .hover\\:bg-gray-100:hover, html.dark .hover\\:bg-gray-200:hover { background-color: #1C2530 !important; }
+        html.dark .hover\\:bg-blue-50:hover { background-color: #0F2A21 !important; }
 
         /* antd surfaces — these screens use local ConfigProviders that override
            the dark algorithm, and some hardcode light table backgrounds. These
@@ -358,10 +393,10 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         html.dark .ant-table,
         html.dark .ant-table-tbody > tr > td,
         html.dark .ant-table-summary > tr > td,
-        html.dark .ant-table-cell { background: #1e293b !important; color: #e2e8f0 !important; border-color: #334155 !important; }
-        html.dark .ant-table-thead > tr > th { background: #0f172a !important; color: #cbd5e1 !important; border-color: #334155 !important; }
-        html.dark .ant-table-tbody > tr:hover > td { background: #334155 !important; }
-        html.dark .ant-table-summary > tr > td { background: #0f172a !important; }
+        html.dark .ant-table-cell { background: #151A21 !important; color: #E6E9EF !important; border-color: #232B36 !important; }
+        html.dark .ant-table-thead > tr > th { background: #0E1116 !important; color: #8B95A5 !important; border-color: #232B36 !important; }
+        html.dark .ant-table-tbody > tr:hover > td { background: #1C2530 !important; }
+        html.dark .ant-table-summary > tr > td { background: #0E1116 !important; }
         html.dark .ant-input,
         html.dark .ant-input-affix-wrapper,
         html.dark .ant-input-number,
@@ -372,16 +407,28 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         html.dark .ant-modal-header,
         html.dark .ant-select-dropdown,
         html.dark .ant-picker-panel-container,
-        html.dark .ant-picker-panel { background-color: #1e293b !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+        html.dark .ant-picker-panel { background-color: #151A21 !important; color: #E6E9EF !important; border-color: #232B36 !important; }
         html.dark .ant-input,
         html.dark .ant-input-number-input,
         html.dark .ant-select-selection-item,
         html.dark .ant-picker-input > input,
         html.dark .ant-modal-title,
-        html.dark .ant-picker-cell { color: #e2e8f0 !important; }
-        html.dark .ant-select-item { color: #cbd5e1 !important; }
-        html.dark .ant-select-item-option-active:not(.ant-select-item-option-disabled) { background-color: #334155 !important; }
-        html.dark .ant-empty-description { color: #94a3b8 !important; }
+        html.dark .ant-picker-cell { color: #E6E9EF !important; }
+        html.dark .ant-select-item { color: #8B95A5 !important; }
+        html.dark .ant-select-item-option-active:not(.ant-select-item-option-disabled) { background-color: #1C2530 !important; }
+        html.dark .ant-empty-description { color: #8B95A5 !important; }
+
+        /* SubNavbar / AnalyticsWidgets use Tailwind's native dark: variant
+           (compiled to ".dark .dark\\:…") with the old slate-800/700 palette
+           directly, instead of the plain slate-* classes overridden above. */
+        .dark .dark\\:bg-slate-800 { background-color: #151A21 !important; }
+        .dark .dark\\:bg-slate-700,
+        .dark .dark\\:hover\\:bg-slate-700:hover { background-color: #1C2530 !important; }
+        .dark .dark\\:border-slate-700 { border-color: #232B36 !important; }
+        .dark .dark\\:text-slate-200,
+        .dark .dark\\:hover\\:text-white:hover { color: #E6E9EF !important; }
+        .dark .dark\\:text-slate-400,
+        .dark .dark\\:text-slate-500 { color: #8B95A5 !important; }
 
         .theme-transition-wrapper {
           /* transitions removed for instant theme application */

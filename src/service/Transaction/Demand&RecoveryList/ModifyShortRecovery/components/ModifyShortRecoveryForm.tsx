@@ -44,10 +44,10 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="msr-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="msr-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
                             <Banknote size={13} className="text-white" />
@@ -133,7 +133,7 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="msr-footer px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5"><Building2 size={9} className="text-slate-400" /><span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Recoveries</span></div>
                     <span className="fz-mini font-black text-indigo-400 uppercase tracking-wide">Supervisor Mode</span>
                 </div>
@@ -144,6 +144,29 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
                 .msr-table .ant-table-thead > tr > th { background: #f8fafc !important; padding: 5px 8px !important; border-bottom: 1px solid #e2e8f0 !important; }
                 .msr-table .ant-table-tbody > tr > td { padding: 4px 8px !important; border-bottom: 1px solid #f1f5f9 !important; }
                 .msr-table .ant-table-tbody > tr:hover > td { background: #f8fafc !important; }
+
+                /* ── Dark mode ── */
+                html.dark .msr-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .msr-header { background: #0c0c0e !important; }
+                html.dark .msr-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .msr-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .msr-root .border-slate-200,
+                html.dark .msr-root .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .msr-root .text-slate-800,
+                html.dark .msr-root .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .msr-root .text-slate-500,
+                html.dark .msr-root .text-slate-600 { color: #8e8e93 !important; }
+                html.dark .msr-root .text-slate-400,
+                html.dark .msr-root .text-slate-300 { color: #71717a !important; }
+                html.dark .msr-root .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .msr-root .bg-indigo-50 { background-color: rgba(99,102,241,.15) !important; }
+                html.dark .msr-sel .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                html.dark .msr-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+                html.dark .msr-table .ant-table-tbody > tr > td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; background-color: #1c1c1e !important; }
+                html.dark .msr-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
+                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
+                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
             `}</style>
         </ConfigProvider>
     );

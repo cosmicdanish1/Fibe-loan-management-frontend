@@ -101,10 +101,27 @@ const LoanNilCertificate: React.FC = () => {
           border-radius: 8px;
           background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
         }
+
+        /* ── Dark-mode overrides (Settings palette, html.dark only) ── */
+        /* Note: .certificate-border is intentionally left unthemed — its outerHTML is
+           reused verbatim for the print iframe, so it must keep the printable look. */
+        html.dark .loannil-page { background-color: #000000 !important; background-image: none !important; }
+        html.dark .loannil-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .loannil-card,
+        html.dark .loannil-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .loannil-report-body { background-color: #1c1c1e !important; }
+        html.dark .loannil-page h1 { color: #f5f5f7 !important; }
+        html.dark .loannil-page .text-slate-400,
+        html.dark .loannil-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .loannil-page .text-slate-300 { color: #71717a !important; }
+        html.dark .loannil-page .ant-input,
+        html.dark .loannil-page .ant-input-affix-wrapper { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .loannil-page .ant-input-affix-wrapper .ant-input { background-color: transparent !important; }
+        html.dark .loannil-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
       `}</style>
 
-      <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-emerald-50/20 to-slate-50 overflow-hidden">
-        <div className="bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 no-print">
+      <div className="loannil-page h-screen flex flex-col bg-gradient-to-br from-slate-50 via-emerald-50/20 to-slate-50 overflow-hidden">
+        <div className="loannil-header bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 no-print">
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-1.5 rounded-lg text-white shadow-md">
               <Award size={14} />
@@ -125,7 +142,7 @@ const LoanNilCertificate: React.FC = () => {
 
         <div className="flex-1 overflow-hidden p-2 flex gap-2">
           <div className="w-[260px] flex flex-col gap-2 shrink-0 no-print">
-            <div className="bg-white/95 backdrop-blur-sm border border-emerald-200/60 rounded-lg overflow-hidden shadow-sm">
+            <div className="loannil-card bg-white/95 backdrop-blur-sm border border-emerald-200/60 rounded-lg overflow-hidden shadow-sm">
               <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <h3 className="fz-caption font-black text-white tracking-wide uppercase">Member</h3>
@@ -147,7 +164,7 @@ const LoanNilCertificate: React.FC = () => {
             <Button type="primary" block size="small" icon={<Search size={11} />} onClick={handleGenerate} loading={loading} className="h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 font-black uppercase tracking-wider fz-caption mt-1 shadow-lg">Generate</Button>
           </div>
 
-          <div className="flex-1 bg-white/95 backdrop-blur-sm border border-emerald-200/60 rounded-lg shadow-sm flex flex-col overflow-hidden">
+          <div className="loannil-report-panel flex-1 bg-white/95 backdrop-blur-sm border border-emerald-200/60 rounded-lg shadow-sm flex flex-col overflow-hidden">
             <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-3 py-1.5 flex items-center justify-between shrink-0 no-print">
               <div className="flex items-center gap-1.5">
                 <div className="bg-white/20 p-1 rounded-md shadow-sm"><FileText size={12} className="text-white" /></div>
@@ -158,7 +175,7 @@ const LoanNilCertificate: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto p-4">
+            <div className="loannil-report-body flex-1 overflow-auto p-4">
               <Spin spinning={loading} tip="Loading...">
                 {certificateData ? (
                   <div className="certificate-border max-w-3xl mx-auto">

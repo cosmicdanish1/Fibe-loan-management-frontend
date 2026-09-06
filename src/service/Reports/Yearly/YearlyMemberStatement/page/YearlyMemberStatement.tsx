@@ -387,11 +387,30 @@ const YearlyMemberStatement: React.FC = () => {
                 .custom-scrollbar-ultra::-webkit-scrollbar-thumb:hover {
                     background: #a78bfa;
                 }
+
+                /* ── Yearly Member Statement — dark mode (reinforces the page's own isDark styling) ── */
+                html.dark .yearly-mstmt-page { background-color: #000000 !important; }
+                html.dark .yearly-mstmt-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .yearly-mstmt-card,
+                html.dark .yearly-mstmt-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .yearly-mstmt-page .bg-slate-900\/40 { background-color: #0c0c0e !important; }
+                html.dark .yearly-mstmt-page .text-slate-100,
+                html.dark .yearly-mstmt-page .text-slate-200,
+                html.dark .yearly-mstmt-page .text-slate-300 { color: #f5f5f7 !important; }
+                html.dark .yearly-mstmt-page label { color: #8e8e93 !important; }
+                html.dark .yearly-mstmt-page .ant-input,
+                html.dark .yearly-mstmt-page .ant-input-affix-wrapper,
+                html.dark .yearly-mstmt-page .ant-input-search .ant-input-group-addon .ant-btn,
+                html.dark .yearly-mstmt-page .ant-select-selector,
+                html.dark .yearly-mstmt-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                html.dark .yearly-mstmt-page .ant-picker input { color: #f5f5f7 !important; }
+                html.dark .yearly-mstmt-page .ant-radio-button-wrapper { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+                html.dark .yearly-mstmt-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
             `}</style>
 
-            <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-purple-50/20 to-slate-50'}`}>
+            <div className={`yearly-mstmt-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-purple-50/20 to-slate-50'}`}>
                 {/* Ultra-Compact Header */}
-                <div className={`px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b no-print ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+                <div className={`yearly-mstmt-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b no-print ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
                     <div className="flex items-center gap-2">
                         <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-1.5 rounded-lg text-white shadow-md">
                             <BookOpen size={14} />
@@ -442,7 +461,7 @@ const YearlyMemberStatement: React.FC = () => {
                     <div className="w-[260px] flex flex-col gap-2 shrink-0 no-print overflow-y-auto custom-scrollbar-ultra">
 
                         {/* Date Range */}
-                        <div className={`backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
+                        <div className={`yearly-mstmt-card backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
                             <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 flex items-center gap-1">
                                 <Calendar size={10} className="text-white" />
                                 <h3 className="fz-caption font-black text-white tracking-wide uppercase">Date Range</h3>
@@ -470,7 +489,7 @@ const YearlyMemberStatement: React.FC = () => {
                         </div>
 
                         {/* Filters */}
-                        <div className={`backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
+                        <div className={`yearly-mstmt-card backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
                             <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 flex items-center gap-1">
                                 <Building size={10} className="text-white" />
                                 <h3 className="fz-caption font-black text-white tracking-wide uppercase">Filters</h3>
@@ -504,7 +523,7 @@ const YearlyMemberStatement: React.FC = () => {
                         </div>
 
                         {/* Member Range */}
-                        <div className={`backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
+                        <div className={`yearly-mstmt-card backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
                             <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 flex items-center gap-1">
                                 <Users size={10} className="text-white" />
                                 <h3 className="fz-caption font-black text-white tracking-wide uppercase">Member Range</h3>
@@ -534,7 +553,7 @@ const YearlyMemberStatement: React.FC = () => {
                         </div>
 
                         {/* Options */}
-                        <div className={`backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
+                        <div className={`yearly-mstmt-card backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
                             <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 flex items-center gap-1">
                                 <ArrowUpDown size={10} className="text-white" />
                                 <h3 className="fz-caption font-black text-white tracking-wide uppercase">Options</h3>
@@ -578,7 +597,7 @@ const YearlyMemberStatement: React.FC = () => {
                     </div>
 
                     {/* RIGHT PANEL: Report */}
-                    <div className={`flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-purple-200/60'}`}>
+                    <div className={`yearly-mstmt-panel flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-purple-200/60'}`}>
                         <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-1.5 flex items-center justify-between shrink-0 no-print">
                             <div className="flex items-center gap-1.5">
                                 <div className="bg-white/20 p-1 rounded-md shadow-sm">

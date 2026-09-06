@@ -67,7 +67,10 @@ export const useLoanRepayment = () => {
         setMessage(null);
         try {
             const base = await getApiBaseUrl();
-            const res = await fetch(`${base}/loans/member/${mbno}/master`);
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch(`${base}/loans/member/${mbno}/master`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             if (!res.ok) throw new Error('Member not found or no active loans');
             const data = await res.json();
             const loans: ActiveLoan[] = (data.data || data || []).filter((l: any) => parseFloat(l.balance || 0) > 0);
@@ -86,7 +89,10 @@ export const useLoanRepayment = () => {
         setHistoryLoading(true);
         try {
             const base = await getApiBaseUrl();
-            const res = await fetch(`${base}/loans/member/${mbno}/repayment-history`);
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch(`${base}/loans/member/${mbno}/repayment-history`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             const data = await res.json();
             setRepaymentHistory(data.data || data || []);
         } catch {
@@ -104,7 +110,10 @@ export const useLoanRepayment = () => {
         setDueStatusLoading(true);
         try {
             const base = await getApiBaseUrl();
-            const res = await fetch(`${base}/loans/case/${loancaseno}/due-status`);
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch(`${base}/loans/case/${loancaseno}/due-status`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             if (!res.ok) throw new Error('Failed to load due status');
             const data = await res.json();
             const status: DueStatus = data.data || data;
@@ -147,9 +156,13 @@ export const useLoanRepayment = () => {
         setMessage(null);
         try {
             const base = await getApiBaseUrl();
+            const token = localStorage.getItem('accessToken');
             const res = await fetch(`${base}/loans/repayment`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({
                     mbno: form.mbno,
                     loancaseno: form.selectedLoanCase,

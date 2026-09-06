@@ -44,6 +44,73 @@ const fmt = (n: number) =>
 
 const balLabel = (n: number) => `${fmt(n)} ${n >= 0 ? 'CR' : 'DR'}`;
 
+// Print-only layout matching the legacy report exactly (letterhead, Head
+// Name/Member/Date-range/Opening block, Date/Page Number line, Date/
+// Particulars/Voucher No/Debit/Credit/Balance columns, Total Amount row,
+// footer notes) — same lines[]-as-single-source-of-truth pattern already
+// proven for the other Daily reports' prints. On-screen view is untouched;
+// this feeds handlePrint only.
+const MLR_LINE_W = 94;
+const MLR_DASH = '-'.repeat(MLR_LINE_W);
+const MLR_COL_DATE = 12;
+const MLR_COL_PART = 22;
+const MLR_COL_VCHR = 11;
+const MLR_COL_AMT = 15;
+
+const mlrPadL = (s: string, w: number) => s.padStart(w);
+const mlrPadR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
+const mlrCenter = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
+
+function buildMemberLedgerLines(data: LedgerData): string[] {
+  const lines: string[] = [];
+  const now = dayjs().format('DD-MMM-YYYY/h:mmA');
+
+  lines.push(mlrCenter('Espat Karmchari Co-Operative Credit Society Limited.', MLR_LINE_W));
+  lines.push(mlrCenter('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', MLR_LINE_W));
+  lines.push(mlrCenter('Ledger Report (Personal)', MLR_LINE_W));
+  lines.push('');
+  lines.push(`Head Name : ${data.headName}  : CODE : ${data.headCode}`);
+  lines.push(MLR_DASH);
+  lines.push(`Member Number : ${data.memberNumber}`);
+  lines.push(`Name : Mr/Ms ${data.memberName}`);
+  lines.push(`From Date : ${dayjs(data.fromDate).format('DD-MMM-YYYY')}  To Date ${dayjs(data.toDate).format('DD-MMM-YYYY')}`);
+  lines.push(`Opening Balance : ${balLabel(data.openingBalance)}`);
+  const dateStr = `Date : ${now}`;
+  const pageStr = 'Page Number :  1';
+  lines.push(`${dateStr}${mlrPadL(pageStr, MLR_LINE_W - dateStr.length)}`);
+  lines.push(MLR_DASH);
+
+  const amtW = MLR_COL_AMT;
+  lines.push(
+    `${mlrPadR('Date', MLR_COL_DATE)}${mlrPadR('Particulars', MLR_COL_PART)}${mlrPadR('Voucher No', MLR_COL_VCHR)}` +
+    `${mlrPadL('Debit', amtW)}${mlrPadL('Credit', amtW)}${mlrPadL('Balance', amtW)}`
+  );
+  lines.push(MLR_DASH);
+
+  data.entries.forEach(e => {
+    lines.push(
+      `${mlrPadR(dayjs(e.transactionDate).format('DD-MMM-YYYY'), MLR_COL_DATE)}` +
+      `${mlrPadR(e.narration, MLR_COL_PART)}${mlrPadR(e.voucherNo, MLR_COL_VCHR)}` +
+      `${mlrPadL(e.debit > 0 ? fmt(e.debit) : '0.00', amtW)}` +
+      `${mlrPadL(e.credit > 0 ? fmt(e.credit) : '0.00', amtW)}` +
+      `${mlrPadL(balLabel(e.balance), amtW)}`
+    );
+  });
+
+  lines.push(MLR_DASH);
+  lines.push(
+    `${mlrPadR('Total Amount', MLR_COL_DATE + MLR_COL_PART + MLR_COL_VCHR)}` +
+    `${mlrPadL(fmt(data.totalDebits), amtW)}${mlrPadL(fmt(data.totalCredits), amtW)}${' '.repeat(amtW)}`
+  );
+  lines.push(MLR_DASH);
+  lines.push('');
+  lines.push('* Report as per data Available');
+  lines.push('* Note   D-Demand   R-Reciept   P-Payment   J- Journal Transfer Entry');
+  lines.push(MLR_DASH);
+
+  return lines;
+}
+
 const MemberLedgerReport: React.FC = () => {
   const dispatch = useDispatch();
   const { interfaceMode, accentColor, cornerRadius } = useSelector((state: RootState) => state.theme);
@@ -129,20 +196,38 @@ const MemberLedgerReport: React.FC = () => {
 
   const handlePrint = () => {
     if (!data) return;
-    const win = window.open('', '_blank', 'width=900,height=700') as unknown as Window | null;
-    if (!win) return;
-    const content = document.getElementById('ledger-print-area')?.innerHTML || '';
-    win.document.write(`<!DOCTYPE html><html><head><title>Member Ledger</title>
+    // window.open() used to be used here, but this app's Electron main
+    // process globally intercepts every window.open() call
+    // (mainWindow.webContents.setWindowOpenHandler in main.ts) and denies
+    // it, redirecting to shell.openExternal(url) instead — with the empty
+    // URL this call passes, that meant Windows trying (and failing) to
+    // open "about:blank" as an external link, confirmed live on the
+    // identical pattern in Consolidation Of Daily A/c. Print silently did
+    // nothing. Switched to the same hidden-iframe + monospace lines[]
+    // technique already proven working for every other report's print
+    // this session — it never goes through window.open() at all, and
+    // matches the legacy report's exact printed layout (user-supplied
+    // reference screenshot).
+    const lines = buildMemberLedgerLines(data);
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`<!DOCTYPE html><html><head><title>Member Ledger</title>
 <style>
-  @page { size:A4 portrait; margin:12mm; }
-  body { font-family:'Courier New',monospace; font-size:9pt; color:#000; background:#fff; }
-  table { width:100%; border-collapse:collapse; }
-  th,td { border-bottom:1px dashed #999; padding:2px 4px; font-size:8.5pt; }
-  th { border-bottom:2px solid #333; font-weight:bold; }
-  .total-row td { border-top:2px solid #333; font-weight:bold; }
-</style></head><body>${content}</body></html>`);
-    win.document.close(); win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 400);
+  @page { size: A4 portrait; margin: 12mm; }
+  body { margin: 0; }
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
+</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 300);
+    }
   };
 
   const handleExportCSV = () => {
@@ -179,10 +264,10 @@ const MemberLedgerReport: React.FC = () => {
         colorBorder: isDark ? '#334155' : '#e2e8f0',
       },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${text} ${bg}`}>
+      <div className={`mlr-page h-screen flex flex-col font-sans overflow-hidden ${text} ${bg}`}>
 
         {/* Header */}
-        <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
+        <div className={`mlr-header border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-cyan-600 p-1.5 rounded-lg text-white shadow-md">
               <BookOpen size={14} />
@@ -213,7 +298,7 @@ const MemberLedgerReport: React.FC = () => {
           <div className="w-[230px] flex flex-col gap-2 shrink-0 overflow-y-auto">
 
             {/* Member */}
-            <div className={`border rounded-lg overflow-hidden ${panel}`}>
+            <div className={`mlr-card border rounded-lg overflow-hidden ${panel}`}>
               <div className={`px-2 py-1 flex items-center gap-1 ${isDark ? 'bg-cyan-800/50' : 'bg-cyan-600'}`}>
                 <User size={10} className="text-white" />
                 <h3 className="fz-small font-black text-white uppercase tracking-wide">Member</h3>
@@ -251,7 +336,7 @@ const MemberLedgerReport: React.FC = () => {
             </div>
 
             {/* Head */}
-            <div className={`border rounded-lg overflow-hidden ${panel}`}>
+            <div className={`mlr-card border rounded-lg overflow-hidden ${panel}`}>
               <div className={`px-2 py-1 flex items-center gap-1 ${isDark ? 'bg-cyan-800/50' : 'bg-cyan-600'}`}>
                 <List size={10} className="text-white" />
                 <h3 className="fz-small font-black text-white uppercase tracking-wide">Account Head</h3>
@@ -274,7 +359,7 @@ const MemberLedgerReport: React.FC = () => {
             </div>
 
             {/* Dates */}
-            <div className={`border rounded-lg overflow-hidden ${panel}`}>
+            <div className={`mlr-card border rounded-lg overflow-hidden ${panel}`}>
               <div className={`px-2 py-1 flex items-center gap-1 ${isDark ? 'bg-cyan-800/50' : 'bg-cyan-600'}`}>
                 <Calendar size={10} className="text-white" />
                 <h3 className="fz-small font-black text-white uppercase tracking-wide">Date Range</h3>
@@ -307,12 +392,12 @@ const MemberLedgerReport: React.FC = () => {
                   { label: 'Total Receipt', value: fmt(data.totalCredits), cls: isDark ? 'text-emerald-300' : 'text-emerald-600' },
                   { label: 'Closing', value: balLabel(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-cyan-300' : 'text-cyan-700') : (isDark ? 'text-rose-300' : 'text-rose-600') },
                 ].map(({ label, value, cls }) => (
-                  <div key={label} className={`border rounded-lg px-3 py-1.5 ${panel}`}>
+                  <div key={label} className={`mlr-card border rounded-lg px-3 py-1.5 ${panel}`}>
                     <div className={`fz-tiny font-bold uppercase tracking-wide ${muted}`}>{label}</div>
                     <div className={`fz-caption font-black font-mono ${cls}`}>{value}</div>
                   </div>
                 ))}
-                <div className={`border rounded-lg px-3 py-1.5 ${panel}`}>
+                <div className={`mlr-card border rounded-lg px-3 py-1.5 ${panel}`}>
                   <div className={`fz-tiny font-bold uppercase tracking-wide ${muted}`}>Entries</div>
                   <div className={`text-base font-black font-mono ${text}`}>{data.totalTransactions}</div>
                 </div>
@@ -321,7 +406,7 @@ const MemberLedgerReport: React.FC = () => {
           </div>
 
           {/* Report panel */}
-          <div className={`flex-1 border rounded-lg flex flex-col overflow-hidden ${panel}`}>
+          <div className={`mlr-panel flex-1 border rounded-lg flex flex-col overflow-hidden ${panel}`}>
             <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-cyan-900/40 border-slate-700' : 'bg-cyan-600'}`}>
               <span className="fz-caption font-black text-white uppercase tracking-wide">
                 Ledger Report (Personal) — {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}
@@ -329,7 +414,7 @@ const MemberLedgerReport: React.FC = () => {
               {data && <span className="fz-small text-cyan-200 font-mono">{data.totalTransactions} entries</span>}
             </div>
 
-            <div className={`flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
+            <div className={`mlr-preview-body flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
               <Spin spinning={loading} tip="Loading...">
                 {data && data.entries.length > 0 ? (
                   <div id="ledger-print-area" className="font-mono">
@@ -423,7 +508,7 @@ const MemberLedgerReport: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className={`border-t px-3 py-1.5 flex items-center justify-between shrink-0 ${panel}`}>
+        <div className={`mlr-footer border-t px-3 py-1.5 flex items-center justify-between shrink-0 ${panel}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" />
             <span className={`fz-tiny font-bold uppercase tracking-wide ${muted}`}>Member Ledger · Personal Account</span>
@@ -450,6 +535,25 @@ const MemberLedgerReport: React.FC = () => {
           onClose={() => setShowLookupModal(false)}
         />
       </Modal>
+
+      <style>{`
+        /* ── Member Ledger Report — dark mode ── */
+        html.dark .mlr-page { background-color: #000000 !important; }
+        html.dark .mlr-header,
+        html.dark .mlr-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mlr-card,
+        html.dark .mlr-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mlr-preview-body { background-color: #1c1c1e !important; }
+        html.dark .mlr-page .ant-picker,
+        html.dark .mlr-page .ant-select-selector,
+        html.dark .mlr-page .ant-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mlr-page .ant-picker input,
+        html.dark .mlr-page .ant-select-selection-item,
+        html.dark .mlr-page .ant-input { color: #f5f5f7 !important; }
+        html.dark .mlr-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .ant-modal-content,
+        html.dark .ant-modal-header { background-color: #1c1c1e !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

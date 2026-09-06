@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Save, RotateCcw, PenTool, Upload as UploadIcon, X as XIcon, CheckCircle2, User, Camera } from 'lucide-react';
+import { Search, Save, RotateCcw, PenTool, Upload as UploadIcon, X as XIcon, CheckCircle2, User, Camera, Sun, Moon } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
 import apiService from '../../../../services/api';
 import { getApiBaseUrlSync } from '../../../../services/apiVersionConfig';
 import { useMemberForm } from '../Hook/useMemberForm';
@@ -7,9 +8,16 @@ import { Modal } from 'antd';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
 import { API_BASE_URL, getApiBaseUrl } from '../../../../services/apiVersionConfig';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { setTheme } from '../../../../store/slices/themeSlice';
+import type { RootState } from '../../../../store';
 
 const MemberMaster: React.FC = () => {
   const { formData, handleInputChange, resetForm, setFormValues } = useMemberForm();
+  const dispatch = useDispatch();
+  const interfaceMode = useSelector((s: RootState) => s.theme.interfaceMode);
+  const isDarkMode = interfaceMode === 'dark' ||
+    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const toggleTheme = () => dispatch(setTheme({ interfaceMode: isDarkMode ? 'light' : 'dark' }));
   const [showLookupModal, setShowLookupModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingMember, setIsLoadingMember] = useState(false);
@@ -65,11 +73,63 @@ const MemberMaster: React.FC = () => {
   const [sigQueue, setSigQueue] = useState<File | null>(null);
   const [savedSigUrl, setSavedSigUrl] = useState('');
 
+  // Tracks blob object URLs (signature + 3 photos) so they can be revoked before replacement/unmount.
+  type MediaKey = PhotoType | 'signature';
+  const mediaObjectUrlsRef = useRef<Partial<Record<MediaKey, string>>>({});
+  const setMediaObjectUrl = useCallback((key: MediaKey, url: string) => {
+    const prev = mediaObjectUrlsRef.current[key];
+    if (prev) URL.revokeObjectURL(prev);
+    mediaObjectUrlsRef.current[key] = url || undefined;
+    if (key === 'signature') {
+      setSavedSigUrl(url);
+      return;
+    }
+    const photoKey = key;
+    setMediaSavedUrls(p => {
+      const n = { ...p };
+      if (url) n[photoKey] = url; else delete n[photoKey];
+      return n;
+    });
+  }, []);
+  useEffect(() => () => {
+    Object.values(mediaObjectUrlsRef.current).forEach(u => u && URL.revokeObjectURL(u));
+  }, []);
+
+  // BUG FIX: /members/master/:mbno/(signature|photo/:type) are JWT-protected —
+  // a plain <img src="..."> can't carry the Authorization header and 401s.
+  // Fetch as a blob (with the header) and hand the <img> an object URL instead.
+  const loadProtectedImage = useCallback(async (key: MediaKey, endpoint: string) => {
+    try {
+      const blob = await apiService.fetchProtectedFile(endpoint);
+      setMediaObjectUrl(key, blob ? URL.createObjectURL(blob) : '');
+    } catch {
+      setMediaObjectUrl(key, '');
+    }
+  }, [setMediaObjectUrl]);
+
   // ── KYC Documents state ───────────────────────────────────────────────────
   const DOC_TYPES = ['Aadhaar', 'PAN', 'Voter ID', 'Driving License', 'Passport', 'Ration Card', 'Bank Passbook', 'Photo', 'Other'];
   const [kycDocType, setKycDocType] = useState('Aadhaar');
   const [kycDocuments, setKycDocuments] = useState<any[]>([]);
   const [kycUploading, setKycUploading] = useState(false);
+
+  // ── Cast Category options — loaded from the Cast Category Master screen so
+  // the two stay in sync; falls back to the legacy fixed list if the fetch fails. ──
+  const FALLBACK_CAST_CATEGORIES = ['OBC', 'General', 'SC', 'ST'];
+  const [castCategoryList, setCastCategoryList] = useState<string[]>(FALLBACK_CAST_CATEGORIES);
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await apiService.getCastCategories();
+        if (response.success && Array.isArray(response.data) && response.data.length > 0) {
+          const names = response.data.map((c: any) => c.name || c.castcategory).filter(Boolean);
+          if (names.length > 0) setCastCategoryList(names);
+        }
+      } catch (error) {
+        console.error('Failed to load cast categories, using fallback list:', error);
+      }
+    })();
+  }, []);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -80,8 +140,8 @@ const MemberMaster: React.FC = () => {
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.fillStyle = isDarkMode ? '#151A21' : '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = isDarkMode ? '#E6E9EF' : '#1e293b'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
     const scaled = (cx: number, cy: number) => {
       const r = canvas.getBoundingClientRect();
@@ -105,10 +165,10 @@ const MemberMaster: React.FC = () => {
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.fillStyle = isDarkMode ? '#151A21' : '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = isDarkMode ? '#E6E9EF' : '#1e293b'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     isDrawingRef.current = false; hasDrawingRef.current = false; setHasDrawing(false); setSigQueue(null);
-  }, []);
+  }, [isDarkMode]);
 
   const scaledMouse = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!; const r = canvas.getBoundingClientRect();
@@ -143,33 +203,29 @@ const MemberMaster: React.FC = () => {
   const uploadQueuedMedia = useCallback(async (mbno: string) => {
     const uploads: Promise<void>[] = [];
     for (const [type, file] of Object.entries(mediaQueue) as [PhotoType, File][]) {
-      uploads.push(apiService.uploadMemberPhotoMaster(mbno, type, file).then(() => {
-        setMediaSavedUrls(prev => ({ ...prev, [type]: `${getApiBaseUrlSync()}/members/master/${mbno}/photo/${type}?t=${Date.now()}` }));
-      }).catch(() => {}));
+      uploads.push(apiService.uploadMemberPhotoMaster(mbno, type, file).then(() =>
+        loadProtectedImage(type, `/members/master/${mbno}/photo/${type}`)
+      ).catch(() => {}));
     }
     if (sigQueue) {
-      uploads.push(apiService.uploadMemberSignatureMaster(mbno, sigQueue).then(() => {
-        setSavedSigUrl(`${getApiBaseUrlSync()}/members/master/${mbno}/signature?t=${Date.now()}`);
+      uploads.push(apiService.uploadMemberSignatureMaster(mbno, sigQueue).then(async () => {
+        await loadProtectedImage('signature', `/members/master/${mbno}/signature`);
         clearCanvas();
       }).catch(() => {}));
     }
     await Promise.all(uploads);
     setMediaQueue({});
     setSigQueue(null);
-  }, [mediaQueue, sigQueue, clearCanvas]);
+  }, [mediaQueue, sigQueue, clearCanvas, loadProtectedImage]);
 
   // Load saved media when an existing member is loaded
   const loadMemberMedia = useCallback((mbno: string) => {
-    const base = getApiBaseUrlSync();
-    const t = Date.now();
-    setSavedSigUrl(`${base}/members/master/${mbno}/signature?t=${t}`);
-    setMediaSavedUrls({
-      profile:   `${base}/members/master/${mbno}/photo/profile?t=${t}`,
-      doc_front: `${base}/members/master/${mbno}/photo/doc_front?t=${t}`,
-      doc_back:  `${base}/members/master/${mbno}/photo/doc_back?t=${t}`,
-    });
+    loadProtectedImage('signature', `/members/master/${mbno}/signature`);
+    (['profile', 'doc_front', 'doc_back'] as PhotoType[]).forEach(type =>
+      loadProtectedImage(type, `/members/master/${mbno}/photo/${type}`)
+    );
     setMediaQueue({}); setMediaPreviews({}); setSigQueue(null); clearCanvas();
-  }, [clearCanvas]);
+  }, [clearCanvas, loadProtectedImage]);
 
   // ── KYC Documents handlers ────────────────────────────────────────────────
   const loadKycDocuments = useCallback(async (mbno: string) => {
@@ -644,20 +700,29 @@ const MemberMaster: React.FC = () => {
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg border-b border-white/5">
         <h1 className="fz-caption font-black text-white tracking-tight uppercase">Member Master</h1>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="flex items-center gap-1 px-2 py-1 rounded-md border border-white/15 text-white/80 hover:text-white hover:bg-white/10 transition-colors fz-tiny font-semibold uppercase tracking-wide"
+        >
+          {isDarkMode ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+          <span>{isDarkMode ? 'Light' : 'Dark'}</span>
+        </button>
       </div>
 
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-xl border-l-4 ${notification.type === 'success'
-          ? 'bg-green-50 border-green-500 text-green-800'
+        <div className={`fixed top-4 right-4 z-50 p-3 rounded-lg shadow-xl border ${notification.type === 'success'
+          ? 'bg-green-50 border-green-200 text-green-800'
           : notification.type === 'error'
-            ? 'bg-red-50 border-red-500 text-red-800'
-            : 'bg-blue-50 border-blue-500 text-blue-800'
+            ? 'bg-red-50 border-red-200 text-red-800'
+            : 'bg-violet-50 border-violet-200 text-violet-800'
           }`} style={{ minWidth: 320, maxWidth: 420 }}>
           <div className="flex items-start gap-2">
             <div className="flex-1">
               <div className={`font-black fz-body uppercase tracking-wide ${notification.type === 'success' ? 'text-green-800' :
-                notification.type === 'error' ? 'text-red-800' : 'text-blue-800'
+                notification.type === 'error' ? 'text-red-800' : 'text-violet-800'
                 }`}>
                 {notification.type === 'success' ? '✅ ' : notification.type === 'error' ? '❌ ' : 'ℹ️ '}
                 {notification.message}
@@ -690,12 +755,12 @@ const MemberMaster: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 p-1 overflow-auto bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex-1 p-1 overflow-auto bg-slate-50">
         <div className="mx-auto" style={{ minWidth: 700 }}>
-          {/* Member Information Card */}
-          <div className="border-2 border-blue-500 rounded p-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md mb-1.5">
-            {/* Top Row: Avatar, Badge, Member Number, Search, Active */}
-            <div className="flex flex-row flex-wrap items-center gap-1.5 mb-1.5">
+          {/* Identity Card */}
+          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            {/* Top Row: Avatar, Member Number, Search, Active */}
+            <div className="flex flex-row flex-wrap items-center gap-2 mb-2">
               {/* Circular profile photo (with initials-avatar fallback) */}
               <div className="relative group shrink-0">
                 <input id="photo-profile-header" type="file" accept="image/jpeg,image/png" className="hidden"
@@ -706,12 +771,12 @@ const MemberMaster: React.FC = () => {
                     alt="Profile"
                     onClick={() => document.getElementById('photo-profile-header')?.click()}
                     onError={() => { if (!mediaQueue.profile) setMediaSavedUrls(p => { const n = { ...p }; delete n.profile; return n; }); }}
-                    className="w-11 h-11 rounded-full object-cover border-2 border-blue-400 shadow-md cursor-pointer transition-transform group-hover:scale-105"
+                    className="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-sm cursor-pointer transition-transform group-hover:scale-105"
                   />
                 ) : (
                   <div
                     onClick={() => document.getElementById('photo-profile-header')?.click()}
-                    className="w-11 h-11 rounded-full border-2 border-blue-400 shadow-md cursor-pointer bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-sm uppercase transition-transform group-hover:scale-105"
+                    className="w-11 h-11 rounded-full border border-slate-200 shadow-sm cursor-pointer bg-violet-600 flex items-center justify-center text-white font-black text-sm uppercase transition-transform group-hover:scale-105"
                   >
                     {((formData.firstName?.[0] || '') + (formData.lastName?.[0] || '')) || <User size={18} />}
                   </div>
@@ -722,26 +787,22 @@ const MemberMaster: React.FC = () => {
                 {mediaQueue.profile && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 fz-nano font-black text-amber-600 bg-white px-1 rounded whitespace-nowrap shadow">on save</span>}
               </div>
 
-              <span className="bg-blue-600 text-white px-2 py-1 rounded fz-caption font-black shadow-md inline-block uppercase tracking-wide">
-                Member Information
-              </span>
-
               <div className="flex items-center gap-1.5">
-                <label className="text-blue-800 font-black fz-caption whitespace-nowrap uppercase">Member No:</label>
+                <label className="text-slate-500 fz-tiny font-semibold whitespace-nowrap uppercase tracking-wide">Member No</label>
                 <input
                   type="text"
                   value={formData.memberNumber}
                   onChange={(e) => handleInputChange('memberNumber', e.target.value)}
-                  className="px-2 py-1 border-2 border-blue-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 fz-caption font-bold w-24"
+                  className="px-2 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium w-24"
                   placeholder="Auto"
                 />
                 <button
                   onClick={handleSearchClick}
                   disabled={isLoadingMember}
-                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded fz-caption font-black transition-all shadow-md flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide"
+                  className="px-2 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md fz-caption font-semibold transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide"
                 >
                   {isLoadingMember ? (
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     <Search className="w-3 h-3" />
                   )}
@@ -749,35 +810,38 @@ const MemberMaster: React.FC = () => {
                 </button>
                 <button
                   onClick={() => document.getElementById('kyc-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                  className="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded fz-caption font-black transition-all shadow-md flex items-center gap-1 uppercase tracking-wide"
+                  className="px-2 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md fz-caption font-semibold transition-colors flex items-center gap-1 uppercase tracking-wide"
                   title="Jump to KYC Documents"
                 >
-                  <UploadIcon className="w-3 h-3" /> <span>KYC</span>
+                  <UploadIcon className="w-3 h-3" /> <span>KYC Docs</span>
                 </button>
               </div>
 
-              <span className={`fz-tiny font-black px-1.5 py-0.5 rounded uppercase tracking-wide ${formData.memberNumber
-                ? 'bg-green-100 text-green-800 border-2 border-green-400'
-                : 'bg-blue-100 text-blue-800 border-2 border-blue-400'
+              <span className={`fz-tiny font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${formData.memberNumber
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-violet-50 text-violet-700 border border-violet-200'
                 }`}>
                 {formData.memberNumber ? '📝 Edit' : '🆕 New'}
               </span>
 
               <div className="ml-auto flex items-center gap-1.5">
-                <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded border-2 border-green-500 shadow-md">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                    className="w-3.5 h-3.5 text-green-600 border-green-400 rounded focus:ring-green-600"
-                  />
-                  <label className="text-green-800 font-black fz-caption whitespace-nowrap uppercase">Active</label>
+                <div
+                  onClick={() => handleInputChange('isActive', !formData.isActive)}
+                  role="checkbox"
+                  aria-checked={formData.isActive}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border cursor-pointer select-none transition-colors ${formData.isActive
+                    ? 'border-green-300 bg-green-50 text-green-700'
+                    : 'border-slate-300 bg-white text-slate-500'
+                    }`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${formData.isActive ? 'bg-green-600' : 'bg-slate-400'}`} />
+                  <span className="fz-caption font-bold uppercase tracking-wide">{formData.isActive ? 'Active' : 'Inactive'}</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleReset}
                   disabled={isSaving}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-black rounded shadow-md transition-all fz-caption uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-semibold rounded-md shadow-sm transition-colors fz-caption uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                 >
                   <RotateCcw className="w-3 h-3" /> <span>Reset</span>
                 </button>
@@ -785,7 +849,7 @@ const MemberMaster: React.FC = () => {
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex items-center gap-1 px-3.5 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-black rounded shadow-md transition-all fz-caption uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                  className="flex items-center gap-1 px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-md shadow-sm transition-colors fz-caption uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                 >
                   {isSaving ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-3 h-3" />}
                   <span>{isSaving ? 'Saving…' : formData.memberNumber ? 'Update' : 'Create'}</span>
@@ -794,13 +858,13 @@ const MemberMaster: React.FC = () => {
             </div>
 
             {/* Name Fields Row */}
-            <div className="grid grid-cols-12 gap-1.5">
+            <div className="grid grid-cols-12 gap-2">
               <div className="col-span-2">
-                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Title</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Title</label>
                 <select
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-blue-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 fz-caption font-bold shadow-sm"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 >
                   <option value="Mr">Mr</option>
                   <option value="Mrs">Mrs</option>
@@ -810,45 +874,45 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div className="col-span-3">
-                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">First Name *</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">First Name *</label>
                 <input
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-blue-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 fz-caption font-bold shadow-sm"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="Enter first name"
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Middle Name</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Middle Name</label>
                 <input
                   type="text"
                   value={formData.middleName}
                   onChange={(e) => handleInputChange('middleName', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-blue-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 fz-caption font-bold shadow-sm"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="Enter middle name"
                 />
               </div>
               <div className="col-span-4">
-                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Last Name *</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Last Name *</label>
                 <input
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-blue-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 fz-caption font-bold shadow-sm"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="Enter last name"
                 />
               </div>
             </div>
             {/* Father's Name Row */}
-            <div className="grid grid-cols-12 gap-1.5 mt-1.5">
+            <div className="grid grid-cols-12 gap-2 mt-2">
               <div className="col-span-12">
-                <label className="text-blue-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Father's Name</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Father's Name</label>
                 <input
                   type="text"
                   value={formData.fatherName}
                   onChange={(e) => handleInputChange('fatherName', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-blue-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 fz-caption font-bold shadow-sm"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="Enter father's name"
                 />
               </div>
@@ -856,42 +920,36 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Personal & Employment Details Card */}
-          <div className="border-2 border-purple-500 rounded p-1.5 bg-gradient-to-r from-purple-50 to-pink-50 shadow-md mb-1.5">
-            <h3 className="fz-caption font-black text-purple-900 mb-1.5 flex items-center gap-1.5">
-              <span className="bg-purple-600 text-white px-2 py-1 rounded fz-tiny uppercase tracking-wide">Personal & Employment</span>
-            </h3>
+          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            <span className="inline-block bg-violet-50 text-violet-700 fz-tiny font-bold uppercase tracking-wide px-2 py-1 rounded mb-2">Personal &amp; Employment</span>
 
             {/* Row 1: Gender, DOB, Age, Monthly Contribution, Compulsary Deposit */}
-            <div className="grid grid-cols-12 gap-1.5 mb-1.5">
+            <div className="grid grid-cols-12 gap-2 mb-2">
               <div className="col-span-2">
-                <label className="text-purple-800 font-black fz-tiny block mb-1 uppercase tracking-wide">Gender</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-1 uppercase tracking-wide">Gender</label>
                 <div className="flex gap-1.5">
-                  <label className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border-2 border-purple-400 shadow-sm">
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="male"
-                      checked={formData.gender === 'male'}
-                      onChange={() => handleInputChange('gender', 'male')}
-                      className="w-2.5 h-2.5 text-purple-600 border-slate-300 focus:ring-purple-500"
-                    />
-                    <span className="text-purple-800 font-black fz-tiny uppercase">Male</span>
-                  </label>
-                  <label className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border-2 border-purple-400 shadow-sm">
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="female"
-                      checked={formData.gender === 'female'}
-                      onChange={() => handleInputChange('gender', 'female')}
-                      className="w-2.5 h-2.5 text-purple-600 border-slate-300 focus:ring-purple-500"
-                    />
-                    <span className="text-purple-800 font-black fz-tiny uppercase">Female</span>
-                  </label>
+                  <div
+                    onClick={() => handleInputChange('gender', 'male')}
+                    className={`flex-1 text-center px-1.5 py-1 rounded-md fz-tiny font-bold cursor-pointer uppercase border transition-colors ${formData.gender === 'male'
+                      ? 'border-violet-500 bg-violet-50 text-violet-700'
+                      : 'border-slate-300 bg-white text-slate-500'
+                      }`}
+                  >
+                    Male
+                  </div>
+                  <div
+                    onClick={() => handleInputChange('gender', 'female')}
+                    className={`flex-1 text-center px-1.5 py-1 rounded-md fz-tiny font-bold cursor-pointer uppercase border transition-colors ${formData.gender === 'female'
+                      ? 'border-violet-500 bg-violet-50 text-violet-700'
+                      : 'border-slate-300 bg-white text-slate-500'
+                      }`}
+                  >
+                    Female
+                  </div>
                 </div>
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Date Of Birth</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Date Of Birth</label>
                 <input
                   type="date"
                   value={formData.dateOfBirth}
@@ -913,63 +971,63 @@ const MemberMaster: React.FC = () => {
                       handleInputChange('age', age);
                     }
                   }}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
               <div className="col-span-1">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Age</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Age</label>
                 <input
                   type="number"
                   value={formData.age}
                   onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 0)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-gray-50 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-slate-50 text-slate-500 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="Auto"
                   title="Age is auto-calculated from Date of Birth"
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Monthly Contrib.</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Monthly Contrib.</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.monthlyContribution}
                   onChange={(e) => handleInputChange('monthlyContribution', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="0.00"
                 />
               </div>
               <div className="col-span-4">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Compulsary Dep.</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Compulsary Dep.</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.compulsatoryDeposit}
                   onChange={(e) => handleInputChange('compulsatoryDeposit', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="0.00"
                 />
               </div>
             </div>
 
             {/* Row 2: Sr.No, Designation, Basic Pay, ShareAmt, Insurance */}
-            <div className="grid grid-cols-12 gap-1.5 mb-1.5">
+            <div className="grid grid-cols-12 gap-2 mb-2">
               <div className="col-span-2">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Sr.No/EPF/P.NO</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Sr.No/EPF/P.NO</label>
                 <input
                   type="text"
                   value={formData.srNoEpfPfNo}
                   onChange={(e) => handleInputChange('srNoEpfPfNo', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Designation</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Designation</label>
                 <select
                   value={formData.designation}
                   onChange={(e) => handleInputChange('designation', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 >
                   <option value="">Select...</option>
                   <option value="A./M.">A./M.</option>
@@ -1251,53 +1309,51 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Basic Pay</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Basic Pay</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.basicPay}
                   onChange={(e) => handleInputChange('basicPay', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="0.00"
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">ShareAmt</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">ShareAmt</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.shareAmt}
                   onChange={(e) => handleInputChange('shareAmt', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="0.00"
                 />
               </div>
-              <div className="col-span-2">
-                <div className={`flex items-center gap-1.5 mt-4 px-1.5 py-1 rounded border-2 shadow-sm transition-all ${formData.isInsured
-                  ? 'bg-orange-50 border-orange-500'
-                  : 'bg-white border-orange-400'
-                  }`}>
-                  <input
-                    type="checkbox"
-                    checked={formData.isInsured}
-                    onChange={(e) => {
-                      const isInsured = e.target.checked;
-                      handleInputChange('isInsured', isInsured);
-                      if (!isInsured) {
-                        handleInputChange('amountOfInsurance', '0');
-                      }
-                    }}
-                    className="w-3 h-3 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
-                  />
-                  <label className="text-orange-800 font-black fz-tiny uppercase tracking-wide">
-                    Insured {formData.isInsured && '✓'}
-                  </label>
+              <div className="col-span-2 flex items-end">
+                <div
+                  onClick={() => {
+                    const isInsured = !formData.isInsured;
+                    handleInputChange('isInsured', isInsured);
+                    if (!isInsured) {
+                      handleInputChange('amountOfInsurance', '0');
+                    }
+                  }}
+                  role="checkbox"
+                  aria-checked={formData.isInsured}
+                  className="flex items-center gap-1.5 py-1 cursor-pointer select-none"
+                >
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center fz-nano font-black text-white ${formData.isInsured ? 'bg-violet-600 border-violet-600' : 'border-slate-300 bg-white'
+                    }`}>
+                    {formData.isInsured && '✓'}
+                  </div>
+                  <span className="text-slate-500 fz-tiny font-semibold uppercase tracking-wide">Insured</span>
                 </div>
               </div>
               <div className="col-span-2">
-                <label className={`font-black fz-tiny block mb-0.5 uppercase tracking-wide ${formData.isInsured ? 'text-purple-800' : 'text-gray-400'
+                <label className={`fz-tiny font-semibold block mb-0.5 uppercase tracking-wide ${formData.isInsured ? 'text-slate-500' : 'text-slate-300'
                   }`}>
                   Insurance Amt {formData.isInsured && <span className="text-red-500">*</span>}
                 </label>
@@ -1308,15 +1364,15 @@ const MemberMaster: React.FC = () => {
                   value={formData.amountOfInsurance}
                   onChange={(e) => handleInputChange('amountOfInsurance', e.target.value)}
                   disabled={!formData.isInsured}
-                  className={`w-full px-1.5 py-1 border-2 rounded shadow-sm focus:outline-none fz-caption font-bold transition-all ${formData.isInsured
-                    ? 'border-purple-400 bg-white focus:ring-2 focus:ring-purple-600'
-                    : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
+                  className={`w-full px-1.5 py-1 border rounded-md focus:outline-none fz-caption font-medium transition-colors ${formData.isInsured
+                    ? 'border-slate-300 bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20'
+                    : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed'
                     }`}
                   placeholder={formData.isInsured ? "0.00" : "Check 'Insured'"}
                   title={formData.isInsured ? "Enter the insurance amount" : "Please check 'Insured' checkbox first"}
                 />
                 {!formData.isInsured && (
-                  <p className="fz-mini text-gray-500 mt-0.5">
+                  <p className="fz-mini text-slate-400 mt-0.5">
                     💡 Check "Insured" to enable
                   </p>
                 )}
@@ -1324,56 +1380,56 @@ const MemberMaster: React.FC = () => {
             </div>
 
             {/* Row 3: Membership Date, Retirement Date, Department */}
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Membership Date</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Membership Date</label>
                 <input
                   type="date"
                   value={formData.membershipDate}
                   onChange={(e) => handleInputChange('membershipDate', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
               <div>
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Retirement Date</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Retirement Date</label>
                 <input
                   type="date"
                   value={formData.retirementDate}
                   onChange={(e) => handleInputChange('retirementDate', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
               <div>
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Department</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Department</label>
                 <input
                   type="text"
                   value={formData.department}
                   onChange={(e) => handleInputChange('department', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
             </div>
 
             {/* Row 4: PanCard, Aadhar, Phone, FRS, BranchMS */}
-            <div className="grid grid-cols-12 gap-1.5 mt-1.5">
+            <div className="grid grid-cols-12 gap-2 mt-2">
               <div className="col-span-2">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">PanCard No</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">PanCard No</label>
                 <input
                   type="text"
                   value={formData.panCardNo}
                   onChange={(e) => handleInputChange('panCardNo', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="ABCDE1234F"
                   maxLength={10}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Aadhar No</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Aadhar No</label>
                 <input
                   type="text"
                   value={formData.aadharNo}
                   onChange={(e) => handleInputChange('aadharNo', e.target.value.replace(/\D/g, '').slice(0, 12))}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="12 digits"
                   maxLength={12}
                 />
@@ -1383,22 +1439,22 @@ const MemberMaster: React.FC = () => {
                   discarded on every save. No landline column exists to wire it to; adding one
                   needs a deliberate decision, not a silent schema change. */}
               <div className="col-span-2">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">F.R.S. Number</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">F.R.S. Number</label>
                 <input
                   type="text"
                   value={formData.frsNumber}
                   onChange={(e) => handleInputChange('frsNumber', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="FRS No"
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-purple-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Branch MS No</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Branch MS No</label>
                 <input
                   type="text"
                   value={formData.branchMsNo}
                   onChange={(e) => handleInputChange('branchMsNo', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-purple-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="Branch MS"
                 />
               </div>
@@ -1406,28 +1462,26 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Address & Status Details Card */}
-          <div className="border-2 border-green-500 rounded p-1.5 bg-gradient-to-r from-green-50 to-emerald-50 shadow-md mb-1.5">
-            <h3 className="fz-caption font-black text-green-900 mb-1.5 flex items-center gap-1.5">
-              <span className="bg-green-600 text-white px-2 py-1 rounded fz-tiny uppercase tracking-wide">Address & Status</span>
-            </h3>
+          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            <span className="inline-block bg-violet-50 text-violet-700 fz-tiny font-bold uppercase tracking-wide px-2 py-1 rounded mb-2">Address &amp; Status</span>
 
             {/* Row 1: Home Address, Status, Date Withdrawl/Retire */}
-            <div className="grid grid-cols-12 gap-1.5 mb-1.5">
+            <div className="grid grid-cols-12 gap-2 mb-2">
               <div className="col-span-6">
-                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Home Address</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Home Address</label>
                 <textarea
                   value={formData.homeAddress}
                   onChange={(e) => handleInputChange('homeAddress', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-green-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 fz-caption font-bold h-16 resize-none"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium h-16 resize-none"
                   placeholder="Enter complete home address..."
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Status</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-green-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 >
                   <option value="Regular">Regular</option>
                   <option value="Retire">Retire</option>
@@ -1436,37 +1490,41 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div className="col-span-3">
-                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Date Withdrawl/Retire</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Date Withdrawl/Retire</label>
                 <input
                   type="date"
                   value={formData.dateOfWithdrawRetire}
                   onChange={(e) => handleInputChange('dateOfWithdrawRetire', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-green-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
             </div>
 
             {/* Row 2: Cast Category and Member Type */}
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Cast Category</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Cast Category</label>
                 <select
                   value={formData.castCategory}
                   onChange={(e) => handleInputChange('castCategory', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-green-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 >
-                  <option value="OBC">OBC</option>
-                  <option value="General">General</option>
-                  <option value="SC">SC</option>
-                  <option value="ST">ST</option>
+                  {/* The loaded member's own category is kept even if it's since been
+                      removed from the master list, so editing doesn't silently blank it. */}
+                  {(formData.castCategory && !castCategoryList.includes(formData.castCategory)
+                    ? [formData.castCategory, ...castCategoryList]
+                    : castCategoryList
+                  ).map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
                 </select>
               </div>
               <div>
-                <label className="text-green-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Member Type</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Member Type</label>
                 <select
                   value={formData.memberType}
                   onChange={(e) => handleInputChange('memberType', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-green-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 >
                   <option value="Regular">Regular</option>
                   <option value="Other">Other</option>
@@ -1479,29 +1537,27 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Organization & Nominee Details Card */}
-          <div className="border-2 border-orange-500 rounded p-1.5 bg-gradient-to-r from-orange-50 to-amber-50 shadow-md mb-1.5">
-            <h3 className="fz-caption font-black text-orange-900 mb-1.5 flex items-center gap-1.5">
-              <span className="bg-orange-600 text-white px-2 py-1 rounded fz-tiny uppercase tracking-wide">Organization & Nominee</span>
-            </h3>
+          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            <span className="inline-block bg-violet-50 text-violet-700 fz-tiny font-bold uppercase tracking-wide px-2 py-1 rounded mb-2">Organization &amp; Nominee</span>
 
             {/* Division/RO and Branch */}
-            <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+            <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Division/RO *</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Division/RO *</label>
                 <select
                   value={formData.divisionRo}
                   onChange={(e) => handleInputChange('divisionRo', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-orange-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 >
                   <option value="1-BHILAI">BHILAI</option>
                 </select>
               </div>
               <div>
-                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Branch</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Branch</label>
                 <select
                   value={formData.branch}
                   onChange={(e) => handleInputChange('branch', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-orange-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 >
                   <option value="">Select...</option>
                   <option value="1-BHILAI-BHILAI-61">1-BHILAI-BHILAI-61</option>
@@ -1515,31 +1571,31 @@ const MemberMaster: React.FC = () => {
             </div>
 
             {/* Nominee Section */}
-            <div className="grid grid-cols-12 gap-1.5">
+            <div className="grid grid-cols-12 gap-2">
               <div className="col-span-3">
-                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Nominee's Name</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Nominee's Name</label>
                 <input
                   type="text"
                   value={formData.nomineeName}
                   onChange={(e) => handleInputChange('nomineeName', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-orange-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-orange-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Nominee Address</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Nominee Address</label>
                 <input
                   type="text"
                   value={formData.nomineeAddress}
                   onChange={(e) => handleInputChange('nomineeAddress', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-orange-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-orange-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Relation</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Relation</label>
                 <select
                   value={formData.relationWithNominee}
                   onChange={(e) => handleInputChange('relationWithNominee', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-orange-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-orange-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 >
                   <option value="">Select...</option>
                   <option value="Wife">Wife</option>
@@ -1555,21 +1611,21 @@ const MemberMaster: React.FC = () => {
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Declaration Date</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Declaration Date</label>
                 <input
                   type="date"
                   value={formData.declarationDate}
                   onChange={(e) => handleInputChange('declarationDate', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-orange-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-orange-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Remarks</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Remarks</label>
                 <input
                   type="text"
                   value={formData.remarks}
                   onChange={(e) => handleInputChange('remarks', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-orange-400 rounded bg-white focus:outline-none focus:ring-2 focus:ring-orange-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                 />
               </div>
             </div>
@@ -1577,26 +1633,24 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Documents & Media Card */}
-          <div className="border-2 border-indigo-500 rounded p-1.5 bg-gradient-to-r from-indigo-50 to-violet-50 shadow-md mb-1.5">
-            <h3 className="fz-caption font-black text-indigo-900 mb-1.5 flex items-center gap-1.5">
-              <span className="bg-indigo-600 text-white px-2 py-1 rounded fz-tiny uppercase tracking-wide">Documents & Media</span>
-            </h3>
+          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            <span className="inline-block bg-violet-50 text-violet-700 fz-tiny font-bold uppercase tracking-wide px-2 py-1 rounded mb-2">Documents &amp; Media</span>
 
             {/* Mobile + Email */}
-            <div className="grid grid-cols-2 gap-1.5 mb-2">
+            <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-indigo-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Mobile No</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Mobile No</label>
                 <input type="tel" value={formData.mobileNumber}
                   onChange={(e) => handleInputChange('mobileNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  className="w-full px-1.5 py-1 border-2 border-indigo-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="10 digits (starts 6-9)"
                   maxLength={10} />
               </div>
               <div>
-                <label className="text-indigo-800 font-black fz-tiny block mb-0.5 uppercase tracking-wide">Email Address</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Email Address</label>
                 <input type="email" value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-1.5 py-1 border-2 border-indigo-400 rounded bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 fz-caption font-bold"
+                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="member@example.com" />
               </div>
             </div>
@@ -1607,12 +1661,12 @@ const MemberMaster: React.FC = () => {
                 const labels: Record<string, string> = { profile: 'Profile Photo', doc_front: 'ID — Front', doc_back: 'ID — Back' };
                 const preview = mediaPreviews[type] || mediaSavedUrls[type] || '';
                 return (
-                  <div key={type} className="border-2 border-indigo-300 rounded bg-white p-1.5 flex flex-col items-center gap-1">
-                    <span className="fz-mini font-black text-indigo-700 uppercase tracking-wide">{labels[type]}</span>
+                  <div key={type} className="border border-slate-200 rounded-lg bg-white p-1.5 flex flex-col items-center gap-1">
+                    <span className="fz-mini font-bold text-slate-500 uppercase tracking-wide">{labels[type]}</span>
                     {preview ? (
                       <div className="relative">
                         <img src={preview} alt={labels[type]}
-                          className="w-20 h-20 object-cover rounded border border-indigo-200"
+                          className="w-20 h-20 object-cover rounded-md border border-slate-200"
                           onError={() => {
                             // 404 = no file saved yet — clear saved URL so placeholder shows
                             if (!mediaQueue[type]) {
@@ -1625,7 +1679,7 @@ const MemberMaster: React.FC = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="w-20 h-20 border-2 border-dashed border-indigo-200 rounded flex flex-col items-center justify-center text-indigo-300 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50"
+                      <div className="w-20 h-20 border border-dashed border-slate-300 rounded-md flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:border-violet-400 hover:bg-violet-50"
                         onClick={() => document.getElementById(`photo-${type}`)?.click()}>
                         <UploadIcon size={16} />
                         <span className="fz-micro mt-0.5">Click to upload</span>
@@ -1634,7 +1688,7 @@ const MemberMaster: React.FC = () => {
                     <input id={`photo-${type}`} type="file" accept="image/jpeg,image/png" className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoSelect(type, f); e.target.value = ''; }} />
                     <button onClick={() => document.getElementById(`photo-${type}`)?.click()}
-                      className="fz-micro font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wide px-2 py-0.5 border border-indigo-300 rounded hover:bg-indigo-50">
+                      className="fz-micro font-bold text-violet-600 hover:text-violet-800 uppercase tracking-wide px-2 py-0.5 border border-slate-300 rounded-md hover:bg-violet-50">
                       {preview ? 'Change' : 'Browse'}
                     </button>
                     {mediaQueue[type] && <span className="fz-nano text-amber-600 font-black">⏳ Will upload on save</span>}
@@ -1644,40 +1698,40 @@ const MemberMaster: React.FC = () => {
             </div>
 
             {/* KYC Documents — typed, multi-upload */}
-            <div id="kyc-section" className="border-2 border-indigo-300 rounded bg-white p-2 mb-2">
+            <div id="kyc-section" className="border border-slate-200 rounded-lg bg-white p-2 mb-2">
               <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
-                <span className="fz-tiny font-black text-indigo-800 uppercase tracking-wide flex items-center gap-1">
+                <span className="fz-tiny font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
                   KYC Documents
-                  {kycDocuments.length > 0 && <span className="bg-indigo-100 text-indigo-700 px-1.5 rounded-full fz-mini">{kycDocuments.length}</span>}
+                  {kycDocuments.length > 0 && <span className="bg-violet-50 text-violet-700 px-1.5 rounded-full fz-mini">{kycDocuments.length}</span>}
                 </span>
                 <div className="flex items-center gap-1.5">
                   <select value={kycDocType} onChange={(e) => setKycDocType(e.target.value)}
-                    className="px-1.5 py-1 border-2 border-indigo-400 rounded bg-white fz-caption font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                    className="px-1.5 py-1 border border-slate-300 rounded-md bg-white fz-caption font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
                     {DOC_TYPES.map((d) => <option key={d} value={d}>{d}</option>)}
                   </select>
                   <input id="kyc-file" type="file" accept="image/jpeg,image/png,application/pdf" className="hidden"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleKycUpload(f); e.target.value = ''; }} />
                   <button onClick={() => document.getElementById('kyc-file')?.click()} disabled={kycUploading || !formData.memberNumber}
-                    className="fz-tiny font-black text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed px-2.5 py-1 rounded uppercase tracking-wide flex items-center gap-1 transition-colors">
+                    className="fz-tiny font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 disabled:cursor-not-allowed px-2.5 py-1 rounded-md uppercase tracking-wide flex items-center gap-1 transition-colors">
                     <UploadIcon size={10} /> {kycUploading ? 'Uploading…' : 'Add Document'}
                   </button>
                 </div>
               </div>
               {!formData.memberNumber && (
-                <p className="fz-mini text-amber-600 font-bold mb-1">💡 Save the member first to attach KYC documents.</p>
+                <p className="fz-mini text-amber-600 font-semibold mb-1">💡 Save the member first to attach KYC documents.</p>
               )}
               {kycDocuments.length === 0 ? (
-                <p className="fz-mini text-slate-400 font-bold text-center py-2 uppercase tracking-wide">No documents uploaded</p>
+                <p className="fz-mini text-slate-400 font-semibold text-center py-2 uppercase tracking-wide">No documents uploaded</p>
               ) : (
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5">
                   {kycDocuments.map((doc) => (
-                    <div key={doc.id} className="border border-indigo-200 rounded bg-indigo-50/40 p-1.5 flex items-center justify-between gap-1">
+                    <div key={doc.id} className="border border-violet-100 rounded-full bg-violet-50 px-2.5 py-1 flex items-center justify-between gap-1.5">
                       <a href={`${getApiBaseUrlSync()}/members/master/${formData.memberNumber}/document/${doc.id}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1">
-                        <span className="block fz-mini font-black text-indigo-700 uppercase truncate">{doc.docType}</span>
-                        <span className="block fz-micro text-slate-500 truncate" title={doc.fileName}>{doc.fileName || 'View'}</span>
+                        <span className="block fz-mini font-bold text-violet-700 uppercase truncate">{doc.docType}</span>
+                        <span className="block fz-micro text-violet-400 truncate" title={doc.fileName}>{doc.fileName || 'View'}</span>
                       </a>
                       <button onClick={() => handleKycDelete(doc.id)}
-                        className="bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center hover:bg-red-600 shrink-0">
+                        className="bg-white text-violet-400 rounded-full w-4 h-4 flex items-center justify-center hover:bg-red-500 hover:text-white shrink-0 transition-colors">
                         <XIcon size={8} />
                       </button>
                     </div>
@@ -1687,13 +1741,13 @@ const MemberMaster: React.FC = () => {
             </div>
 
             {/* Signature */}
-            <div className="border-2 border-indigo-300 rounded bg-white overflow-hidden">
-              <div className="bg-indigo-600 px-2 py-0.5 flex items-center justify-between">
+            <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
+              <div className="bg-violet-600 px-2 py-0.5 flex items-center justify-between">
                 <span className="fz-mini font-black text-white uppercase tracking-wide flex items-center gap-1"><PenTool size={9} /> Signature</span>
                 <div className="flex gap-1">
                   {(['draw', 'upload'] as const).map(m => (
                     <button key={m} onClick={() => setSigMode(m)}
-                      className={`fz-micro font-black px-2 py-0.5 rounded uppercase tracking-wide transition-all ${sigMode === m ? 'bg-white text-indigo-700' : 'text-indigo-200 hover:text-white'}`}>
+                      className={`fz-micro font-black px-2 py-0.5 rounded uppercase tracking-wide transition-all ${sigMode === m ? 'bg-white text-violet-700' : 'text-violet-200 hover:text-white'}`}>
                       {m === 'draw' ? '✏ Draw' : '⬆ Upload'}
                     </button>
                   ))}
@@ -1705,7 +1759,7 @@ const MemberMaster: React.FC = () => {
                 <div>
                   <div className="relative bg-white">
                     <canvas ref={canvasRef} width={600} height={120}
-                      className="w-full cursor-crosshair border-b border-indigo-100 select-none"
+                      className="w-full cursor-crosshair border-b border-violet-100 select-none"
                       style={{ touchAction: 'none', display: 'block', height: 140 }}
                       onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={stopDrawing} onMouseLeave={stopDrawing} />
                     {!hasDrawing && (
@@ -1714,9 +1768,9 @@ const MemberMaster: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <div className="px-2 py-1 bg-slate-50 flex items-center justify-between border-t border-indigo-100">
+                  <div className="px-2 py-1 bg-slate-50 flex items-center justify-between border-t border-slate-200">
                     <button onClick={clearCanvas} disabled={!hasDrawing}
-                      className="fz-micro font-black px-2 py-0.5 border-2 border-slate-300 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-30 uppercase">
+                      className="fz-micro font-bold px-2 py-0.5 border border-slate-300 rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-30 uppercase">
                       Clear
                     </button>
                     <div className="flex items-center gap-2">
@@ -1725,7 +1779,7 @@ const MemberMaster: React.FC = () => {
                         <span className="fz-nano text-emerald-600 font-black flex items-center gap-0.5"><CheckCircle2 size={8} /> Saved</span>
                       )}
                       <button onClick={queueDrawing} disabled={!hasDrawing}
-                        className="fz-micro font-black px-3 py-0.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded uppercase tracking-wide">
+                        className="fz-micro font-bold px-3 py-0.5 bg-violet-600 hover:bg-violet-500 disabled:bg-slate-300 text-white rounded-md uppercase tracking-wide">
                         Use This Signature
                       </button>
                     </div>
@@ -1736,10 +1790,10 @@ const MemberMaster: React.FC = () => {
               {/* Upload tab */}
               {sigMode === 'upload' && (
                 <div className="p-2">
-                  <div className="border-2 border-dashed border-indigo-300 rounded p-4 flex flex-col items-center gap-1 cursor-pointer hover:border-indigo-500 hover:bg-indigo-50"
+                  <div className="border border-dashed border-slate-300 rounded-md p-4 flex flex-col items-center gap-1 cursor-pointer hover:border-violet-500 hover:bg-violet-50"
                     onClick={() => document.getElementById('sig-upload')?.click()}>
-                    <UploadIcon size={20} className="text-indigo-300" />
-                    <span className="fz-mini font-black text-indigo-700 uppercase">Click to upload signature (JPG/PNG)</span>
+                    <UploadIcon size={20} className="text-slate-300" />
+                    <span className="fz-mini font-bold text-slate-500 uppercase">Click to upload signature (JPG/PNG)</span>
                     {sigQueue && <span className="fz-micro text-amber-600 font-black">⏳ {sigQueue.name} — will upload on save</span>}
                   </div>
                   <input id="sig-upload" type="file" accept="image/jpeg,image/png" className="hidden"
@@ -1749,7 +1803,7 @@ const MemberMaster: React.FC = () => {
 
               {/* Saved signature preview */}
               {savedSigUrl && !sigQueue && (
-                <div className="border-t-2 border-indigo-100 px-2 py-1 bg-emerald-50 flex items-center gap-2">
+                <div className="border-t border-slate-200 px-2 py-1 bg-emerald-50 flex items-center gap-2">
                   <CheckCircle2 size={10} className="text-emerald-600" />
                   <span className="fz-micro font-black text-emerald-700 uppercase">Saved Signature:</span>
                   <img src={savedSigUrl} alt="Saved signature"
@@ -1782,51 +1836,22 @@ const MemberMaster: React.FC = () => {
         />
       </Modal>
 
-      {/* Scoped polish — compact layout, subtle motion, and dark-mode that the
-          hardcoded light styling can't reach on its own. */}
+      {/* Scoped polish — most of the previous rainbow-scheme dark-mode overrides
+          are gone: the page now uses plain neutral slate and violet utility
+          classes, which ThemeProvider's global html.dark rules already repaint.
+          Only the slate-300 input border isn't covered by those global rules,
+          so it gets one here. */}
       <style>{`
         /* ── Subtle entrance animation for each section card ── */
         @keyframes mmCardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-        .mm-form .max-w-7xl > div { animation: mmCardIn .34s cubic-bezier(.22,.61,.36,1) both; }
-        .mm-form .max-w-7xl > div:nth-child(2) { animation-delay: .04s; }
-        .mm-form .max-w-7xl > div:nth-child(3) { animation-delay: .08s; }
-        .mm-form .max-w-7xl > div:nth-child(4) { animation-delay: .12s; }
-        .mm-form .max-w-7xl > div:nth-child(5) { animation-delay: .16s; }
-        .mm-form .max-w-7xl > div:nth-child(6) { animation-delay: .20s; }
-
-        /* ── Smooth, modern field interactions ── */
         .mm-form input, .mm-form select, .mm-form textarea { transition: border-color .15s, box-shadow .15s, background-color .15s; }
-        .mm-form input:focus, .mm-form select:focus, .mm-form textarea:focus { box-shadow: 0 0 0 3px rgba(99,102,241,.18); }
         .mm-form button { transition: transform .12s ease, background-color .15s, box-shadow .15s; }
         .mm-form button:active { transform: scale(.96); }
 
-        /* ── Compact: tighten card padding/margins a touch ── */
-        .mm-form .max-w-7xl > div { margin-bottom: .4rem; }
-
-        /* ── Dark mode (the form is hardcoded light; neutralise it under .dark) ── */
-        html.dark .mm-form { background: #0f172a !important; }
-        html.dark .mm-form .bg-gradient-to-br,
-        html.dark .mm-form .bg-gradient-to-r { background: #1e293b !important; background-image: none !important; }
-        html.dark .mm-form input,
-        html.dark .mm-form select,
-        html.dark .mm-form textarea { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
-        html.dark .mm-form select option { background: #1e293b; color: #e2e8f0; }
-        html.dark .mm-form label { color: #cbd5e1 !important; }
+        html.dark .mm-form .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mm-form select option { background: #151A21; color: #E6E9EF; }
         html.dark .mm-form input::placeholder,
-        html.dark .mm-form textarea::placeholder { color: #64748b !important; }
-        /* readable body text on dark cards */
-        html.dark .mm-form h3,
-        html.dark .mm-form .text-blue-900, html.dark .mm-form .text-indigo-900,
-        html.dark .mm-form .text-purple-900, html.dark .mm-form .text-green-900 { color: #e2e8f0 !important; }
-        html.dark .mm-form .text-blue-800, html.dark .mm-form .text-indigo-800,
-        html.dark .mm-form .text-purple-800, html.dark .mm-form .text-green-800,
-        html.dark .mm-form .text-gray-800, html.dark .mm-form .text-slate-800 { color: #cbd5e1 !important; }
-        html.dark .mm-form .text-gray-500, html.dark .mm-form .text-gray-400 { color: #94a3b8 !important; }
-        /* document/photo tiles & inner white boxes */
-        html.dark .mm-form .bg-white { background-color: #1e293b !important; }
-        html.dark .mm-form .bg-gray-50, html.dark .mm-form .bg-indigo-50\\/40 { background-color: #0f172a !important; }
-        /* keep the dashed upload zones visible */
-        html.dark .mm-form .border-dashed { border-color: #475569 !important; }
+        html.dark .mm-form textarea::placeholder { color: #71717a !important; }
       `}</style>
 
     </div>

@@ -13,7 +13,7 @@
 ; quote is $\". A literal dollar sign is $$.
 ; ${VERSION} is set by electron-builder from package.json — no need
 ; to hardcode it here.
-!define RELEASE_NOTES "- Separate login screen before the dashboard opens; you're now asked to log in again each time the app is closed and reopened.$\r$\n- New Settings: notifications, sound effects, density, corner radius, background, and font style.$\r$\n- All Exit buttons across the app now actually close their window.$\r$\n- Large batch of accuracy and stability fixes across Member Master, Loan, Savings/RD/FD, Day-End, Financial Year, vouchers, and ledger reports.$\r$\n- App and log files now live in the install folder (C:\Program Files\Fibe Loan Management\logs) instead of the hidden AppData folder, matching how the backend server stores its logs."
+!define RELEASE_NOTES "- App-wide dark mode, available from Settings on every screen.$\r$\n- Real role-based access control: login, navigation, and every route now enforce each user's configured rights (previously had no effect).$\r$\n- Security fixes: member KYC document access, file-upload handling, an account-takeover login issue, and password policy enforcement.$\r$\n- Day-End: fixed a bug allowing two runs at once, plus further date/timezone fixes; added an admin-only auto-close option.$\r$\n- Large batch of accuracy fixes across Financial Year, Day-End, Vouchers, FD/RD, Ledger Reports, and Monthly/Yearly Reports.$\r$\n- Demand & Recovery, Business Rules, and Communication Hub screens fixed after being non-functional.$\r$\n- Numerous smaller data-integrity and validation fixes across Member, Savings, RD, FD, and Loan modules."
 ; ================================================================
 
 !macro customWelcomePage

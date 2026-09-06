@@ -399,10 +399,10 @@ const Dashboard: React.FC = () => {
 
         {/* Notice Board + Keyboard Shortcuts */}
         {(widgets.noticeBoard || widgets.shortcuts) && (
-          <div className={`grid gap-3 ${widgets.noticeBoard && widgets.shortcuts ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <div className="flex flex-wrap gap-3">
 
             {widgets.noticeBoard && (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+              <div className="flex-[2_1_380px] min-w-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
                 <style dangerouslySetInnerHTML={{ __html: `
                   @keyframes noticeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
                 ` }} />
@@ -480,7 +480,7 @@ const Dashboard: React.FC = () => {
             )}
 
             {widgets.shortcuts && (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+              <div className="flex-[1_1_240px] min-w-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
                 <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2 shrink-0">
                   <Command size={11} className="text-slate-400" />
                   <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Keyboard Shortcuts</span>
@@ -510,7 +510,7 @@ const Dashboard: React.FC = () => {
 
         {/* Analytics widgets */}
         {(widgets.activeMembers || widgets.sanctionedLoans || widgets.monthEndOutstanding || widgets.balanceDistribution) && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
             {widgets.activeMembers && <ActiveMembersWidget />}
             {widgets.sanctionedLoans && <SanctionedLoansWidget />}
             {widgets.monthEndOutstanding && <MonthEndOutstandingWidget />}

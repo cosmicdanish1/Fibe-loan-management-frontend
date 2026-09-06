@@ -229,12 +229,34 @@ const RDStatement: React.FC = () => {
         .custom-scrollbar-amber::-webkit-scrollbar-track { background: ${isDark ? '#1e293b' : '#f8fafc'}; border-radius: 3px; }
         .custom-scrollbar-amber::-webkit-scrollbar-thumb { background: #fcd34d; border-radius: 3px; }
         .custom-scrollbar-amber::-webkit-scrollbar-thumb:hover { background: #fbbf24; }
+
+        /* ── Dark-mode overrides (Settings palette, html.dark only) ── */
+        html.dark .rdstmt-page { background-color: #000000 !important; background-image: none !important; }
+        html.dark .rdstmt-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .rdstmt-card,
+        html.dark .rdstmt-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .rdstmt-report-body { background-color: #1c1c1e !important; }
+        html.dark .rdstmt-report-body pre { color: #f5f5f7 !important; }
+        html.dark .rdstmt-page h1,
+        html.dark .rdstmt-page h3,
+        html.dark .rdstmt-page h4 { color: #f5f5f7 !important; }
+        html.dark .rdstmt-page label { color: #8e8e93 !important; }
+        html.dark .rdstmt-page .text-slate-400,
+        html.dark .rdstmt-page .text-slate-500,
+        html.dark .rdstmt-page .text-slate-600 { color: #8e8e93 !important; }
+        html.dark .rdstmt-page .text-slate-300 { color: #71717a !important; }
+        html.dark .rdstmt-page .ant-input,
+        html.dark .rdstmt-page .ant-input-affix-wrapper,
+        html.dark .rdstmt-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .rdstmt-page .ant-input-affix-wrapper .ant-input { background-color: transparent !important; }
+        html.dark .rdstmt-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .rdstmt-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
       `}</style>
 
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-50'}`}>
+      <div className={`rdstmt-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`rdstmt-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-amber-600 to-amber-700 p-1.5 rounded-lg text-white shadow-md">
               <Wallet size={14} />
@@ -263,7 +285,7 @@ const RDStatement: React.FC = () => {
           <div className="w-[220px] flex flex-col gap-2 shrink-0 overflow-y-auto custom-scrollbar-amber">
 
             {/* Member */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-amber-200/60'}`}>
+            <div className={`rdstmt-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Member</h3>
@@ -283,7 +305,7 @@ const RDStatement: React.FC = () => {
             </div>
 
             {/* Date Range */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-amber-200/60'}`}>
+            <div className={`rdstmt-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <Calendar size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Date Range</h3>
@@ -301,7 +323,7 @@ const RDStatement: React.FC = () => {
             </div>
 
             {/* Output */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-amber-200/60'}`}>
+            <div className={`rdstmt-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <FileText size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Output</h3>
@@ -323,7 +345,7 @@ const RDStatement: React.FC = () => {
           </div>
 
           {/* Report Panel */}
-          <div className={`flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-amber-200/60'}`}>
+          <div className={`rdstmt-report-panel flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-amber-200/60'}`}>
             <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-3 py-1.5 flex items-center gap-1.5 shrink-0">
               <div className="bg-white/20 p-1 rounded-md">
                 <FileText size={12} className="text-white" />
@@ -336,7 +358,7 @@ const RDStatement: React.FC = () => {
               </div>
             </div>
 
-            <div className={`flex-1 overflow-auto p-2 custom-scrollbar-amber ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-amber-50/10'}`}>
+            <div className={`rdstmt-report-body flex-1 overflow-auto p-2 custom-scrollbar-amber ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-amber-50/10'}`}>
               <Spin spinning={isLoading} tip="Loading..." size="small">
                 {reportText ? (
                   <pre

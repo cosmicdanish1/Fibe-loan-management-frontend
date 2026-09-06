@@ -42,9 +42,9 @@ const LoanRepaymentForm: React.FC<Props> = ({
     });
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 overflow-auto">
+        <div className="lr-root flex flex-col h-full bg-slate-50 overflow-auto">
             {/* Header */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
+            <div className="lr-header bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
                 <div>
                     <h1 className="fz-heading font-semibold text-white">Loan Repayment</h1>
                     <p className="fz-caption text-slate-400">Record monthly installment payments against active loans</p>
@@ -337,6 +337,52 @@ const LoanRepaymentForm: React.FC<Props> = ({
             >
                 <MemberLookup isModal onSelect={onMemberSelected} onClose={() => setShowLookup(false)} />
             </Modal>
+
+            <style>{`
+                /* ── Dark mode ── */
+                html.dark .lr-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .lr-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .lr-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .lr-root .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .lr-root .border-slate-200,
+                html.dark .lr-root .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .lr-root .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+                html.dark .lr-root .text-slate-800,
+                html.dark .lr-root .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .lr-root .text-slate-600,
+                html.dark .lr-root .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .lr-root .text-slate-400 { color: #71717a !important; }
+                html.dark .lr-root label { color: #8e8e93 !important; }
+                html.dark .lr-root .text-green-600,
+                html.dark .lr-root .text-green-700 { color: #34d399 !important; }
+                html.dark .lr-root .bg-green-50 { background-color: rgba(52,211,153,.12) !important; }
+                html.dark .lr-root .border-green-200 { border-color: rgba(52,211,153,.3) !important; }
+                html.dark .lr-root .text-red-600 { color: #ff453a !important; }
+                html.dark .lr-root .bg-red-50 { background-color: rgba(255,69,58,.12) !important; }
+                html.dark .lr-root .border-red-200 { border-color: rgba(255,69,58,.3) !important; }
+                html.dark .lr-root .text-amber-800,
+                html.dark .lr-root .text-amber-900 { color: #fbbf24 !important; }
+                html.dark .lr-root .bg-amber-50 { background-color: rgba(251,191,36,.12) !important; }
+                html.dark .lr-root .border-amber-100,
+                html.dark .lr-root .border-amber-200 { border-color: rgba(251,191,36,.3) !important; }
+                html.dark .lr-root .bg-blue-50 { background-color: rgba(59,130,246,.12) !important; }
+                html.dark .lr-root .border-blue-400 { border-color: rgba(96,165,250,.5) !important; }
+                /* buttons */
+                html.dark .lr-root button.bg-slate-100 { background-color: #1c1c1e !important; color: #f5f5f7 !important; }
+                html.dark .lr-root button.border-white\\/20 { border-color: rgba(255,255,255,.2) !important; }
+                /* form inputs */
+                html.dark .lr-root input[type=text],
+                html.dark .lr-root input[type=number] {
+                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .lr-root input[readonly] { background-color: rgba(255,255,255,.03) !important; color: #8e8e93 !important; }
+                html.dark .lr-root input::placeholder { color: #71717a !important; }
+                /* tables */
+                html.dark .lr-root table thead { background-color: #1c1c1e !important; }
+                html.dark .lr-root table th { color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+                html.dark .lr-root table td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
+                html.dark .lr-root table tr:hover { background-color: rgba(255,255,255,.05) !important; }
+            `}</style>
         </div>
     );
 };

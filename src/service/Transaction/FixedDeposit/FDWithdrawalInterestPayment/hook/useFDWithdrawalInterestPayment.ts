@@ -166,6 +166,11 @@ export const useFDWithdrawalInterestPayment = (): FDWithdrawalHookReturn => {
     }, [formData.certNo, memberFDs]);
 
     const handleSave = useCallback(async () => {
+        // BUG FIX: handleSave never set `loading`, so the Save button's `disabled={loading}`
+        // only reflected the FD-list fetch, not the save request itself — nothing stopped a
+        // double-click from firing two concurrent payFdInterest/closeFixedDeposit calls,
+        // each of which posts its own real ledger voucher server-side.
+        if (loading) return;
         if (!formData.memberNo || !formData.certNo) {
             await showDialog('warning', 'Input Validation Error', 'Member & Certificate Required', 'Please select both a member and a certificate before saving.');
             return;
@@ -187,6 +192,7 @@ export const useFDWithdrawalInterestPayment = (): FDWithdrawalHookReturn => {
             }
         }
 
+        setLoading(true);
         try {
             let res;
             if (formData.fdOption === 'interest') {
@@ -250,8 +256,10 @@ export const useFDWithdrawalInterestPayment = (): FDWithdrawalHookReturn => {
             }
         } catch (error: any) {
             await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${error.message}`);
+        } finally {
+            setLoading(false);
         }
-    }, [formData, actualAmount]);
+    }, [formData, actualAmount, loading]);
 
     const handleReset = useCallback(() => {
         setFormData(emptyForm());

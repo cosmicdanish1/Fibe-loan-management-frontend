@@ -213,8 +213,8 @@ const OpenPL: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col overflow-auto bg-[#f8fafc] p-6">
-      <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5 no-print">
+    <div className="open-pl-page min-h-screen flex flex-col overflow-auto bg-[#f8fafc] p-6">
+      <div className="open-pl-header bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5 no-print">
         <h1 className="fz-caption font-black text-white tracking-tight uppercase">Profit & Loss Account</h1>
       </div>
       <style>{`
@@ -237,6 +237,33 @@ const OpenPL: React.FC = () => {
         .ant-table-summary {
           background-color: #f8fafc !important;
         }
+
+        /* ── Open P&L — dark mode (screen chrome only, print output untouched) ── */
+        html.dark .open-pl-page { background-color: #000000 !important; }
+        html.dark .open-pl-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .open-pl-filters,
+        html.dark .open-pl-report-card,
+        html.dark .open-pl-empty { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .open-pl-page .ant-typography { color: #f5f5f7 !important; }
+        html.dark .open-pl-page .ant-typography-secondary,
+        html.dark .open-pl-page .text-slate-600,
+        html.dark .open-pl-page .text-slate-400,
+        html.dark .open-pl-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .open-pl-page .ant-select-selector,
+        html.dark .open-pl-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .open-pl-page .ant-picker input,
+        html.dark .open-pl-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .open-pl-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .open-pl-table .ant-table,
+        html.dark .open-pl-table .ant-table-container,
+        html.dark .open-pl-table .ant-table-content { background-color: #1c1c1e !important; }
+        html.dark .open-pl-table .ant-table-thead > tr > th { background-color: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .open-pl-table .ant-table-tbody > tr > td { background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.07) !important; }
+        html.dark .open-pl-table .ant-table-tbody > tr.bg-slate-50 > td,
+        html.dark .open-pl-table .ant-table-summary,
+        html.dark .open-pl-table .ant-table-summary > tr > td { background-color: #0c0c0e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .open-pl-empty .ant-empty-description,
+        html.dark .open-pl-empty .ant-empty-description p { color: #8e8e93 !important; }
       `}</style>
 
       <div className="max-w-7xl mx-auto w-full">
@@ -262,7 +289,7 @@ const OpenPL: React.FC = () => {
         </div>
 
         {/* Filters Card */}
-        <Card className="mb-6 shadow-sm border-none rounded-2xl no-print">
+        <Card className="open-pl-filters mb-6 shadow-sm border-none rounded-2xl no-print">
           <Row gutter={[24, 24]} align="bottom">
             <Col xs={24} md={8}>
               <div className="space-y-1">
@@ -339,7 +366,7 @@ const OpenPL: React.FC = () => {
         {/* Report Section */}
         {data.length > 0 ? (
           <Card
-            className={`border-none ${isPrinting ? "" : "shadow-xl rounded-2xl overflow-hidden mb-10"}`}
+            className={`open-pl-report-card border-none ${isPrinting ? "" : "shadow-xl rounded-2xl overflow-hidden mb-10"}`}
             styles={{ body: { padding: 0 } }}
           >
             {/* Print Only Header */}
@@ -363,7 +390,7 @@ const OpenPL: React.FC = () => {
               bordered={isPrinting}
               loading={loading}
               scroll={isPrinting ? undefined : { x: 1000 }}
-              className="custom-table"
+              className="custom-table open-pl-table"
               summary={() => (
                 grandTotals && (
                   <Table.Summary fixed={isPrinting ? false : "bottom"}>
@@ -415,7 +442,7 @@ const OpenPL: React.FC = () => {
             </div>
           </Card>
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl shadow-sm border border-slate-100">
+          <div className="open-pl-empty flex flex-col items-center justify-center py-24 bg-white rounded-3xl shadow-sm border border-slate-100">
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
               description={

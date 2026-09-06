@@ -215,10 +215,10 @@ const FullScreenAnalytics: React.FC = () => {
         }
       }}
     >
-      <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900 font-sans selection:bg-indigo-100">
+      <div className="fsa-app min-h-screen bg-slate-50 flex flex-col text-slate-900 font-sans selection:bg-indigo-100">
 
         {/* Compact Premium Header */}
-        <div className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between shadow-lg sticky top-0 z-50">
+        <div className="fsa-header bg-slate-900 text-white px-6 py-3 flex items-center justify-between shadow-lg sticky top-0 z-50">
           <div className="flex items-center gap-4">
             <div className="relative">
               <div className="absolute -inset-1 rounded-full bg-emerald-500/30 animate-ping"></div>
@@ -446,6 +446,39 @@ const FullScreenAnalytics: React.FC = () => {
           </AnimatePresence>
         </div>
 
+        <style>{`
+          /* ── Full Screen Analytics — dark mode (Settings-panel palette) ── */
+          html.dark .fsa-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .fsa-header { background-color: #0c0c0e !important; border-bottom: 1px solid rgba(255,255,255,.08); box-shadow: none !important; }
+          html.dark .fsa-header .text-slate-400 { color: #8e8e93 !important; }
+          html.dark .fsa-header .bg-slate-600 { background-color: rgba(255,255,255,.15) !important; }
+          html.dark .fsa-header .ant-select-selector { background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .fsa-header .ant-select-arrow { color: #8e8e93 !important; }
+          /* Cards */
+          html.dark .fsa-app .bg-white { background-color: #1c1c1e !important; }
+          html.dark .fsa-app .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .fsa-app .bg-slate-200 { background-color: rgba(255,255,255,.1) !important; }
+          html.dark .fsa-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .fsa-app .shadow-sm { box-shadow: none !important; }
+          /* Text */
+          html.dark .fsa-app .text-slate-800 { color: #f5f5f7 !important; }
+          html.dark .fsa-app .text-slate-700 { color: #f5f5f7 !important; }
+          html.dark .fsa-app .text-slate-500 { color: #8e8e93 !important; }
+          html.dark .fsa-app .text-slate-400 { color: #71717a !important; }
+          /* Status chips (StatCard trend + service health) */
+          html.dark .fsa-app .bg-emerald-50 { background-color: rgba(52,211,153,.1) !important; }
+          html.dark .fsa-app .text-emerald-600 { color: #34d399 !important; }
+          html.dark .fsa-app .bg-rose-50 { background-color: rgba(255,69,58,.1) !important; }
+          html.dark .fsa-app .text-rose-600 { color: #ff453a !important; }
+          html.dark .fsa-app .bg-amber-50 { background-color: rgba(251,191,36,.1) !important; }
+          html.dark .fsa-app .text-amber-600 { color: #fbbf24 !important; }
+          html.dark .fsa-app .bg-indigo-50 { background-color: rgba(99,102,241,.12) !important; }
+          html.dark .fsa-app .text-indigo-600 { color: #818cf8 !important; }
+          /* Recharts chrome (grid/axes are hardcoded light-mode hex in props) */
+          html.dark .fsa-app .recharts-cartesian-grid line { stroke: rgba(255,255,255,.08) !important; }
+          html.dark .fsa-app .recharts-cartesian-axis-tick text { fill: #71717a !important; }
+          html.dark .fsa-app .recharts-legend-item-text { color: #8e8e93 !important; }
+        `}</style>
       </div>
     </ConfigProvider>
   );

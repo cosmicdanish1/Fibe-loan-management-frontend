@@ -119,10 +119,10 @@ const VoucherPaymentForm: React.FC<VoucherPaymentHookReturn> = ({
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="vp-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="vp-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
                             <CreditCard size={13} className="text-white" />
@@ -350,7 +350,7 @@ const VoucherPaymentForm: React.FC<VoucherPaymentHookReturn> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="vp-footer px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
                         <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Voucher Payment</span>
@@ -386,6 +386,68 @@ const VoucherPaymentForm: React.FC<VoucherPaymentHookReturn> = ({
                 .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
                 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
                 input[type=number] { -moz-appearance: textfield; }
+
+                /* ── Dark mode ── */
+                html.dark .vp-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .vp-header { background-image: none !important; background-color: #0c0c0e !important; border-bottom: 1px solid rgba(255,255,255,.08) !important; }
+                html.dark .vp-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .vp-root .bg-slate-50,
+                html.dark .vp-root .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .vp-root .border-slate-200,
+                html.dark .vp-root .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .vp-root .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+                html.dark .vp-root .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
+                html.dark .vp-root .text-slate-900,
+                html.dark .vp-root .text-slate-800,
+                html.dark .vp-root .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .vp-root .text-slate-600,
+                html.dark .vp-root .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .vp-root .text-slate-400 { color: #71717a !important; }
+                html.dark .vp-root label { color: #8e8e93 !important; }
+                html.dark .vp-root .text-emerald-600,
+                html.dark .vp-root .text-emerald-800,
+                html.dark .vp-root .text-emerald-500 { color: #34d399 !important; }
+                html.dark .vp-root .text-rose-500,
+                html.dark .vp-root .text-rose-600 { color: #ff453a !important; }
+                html.dark .vp-root .bg-emerald-50 { background-color: rgba(52,211,153,.12) !important; }
+                html.dark .vp-root .border-emerald-200 { border-color: rgba(52,211,153,.3) !important; }
+                html.dark .vp-root .bg-indigo-50,
+                html.dark .vp-root .bg-indigo-50\\/30 { background-color: rgba(99,102,241,.12) !important; }
+                html.dark .vp-root .border-indigo-100,
+                html.dark .vp-root .border-indigo-200 { border-color: rgba(99,102,241,.3) !important; }
+                html.dark .vp-root .text-indigo-700,
+                html.dark .vp-root .text-indigo-500,
+                html.dark .vp-root .text-indigo-400 { color: #60a5fa !important; }
+                /* payment type tabs */
+                html.dark .vp-header .bg-white\\/5 { background-color: rgba(255,255,255,.06) !important; }
+                /* inactive white buttons */
+                html.dark .vp-root button.bg-white { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                /* footer strip */
+                html.dark .vp-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                /* antd inputs / selects */
+                html.dark .vp-root .ant-input,
+                html.dark .vp-root input.ant-input,
+                html.dark .vp-root textarea.ant-input,
+                html.dark .vp-root .ant-select-selector {
+                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .vp-root .ant-select-selection-item,
+                html.dark .vp-root .ant-select-selection-search-input { color: #f5f5f7 !important; }
+                html.dark .vp-root .ant-select-selection-placeholder,
+                html.dark .vp-root .ant-input::placeholder { color: #71717a !important; }
+                html.dark .vp-root .ant-select-arrow { color: #8e8e93 !important; }
+                /* table */
+                html.dark .vp-table .ant-table,
+                html.dark .vp-table .ant-table-container { background-color: #1c1c1e !important; color: #f5f5f7 !important; }
+                html.dark .vp-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.07) !important; }
+                html.dark .vp-table .ant-table-tbody > tr > td { background-color: #1c1c1e !important; color: #f5f5f7 !important; border-bottom-color: rgba(255,255,255,.07) !important; }
+                html.dark .vp-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
+                html.dark .vp-table .ant-table-tbody > tr.row-coded > td { background: rgba(251,191,36,.10) !important; }
+                html.dark .vp-table .ant-table-placeholder .ant-table-cell,
+                html.dark .vp-table .ant-empty-description { background-color: #1c1c1e !important; color: #71717a !important; }
+                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
+                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
             `}</style>
         </ConfigProvider>
     );

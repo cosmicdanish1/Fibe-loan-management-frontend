@@ -213,14 +213,14 @@ const WingOfficeMaster: React.FC = () => {
 
         /* ── Dark mode: arbitrary bg hex + the forced-light division select + status tints ── */
         html.dark .wo-master,
-        html.dark .wo-workspace { background-color: #0f172a !important; }
+        html.dark .wo-workspace { background-color: #000000 !important; }
         html.dark .ultra-compact-master-select .ant-select-selector {
-          background-color: #1e293b !important;
-          border-color: #334155 !important;
-          color: #e2e8f0 !important;
+          background-color: #1c1c1e !important;
+          border-color: rgba(255,255,255,.08) !important;
+          color: #f5f5f7 !important;
         }
         html.dark .ultra-compact-master-select.ant-select-focused .ant-select-selector {
-          background-color: #0f172a !important;
+          background-color: rgba(255,255,255,.05) !important;
           border-color: #6366f1 !important;
         }
         html.dark .wo-master .bg-emerald-50 { background-color: #064e3b !important; }

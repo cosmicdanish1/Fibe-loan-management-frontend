@@ -67,24 +67,29 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="mld-root flex items-center justify-center p-8">
         <div className="text-gray-600">Loading loan details...</div>
+        <style>{`html.dark .mld-root .text-gray-600 { color: #8e8e93 !important; }`}</style>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div className="mld-root bg-red-50 border border-red-200 rounded-lg p-4">
         <p className="text-red-600">{error}</p>
+        <style>{`
+          html.dark .mld-root { background-color: rgba(255,69,58,0.08) !important; border-color: rgba(255,69,58,0.3) !important; }
+          html.dark .mld-root .text-red-600 { color: #ff453a !important; }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mld-root space-y-4">
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="mld-tabs flex border-b border-gray-200">
         <button
           className={`px-4 py-2 font-medium ${
             selectedTab === 'active'
@@ -114,7 +119,7 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
             <div className="text-center py-8 text-gray-500">No active loans found</div>
           ) : (
             activeLoans.map((loan) => (
-              <div key={loan.loanCaseNo} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <div key={loan.loanCaseNo} className="mld-card bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {/* Loan Information */}
                   <div className="col-span-2 md:col-span-3 border-b pb-2 mb-2">
@@ -215,7 +220,7 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
             <div className="text-center py-8 text-gray-500">No pending loans found</div>
           ) : (
             pendingLoans.map((loan) => (
-              <div key={loan.loanCaseNo} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <div key={loan.loanCaseNo} className="mld-card bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {/* Loan Information */}
                   <div className="col-span-2 md:col-span-3 border-b pb-2 mb-2">
@@ -313,6 +318,32 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
           )}
         </div>
       )}
+
+      <style>{`
+        /* ── Member Loan Details — dark mode ── */
+        html.dark .mld-tabs { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mld-tabs button { color: #8e8e93 !important; }
+        html.dark .mld-tabs button.border-blue-500 { color: #60a5fa !important; border-color: #3b82f6 !important; }
+        html.dark .mld-tabs button:hover { color: #f5f5f7 !important; }
+        html.dark .mld-card {
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .mld-card .border-b { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mld-card .text-gray-800 { color: #f5f5f7 !important; }
+        html.dark .mld-card .text-gray-600 { color: #8e8e93 !important; }
+        html.dark .mld-card .text-gray-500 { color: #8e8e93 !important; }
+        html.dark .mld-card p.font-medium { color: #f5f5f7 !important; }
+        html.dark .mld-card .text-green-600 { color: #34d399 !important; }
+        html.dark .mld-card .text-red-600 { color: #ff453a !important; }
+        html.dark .mld-card .text-blue-600 { color: #60a5fa !important; }
+        html.dark .mld-root .text-gray-500 { color: #8e8e93 !important; }
+        html.dark .mld-card .bg-green-100 { background-color: rgba(52,211,153,0.15) !important; color: #34d399 !important; }
+        html.dark .mld-card .bg-blue-100 { background-color: rgba(59,130,246,0.15) !important; color: #60a5fa !important; }
+        html.dark .mld-card .bg-yellow-100 { background-color: rgba(251,191,36,0.15) !important; color: #fbbf24 !important; }
+        html.dark .mld-card .text-green-800 { color: #34d399 !important; }
+        html.dark .mld-card .text-blue-800 { color: #60a5fa !important; }
+        html.dark .mld-card .text-yellow-800 { color: #fbbf24 !important; }
+      `}</style>
     </div>
   );
 };

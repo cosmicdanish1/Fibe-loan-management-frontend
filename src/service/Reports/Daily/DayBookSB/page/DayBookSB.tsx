@@ -37,6 +37,96 @@ const fmt = (n: number) =>
 
 const fmtSigned = (n: number) => (n < 0 ? '-' : '') + fmt(n);
 
+// Print-only layout matching the legacy report exactly (letterhead, Tr No/A/C
+// No./A/C Name/Deposit(Cash,Transfer,Total)/Withdrawal(Cash,Transfer,Total)
+// columns, TOTAL row, summary block) — plain decimals, no thousands
+// separators or currency symbol, same as the legacy screen. On-screen view is
+// untouched; this feeds handlePrint only.
+// Portrait, not landscape: this app's print pipeline doesn't honor
+// `@page { size: landscape }` from a dynamically-written iframe (confirmed
+// live — content came out sideways on a portrait sheet). Portrait + narrow
+// columns is the pattern already proven to work elsewhere (Day-Book 1.3).
+const SB_LINE_W = 94;
+const SB_DASH = '-'.repeat(SB_LINE_W);
+const SB_COL_TR = 6;
+const SB_COL_ACC = 8;
+const SB_COL_NAME = 20;
+const SB_COL_AMT = 10;
+
+const plain = (n: number) => Math.abs(n).toFixed(2);
+const plainSigned = (n: number) => (n < 0 ? '-' : '') + plain(n);
+const padL = (s: string, w: number) => s.padStart(w);
+const padR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
+const centerIn = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
+
+function buildSBPrintLines(data: SBData, dateLabel: string): string[] {
+  const lines: string[] = [];
+  const prefixW = SB_COL_TR + SB_COL_ACC + SB_COL_NAME;
+  const amtSpan = SB_COL_AMT * 3;
+
+  lines.push(centerIn('Espat Karmchari Co-Operative Credit Society Limited.', SB_LINE_W));
+  lines.push(centerIn('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', SB_LINE_W));
+  lines.push('');
+  lines.push(centerIn(`Day Book [Saving] for Date :${dateLabel}`, SB_LINE_W));
+  lines.push('');
+  lines.push(padL('Page Number : 1', SB_LINE_W));
+  lines.push(SB_DASH);
+
+  lines.push(
+    `${padR('Tr No', SB_COL_TR)}${padR('A/C No.', SB_COL_ACC)}${padR('A/C Name', SB_COL_NAME)}` +
+    `${centerIn('Deposit', amtSpan)}${centerIn('Withdrawal', amtSpan)}`
+  );
+  lines.push(
+    `${' '.repeat(prefixW)}${padR('Cash', SB_COL_AMT)}${padR('Transfer', SB_COL_AMT)}${padR('Total', SB_COL_AMT)}` +
+    `${padR('Cash', SB_COL_AMT)}${padR('Transfer', SB_COL_AMT)}${padR('Total', SB_COL_AMT)}`
+  );
+  lines.push(SB_DASH);
+
+  data.entries.forEach(e => {
+    const depTotal = e.depositCash + e.depositTransfer;
+    const wdTotal = e.withdrawalCash + e.withdrawalTransfer;
+    lines.push(
+      `${padR(String(e.srNo), SB_COL_TR)}${padR(e.accNo, SB_COL_ACC)}${padR(e.acName, SB_COL_NAME)}` +
+      `${padR(e.depositCash > 0 ? plain(e.depositCash) : '', SB_COL_AMT)}` +
+      `${padR(e.depositTransfer > 0 ? plain(e.depositTransfer) : '', SB_COL_AMT)}` +
+      `${padR(depTotal > 0 ? plain(depTotal) : '', SB_COL_AMT)}` +
+      `${padR(e.withdrawalCash > 0 ? plain(e.withdrawalCash) : '', SB_COL_AMT)}` +
+      `${padR(e.withdrawalTransfer > 0 ? plain(e.withdrawalTransfer) : '', SB_COL_AMT)}` +
+      `${padR(wdTotal > 0 ? plain(wdTotal) : '', SB_COL_AMT)}`
+    );
+  });
+
+  lines.push(SB_DASH);
+  lines.push(
+    `${padR('TOTAL :-', prefixW)}` +
+    `${padR(plain(data.totalDepositCash), SB_COL_AMT)}` +
+    `${padR(plain(data.totalDepositTransfer), SB_COL_AMT)}` +
+    `${padR(plain(data.totalDeposit), SB_COL_AMT)}` +
+    `${padR(plain(data.totalWithdrawalCash), SB_COL_AMT)}` +
+    `${padR(plain(data.totalWithdrawalTransfer), SB_COL_AMT)}` +
+    `${padR(plain(data.totalWithdrawal), SB_COL_AMT)}`
+  );
+  lines.push(SB_DASH);
+
+  const IND = ' '.repeat(34);
+  const LBL_W = 24;
+  const VAL_W = 12;
+  ([
+    ['Opening Balance [SB]', plainSigned(data.openingBalance)],
+    ['Total Deposit [SB]', plain(data.totalDeposit)],
+    ['Total Cash In Hand [SB]', plain(data.totalCashInHand)],
+    ['Total Withdrawal [SB]', plain(data.totalWithdrawal)],
+    ['Closing Balance [SB]', plainSigned(data.closingBalance)],
+  ] as [string, string][]).forEach(([label, value]) => {
+    lines.push(`${IND}${label.padEnd(LBL_W)}${padL(value, VAL_W)}`);
+  });
+  lines.push(SB_DASH);
+  lines.push('');
+  lines.push('* Report As Per Data Available ..');
+
+  return lines;
+}
+
 const DayBookSB: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs().subtract(1, 'day'));
   const [loading, setLoading] = useState(false);
@@ -87,7 +177,7 @@ const DayBookSB: React.FC = () => {
 
   const handlePrint = () => {
     if (!data) return;
-    const content = document.getElementById('sb-print-area')?.innerHTML || '';
+    const lines = buildSBPrintLines(data, selectedDate.format('DD-MMM-YYYY'));
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
     document.body.appendChild(iframe);
@@ -96,14 +186,10 @@ const DayBookSB: React.FC = () => {
       doc.open();
       doc.write(`<!DOCTYPE html><html><head><title>Day Book [SB]</title>
 <style>
-  @page { size:A4 landscape; margin:10mm; }
-  body { font-family:'Courier New',monospace; font-size:8pt; color:#000; background:#fff; }
-  table { width:100%; border-collapse:collapse; }
-  th,td { border:1px solid #666; padding:2px 4px; font-size:8pt; }
-  th { background:#ddd; font-weight:bold; }
-  .total-row td { font-weight:bold; background:#eee; }
-  .summary-row td { font-weight:bold; }
-</style></head><body>${content}</body></html>`);
+  @page { size: A4 portrait; margin: 12mm; }
+  body { margin: 0; }
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
+</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -137,10 +223,10 @@ const DayBookSB: React.FC = () => {
         colorBorder: isDark ? '#334155' : '#e2e8f0',
       },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+      <div className={`dbsb-page h-screen flex flex-col font-sans overflow-hidden ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
 
         {/* Header */}
-        <div className={`px-4 py-2.5 flex items-center justify-between shrink-0 ${header}`}>
+        <div className={`dbsb-header px-4 py-2.5 flex items-center justify-between shrink-0 ${header}`}>
           <div className="flex items-center gap-3">
             <div className="bg-sky-600 p-2 rounded-lg shadow-lg shadow-sky-500/30">
               <PiggyBank size={18} className="text-white" />
@@ -172,8 +258,8 @@ const DayBookSB: React.FC = () => {
           {/* Left panel */}
           <div className="w-[240px] flex flex-col gap-3 shrink-0">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className={`rounded-xl overflow-hidden ${panel}`}>
-              <div className={`px-3 py-2 flex items-center justify-between ${panelHd}`}>
+              className={`dbsb-panel rounded-xl overflow-hidden ${panel}`}>
+              <div className={`dbsb-panel-header px-3 py-2 flex items-center justify-between ${panelHd}`}>
                 <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
                   <Settings size={11} className="text-sky-400" /> Parameters
                 </h3>
@@ -200,7 +286,7 @@ const DayBookSB: React.FC = () => {
               {data && (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col gap-2">
-                  <div className={`rounded-lg p-3 ${panel}`}>
+                  <div className={`dbsb-panel rounded-lg p-3 ${panel}`}>
                     <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening [SB]</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.openingBalance)}</div>
                   </div>
@@ -209,7 +295,7 @@ const DayBookSB: React.FC = () => {
                     <div className={`text-sm font-black font-mono ${isDark ? 'text-sky-300' : 'text-sky-700'}`}>{fmt(data.totalDeposit)}</div>
                     <div className={`fz-tiny mt-1 ${isDark ? 'text-sky-500' : 'text-sky-500'}`}>Cash: {fmt(data.totalDepositCash)} | Trf: {fmt(data.totalDepositTransfer)}</div>
                   </div>
-                  <div className={`rounded-lg p-3 ${panel}`}>
+                  <div className={`dbsb-panel rounded-lg p-3 ${panel}`}>
                     <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${muted}`}>Cash In Hand</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmt(data.totalCashInHand)}</div>
                   </div>
@@ -228,7 +314,7 @@ const DayBookSB: React.FC = () => {
                       {fmtSigned(data.closingBalance)}
                     </div>
                   </div>
-                  <div className={`rounded-lg p-3 ${panel}`}>
+                  <div className={`dbsb-panel rounded-lg p-3 ${panel}`}>
                     <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Transactions</div>
                     <div className={`text-lg font-black font-mono ${text}`}>{data.totalTransactions}</div>
                   </div>
@@ -238,8 +324,8 @@ const DayBookSB: React.FC = () => {
           </div>
 
           {/* Report panel */}
-          <div className={`flex-1 rounded-xl flex flex-col overflow-hidden ${panel}`}>
-            <div className={`px-4 py-2 flex items-center justify-between shrink-0 ${panelHd}`}>
+          <div className={`dbsb-panel flex-1 rounded-xl flex flex-col overflow-hidden ${panel}`}>
+            <div className={`dbsb-panel-header px-4 py-2 flex items-center justify-between shrink-0 ${panelHd}`}>
               <span className={`text-xs font-extrabold uppercase tracking-wide ${panelHdTx}`}>
                 Day Book [Saving] — {selectedDate.format('DD-MMM-YYYY')}
               </span>
@@ -248,7 +334,7 @@ const DayBookSB: React.FC = () => {
               )}
             </div>
 
-            <div className={`flex-1 overflow-auto p-4 ${contentBg}`}>
+            <div className={`dbsb-preview-body flex-1 overflow-auto p-4 ${contentBg}`}>
               <Spin spinning={loading} tip="Loading...">
                 {hasData ? (
                   <div id="sb-print-area">
@@ -353,7 +439,7 @@ const DayBookSB: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className={`px-4 py-1.5 flex items-center justify-between shrink-0 ${ftrBg}`}>
+        <div className={`dbsb-footer px-4 py-1.5 flex items-center justify-between shrink-0 ${ftrBg}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse" />
             <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Day Book [SB] · Savings Ledger</span>
@@ -361,6 +447,18 @@ const DayBookSB: React.FC = () => {
           <span className={`fz-small font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
         </div>
       </div>
+
+      <style>{`
+        /* ── Day Book [SB] — dark mode ── */
+        html.dark .dbsb-page { background-color: #000000 !important; }
+        html.dark .dbsb-header,
+        html.dark .dbsb-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dbsb-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dbsb-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dbsb-preview-body { background-color: #1c1c1e !important; }
+        html.dark .dbsb-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dbsb-page .ant-picker input { color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

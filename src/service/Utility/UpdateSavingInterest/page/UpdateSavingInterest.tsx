@@ -137,7 +137,7 @@ const UpdateSavingInterest: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+      <div className="usi-app h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
@@ -313,6 +313,74 @@ const UpdateSavingInterest: React.FC = () => {
           .usi-table .ant-table-tbody > tr:hover > td { background: #eef2ff !important; }
           .usi-head-sel .ant-select-selector { height: 28px !important; min-height: 28px !important; font-size: 10px !important; font-weight: 600 !important; align-items: center; }
           .usi-head-sel .ant-select-selection-item, .usi-head-sel .ant-select-selection-placeholder { line-height: 26px !important; font-size: 10px !important; }
+
+          /* ── Update Saving Interest — dark mode (Settings-panel palette) ── */
+          html.dark .usi-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .usi-app > .bg-gradient-to-r { background-image: none !important; background-color: #0c0c0e !important; border-bottom: 1px solid rgba(255,255,255,.08); box-shadow: none !important; }
+          /* Cards / panels */
+          html.dark .usi-app .bg-white { background-color: #1c1c1e !important; }
+          html.dark .usi-app .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .usi-app .bg-slate-100 { background-color: #1c1c1e !important; }
+          html.dark .usi-app .hover\\:bg-slate-200:hover { background-color: rgba(255,255,255,.1) !important; }
+          html.dark .usi-app .border-slate-50,
+          html.dark .usi-app .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+          html.dark .usi-app .border-slate-200,
+          html.dark .usi-app .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .usi-app .shadow-sm { box-shadow: none !important; }
+          /* Inputs (native + antd) */
+          html.dark .usi-app input,
+          html.dark .usi-app textarea,
+          html.dark .usi-app .ant-input,
+          html.dark .usi-app .ant-input-affix-wrapper,
+          html.dark .usi-app .ant-picker,
+          html.dark .usi-app .ant-select-selector {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+          }
+          html.dark .usi-app .ant-picker input { background-color: transparent !important; }
+          html.dark .usi-app .ant-picker-suffix,
+          html.dark .usi-app .ant-select-arrow { color: #8e8e93 !important; }
+          html.dark .usi-app .ant-select-selection-placeholder,
+          html.dark .usi-app input::placeholder,
+          html.dark .usi-app textarea::placeholder { color: #71717a !important; }
+          html.dark .usi-app label { color: #8e8e93 !important; }
+          /* Text */
+          html.dark .usi-app .text-slate-900 { color: #f5f5f7 !important; }
+          html.dark .usi-app .text-slate-800 { color: #f5f5f7 !important; }
+          html.dark .usi-app .text-slate-700 { color: #f5f5f7 !important; }
+          html.dark .usi-app .text-slate-600 { color: #8e8e93 !important; }
+          html.dark .usi-app .text-slate-500 { color: #8e8e93 !important; }
+          html.dark .usi-app .text-slate-400 { color: #71717a !important; }
+          /* Buttons */
+          html.dark .usi-app button.bg-slate-100 { background-color: #1c1c1e !important; border: 1px solid rgba(255,255,255,.08); color: #f5f5f7 !important; }
+          html.dark .usi-app button.bg-indigo-50 { background-color: rgba(99,102,241,.15) !important; border-color: rgba(99,102,241,.4) !important; color: #a5b4fc !important; }
+          html.dark .usi-app button.hover\\:bg-indigo-100:hover { background-color: rgba(99,102,241,.25) !important; }
+          /* Status */
+          html.dark .usi-app .bg-emerald-50 { background-color: rgba(52,211,153,.08) !important; }
+          html.dark .usi-app .border-emerald-200 { border-color: rgba(52,211,153,.3) !important; }
+          html.dark .usi-app .text-emerald-600,
+          html.dark .usi-app .text-emerald-700 { color: #34d399 !important; }
+          html.dark .usi-app .bg-rose-50 { background-color: rgba(255,69,58,.08) !important; }
+          html.dark .usi-app .border-rose-200 { border-color: rgba(255,69,58,.3) !important; }
+          html.dark .usi-app .text-rose-600,
+          html.dark .usi-app .text-rose-700 { color: #ff453a !important; }
+          html.dark .usi-app .text-indigo-600 { color: #818cf8 !important; }
+          /* Preview table */
+          html.dark .usi-app .ant-table,
+          html.dark .usi-app .ant-table-container,
+          html.dark .usi-app .ant-table-content { background-color: #1c1c1e !important; color: #f5f5f7 !important; }
+          html.dark .usi-table .ant-table-thead > tr > th { background: #1c1c1e !important; border-bottom-color: rgba(255,255,255,.07) !important; color: #8e8e93 !important; }
+          html.dark .usi-table .ant-table-tbody > tr > td { background: #1c1c1e !important; border-bottom-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
+          html.dark .usi-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
+          html.dark .usi-table .ant-table-cell-fix-left,
+          html.dark .usi-table .ant-table-cell-fix-right { background: #1c1c1e !important; }
+          html.dark .usi-table .ant-table-placeholder .ant-table-cell { background: #1c1c1e !important; color: #71717a !important; }
+          html.dark .usi-table .ant-empty-description { color: #71717a !important; }
+          html.dark .usi-table .ant-pagination-item,
+          html.dark .usi-table .ant-pagination-prev .ant-pagination-item-link,
+          html.dark .usi-table .ant-pagination-next .ant-pagination-item-link { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+          html.dark .usi-table .ant-pagination-item a { color: #f5f5f7 !important; }
+          html.dark .usi-table .ant-pagination-item-active { border-color: #6366f1 !important; }
+          html.dark .usi-app .ant-spin-text { color: #8e8e93 !important; }
         `}</style>
       </div>
     </ConfigProvider>

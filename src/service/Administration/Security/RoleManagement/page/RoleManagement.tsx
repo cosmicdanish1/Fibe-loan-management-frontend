@@ -9,12 +9,12 @@ import {
   Square,
   ShieldCheck,
   Building2,
-  LucideIcon,
+  Search,
+  ChevronRight,
   Lock,
   X,
 } from 'lucide-react';
 import { useDefaultRights } from '../hook/useDefaultRights';
-import type { MenuRight } from '../interface/types';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import { ConfigProvider, Tooltip } from 'antd';
 
@@ -54,10 +54,11 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
   const [newRoleName, setNewRoleName] = React.useState('');
 
   const {
-    formData, selectedUserLevel, updateUserLevel,
-    toggleMenuRight, toggleAllRights, saveDefaultRights, resetForm,
-    getSelectedRightsCount, getTotalRightsCount, createRole,
-    userLevels: dynamicUserLevels
+    selectedUserLevel, updateUserLevel,
+    saveDefaultRights, resetForm, getSelectedRightsCount, getTotalRightsCount, createRole,
+    userLevels: dynamicUserLevels,
+    query, setQuery, onlyGranted, toggleOnlyGranted,
+    sections, isEmpty, expandAll, collapseAll, toggleAllRights,
   } = useDefaultRights();
 
   const roleLabelMap: Record<string, string> = {
@@ -79,6 +80,8 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
 
   const total = getTotalRightsCount();
   const selected = getSelectedRightsCount();
+  const shownCount = sections.reduce((sum, s) => sum + s.items.length, 0);
+  const isFiltering = !!query.trim() || onlyGranted;
 
   const handleSave = async () => {
     if (!selectedUserLevel) {
@@ -109,37 +112,57 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
         .role-mgmt-page .rm-scroll::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 3px; }
         .role-mgmt-page .rm-scroll::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
 
-        html.dark .role-mgmt-page { background: #0f172a !important; }
-        html.dark .role-mgmt-page .rm-controlbar { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .role-mgmt-page .rm-select { background: #0f172a !important; border-color: #475569 !important; color: #f1f5f9 !important; }
-        html.dark .role-mgmt-page .rm-select option { background: #1e293b; color: #f1f5f9; }
-        html.dark .role-mgmt-page .rm-icon-btn { background: #0f172a !important; border-color: #475569 !important; color: #94a3b8 !important; }
-        html.dark .role-mgmt-page .rm-icon-btn:hover { background: #334155 !important; color: #f1f5f9 !important; }
-        html.dark .role-mgmt-page .rm-pip { background: #0f172a !important; }
-        html.dark .role-mgmt-page .rm-pip-label { color: #64748b !important; }
-        html.dark .role-mgmt-page .rm-divider { background: #334155 !important; }
+        .role-mgmt-page .rm-section-head { background: #f8fafc; border-color: #e2e8f0; }
+        .role-mgmt-page .rm-section-head:hover { background: #f1f5f9; }
+        .role-mgmt-page .rm-bar-track { background: #e2e8f0; }
+        .role-mgmt-page .rm-grid-cell:hover { background: #f8fafc; }
+        .role-mgmt-page .rm-grid-cell.rm-sel { background: #eef2ff; }
 
-        html.dark .role-mgmt-page .rm-grid-area { background: #334155 !important; }
-        html.dark .role-mgmt-page .rm-grid-cell { background: #1e293b !important; }
-        html.dark .role-mgmt-page .rm-grid-cell:hover { background: #283548 !important; }
-        html.dark .role-mgmt-page .rm-grid-cell.rm-sel { background: #1e3058 !important; }
-        html.dark .role-mgmt-page .rm-cb { border-color: #475569 !important; background: #0f172a !important; }
+        html.dark .role-mgmt-page { background: #000000 !important; }
+        html.dark .role-mgmt-page .rm-controlbar { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .role-mgmt-page .rm-select { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .role-mgmt-page .rm-select option { background: #1c1c1e; color: #f5f5f7; }
+        html.dark .role-mgmt-page .rm-icon-btn { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .role-mgmt-page .rm-icon-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .role-mgmt-page .rm-search { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .role-mgmt-page .rm-search input { color: #f5f5f7 !important; }
+        html.dark .role-mgmt-page .rm-search input::placeholder { color: #71717a !important; }
+        html.dark .role-mgmt-page .rm-toggle-off { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .role-mgmt-page .rm-toggle-on { background: #4f46e5 !important; border-color: #4f46e5 !important; color: #fff !important; }
+        html.dark .role-mgmt-page .rm-pip { background: #000000 !important; }
+        html.dark .role-mgmt-page .rm-pip-label { color: #71717a !important; }
+        html.dark .role-mgmt-page .rm-divider { background: rgba(255,255,255,.07) !important; }
+
+        html.dark .role-mgmt-page .rm-scroll { background: #000000 !important; }
+        html.dark .role-mgmt-page .rm-section-head { background: #111c31 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .role-mgmt-page .rm-section-head:hover { background: #16213a !important; }
+        html.dark .role-mgmt-page .rm-section-name { color: #f5f5f7 !important; }
+        html.dark .role-mgmt-page .rm-section-count-off { color: rgba(255,255,255,.08) !important; }
+        html.dark .role-mgmt-page .rm-bar-track { background: #000000 !important; }
+        html.dark .role-mgmt-page .rm-mini-btn { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .role-mgmt-page .rm-mini-btn:hover { background: #4f46e5 !important; color: #fff !important; border-color: #4f46e5 !important; }
+        html.dark .role-mgmt-page .rm-mini-btn.rm-mini-danger:hover { background: rgba(255,255,255,.08) !important; }
+        html.dark .role-mgmt-page .rm-grid-area { background: #000000 !important; }
+        html.dark .role-mgmt-page .rm-grid-cell { background: #1a2436 !important; }
+        html.dark .role-mgmt-page .rm-grid-cell:hover { background: #26344c !important; }
+        html.dark .role-mgmt-page .rm-grid-cell.rm-sel { background: #1c2c4d !important; }
+        html.dark .role-mgmt-page .rm-cb { border-color: rgba(255,255,255,.08) !important; background: rgba(255,255,255,.05) !important; }
         html.dark .role-mgmt-page .rm-grid-cell.rm-sel .rm-cb { background: #4f46e5 !important; border-color: #4f46e5 !important; }
-        html.dark .role-mgmt-page .rm-cell-name { color: #94a3b8 !important; }
-        html.dark .role-mgmt-page .rm-grid-cell.rm-sel .rm-cell-name { color: #e2e8f0 !important; }
+        html.dark .role-mgmt-page .rm-cell-name { color: #8e8e93 !important; }
+        html.dark .role-mgmt-page .rm-grid-cell.rm-sel .rm-cell-name { color: #f5f5f7 !important; }
         html.dark .role-mgmt-page .rm-cell-accent { background: #4f46e5 !important; }
-        html.dark .role-mgmt-page .rm-scroll::-webkit-scrollbar-track { background: #1e293b !important; }
+        html.dark .role-mgmt-page .rm-scroll::-webkit-scrollbar-track { background: #1c1c1e !important; }
 
-        html.dark .role-mgmt-page .rm-modal { background: #1e293b !important; }
-        html.dark .role-mgmt-page .rm-modal-border { border-color: #334155 !important; }
+        html.dark .role-mgmt-page .rm-modal { background: #1c1c1e !important; }
+        html.dark .role-mgmt-page .rm-modal-border { border-color: rgba(255,255,255,.08) !important; }
         html.dark .role-mgmt-page .rm-modal-icon { background: #312e81 !important; color: #818cf8 !important; }
-        html.dark .role-mgmt-page .rm-modal h3 { color: #f1f5f9 !important; }
-        html.dark .role-mgmt-page .rm-modal p { color: #94a3b8 !important; }
-        html.dark .role-mgmt-page .rm-modal label { color: #64748b !important; }
-        html.dark .role-mgmt-page .rm-modal-input { background: #0f172a !important; border-color: #475569 !important; color: #f1f5f9 !important; }
-        html.dark .role-mgmt-page .rm-modal-input::placeholder { color: #475569 !important; }
-        html.dark .role-mgmt-page .rm-modal-cancel { background: #334155 !important; color: #94a3b8 !important; }
-        html.dark .role-mgmt-page .rm-modal-cancel:hover { background: #475569 !important; }
+        html.dark .role-mgmt-page .rm-modal h3 { color: #f5f5f7 !important; }
+        html.dark .role-mgmt-page .rm-modal p { color: #8e8e93 !important; }
+        html.dark .role-mgmt-page .rm-modal label { color: #71717a !important; }
+        html.dark .role-mgmt-page .rm-modal-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .role-mgmt-page .rm-modal-input::placeholder { color: rgba(255,255,255,.08) !important; }
+        html.dark .role-mgmt-page .rm-modal-cancel { background: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .role-mgmt-page .rm-modal-cancel:hover { background: rgba(255,255,255,.08) !important; }
       `}</style>
 
       <div className={`role-mgmt-page h-screen flex flex-col bg-slate-50 font-sans overflow-hidden ${className}`}>
@@ -170,13 +193,13 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
           </div>
         </div>
 
-        {/* ── Control Bar: level select + stats + toggle buttons ── */}
-        <div className="rm-controlbar bg-white border-b border-slate-200 px-2 py-1 flex items-center gap-2 shrink-0">
+        {/* ── Control Bar: level select + search + filters + stats + toggle buttons ── */}
+        <div className="rm-controlbar bg-white border-b border-slate-200 px-2 py-1 flex items-center gap-2 shrink-0 flex-wrap">
           <Lock size={9} className="text-slate-400 shrink-0" />
           <select
             value={selectedUserLevel}
             onChange={(e) => updateUserLevel(e.target.value)}
-            className="rm-select flex-1 min-w-0 h-6 bg-slate-50 border border-slate-200 rounded px-1.5 fz-caption font-black text-slate-900 outline-none focus:ring-1 focus:ring-indigo-400 transition-all cursor-pointer appearance-none"
+            className="rm-select w-[210px] shrink-0 h-6 bg-slate-50 border border-slate-200 rounded px-1.5 fz-caption font-black text-slate-900 outline-none focus:ring-1 focus:ring-indigo-400 transition-all cursor-pointer appearance-none"
           >
             {userLevels.map(l => (
               <option key={l.value} value={l.value}>{l.label}</option>
@@ -189,9 +212,41 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
             </button>
           </Tooltip>
 
+          <div className="rm-search flex items-center gap-1.5 flex-1 min-w-[160px] bg-slate-50 border border-slate-200 rounded h-6 px-2">
+            <Search size={11} className="text-slate-400 shrink-0" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter rights by name…"
+              className="flex-1 min-w-0 bg-transparent outline-none border-0 fz-caption font-semibold text-slate-800 placeholder:text-slate-400"
+            />
+            {isFiltering && (
+              <span className="fz-caption font-black text-slate-400 uppercase tracking-tight shrink-0" style={{ fontSize: '9px' }}>
+                {shownCount} shown
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={toggleOnlyGranted}
+            className={`h-6 px-2 rounded border fz-caption font-black transition-all shrink-0 ${
+              onlyGranted ? 'rm-toggle-on bg-indigo-600 border-indigo-600 text-white' : 'rm-toggle-off bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            Granted only
+          </button>
+          <button onClick={expandAll}
+            className="rm-icon-btn h-6 px-2 bg-slate-50 text-slate-500 rounded border border-slate-200 hover:bg-slate-100 transition-all fz-caption font-black shrink-0">
+            Expand
+          </button>
+          <button onClick={collapseAll}
+            className="rm-icon-btn h-6 px-2 bg-slate-50 text-slate-500 rounded border border-slate-200 hover:bg-slate-100 transition-all fz-caption font-black shrink-0">
+            Collapse
+          </button>
+
           <div className="rm-divider w-px h-4 bg-slate-200 shrink-0" />
 
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5 shrink-0">
             <Pip label="Total" value={total} color="text-slate-700" />
             <Pip label="On" value={selected} color="text-indigo-600" />
             <Pip label="Off" value={total - selected} color="text-slate-400" />
@@ -215,29 +270,73 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
           </div>
         </div>
 
-        {/* ── Grid fills remaining space ── */}
+        {/* ── Sections fill remaining space ── */}
         <div className="flex-1 overflow-auto rm-scroll">
-          <div className="rm-grid-area grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-[1px] bg-slate-200 min-h-full">
-            {formData.menuRights.map((right: MenuRight) => (
-              <div
-                key={right.id}
-                onClick={() => toggleMenuRight(right.id)}
-                className={`rm-grid-cell relative flex items-center gap-1 p-1 cursor-pointer transition-colors bg-white group ${right.isSelected ? 'rm-sel' : ''}`}
-              >
-                {right.isSelected && <div className="rm-cell-accent absolute left-0 top-0 w-0.5 h-full bg-indigo-500" />}
-                <div className={`rm-cb shrink-0 w-3 h-3 rounded-sm border flex items-center justify-center transition-all ${
-                  right.isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white group-hover:border-indigo-400'
-                }`}>
-                  {right.isSelected && <CheckSquare size={8} strokeWidth={3} className="text-white" />}
+          {sections.map(section => {
+            const pct = section.total > 0 ? Math.round((section.on / section.total) * 100) : 0;
+            return (
+              <div key={section.name} className="border-b border-slate-200">
+                <div
+                  onClick={section.toggleOpen}
+                  className="rm-section-head sticky top-0 z-[1] border-b border-slate-200 px-2.5 py-1.5 flex items-center gap-2.5 cursor-pointer transition-colors"
+                >
+                  <ChevronRight size={10} className="text-slate-400 shrink-0 transition-transform" style={{ transform: section.open ? 'rotate(90deg)' : 'none' }} />
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${section.on > 0 ? 'bg-indigo-500' : 'bg-slate-300'}`} />
+                  <span className="rm-section-name fz-caption font-black text-slate-700 uppercase tracking-wide">{section.name}</span>
+                  <span className="fz-caption font-black text-indigo-600">{section.on}</span>
+                  <span className="rm-section-count-off fz-caption font-bold text-slate-400">/ {section.total}</span>
+                  <div className="rm-bar-track w-[90px] h-1 rounded-full bg-slate-200 overflow-hidden shrink-0">
+                    <div className="h-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="flex gap-1 ml-auto shrink-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); section.grant(); }}
+                      className="rm-mini-btn h-5 px-2 bg-slate-50 border border-slate-200 rounded fz-caption font-black text-slate-500 uppercase tracking-wide hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all"
+                      style={{ fontSize: '9px' }}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); section.revoke(); }}
+                      className="rm-mini-btn rm-mini-danger h-5 px-2 bg-slate-50 border border-slate-200 rounded fz-caption font-black text-slate-500 uppercase tracking-wide hover:bg-slate-500 hover:text-white transition-all"
+                      style={{ fontSize: '9px' }}
+                    >
+                      None
+                    </button>
+                  </div>
                 </div>
-                <span className={`rm-cell-name fz-caption font-bold leading-tight truncate transition-colors ${
-                  right.isSelected ? 'text-slate-800' : 'text-slate-500 group-hover:text-slate-700'
-                }`}>
-                  {right.description}
-                </span>
+
+                {section.open && (
+                  <div className="rm-grid-area grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-[1px] bg-slate-200">
+                    {section.items.map(item => (
+                      <div
+                        key={item.id}
+                        onClick={item.toggle}
+                        className={`rm-grid-cell relative flex items-center gap-1 p-1 cursor-pointer transition-colors bg-white group ${item.isSelected ? 'rm-sel' : ''}`}
+                      >
+                        {item.isSelected && <div className="rm-cell-accent absolute left-0 top-0 w-0.5 h-full bg-indigo-500" />}
+                        <div className={`rm-cb shrink-0 w-3 h-3 rounded-sm border flex items-center justify-center transition-all ${
+                          item.isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white group-hover:border-indigo-400'
+                        }`}>
+                          {item.isSelected && <CheckSquare size={8} strokeWidth={3} className="text-white" />}
+                        </div>
+                        <span className={`rm-cell-name fz-caption font-bold leading-tight truncate transition-colors ${
+                          item.isSelected ? 'text-slate-800' : 'text-slate-500 group-hover:text-slate-700'
+                        }`}>
+                          {item.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            );
+          })}
+          {isEmpty && (
+            <div className="p-12 text-center text-slate-400 fz-body font-bold">
+              No rights match &ldquo;{query}&rdquo;.
+            </div>
+          )}
         </div>
 
         {/* ── Footer ── */}

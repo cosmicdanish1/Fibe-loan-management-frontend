@@ -1,455 +1,577 @@
-import React, { useState, useEffect } from 'react';
-import {
-  ConfigProvider,
-  DatePicker,
-  Button,
-  Spin,
-  Typography,
-  Tabs,
-  Progress,
-  Table
-} from 'antd';
-import {
-  Download,
-  RotateCcw,
-  Users,
-  Eye,
-  AlertTriangle,
-  Clock,
-  TrendingUp,
-  Activity,
-  Zap,
-  BarChart2,
-  Calendar,
-  ShieldCheck,
-  Search
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo, useEffect } from 'react';
+import { RefreshCw, ArrowUp, Download, Activity, AlertCircle, Zap } from 'lucide-react';
 import { useComponentAnalytics } from '../../../../hooks/useAnalytics';
 
-const { RangePicker } = DatePicker;
-const { Text } = Typography;
+type Range = '7D' | '30D' | '90D';
+type Tab = 'pages' | 'features' | 'errors';
+type Section = 'Overview' | 'Traffic' | 'Features' | 'Errors' | 'Reports';
 
-interface DashboardData {
-  totalSessions: number;
-  activeUsers: number;
-  totalPageViews: number;
-  totalErrors: number;
-  avgSessionDuration: number;
-  topPages: Array<{ page: string; visits: number }>;
-  topFeatures: Array<{ feature: string; usage: number }>;
-  errorsByType: Array<{ type: string; count: number }>;
-  sessionTrend: Array<{ date: string; sessions: number; users: number }>;
-  performanceMetrics: Array<{ feature: string; avgTime: number }>;
+interface TrendRow {
+  label: string;
+  s: number;
+  u: number;
 }
+
+const NAV_ITEMS: Array<{ label: Section; color: string; badge: string }> = [
+  { label: 'Overview', color: '#34D06A', badge: '' },
+  { label: 'Traffic', color: '#5AA9FF', badge: '' },
+  { label: 'Features', color: '#BF5AF2', badge: '' },
+  { label: 'Errors', color: '#FF453A', badge: '23' },
+  { label: 'Reports', color: '#FF9F0A', badge: '' },
+];
+
+const PERF_RAW = [
+  { feature: 'Member lookup', avgTime: 1.2 },
+  { feature: 'Report generation', avgTime: 3.8 },
+  { feature: 'Data loading', avgTime: 2.1 },
+  { feature: 'Form submission', avgTime: 0.9 },
+  { feature: 'Page navigation', avgTime: 0.6 },
+];
+
+const PAGES = [
+  { page: '/reports/member-ledger', visits: 342 },
+  { page: '/masters/member', visits: 298 },
+  { page: '/transaction/loan-payment', visits: 256 },
+  { page: '/reports/cash-book', visits: 189 },
+  { page: '/utility/member-balance', visits: 167 },
+];
+
+const FEATURES = [
+  { feature: 'Member lookup', usage: 456 },
+  { feature: 'Report generation', usage: 389 },
+  { feature: 'Loan payment', usage: 234 },
+  { feature: 'Member master', usage: 198 },
+  { feature: 'Cash book', usage: 156 },
+];
+
+const ERRORS = [
+  { type: 'API error', count: 12 },
+  { type: 'Validation error', count: 8 },
+  { type: 'Network error', count: 2 },
+  { type: 'JavaScript error', count: 1 },
+];
+
+const MINI_DATA = [
+  { label: 'Page views', sub: '4.5 per session', value: '5,632', color: '#BF5AF2', tint: 'rgba(191,90,242,0.16)' },
+  { label: 'System errors', sub: '1.8% of requests', value: '23', color: '#FF453A', tint: 'rgba(255,69,58,0.16)' },
+  { label: 'Avg. session', sub: 'Up 1.2 min', value: '18.5m', color: '#FF9F0A', tint: 'rgba(255,159,10,0.16)' },
+];
+
+const LIVE_SEED = [38, 52, 44, 61, 48, 72, 55, 40, 66, 58, 47, 80, 62, 50, 44, 68, 74, 56, 42, 60, 70, 52, 46, 64];
+
+function trendData(range: Range): TrendRow[] {
+  if (range === '7D') {
+    return [
+      { label: 'Mon', s: 45, u: 23 }, { label: 'Tue', s: 52, u: 28 }, { label: 'Wed', s: 38, u: 19 },
+      { label: 'Thu', s: 61, u: 34 }, { label: 'Fri', s: 48, u: 26 }, { label: 'Sat', s: 35, u: 18 },
+      { label: 'Sun', s: 42, u: 22 },
+    ];
+  }
+  const n = range === '30D' ? 30 : 90;
+  const out: TrendRow[] = [];
+  for (let i = 0; i < n; i++) {
+    const w = Math.sin(i / 4.4) * 9 + Math.sin(i / 1.7) * 5;
+    const s = Math.round(46 + w + (i / n) * 16);
+    out.push({ label: String(i + 1), s, u: Math.round(s * 0.53 + Math.sin(i / 3) * 2) });
+  }
+  return out;
+}
+
+function smoothPath(pts: Array<[number, number]>, close: boolean): string {
+  if (!pts.length) return '';
+  const first = pts[0]!;
+  let d = `M${first[0].toFixed(1)} ${first[1].toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i - 1]!;
+    const c = pts[i]!;
+    const mx = (p[0] + c[0]) / 2;
+    d += ` C${mx.toFixed(1)} ${p[1].toFixed(1)},${mx.toFixed(1)} ${c[1].toFixed(1)},${c[0].toFixed(1)} ${c[1].toFixed(1)}`;
+  }
+  if (close) {
+    const last = pts[pts.length - 1]!;
+    d += ` L${last[0].toFixed(1)} 240 L${first[0].toFixed(1)} 240 Z`;
+  }
+  return d;
+}
+
+const navItemStyle = (active: boolean): React.CSSProperties => ({
+  display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '7px 9px',
+  border: 'none', borderRadius: 9, fontFamily: 'inherit', fontSize: 13.5,
+  fontWeight: active ? 600 : 450, letterSpacing: '-0.012em', cursor: 'pointer',
+  transition: 'background 150ms ease',
+  background: active ? 'rgba(52,208,106,0.15)' : 'transparent',
+  color: active ? '#EAFBF0' : '#A7ACB4',
+});
+
+const segBtnStyle = (active: boolean): React.CSSProperties => ({
+  padding: '5px 11px', border: 'none', borderRadius: 7, fontFamily: 'inherit',
+  fontSize: 12.5, fontWeight: active ? 600 : 500, cursor: 'pointer',
+  transition: 'all 180ms ease',
+  background: active ? 'rgba(255,255,255,0.14)' : 'transparent',
+  color: active ? '#FFFFFF' : '#8B9099',
+  boxShadow: active ? '0 1px 3px rgba(0,0,0,0.32)' : 'none',
+});
+
+const tabBtnStyle = (active: boolean): React.CSSProperties => ({
+  flex: 1, padding: '7px 0', border: 'none', borderRadius: 8, fontFamily: 'inherit',
+  fontSize: 13, fontWeight: active ? 600 : 500, letterSpacing: '-0.01em', cursor: 'pointer',
+  transition: 'all 180ms ease',
+  background: active ? 'rgba(255,255,255,0.14)' : 'transparent',
+  color: active ? '#FFFFFF' : '#8B9099',
+  boxShadow: active ? '0 1px 3px rgba(0,0,0,0.32)' : 'none',
+});
 
 const AnalyticsDashboard: React.FC = () => {
   const analytics = useComponentAnalytics('AnalyticsDashboard');
-  const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
-
-  // Load dashboard data
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        const mockData: DashboardData = {
-          totalSessions: 1247,
-          activeUsers: 89,
-          totalPageViews: 5632,
-          totalErrors: 23,
-          avgSessionDuration: 18.5,
-          topPages: [
-            { page: '/reports/member-ledger', visits: 342 },
-            { page: '/masters/member', visits: 298 },
-            { page: '/transaction/loan-payment', visits: 256 },
-            { page: '/reports/cash-book', visits: 189 },
-            { page: '/utility/member-balance', visits: 167 },
-          ],
-          topFeatures: [
-            { feature: 'Member Lookup', usage: 456 },
-            { feature: 'Report Generation', usage: 389 },
-            { feature: 'Loan Payment', usage: 234 },
-            { feature: 'Member Master', usage: 198 },
-            { feature: 'Cash Book', usage: 156 },
-          ],
-          errorsByType: [
-            { type: 'API Error', count: 12 },
-            { type: 'Validation Error', count: 8 },
-            { type: 'Network Error', count: 2 },
-            { type: 'JavaScript Error', count: 1 },
-          ],
-          sessionTrend: [
-            { date: 'Mon', sessions: 45, users: 23 },
-            { date: 'Tue', sessions: 52, users: 28 },
-            { date: 'Wed', sessions: 38, users: 19 },
-            { date: 'Thu', sessions: 61, users: 34 },
-            { date: 'Fri', sessions: 48, users: 26 },
-            { date: 'Sat', sessions: 35, users: 18 },
-            { date: 'Sun', sessions: 42, users: 22 },
-          ],
-          performanceMetrics: [
-            { feature: 'Member Lookup', avgTime: 1.2 },
-            { feature: 'Report Generation', avgTime: 3.8 },
-            { feature: 'Data Loading', avgTime: 2.1 },
-            { feature: 'Form Submission', avgTime: 0.9 },
-            { feature: 'Page Navigation', avgTime: 0.6 },
-          ],
-        };
-
-        setDashboardData(mockData);
-        setLoading(false);
-      }, 800);
-
-      analytics.trackFeatureUsage({
-        featureCategory: 'Analytics',
-        featureName: 'Dashboard Load',
-        actionType: 'view',
-        sessionId: '',
-      });
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
-    }
-  };
+  const [range, setRange] = useState<Range>('7D');
+  const [tab, setTab] = useState<Tab>('pages');
+  const [section, setSection] = useState<Section>('Overview');
+  const [spinning, setSpinning] = useState(false);
 
   useEffect(() => {
-    loadDashboardData();
+    analytics.trackFeatureUsage({
+      featureCategory: 'Analytics',
+      featureName: 'Dashboard Load',
+      actionType: 'view',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // UI Components
-  const KPIWidget = ({ title, value, icon: Icon, color, bgClass, trend }: any) => (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300"
-    >
-      <div className={`absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity ${color}`}>
-        <Icon size={80} />
-      </div>
-      <div className="relative z-10">
-        <div className={`w-10 h-10 ${bgClass} rounded-xl flex items-center justify-center mb-4 text-white shadow-lg`}>
-          <Icon size={20} />
-        </div>
-        <div className="space-y-1">
-          <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">{title}</span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-800 tracking-tight">{value}</span>
-            {trend && (
-              <span className="fz-small font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-1">
-                <TrendingUp size={10} /> {trend}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
+  const rows = useMemo(() => trendData(range), [range]);
 
-  const SectionHeader = ({ title, icon: Icon }: any) => (
-    <div className="flex items-center gap-2 mb-4">
-      <Icon size={16} className="text-indigo-500" />
-      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">{title}</h3>
-    </div>
-  );
+  const chart = useMemo(() => {
+    const W = 700, H = 208, top = 16;
+    const max = Math.max(...rows.map(r => r.s)) * 1.16;
+    const xs = (i: number) => (rows.length === 1 ? W / 2 : (i / (rows.length - 1)) * W);
+    const ys = (v: number) => top + H - (v / max) * H;
+    const sPts: Array<[number, number]> = rows.map((r, i) => [xs(i), ys(r.s)]);
+    const uPts: Array<[number, number]> = rows.map((r, i) => [xs(i), ys(r.u)]);
+    const peakIdx = rows.reduce((b, r, i) => (r.s > rows[b]!.s ? i : b), 0);
+    const step = Math.ceil(rows.length / 7);
+    return {
+      gridLines: [0, 1, 2, 3].map(i => top + (H / 3) * i),
+      sessionsLine: smoothPath(sPts, false),
+      sessionsArea: smoothPath(sPts, true),
+      usersLine: smoothPath(uPts, false),
+      usersArea: smoothPath(uPts, true),
+      peak: sPts[peakIdx]!,
+      axisLabels: rows.filter((_, i) => i % step === 0).map(r => r.label),
+    };
+  }, [rows]);
+
+  const handleRefresh = () => {
+    setSpinning(true);
+    analytics.trackFeatureUsage({
+      featureCategory: 'Analytics',
+      featureName: 'Dashboard Refresh',
+      actionType: 'click',
+    });
+    setTimeout(() => setSpinning(false), 600);
+  };
+
+  const rangeLabel = range === '7D' ? 'Last 7 days' : range === '30D' ? 'Last 30 days' : 'Last 90 days';
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#6366f1',
-          borderRadius: 8,
-          fontFamily: "'Inter', sans-serif"
-        }
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '236px minmax(0, 1fr)',
+        minHeight: '100vh',
+        background: '#0A0C10',
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', sans-serif",
+        color: '#F5F5F7',
+        fontSize: 15,
+        lineHeight: 1.4,
+        letterSpacing: '-0.012em',
       }}
     >
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-indigo-100">
+      <style>{`
+        .ah-scope a { color: #34D06A; text-decoration: none; }
+        .ah-scope a:hover { color: #7CE6A4; }
+        .ah-scope ::selection { background: rgba(52,208,106,0.3); }
+        .ah-scope .ah-scroll::-webkit-scrollbar { width: 9px; }
+        .ah-scope .ah-scroll::-webkit-scrollbar-track { background: transparent; }
+        .ah-scope .ah-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); border-radius: 9px; border: 3px solid transparent; background-clip: padding-box; }
+        .ah-scope .ah-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.28); background-clip: padding-box; }
+        .ah-icon-btn:hover { background: rgba(255,255,255,0.13) !important; }
+        .ah-export-btn:hover { filter: brightness(1.08); }
+        .ah-row-hover:hover { background: rgba(255,255,255,0.05); }
+        @keyframes ah-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
 
-        {/* Header */}
-        <div className="bg-slate-900 px-6 py-4 flex items-center justify-between shrink-0 shadow-lg z-20">
-          <div className="flex items-center gap-4">
-            <div className="bg-indigo-500 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/20">
-              <BarChart2 size={20} />
+      <div className="ah-scope" style={{ display: 'contents' }}>
+        {/* Sidebar */}
+        <aside
+          style={{
+            position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column',
+            gap: 4, padding: '14px 10px 12px',
+            background: 'linear-gradient(180deg, #14181F 0%, #0E1116 100%)',
+            borderRight: '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 8px 16px' }}>
+            <div
+              style={{
+                width: 26, height: 26, flex: 'none', borderRadius: 8,
+                background: 'linear-gradient(180deg, #4BE383 0%, #1FA25A 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 1px 0 rgba(255,255,255,0.3) inset, 0 3px 10px rgba(31,162,90,0.35)',
+              }}
+            >
+              <Activity size={14} color="#052110" strokeWidth={2.6} />
             </div>
-            <div>
-              <h1 className="text-base font-black text-white uppercase tracking-tight leading-none">Analytics Hub</h1>
-              <div className="flex items-center gap-2 mt-1.5 fz-tiny font-bold text-slate-400 uppercase tracking-widest leading-none">
-                <ShieldCheck size={10} className="text-emerald-400" /> System Metrics v2.4
+            <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>Analytics Hub</div>
+          </div>
+
+          <div style={{ padding: '0 8px 7px', fontSize: 11, fontWeight: 600, color: '#6B7078', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+            Monitor
+          </div>
+          {NAV_ITEMS.map(n => {
+            const active = section === n.label;
+            return (
+              <button key={n.label} onClick={() => setSection(n.label)} style={navItemStyle(active)}>
+                <span style={{ width: 7, height: 7, flex: 'none', borderRadius: 2.5, background: active ? n.color : 'rgba(255,255,255,0.22)' }} />
+                <span style={{ flex: 1, textAlign: 'left', whiteSpace: 'nowrap' }}>{n.label}</span>
+                {n.badge ? (
+                  <span style={{ flex: 'none', padding: '1px 7px', borderRadius: 20, background: 'rgba(255,69,58,0.9)', color: '#240605', fontSize: 11, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                    {n.badge}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+
+          <div style={{ flex: 1 }} />
+
+          <div style={{ margin: '0 4px 6px', padding: '12px 13px', borderRadius: 14, background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: '#B7BCC4' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#34D06A', boxShadow: '0 0 0 3px rgba(52,208,106,0.18)' }} />
+              All systems normal
+            </div>
+            <div style={{ marginTop: 8, fontSize: 11.5, color: '#6B7078', lineHeight: 1.5 }}>Live telemetry · 12 nodes<br />Synced 2 min ago</div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px 4px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <div
+              style={{
+                width: 26, height: 26, flex: 'none', borderRadius: '50%',
+                background: 'linear-gradient(180deg, #5B6472 0%, #3A414B 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 600, color: '#E6E8EC',
+              }}
+            >
+              RK
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Rahul Kumar</div>
+              <div style={{ fontSize: 11, color: '#6B7078' }}>Administrator</div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between', gap: 20, padding: '14px 26px',
+              background: 'rgba(10,12,16,0.72)', backdropFilter: 'saturate(180%) blur(22px)',
+              WebkitBackdropFilter: 'saturate(180%) blur(22px)',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.024em', whiteSpace: 'nowrap' }}>Overview</div>
+              <div style={{ fontSize: 12, color: '#6B7078', whiteSpace: 'nowrap', marginTop: 1 }}>{rangeLabel} · updated a moment ago</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 'none' }}>
+              <div style={{ display: 'flex', padding: 2, borderRadius: 9, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                {(['7D', '30D', '90D'] as Range[]).map(r => (
+                  <button key={r} onClick={() => setRange(r)} style={segBtnStyle(range === r)}>{r}</button>
+                ))}
               </div>
+              <button
+                className="ah-icon-btn"
+                onClick={handleRefresh}
+                title="Refresh"
+                style={{
+                  width: 32, height: 32, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 9, border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.06)',
+                  color: '#E6E8EC', cursor: 'pointer', transition: 'background 160ms ease',
+                }}
+              >
+                <RefreshCw size={15} style={spinning ? { animation: 'ah-spin 600ms linear' } : undefined} />
+              </button>
+              <button
+                className="ah-export-btn"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7, height: 32, padding: '0 14px', flex: 'none',
+                  whiteSpace: 'nowrap', borderRadius: 9, border: 'none',
+                  background: 'linear-gradient(180deg, #4BE383 0%, #22AE5F 100%)', color: '#052110',
+                  fontFamily: 'inherit', fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em', cursor: 'pointer',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.32) inset, 0 4px 14px rgba(34,174,95,0.28)',
+                  transition: 'filter 160ms ease',
+                }}
+              >
+                <Download size={14} strokeWidth={2.3} />
+                Export
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden md:block">
-              <RangePicker
-                className="bg-white/5 border-white/10 text-white hover:bg-white/10 input-dark-calendar w-64"
-                suffixIcon={<Calendar size={14} className="text-slate-400" />}
-                placeholder={['Start Date', 'End Date']}
-              />
-            </div>
-
-            <div className="h-5 w-px bg-slate-700 mx-1" />
-
-            <Button
-              icon={<RotateCcw size={14} />}
-              onClick={loadDashboardData}
-              loading={loading}
-              className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white fz-small font-bold uppercase tracking-widest border-0 h-9"
-            >
-              Refresh
-            </Button>
-            <Button
-              type="primary"
-              icon={<Download size={14} />}
-              className="bg-indigo-600 hover:bg-indigo-500 fz-small font-bold uppercase tracking-widest h-9 border-0 shadow-lg shadow-indigo-600/20"
-            >
-              Export
-            </Button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
-          {loading || !dashboardData ? (
-            <div className="h-full flex flex-col items-center justify-center gap-4">
-              <Spin size="large" />
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Aggregating Metrics...</span>
-            </div>
-          ) : (
-            <div className="max-w-7xl mx-auto space-y-6">
-
-              {/* KPI Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KPIWidget
-                  title="Total Sessions"
-                  value={dashboardData.totalSessions.toLocaleString()}
-                  icon={Users}
-                  bgClass="bg-indigo-500"
-                  color="text-indigo-500"
-                  trend="+12%"
-                />
-                <KPIWidget
-                  title="Active Users"
-                  value={dashboardData.activeUsers}
-                  icon={Activity}
-                  bgClass="bg-emerald-500"
-                  color="text-emerald-500"
-                  trend="+5%"
-                />
-                <KPIWidget
-                  title="Total Page Views"
-                  value={dashboardData.totalPageViews.toLocaleString()}
-                  icon={Eye}
-                  bgClass="bg-purple-500"
-                  color="text-purple-500"
-                />
-                <KPIWidget
-                  title="System Errors"
-                  value={dashboardData.totalErrors}
-                  icon={AlertTriangle}
-                  bgClass="bg-rose-500"
-                  color="text-rose-500"
-                />
-              </div>
-
-              {/* Main Dashboard Layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
-
-                {/* Left Column: Visuals */}
-                <div className="lg:col-span-2 flex flex-col gap-6 h-full">
-                  {/* Chart Card */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex-1 flex flex-col">
-                    <div className="flex items-center justify-between mb-6">
-                      <SectionHeader title="Traffic Trend (7 Days)" icon={TrendingUp} />
-                      <div className="flex gap-2">
-                        {['Sessions', 'Users'].map(t => (
-                          <div key={t} className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${t === 'Sessions' ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
-                            <span className="fz-tiny font-bold text-slate-400 uppercase tracking-widest">{t}</span>
-                          </div>
-                        ))}
-                      </div>
+          <div style={{ padding: '22px 26px 40px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.62fr) minmax(280px, 1fr)', gap: 18, alignItems: 'start' }}>
+              {/* Sessions chart card */}
+              <div
+                style={{
+                  minWidth: 0, padding: '22px 24px 16px', borderRadius: 22,
+                  background: 'linear-gradient(170deg, rgba(52,208,106,0.10) 0%, rgba(255,255,255,0.035) 42%, rgba(255,255,255,0.018) 100%)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset, 0 20px 40px rgba(0,0,0,0.34)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, color: '#8B9099', whiteSpace: 'nowrap' }}>Total sessions</div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginTop: 8 }}>
+                      <span style={{ fontSize: 46, fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>1,247</span>
+                      <span
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 8,
+                          background: 'rgba(52,208,106,0.16)', color: '#5BE08C', fontSize: 12.5, fontWeight: 600,
+                          marginBottom: 5, whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <ArrowUp size={10} strokeWidth={3.2} />12%
+                      </span>
                     </div>
-
-                    <div className="flex-1 flex items-end gap-4 px-4 pb-4">
-                      {dashboardData.sessionTrend.map((item, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                          <div className="w-full flex items-end justify-center gap-1 h-full relative">
-                            {/* Bar 1 */}
-                            <motion.div
-                              initial={{ height: 0 }}
-                              animate={{ height: `${(item.sessions / 80) * 100}%` }}
-                              className="w-3 bg-indigo-500/20 group-hover:bg-indigo-500 rounded-t-sm transition-colors relative"
-                            >
-                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-600 text-white fz-tiny font-bold px-1.5 py-0.5 rounded shadow-sm">
-                                {item.sessions}
-                              </div>
-                            </motion.div>
-                            {/* Bar 2 */}
-                            <motion.div
-                              initial={{ height: 0 }}
-                              animate={{ height: `${(item.users / 80) * 100}%` }}
-                              className="w-3 bg-emerald-500/20 group-hover:bg-emerald-500 rounded-t-sm transition-colors relative"
-                            >
-                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-600 text-white fz-tiny font-bold px-1.5 py-0.5 rounded shadow-sm">
-                                {item.users}
-                              </div>
-                            </motion.div>
-                          </div>
-                          <span className="fz-tiny font-bold text-slate-400 uppercase">{item.date}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <div style={{ marginTop: 7, fontSize: 12.5, color: '#6B7078', whiteSpace: 'nowrap' }}>vs. 1,113 in the previous period</div>
                   </div>
-
-                  {/* Performance Bars */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-64 overflow-hidden flex flex-col">
-                    <SectionHeader title="System Response Times" icon={Zap} />
-                    <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                      {dashboardData.performanceMetrics.map((item, i) => (
-                        <div key={i}>
-                          <div className="flex justify-between items-end mb-1">
-                            <span className="fz-small font-bold text-slate-600 uppercase tracking-wide">{item.feature}</span>
-                            <span className={`fz-small font-black ${item.avgTime > 2 ? 'text-amber-500' : 'text-emerald-500'}`}>{item.avgTime}s</span>
-                          </div>
-                          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${(item.avgTime / 5) * 100}%` }}
-                              className={`h-full rounded-full ${item.avgTime > 2 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 'none', paddingTop: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#B7BCC4', whiteSpace: 'nowrap' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34D06A' }} />Sessions
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#B7BCC4', whiteSpace: 'nowrap' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#5AA9FF' }} />Users
                     </div>
                   </div>
                 </div>
 
-                {/* Right Column: Lists */}
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
-                  <div className="p-1 bg-slate-50 border-b border-slate-100 flex">
-                    {['Pages', 'Features', 'Errors'].map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab.toLowerCase())}
-                        className={`flex-1 py-2 fz-small font-black uppercase tracking-widest transition-all rounded-lg ${activeTab === tab.toLowerCase() ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'
-                          }`}
-                      >
-                        {tab}
-                      </button>
+                <div style={{ marginTop: 14 }}>
+                  <svg viewBox="0 0 700 240" preserveAspectRatio="none" style={{ width: '100%', height: 244, display: 'block', overflow: 'visible' }}>
+                    <defs>
+                      <linearGradient id="hubSess" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#34D06A" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="#34D06A" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="hubUsers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#5AA9FF" stopOpacity={0.22} />
+                        <stop offset="100%" stopColor="#5AA9FF" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    {chart.gridLines.map((y, i) => (
+                      <line key={i} x1={0} x2={700} y1={y} y2={y} stroke="rgba(255,255,255,0.055)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+                    ))}
+                    <path d={chart.usersArea} fill="url(#hubUsers)" />
+                    <path d={chart.sessionsArea} fill="url(#hubSess)" />
+                    <path d={chart.usersLine} fill="none" stroke="#5AA9FF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                    <path d={chart.sessionsLine} fill="none" stroke="#34D06A" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                    <circle cx={chart.peak[0]} cy={chart.peak[1]} r={4.5} fill="#0A0C10" stroke="#34D06A" strokeWidth={2.6} vectorEffect="non-scaling-stroke" />
+                  </svg>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0' }}>
+                    {chart.axisLabels.map((lbl, i) => (
+                      <span key={i} style={{ fontSize: 11.5, color: '#6B7078', fontVariantNumeric: 'tabular-nums' }}>{lbl}</span>
                     ))}
                   </div>
-
-                  <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                    <AnimatePresence mode="wait">
-                      {activeTab === 'pages' && (
-                        <motion.div key="pages" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1">
-                          {dashboardData.topPages.map((page, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg group transition-colors cursor-default border border-transparent hover:border-slate-100">
-                              <div className="flex items-center gap-3 overflow-hidden">
-                                <span className="fz-tiny font-black text-slate-300 w-4">{i + 1}</span>
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-xs font-bold text-slate-700 truncate block max-w-[180px]">{page.page}</span>
-                                </div>
-                              </div>
-                              <div className="bg-slate-100 text-slate-600 fz-small font-black px-2 py-1 rounded group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
-                                {page.visits}
-                              </div>
-                            </div>
-                          ))}
-                        </motion.div>
-                      )}
-                      {activeTab === 'features' && (
-                        <motion.div key="features" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1">
-                          {dashboardData.topFeatures.map((feat, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg group transition-colors cursor-default border border-transparent hover:border-slate-100">
-                              <div className="flex items-center gap-3">
-                                <div className="p-1.5 bg-purple-50 text-purple-600 rounded-md"><Zap size={12} /></div>
-                                <span className="text-xs font-bold text-slate-700">{feat.feature}</span>
-                              </div>
-                              <div className="fz-small font-black text-slate-400">
-                                {feat.usage} uses
-                              </div>
-                            </div>
-                          ))}
-                        </motion.div>
-                      )}
-                      {activeTab === 'errors' && (
-                        <motion.div key="errors" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
-                          {dashboardData.errorsByType.map((err, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 bg-rose-50/50 border border-rose-100 rounded-lg">
-                              <div className="flex items-center gap-2">
-                                <AlertTriangle size={14} className="text-rose-500" />
-                                <span className="text-xs font-bold text-rose-700">{err.type}</span>
-                              </div>
-                              <span className="fz-small font-black text-white bg-rose-500 px-2 py-0.5 rounded-full">
-                                {err.count}
-                              </span>
-                            </div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Footer Stats */}
-              <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-4 flex items-center justify-between text-white shadow-lg">
-                <div className="flex items-center gap-4">
-                  <div className="bg-white/10 p-2 rounded-lg">
-                    <Clock size={20} className="text-indigo-300" />
-                  </div>
-                  <div>
-                    <span className="fz-small font-black text-slate-400 uppercase tracking-widest block">Avg. Session Time</span>
-                    <span className="text-xl font-black tracking-tight">{dashboardData.avgSessionDuration} Min</span>
-                  </div>
-                </div>
-                <div className="flex gap-8">
-                  <div>
-                    <span className="fz-tiny font-bold text-slate-500 uppercase block text-right">Server Load</span>
-                    <span className="text-sm font-black text-emerald-400">12% Idle</span>
-                  </div>
-                  <div>
-                    <span className="fz-tiny font-bold text-slate-500 uppercase block text-right">Database</span>
-                    <span className="text-sm font-black text-indigo-400">Connected</span>
-                  </div>
                 </div>
               </div>
 
+              {/* Active now + mini stats */}
+              <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div
+                  style={{
+                    padding: '16px 18px', borderRadius: 20,
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                    border: '1px solid rgba(255,255,255,0.075)',
+                    boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 14px 30px rgba(0,0,0,0.3)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <span style={{ width: 30, height: 30, flex: 'none', borderRadius: 10, background: 'rgba(90,169,255,0.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Activity size={15} color="#7EBBFF" strokeWidth={2} />
+                      </span>
+                      <span style={{ fontSize: 13, color: '#B7BCC4', whiteSpace: 'nowrap' }}>Active now</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, flex: 'none' }}>
+                      <span style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>89</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#5BE08C' }}>+5%</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 34, marginTop: 14 }}>
+                    {LIVE_SEED.map((v, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          flex: 1, borderRadius: '3px 3px 1px 1px', height: `${v}%`,
+                          background: i > 19 ? '#34D06A' : `rgba(52,208,106,${(0.22 + (i / 24) * 0.4).toFixed(2)})`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    padding: '6px 18px', borderRadius: 20,
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                    border: '1px solid rgba(255,255,255,0.075)',
+                    boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 14px 30px rgba(0,0,0,0.3)',
+                  }}
+                >
+                  {MINI_DATA.map((m, i) => (
+                    <div
+                      key={m.label}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0',
+                        borderBottom: i === MINI_DATA.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.07)',
+                      }}
+                    >
+                      <span style={{ width: 30, height: 30, flex: 'none', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.tint }}>
+                        <span style={{ width: 9, height: 9, borderRadius: 3, background: m.color }} />
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, color: '#EDEDEF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.label}</div>
+                        <div style={{ fontSize: 11.5, color: '#6B7078', whiteSpace: 'nowrap', marginTop: 1 }}>{m.sub}</div>
+                      </div>
+                      <span style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums', flex: 'none' }}>{m.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          )}
-        </div>
 
-        <style>{`
-            .input-dark-calendar {
-                color: white !important;
-            }
-            .input-dark-calendar input {
-                color: white !important;
-            }
-            .input-dark-calendar .ant-picker-suffix {
-                color: #94a3b8 !important;
-            }
-            .custom-scrollbar::-webkit-scrollbar {
-                width: 4px;
-            }
-            .custom-scrollbar::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            .custom-scrollbar::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
-                border-radius: 4px;
-            }
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                background: #94a3b8;
-            }
-        `}</style>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.62fr) minmax(280px, 1fr)', gap: 18, alignItems: 'start' }}>
+              {/* Response times */}
+              <div
+                style={{
+                  minWidth: 0, padding: '20px 24px 22px', borderRadius: 22,
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(255,255,255,0.075)',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 18px 36px rgba(0,0,0,0.3)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, letterSpacing: '-0.022em' }}>Response times</h2>
+                    <p style={{ margin: '3px 0 0', fontSize: 12.5, color: '#6B7078' }}>Average duration per operation</p>
+                  </div>
+                  <span style={{ flex: 'none', padding: '4px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', fontSize: 12, color: '#B7BCC4', whiteSpace: 'nowrap' }}>
+                    Target under 2.0s
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {PERF_RAW.map(p => {
+                    const c = p.avgTime > 2 ? '#FF9F0A' : '#34D06A';
+                    const width = Math.min(100, (p.avgTime / 4.2) * 100);
+                    return (
+                      <div key={p.feature} style={{ display: 'grid', gridTemplateColumns: '170px minmax(0, 1fr) 56px', alignItems: 'center', gap: 16 }}>
+                        <span style={{ fontSize: 13.5, color: '#EDEDEF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.feature}</span>
+                        <span style={{ height: 7, borderRadius: 7, background: 'rgba(255,255,255,0.065)', overflow: 'hidden', display: 'block' }}>
+                          <span
+                            style={{
+                              display: 'block', height: '100%', borderRadius: 7, width: `${width.toFixed(0)}%`,
+                              background: c, transition: 'width 700ms cubic-bezier(.2,.8,.2,1)',
+                            }}
+                          />
+                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 500, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: c }}>
+                          {p.avgTime.toFixed(1)}s
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Tabbed panel */}
+              <div
+                style={{
+                  minWidth: 0, borderRadius: 22,
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(255,255,255,0.075)',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 18px 36px rgba(0,0,0,0.3)',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{ padding: '16px 16px 12px' }}>
+                  <div style={{ display: 'flex', padding: 2, borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    {(['Pages', 'Features', 'Errors'] as const).map(t => {
+                      const key = t.toLowerCase() as Tab;
+                      return (
+                        <button key={t} onClick={() => setTab(key)} style={tabBtnStyle(tab === key)}>{t}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ padding: '0 8px 12px' }}>
+                  {tab === 'pages' && (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {PAGES.map((p, i) => (
+                        <div key={p.page} className="ah-row-hover" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 10px', borderRadius: 12, transition: 'background 140ms ease' }}>
+                          <span style={{ fontSize: 12, color: '#5A5F67', width: 11, flex: 'none', fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, color: '#EDEDEF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.page}</div>
+                            <div style={{ height: 3, marginTop: 7, borderRadius: 3, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                              <div style={{ height: '100%', borderRadius: 3, width: `${((p.visits / 342) * 100).toFixed(0)}%`, background: 'rgba(52,208,106,0.7)' }} />
+                            </div>
+                          </div>
+                          <span style={{ fontSize: 13, color: '#B7BCC4', flex: 'none', fontVariantNumeric: 'tabular-nums' }}>{p.visits}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {tab === 'features' && (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {FEATURES.map(f => (
+                        <div key={f.feature} className="ah-row-hover" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 10px', borderRadius: 12, transition: 'background 140ms ease' }}>
+                          <span style={{ width: 28, height: 28, flex: 'none', borderRadius: 9, background: 'rgba(191,90,242,0.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Zap size={14} color="#CE95F7" strokeWidth={2} />
+                          </span>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#EDEDEF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.feature}</span>
+                          <span style={{ fontSize: 13, color: '#B7BCC4', flex: 'none', fontVariantNumeric: 'tabular-nums' }}>{f.usage}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {tab === 'errors' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '2px 10px 6px' }}>
+                      {ERRORS.map(e => (
+                        <div key={e.type} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 13px', borderRadius: 13, background: 'rgba(255,69,58,0.08)', border: '1px solid rgba(255,69,58,0.16)' }}>
+                          <AlertCircle size={15} color="#FF6B60" strokeWidth={2} />
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#FFD9D6', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.type}</span>
+                          <span style={{ minWidth: 24, textAlign: 'center', padding: '2px 8px', borderRadius: 20, background: '#FF453A', color: '#240605', fontSize: 12, fontWeight: 700, fontVariantNumeric: 'tabular-nums', flex: 'none' }}>
+                            {e.count}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                  <span style={{ fontSize: 12.5, color: '#6B7078', whiteSpace: 'nowrap' }}>Avg. session 18.5 min</span>
+                  <a href="#" onClick={(e) => e.preventDefault()} style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap' }}>View report</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
-    </ConfigProvider>
+    </div>
   );
 };
 

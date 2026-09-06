@@ -287,10 +287,10 @@ const MemberDetailLedger: React.FC = () => {
         .custom-scrollbar-violet::-webkit-scrollbar-thumb:hover { background: #a78bfa; }
       `}</style>
 
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-violet-50/20 to-slate-50'}`}>
+      <div className={`mdl-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-violet-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 no-print border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`mdl-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 no-print border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-violet-600 to-violet-700 p-1.5 rounded-lg text-white shadow-md">
               <BookOpen size={14} />
@@ -326,7 +326,7 @@ const MemberDetailLedger: React.FC = () => {
           <div className="w-[220px] flex flex-col gap-2 shrink-0 no-print overflow-y-auto custom-scrollbar-violet">
 
             {/* Member */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
+            <div className={`mdl-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
               <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Member</h3>
@@ -355,7 +355,7 @@ const MemberDetailLedger: React.FC = () => {
             </div>
 
             {/* Date Range */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
+            <div className={`mdl-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
               <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-2 py-1 flex items-center gap-1">
                 <Calendar size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Date Range</h3>
@@ -373,7 +373,7 @@ const MemberDetailLedger: React.FC = () => {
             </div>
 
             {/* Output */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
+            <div className={`mdl-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
               <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-2 py-1 flex items-center gap-1">
                 <FileText size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Output</h3>
@@ -395,7 +395,7 @@ const MemberDetailLedger: React.FC = () => {
           </div>
 
           {/* Report Panel */}
-          <div className={`flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
+          <div className={`mdl-panel flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
             <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-3 py-1.5 flex items-center justify-between shrink-0 no-print">
               <div className="flex items-center gap-1.5">
                 <div className="bg-white/20 p-1 rounded-md">
@@ -410,7 +410,7 @@ const MemberDetailLedger: React.FC = () => {
               </div>
             </div>
 
-            <div className={`flex-1 overflow-auto p-2 custom-scrollbar-violet ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-violet-50/10'}`}>
+            <div className={`mdl-panel-body flex-1 overflow-auto p-2 custom-scrollbar-violet ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-violet-50/10'}`}>
               <Spin spinning={isLoading} tip="Loading..." size="small">
                 {reportText ? (
                   <pre
@@ -458,6 +458,28 @@ const MemberDetailLedger: React.FC = () => {
           <MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} />
         </div>
       </Modal>
+
+      <style>{`
+        html.dark .mdl-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .mdl-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mdl-header h1 { color: #f5f5f7 !important; }
+        html.dark .mdl-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mdl-card label { color: #8e8e93 !important; }
+        html.dark .mdl-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mdl-panel-body { background-color: #000000 !important; }
+        html.dark .mdl-page pre { color: #f5f5f7 !important; }
+        html.dark .mdl-page .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .mdl-page .text-slate-300 { color: #71717a !important; }
+        html.dark .mdl-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .mdl-page .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mdl-page input,
+        html.dark .mdl-page .ant-input,
+        html.dark .mdl-page .ant-input-affix-wrapper,
+        html.dark .mdl-page .ant-picker { background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mdl-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .mdl-page .ant-radio-button-wrapper { background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mdl-page button.border-slate-200 { background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

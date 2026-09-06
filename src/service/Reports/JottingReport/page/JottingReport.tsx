@@ -347,11 +347,42 @@ const JottingReport: React.FC = () => {
         .custom-scrollbar-amber::-webkit-scrollbar-thumb:hover {
           background: #fbbf24;
         }
+
+        /* ── Jotting Report — dark mode ── */
+        html.dark .jotting-page { background-color: #000000 !important; background-image: none !important; }
+        html.dark .jotting-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .jotting-card,
+        html.dark .jotting-report-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .jotting-preview-body { background-color: #1c1c1e !important; background-image: none !important; }
+        html.dark .jotting-page .ant-picker,
+        html.dark .jotting-page .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .jotting-page .ant-picker input,
+        html.dark .jotting-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .jotting-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .legacy-jotting .company-header,
+        html.dark .legacy-jotting .report-title,
+        html.dark .legacy-jotting .report-info,
+        html.dark .legacy-jotting .total-row {
+          background: rgba(255,255,255,.05) !important;
+          border-color: rgba(255,255,255,.15) !important;
+          text-shadow: none !important;
+        }
+        html.dark .legacy-jotting .company-name,
+        html.dark .legacy-jotting .company-address,
+        html.dark .legacy-jotting .company-contact,
+        html.dark .legacy-jotting .info-row,
+        html.dark .legacy-jotting .info-label,
+        html.dark .legacy-jotting .total-row { color: #f5f5f7 !important; }
+        html.dark .legacy-jotting .report-title { color: #fbbf24 !important; }
+        html.dark .legacy-jotting .col-mbno { color: #60a5fa !important; }
+        html.dark .legacy-jotting .col-name { color: #f5f5f7 !important; }
+        html.dark .legacy-jotting .col-balance { color: #34d399 !important; }
+        html.dark .legacy-jotting .total-row .col-balance { color: #34d399 !important; }
       `}</style>
 
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-50'}`}>
+      <div className={`jotting-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-50'}`}>
         {/* Ultra-Compact Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 no-print border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`jotting-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 no-print border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-amber-600 to-amber-700 p-1.5 rounded-lg text-white shadow-md">
               <BookOpen size={14} />
@@ -402,7 +433,7 @@ const JottingReport: React.FC = () => {
           <div className="w-[260px] flex flex-col gap-2 shrink-0 no-print overflow-y-auto custom-scrollbar-amber">
 
             {/* Head Code */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
+            <div className={`jotting-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <BookOpen size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Head Code</h3>
@@ -431,7 +462,7 @@ const JottingReport: React.FC = () => {
             </div>
 
             {/* As On Date */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
+            <div className={`jotting-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <Calendar size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">As On Date</h3>
@@ -447,7 +478,7 @@ const JottingReport: React.FC = () => {
             </div>
 
             {/* Wing */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
+            <div className={`jotting-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <Building size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Wing</h3>
@@ -470,7 +501,7 @@ const JottingReport: React.FC = () => {
             </div>
 
             {/* Office */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
+            <div className={`jotting-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <Building size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Office</h3>
@@ -493,7 +524,7 @@ const JottingReport: React.FC = () => {
             </div>
 
             {/* Sort By */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
+            <div className={`jotting-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
                 <Users size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Sort By</h3>
@@ -527,7 +558,7 @@ const JottingReport: React.FC = () => {
           </div>
 
           {/* RIGHT PANEL: Report */}
-          <div className={`flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
+          <div className={`jotting-report-card flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-amber-200/60'}`}>
             <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-3 py-1.5 flex items-center justify-between shrink-0 no-print">
               <div className="flex items-center gap-1.5">
                 <div className="bg-white/20 p-1 rounded-md shadow-sm">
@@ -545,7 +576,7 @@ const JottingReport: React.FC = () => {
               </div>
             </div>
 
-            <div className={`flex-1 overflow-auto p-2 custom-scrollbar-amber ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-amber-50/10'}`}>
+            <div className={`jotting-preview-body flex-1 overflow-auto p-2 custom-scrollbar-amber ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-amber-50/10'}`}>
               <Spin spinning={loading} tip="Loading..." size="small">
                 {reportData && reportData.length > 0 ? (
                   <div className="legacy-jotting">

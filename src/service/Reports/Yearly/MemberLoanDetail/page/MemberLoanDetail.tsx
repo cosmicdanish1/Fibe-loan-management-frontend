@@ -221,9 +221,9 @@ const MemberLoanDetail: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50'}`}>
+      <div className={`member-loan-detail-page h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50'}`}>
         {/* Compact Header */}
-        <div className={`px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`member-loan-detail-header px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-2 rounded-lg text-white shadow-md">
               <FileSearch size={18} />
@@ -256,7 +256,7 @@ const MemberLoanDetail: React.FC = () => {
           <div className="w-[280px] flex flex-col gap-3 shrink-0">
 
             {/* Parameters Card */}
-            <div className={`rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+            <div className={`member-loan-detail-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
               <div className={`border-b px-3 py-2 flex items-center justify-between ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100'}`}>
                 <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   <Settings size={12} className="text-indigo-600" />
@@ -377,7 +377,7 @@ const MemberLoanDetail: React.FC = () => {
           </div>
 
           {/* Compact Report Panel with Scroll */}
-          <div className={`flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+          <div className={`member-loan-detail-panel flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
             <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100'}`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-100'}`}>
@@ -567,7 +567,7 @@ const MemberLoanDetail: React.FC = () => {
         </div>
 
         {/* Compact Footer */}
-        <div className={`px-4 py-2 flex items-center justify-between shrink-0 border-t ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`member-loan-detail-footer px-4 py-2 flex items-center justify-between shrink-0 border-t ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/80 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
@@ -635,6 +635,30 @@ const MemberLoanDetail: React.FC = () => {
           line-height: 26px !important;
         }
         .legacy-loan-report { padding: 4px; }
+
+        /* ── Member Loan Detail — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .member-loan-detail-page { background-color: #000000 !important; background-image: none !important; }
+        html.dark .member-loan-detail-header,
+        html.dark .member-loan-detail-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .member-loan-detail-card,
+        html.dark .member-loan-detail-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .member-loan-detail-page .bg-slate-900\/50,
+        html.dark .member-loan-detail-page .bg-slate-900\/40 { background-color: #0c0c0e !important; }
+        html.dark .member-loan-detail-page .border-slate-700,
+        html.dark .member-loan-detail-page .border-slate-600 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .member-loan-detail-page .text-slate-100,
+        html.dark .member-loan-detail-page .text-slate-200,
+        html.dark .member-loan-detail-page .text-slate-300 { color: #f5f5f7 !important; }
+        html.dark .member-loan-detail-page .text-slate-400,
+        html.dark .member-loan-detail-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .member-loan-detail-page label { color: #8e8e93 !important; }
+        html.dark .member-loan-detail-page .ant-input,
+        html.dark .member-loan-detail-page .ant-input-affix-wrapper,
+        html.dark .member-loan-detail-page .ant-input-search .ant-input-group-addon .ant-btn,
+        html.dark .member-loan-detail-page .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .member-loan-detail-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .member-loan-detail-page .ant-radio-button-wrapper { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .member-loan-detail-page .ant-radio-button-wrapper-checked { color: #ffffff !important; }
       `}</style>
     </ConfigProvider>
   );

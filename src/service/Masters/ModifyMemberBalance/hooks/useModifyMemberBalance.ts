@@ -60,13 +60,25 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
   // Load a member's funds by member number
   const loadMember = useCallback(async (no: string, name?: string) => {
     if (!no || !no.trim()) return;
+
+    // Defense in depth: refuse to fetch/commit anything that isn't a real member
+    // number. handleMemberSelect already guards against raw search keystrokes,
+    // but this is the last line of defense before a network call is made.
+    const numericNo = parseInt(no, 10);
+    if (!Number.isFinite(numericNo) || numericNo <= 0) {
+      console.error('[ModifyMemberBalance] Refusing to load invalid member number:', no);
+      return;
+    }
+
     setMemberNo(no);
     setMemberName(name || '');
     setFormData(emptyForm());
 
-    // Update index in list
+    // Update index in list — reset to 0 (unranked) when the loaded member isn't
+    // part of the current wing-filtered list, instead of leaving a stale value
+    // from whatever member was previously shown.
     const idx = memberListRef.current.indexOf(no);
-    if (idx >= 0) setMemberIndex(idx + 1);
+    setMemberIndex(idx >= 0 ? idx + 1 : 0);
 
     // If no name provided, try to get it from member lookup
     if (!name) {
@@ -79,7 +91,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     }
 
     try {
-      const response = await apiService.getMemberFunds(parseInt(no));
+      const response = await apiService.getMemberFunds(numericNo);
       const data = response?.data;
       if (data) {
         setFormData({
@@ -104,9 +116,15 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
   }, []);
 
   const handleMemberSelect = useCallback((no: string, memberData?: any) => {
-    // Always use the actual member number from memberData, not the search string
-    const actualNo = memberData?.memberNo || no;
-    loadMember(actualNo, memberData?.memberName);
+    // MemberLookupInput fires onChange on every keystroke while the user is still
+    // typing/searching (memberData is undefined then), not just on an actual pick
+    // from the dropdown. Treating raw partial text as a committed member number
+    // used to send parseInt(partialText) (=> NaN) straight to the backend, which
+    // silently created/overwrote a bogus mbno='NaN' row in fundsmaster on Save.
+    // Only commit + fetch once a real member has been selected.
+    if (memberData?.memberNo) {
+      loadMember(memberData.memberNo, memberData.memberName);
+    }
   }, [loadMember]);
 
   const navigateMember = useCallback((direction: 'first' | 'prev' | 'next' | 'last') => {
@@ -130,8 +148,17 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
   }, [memberNo, loadMember]);
 
   const save = useCallback(async () => {
-    if (!memberNo || !memberNo.trim()) {
-      await notify('warning', 'Input Validation Error', 'No Member Selected', 'Please select a member before saving balances.');
+    const numericMemberNo = memberNo ? parseInt(memberNo, 10) : NaN;
+    if (!memberNo || !memberNo.trim() || !Number.isFinite(numericMemberNo) || numericMemberNo <= 0) {
+      await notify('warning', 'Input Validation Error', 'No Member Selected', 'Please select a valid member before saving balances.');
+      return;
+    }
+
+    // Balances can't be negative — reject before the confirm dialog rather than
+    // letting the backend's @Min(0) validation bounce it after the user commits.
+    const negativeField = Object.entries(formData).find(([, v]) => parseFloat(v as string) < 0);
+    if (negativeField) {
+      await notify('warning', 'Input Validation Error', 'Negative Amount Not Allowed', 'Balance and installment fields cannot be negative. Please correct the highlighted value.');
       return;
     }
 
@@ -168,7 +195,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     };
 
     try {
-      const response = await apiService.updateMemberFunds(parseInt(memberNo), payload);
+      const response = await apiService.updateMemberFunds(numericMemberNo, payload);
       if (response.success) {
         await notify(
           'info',

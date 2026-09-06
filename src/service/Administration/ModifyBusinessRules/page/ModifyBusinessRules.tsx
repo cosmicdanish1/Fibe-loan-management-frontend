@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   IndianRupee, Calculator, ShieldCheck, Settings,
   Database, TrendingUp, Percent, Users, Building2,
-  Save, Info, Trash2, Plus, ArrowRight, X,
+  Save, Info, Trash2, Plus, ArrowRight, X, Clock,
 } from 'lucide-react';
 import { ConfigProvider, Switch } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -154,6 +154,42 @@ const ModifyBusinessRules: React.FC = () => {
             </div>
           </div>
         )}
+        {data.graceDays !== undefined && (
+          <div className="space-y-0.5">
+            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5" title="Grace runs from the 1st through this day of an installment's own due month — not a day-count from its due date.">
+              Grace Ends (Day of Month)
+            </label>
+            <div className="relative">
+              <Clock size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+              <input type="number" min={0} max={31} step="1" value={data.graceDays}
+                onChange={e => updateLoanType(loanType, 'graceDays', parseInt(e.target.value, 10) || 0)}
+                className={inputIconCls} />
+            </div>
+          </div>
+        )}
+        {data.sameMonthPenalPercent !== undefined && (
+          <div className="space-y-0.5">
+            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5" title="Flat fee charged once grace expires but still within the same due month: (this % × unpaid principal) ÷ the divisor beside it.">
+              Same-Month Late Fee (%)
+            </label>
+            <div className="relative">
+              <Percent size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+              <input type="number" min={0} step="0.01" value={data.sameMonthPenalPercent}
+                onChange={e => updateLoanType(loanType, 'sameMonthPenalPercent', parseFloat(e.target.value) || 0)}
+                className={inputIconCls} />
+            </div>
+          </div>
+        )}
+        {data.sameMonthPenalDivisor !== undefined && (
+          <div className="space-y-0.5">
+            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5" title="Divisor in the same-month late fee formula: (percentage × unpaid principal) ÷ this number.">
+              Same-Month Fee Divisor
+            </label>
+            <input type="number" min={1} step="0.01" value={data.sameMonthPenalDivisor}
+              onChange={e => updateLoanType(loanType, 'sameMonthPenalDivisor', parseFloat(e.target.value) || 0)}
+              className={inputCls} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -161,66 +197,66 @@ const ModifyBusinessRules: React.FC = () => {
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#4f46e5', borderRadius: 8 } }}>
       <style>{`
-        html.dark .mbr-page { background: #0f172a !important; }
+        html.dark .mbr-page { background: #000000 !important; }
 
         /* Tab bar */
-        html.dark .mbr-page .mbr-tabbar { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-tab-btn { color: #475569 !important; }
-        html.dark .mbr-page .mbr-tab-btn.active { color: #e2e8f0 !important; }
+        html.dark .mbr-page .mbr-tabbar { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-tab-btn { color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-tab-btn.active { color: #f5f5f7 !important; }
         html.dark .mbr-page .mbr-tab-indicator { background: #818cf8 !important; }
 
         /* Workspace background */
-        html.dark .mbr-page .mbr-workspace { background: #0f172a !important; }
+        html.dark .mbr-page .mbr-workspace { background: #000000 !important; }
 
         /* Loan + generic cards */
-        html.dark .mbr-page .mbr-card { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-card-header { background: linear-gradient(90deg,#1e293b,#0f172a) !important; border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-card-title { color: #94a3b8 !important; }
+        html.dark .mbr-page .mbr-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-card-header { background: linear-gradient(90deg,#1c1c1e,#000000) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-card-title { color: #8e8e93 !important; }
 
         /* Labels, icons, inputs */
-        html.dark .mbr-page .mbr-label { color: #475569 !important; }
-        html.dark .mbr-page .mbr-icon { color: #475569 !important; }
-        html.dark .mbr-page .mbr-input { background: #0f172a !important; border-color: #334155 !important; color: #e2e8f0 !important; }
-        html.dark .mbr-page .mbr-input:focus { background: #0f172a !important; border-color: #6366f1 !important; box-shadow: 0 0 0 2px rgba(99,102,241,0.15) !important; }
-        html.dark .mbr-page .mbr-input::placeholder { color: #334155 !important; }
+        html.dark .mbr-page .mbr-label { color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-icon { color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .mbr-page .mbr-input:focus { background: rgba(255,255,255,.05) !important; border-color: #6366f1 !important; box-shadow: 0 0 0 2px rgba(99,102,241,0.15) !important; }
+        html.dark .mbr-page .mbr-input::placeholder { color: rgba(255,255,255,.08) !important; }
 
         /* Others & Penal Sector */
-        html.dark .mbr-page .mbr-others-card { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-others-header { background: #0f172a !important; }
-        html.dark .mbr-page .mbr-others-body { background: #1e293b !important; }
+        html.dark .mbr-page .mbr-others-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-others-header { background: #000000 !important; }
+        html.dark .mbr-page .mbr-others-body { background: #1c1c1e !important; }
 
         /* Policy notice */
-        html.dark .mbr-page .mbr-notice { background: #1e293b !important; border-color: #334155 !important; border-left-color: #6366f1 !important; }
-        html.dark .mbr-page .mbr-notice-icon { background: #1e293b !important; color: #818cf8 !important; }
-        html.dark .mbr-page .mbr-notice-text { color: #64748b !important; }
+        html.dark .mbr-page .mbr-notice { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; border-left-color: #6366f1 !important; }
+        html.dark .mbr-page .mbr-notice-icon { background: #1c1c1e !important; color: #818cf8 !important; }
+        html.dark .mbr-page .mbr-notice-text { color: #71717a !important; }
 
         /* General Settings toggle rows */
-        html.dark .mbr-page .mbr-toggle-row { border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-toggle-row:hover { background: #0f172a !important; }
-        html.dark .mbr-page .mbr-toggle-label { color: #94a3b8 !important; }
-        html.dark .mbr-page .mbr-gs-card { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-divider { background: #334155 !important; }
+        html.dark .mbr-page .mbr-toggle-row { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-toggle-row:hover { background: #000000 !important; }
+        html.dark .mbr-page .mbr-toggle-label { color: #8e8e93 !important; }
+        html.dark .mbr-page .mbr-gs-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-divider { background: rgba(255,255,255,.07) !important; }
 
         /* Fund Management */
-        html.dark .mbr-page .mbr-fm-card { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-fm-card-header { background: linear-gradient(90deg,#1e293b,#0f172a) !important; border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-fm-section-title { color: #94a3b8 !important; }
-        html.dark .mbr-page .mbr-fm-hint { color: #475569 !important; }
-        html.dark .mbr-page .mbr-chart-header { background: #0f172a !important; border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-chart-col-label { color: #475569 !important; }
+        html.dark .mbr-page .mbr-fm-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-fm-card-header { background: linear-gradient(90deg,#1c1c1e,#000000) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-fm-section-title { color: #8e8e93 !important; }
+        html.dark .mbr-page .mbr-fm-hint { color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-chart-header { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-chart-col-label { color: rgba(255,255,255,.08) !important; }
         html.dark .mbr-page .mbr-chart-row:hover { background: rgba(30,41,59,0.6) !important; }
-        html.dark .mbr-page .mbr-chart-num { background: #0f172a !important; color: #475569 !important; }
-        html.dark .mbr-page .mbr-chart-input { background: #1e293b !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+        html.dark .mbr-page .mbr-chart-num { background: #000000 !important; color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-chart-input { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
         html.dark .mbr-page .mbr-chart-input:focus { border-color: #6366f1 !important; }
-        html.dark .mbr-page .mbr-chart-empty { color: #475569 !important; }
+        html.dark .mbr-page .mbr-chart-empty { color: rgba(255,255,255,.08) !important; }
         html.dark .mbr-page .mbr-del-btn:hover { background: rgba(127,29,29,0.3) !important; border-color: #7f1d1d !important; }
 
         /* Footer */
-        html.dark .mbr-page .mbr-footer { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .mbr-page .mbr-footer-text { color: #334155 !important; }
+        html.dark .mbr-page .mbr-footer { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mbr-page .mbr-footer-text { color: rgba(255,255,255,.08) !important; }
 
         /* antd Switch dark mode */
-        html.dark .mbr-page .ant-switch { background: #334155 !important; }
+        html.dark .mbr-page .ant-switch { background: rgba(255,255,255,.08) !important; }
         html.dark .mbr-page .ant-switch.ant-switch-checked { background: #6366f1 !important; }
       `}</style>
 
@@ -300,11 +336,16 @@ const ModifyBusinessRules: React.FC = () => {
                 className="mbr-workspace h-full overflow-auto p-2 bg-slate-50/50">
                 <div className="max-w-7xl mx-auto space-y-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {renderLoanSection('Loan Against R',    'loanAgainstR',    businessRules.loanAgainstR)}
-                    {renderLoanSection('Regular Loan',      'longTermLoan',    businessRules.longTermLoan)}
+                    {/* Titles follow the columns each card actually writes — see the
+                        mapping note in useBusinessRules.ts. The old "Loan Against R"
+                        and "Regular Loan" labels were swapped relative to the rln and
+                        aln columns the disbursement path reads, and a third
+                        "Additional Loan" card had no backing columns at all
+                        (always zeros, never saved). */}
+                    {renderLoanSection('Regular Loan',      'regularLoan',     businessRules.regularLoan)}
+                    {renderLoanSection('Additional Loan',   'additionalLoan',  businessRules.additionalLoan)}
                     {renderLoanSection('Grain Loan',        'mediumTermLoan',  businessRules.mediumTermLoan)}
                     {renderLoanSection('Emergency Loan',    'emergencyLoan',   businessRules.emergencyLoan)}
-                    {renderLoanSection('Additional Loan',   'additionalLoan',  businessRules.additionalLoan)}
                     {renderLoanSection('Loan On Deposit',   'loanOnDeposit',   businessRules.loanOnDeposit)}
 
                     {/* Loan Against Deposits — custom layout */}
@@ -332,6 +373,103 @@ const ModifyBusinessRules: React.FC = () => {
                               className={inputCls} />
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Regular Loan Eligibility — RD / Share Value rules.
+                      These persist to system_configs (not busrules) because
+                      that is where the loan services read them at application
+                      and disbursement time. */}
+                  <div className="mbr-others-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                    <div className="mbr-others-header bg-slate-900 px-2 py-1 flex items-center gap-1">
+                      <TrendingUp size={9} className="text-emerald-400" />
+                      <h3 className="fz-mini font-black text-white tracking-widest uppercase">
+                        Regular Loan Eligibility (RD / Share Value)
+                      </h3>
+                    </div>
+                    <div className="mbr-others-body p-2 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 bg-white">
+                      <div className="space-y-0.5 col-span-2">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Max. Regular Loan Limit</label>
+                        <input type="number" step="1"
+                          value={businessRules.regularLoanEligibility.maxLimit}
+                          onChange={e => setBusinessRules(prev => ({
+                            ...prev,
+                            regularLoanEligibility: { ...prev.regularLoanEligibility, maxLimit: parseFloat(e.target.value) || 0 }
+                          }))}
+                          className={inputCls} />
+                      </div>
+                      <div className="space-y-0.5">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">RD Req. (%)</label>
+                        <input type="number" step="0.01"
+                          value={businessRules.regularLoanEligibility.rdPercent}
+                          onChange={e => setBusinessRules(prev => ({
+                            ...prev,
+                            regularLoanEligibility: { ...prev.regularLoanEligibility, rdPercent: parseFloat(e.target.value) || 0 }
+                          }))}
+                          className={inputCls} />
+                      </div>
+                      <div className="space-y-0.5">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Share Req. (%)</label>
+                        <input type="number" step="0.01"
+                          value={businessRules.regularLoanEligibility.sharePercent}
+                          onChange={e => setBusinessRules(prev => ({
+                            ...prev,
+                            regularLoanEligibility: { ...prev.regularLoanEligibility, sharePercent: parseFloat(e.target.value) || 0 }
+                          }))}
+                          className={inputCls} />
+                      </div>
+                      <div className="space-y-0.5">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Shortfall Handling</label>
+                        <select
+                          value={businessRules.regularLoanEligibility.shortfallMode}
+                          onChange={e => setBusinessRules(prev => ({
+                            ...prev,
+                            regularLoanEligibility: { ...prev.regularLoanEligibility, shortfallMode: e.target.value as any }
+                          }))}
+                          className={inputCls}>
+                          <option value="DEDUCT">Deduct from disbursement</option>
+                          <option value="BLOCK">Block the loan</option>
+                          <option value="IGNORE">Ignore (no deduction)</option>
+                        </select>
+                      </div>
+                      <div className="space-y-0.5 col-span-2">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Limit Calculation</label>
+                        <select
+                          value={businessRules.regularLoanEligibility.limitCalc}
+                          onChange={e => setBusinessRules(prev => ({
+                            ...prev,
+                            regularLoanEligibility: { ...prev.regularLoanEligibility, limitCalc: e.target.value as any }
+                          }))}
+                          className={inputCls}>
+                          <option value="OUTSTANDING_PLUS_NEW">Existing Regular Outstanding + New Loan</option>
+                          <option value="NEW_ONLY">New Loan only</option>
+                        </select>
+                      </div>
+                      <div className="space-y-0.5">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">RD Head Code</label>
+                        <input type="text"
+                          value={businessRules.regularLoanEligibility.rdHeadCode}
+                          onChange={e => setBusinessRules(prev => ({
+                            ...prev,
+                            regularLoanEligibility: { ...prev.regularLoanEligibility, rdHeadCode: e.target.value }
+                          }))}
+                          className={inputCls} />
+                      </div>
+                      <div className="space-y-0.5">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Share Head Code</label>
+                        <input type="text"
+                          value={businessRules.regularLoanEligibility.shareHeadCode}
+                          onChange={e => setBusinessRules(prev => ({
+                            ...prev,
+                            regularLoanEligibility: { ...prev.regularLoanEligibility, shareHeadCode: e.target.value }
+                          }))}
+                          className={inputCls} />
+                      </div>
+                      <div className="col-span-full fz-mini text-slate-500 leading-tight pt-0.5">
+                        Applies to Regular Loans only. RD/Share requirements are calculated on total exposure
+                        (existing regular outstanding + new loan) and are never added to the loan amount — any
+                        shortfall is withheld from the disbursement.
                       </div>
                     </div>
                   </div>
@@ -364,14 +502,11 @@ const ModifyBusinessRules: React.FC = () => {
                             className={inputCls} />
                         </div>
                       ))}
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5 whitespace-nowrap flex items-center gap-1">
-                          <Percent size={8} /> Loan Against R Penal Rate (%)
-                        </label>
-                        <input type="number" step="0.01" value={businessRules.penalRate}
-                          onChange={e => setBusinessRules(prev => ({ ...prev, penalRate: parseFloat(e.target.value) || 0 }))}
-                          className={inputCls} />
-                      </div>
+                      {/* The "Loan Against R Penal Rate" box that used to sit here wrote
+                          rlnpenalrate — the REGULAR loan penal rate — from a tab that gave
+                          no hint of it. It now lives on the Regular Loan card in tab 1
+                          beside the rate it belongs to. Two inputs on one column would
+                          just race each other. */}
                     </div>
                   </div>
 
@@ -406,6 +541,7 @@ const ModifyBusinessRules: React.FC = () => {
                           { label: 'Calculate Interest Using Reducing Balance',   field: 'calculateInterestUsingReducingBalance' },
                           { label: 'Show Consolidate Intt. Amount in Demand',    field: 'showConsolidateIntAmountInDemand' },
                           { label: 'Get Working Charges (Rs.)',                  field: 'getWorkingCharges' },
+                          { label: 'Auto Day-End (Nightly Close, 11:30 PM)',      field: 'autoDayEndCloseEnabled' },
                         ].map(item => (
                           <div key={item.field}
                             className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">

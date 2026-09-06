@@ -38,6 +38,71 @@ const fmt = (n: number) =>
 
 const fmtSigned = (n: number) => (n < 0 ? '-' : '') + fmt(n);
 
+// Print-only layout matching the legacy report exactly (letterhead, Date/Page
+// Number line, Code/Name/Amount columns, RECEIPT/PAYMENT sections with
+// per-head sub-entries and subtotals, summary block) — same lines[]-as-
+// single-source-of-truth pattern already proven for Day-Book/Day-Book [SB].
+// On-screen view is untouched; this feeds handlePrint only.
+const CON_LINE_W = 94;
+const CON_DASH = '-'.repeat(CON_LINE_W);
+const CON_COL_CODE = 12;
+const CON_COL_NAME = 62;
+const CON_COL_AMT = CON_LINE_W - CON_COL_CODE - CON_COL_NAME;
+
+const padL = (s: string, w: number) => s.padStart(w);
+const padR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
+const centerIn = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
+
+function buildConsolidationLines(data: ConsolidationData, dateLabel: string): string[] {
+  const lines: string[] = [];
+  const now = dayjs().format('DD-MMM-YYYY/h:mmA');
+
+  lines.push(centerIn('Espat Karmchari Co-Operative Credit Society Limited.', CON_LINE_W));
+  lines.push(centerIn('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', CON_LINE_W));
+  lines.push(centerIn(`Consolidation Of Daily Accounts : ${dateLabel}`, CON_LINE_W));
+  lines.push(CON_DASH);
+  const dateStr = `Date : ${now}`;
+  const pageStr = 'Page Number :   1';
+  lines.push(`${dateStr}${padL(pageStr, CON_LINE_W - dateStr.length)}`);
+  lines.push(CON_DASH);
+  lines.push(`${padR('Code', CON_COL_CODE)}${padR('Name', CON_COL_NAME)}${padL('Amount', CON_COL_AMT)}`);
+  lines.push(CON_DASH);
+
+  const section = (title: string, groups: HeadGroup[]) => {
+    lines.push(title);
+    lines.push(CON_DASH);
+    groups.forEach(g => {
+      lines.push(`${padR(g.headCode, CON_COL_CODE)}${g.headName}`);
+      g.subEntries.forEach(e => {
+        lines.push(`${padR(e.mbNo, CON_COL_CODE)}${padR(e.memberName, CON_COL_NAME)}${padL(fmt(e.amount), CON_COL_AMT)}`);
+      });
+      lines.push(`${' '.repeat(CON_COL_CODE + CON_COL_NAME)}${padL(fmt(g.total), CON_COL_AMT)}`);
+      lines.push(CON_DASH);
+    });
+    lines.push('');
+  };
+
+  section('RECEIPT', data.receiptGroups);
+  section('PAYMENT', data.paymentGroups);
+
+  const IND = ' '.repeat(28);
+  const LBL_W = 20;
+  const VAL_W = 18;
+  ([
+    ['Opening Balance', fmtSigned(data.openingBalance)],
+    ['Total Reciept', fmt(data.totalReceipts)],
+    ['Total Cash', fmtSigned(data.totalCash)],
+    ['Total Payment', fmt(data.totalPayments)],
+    ['Closing Balance', fmtSigned(data.closingBalance)],
+  ] as [string, string][]).forEach(([label, value]) => {
+    lines.push(`${IND}${label.padEnd(LBL_W)}:${padL(value, VAL_W)}`);
+  });
+  lines.push('');
+  lines.push('* Report As Per Data Available ..');
+
+  return lines;
+}
+
 const ConsolidationOfDailyAccount: React.FC = () => {
   const dispatch = useDispatch();
   const { interfaceMode, accentColor, cornerRadius } = useSelector((state: RootState) => state.theme);
@@ -68,25 +133,37 @@ const ConsolidationOfDailyAccount: React.FC = () => {
 
   const handlePrint = () => {
     if (!data) return;
-    const win = window.open('', '_blank', 'width=900,height=750') as unknown as Window | null;
-    if (!win) return;
-    const content = document.getElementById('consol-print-area')?.innerHTML || '';
-    win.document.write(`<!DOCTYPE html><html><head><title>Consolidation</title>
+    // window.open() used to be used here, but this app's Electron main
+    // process globally intercepts every window.open() call
+    // (mainWindow.webContents.setWindowOpenHandler in main.ts) and denies
+    // it, redirecting to shell.openExternal(url) instead — with the empty
+    // URL this call passes, that meant Windows trying (and failing) to
+    // open "about:blank" as an external link ("Get an app to open this
+    // 'about' link"), confirmed live. Print silently did nothing. Switched
+    // to the same hidden-iframe + monospace lines[] technique already
+    // proven working for every other report's print this session — it
+    // never goes through window.open() at all, and matches the legacy
+    // report's exact printed layout (user-supplied reference screenshot).
+    const lines = buildConsolidationLines(data, selectedDate.format('DD-MMM-YYYY'));
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`<!DOCTYPE html><html><head><title>Consolidation</title>
 <style>
-  @page { size:A4 portrait; margin:12mm; }
-  body { font-family:'Courier New',monospace; font-size:9pt; color:#000; background:#fff; }
-  table { width:100%; border-collapse:collapse; }
-  td { padding:2px 4px; font-size:8.5pt; }
-  .section-hdr { font-weight:bold; font-size:10pt; padding:4px 4px; }
-  .head-row td { font-weight:bold; }
-  .sub-row td:last-child { color:#1a56db; }
-  .subtotal td { border-top:1px solid #999; font-weight:bold; }
-  .summary td { font-weight:bold; }
-  .red { color:#c00; }
-</style></head><body>${content}</body></html>`);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 400);
+  @page { size: A4 portrait; margin: 12mm; }
+  body { margin: 0; }
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
+</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 300);
+    }
   };
 
   const handleExportCSV = () => {
@@ -173,10 +250,10 @@ const ConsolidationOfDailyAccount: React.FC = () => {
         colorBorder: isDark ? '#334155' : '#e2e8f0',
       },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${text} ${bg}`}>
+      <div className={`cda-page h-screen flex flex-col font-sans overflow-hidden ${text} ${bg}`}>
 
         {/* Header */}
-        <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
+        <div className={`cda-header border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center gap-3">
             <div className="bg-violet-600 p-2 rounded-lg shadow-lg shadow-violet-500/30">
               <Layers size={18} className="text-white" />
@@ -213,8 +290,8 @@ const ConsolidationOfDailyAccount: React.FC = () => {
           {/* Left panel */}
           <div className="w-[240px] flex flex-col gap-3 shrink-0">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className={`border rounded-xl overflow-hidden ${panel}`}>
-              <div className={`border-b px-3 py-2 flex items-center justify-between ${panelHead}`}>
+              className={`cda-panel border rounded-xl overflow-hidden ${panel}`}>
+              <div className={`cda-panel-header border-b px-3 py-2 flex items-center justify-between ${panelHead}`}>
                 <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${muted}`}>
                   <Settings size={11} className="text-violet-400" /> Parameters
                 </h3>
@@ -241,7 +318,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
               {data && (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col gap-2">
-                  <div className={`border rounded-lg p-3 ${panel}`}>
+                  <div className={`cda-panel border rounded-lg p-3 ${panel}`}>
                     <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening</div>
                     <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.openingBalance)}</div>
                   </div>
@@ -267,7 +344,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                       {fmtSigned(data.closingBalance)}
                     </div>
                   </div>
-                  <div className={`border rounded-lg p-3 ${panel}`}>
+                  <div className={`cda-panel border rounded-lg p-3 ${panel}`}>
                     <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Heads</div>
                     <div className={`text-lg font-black font-mono ${text}`}>{data.totalHeads}</div>
                   </div>
@@ -277,8 +354,8 @@ const ConsolidationOfDailyAccount: React.FC = () => {
           </div>
 
           {/* Report panel */}
-          <div className={`flex-1 border rounded-xl flex flex-col overflow-hidden ${panel}`}>
-            <div className={`border-b px-4 py-2 flex items-center justify-between shrink-0 ${panelHead}`}>
+          <div className={`cda-panel flex-1 border rounded-xl flex flex-col overflow-hidden ${panel}`}>
+            <div className={`cda-panel-header border-b px-4 py-2 flex items-center justify-between shrink-0 ${panelHead}`}>
               <span className={`text-xs font-extrabold uppercase tracking-wide ${text}`}>
                 Consolidation — {selectedDate.format('DD-MMM-YYYY')}
               </span>
@@ -287,7 +364,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
               )}
             </div>
 
-            <div className={`flex-1 overflow-auto p-4 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
+            <div className={`cda-preview-body flex-1 overflow-auto p-4 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
               <Spin spinning={loading} tip="Loading...">
                 {hasData ? (
                   <div id="consol-print-area">
@@ -351,7 +428,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className={`border-t px-4 py-1.5 flex items-center justify-between shrink-0 ${panel}`}>
+        <div className={`cda-footer border-t px-4 py-1.5 flex items-center justify-between shrink-0 ${panel}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />
             <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Consolidation · Daily A/c Summary</span>
@@ -364,6 +441,18 @@ const ConsolidationOfDailyAccount: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        /* ── Consolidation Of Daily A/c — dark mode ── */
+        html.dark .cda-page { background-color: #000000 !important; }
+        html.dark .cda-header,
+        html.dark .cda-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cda-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cda-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cda-preview-body { background-color: #1c1c1e !important; }
+        html.dark .cda-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cda-page .ant-picker input { color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

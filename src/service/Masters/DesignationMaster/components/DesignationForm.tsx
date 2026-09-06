@@ -234,11 +234,11 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                 }
 
                 /* ── Dark mode: arbitrary bg hex + the table's own !important light header + badge tints ── */
-                html.dark .desig-form { background-color: #0f172a !important; }
+                html.dark .desig-form { background-color: #000000 !important; }
                 html.dark .desig-table .ant-table-thead > tr > th {
-                    background: #0f172a !important; color: #94a3b8 !important; border-bottom-color: #334155 !important;
+                    background: #000000 !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.07) !important;
                 }
-                html.dark .desig-table .ant-table-tbody > tr > td { border-bottom-color: #1e293b !important; }
+                html.dark .desig-table .ant-table-tbody > tr > td { border-bottom-color: rgba(255,255,255,.07) !important; }
                 html.dark .desig-form .bg-amber-50 { background-color: #422006 !important; }
                 html.dark .desig-form .bg-emerald-50 { background-color: #064e3b !important; }
             `}</style>

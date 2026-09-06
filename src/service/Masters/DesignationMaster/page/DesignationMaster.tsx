@@ -8,8 +8,12 @@ const DesignationMaster: React.FC = () => {
   const designationProps = useDesignationMaster();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="designation-master-page h-screen bg-slate-50 overflow-hidden">
       <DesignationForm {...designationProps} />
+
+      <style>{`
+        html.dark .designation-master-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

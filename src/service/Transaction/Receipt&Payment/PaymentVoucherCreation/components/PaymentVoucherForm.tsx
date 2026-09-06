@@ -119,10 +119,10 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#1e40af', borderRadius: 3, fontSize: 12 } }}>
-            <div className="h-screen flex flex-col bg-white font-sans overflow-hidden text-gray-800">
+            <div className="pvc-root h-screen flex flex-col bg-white font-sans overflow-hidden text-gray-800">
 
                 {/* ── Title bar ── */}
-                <div className="bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="pvc-header bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg">
                     <span className="fz-body font-semibold text-white">Voucher Creation</span>
                     <div className="flex items-center gap-1.5">
                         <button onClick={handleClear}
@@ -305,7 +305,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                 </div>
 
                 {/* ── Footer status bar ── */}
-                <div className="px-3 py-1 bg-gray-100 border-t border-gray-300 flex items-center justify-between shrink-0">
+                <div className="pvc-footer px-3 py-1 bg-gray-100 border-t border-gray-300 flex items-center justify-between shrink-0">
                     <span className="fz-caption text-gray-500">
                         Payment Voucher
                         {formData.memberName && <> &nbsp;|&nbsp; <span className="text-blue-700 font-semibold">{formData.memberName}</span></>}
@@ -349,6 +349,56 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                 input[type=number]::-webkit-inner-spin-button,
                 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
                 input[type=number] { -moz-appearance: textfield; }
+
+                /* ── Dark mode ── */
+                html.dark .pvc-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .pvc-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .pvc-root .bg-gray-50 { background-color: #1c1c1e !important; }
+                html.dark .pvc-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .pvc-root .border-gray-300 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .pvc-root .text-gray-800 { color: #f5f5f7 !important; }
+                html.dark .pvc-root .text-gray-700 { color: #f5f5f7 !important; }
+                html.dark .pvc-root .text-gray-600 { color: #8e8e93 !important; }
+                html.dark .pvc-root .text-gray-500 { color: #8e8e93 !important; }
+                html.dark .pvc-root .text-gray-400 { color: #71717a !important; }
+                html.dark .pvc-root .text-blue-700,
+                html.dark .pvc-root .text-blue-800 { color: #60a5fa !important; }
+                html.dark .pvc-root .bg-green-50 { background-color: rgba(52,211,153,.12) !important; }
+                html.dark .pvc-root .border-green-300 { border-color: rgba(52,211,153,.3) !important; }
+                html.dark .pvc-root .text-green-700 { color: #34d399 !important; }
+                html.dark .pvc-root .text-green-600 { color: #34d399 !important; }
+                html.dark .pvc-root .text-red-500 { color: #ff453a !important; }
+                /* footer strip */
+                html.dark .pvc-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                /* buttons with white background */
+                html.dark .pvc-root button.bg-white { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                /* antd inputs / selects / pickers */
+                html.dark .pvc-root .ant-input,
+                html.dark .pvc-root input.ant-input,
+                html.dark .pvc-root textarea.ant-input,
+                html.dark .pvc-root .ant-picker,
+                html.dark .pvc-root .ant-select-selector {
+                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .pvc-root .ant-select-selection-item,
+                html.dark .pvc-root .ant-select-selection-search-input,
+                html.dark .pvc-root .ant-picker input { color: #f5f5f7 !important; }
+                html.dark .pvc-root .ant-select-selection-placeholder,
+                html.dark .pvc-root .ant-input::placeholder,
+                html.dark .pvc-root .ant-picker input::placeholder { color: #71717a !important; }
+                html.dark .pvc-root .ant-select-arrow,
+                html.dark .pvc-root .ant-picker-suffix { color: #8e8e93 !important; }
+                /* table */
+                html.dark .pvc-table .ant-table,
+                html.dark .pvc-table .ant-table-container { background-color: #1c1c1e !important; color: #f5f5f7 !important; }
+                html.dark .pvc-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.07) !important; }
+                html.dark .pvc-table .ant-table-tbody > tr > td { background-color: #1c1c1e !important; color: #f5f5f7 !important; border-bottom-color: rgba(255,255,255,.07) !important; }
+                html.dark .pvc-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
+                html.dark .pvc-table .ant-table-placeholder .ant-table-cell,
+                html.dark .pvc-table .ant-empty-description { background-color: #1c1c1e !important; color: #71717a !important; }
+                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
+                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
             `}</style>
         </ConfigProvider>
     );

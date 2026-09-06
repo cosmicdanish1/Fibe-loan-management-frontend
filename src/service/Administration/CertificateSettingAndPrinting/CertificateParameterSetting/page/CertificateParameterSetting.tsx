@@ -183,11 +183,11 @@ const CertificateParameterSetting: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 8, colorBgContainer: '#1e293b', colorBorder: '#334155' } }}>
-      <div className="h-screen flex flex-col overflow-hidden" style={{ background: DARK.bg, color: DARK.text }}>
+      <div className="cps-app h-screen flex flex-col overflow-hidden" style={{ background: DARK.bg, color: DARK.text }}>
 
         {/* Header */}
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="px-4 py-3 flex items-center justify-between shrink-0 border-b"
+          className="cps-header px-4 py-3 flex items-center justify-between shrink-0 border-b"
           style={{ background: '#1e293b', borderColor: DARK.border }}>
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/30">
@@ -211,7 +211,7 @@ const CertificateParameterSetting: React.FC = () => {
         </motion.div>
 
         {/* Tabs */}
-        <div className="flex gap-1 px-4 shrink-0 border-b" style={{ background: '#1e293b', borderColor: DARK.border }}>
+        <div className="cps-tabs flex gap-1 px-4 shrink-0 border-b" style={{ background: '#1e293b', borderColor: DARK.border }}>
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
               className={`px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all relative flex items-center gap-2
@@ -232,7 +232,7 @@ const CertificateParameterSetting: React.FC = () => {
               <motion.div key="format" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}
                 className="h-full p-6 overflow-auto">
-                <div className="max-w-2xl mx-auto rounded-2xl overflow-hidden border" style={{ background: DARK.card, borderColor: DARK.border }}>
+                <div className="cps-card max-w-2xl mx-auto rounded-2xl overflow-hidden border" style={{ background: DARK.card, borderColor: DARK.border }}>
                   <div className="px-6 py-4 border-b flex items-center gap-3" style={{ borderColor: DARK.border }}>
                     <div className="bg-indigo-500/20 p-2 rounded-lg text-indigo-400"><FileText size={16} /></div>
                     <div>
@@ -275,7 +275,7 @@ const CertificateParameterSetting: React.FC = () => {
                     placeholder="Legacy map key…"
                     className="h-7 w-40 bg-white/10 border border-white/20 text-xs font-bold text-white rounded px-3 focus:outline-none placeholder:text-white/40" />
                 </div>
-                <div className="flex-1 overflow-auto border rounded-b-2xl" style={{ borderColor: DARK.border }}>
+                <div className="cps-table-wrap flex-1 overflow-auto border rounded-b-2xl" style={{ borderColor: DARK.border }}>
                   <Table columns={columns} dataSource={data.fields} pagination={false} size="small"
                     className="cert-dark-table"
                     rowClassName={(_, i) => i % 2 === 0 ? 'row-even' : 'row-odd'} />
@@ -312,6 +312,42 @@ const CertificateParameterSetting: React.FC = () => {
           .row-even td { background: #1a2744 !important; }
           .row-odd td  { background: #1e293b !important; }
           .cert-dark-table .ant-table-tbody > tr:hover > td { background: #2d3f6b !important; }
+        `}</style>
+
+        <style>{`
+          /* ── Certificate Parameter Setting — dark mode (Settings-panel palette) ── */
+          html.dark .cps-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .cps-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .cps-header .text-slate-400 { color: #8e8e93 !important; }
+          html.dark .cps-tabs { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .cps-tabs button:not(.text-indigo-400) { color: #8e8e93 !important; }
+          html.dark .cps-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .cps-card .text-slate-400 { color: #8e8e93 !important; }
+          html.dark .cps-card .text-slate-300 { color: #f5f5f7 !important; }
+          /* Inputs */
+          html.dark .cps-app input,
+          html.dark .cps-app select,
+          html.dark .cps-app textarea {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+          }
+          html.dark .cps-app label { color: #8e8e93 !important; }
+          html.dark .cps-app .bg-slate-700 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .cps-app .border-slate-600 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .cps-app .bg-slate-800 { background-color: #1c1c1e !important; }
+          html.dark .cps-app .bg-white { background-color: #1c1c1e !important; }
+          html.dark .cps-app .border-slate-200,
+          html.dark .cps-app .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .cps-table-wrap { border-color: rgba(255,255,255,.08) !important; }
+          /* Field-position table (already dark-only, now re-mapped to app palette) */
+          html.dark .cps-app .cert-dark-table.ant-table-wrapper,
+          html.dark .cps-app .cert-dark-table .ant-table { background: #1c1c1e !important; }
+          html.dark .cps-app .cert-dark-table .ant-table-thead > tr > th {
+            background: #0c0c0e !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.07) !important;
+          }
+          html.dark .cps-app .cert-dark-table .ant-table-tbody > tr > td { border-bottom-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
+          html.dark .cps-app .row-even td { background: #1c1c1e !important; }
+          html.dark .cps-app .row-odd td { background: #0c0c0e !important; }
+          html.dark .cps-app .cert-dark-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
         `}</style>
       </div>
     </ConfigProvider>

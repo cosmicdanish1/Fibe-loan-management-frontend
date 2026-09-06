@@ -56,11 +56,11 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-2">
+    <div className="om-root max-w-2xl mx-auto space-y-2">
 
       {/* Branch Identity */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
+      <div className="om-card bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="om-card-hdr px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
           <Building2 size={11} className="text-slate-400" />
           <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Office Details</span>
           {data.name && (
@@ -131,8 +131,8 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
       </div>
 
       {/* Address */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
+      <div className="om-card bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="om-card-hdr px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
           <MapPin size={11} className="text-slate-400" />
           <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Location</span>
         </div>
@@ -168,6 +168,32 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
           Enter Branch No and press Enter to load existing office — or fill in details for new
         </span>
       </div>
+
+      <style>{`
+        /* ── Office Master — dark mode ── */
+        html.dark .om-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .om-card-hdr { border-color: rgba(255,255,255,.07) !important; }
+        html.dark .om-card-hdr span.text-slate-500 { color: #8e8e93 !important; }
+        html.dark .om-card-hdr svg.text-slate-400 { color: #71717a !important; }
+        html.dark .om-root label.text-slate-500 { color: #8e8e93 !important; }
+        html.dark .om-root .text-slate-400 { color: #71717a !important; }
+        html.dark .om-root input,
+        html.dark .om-root textarea,
+        html.dark .om-root .ant-select-selector {
+          background-color: rgba(255,255,255,.05) !important;
+          color: #f5f5f7 !important;
+          border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .om-root .ant-select-selection-item,
+        html.dark .om-root .ant-select-selection-placeholder { color: #f5f5f7 !important; }
+        html.dark .om-root .ant-select-arrow { color: #8e8e93 !important; }
+        html.dark .om-root .bg-slate-50 { background-color: rgba(255,255,255,.03) !important; }
+        html.dark .om-root .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+        html.dark .om-root .border-slate-200,
+        html.dark .om-root .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .om-root button.bg-slate-100 { background-color: rgba(255,255,255,.05) !important; color: #8e8e93 !important; }
+        html.dark .om-root button.bg-slate-100:hover { background-color: #3b82f6 !important; color: #fff !important; }
+      `}</style>
 
     </div>
   );

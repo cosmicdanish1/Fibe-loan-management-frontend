@@ -73,11 +73,11 @@ const ShareCertificatePrinting: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 8, colorBgContainer: '#1e293b', colorBorder: '#334155' } }}>
-      <div className="h-screen flex flex-col overflow-hidden bg-[#0f172a] text-slate-100 font-sans print:bg-white">
+      <div className="scp-app h-screen flex flex-col overflow-hidden bg-[#0f172a] text-slate-100 font-sans print:bg-white">
 
         {/* Header */}
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="print:hidden px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700 bg-slate-800">
+          className="scp-header print:hidden px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700 bg-slate-800">
           <div className="flex items-center gap-3">
             <div className="bg-emerald-600 p-2 rounded-xl shadow-lg shadow-emerald-500/30"><Share2 size={18} className="text-white" /></div>
             <div>
@@ -103,7 +103,7 @@ const ShareCertificatePrinting: React.FC = () => {
           {/* Form Panel */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
             className="print:hidden md:w-[42%] overflow-auto space-y-4 pr-1">
-            <div className="rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
+            <div className="scp-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
               <div className="px-5 py-3.5 border-b border-slate-700 flex items-center gap-2.5">
                 <Share2 size={15} className="text-emerald-400" />
                 <h2 className="text-xs font-black text-white uppercase tracking-wider">Share Details</h2>
@@ -172,7 +172,7 @@ const ShareCertificatePrinting: React.FC = () => {
 
           {/* Certificate Preview */}
           <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-            className="print:hidden md:w-[58%] flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/40">
+            className="scp-preview-wrap print:hidden md:w-[58%] flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/40">
             <p className="fz-small text-slate-500 uppercase tracking-widest mb-4 font-bold">Certificate Preview</p>
             <div className="w-full max-w-md bg-white shadow-2xl rounded-sm overflow-hidden p-10 border-8 border-double border-slate-800 relative">
               <div className="absolute inset-2 border border-slate-100 pointer-events-none opacity-40" />
@@ -239,6 +239,33 @@ const ShareCertificatePrinting: React.FC = () => {
             </div>
           </motion.div>
         </div>
+
+        <style>{`
+          /* ── Share Certificate Printing — dark mode (Settings-panel palette) ── */
+          html.dark .scp-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .scp-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .scp-header .text-slate-400 { color: #8e8e93 !important; }
+          html.dark .scp-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .scp-card .text-slate-400 { color: #8e8e93 !important; }
+          html.dark .scp-card .text-slate-500 { color: #71717a !important; }
+          /* Inputs (form panel only — certificate preview paper stays untouched) */
+          html.dark .scp-card input,
+          html.dark .scp-card select,
+          html.dark .scp-card textarea {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+          }
+          html.dark .scp-card input.text-emerald-300 { color: #34d399 !important; }
+          html.dark .scp-card label { color: #8e8e93 !important; }
+          html.dark .scp-app .bg-slate-700 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .scp-app .border-slate-600,
+          html.dark .scp-app .border-slate-700 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .scp-app .bg-slate-800 { background-color: #1c1c1e !important; }
+          html.dark .scp-header button.bg-slate-700 { background-color: #1c1c1e !important; border: 1px solid rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+          html.dark .scp-app .text-emerald-400 { color: #34d399 !important; }
+          /* Preview chrome (dashed wrapper) — the paper certificate itself is intentionally left light */
+          html.dark .scp-preview-wrap { background-color: rgba(255,255,255,.03) !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .scp-preview-wrap > p.text-slate-500 { color: #71717a !important; }
+        `}</style>
       </div>
     </ConfigProvider>
   );

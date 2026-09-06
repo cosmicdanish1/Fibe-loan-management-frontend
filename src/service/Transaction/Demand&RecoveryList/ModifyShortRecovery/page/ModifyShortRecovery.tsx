@@ -8,8 +8,11 @@ const ModifyShortRecovery: React.FC = () => {
   const props = useModifyShortRecovery();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="msr-page h-screen bg-slate-50 overflow-hidden">
       <ModifyShortRecoveryForm {...props} />
+      <style>{`
+        html.dark .msr-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

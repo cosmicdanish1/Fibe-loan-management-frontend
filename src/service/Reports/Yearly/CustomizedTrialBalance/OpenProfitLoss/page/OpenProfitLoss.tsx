@@ -182,7 +182,7 @@ const OpenProfitLoss: React.FC = () => {
         }
       }}
     >
-      <div className={`h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+      <div className={`open-profitloss-page h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
 
         {/* Print Styles */}
         <style>{`
@@ -213,6 +213,21 @@ const OpenProfitLoss: React.FC = () => {
              .custom-table .ant-table-summary {
                background: #f8fafc;
              }
+
+          /* ── Open Profit & Loss — dark mode ── */
+          html.dark .open-profitloss-page .ant-select-selector,
+          html.dark .open-profitloss-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .open-profitloss-page .ant-picker input,
+          html.dark .open-profitloss-page .ant-select-selection-item { color: #f5f5f7 !important; }
+          html.dark .open-profitloss-table .ant-table,
+          html.dark .open-profitloss-table .ant-table-container,
+          html.dark .open-profitloss-table .ant-table-content { background-color: #1c1c1e !important; }
+          html.dark .open-profitloss-table .ant-table-thead > tr > th { background-color: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .open-profitloss-table .ant-table-tbody > tr > td { background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.07) !important; }
+          html.dark .open-profitloss-table .ant-table-summary,
+          html.dark .open-profitloss-table .ant-table-summary > tr > td,
+          html.dark .open-profitloss-table .bg-slate-50 { background-color: #0c0c0e !important; color: #f5f5f7 !important; }
+          html.dark .open-profitloss-page .bg-white { background-color: #1c1c1e !important; }
         `}</style>
 
         {/* Header */}
@@ -381,7 +396,7 @@ const OpenProfitLoss: React.FC = () => {
                   columns={columns as any}
                   pagination={false}
                   size="small"
-                  className="custom-table"
+                  className="custom-table open-profitloss-table"
                   scroll={{ x: 1000, y: 500 }}
                   bordered={false}
                   summary={() => (

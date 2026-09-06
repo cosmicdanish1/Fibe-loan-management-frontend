@@ -133,60 +133,60 @@ const DemandPrintOrder: React.FC = () => {
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 10 } }}>
       <style>{`
-        html.dark .dpo-page { background: #0f172a !important; }
+        html.dark .dpo-page { background: #000000 !important; }
 
         /* Table body + footer */
-        html.dark .dpo-page .dpo-table-wrap { background: #0f172a !important; }
-        html.dark .dpo-page .dpo-tbody { background: #0f172a !important; }
-        html.dark .dpo-page .dpo-row { border-color: #1e293b !important; }
+        html.dark .dpo-page .dpo-table-wrap { background: #000000 !important; }
+        html.dark .dpo-page .dpo-tbody { background: #000000 !important; }
+        html.dark .dpo-page .dpo-row { border-color: rgba(255,255,255,.07) !important; }
         html.dark .dpo-page .dpo-row:hover { background: rgba(30,41,59,0.7) !important; }
-        html.dark .dpo-page .dpo-row.editing { background: #1e293b !important; }
-        html.dark .dpo-page .dpo-cell { border-color: #1e293b !important; }
+        html.dark .dpo-page .dpo-row.editing { background: #1c1c1e !important; }
+        html.dark .dpo-page .dpo-cell { border-color: rgba(255,255,255,.07) !important; }
         html.dark .dpo-page .dpo-cell-code { color: #818cf8 !important; }
-        html.dark .dpo-page .dpo-cell-desc { color: #94a3b8 !important; }
-        html.dark .dpo-page .dpo-cell-intt { color: #475569 !important; }
-        html.dark .dpo-page .dpo-badge { background: #1e293b !important; border-color: #334155 !important; color: #94a3b8 !important; }
-        html.dark .dpo-page .dpo-mapcol-badge { background: #1e293b !important; border-color: #334155 !important; color: #818cf8 !important; }
-        html.dark .dpo-page .dpo-order-num { background: #1e293b !important; color: #64748b !important; }
+        html.dark .dpo-page .dpo-cell-desc { color: #8e8e93 !important; }
+        html.dark .dpo-page .dpo-cell-intt { color: rgba(255,255,255,.08) !important; }
+        html.dark .dpo-page .dpo-badge { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .dpo-page .dpo-mapcol-badge { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #818cf8 !important; }
+        html.dark .dpo-page .dpo-order-num { background: #1c1c1e !important; color: #71717a !important; }
         html.dark .dpo-page .dpo-row:hover .dpo-order-num { background: #6366f1 !important; color: white !important; }
 
         /* Edit-mode inputs */
-        html.dark .dpo-page .dpo-edit-input { background: #0f172a !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+        html.dark .dpo-page .dpo-edit-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
         html.dark .dpo-page .dpo-edit-input:focus { border-color: #6366f1 !important; }
 
         /* Search input in header */
-        html.dark .dpo-page .dpo-search-input { background: rgba(15,23,42,0.8) !important; border-color: #334155 !important; color: #e2e8f0 !important; }
-        html.dark .dpo-page .dpo-search-input::placeholder { color: #475569 !important; }
+        html.dark .dpo-page .dpo-search-input { background: rgba(15,23,42,0.8) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .dpo-page .dpo-search-input::placeholder { color: rgba(255,255,255,.08) !important; }
 
         /* Footer */
-        html.dark .dpo-page .dpo-footer { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .dpo-page .dpo-footer-left { color: #334155 !important; }
-        html.dark .dpo-page .dpo-footer-right { color: #475569 !important; }
+        html.dark .dpo-page .dpo-footer { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dpo-page .dpo-footer-left { color: rgba(255,255,255,.08) !important; }
+        html.dark .dpo-page .dpo-footer-right { color: rgba(255,255,255,.08) !important; }
 
         /* Loading / empty states */
-        html.dark .dpo-page .dpo-loading { color: #475569 !important; }
+        html.dark .dpo-page .dpo-loading { color: rgba(255,255,255,.08) !important; }
 
         /* Modal content (MDAmountDetails + HeadMasterLookup inside) */
-        html.dark .dpo-modal-content { background: #1e293b !important; }
-        html.dark .dpo-modal-content > div { background: #1e293b !important; }
-        html.dark .dpo-modal-content .bg-white { background: #1e293b !important; }
+        html.dark .dpo-modal-content { background: #1c1c1e !important; }
+        html.dark .dpo-modal-content > div { background: #1c1c1e !important; }
+        html.dark .dpo-modal-content .bg-white { background: #1c1c1e !important; }
         html.dark .dpo-modal-content .bg-slate-50\\/30 { background: rgba(15,23,42,0.6) !important; }
-        html.dark .dpo-modal-content .bg-slate-100 { background: #0f172a !important; }
-        html.dark .dpo-modal-content .border-slate-100 { border-color: #334155 !important; }
-        html.dark .dpo-modal-content .border-slate-200 { border-color: #334155 !important; }
-        html.dark .dpo-modal-content .text-slate-700 { color: #e2e8f0 !important; }
-        html.dark .dpo-modal-content .text-slate-600 { color: #94a3b8 !important; }
-        html.dark .dpo-modal-content .text-slate-500 { color: #64748b !important; }
-        html.dark .dpo-modal-content .text-slate-400 { color: #475569 !important; }
-        html.dark .dpo-modal-content .text-slate-300 { color: #334155 !important; }
+        html.dark .dpo-modal-content .bg-slate-100 { background: #000000 !important; }
+        html.dark .dpo-modal-content .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dpo-modal-content .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dpo-modal-content .text-slate-700 { color: #f5f5f7 !important; }
+        html.dark .dpo-modal-content .text-slate-600 { color: #8e8e93 !important; }
+        html.dark .dpo-modal-content .text-slate-500 { color: #71717a !important; }
+        html.dark .dpo-modal-content .text-slate-400 { color: rgba(255,255,255,.08) !important; }
+        html.dark .dpo-modal-content .text-slate-300 { color: rgba(255,255,255,.08) !important; }
         html.dark .dpo-modal-content .hover\\:bg-slate-50:hover { background: rgba(30,41,59,0.8) !important; }
         html.dark .dpo-modal-content .hover\\:bg-indigo-50:hover { background: rgba(55,48,163,0.2) !important; }
-        html.dark .dpo-modal-content input { background: #0f172a !important; border-color: #334155 !important; color: #e2e8f0 !important; }
-        html.dark .dpo-modal-content input::placeholder { color: #334155 !important; }
+        html.dark .dpo-modal-content input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .dpo-modal-content input::placeholder { color: rgba(255,255,255,.08) !important; }
         html.dark .dpo-modal-content input:focus { border-color: #6366f1 !important; }
-        html.dark .dpo-modal-content .border-b { border-color: #334155 !important; }
-        html.dark .dpo-modal-content .border-t { border-color: #334155 !important; }
-        html.dark .dpo-modal-content .scrollbar-thumb-slate-200 { scrollbar-color: #334155 transparent !important; }
+        html.dark .dpo-modal-content .border-b { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dpo-modal-content .border-t { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dpo-modal-content .scrollbar-thumb-slate-200 { scrollbar-color: rgba(255,255,255,.08) transparent !important; }
         html.dark .dpo-modal-content .shadow-\\[0_-4px_6px_-1px_rgba\\(0\\,0\\,0\\,0\\.02\\)\\] { box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.4) !important; }
       `}</style>
 

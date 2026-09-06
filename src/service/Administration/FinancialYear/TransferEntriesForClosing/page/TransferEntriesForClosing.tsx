@@ -186,21 +186,21 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 8 } }}>
       <style>{`
-        html.dark .tefc-page { background: #0f172a !important; }
-        html.dark .tefc-page .tefc-header { background: #1e293b !important; border-color: #334155 !important; }
+        html.dark .tefc-page { background: #000000 !important; }
+        html.dark .tefc-page .tefc-header { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
         html.dark .tefc-page .tefc-header-icon { background: #312e81 !important; color: #818cf8 !important; }
-        html.dark .tefc-page .tefc-title { color: #f1f5f9 !important; }
+        html.dark .tefc-page .tefc-title { color: #f5f5f7 !important; }
         html.dark .tefc-page .tefc-sub { color: #818cf8 !important; }
-        html.dark .tefc-page .tefc-card { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .tefc-page .tefc-select { background: #0f172a !important; border-color: #4f46e5 !important; color: #f1f5f9 !important; }
-        html.dark .tefc-page .tefc-select option { background: #1e293b; color: #f1f5f9; }
-        html.dark .tefc-page .tefc-detail-box { background: #0f172a !important; border-color: #334155 !important; }
-        html.dark .tefc-page .tefc-detail-label { color: #64748b !important; }
-        html.dark .tefc-page .tefc-detail-value { color: #e2e8f0 !important; }
-        html.dark .tefc-page .tefc-cancel-btn { background: #1e293b !important; border-color: #334155 !important; color: #94a3b8 !important; }
-        html.dark .tefc-page .tefc-cancel-btn:hover { background: #334155 !important; color: #f1f5f9 !important; }
-        html.dark .tefc-page .tefc-footer { background: #1e293b !important; border-color: #334155 !important; }
-        html.dark .tefc-page .tefc-footer-text { color: #475569 !important; }
+        html.dark .tefc-page .tefc-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .tefc-page .tefc-select { background: rgba(255,255,255,.05) !important; border-color: #4f46e5 !important; color: #f5f5f7 !important; }
+        html.dark .tefc-page .tefc-select option { background: #1c1c1e; color: #f5f5f7; }
+        html.dark .tefc-page .tefc-detail-box { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .tefc-page .tefc-detail-label { color: #71717a !important; }
+        html.dark .tefc-page .tefc-detail-value { color: #f5f5f7 !important; }
+        html.dark .tefc-page .tefc-cancel-btn { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .tefc-page .tefc-cancel-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .tefc-page .tefc-footer { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .tefc-page .tefc-footer-text { color: #71717a !important; }
       `}</style>
 
       <div className={`tefc-page h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-slate-50 font-sans overflow-hidden ${className}`}>
@@ -339,7 +339,7 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
               </button>
               <button onClick={handleSubmit}
                 disabled={!selectedCode || isLoading || isLoadingYears}
-                className="flex-[2] h-8 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-400 text-white font-black rounded-lg fz-caption shadow-md shadow-indigo-200 transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:cursor-not-allowed group">
+                className="flex-[2] h-8 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-400 text-white font-black rounded-lg fz-caption shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:cursor-not-allowed group">
                 {isLoading
                   ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /><span className="uppercase tracking-wider">Processing...</span></>
                   : <><span className="uppercase tracking-wider">Initiate Transfer</span><ChevronRight size={11} className="group-hover:translate-x-0.5 transition-transform" /></>}

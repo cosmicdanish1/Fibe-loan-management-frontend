@@ -313,8 +313,8 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                 input[type=number] { -moz-appearance: textfield; }
 
                 /* Dark mode: the global layer covers cards/inputs; only the arbitrary root bg is missed. */
-                html.dark .mmb-form { background-color: #0f172a !important; }
-                html.dark .mmb-form input[type=number] { background-color: #1e293b !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+                html.dark .mmb-form { background-color: #000000 !important; }
+                html.dark .mmb-form input[type=number] { background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
             `}</style>
         </ConfigProvider>
     );

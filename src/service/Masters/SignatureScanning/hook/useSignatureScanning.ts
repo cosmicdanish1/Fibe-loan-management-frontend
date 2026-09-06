@@ -1,10 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type {
   SignatureScanningData,
   SignatureScanningHookReturn
 } from '../interface/interface';
 import apiService from '../../../../services/api';
-import { API_BASE_URL, getApiBaseUrl, getApiBaseUrlSync } from '../../../../services/apiVersionConfig';
 import { message } from 'antd';
 
 export const useSignatureScanning = (): SignatureScanningHookReturn => {
@@ -14,6 +13,29 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
     signatureData: '',
     loading: false
   });
+
+  // Tracks the current blob object URL so it can be revoked before replacing/unmounting.
+  const objectUrlRef = useRef<string | null>(null);
+  const setSignatureObjectUrl = useCallback((url: string) => {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    objectUrlRef.current = url || null;
+    setData(prev => ({ ...prev, signatureData: url }));
+  }, []);
+  useEffect(() => () => {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+  }, []);
+
+  // BUG FIX: the endpoint is JWT-protected, so a plain <img src="..."> 401s —
+  // fetch it as a blob (with the Authorization header) and hand back an object URL.
+  const loadSignatureImage = useCallback(async (mbno: string) => {
+    try {
+      const blob = await apiService.fetchProtectedFile(`/members/master/${mbno}/signature`);
+      setSignatureObjectUrl(blob ? URL.createObjectURL(blob) : '');
+    } catch (error) {
+      console.error(error);
+      setSignatureObjectUrl('');
+    }
+  }, [setSignatureObjectUrl]);
 
   const updateMemberNumber = useCallback((value: string) => {
     setData(prev => ({ ...prev, memberNumber: value }));
@@ -30,11 +52,14 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
     try {
       const response = await apiService.getMemberDetails(memberNo);
       // TransformInterceptor wraps: { success, data: <member_master row> }
-      if (response && response.success) {
+      // BUG FIX: the endpoint returns { success: true, data: null } for a
+      // nonexistent member rather than a 404 — must be checked explicitly,
+      // otherwise `member.mbno` below throws and surfaces as a generic error.
+      const member = response?.success ? response.data : null;
+      if (member) {
         // BUG FIX 1: member_master returns lowercase DB column names.
         // Use mbno (not id), f_name/l_name (not firstName/lastName),
         // signature_image_path (not signatureImagePath).
-        const member = response.data;
         const mbno: string = member.mbno;
         const fullName: string =
           member.fullname ||
@@ -45,37 +70,41 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
           // BUG FIX 1+2: store mbno as string, build URL using master route
           memberId: mbno,
           memberName: fullName,
-          signatureData: member.signature_image_path
-            ? `${getApiBaseUrlSync()}/members/master/${mbno}/signature?t=${Date.now()}`
-            : '',
           loading: false
         }));
+
+        if (member.signature_image_path) {
+          await loadSignatureImage(mbno);
+        } else {
+          setSignatureObjectUrl('');
+        }
       } else {
         message.warning('Member not found');
-        setData(prev => ({ ...prev, loading: false, memberId: undefined, memberName: '', signatureData: '' }));
+        setSignatureObjectUrl('');
+        setData(prev => ({ ...prev, loading: false, memberId: undefined, memberName: '' }));
       }
     } catch (error) {
       console.error(error);
       message.error('Error searching member');
       setData(prev => ({ ...prev, loading: false }));
     }
-  }, []);
+  }, [loadSignatureImage, setSignatureObjectUrl]);
 
   const clearSignature = useCallback(async () => {
     if (!data.memberId) {
-      setData(prev => ({ ...prev, signatureData: '' }));
+      setSignatureObjectUrl('');
       return;
     }
 
     try {
       // BUG FIX 2: use master (member_master) endpoint, not the TypeORM members endpoint
       await apiService.deleteMemberSignatureMaster(data.memberId);
-      setData(prev => ({ ...prev, signatureData: '' }));
+      setSignatureObjectUrl('');
       message.success('Signature purged');
     } catch (error) {
       message.error('Failed to delete signature');
     }
-  }, [data.memberId]);
+  }, [data.memberId, setSignatureObjectUrl]);
 
   const uploadFile = useCallback(async (file: File) => {
     if (!data.memberId) {
@@ -102,12 +131,8 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
       const response = await apiService.uploadMemberSignatureMaster(data.memberId, file);
       if (response.success) {
         message.success('Signature uploaded successfully');
-        // Refresh signature image with cache-buster
-        setData(prev => ({
-          ...prev,
-          loading: false,
-          signatureData: `${getApiBaseUrlSync()}/members/master/${data.memberId}/signature?t=${Date.now()}`
-        }));
+        await loadSignatureImage(data.memberId);
+        setData(prev => ({ ...prev, loading: false }));
         return true;
       } else {
         message.error('Upload failed');
@@ -120,7 +145,7 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
       setData(prev => ({ ...prev, loading: false }));
       return false;
     }
-  }, [data.memberId]);
+  }, [data.memberId, loadSignatureImage]);
 
   return {
     data,

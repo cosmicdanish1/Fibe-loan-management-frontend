@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ConfigProvider, Select, message, Spin, theme as antdTheme, Modal } from 'antd';
-import { BookOpen, User, Search, RotateCcw, Printer, FileText, X, Users } from 'lucide-react';
+import { BookOpen, User, Search, RotateCcw, Printer, FileText, X, Users, ChevronLeft, ChevronRight, Save, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../store';
@@ -104,6 +104,17 @@ interface PageSetup { widthIn: number; heightIn: number; bookHeightIn: number; l
 const DEFAULT_PAGE_SETUP: PageSetup = { widthIn: 6, heightIn: 4, bookHeightIn: 8, linesPerPage: 20 };
 const PAGE_SETUP_KEY = 'passbookPageSetup';
 
+// Named page-size presets, editable from the preview dialog — different
+// passbook vendors/models use different physical sizes. Seeded with a few
+// reasonable defaults; the user can rename, add, or delete freely.
+interface PageSetupPreset extends PageSetup { name: string; }
+const DEFAULT_PRESETS: PageSetupPreset[] = [
+  { name: 'PLQ-35 Standard (6×4)', widthIn: 6, heightIn: 4, bookHeightIn: 8, linesPerPage: 20 },
+  { name: 'Compact Passbook (5×3.5)', widthIn: 5, heightIn: 3.5, bookHeightIn: 7, linesPerPage: 18 },
+  { name: 'Wide Passbook (7×4)', widthIn: 7, heightIn: 4, bookHeightIn: 8, linesPerPage: 20 },
+];
+const PRESETS_KEY = 'passbookPagePresets';
+
 const DETAIL_TOP = 4;        // mm, top edge of page → header
 const DETAIL_BOTTOM = 4;     // mm, reserved below the last line
 const DETAIL_PAD_X = 2;      // mm, unprintable side edge
@@ -204,6 +215,7 @@ const PassBookPrinting: React.FC = () => {
   const [data, setData] = useState<PassbookData | null>(null);
   const [showMemberLookup, setShowMemberLookup] = useState(false);
   const [previewKind, setPreviewKind] = useState<'first' | 'details' | null>(null);
+  const [previewPageIndex, setPreviewPageIndex] = useState(0);
   const [pageSetup, setPageSetup] = useState<PageSetup>(() => {
     try {
       const saved = { ...DEFAULT_PAGE_SETUP, ...JSON.parse(localStorage.getItem(PAGE_SETUP_KEY) || '{}') };
@@ -211,6 +223,16 @@ const PassBookPrinting: React.FC = () => {
     } catch { /* fall through to defaults */ }
     return DEFAULT_PAGE_SETUP;
   });
+  const [presets, setPresets] = useState<PageSetupPreset[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PRESETS_KEY) || 'null');
+      if (Array.isArray(saved) && saved.length) return saved;
+    } catch { /* fall through to defaults */ }
+    return DEFAULT_PRESETS;
+  });
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
   const [printers, setPrinters] = useState<Array<{ name: string; displayName?: string; isDefault?: boolean }>>([]);
   const [printerName, setPrinterName] = useState<string>(() => localStorage.getItem('passbookPrinterName') || '');
   const printRef = useRef<HTMLDivElement>(null);
@@ -289,6 +311,37 @@ const PassBookPrinting: React.FC = () => {
       localStorage.setItem(PAGE_SETUP_KEY, JSON.stringify(next));
       return next;
     });
+    setSelectedPreset(''); // manual edit no longer matches any saved preset
+  };
+
+  const persistPresets = (next: PageSetupPreset[]) => {
+    setPresets(next);
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(next));
+  };
+
+  const applyPreset = (name: string) => {
+    const preset = presets.find(p => p.name === name);
+    if (!preset) return;
+    const { name: _n, ...setup } = preset;
+    setPageSetup(setup);
+    localStorage.setItem(PAGE_SETUP_KEY, JSON.stringify(setup));
+    setSelectedPreset(name);
+  };
+
+  const saveCurrentAsPreset = () => {
+    const name = newPresetName.trim();
+    if (!name) return;
+    const withoutSameName = presets.filter(p => p.name !== name);
+    persistPresets([...withoutSameName, { name, ...pageSetup }]);
+    setSelectedPreset(name);
+    setNewPresetName('');
+    setSavingPreset(false);
+  };
+
+  const deleteSelectedPreset = () => {
+    if (!selectedPreset) return;
+    persistPresets(presets.filter(p => p.name !== selectedPreset));
+    setSelectedPreset('');
   };
 
   const buildFirstPageBody = () => {
@@ -370,6 +423,7 @@ const PassBookPrinting: React.FC = () => {
       if (!proceed) return;
     }
 
+    setPreviewPageIndex(0);
     const api = window.electronAPI;
     if (api?.getPrinters && printers.length === 0) {
       api.getPrinters().then(list => {
@@ -392,8 +446,12 @@ const PassBookPrinting: React.FC = () => {
       ? [{ body: buildFirstPageBody(), rowCount: 0, maxLedgerId: 0 }]
       : buildDetailChunks())
     : [];
-  const previewHtml = previewPages.length
-    ? buildPrintDoc(previewTitle, previewPages.map(p => p.body), pageWMm, pageHMm, bookHMm, detailLineH, true)
+  // Shown one page at a time (Prev/Next below) rather than a long stacked
+  // scroll, so each physical passbook page can be checked individually.
+  const clampedPageIndex = Math.min(previewPageIndex, Math.max(0, previewPages.length - 1));
+  const currentPreviewPage = previewPages[clampedPageIndex];
+  const previewHtml = currentPreviewPage
+    ? buildPrintDoc(previewTitle, [currentPreviewPage.body], pageWMm, pageHMm, bookHMm, detailLineH, true)
     : '';
 
   const confirmFlip = (nextPage: number, total: number) => new Promise<boolean>(resolve => {
@@ -481,11 +539,11 @@ const PassBookPrinting: React.FC = () => {
         colorBorder: isDark ? '#334155' : '#e2e8f0',
       }
     }}>
-      <div className={`h-screen flex flex-col overflow-hidden font-sans ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+      <div className={`pbp-page h-screen flex flex-col overflow-hidden font-sans ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
 
         {/* Header */}
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className={`px-4 py-3 flex items-center justify-between shrink-0 ${header}`}>
+          className={`pbp-header px-4 py-3 flex items-center justify-between shrink-0 ${header}`}>
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/30">
               <BookOpen size={18} className="text-white" />
@@ -502,8 +560,8 @@ const PassBookPrinting: React.FC = () => {
 
           {/* Member Input */}
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className={`rounded-xl overflow-hidden shrink-0 ${panel}`}>
-            <div className={`px-5 py-3 flex items-center gap-2 ${panelHd}`}>
+            className={`pbp-panel rounded-xl overflow-hidden shrink-0 ${panel}`}>
+            <div className={`pbp-panel-header px-5 py-3 flex items-center gap-2 ${panelHd}`}>
               <User size={14} className="text-indigo-400" />
               <h2 className={`text-xs font-black uppercase tracking-wider ${text}`}>Member Details</h2>
             </div>
@@ -516,7 +574,7 @@ const PassBookPrinting: React.FC = () => {
                     onChange={e => setMemberNo(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleLoad()}
                     placeholder="e.g. 610031401"
-                    className={`flex-1 h-9 border rounded-lg px-3 text-sm focus:outline-none transition-colors ${inpBg}`}
+                    className={`pbp-input flex-1 h-9 border rounded-lg px-3 text-sm focus:outline-none transition-colors ${inpBg}`}
                   />
                   <button onClick={() => setShowMemberLookup(true)}
                     className={`h-9 px-3 rounded-lg transition-all flex items-center gap-1.5 ${btnSec}`}>
@@ -550,9 +608,9 @@ const PassBookPrinting: React.FC = () => {
 
           {/* Tracking & Transactions */}
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-            className={`rounded-xl overflow-hidden flex-1 flex flex-col min-h-0 ${panel}`}>
+            className={`pbp-panel rounded-xl overflow-hidden flex-1 flex flex-col min-h-0 ${panel}`}>
 
-            <div className={`px-5 py-3 flex items-center gap-2 shrink-0 ${panelHd}`}>
+            <div className={`pbp-panel-header px-5 py-3 flex items-center gap-2 shrink-0 ${panelHd}`}>
               <FileText size={14} className={isDark ? 'text-amber-400' : 'text-amber-500'} />
               <h2 className={`text-xs font-black uppercase tracking-wider ${text}`}>Pass Book Printing Details</h2>
               {data && (
@@ -766,6 +824,50 @@ const PassBookPrinting: React.FC = () => {
           }>
           {previewKind && (
             <div className="space-y-2">
+              {/* Size presets — different passbook vendors/models use different physical sizes */}
+              <div className="flex items-end gap-2 flex-wrap">
+                <div className="space-y-1">
+                  <label className={`block fz-small font-bold uppercase tracking-wider ${muted}`}>Preset</label>
+                  <Select
+                    {...(selectedPreset ? { value: selectedPreset } : {})}
+                    placeholder="Custom"
+                    onChange={(v: string) => applyPreset(v)}
+                    style={{ minWidth: 200 }}
+                    options={presets.map(p => ({ value: p.name, label: p.name }))}
+                  />
+                </div>
+                {!savingPreset ? (
+                  <button onClick={() => { setNewPresetName(selectedPreset || ''); setSavingPreset(true); }}
+                    className={`h-8 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${btnSec}`}>
+                    <Save size={12} /> Save as preset
+                  </button>
+                ) : (
+                  <div className="flex items-end gap-1.5">
+                    <input
+                      autoFocus
+                      value={newPresetName}
+                      onChange={e => setNewPresetName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveCurrentAsPreset(); if (e.key === 'Escape') setSavingPreset(false); }}
+                      placeholder="Preset name"
+                      className={`h-8 border rounded-lg px-2 text-xs focus:outline-none ${inpBg}`}
+                    />
+                    <button onClick={saveCurrentAsPreset} disabled={!newPresetName.trim()}
+                      className="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-40">
+                      Save
+                    </button>
+                    <button onClick={() => setSavingPreset(false)}
+                      className={`h-8 px-3 rounded-lg text-xs font-bold transition-all ${btnSec}`}>
+                      Cancel
+                    </button>
+                  </div>
+                )}
+                {selectedPreset && (
+                  <button onClick={deleteSelectedPreset} title="Delete this preset"
+                    className="h-8 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-rose-700/90 hover:bg-rose-600 text-white">
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </div>
               <div className="flex items-end gap-4 flex-wrap">
                 {([
                   { label: 'Page width (in)', key: 'widthIn', step: 0.1, min: 2 },
@@ -781,7 +883,7 @@ const PassBookPrinting: React.FC = () => {
                         const v = parseFloat(e.target.value);
                         if (Number.isFinite(v) && v > 0) updatePageSetup({ [f.key]: v } as Partial<PageSetup>);
                       }}
-                      className={`w-20 h-8 border rounded-lg px-2 text-xs focus:outline-none ${inpBg}`}
+                      className={`pbp-input w-20 h-8 border rounded-lg px-2 text-xs focus:outline-none ${inpBg}`}
                     />
                   </div>
                 ))}
@@ -792,6 +894,19 @@ const PassBookPrinting: React.FC = () => {
                 srcDoc={previewHtml}
                 style={{ width: '100%', height: 420, border: 'none', borderRadius: 8, background: '#3f434a' }}
               />
+              {previewPages.length > 1 && (
+                <div className="flex items-center justify-center gap-3">
+                  <button onClick={() => setPreviewPageIndex(i => Math.max(0, i - 1))} disabled={clampedPageIndex === 0}
+                    className={`h-8 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-30 ${btnSec}`}>
+                    <ChevronLeft size={13} /> Prev
+                  </button>
+                  <span className={`fz-small font-bold ${muted}`}>Page {clampedPageIndex + 1} of {previewPages.length}</span>
+                  <button onClick={() => setPreviewPageIndex(i => Math.min(previewPages.length - 1, i + 1))} disabled={clampedPageIndex === previewPages.length - 1}
+                    className={`h-8 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-30 ${btnSec}`}>
+                    Next <ChevronRight size={13} />
+                  </button>
+                </div>
+              )}
               <p className={`fz-caption ${muted}`}>
                 {previewPages.length} page{previewPages.length > 1 ? 's' : ''}, {pageSetup.linesPerPage} lines per page.
                 Content prints from the top of the inserted book; the dashed line in the preview marks where the passbook page (fold) ends.
@@ -801,6 +916,21 @@ const PassBookPrinting: React.FC = () => {
           )}
         </Modal>
       </div>
+
+      <style>{`
+        /* ── Pass Book Printing — dark mode (screen chrome only; the passbook
+           print preview iframe renders the actual print job and stays as-is) ── */
+        html.dark .pbp-page { background-color: #000000 !important; }
+        html.dark .pbp-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .pbp-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .pbp-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .pbp-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .pbp-page .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .pbp-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .ant-modal-content,
+        html.dark .ant-modal-header { background-color: #1c1c1e !important; }
+        html.dark .ant-modal-title { color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

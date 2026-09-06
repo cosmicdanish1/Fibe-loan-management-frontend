@@ -232,9 +232,47 @@ const CommunicationCenter: React.FC = () => {
         .ch-send-btn{transition:transform .15s,box-shadow .15s}
         .ch-send-btn:hover{transform:scale(1.08) !important;box-shadow:0 4px 12px rgba(34,197,94,0.3) !important}
         .ch-retry-btn:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(245,158,11,0.3)}
+
+        /* ── Communication Center — dark mode (Settings-panel palette) ── */
+        html.dark .comm-hub { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .comm-hub .bg-slate-900 { background-color: #000000 !important; }
+        html.dark .comm-hub .bg-slate-800 { background-color: #1c1c1e !important; }
+        html.dark .comm-hub .bg-slate-800\/80 { background-color: #0c0c0e !important; }
+        html.dark .comm-hub .bg-slate-800\/60 { background-color: #0c0c0e !important; }
+        html.dark .comm-hub .border-slate-700 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .comm-hub .border-slate-700\/50 { border-color: rgba(255,255,255,.07) !important; }
+        html.dark .comm-hub .border-slate-600 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .comm-hub .bg-slate-700\/50 { background-color: rgba(255,255,255,.05) !important; }
+        html.dark .comm-hub .text-slate-200 { color: #f5f5f7 !important; }
+        html.dark .comm-hub .text-slate-300 { color: #71717a !important; }
+        html.dark .comm-hub .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .comm-hub .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .comm-hub .text-slate-600 { color: #71717a !important; }
+        html.dark .comm-hub input,
+        html.dark .comm-hub textarea,
+        html.dark .comm-hub .ant-input,
+        html.dark .comm-hub .ant-input-affix-wrapper,
+        html.dark .comm-hub .ant-select-selector {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+
+        /* Modals are React-portaled to <body>, so they are styled by unscoped class names below */
+        html.dark .ch-lookup-modal .ant-modal-content,
+        html.dark .ch-channel-modal .ant-modal-content { background-color: #1c1c1e !important; }
+        html.dark .ch-lookup-modal .ant-modal-header,
+        html.dark .ch-channel-modal .ant-modal-header { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ch-channel-modal .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .ch-channel-modal .text-slate-800 { color: #f5f5f7 !important; }
+        html.dark .ch-channel-modal .text-slate-600 { color: #8e8e93 !important; }
+        html.dark .ch-channel-modal .bg-white { background-color: #1c1c1e !important; }
+        html.dark .ch-channel-modal .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ch-channel-modal .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ch-channel-modal button.border-slate-200,
+        html.dark .ch-channel-modal button.border-slate-300 { background-color: rgba(255,255,255,.03) !important; }
+        html.dark .ch-channel-modal .hover\:bg-slate-50:hover { background-color: rgba(255,255,255,.05) !important; }
       `}</style>
 
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50'}`}>
+      <div className={`comm-hub h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50'}`}>
 
         {/* ── Header ── */}
         <div className="ch-header-bg bg-gradient-to-r from-slate-900 to-slate-900 px-4 py-2.5 flex items-center justify-between shrink-0 shadow-xl relative overflow-hidden"
@@ -545,7 +583,8 @@ const CommunicationCenter: React.FC = () => {
 
       <Modal
         title={<div className="flex items-center gap-2"><div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center"><Search size={14} className="text-white" /></div><span className="font-black text-sm">Member Lookup</span></div>}
-        open={showLookup} onCancel={() => setShowLookup(false)} footer={null} width={1000} centered destroyOnClose>
+        open={showLookup} onCancel={() => setShowLookup(false)} footer={null} width={1000} centered destroyOnClose
+        className="ch-lookup-modal">
         <div className="p-2"><MemberLookup isModal onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} /></div>
       </Modal>
 
@@ -554,7 +593,8 @@ const CommunicationCenter: React.FC = () => {
         title={<div className="flex items-center gap-2"><Send size={16} className="text-indigo-600" /><span className="font-black text-sm uppercase">Choose Delivery Channel</span></div>}
         open={showChannelPicker}
         onCancel={() => { setShowChannelPicker(false); setPendingSendAction(null); }}
-        footer={null} width={420} centered destroyOnClose>
+        footer={null} width={420} centered destroyOnClose
+        className="ch-channel-modal">
         <div className="py-4 space-y-3">
           <p className="text-xs text-slate-500 mb-3">Select how you want to deliver this notification:</p>
 

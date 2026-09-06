@@ -138,7 +138,8 @@ class ApiService {
         const errorData = await response.json().catch(() => ({}));
         const duration = Date.now() - startTime;
         rendererLogger.apiCall(options.method || 'GET', endpoint, response.status, duration, requestId, requestBody, errorData);
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        const serverMessage = Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message;
+        throw new Error(serverMessage || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -166,11 +167,14 @@ class ApiService {
       const duration = Date.now() - startTime;
       rendererLogger.apiCall(options.method || 'GET', endpoint, 0, duration);
       const timedOut = !usesOwnSignal && (error as any)?.name === 'AbortError';
+      const message = timedOut
+        ? `Request timed out after ${Math.round(timeoutMs / 1000)}s. Please check your connection and try again.`
+        : error instanceof Error ? error.message : 'Unknown error occurred';
+      // Both fields carry the same text — callers vary on which one they read.
       return {
         success: false,
-        error: timedOut
-          ? `Request timed out after ${Math.round(timeoutMs / 1000)}s. Please check your connection and try again.`
-          : error instanceof Error ? error.message : 'Unknown error occurred',
+        error: message,
+        message,
       };
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
@@ -458,6 +462,29 @@ class ApiService {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
+    return response.blob();
+  }
+
+  /**
+   * Fetch a JWT-protected file (signature/photo/document) as a Blob for use
+   * as an <img>/<a> object URL. Plain <img src="..."> requests can't carry
+   * an Authorization header, so endpoints guarded by JwtAuthGuard 401 when
+   * loaded that way — this goes through fetch() with the header instead.
+   * Returns null on 404 (no file saved yet) rather than throwing.
+   */
+  async fetchProtectedFile(endpoint: string): Promise<Blob | null> {
+    const baseURL = await this.getBaseURL();
+    const url = `${baseURL}${endpoint}`;
+    const token = this.token || localStorage.getItem('accessToken');
+    const response = await fetch(url, {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
     return response.blob();
   }
 
@@ -2399,6 +2426,14 @@ class ApiService {
     return this.request<any[]>('/admin/financial-year/list');
   }
 
+  // Distinct from getFinancialYears() above: that one returns raw
+  // financial_year entities ({yearCode, startDate: Date, endDate: Date}, no
+  // label). This hits /utilities/financial-years, which returns the
+  // {yearcode, startDate, endDate, label} shape HeadOpeningBalance needs.
+  async getHeadOpeningBalanceYears(): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>('/utilities/financial-years');
+  }
+
   async createFinancialYear(startDate: string, endDate: string): Promise<ApiResponse<any>> {
     return this.request<any>('/admin/financial-year/create', {
       method: 'POST',
@@ -2425,6 +2460,16 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(transferData),
     });
+  }
+
+  async getClosingEntriesPreview(yearCode: number): Promise<ApiResponse<{
+    rows: { code: string; name: string; pflag: string; closingBal: number }[];
+    totalIncome: number;
+    totalExpense: number;
+    netProfit: number;
+    reserveHead: { code: string; name: string } | null;
+  }>> {
+    return this.request(`/admin/financial-year/closing-entries/${yearCode}`);
   }
 
   async initiatePLYearEndProcess(): Promise<ApiResponse> {

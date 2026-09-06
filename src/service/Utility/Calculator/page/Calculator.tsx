@@ -188,7 +188,7 @@ const Calculator: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+      <div className="calc-app h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
@@ -500,6 +500,35 @@ const Calculator: React.FC = () => {
           .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
           input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
           input[type=number] { -moz-appearance: textfield; }
+
+          /* ── Calculator — dark mode ── */
+          html.dark .calc-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .calc-app .bg-white { background-color: #1c1c1e !important; }
+          html.dark .calc-app .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .calc-app .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .calc-app .bg-slate-900 { background-color: #0c0c0e !important; }
+          html.dark .calc-app .bg-\\[\\#f8fafc\\] { background-color: #1c1c1e !important; }
+          html.dark .calc-app .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+          html.dark .calc-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .calc-app input,
+          html.dark .calc-app select,
+          html.dark .calc-app textarea {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+          }
+          html.dark .calc-app label { color: #8e8e93 !important; }
+          html.dark .calc-app .text-slate-900 { color: #f5f5f7 !important; }
+          html.dark .calc-app .text-slate-800 { color: #f5f5f7 !important; }
+          html.dark .calc-app .text-slate-700 { color: #f5f5f7 !important; }
+          html.dark .calc-app .text-slate-600 { color: #8e8e93 !important; }
+          html.dark .calc-app .text-slate-500 { color: #8e8e93 !important; }
+          html.dark .calc-app .text-slate-400 { color: #71717a !important; }
+          html.dark .calc-app .text-slate-300 { color: #71717a !important; }
+          html.dark .calc-app .hover\\:bg-slate-50:hover { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .calc-app .text-emerald-500 { color: #34d399 !important; }
+          html.dark .calc-app .text-emerald-600 { color: #34d399 !important; }
+          html.dark .calc-app .bg-emerald-50 { background-color: rgba(52,211,153,0.08) !important; }
+          html.dark .calc-app .text-amber-600 { color: #fbbf24 !important; }
+          html.dark .calc-app .bg-amber-50 { background-color: rgba(251,191,36,0.08) !important; }
         `}</style>
       </div>
     </ConfigProvider>

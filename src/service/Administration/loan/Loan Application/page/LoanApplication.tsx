@@ -11,12 +11,25 @@ import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 interface LoanEligibilityStatus {
   isEligible: boolean;
   loanAmount: number;
+
+  existingOutstanding: number;
+  totalExposure: number;
+  maxLimit: number;
+  withinMaxLimit: boolean;
+
+  rdPct: number;
+  requiredRd: number;
+  currentRd: number;
+  rdShortfall: number;
+
+  sharePct: number;
   requiredShare: number;
   currentShare: number;
-  additionalShareRequired: number;
-  requiredFd: number;
-  currentFd: number;
-  additionalFdRequired: number;
+  shareShortfall: number;
+
+  totalShortfall: number;
+  netDisbursement: number;
+
   message?: string;
 }
 
@@ -50,12 +63,12 @@ const LoanApplication: React.FC = () => {
   React.useEffect(() => {
     const amount = parseFloat(state.loanDetails.loanAmount) || 0;
     const memberNo = state.loanDetails.memberNo;
+    const loanType = state.loanDetails.loanType;
 
-    // BUG FIX 40 (frontend half — backend's loan-eligibility.service.ts fixed the same
-    // boundary): was `<= 500000`, so a loan of exactly ₹5,00,000 never even fired this check —
-    // no badge shown, Save stayed enabled, and the rejection would only surface late, from the
-    // backend, after the user already tried to save.
-    if (!memberNo || amount < 500000) {
+    // The Regular Loan rules (max limit, RD %, Share %) apply to RLN at ANY
+    // amount — there is no minimum threshold. Emergency Loan (ALN) and Loan
+    // Against Recovery (ELN) are exempt entirely.
+    if (!memberNo || amount <= 0 || (loanType || '').toUpperCase() !== 'RLN') {
       setEligibilityStatus(null);
       setIsCheckingEligibility(false);
       return;
@@ -67,7 +80,10 @@ const LoanApplication: React.FC = () => {
     eligibilityDebounceRef.current = setTimeout(async () => {
       try {
         const base = await getApiBaseUrl();
-        const resp = await fetch(`${base}/loans/eligibility/${memberNo}?amount=${amount}`);
+        const token = localStorage.getItem('accessToken');
+        const resp = await fetch(`${base}/loans/eligibility/${memberNo}?amount=${amount}&loanType=${loanType}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (resp.ok) {
           const result = await resp.json();
           const data = result.data || result;
@@ -86,7 +102,7 @@ const LoanApplication: React.FC = () => {
     return () => {
       if (eligibilityDebounceRef.current) clearTimeout(eligibilityDebounceRef.current);
     };
-  }, [state.loanDetails.loanAmount, state.loanDetails.memberNo]);
+  }, [state.loanDetails.loanAmount, state.loanDetails.memberNo, state.loanDetails.loanType]);
 
   // Ref updated synchronously so IPC handler always reads the latest target
   const lookupTargetRef = React.useRef<'memberNo' | 'surety1' | 'surety2'>('memberNo');
@@ -108,7 +124,8 @@ const LoanApplication: React.FC = () => {
   const fetchMemberBalances = async (memberNo: string) => {
     try {
       const url = `${await getApiBaseUrl()}/loans/member/${memberNo}/balances`;
-      const resp = await fetch(url);
+      const token = localStorage.getItem('accessToken');
+      const resp = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       if (resp.ok) {
         const json = await resp.json();
         const b = json.data || json;
@@ -138,7 +155,8 @@ const LoanApplication: React.FC = () => {
       const url = `${await getApiBaseUrl()}${endpoint}`;
       console.log('Fetch URL:', url);
 
-      const response = await fetch(url);
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       console.log('Response status:', response.status);
 
       if (response.ok) {
@@ -186,7 +204,10 @@ const LoanApplication: React.FC = () => {
           // Enrich with full details from API in background
           try {
             const endpoint = API_ROUTES.members.details(no);
-            const resp = await fetch(`${await getApiBaseUrl()}${endpoint}`);
+            const token = localStorage.getItem('accessToken');
+            const resp = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             if (resp.ok) {
               const result = await resp.json();
               const d = result.data || result;
@@ -211,7 +232,10 @@ const LoanApplication: React.FC = () => {
           // Fetch detailed member information
           console.log(`🔍 Fetching detailed member info for: ${memberData.memberNo}`);
           const endpoint = API_ROUTES.members.details(memberData.memberNo);
-          const response = await fetch(`${await getApiBaseUrl()}${endpoint}`);
+          const token = localStorage.getItem('accessToken');
+          const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
 
           if (response.ok) {
             const result = await response.json();
@@ -454,20 +478,22 @@ const LoanApplication: React.FC = () => {
       return;
     }
 
-    // 5% Share & FD eligibility check
+    // Regular Loan max-limit check. An RD/Share shortfall does NOT block the
+    // application — it is withheld from the disbursement instead (confirmed
+    // below), so only a genuine over-limit breach stops the save here.
     if (eligibilityStatus && !eligibilityStatus.isEligible) {
       const detail =
-        `The member does not meet the 5% Share Value and 5% FD balance requirements.\n\n` +
-        `Share: Current ₹${eligibilityStatus.currentShare.toLocaleString('en-IN')} / Required ₹${eligibilityStatus.requiredShare.toLocaleString('en-IN')}` +
-        (eligibilityStatus.additionalShareRequired > 0 ? ` (Shortfall: ₹${eligibilityStatus.additionalShareRequired.toLocaleString('en-IN')})` : '') +
-        `\nFD: Current ₹${eligibilityStatus.currentFd.toLocaleString('en-IN')} / Required ₹${eligibilityStatus.requiredFd.toLocaleString('en-IN')}` +
-        (eligibilityStatus.additionalFdRequired > 0 ? ` (Shortfall: ₹${eligibilityStatus.additionalFdRequired.toLocaleString('en-IN')})` : '');
+        `Total regular loan exposure exceeds the permitted maximum.\n\n` +
+        `Existing Regular Outstanding : ₹${eligibilityStatus.existingOutstanding.toLocaleString('en-IN')}\n` +
+        `New Loan Requested           : ₹${eligibilityStatus.loanAmount.toLocaleString('en-IN')}\n` +
+        `Total Exposure               : ₹${eligibilityStatus.totalExposure.toLocaleString('en-IN')}\n` +
+        `Maximum Limit                : ₹${eligibilityStatus.maxLimit.toLocaleString('en-IN')}`;
 
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
           type: 'error',
           title: 'Loan Eligibility Failed',
-          message: 'Cannot Save — 5% Share/FD Rule Not Met',
+          message: 'Cannot Save — Maximum Regular Loan Limit Exceeded',
           detail,
           buttons: ['OK'],
           defaultId: 0,
@@ -476,6 +502,33 @@ const LoanApplication: React.FC = () => {
         alert(`❌ Eligibility Failed\n\n${detail}`);
       }
       return;
+    }
+
+    // Shortfall is allowed to proceed, but the user should know the member
+    // will receive less than the sanctioned amount before they commit.
+    if (eligibilityStatus && eligibilityStatus.totalShortfall > 0) {
+      const detail =
+        `The member is short of the RD / Share Value requirement. The shortfall will be ` +
+        `withheld from the disbursement — it is NOT added to the loan.\n\n` +
+        `Share : Current ₹${eligibilityStatus.currentShare.toLocaleString('en-IN')} / Required ₹${eligibilityStatus.requiredShare.toLocaleString('en-IN')}` +
+        (eligibilityStatus.shareShortfall > 0 ? ` (Shortfall ₹${eligibilityStatus.shareShortfall.toLocaleString('en-IN')})` : '') +
+        `\nRD    : Current ₹${eligibilityStatus.currentRd.toLocaleString('en-IN')} / Required ₹${eligibilityStatus.requiredRd.toLocaleString('en-IN')}` +
+        (eligibilityStatus.rdShortfall > 0 ? ` (Shortfall ₹${eligibilityStatus.rdShortfall.toLocaleString('en-IN')})` : '') +
+        `\n\nTotal Withheld : ₹${eligibilityStatus.totalShortfall.toLocaleString('en-IN')}` +
+        `\nNet Payable    : ₹${eligibilityStatus.netDisbursement.toLocaleString('en-IN')}`;
+
+      if (window.electronAPI?.showMessageBox) {
+        const res = await window.electronAPI.showMessageBox({
+          type: 'warning',
+          title: 'RD / Share Shortfall',
+          message: 'Shortfall Will Be Withheld From Disbursement',
+          detail,
+          buttons: ['Continue', 'Cancel'],
+          defaultId: 0,
+          cancelId: 1,
+        });
+        if ((res as any)?.response === 1) return;
+      }
     }
 
     console.log('✅ All validations passed');
@@ -512,10 +565,12 @@ const LoanApplication: React.FC = () => {
       console.log('Data:', JSON.stringify(loanApplicationData, null, 2));
 
       // Save to backend
+      const saveToken = localStorage.getItem('accessToken');
       const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(saveToken ? { Authorization: `Bearer ${saveToken}` } : {}),
         },
         body: JSON.stringify(loanApplicationData)
       });
@@ -753,55 +808,55 @@ const LoanApplication: React.FC = () => {
       </div>
 
       <style>{`
-        /* ── Loan Application — dark mode ── */
-        html.dark .loan-app { background-color: #0f172a !important; color: #e2e8f0 !important; }
-        html.dark .loan-tab-bar { background-color: #1e293b !important; border-color: #334155 !important; }
-        html.dark .loan-tab-bar button { background-color: #1e293b !important; color: #94a3b8 !important; }
-        html.dark .loan-tab-bar button.border-b-2 { background-color: #0f172a !important; color: #60a5fa !important; border-bottom-color: #3b82f6 !important; }
-        html.dark .loan-content { background-color: #0f172a !important; }
-        html.dark .loan-actions { background-color: #1e293b !important; border-color: #334155 !important; }
+        /* ── Loan Application — dark mode (Settings-panel palette trial) ── */
+        html.dark .loan-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .loan-tab-bar { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .loan-tab-bar button { background-color: transparent !important; color: #8e8e93 !important; }
+        html.dark .loan-tab-bar button.border-b-2 { background-color: transparent !important; color: #60a5fa !important; border-bottom-color: #3b82f6 !important; }
+        html.dark .loan-content { background-color: #000000 !important; }
+        html.dark .loan-actions { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
         html.dark .loan-actions button:not(.bg-blue-600):not(.bg-blue-400) {
-          background-color: #1e293b !important; border-color: #475569 !important; color: #cbd5e1 !important;
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
         }
-        /* Left & right panels */
-        html.dark .loan-left-panel { background-color: #1e293b !important; border-color: #334155 !important; }
-        html.dark .loan-right-panel { background-image: none !important; background-color: #1e293b !important; border-color: #334155 !important; }
-        html.dark .loan-member-hdr { border-color: #334155 !important; }
-        html.dark .loan-member-hdr .text-slate-800 { color: #e2e8f0 !important; }
-        html.dark .loan-member-card { background-color: #0f172a !important; border-color: #334155 !important; }
+        /* Left & right panels (cards) */
+        html.dark .loan-left-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .loan-right-panel { background-image: none !important; background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .loan-member-hdr { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .loan-member-hdr .text-slate-800 { color: #f5f5f7 !important; }
+        html.dark .loan-member-card { background-color: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
         /* All form inputs */
         html.dark .loan-app input,
         html.dark .loan-app select,
         html.dark .loan-app textarea {
-          background-color: #1e293b !important; color: #e2e8f0 !important; border-color: #475569 !important;
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
         }
-        html.dark .loan-app label { color: #94a3b8 !important; }
+        html.dark .loan-app label { color: #8e8e93 !important; }
         /* Text colours */
-        html.dark .loan-app .text-slate-800 { color: #e2e8f0 !important; }
-        html.dark .loan-app .text-slate-700 { color: #cbd5e1 !important; }
-        html.dark .loan-app .text-slate-600 { color: #94a3b8 !important; }
-        html.dark .loan-app .text-slate-500 { color: #64748b !important; }
-        html.dark .loan-app .text-slate-400 { color: #475569 !important; }
+        html.dark .loan-app .text-slate-800 { color: #f5f5f7 !important; }
+        html.dark .loan-app .text-slate-700 { color: #f5f5f7 !important; }
+        html.dark .loan-app .text-slate-600 { color: #8e8e93 !important; }
+        html.dark .loan-app .text-slate-500 { color: #71717a !important; }
+        html.dark .loan-app .text-slate-400 { color: #71717a !important; }
         /* Surety table */
         html.dark .surety-table thead tr,
-        html.dark .surety-table .surety-hdr { background-color: #1e293b !important; border-color: #334155 !important; }
-        html.dark .surety-table th { color: #94a3b8 !important; border-color: #334155 !important; }
-        html.dark .surety-table td { border-color: #334155 !important; color: #e2e8f0 !important; }
-        html.dark .surety-table tr:hover { background-color: rgba(59,130,246,0.08) !important; }
+        html.dark .surety-table .surety-hdr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.07) !important; }
+        html.dark .surety-table th { color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+        html.dark .surety-table td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
+        html.dark .surety-table tr:hover { background-color: rgba(255,255,255,.05) !important; }
         /* Misc */
-        html.dark .loan-app .bg-slate-50 { background-color: #1e293b !important; }
-        html.dark .loan-app .bg-slate-100 { background-color: #1e293b !important; }
-        html.dark .loan-app .bg-white { background-color: #0f172a !important; }
+        html.dark .loan-app .bg-slate-50 { background-color: #1c1c1e !important; }
+        html.dark .loan-app .bg-slate-100 { background-color: #1c1c1e !important; }
+        html.dark .loan-app .bg-white { background-color: #1c1c1e !important; }
         html.dark .loan-app .bg-blue-50 { background-color: rgba(59,130,246,0.08) !important; }
-        html.dark .loan-app .border-slate-200 { border-color: #334155 !important; }
-        html.dark .loan-app .border-slate-300 { border-color: #475569 !important; }
+        html.dark .loan-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .loan-app .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
         /* Loading spinner text */
         html.dark .loan-app .text-blue-600 { color: #60a5fa !important; }
         html.dark .loan-app .text-green-600 { color: #34d399 !important; }
         html.dark .loan-app .text-amber-600 { color: #fbbf24 !important; }
         html.dark .loan-app .text-orange-600 { color: #fb923c !important; }
-        html.dark .loan-app .text-red-600 { color: #f87171 !important; }
-        html.dark .loan-app .text-slate-300 { color: #334155 !important; }
+        html.dark .loan-app .text-red-600 { color: #ff453a !important; }
+        html.dark .loan-app .text-slate-300 { color: rgba(255,255,255,.08) !important; }
       `}</style>
     </div>
   );

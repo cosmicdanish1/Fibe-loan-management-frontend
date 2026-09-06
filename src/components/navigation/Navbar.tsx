@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { UserProfileMenu } from '../UserProfileMenu';
 import { AlertCircle, X } from 'lucide-react';
 import { apiService } from '../../services/api';
+import { useAuth } from '../../auth/context/AuthContext';
+import { ACTION_ROUTE_MAP, isActionAllowed } from '../../config/menuActions';
 
 interface MenuItem {
   title: string;
@@ -64,6 +66,7 @@ const navConfig: NavItem[] = [
           { title: '1 Transfer Entries For Closing', action: 'FIN_YEAR_TRANSFER' },
           { title: '2 Financial Year Closing', action: 'FIN_YEAR_CLOSING' },
           { title: '3 Balance Transfer', action: 'FIN_YEAR_BALANCE_TRANSFER' },
+          { title: '4 P and L Year End Process', action: 'FIN_YEAR_PL_PROCESS' },
         ]
       },
       { title: 'Saakh Score — Member Health', action: 'SAAKH_SCORE' },
@@ -348,7 +351,42 @@ const ExitConfirmationModal: React.FC<ExitConfirmationModalProps> = ({ isOpen, o
   );
 };
 
+// Keeps a menu item only if its own action is allowed, or (for a submenu) it
+// still has at least one allowed item underneath after filtering — so a role
+// with no rights in a whole section (e.g. Security) doesn't see an empty
+// "Security" submenu with nothing clickable inside it.
+function filterMenuItems(items: MenuItem[], allowedActions: string[] | null | undefined): MenuItem[] {
+  return items.reduce<MenuItem[]>((acc, item) => {
+    if (item.submenu) {
+      const filteredSubmenu = filterMenuItems(item.submenu, allowedActions);
+      if (filteredSubmenu.length > 0) acc.push({ ...item, submenu: filteredSubmenu });
+    } else if (isActionAllowed(allowedActions, item.action)) {
+      acc.push(item);
+    }
+    return acc;
+  }, []);
+}
+
+function filterNavConfig(config: NavItem[], allowedActions: string[] | null | undefined): NavItem[] {
+  return config.reduce<NavItem[]>((acc, navItem) => {
+    if (navItem.items.length === 0) {
+      // Top-level items with no dropdown (Exit, Settings) act on navItem.action directly.
+      if (isActionAllowed(allowedActions, navItem.action)) acc.push(navItem);
+      return acc;
+    }
+    const filteredItems = filterMenuItems(navItem.items, allowedActions);
+    if (filteredItems.length > 0) acc.push({ ...navItem, items: filteredItems });
+    return acc;
+  }, []);
+}
+
 const Navbar: React.FC = () => {
+  const { user } = useAuth();
+  const visibleNavConfig = useMemo(
+    () => filterNavConfig(navConfig, user?.allowedActions),
+    [user?.allowedActions],
+  );
+
   const [menuState, setMenuState] = useState<{ activeMenu: string | null, activeSubmenus: Record<string, boolean> }>({ activeMenu: null, activeSubmenus: {} });
   const [showExitModal, setShowExitModal] = useState(false);
   const navbarRef = useRef<HTMLDivElement>(null);
@@ -408,164 +446,7 @@ const Navbar: React.FC = () => {
       return;
     }
 
-    const serviceMap: Record<string, { route: string; electronMethod: string }> = {
-      // Loan related
-      'LOAN_APP': { route: '/loan-application', electronMethod: 'openLoanAppWindow' },
-      'CHANGE_LOAN_SURETY': { route: '/change-loan-surety', electronMethod: 'openNewWindow' },
-      'INTEREST_CALC_POST': { route: '/interest-calculation-posting', electronMethod: 'openNewWindow' },
-
-      // Payment related
-      'RECEIPT_PAYMENT_VOUCHER_CREATION': { route: '/transaction/receipt-payment/payment-voucher-creation', electronMethod: 'openNewWindow' },
-      'VOUCHER_PAYMENT': { route: '/transaction/receipt-payment/voucher-payment', electronMethod: 'openNewWindow' },
-      'RECEIPT_PAYMENT': { route: '/transaction/receipt-payment/receipt', electronMethod: 'openNewWindow' },
-      'RECEIPT_DIVIDEND_PAYMENT': { route: '/transaction/receipt-payment/dividend-payment', electronMethod: 'openNewWindow' },
-
-      // Fixed Deposit related
-      'FD_RECEIPT': { route: '/transaction/fixed-deposit/receipt', electronMethod: 'openNewWindow' },
-      'FD_INTEREST_VOUCHER_POSTING': { route: '/transaction/fixed-deposit/interest-voucher-posting', electronMethod: 'openNewWindow' },
-      'FD_WITHDRAWAL_INT_PAYMENT': { route: '/transaction/fixed-deposit/withdrawal-interest-payment', electronMethod: 'openNewWindow' },
-
-      // Transaction components
-      'SAVING_RECEIPT_PAYMENT': { route: '/transaction/saving', electronMethod: 'openNewWindow' },
-      'JOURNAL_TRANSFER_ENTRY': { route: '/transaction/journal-transfer', electronMethod: 'openNewWindow' },
-      'LOAN_PAYMENT': { route: '/transaction/loan-payment', electronMethod: 'openNewWindow' },
-      'LOAN_REPAYMENT': { route: '/transaction/loan-repayment', electronMethod: 'openNewWindow' },
-      'LOAN_EARLY_CLOSURE': { route: '/transaction/loan-early-closure', electronMethod: 'openNewWindow' },
-      'COMPULSORY_DEPOSIT_TRANSACTION': { route: '/transaction/compulsory-deposit', electronMethod: 'openNewWindow' },
-      'MEMBER_BALANCE_TRANSFER': { route: '/transaction/member-balance-transfer', electronMethod: 'openNewWindow' },
-      'PASS_TRANSACTIONS': { route: '/transaction/pass-transactions', electronMethod: 'openNewWindow' },
-
-      // Administration
-      'DAY_END': { route: '/day-end', electronMethod: 'openNewWindow' },
-      'INTEREST_CALC': { route: '/interest-calculation', electronMethod: 'openNewWindow' },
-      'DEPOSIT_LOAN_SLAB': { route: '/deposit-loan-slab', electronMethod: 'openNewWindow' },
-      'HEAD_ADD_MOD': { route: '/head-addition-modification', electronMethod: 'openNewWindow' },
-      'HEAD_OPEN_BAL': { route: '/head-opening-balance', electronMethod: 'openNewWindow' },
-
-
-      // Security
-      'USER_MANAGEMENT': { route: '/user-management', electronMethod: 'openNewWindow' },
-      'ROLE_MANAGEMENT': { route: '/role-management', electronMethod: 'openNewWindow' },
-      'CHANGE_PASSWORD': { route: '/change-password', electronMethod: 'openNewWindow' },
-      'MY_PROFILE': { route: '/my-profile', electronMethod: 'openNewWindow' },
-      'LOGOUT_USER': { route: '/logout-user', electronMethod: 'openNewWindow' },
-
-      // Financial Year
-      'FIN_YEAR_TRANSFER': { route: '/financial-year/transfer-entries', electronMethod: 'openNewWindow' },
-      'FIN_YEAR_CLOSING': { route: '/financial-year/closing', electronMethod: 'openNewWindow' },
-      'FIN_YEAR_BALANCE_TRANSFER': { route: '/financial-year/balance-transfer', electronMethod: 'openNewWindow' },
-
-      // Member Analytics
-      'SAAKH_SCORE': { route: '/saakh-score', electronMethod: 'openNewWindow' },
-
-      // Business Rules and Printing
-      'MODIFY_BIZ_RULES': { route: '/modify-business-rules', electronMethod: 'openNewWindow' },
-      'DEMAND_PRINT_ORDER': { route: '/demand-print-order', electronMethod: 'openNewWindow' },
-
-      // Certificate Setting and Printing
-      'CERT_PARAM_SETTING': { route: '/certificate/parameter-setting', electronMethod: 'openNewWindow' },
-      'FD_CERT_PRINT': { route: '/certificate/fd-printing', electronMethod: 'openNewWindow' },
-      'SHARE_CERT_PRINT': { route: '/certificate/share-printing', electronMethod: 'openNewWindow' },
-      'PASSBOOK_PARAM_SETTING': { route: '/certificate/passbook-parameter', electronMethod: 'openNewWindow' },
-
-      // Masters
-      'MEMBER_MASTER': { route: '/masters/member', electronMethod: 'openNewWindow' },
-      'SIGNATURE_SCANNING': { route: '/masters/signature-scanning', electronMethod: 'openNewWindow' },
-      'SAVING_AC_OPENING': { route: '/masters/saving-account-opening', electronMethod: 'openNewWindow' },
-      'WING_OFFICE_MASTER': { route: '/masters/wing-office', electronMethod: 'openNewWindow' },
-      'MODIFY_FD_AC': { route: '/masters/modify-fd-account', electronMethod: 'openNewWindow' },
-      'MODIFY_MEMBER_BAL': { route: '/masters/modify-member-balance', electronMethod: 'openNewWindow' },
-      'CAST_CATEGORY': { route: '/masters/cast-category', electronMethod: 'openNewWindow' },
-      'DESIGNATION_MASTER': { route: '/masters/designation', electronMethod: 'openNewWindow' },
-      'FD_RD_SB_ENTRY': { route: '/masters/data-entry/fd-rd-sb', electronMethod: 'openNewWindow' },
-      'LOAN_ENTRY': { route: '/masters/data-entry/loan', electronMethod: 'openNewWindow' },
-      'RD_AC_OPENING': { route: '/masters/rd-account/opening', electronMethod: 'openNewWindow' },
-      'PASS_RD_AC': { route: '/masters/rd-account/pass', electronMethod: 'openNewWindow' },
-
-      // Demand & Recovery List
-      'IMPORT_DEMAND_LIST': { route: '/transaction/demand-recovery/import-demand-list', electronMethod: 'openNewWindow' },
-      'GENERATE': { route: '/transaction/demand-recovery/generate', electronMethod: 'openNewWindow' },
-      'UPDATION_LEDGER_POSTING': { route: '/transaction/demand-recovery/updation-ledger-posting', electronMethod: 'openNewWindow' },
-      'PRINT_MEMBERS_DEMAND_LIST': { route: '/transaction/demand-recovery/print-members-demand-list', electronMethod: 'openNewWindow' },
-      'CHANGE_MEMBER_OFFICE': { route: '/transaction/demand-recovery/change-member-office', electronMethod: 'openNewWindow' },
-      'MODIFY_SHORT_RECOVERY': { route: '/transaction/demand-recovery/modify-short-recovery', electronMethod: 'openNewWindow' },
-
-      // Print Vouchers
-      'RECEIPT_PAYMENT_VOUCHER': { route: '/reports/monthly/print-vouchers/receipt-payment', electronMethod: 'openNewWindow' },
-      'JOURNAL_TRANSFER_VOUCHER': { route: '/reports/monthly/print-vouchers/journal-transfer', electronMethod: 'openNewWindow' },
-
-      // Reports
-      'MEMBER_LEDGER_REPORT': { route: '/reports/member-ledger', electronMethod: 'openNewWindow' },
-      'GENERAL_LEDGER': { route: '/reports/general-ledger', electronMethod: 'openNewWindow' },
-      'MEMBER_DETAIL_LEDGER': { route: '/reports/member-detail-ledger', electronMethod: 'openNewWindow' },
-      'ACCOUNT_BALANCE': { route: '/reports/account-balance', electronMethod: 'openNewWindow' },
-      'SURETY_REGISTER': { route: '/reports/surety-register', electronMethod: 'openNewWindow' },
-      'DEPOSIT_DUE_DATE_REGISTER': { route: '/reports/deposit-due-date-register', electronMethod: 'openNewWindow' },
-      'PASS_BOOK_PRINTING': { route: '/reports/pass-book-printing', electronMethod: 'openNewWindow' },
-
-      // Daily Reports
-      'CASH_BOOK_RECEIPTWISE': { route: '/reports/daily/cash-book-receiptwise', electronMethod: 'openNewWindow' },
-      'CASH_BOOK': { route: '/reports/daily/cash-book', electronMethod: 'openNewWindow' },
-      'DAY_BOOK': { route: '/reports/daily/day-book', electronMethod: 'openNewWindow' },
-      'DAY_BOOK_SB': { route: '/reports/daily/day-book-sb', electronMethod: 'openNewWindow' },
-      'CONSOLIDATION_DAILY_AC': { route: '/reports/daily/consolidation', electronMethod: 'openNewWindow' },
-
-      // Monthly Reports
-      'CASH_BOOK_MONTHLY': { route: '/reports/monthly/cash-book-monthly', electronMethod: 'openNewWindow' },
-      'DETAIL_LEDGER': { route: '/reports/monthly/detail-ledger', electronMethod: 'openNewWindow' },
-      'BANK_DETAIL_LEDGER': { route: '/reports/monthly/bank-detail-ledger', electronMethod: 'openNewWindow' },
-      'DEFAULTER_LIST': { route: '/reports/monthly/defaulter-list', electronMethod: 'openNewWindow' },
-      'NEW_LOAN_DISBURSED': { route: '/reports/monthly/new-loan-disbursed', electronMethod: 'openNewWindow' },
-      'MEMBER_LOAN_LEDGER': { route: '/reports/monthly/member-loan-ledger', electronMethod: 'openNewWindow' },
-      'LOAN_ACCOUNT_STATEMENT': { route: '/reports/account-reports/loan-statement', electronMethod: 'openNewWindow' },
-
-      // Yearly Reports
-      'P_L_BALANCE_SHEET': { route: '/reports/yearly/pl-balance-sheet', electronMethod: 'openNewWindow' },
-      'VOTERS_WITHDRAWL_LIST': { route: '/reports/yearly/members/voters-withdrawal-list', electronMethod: 'openNewWindow' },
-      'DIVIDEND_REPORT': { route: '/reports/yearly/interest-list/dividend-report', electronMethod: 'openNewWindow' },
-      'DIVIDEND_PAID': { route: '/reports/yearly/interest-list/dividend-paid', electronMethod: 'openNewWindow' },
-      'INT_LIST_CD_MD_SHRt': { route: '/reports/yearly/interest-list/cd-md-shrt', electronMethod: 'openNewWindow' },
-      'DIVIDEND_WARRANT': { route: '/reports/yearly/interest-list/dividend-warrant', electronMethod: 'openNewWindow' },
-      'DEFINE_TRIAL_BALANCE': { route: '/reports/yearly/customized-trial-balance/define-trial-balance', electronMethod: 'openNewWindow' },
-      'OPEN_TRIAL_BALANCE': { route: '/reports/yearly/customized-trial-balance/open-trial-balance', electronMethod: 'openNewWindow' },
-      'DEFINE_BALANCE_SHEET': { route: '/reports/yearly/customized-trial-balance/define-balance-sheet', electronMethod: 'openNewWindow' },
-      'OPEN_BALANCE_SHEET': { route: '/reports/yearly/customized-trial-balance/open-balance-sheet', electronMethod: 'openNewWindow' },
-      'MEMBER_LOAN_DETAIL': { route: '/reports/yearly/member-loan-detail', electronMethod: 'openNewWindow' },
-      'SHARE_WARRANT_PRINTING': { route: '/reports/yearly/share-warrant-printing', electronMethod: 'openNewWindow' },
-      'ANNUAL_MEMBER_STATEMENT': { route: '/reports/yearly/annual-member-statement', electronMethod: 'openNewWindow' },
-      'YEARLY_MEMBER_STATEMENT': { route: '/reports/yearly/yearly-member-statement', electronMethod: 'openNewWindow' },
-      'MEMBER_LEDGER': { route: '/reports/yearly/member-ledger', electronMethod: 'openNewWindow' },
-      'MEMBER_STATEMENT': { route: '/reports/yearly/member-statement', electronMethod: 'openNewWindow' },
-      'SAVING_STATEMENT': { route: '/reports/yearly/member-statement/saving-statement', electronMethod: 'openNewWindow' },
-      'RD_STATEMENT': { route: '/reports/yearly/member-statement/rd-statement', electronMethod: 'openNewWindow' },
-      'FD_STATEMENT': { route: '/reports/yearly/member-statement/fd-statement', electronMethod: 'openNewWindow' },
-      'NEW_SHARE_CERTIFICATE': { route: '/reports/yearly/member-statement/new-share-certificate', electronMethod: 'openNewWindow' },
-      'INTEREST_CERTIFICATE': { route: '/reports/yearly/member-statement/interest-certificate', electronMethod: 'openNewWindow' },
-      'LOAN_NIL_CERTIFICATE': { route: '/reports/yearly/member-statement/loan-nil-certificate', electronMethod: 'openNewWindow' },
-      // Utility Routes
-      'PREMATURE_RD_AC': { route: '/utility/premature-information/rd', electronMethod: 'openNewWindow' },
-      'PREMATURE_SB_AC': { route: '/utility/premature-information/sb', electronMethod: 'openNewWindow' },
-      'CALCULATOR': { route: '/utility/calculator', electronMethod: 'openNewWindow' },
-      'FIND': { route: '/utility/find', electronMethod: 'openNewWindow' },
-      'MEMBER_BALANCE': { route: '/utility/member-balance', electronMethod: 'openNewWindow' },
-      'EMI_CHART': { route: '/utility/emi-chart', electronMethod: 'openNewWindow' },
-      'DATABASE_BACKUP': { route: '/utility/database-backup', electronMethod: 'openNewWindow' },
-      'UPDATE_SAVING_INTT': { route: '/utility/update-saving-interest', electronMethod: 'openNewWindow' },
-      'INTEREST_RECEIVABLE_RECEIVED_STATEMENT': { route: '/utility/interest-receivable-received-statement', electronMethod: 'openNewWindow' },
-      'COMMUNICATION_HUB': { route: '/utility/communication-center', electronMethod: 'openNewWindow' },
-      // Help Routes
-      'ABOUT': { route: '/help/about', electronMethod: 'openNewWindow' },
-      'CONTENTS': { route: '/help/contents', electronMethod: 'openNewWindow' },
-      // Other Reports
-      'ACCOUNT_CLOSING_REGISTER': { route: '/reports/account-reports/account-closing-register', electronMethod: 'openNewWindow' },
-      'FIXED_DEPOSIT_CERTIFICATE': { route: '/reports/account-reports/fixed-deposit-certificate', electronMethod: 'openNewWindow' },
-      'SHARE_CERTIFICATE': { route: '/reports/account-reports/share-certificate', electronMethod: 'openNewWindow' },
-      'RECURRING_DETAILS': { route: '/reports/account-reports/recurring-details', electronMethod: 'openNewWindow' },
-      'RECOVERY_DETAILS': { route: '/reports/account-reports/recovery-details', electronMethod: 'openNewWindow' },
-      'LOAN_CONTRIBUTIONS_REGISTER': { route: '/reports/account-reports/loan-contributions-register', electronMethod: 'openNewWindow' },
-      'LIEN_ACCOUNT_INFORMATION': { route: '/reports/account-reports/lien-account-information', electronMethod: 'openNewWindow' },
-      'SETTINGS': { route: '/settings', electronMethod: 'openSettingsWindow' },
-    };
+    const serviceMap = ACTION_ROUTE_MAP;
 
     const service = serviceMap[action];
     if (service) {
@@ -682,7 +563,7 @@ const Navbar: React.FC = () => {
         {/* Menu items — NO overflow:auto here; it clips absolute dropdowns */}
         <div className="flex flex-1 min-w-0">
           <ul className="list-none m-0 p-0 flex gap-0">
-            {navConfig.map(navItem => (
+            {visibleNavConfig.map(navItem => (
               <li key={navItem.id} className="relative">
                 <a
                   href="#"

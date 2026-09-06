@@ -262,10 +262,10 @@ const AccountBalance: React.FC = () => {
         .custom-scrollbar-sky::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
       `}</style>
 
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-sky-50/20 to-slate-50'}`}>
+      <div className={`account-balance-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-sky-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`ab-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-sky-600 to-sky-700 p-1.5 rounded-lg text-white shadow-md">
               <Wallet size={14} />
@@ -294,7 +294,7 @@ const AccountBalance: React.FC = () => {
           <div className="w-[220px] flex flex-col gap-2 shrink-0 overflow-y-auto custom-scrollbar-sky">
 
             {/* From Member */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
+            <div className={`ab-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
               <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">From Member</h3>
@@ -314,7 +314,7 @@ const AccountBalance: React.FC = () => {
             </div>
 
             {/* To Member */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
+            <div className={`ab-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
               <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">To Member</h3>
@@ -334,7 +334,7 @@ const AccountBalance: React.FC = () => {
             </div>
 
             {/* Output */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
+            <div className={`ab-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
               <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
                 <FileText size={10} className="text-white" />
                 <h3 className="fz-body font-black text-white tracking-wide uppercase">Output</h3>
@@ -356,7 +356,7 @@ const AccountBalance: React.FC = () => {
           </div>
 
           {/* Report Panel */}
-          <div className={`flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
+          <div className={`ab-report-panel flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
             <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-3 py-1.5 flex items-center gap-1.5 shrink-0">
               <div className="bg-white/20 p-1 rounded-md">
                 <FileText size={12} className="text-white" />
@@ -415,6 +415,43 @@ const AccountBalance: React.FC = () => {
           <MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} />
         </div>
       </Modal>
+
+      <style>{`
+        /* ── Account Balance — dark mode ── */
+        html.dark .account-balance-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .ab-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ab-header h1 { color: #f5f5f7 !important; }
+        html.dark .ab-header .text-slate-100 { color: #f5f5f7 !important; }
+        html.dark .ab-header .text-slate-800 { color: #f5f5f7 !important; }
+        html.dark .ab-header .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .ab-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ab-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .account-balance-page .bg-slate-900\\/40 { background-color: rgba(255,255,255,.03) !important; }
+        html.dark .account-balance-page label { color: #8e8e93 !important; }
+        html.dark .account-balance-page .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .account-balance-page .text-slate-300 { color: #71717a !important; }
+        html.dark .account-balance-page pre { color: #f5f5f7 !important; }
+        /* Antd inputs / buttons used on this page */
+        html.dark .account-balance-page .ant-input,
+        html.dark .account-balance-page .ant-input-affix-wrapper,
+        html.dark .account-balance-page input.ant-input {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .account-balance-page .ant-input::placeholder { color: #71717a !important; }
+        html.dark .account-balance-page .ant-btn:not(.ant-btn-primary) {
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
+        }
+        html.dark .account-balance-page .ant-radio-button-wrapper {
+          background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
+        }
+        html.dark .account-balance-page .ant-radio-button-wrapper-checked {
+          background-color: #0ea5e9 !important; color: #ffffff !important;
+        }
+        html.dark .ant-modal-content, html.dark .ant-modal-header {
+          background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .ant-modal-title { color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

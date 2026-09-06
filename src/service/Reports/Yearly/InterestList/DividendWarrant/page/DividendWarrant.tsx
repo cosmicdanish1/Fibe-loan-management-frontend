@@ -225,14 +225,14 @@ const DividendWarrant: React.FC = () => {
       algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
       token: { colorPrimary: '#14b8a6', borderRadius: 6 },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
-        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+      <div className={`dividend-warrant-page h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
+        <div className="dividend-warrant-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
           <h1 className="fz-caption font-black text-white tracking-tight uppercase">Dividend Warrant</h1>
         </div>
         <div className="flex-1 flex gap-4 p-4 w-full overflow-hidden">
 
           {/* Sidebar */}
-          <div className={`w-[300px] shrink-0 rounded-2xl shadow-lg border flex flex-col ${side}`}>
+          <div className={`dividend-warrant-sidebar w-[300px] shrink-0 rounded-2xl shadow-lg border flex flex-col ${side}`}>
 
             {/* Header */}
             <div className={`flex items-center gap-3 p-4 border-b ${divider}`}>
@@ -449,7 +449,7 @@ const DividendWarrant: React.FC = () => {
           </div>
 
           {/* Main Content */}
-          <div className={`flex-1 rounded-2xl shadow-lg border flex flex-col overflow-hidden ${main}`}>
+          <div className={`dividend-warrant-main flex-1 rounded-2xl shadow-lg border flex flex-col overflow-hidden ${main}`}>
 
             {/* Report Header */}
             <div className={`px-6 py-4 border-b ${divider} text-center`} style={{ fontFamily: 'Courier New, monospace' }}>
@@ -562,6 +562,19 @@ const DividendWarrant: React.FC = () => {
           onClose={() => setShowLookupModal(false)}
         />
       </Modal>
+
+      <style>{`
+        /* ── Dividend Warrant — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .dividend-warrant-page { background-color: #000000 !important; }
+        html.dark .dividend-warrant-topbar { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dividend-warrant-sidebar,
+        html.dark .dividend-warrant-main { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .dividend-warrant-page label { color: #8e8e93 !important; }
+        html.dark .dividend-warrant-page .ant-select-selector,
+        html.dark .dividend-warrant-page .ant-input,
+        html.dark .dividend-warrant-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .dividend-warrant-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

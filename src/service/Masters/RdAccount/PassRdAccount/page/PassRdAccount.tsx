@@ -330,7 +330,7 @@ const PassRdAccount: React.FC = () => {
           .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
 
           /* ── Dark mode: arbitrary bg hex + emerald A/c badge the global layer misses ── */
-          html.dark .pass-rd-form { background-color: #0f172a !important; }
+          html.dark .pass-rd-form { background-color: #000000 !important; }
           html.dark .pass-rd-form .bg-emerald-50 { background-color: #064e3b !important; }
           html.dark .pass-rd-form .text-emerald-600,
           html.dark .pass-rd-form .text-emerald-700 { color: #6ee7b7 !important; }

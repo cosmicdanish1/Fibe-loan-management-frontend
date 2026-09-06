@@ -165,10 +165,10 @@ const DepositDueDateRegister: React.FC = () => {
       algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
       token: { colorPrimary: '#f59e0b', borderRadius: 6, fontSize: 12 },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-50'}`}>
+      <div className={`ddr-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-50'}`}>
 
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`ddr-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-1.5 rounded-lg text-white shadow-md">
               <Wallet size={14} />
@@ -197,7 +197,7 @@ const DepositDueDateRegister: React.FC = () => {
           <div className="w-[220px] flex flex-col gap-2 shrink-0">
 
             {/* Date Range */}
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
+            <div className={`ddr-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-2 py-1 flex items-center gap-1">
                 <Calendar size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Date Range</span>
@@ -215,7 +215,7 @@ const DepositDueDateRegister: React.FC = () => {
             </div>
 
             {/* Deposit Type */}
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
+            <div className={`ddr-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
               <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-2 py-1 flex items-center gap-1">
                 <Wallet size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Deposit Type</span>
@@ -232,7 +232,7 @@ const DepositDueDateRegister: React.FC = () => {
             </div>
 
             {/* Output */}
-            <div className={`border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
+            <div className={`ddr-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
               <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
               <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
                 <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
@@ -250,7 +250,7 @@ const DepositDueDateRegister: React.FC = () => {
           </div>
 
           {/* Report Area */}
-          <div className={`flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
+          <div className={`ddr-report-card flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
             <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1.5">
                 <FileText size={12} className="text-white" />
@@ -262,7 +262,7 @@ const DepositDueDateRegister: React.FC = () => {
               <span className="fz-caption font-black text-white bg-white/20 px-2 py-0.5 rounded">{totals.count} Deposits</span>
             </div>
 
-            <div className={`flex-1 overflow-auto p-2 ${isDark ? 'bg-slate-900/40' : ''}`}>
+            <div className={`ddr-report-body flex-1 overflow-auto p-2 ${isDark ? 'bg-slate-900/40' : ''}`}>
               <Spin spinning={loading} size="small">
                 {reportData.length > 0 ? (
                   <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11 }}>
@@ -288,7 +288,7 @@ const DepositDueDateRegister: React.FC = () => {
                     </div>
 
                     {/* Table Header */}
-                    <div className="flex bg-amber-500 text-white fz-caption font-black rounded-t px-1 py-1.5">
+                    <div className="ddr-table-head flex bg-amber-500 text-white fz-caption font-black rounded-t px-1 py-1.5">
                       <span style={{ width: '9%' }}>MbNo</span>
                       <span style={{ width: '17%' }}>Name</span>
                       <span style={{ width: '9%' }}>Acc.No</span>
@@ -303,7 +303,7 @@ const DepositDueDateRegister: React.FC = () => {
                     {reportData.map((item, idx) => (
                       <div
                         key={idx}
-                        className={`flex fz-caption px-1 py-1 border-b ${
+                        className={`ddr-table-row flex fz-caption px-1 py-1 border-b ${
                           isDark
                             ? idx % 2 === 0 ? 'bg-slate-800' : 'bg-slate-900'
                             : idx % 2 === 0 ? 'bg-white' : 'bg-amber-50/40'
@@ -322,7 +322,7 @@ const DepositDueDateRegister: React.FC = () => {
                     ))}
 
                     {/* Totals */}
-                    <div className={`flex fz-caption font-black px-1 py-2 border-t-2 rounded-b ${isDark ? 'bg-amber-900/20 border-amber-500' : 'bg-amber-50 border-amber-400'}`}>
+                    <div className={`ddr-table-total flex fz-caption font-black px-1 py-2 border-t-2 rounded-b ${isDark ? 'bg-amber-900/20 border-amber-500' : 'bg-amber-50 border-amber-400'}`}>
                       <span style={{ width: '9%' }}></span>
                       <span style={{ width: '17%' }}>Total: {totals.count}</span>
                       <span style={{ width: '9%' }}></span>
@@ -352,6 +352,35 @@ const DepositDueDateRegister: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        /* ── Deposit Due Date Register — dark mode ── */
+        html.dark .ddr-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .ddr-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ddr-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ddr-report-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ddr-report-body { background-color: #000000 !important; }
+        html.dark .ddr-page input,
+        html.dark .ddr-page .ant-input,
+        html.dark .ddr-page .ant-picker,
+        html.dark .ddr-page .ant-select-selector {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .ddr-page .ant-picker-input > input,
+        html.dark .ddr-page .ant-select-selection-item,
+        html.dark .ddr-page .ant-radio-wrapper { color: #f5f5f7 !important; }
+        html.dark .ddr-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .ddr-page .text-slate-400 { color: #71717a !important; }
+        html.dark .ddr-page .text-slate-300 { color: #71717a !important; }
+        html.dark .ddr-table-head { background-color: #b45309 !important; }
+        html.dark .ddr-table-row { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
+        html.dark .ddr-table-row.bg-slate-800,
+        html.dark .ddr-table-row.bg-slate-900 { background-color: #1c1c1e !important; }
+        html.dark .ddr-table-total { border-color: rgba(255,255,255,.08) !important; background-color: rgba(255,255,255,.05) !important; }
+        html.dark .ddr-page button:not(.ant-btn-primary) {
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
+        }
+      `}</style>
     </ConfigProvider>
   );
 };

@@ -229,14 +229,14 @@ const InterestListCDMDSHRt: React.FC = () => {
       algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
       token: { colorPrimary: '#f59e0b', borderRadius: 8 },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
-        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+      <div className={`interest-cdmdshr-page h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
+        <div className="interest-cdmdshr-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
           <h1 className="fz-caption font-black text-white tracking-tight uppercase">5.3.3 Interest List</h1>
         </div>
         <div className="flex-1 flex overflow-hidden">
 
         {/* Sidebar */}
-        <div className={`w-80 flex flex-col shrink-0 border-r ${side}`}>
+        <div className={`interest-cdmdshr-sidebar w-80 flex flex-col shrink-0 border-r ${side}`}>
 
           {/* Header */}
           <div className={`p-4 border-b ${divider}`}>
@@ -379,7 +379,7 @@ const InterestListCDMDSHRt: React.FC = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
 
           {/* Top bar */}
-          <div className={`px-4 py-3 shrink-0 border-b flex items-center justify-between ${side}`}>
+          <div className={`interest-cdmdshr-topbar2 px-4 py-3 shrink-0 border-b flex items-center justify-between ${side}`}>
             <div>
               <h2 className={`fz-heading font-black ${text}`}>Interest Distribution Register</h2>
               <p className={`fz-label mt-0.5 ${muted}`}>
@@ -408,7 +408,7 @@ const InterestListCDMDSHRt: React.FC = () => {
 
           {/* Table */}
           <div className="flex-1 p-4 overflow-auto">
-            <div className={`rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className={`interest-cdmdshr-card rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
 
               {loading ? (
                 <div className="flex items-center justify-center py-12">
@@ -527,6 +527,19 @@ const InterestListCDMDSHRt: React.FC = () => {
           onClose={() => setShowLookupModal(false)}
         />
       </Modal>
+
+      <style>{`
+        /* ── Interest List CD/MD/SHR — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .interest-cdmdshr-page { background-color: #000000 !important; }
+        html.dark .interest-cdmdshr-topbar { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .interest-cdmdshr-sidebar,
+        html.dark .interest-cdmdshr-topbar2,
+        html.dark .interest-cdmdshr-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .interest-cdmdshr-page label { color: #8e8e93 !important; }
+        html.dark .interest-cdmdshr-page .ant-select-selector,
+        html.dark .interest-cdmdshr-page .ant-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .interest-cdmdshr-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+      `}</style>
     </ConfigProvider>
   );
 };

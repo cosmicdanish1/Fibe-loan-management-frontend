@@ -8,8 +8,12 @@ const ModifyFdAccount: React.FC = () => {
   const modifyFDProps = useModifyFD();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="modifyfd-page h-screen bg-slate-50 overflow-hidden">
       <ModifyFDForm {...modifyFDProps} />
+
+      <style>{`
+        html.dark .modifyfd-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

@@ -159,9 +159,30 @@ const NewShareCertificate: React.FC = () => {
         token: { colorPrimary: '#4f46e5', borderRadius: 6, fontSize: 12 },
       }}
     >
-      <div className={`h-screen flex flex-col overflow-hidden ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/20 to-slate-50'}`}>
+      <style>{`
+        /* ── Dark-mode overrides (Settings palette, html.dark only) ── */
+        html.dark .newshare-page { background-color: #000000 !important; background-image: none !important; }
+        html.dark .newshare-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .newshare-card,
+        html.dark .newshare-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .newshare-report-body { background-color: #1c1c1e !important; }
+        html.dark .newshare-report-body pre { color: #f5f5f7 !important; }
+        html.dark .newshare-page h1 { color: #f5f5f7 !important; }
+        html.dark .newshare-page .text-slate-400,
+        html.dark .newshare-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .newshare-page .text-slate-300 { color: #71717a !important; }
+        html.dark .newshare-page label { color: #8e8e93 !important; }
+        html.dark .newshare-page .ant-input,
+        html.dark .newshare-page .ant-input-affix-wrapper,
+        html.dark .newshare-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .newshare-page .ant-input-affix-wrapper .ant-input { background-color: transparent !important; }
+        html.dark .newshare-page .ant-radio-wrapper { color: #f5f5f7 !important; }
+        html.dark .newshare-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+      `}</style>
+
+      <div className={`newshare-page h-screen flex flex-col overflow-hidden ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 via-indigo-50/20 to-slate-50'}`}>
         {/* Header */}
-        <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`newshare-header border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-1.5 rounded-lg text-white shadow-md">
               <Award size={14} />
@@ -186,7 +207,7 @@ const NewShareCertificate: React.FC = () => {
           {/* Sidebar */}
           <div className="w-[220px] flex flex-col gap-2 shrink-0">
             {/* Member */}
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-200/60'}`}>
+            <div className={`newshare-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-200/60'}`}>
               <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Member</span>
@@ -212,7 +233,7 @@ const NewShareCertificate: React.FC = () => {
             </div>
 
             {/* Output */}
-            <div className={`border rounded-lg p-2 shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-200/60'}`}>
+            <div className={`newshare-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-200/60'}`}>
               <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
               <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
                 <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
@@ -230,12 +251,12 @@ const NewShareCertificate: React.FC = () => {
           </div>
 
           {/* Certificate Area */}
-          <div className={`flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-200/60'}`}>
+          <div className={`newshare-report-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-indigo-200/60'}`}>
             <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-3 py-1.5 flex items-center gap-1.5 shrink-0">
               <FileText size={12} className="text-white" />
               <span className="fz-caption font-black text-white uppercase">Share Certificate — Member: {memberNo || 'N/A'}</span>
             </div>
-            <div className="flex-1 overflow-auto p-3">
+            <div className="newshare-report-body flex-1 overflow-auto p-3">
               <Spin spinning={loading} size="small">
                 {certText ? (
                   <pre className="font-mono leading-relaxed whitespace-pre" style={{ fontFamily: "'Courier New', monospace", fontSize: 12 }}>

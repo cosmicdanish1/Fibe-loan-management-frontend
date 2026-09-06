@@ -169,11 +169,11 @@ const PassbookParameterSetting: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 8, colorBgContainer: '#1e293b', colorBorder: '#334155' } }}>
-      <div className="h-screen flex flex-col overflow-hidden bg-[#0f172a] text-slate-100 font-sans">
+      <div className="pbps-app h-screen flex flex-col overflow-hidden bg-[#0f172a] text-slate-100 font-sans">
 
         {/* Header */}
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700 bg-slate-800">
+          className="pbps-header px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700 bg-slate-800">
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/30"><Book size={18} className="text-white" /></div>
             <div>
@@ -194,7 +194,7 @@ const PassbookParameterSetting: React.FC = () => {
         </motion.div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-0 px-4 shrink-0 border-b border-slate-700 bg-slate-800 overflow-x-auto">
+        <div className="pbps-tabs flex gap-0 px-4 shrink-0 border-b border-slate-700 bg-slate-800 overflow-x-auto">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
               className={`px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all relative whitespace-nowrap flex items-center gap-2
@@ -218,7 +218,7 @@ const PassbookParameterSetting: React.FC = () => {
 
                 {/* Identity Tab */}
                 {activeTab === 'bank' && (
-                  <div className="rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
+                  <div className="pbps-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-700 flex items-center gap-3">
                       <div className="bg-indigo-500/20 p-2 rounded-lg text-indigo-400"><Building2 size={16} /></div>
                       <div>
@@ -257,7 +257,7 @@ const PassbookParameterSetting: React.FC = () => {
 
                 {/* Page Layout Tab */}
                 {activeTab === 'page' && (
-                  <div className="rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
+                  <div className="pbps-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-700 flex items-center gap-3">
                       <div className="bg-amber-500/20 p-2 rounded-lg text-amber-400"><Layers size={16} /></div>
                       <div>
@@ -283,7 +283,7 @@ const PassbookParameterSetting: React.FC = () => {
 
                 {/* Transactions Tab */}
                 {activeTab === 'detail' && (
-                  <div className="rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
+                  <div className="pbps-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
                     <div className="px-5 py-3.5 border-b border-indigo-700/50 bg-indigo-600/20 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Layout size={15} className="text-indigo-400" />
@@ -330,7 +330,7 @@ const PassbookParameterSetting: React.FC = () => {
 
                 {/* First Page Tab */}
                 {activeTab === 'first' && (
-                  <div className="rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
+                  <div className="pbps-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
                     <div className="px-5 py-3.5 border-b border-emerald-700/50 bg-emerald-600/20 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <FileText size={15} className="text-emerald-400" />
@@ -402,6 +402,37 @@ const PassbookParameterSetting: React.FC = () => {
             </List.Item>
           )} />
         </Modal>
+
+        <style>{`
+          /* ── Passbook Parameter Setting — dark mode (Settings-panel palette) ── */
+          html.dark .pbps-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .pbps-header,
+          html.dark .pbps-tabs { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .pbps-header .text-slate-400 { color: #8e8e93 !important; }
+          html.dark .pbps-tabs button:not(.text-indigo-400) { color: #8e8e93 !important; }
+          html.dark .pbps-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+          /* Inputs */
+          html.dark .pbps-app input,
+          html.dark .pbps-app select,
+          html.dark .pbps-app textarea {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+          }
+          html.dark .pbps-app label { color: #8e8e93 !important; }
+          html.dark .pbps-app .text-slate-400 { color: #8e8e93 !important; }
+          html.dark .pbps-app .text-slate-300 { color: #f5f5f7 !important; }
+          html.dark .pbps-app .text-slate-200 { color: #f5f5f7 !important; }
+          html.dark .pbps-app .bg-slate-700 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .pbps-app .border-slate-600,
+          html.dark .pbps-app .border-slate-700 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .pbps-app .border-slate-700\\/50 { border-color: rgba(255,255,255,.07) !important; }
+          html.dark .pbps-app .bg-slate-800 { background-color: #1c1c1e !important; }
+          html.dark .pbps-app .bg-slate-800\\/60 { background-color: rgba(255,255,255,.03) !important; }
+          html.dark .pbps-app .bg-slate-900\\/60 { background-color: #0c0c0e !important; }
+          /* Field-position tables */
+          html.dark .pbps-card table thead tr { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.07) !important; }
+          html.dark .pbps-card table th { border-color: rgba(255,255,255,.07) !important; }
+          html.dark .pbps-card table td { border-color: rgba(255,255,255,.07) !important; }
+        `}</style>
       </div>
     </ConfigProvider>
   );

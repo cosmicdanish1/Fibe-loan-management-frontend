@@ -230,11 +230,40 @@ const MemberLedger: React.FC = () => {
         .custom-scrollbar-cyan::-webkit-scrollbar-track { background: ${isDark ? '#0f172a' : '#f8fafc'}; border-radius: 3px; }
         .custom-scrollbar-cyan::-webkit-scrollbar-thumb { background: ${isDark ? '#334155' : '#67e8f9'}; border-radius: 3px; }
         .custom-scrollbar-cyan::-webkit-scrollbar-thumb:hover { background: ${isDark ? '#475569' : '#22d3ee'}; }
+
+        /* ── Member Ledger — dark mode (app-wide Settings palette) ── */
+        html.dark .member-ledger-page { background-color: #000000 !important; background-image: none !important; color: #f5f5f7 !important; }
+        html.dark .member-ledger-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .member-ledger-page .bg-slate-800,
+        html.dark .member-ledger-page .bg-slate-700 { background-color: #1c1c1e !important; }
+        html.dark .member-ledger-page .bg-slate-900,
+        html.dark .member-ledger-page .bg-slate-900\/40 { background-color: #1c1c1e !important; background-image: none !important; }
+        html.dark .member-ledger-page .border-slate-700,
+        html.dark .member-ledger-page .border-slate-600,
+        html.dark .member-ledger-page .border-white\/5 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .member-ledger-page .text-slate-100,
+        html.dark .member-ledger-page .text-slate-200 { color: #f5f5f7 !important; }
+        html.dark .member-ledger-page .text-slate-400,
+        html.dark .member-ledger-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .member-ledger-page .text-slate-600 { color: #71717a !important; }
+        html.dark .member-ledger-page label { color: #8e8e93 !important; }
+        html.dark .member-ledger-preview { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .member-ledger-preview pre { color: #f5f5f7 !important; }
+        html.dark .member-ledger-page .ant-input,
+        html.dark .member-ledger-page .ant-input-affix-wrapper,
+        html.dark .member-ledger-page .ant-input-search .ant-input-group-addon .ant-btn,
+        html.dark .member-ledger-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .member-ledger-page .ant-input::placeholder,
+        html.dark .member-ledger-page .ant-picker input::placeholder { color: #71717a !important; }
+        html.dark .member-ledger-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .member-ledger-page .ant-radio-button-wrapper { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
+        html.dark .member-ledger-page .ant-radio-button-wrapper-checked { color: #ffffff !important; }
+        html.dark .member-ledger-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
       `}</style>
 
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-cyan-50/20 to-slate-50'}`}>
+      <div className={`member-ledger-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-cyan-50/20 to-slate-50'}`}>
         {/* Header */}
-        <div className={`px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
+        <div className={`member-ledger-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-cyan-600 to-cyan-700 p-1.5 rounded-lg text-white shadow-md">
               <BookOpen size={14} />
@@ -374,7 +403,7 @@ const MemberLedger: React.FC = () => {
                   <span className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading ledger...</span>
                 </div>
               ) : report ? (
-                <div className={`font-mono rounded-lg border p-4 overflow-x-auto ${isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-[#fffff0] border-slate-300 text-slate-800'}`}>
+                <div className={`member-ledger-preview font-mono rounded-lg border p-4 overflow-x-auto ${isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-[#fffff0] border-slate-300 text-slate-800'}`}>
                   <pre style={{ fontFamily: "'Courier New', Courier, monospace", lineHeight: '1.4', fontSize: '12px' }} className="whitespace-pre">{reportText}</pre>
                 </div>
               ) : (

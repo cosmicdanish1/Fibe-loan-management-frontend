@@ -8,8 +8,11 @@ const JournalTransferEntry: React.FC = () => {
   const props = useJournalTransfer();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="jte-page h-screen bg-slate-50 overflow-hidden">
       <JournalTransferForm {...props} />
+      <style>{`
+        html.dark .jte-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

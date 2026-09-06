@@ -114,7 +114,7 @@ const InterestReceivableReceivedStatement: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+      <div className="irr-app h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
@@ -290,6 +290,34 @@ const InterestReceivableReceivedStatement: React.FC = () => {
             .w-\\[280px\\] { display: none !important; }
             header, button { display: none !important; }
           }
+
+          /* ── Interest Receivable/Received Statement — dark mode ── */
+          html.dark .irr-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .irr-app .bg-white { background-color: #1c1c1e !important; }
+          html.dark .irr-app .bg-slate-100 { background-color: rgba(255,255,255,.07) !important; }
+          html.dark .irr-app .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+          html.dark .irr-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .irr-app input,
+          html.dark .irr-app .ant-select-selector {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+          }
+          html.dark .irr-app .ant-select-selection-item { color: #f5f5f7 !important; }
+          html.dark .irr-app label { color: #8e8e93 !important; }
+          html.dark .irr-app .text-slate-800 { color: #f5f5f7 !important; }
+          html.dark .irr-app .text-slate-700 { color: #f5f5f7 !important; }
+          html.dark .irr-app .text-slate-500 { color: #8e8e93 !important; }
+          html.dark .irr-app .text-slate-400 { color: #71717a !important; }
+          html.dark .irr-app .bg-slate-300 { background-color: rgba(255,255,255,.15) !important; }
+          html.dark .irr-app .bg-indigo-50 { background-color: rgba(99,102,241,0.1) !important; }
+          html.dark .irr-app .text-blue-600 { color: #60a5fa !important; }
+          html.dark .irr-app .text-blue-700 { color: #60a5fa !important; }
+          html.dark .irr-app .text-emerald-600 { color: #34d399 !important; }
+          html.dark .irr-app .text-emerald-700 { color: #34d399 !important; }
+          html.dark .irr-app .text-rose-600 { color: #ff453a !important; }
+          html.dark .irr-app .text-rose-700 { color: #ff453a !important; }
+          html.dark .irr-app .irr-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.08) !important; }
+          html.dark .irr-app .irr-table .ant-table-tbody > tr > td { background: #1c1c1e !important; color: #f5f5f7 !important; border-bottom-color: rgba(255,255,255,.07) !important; }
+          html.dark .irr-app .irr-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
         `}</style>
       </div>
     </ConfigProvider>

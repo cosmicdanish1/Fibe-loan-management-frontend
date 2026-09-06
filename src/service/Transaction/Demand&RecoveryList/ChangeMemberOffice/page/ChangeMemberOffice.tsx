@@ -8,8 +8,11 @@ const ChangeMemberOffice: React.FC = () => {
   const props = useChangeMemberOffice();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="cmo-page h-screen bg-slate-50 overflow-hidden">
       <ChangeMemberOfficeForm {...props} />
+      <style>{`
+        html.dark .cmo-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

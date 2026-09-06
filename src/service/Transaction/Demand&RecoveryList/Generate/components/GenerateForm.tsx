@@ -29,10 +29,10 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6, fontSize: 11 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="gen-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="gen-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
                             <ServerCog size={13} className="text-white" />
@@ -115,7 +115,7 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="gen-footer px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <CalendarDays size={9} className="text-indigo-400" />
                         <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">{formData.month} {formData.year}</span>
@@ -129,6 +129,21 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
             <style>{`
                 .gen-sel .ant-select-selector { height: 28px !important; min-height: 28px !important; font-size: 10px !important; font-weight: 800 !important; }
                 .gen-sel .ant-select-selection-item { line-height: 26px !important; font-size: 10px !important; font-weight: 800 !important; }
+
+                /* ── Dark mode ── */
+                html.dark .gen-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .gen-header { background: #0c0c0e !important; }
+                html.dark .gen-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .gen-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .gen-root .border-slate-200,
+                html.dark .gen-root .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .gen-root .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .gen-root .text-slate-400 { color: #71717a !important; }
+                html.dark .gen-root .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
+                html.dark .gen-sel .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
+                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
             `}</style>
         </ConfigProvider>
     );

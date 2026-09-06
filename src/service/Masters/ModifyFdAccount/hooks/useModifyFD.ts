@@ -32,7 +32,7 @@ const emptyData = (): ModifyFDData => ({
   lastIntPaymentDate: '',
   interestPaid: '',
   status: '',
-  nominees: []
+  nominee: { name: '', address: '', age: '', relation: '' }
 });
 
 export const useModifyFD = (): ModifyFDHookReturn => {
@@ -92,13 +92,12 @@ export const useModifyFD = (): ModifyFDHookReturn => {
           lastIntPaymentDate: fd.lastIntPaymentDate ? dayjs(fd.lastIntPaymentDate).format('YYYY-MM-DD') : '',
           interestPaid: fd.interestPaid != null ? fd.interestPaid.toString() : '',
           status: fd.status || '',
-          nominees: fd.nominee ? [{
-            id: '1',
-            name: fd.nominee,
+          nominee: {
+            name: fd.nominee || '',
             age: fd.nomineeAge || '',
             address: fd.nomineeAddress || '',
             relation: fd.nomineeRelation || ''
-          }] : []
+          }
         }));
       }
     } catch (err) {
@@ -111,20 +110,8 @@ export const useModifyFD = (): ModifyFDHookReturn => {
     setData(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const addNominee = useCallback(() => {
-    const n: NomineeDetail = { id: Date.now().toString(), name: '', address: '', age: '', relation: '' };
-    setData(prev => ({ ...prev, nominees: [...prev.nominees, n] }));
-  }, []);
-
-  const removeNominee = useCallback((id: string) => {
-    setData(prev => ({ ...prev, nominees: prev.nominees.filter(n => n.id !== id) }));
-  }, []);
-
-  const updateNominee = useCallback((id: string, field: keyof Omit<NomineeDetail, 'id'>, value: string) => {
-    setData(prev => ({
-      ...prev,
-      nominees: prev.nominees.map(n => n.id === id ? { ...n, [field]: value } : n)
-    }));
+  const updateNominee = useCallback((field: keyof NomineeDetail, value: string) => {
+    setData(prev => ({ ...prev, nominee: { ...prev.nominee, [field]: value } }));
   }, []);
 
   const save = useCallback(async () => {
@@ -155,13 +142,10 @@ export const useModifyFD = (): ModifyFDHookReturn => {
     if (data.maturityDate) payload.maturityDate = new Date(data.maturityDate);
     if (data.lastIntPaymentDate) payload.lastIntPaymentDate = new Date(data.lastIntPaymentDate);
 
-    if (data.nominees.length > 0) {
-      const n = data.nominees[0];
-      payload.nominee = n.name;
-      payload.nomineeAge = n.age;
-      payload.nomineeAddress = n.address;
-      payload.nomineeRelation = n.relation;
-    }
+    payload.nominee = data.nominee.name || null;
+    payload.nomineeAge = data.nominee.age || null;
+    payload.nomineeAddress = data.nominee.address || null;
+    payload.nomineeRelation = data.nominee.relation || null;
 
     try {
       const response = await apiService.updateFdAccount(data.selectFD, payload);
@@ -200,8 +184,6 @@ export const useModifyFD = (): ModifyFDHookReturn => {
     data,
     handleFdSelect,
     updateField,
-    addNominee,
-    removeNominee,
     updateNominee,
     save,
     reset

@@ -32,6 +32,69 @@ const SEARCH_TYPE_LABELS: Record<string, string> = {
   headName: 'Head Name',
 };
 
+// Maps each GlobalSearchResult category (members/loans/deposits/transactions —
+// see backend/src/modules/utility/dto/search.dto.ts GlobalSearchResult) into
+// the flat row shape this screen renders.
+const flattenSearchResults = (payload: any): SearchResult[] => {
+  const rows: SearchResult[] = [];
+
+  (payload?.members?.data ?? []).forEach((m: any) => {
+    rows.push({
+      id: `member-${m.mbno}`,
+      memberNo: m.mbno,
+      name: m.name,
+      wing: m.wingName,
+      division: m.divisionName,
+      type: 'member',
+      title: m.name || String(m.mbno),
+      subtitle: `Member No ${m.mbno}`,
+      details: '',
+    });
+  });
+
+  (payload?.loans?.data ?? []).forEach((l: any) => {
+    rows.push({
+      id: `loan-${l.loanType}-${l.loanCaseNo}`,
+      memberNo: l.mbno,
+      name: l.name,
+      wing: l.wingName,
+      division: l.divisionName,
+      accountNo: l.loanCaseNo,
+      type: 'loan',
+      title: l.name || String(l.mbno),
+      subtitle: `Loan A/c ${l.loanCaseNo}`,
+      details: '',
+    });
+  });
+
+  (payload?.deposits?.data ?? []).forEach((d: any) => {
+    rows.push({
+      id: `deposit-${d.accountNumber}`,
+      memberNo: d.mbno,
+      name: d.name,
+      wing: d.wingName,
+      division: d.divisionName,
+      accountNo: d.accountNumber,
+      type: 'account',
+      title: d.name || String(d.mbno),
+      subtitle: `${d.fdrdflag === 'R' ? 'RD' : 'FD'} A/c ${d.accountNumber}`,
+      details: '',
+    });
+  });
+
+  (payload?.transactions?.data ?? []).forEach((t: any) => {
+    rows.push({
+      id: `transaction-${t.id}`,
+      type: 'transaction',
+      title: t.transactionNumber || 'Transaction',
+      subtitle: t.description || '',
+      details: '',
+    });
+  });
+
+  return rows;
+};
+
 // Native "record not found" popup — mirrors the legacy Find dialog.
 // Uses Electron's native message box (consistent with the rest of the app);
 // falls back to window.alert when not running inside Electron.
@@ -65,18 +128,13 @@ const Find: React.FC = () => {
         headCode: 'all', headName: 'all'
       };
       const backendType = typeMapping[searchType] || 'all';
-      const searchUrl = `${await getApiBaseUrl()}/search/global?q=${encodeURIComponent(searchQuery)}&type=${backendType}&limit=100`;
+      const searchUrl = `${await getApiBaseUrl()}/search/global?query=${encodeURIComponent(searchQuery)}&entityType=${backendType}&limit=100`;
       const response = await fetch(searchUrl, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (!response.ok) throw new Error(`Search failed: ${response.status}`);
       const data = await response.json();
-      let actualData: any[] = [];
-      if (data.success && data.data) {
-        if (Array.isArray(data.data)) actualData = data.data;
-        else if (data.data.data && Array.isArray(data.data.data)) actualData = data.data.data;
-        else if (data.data.members && Array.isArray(data.data.members)) actualData = data.data.members;
-      }
+      const actualData: any[] = data.success && data.data ? flattenSearchResults(data.data) : [];
       setResults(actualData);
       if (actualData.length === 0) {
         setError('No results found for your search.');
@@ -107,7 +165,7 @@ const Find: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+      <div className="find-app h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
@@ -236,6 +294,29 @@ const Find: React.FC = () => {
           </Spin>
         </div>
 
+        <style>{`
+          /* ── Find — dark mode ── */
+          html.dark .find-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .find-app .bg-white { background-color: #1c1c1e !important; }
+          html.dark .find-app .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .find-app .bg-\\[\\#f8fafc\\] { background-color: #1c1c1e !important; }
+          html.dark .find-app .hover\\:bg-\\[\\#eef2ff\\]:hover { background-color: rgba(99,102,241,0.1) !important; }
+          html.dark .find-app .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+          html.dark .find-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .find-app .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .find-app input {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+          }
+          html.dark .find-app label { color: #8e8e93 !important; }
+          html.dark .find-app .text-slate-700 { color: #f5f5f7 !important; }
+          html.dark .find-app .text-slate-600 { color: #8e8e93 !important; }
+          html.dark .find-app .text-slate-500 { color: #8e8e93 !important; }
+          html.dark .find-app .text-slate-400 { color: #71717a !important; }
+          html.dark .find-app .bg-slate-300 { background-color: rgba(255,255,255,.15) !important; }
+          html.dark .find-app .bg-rose-50 { background-color: rgba(255,69,58,0.08) !important; }
+          html.dark .find-app .text-rose-600 { color: #ff453a !important; }
+          html.dark .find-app .border-rose-200 { border-color: rgba(255,69,58,0.3) !important; }
+        `}</style>
       </div>
     </ConfigProvider>
   );

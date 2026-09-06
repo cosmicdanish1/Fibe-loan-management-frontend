@@ -129,8 +129,10 @@ const CastCategoryForm: React.FC<CastCategoryHookReturn> = ({
                                         <Input value={data.categoryCode}
                                             onChange={e => updateCategoryCode(e.target.value)}
                                             inputMode="numeric"
+                                            disabled={isEditing}
                                             placeholder="Auto (e.g. 5)"
-                                            className={`${inputCls} pl-6 font-mono font-bold text-indigo-700`} />
+                                            title={isEditing ? 'Code cannot be changed while editing — Reset first to create a new entry.' : undefined}
+                                            className={`${inputCls} pl-6 font-mono font-bold text-indigo-700 ${isEditing ? 'opacity-60 cursor-not-allowed' : ''}`} />
                                     </div>
                                 </div>
                                 <div>
@@ -200,11 +202,11 @@ const CastCategoryForm: React.FC<CastCategoryHookReturn> = ({
                 .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
 
                 /* ── Dark mode: arbitrary bg hex + the table's own !important light header ── */
-                html.dark .cast-cat { background-color: #0f172a !important; }
+                html.dark .cast-cat { background-color: #000000 !important; }
                 html.dark .cast-table .ant-table-thead > tr > th {
-                    background: #0f172a !important; color: #94a3b8 !important; border-bottom-color: #334155 !important;
+                    background: #000000 !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.07) !important;
                 }
-                html.dark .cast-table .ant-table-tbody > tr > td { border-bottom-color: #1e293b !important; }
+                html.dark .cast-table .ant-table-tbody > tr > td { border-bottom-color: rgba(255,255,255,.07) !important; }
                 html.dark .cast-cat .bg-amber-50 { background-color: #422006 !important; }
                 html.dark .cast-cat .bg-emerald-50 { background-color: #064e3b !important; }
             `}</style>

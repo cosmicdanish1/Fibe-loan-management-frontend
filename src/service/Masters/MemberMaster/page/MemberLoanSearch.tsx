@@ -32,15 +32,15 @@ const MemberLoanSearch: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="mls-page p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-900 rounded-lg shadow-lg p-6">
+      <div className="mls-header bg-gradient-to-r from-slate-900 to-slate-900 rounded-lg shadow-lg p-6">
         <h1 className="text-2xl font-bold text-white mb-2">Member Loan Search</h1>
         <p className="text-slate-400">Search for member loans from loan_master and loan_pending tables</p>
       </div>
 
       {/* Search Form */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="mls-search-card bg-white rounded-lg shadow-sm p-6">
         <div className="space-y-4">
           {/* Search Type Selection */}
           <div>
@@ -166,7 +166,7 @@ const MemberLoanSearch: React.FC = () => {
 
       {/* Results */}
       {showResults && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="mls-results-card bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Search Results</h2>
           <MemberLoanDetailsComponent
             {...(searchType === 'member' && memberNumber ? { memberNumber } : {})}
@@ -182,6 +182,33 @@ const MemberLoanSearch: React.FC = () => {
           onClose={() => setShowMemberLookup(false)}
         />
       )}
+
+      <style>{`
+        /* ── Member Loan Search — dark mode ── */
+        html.dark .mls-page { background-color: #000000 !important; }
+        html.dark .mls-header { background-image: none !important; background-color: #0c0c0e !important; }
+        html.dark .mls-header .text-slate-400 { color: #8e8e93 !important; }
+        html.dark .mls-search-card,
+        html.dark .mls-results-card {
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .mls-search-card .text-gray-700,
+        html.dark .mls-search-card label,
+        html.dark .mls-results-card .text-gray-800 { color: #f5f5f7 !important; }
+        html.dark .mls-search-card .text-gray-800 { color: #f5f5f7 !important; }
+        html.dark .mls-page input,
+        html.dark .mls-page select,
+        html.dark .mls-page textarea {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .mls-page input[readOnly] { background-color: rgba(255,255,255,.03) !important; color: #8e8e93 !important; }
+        html.dark .mls-page .bg-gray-50 { background-color: rgba(255,255,255,.03) !important; }
+        html.dark .mls-page .border-gray-300 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mls-page .bg-gray-200 { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .mls-page .text-gray-700 { color: #f5f5f7 !important; }
+        html.dark .mls-page button.bg-gray-200:hover { background-color: rgba(255,255,255,.08) !important; }
+        html.dark .mls-page .bg-gray-300 { background-color: rgba(255,255,255,.08) !important; }
+      `}</style>
     </div>
   );
 };

@@ -9,6 +9,7 @@ export interface User {
   role: string;
   permissions: string[];
   isActive: boolean;
+  allowPassTransactions?: boolean;
   createdAt?: string;
 }
 

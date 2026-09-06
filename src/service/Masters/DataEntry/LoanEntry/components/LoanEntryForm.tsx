@@ -81,10 +81,10 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="loanentry-form h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="loanentry-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
                             <TrendingDown size={13} className="text-white" />
@@ -117,7 +117,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                     <div className="max-w-3xl mx-auto p-3 pb-4 space-y-2">
 
                         {/* ── Member + Loan Type ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div className="loanentry-card bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Users size={11} className="text-slate-400" />
                                 <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member & Loan Type</span>
@@ -142,7 +142,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
 
                         {/* ── Eligibility Panel (Visible if loanAmount > 5L) ── */}
                         {(isCheckingEligibility || eligibilityStatus) && (
-                            <div className={`bg-white rounded-xl border shadow-sm ${eligibilityStatus && !eligibilityStatus.isEligible ? 'border-rose-200' : 'border-emerald-200'}`}>
+                            <div className={`loanentry-card bg-white rounded-xl border shadow-sm ${eligibilityStatus && !eligibilityStatus.isEligible ? 'border-rose-200' : 'border-emerald-200'}`}>
                                 <div className={`px-3 py-1.5 border-b flex items-center justify-between ${eligibilityStatus && !eligibilityStatus.isEligible ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-emerald-100'}`}>
                                     <div className="flex items-center gap-1.5">
                                         <ShieldCheck size={11} className={eligibilityStatus && !eligibilityStatus.isEligible ? 'text-rose-500' : 'text-emerald-500'} />
@@ -213,7 +213,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                         )}
 
                         {/* ── Loan Details ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div className="loanentry-card bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <IndianRupee size={11} className="text-slate-400" />
                                 <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Loan Details</span>
@@ -288,7 +288,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                         </div>
 
                         {/* ── Guarantors ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div className="loanentry-card bg-white rounded-xl border border-slate-200 shadow-sm">
                             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
                                 <Users size={11} className="text-slate-400" />
                                 <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Guarantors (Surety)</span>
@@ -309,7 +309,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="loanentry-footer px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <Building2 size={9} className="text-slate-400" />
                         <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">
@@ -343,6 +343,57 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                 input[type=number]::-webkit-inner-spin-button,
                 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
                 input[type=number] { -moz-appearance: textfield; }
+
+                /* ── Loan Entry — dark mode ── */
+                html.dark .loanentry-form { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .loanentry-header { background-image: none !important; background-color: #0c0c0e !important; }
+                html.dark .loanentry-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .loanentry-card .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .loanentry-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+
+                html.dark .loanentry-form label { color: #8e8e93 !important; }
+                html.dark .loanentry-form .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .loanentry-form .text-slate-400 { color: #71717a !important; }
+                html.dark .loanentry-form .text-slate-600 { color: #8e8e93 !important; }
+                html.dark .loanentry-form .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .loanentry-form .text-slate-900 { color: #f5f5f7 !important; }
+
+                html.dark .loanentry-form .ant-input,
+                html.dark .loanentry-form .ant-select-selector,
+                html.dark .loanentry-form .ant-picker,
+                html.dark .loanentry-form textarea {
+                    background-color: rgba(255,255,255,.05) !important;
+                    color: #f5f5f7 !important;
+                    border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .loanentry-form .ant-input::placeholder { color: #71717a !important; }
+                html.dark .loanentry-form .ant-picker-input > input { color: #f5f5f7 !important; }
+                html.dark .loanentry-form .ant-picker svg { fill: #8e8e93 !important; }
+                html.dark .loanentry-form .ant-select-selection-item { color: #f5f5f7 !important; }
+                html.dark .loanentry-form .ant-select-arrow { color: #8e8e93 !important; }
+
+                html.dark .loanentry-form .bg-slate-50 { background-color: rgba(255,255,255,.03) !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .loanentry-form .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .loanentry-form .border-slate-200,
+                html.dark .loanentry-form .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .loanentry-form .bg-white:not(.loanentry-card):not(.loanentry-footer) { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .loanentry-form .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
+
+                /* Eligibility panel status colours */
+                html.dark .loanentry-form .bg-emerald-50 { background-color: rgba(52,211,153,.1) !important; }
+                html.dark .loanentry-form .border-emerald-100,
+                html.dark .loanentry-form .border-emerald-200 { border-color: rgba(52,211,153,.3) !important; }
+                html.dark .loanentry-form .text-emerald-600,
+                html.dark .loanentry-form .text-emerald-500,
+                html.dark .loanentry-form .text-emerald-700 { color: #34d399 !important; }
+                html.dark .loanentry-form .bg-emerald-100 { background-color: rgba(52,211,153,.18) !important; }
+                html.dark .loanentry-form .bg-rose-50 { background-color: rgba(255,69,58,.1) !important; }
+                html.dark .loanentry-form .border-rose-100,
+                html.dark .loanentry-form .border-rose-200 { border-color: rgba(255,69,58,.3) !important; }
+                html.dark .loanentry-form .text-rose-600,
+                html.dark .loanentry-form .text-rose-500,
+                html.dark .loanentry-form .text-rose-700 { color: #ff453a !important; }
+                html.dark .loanentry-form .bg-rose-100 { background-color: rgba(255,69,58,.18) !important; }
             `}</style>
         </ConfigProvider>
     );

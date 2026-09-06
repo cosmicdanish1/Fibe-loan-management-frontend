@@ -8,8 +8,11 @@ const LoanPayment: React.FC = () => {
   const props = useLoanPayment();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="loan-payment-page h-screen bg-slate-50 overflow-hidden">
       <LoanPaymentForm {...props} />
+      <style>{`
+        html.dark .loan-payment-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

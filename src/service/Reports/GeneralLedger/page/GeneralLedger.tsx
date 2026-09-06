@@ -154,10 +154,10 @@ const GeneralLedger: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm, token: { colorPrimary: '#10b981', borderRadius: 8 } }}>
-      <div className={`h-screen flex flex-col ${bg} font-sans overflow-hidden`}>
+      <div className={`gl-page h-screen flex flex-col ${bg} font-sans overflow-hidden`}>
 
         {/* ── Header ── */}
-        <div className={`${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'} border-b px-4 py-2 flex items-center justify-between shrink-0 shadow-sm`}>
+        <div className={`gl-header ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'} border-b px-4 py-2 flex items-center justify-between shrink-0 shadow-sm`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-1.5 rounded-lg text-white shadow">
               <BookOpen size={15} />
@@ -182,7 +182,7 @@ const GeneralLedger: React.FC = () => {
         </div>
 
         {/* ── Filter Bar ── */}
-        <div className={`${panel} border-b ${panelBdr} px-4 py-2 flex items-end gap-3 shrink-0`}>
+        <div className={`gl-filter-bar ${panel} border-b ${panelBdr} px-4 py-2 flex items-end gap-3 shrink-0`}>
           {/* Head */}
           <div className="flex flex-col gap-0.5 min-w-[220px] max-w-[320px] flex-1">
             <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>Head Name</label>
@@ -231,7 +231,7 @@ const GeneralLedger: React.FC = () => {
         {/* ── Stats Bar (shown only when data loaded) ── */}
         {ledgerData && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className={`${panel} border-b ${panelBdr} px-4 py-1.5 flex items-center gap-6 shrink-0`}>
+            className={`gl-stats-bar ${panel} border-b ${panelBdr} px-4 py-1.5 flex items-center gap-6 shrink-0`}>
             {[
               { label: 'Opening',      value: ledgerData.openingBalance,  color: text },
               { label: 'Total Payments', value: ledgerData.totalDebits,   color: 'text-rose-500' },
@@ -251,7 +251,7 @@ const GeneralLedger: React.FC = () => {
         )}
 
         {/* ── Report Table ── */}
-        <div className="flex-1 overflow-auto p-3 custom-scrollbar-emerald">
+        <div className="gl-report-panel flex-1 overflow-auto p-3 custom-scrollbar-emerald">
           <Spin spinning={isLoading} tip="Loading…" size="small">
             {ledgerData && ledgerData.entries.length > 0 ? (
               <div className="font-mono fz-small">
@@ -264,9 +264,9 @@ const GeneralLedger: React.FC = () => {
                 </div>
 
                 {/* Table */}
-                <table className={`w-full border ${tblBdr}`} style={{ borderCollapse: 'collapse' }}>
+                <table className={`gl-table w-full border ${tblBdr}`} style={{ borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr className={tblHd}>
+                    <tr className={`gl-table-head ${tblHd}`}>
                       <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold w-24`}>Date</th>
                       <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold w-20`}>MB No</th>
                       <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold w-20`}>Voucher</th>
@@ -349,6 +349,36 @@ const GeneralLedger: React.FC = () => {
         @media print {
           header, .shrink-0 { display: none !important; }
           .flex-1 { overflow: visible !important; }
+          /* Strip all the on-screen accent colors (rose/emerald/teal for
+             debit/credit/balance) — printed output should be plain black
+             text on white, not a copy of the dark-mode color scheme. */
+          .gl-report-panel, .gl-report-panel * {
+            color: #000 !important;
+            background: #fff !important;
+            border-color: #999 !important;
+          }
+        }
+
+        /* ── General Ledger — dark mode ── */
+        html.dark .gl-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .gl-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .gl-filter-bar { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .gl-stats-bar { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .gl-report-panel { background-color: #000000 !important; }
+        html.dark .gl-table { border-color: rgba(255,255,255,.07) !important; }
+        html.dark .gl-table td,
+        html.dark .gl-table th { border-color: rgba(255,255,255,.07) !important; }
+        html.dark .gl-table-head { background-color: #1c1c1e !important; color: #8e8e93 !important; }
+        html.dark .gl-page input,
+        html.dark .gl-page .ant-picker,
+        html.dark .gl-page .ant-select-selector {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .gl-page .ant-picker-input > input,
+        html.dark .gl-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .gl-page label { color: #8e8e93 !important; }
+        html.dark .gl-page button:not(.ant-btn-primary):not(.bg-emerald-600) {
+          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
         }
       `}</style>
     </ConfigProvider>

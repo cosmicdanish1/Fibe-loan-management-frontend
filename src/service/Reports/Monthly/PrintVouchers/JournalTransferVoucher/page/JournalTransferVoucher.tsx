@@ -31,6 +31,69 @@ interface JournalVoucherData {
   entries: VoucherEntry[];
 }
 
+// Print-only layout matching the legacy report design standard used across
+// every report this session (letterhead, Date/Page Number line, plain
+// column headers, dashed rules, TOTAL row, footer note) — plain monospace
+// text, not a clone of the on-screen colorful UI. Feeds handlePrint only.
+const JTV_LINE_W = 96;
+const JTV_DASH = '-'.repeat(JTV_LINE_W);
+const JTV_COL_MB = 12;
+const JTV_COL_NAME = 20;
+const JTV_COL_CODE = 8;
+const JTV_COL_HNAME = 22;
+const JTV_COL_AMT = (JTV_LINE_W - JTV_COL_MB - JTV_COL_NAME - JTV_COL_CODE - JTV_COL_HNAME) / 2;
+
+const jtvFmt = (n: number) =>
+  Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const jtvPadL = (s: string, w: number) => s.padStart(w);
+const jtvPadR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
+const jtvCenter = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
+
+function buildJournalVoucherLines(data: JournalVoucherData, totalDebit: number, totalCredit: number): string[] {
+  const lines: string[] = [];
+  const now = dayjs().format('DD-MMM-YYYY/h:mmA');
+
+  lines.push(jtvCenter('Espat Karmchari Co-Operative Credit Society Limited.', JTV_LINE_W));
+  lines.push(jtvCenter('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', JTV_LINE_W));
+  lines.push(jtvCenter('Journal / Transfer Voucher', JTV_LINE_W));
+  lines.push('');
+  lines.push(`Voucher No : ${data.voucher_no}`);
+  lines.push(`Date : ${dayjs(data.trans_date).format('DD-MMM-YYYY')}`);
+  const printedStr = `Printed : ${now}`;
+  const pageStr = 'Page Number :  1';
+  lines.push(`${printedStr}${jtvPadL(pageStr, JTV_LINE_W - printedStr.length)}`);
+  lines.push(JTV_DASH);
+
+  lines.push(
+    `${jtvPadR('MBNO', JTV_COL_MB)}${jtvPadR('Name', JTV_COL_NAME)}${jtvPadR('Code', JTV_COL_CODE)}${jtvPadR('Head Name', JTV_COL_HNAME)}` +
+    `${jtvPadL('Debit', JTV_COL_AMT)}${jtvPadL('Credit', JTV_COL_AMT)}`
+  );
+  lines.push(JTV_DASH);
+
+  data.entries.forEach(e => {
+    lines.push(
+      `${jtvPadR(e.member_code || '', JTV_COL_MB)}${jtvPadR(e.member_name || '', JTV_COL_NAME)}` +
+      `${jtvPadR(e.head_code, JTV_COL_CODE)}${jtvPadR(e.head_name, JTV_COL_HNAME)}` +
+      `${jtvPadL(e.debit > 0 ? jtvFmt(e.debit) : '', JTV_COL_AMT)}${jtvPadL(e.credit > 0 ? jtvFmt(e.credit) : '', JTV_COL_AMT)}`
+    );
+  });
+
+  lines.push(JTV_DASH);
+  lines.push(
+    `${jtvPadR('TOTAL :-', JTV_COL_MB + JTV_COL_NAME + JTV_COL_CODE + JTV_COL_HNAME)}` +
+    `${jtvPadL(jtvFmt(totalDebit), JTV_COL_AMT)}${jtvPadL(jtvFmt(totalCredit), JTV_COL_AMT)}`
+  );
+  lines.push(JTV_DASH);
+  const balanced = Math.abs(totalDebit - totalCredit) < 0.01;
+  lines.push(`Status : ${balanced ? 'BALANCED' : 'UNBALANCED'}`);
+  lines.push('');
+  lines.push(`Narration : ${data.narration || 'No narration provided'}`);
+  lines.push('');
+  lines.push('* Report As Per Data Available ..');
+
+  return lines;
+}
+
 const JournalTransferVoucher: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark' || (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -122,138 +185,31 @@ const JournalTransferVoucher: React.FC = () => {
     await showDialog('info', 'Exported', 'CSV exported successfully');
   };
 
+  // Rebuilt to match the legacy report design standard used across every
+  // report this session: monospace letterhead layout, not a colorful clone
+  // of the on-screen UI (that HTML/CSS template — amber boxes, JetBrains
+  // Mono web font, signature blocks — never matched the legacy look this
+  // app's prints are meant to follow, confirmed against multiple user-
+  // supplied legacy reference screenshots this session).
   const handlePrint = async () => {
     if (!voucherData) {
       await showDialog('warning', 'No Voucher', 'Please select a voucher first');
       return;
     }
 
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Journal/Transfer Voucher - ${voucherData.voucher_no}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'JetBrains Mono', monospace; padding: 20px; background: white; color: #000; }
-            .container { max-width: 900px; margin: 0 auto; }
-            
-            .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 15px; margin-bottom: 20px; }
-            .header h1 { font-size: 20px; font-weight: 700; margin-bottom: 5px; }
-            .header p { font-size: 11px; color: #666; }
-            
-            .voucher-info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; padding: 15px; background: #fef3c7; border: 1px dashed #f59e0b; }
-            .info-item { }
-            .info-label { font-size: 9px; color: #f59e0b; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
-            .info-value { font-size: 12px; font-weight: 700; color: #000; }
-            
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th { background: #f59e0b; color: #000; padding: 10px 8px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; border: 1px dashed #000; }
-            td { padding: 8px; border: 1px dashed #ccc; font-size: 11px; }
-            .text-right { text-align: right; }
-            .text-center { text-align: center; }
-            .amount { font-weight: 700; }
-            .debit-col { color: #059669; }
-            .credit-col { color: #dc2626; }
-            
-            .total-row { background: #fef3c7; font-weight: 700; }
-            .total-row td { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 12px 8px; }
-            
-            .narration { margin: 20px 0; padding: 15px; background: #fffbeb; border: 1px dashed #f59e0b; border-left: 4px solid #f59e0b; }
-            .narration-label { font-size: 9px; color: #f59e0b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
-            .narration-text { font-size: 11px; color: #000; font-style: italic; }
-            
-            .footer { margin-top: 60px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
-            .signature { text-align: center; border-top: 1px solid #000; padding-top: 8px; }
-            .signature-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #666; }
-            
-            @media print {
-              body { padding: 0; }
-              .no-print { display: none !important; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>EMPLOYEE COOPERATIVE CREDIT SOCIETY</h1>
-              <p>JOURNAL / TRANSFER VOUCHER</p>
-            </div>
-            
-            <div class="voucher-info">
-              <div class="info-item">
-                <div class="info-label">Voucher No</div>
-                <div class="info-value">${voucherData.voucher_no}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Date</div>
-                <div class="info-value">${dayjs(voucherData.trans_date).format('DD-MMM-YYYY')}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Type</div>
-                <div class="info-value">JOURNAL</div>
-              </div>
-            </div>
-            
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 100px;">MBNO</th>
-                  <th>Name</th>
-                  <th style="width: 80px;">Code</th>
-                  <th>Name</th>
-                  <th style="width: 120px;" class="text-right">Debit</th>
-                  <th style="width: 120px;" class="text-right">Credit</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${voucherData.entries.map((entry) => `
-                  <tr>
-                    <td>${entry.member_code || '-'}</td>
-                    <td>${entry.member_name || '-'}</td>
-                    <td style="color: #f59e0b; font-weight: 700;">${entry.head_code}</td>
-                    <td style="color: #3b82f6;">${entry.head_name}</td>
-                    <td class="text-right amount debit-col">${entry.debit > 0 ? formatCurrency(entry.debit) : '-'}</td>
-                    <td class="text-right amount credit-col">${entry.credit > 0 ? formatCurrency(entry.credit) : '-'}</td>
-                  </tr>
-                `).join('')}
-                <tr class="total-row">
-                  <td colspan="4" class="text-right" style="text-transform: uppercase; letter-spacing: 1px;">TOTAL</td>
-                  <td class="text-right amount debit-col">${formatCurrency(totalDebit)}</td>
-                  <td class="text-right amount credit-col">${formatCurrency(totalCredit)}</td>
-                </tr>
-              </tbody>
-            </table>
-            
-            <div class="narration">
-              <div class="narration-label">Narration</div>
-              <div class="narration-text">${voucherData.narration || 'No narration provided'}</div>
-            </div>
-            
-            <div class="footer">
-              <div class="signature">
-                <div class="signature-label">Prepared By</div>
-              </div>
-              <div class="signature">
-                <div class="signature-label">Checked By</div>
-              </div>
-              <div class="signature">
-                <div class="signature-label">Authorized By</div>
-              </div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
+    const lines = buildJournalVoucherLines(voucherData, totalDebit, totalCredit);
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
     document.body.appendChild(iframe);
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (doc) {
       doc.open();
-      doc.write(printContent);
+      doc.write(`<!DOCTYPE html><html><head><title>Journal/Transfer Voucher - ${voucherData.voucher_no}</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  body { margin: 0; }
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
+</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -279,17 +235,17 @@ const JournalTransferVoucher: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm, token: { colorPrimary: '#f59e0b', borderRadius: 8 } }}>
-      <div className={`h-screen flex flex-col ${bg}`}>
-        
+      <div className={`jtv-page h-screen flex flex-col ${bg}`}>
+
         {/* Compact Header */}
-        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-2 flex items-center justify-between shadow-xl shrink-0 border-b border-white/5">
+        <div className="jtv-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-2 flex items-center justify-between shadow-xl shrink-0 border-b border-white/5">
           <div className="flex items-center gap-2">
             <div className="bg-white/20 backdrop-blur-sm p-1.5 rounded-lg shadow-inner">
               <BookOpen size={16} className="text-white" />
             </div>
             <div>
               <h1 className="fz-body font-black text-white tracking-tight leading-none">Journal / Transfer Voucher</h1>
-              <p className="fz-caption font-extrabold text-amber-100 uppercase tracking-wider mt-0.5 opacity-90">Employee Cooperative Credit Society</p>
+              <p className="fz-caption font-extrabold text-amber-100 uppercase tracking-wider mt-0.5 opacity-90">Espat Karmchari Co-Operative Credit Society</p>
             </div>
           </div>
 
@@ -324,8 +280,8 @@ const JournalTransferVoucher: React.FC = () => {
           <div className="w-[260px] flex flex-col gap-2 shrink-0">
 
             {/* Parameters Card */}
-            <div className={`${panel} backdrop-blur-xl border rounded-2xl overflow-hidden shadow-lg`}>
-              <div className={`${panelHd} border-b px-2.5 py-1.5 flex items-center justify-between`}>
+            <div className={`jtv-panel ${panel} backdrop-blur-xl border rounded-2xl overflow-hidden shadow-lg`}>
+              <div className={`jtv-panel-header ${panelHd} border-b px-2.5 py-1.5 flex items-center justify-between`}>
                 <h3 className={`fz-caption font-black ${text} tracking-wider uppercase flex items-center gap-1`}>
                   <Settings size={11} className="text-amber-600" />
                   Parameters
@@ -344,7 +300,15 @@ const JournalTransferVoucher: React.FC = () => {
                     className="w-full compact-select"
                     placeholder="Choose voucher..."
                     showSearch
-                    optionFilterProp="children"
+                    // BUG FIX: optionFilterProp="children" compares typed
+                    // text against each Option's children — but children
+                    // here is a <span> JSX element, not plain text, so
+                    // AntD's default search can never extract a matching
+                    // string from it (same bug confirmed live on Receipt/
+                    // Payment Voucher's identical pattern). "value" is the
+                    // plain voucher-number string already used as the
+                    // option's value.
+                    optionFilterProp="value"
                     loading={isLoading}
                     size="small"
                     style={{ fontWeight: 700 }}
@@ -362,7 +326,7 @@ const JournalTransferVoucher: React.FC = () => {
             {/* Compact Stats Grid */}
             {voucherData && (
               <div className="grid grid-cols-1 gap-1.5">
-                <div className={`${panel} backdrop-blur-xl border rounded-xl p-2 shadow-md hover:shadow-lg transition-shadow group`}>
+                <div className={`jtv-panel ${panel} backdrop-blur-xl border rounded-xl p-2 shadow-md hover:shadow-lg transition-shadow group`}>
                   <div className="flex items-center justify-between mb-0.5">
                     <div className={`fz-caption font-black uppercase tracking-wider ${muted}`}>Voucher No</div>
                     <Calculator size={10} className={`${isDark ? 'text-slate-600' : 'text-slate-300'} group-hover:text-amber-500 transition-colors`} />
@@ -370,7 +334,7 @@ const JournalTransferVoucher: React.FC = () => {
                   <div className={`fz-body font-black ${text} font-mono`}>{voucherData.voucher_no}</div>
                 </div>
 
-                <div className={`${panel} backdrop-blur-xl border rounded-xl p-2 shadow-md hover:shadow-lg transition-shadow group`}>
+                <div className={`jtv-panel ${panel} backdrop-blur-xl border rounded-xl p-2 shadow-md hover:shadow-lg transition-shadow group`}>
                   <div className="flex items-center justify-between mb-0.5">
                     <div className={`fz-caption font-black uppercase tracking-wider ${muted}`}>Date</div>
                     <Calculator size={10} className={`${isDark ? 'text-slate-600' : 'text-slate-300'} group-hover:text-amber-500 transition-colors`} />
@@ -401,16 +365,19 @@ const JournalTransferVoucher: React.FC = () => {
           </div>
 
           {/* Right Panel: Report Display */}
-          <div className={`flex-1 ${panel} backdrop-blur-xl border rounded-2xl shadow-xl overflow-hidden flex flex-col`}>
+          <div className={`jtv-panel flex-1 ${panel} backdrop-blur-xl border rounded-2xl shadow-xl overflow-hidden flex flex-col`}>
 
-            <div className="flex-1 overflow-auto p-3 custom-scrollbar">
+            <div className="jtv-preview-body flex-1 overflow-auto p-3 custom-scrollbar">
               {voucherData ? (
                 <div>
                   {/* Company Header */}
                   <div className={`text-center border-b-2 border-dashed ${isDark ? 'border-slate-600' : 'border-gray-800'} pb-2 mb-3`}>
                     <h1 className={`fz-body font-black ${text} tracking-tight`} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                      EMPLOYEE COOPERATIVE CREDIT SOCIETY
+                      Espat Karmchari Co-Operative Credit Society Limited.
                     </h1>
+                    <p className={`fz-caption ${muted} mt-0.5`} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                      Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006
+                    </p>
                     <p className={`fz-caption font-bold ${muted} mt-0.5 tracking-wider`} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                       JOURNAL / TRANSFER VOUCHER
                     </p>
@@ -533,6 +500,15 @@ const JournalTransferVoucher: React.FC = () => {
         @media print {
           .no-print { display: none !important; }
         }
+
+        /* ── Journal/Transfer Voucher — dark mode ── */
+        html.dark .jtv-page { background-color: #000000 !important; }
+        html.dark .jtv-topbar { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .jtv-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .jtv-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
+        html.dark .jtv-preview-body { background-color: transparent !important; }
+        html.dark .jtv-page .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .jtv-page .ant-select-selection-item { color: #f5f5f7 !important; }
       `}</style>
     </ConfigProvider>
   );

@@ -267,11 +267,11 @@ const DefineProfitLoss: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+      <div className={`define-pl-page h-screen flex flex-col font-sans selection:bg-indigo-100 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
         <Spin spinning={loading} tip="Loading definition..." size="large">
 
           {/* Header */}
-          <div className={`px-4 py-3 flex items-center justify-between z-20 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
+          <div className={`define-pl-header px-4 py-3 flex items-center justify-between z-20 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-3">
               <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100 ring-2 ring-indigo-50">
                 <Settings size={18} />
@@ -304,7 +304,7 @@ const DefineProfitLoss: React.FC = () => {
           </div>
 
           {/* Control Bar */}
-          <div className={`px-4 py-3 grid grid-cols-12 gap-4 items-end shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] z-10 shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+          <div className={`define-pl-controlbar px-4 py-3 grid grid-cols-12 gap-4 items-end shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] z-10 shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
             <div className="col-span-4 space-y-1.5">
               <label className="fz-caption font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                 <Search size={10} /> Load Existing Schedule
@@ -351,7 +351,7 @@ const DefineProfitLoss: React.FC = () => {
 
           {/* Main Content Area */}
           <div className={`flex-1 overflow-hidden flex flex-col p-4 ${isDark ? 'bg-slate-900/50' : 'bg-slate-50/50'}`}>
-            <div className={`flex-1 border rounded-2xl shadow-sm overflow-hidden flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className={`define-pl-card flex-1 border rounded-2xl shadow-sm overflow-hidden flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
               {/* Table Header Action */}
               <div className={`px-4 py-2 border-b flex justify-between items-center ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-slate-100 bg-slate-50/30'}`}>
                 <div className="flex items-center gap-2">
@@ -380,7 +380,7 @@ const DefineProfitLoss: React.FC = () => {
               </div>
 
               {/* Stats Footer */}
-              <div className="px-4 py-2 border-t border-slate-100 bg-slate-50 fz-caption font-bold text-slate-400 flex justify-between items-center">
+              <div className="define-pl-footer px-4 py-2 border-t border-slate-100 bg-slate-50 fz-caption font-bold text-slate-400 flex justify-between items-center">
                 <span>Total Rows: {tableData.length}</span>
                 <div className="flex items-center gap-2">
                   <Info size={12} />
@@ -421,6 +421,26 @@ const DefineProfitLoss: React.FC = () => {
             font-weight: 600 !important;
             color: #334155 !important;
           }
+
+          /* ── Define Profit & Loss — dark mode ── */
+          html.dark .define-pl-page { background-color: #000000 !important; }
+          html.dark .define-pl-header,
+          html.dark .define-pl-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
+          html.dark .define-pl-controlbar,
+          html.dark .define-pl-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .define-pl-page h1,
+          html.dark .define-pl-page span,
+          html.dark .define-pl-page input,
+          html.dark .define-pl-page label { color: #f5f5f7 !important; }
+          html.dark .define-pl-page label,
+          html.dark .define-pl-page .text-slate-400,
+          html.dark .define-pl-page .text-slate-500 { color: #8e8e93 !important; }
+          html.dark .define-pl-page input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .define-pl-page .custom-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+          html.dark .define-pl-page .custom-table .ant-table-tbody > tr > td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
+          html.dark .define-pl-page .custom-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
+          html.dark .define-pl-page .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+          html.dark .define-pl-page button { color: #f5f5f7 !important; }
         `}</style>
       </div>
     </ConfigProvider>

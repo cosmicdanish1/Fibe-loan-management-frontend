@@ -138,6 +138,11 @@ export const useCastCategory = (): CastCategoryHookReturn => {
             const response = await apiService.deleteCastCategory(id);
             if (response.success) {
                 await notify('info', 'electron-react-ts', 'Category Deleted', `Category code ${code} has been removed from cast_category.`);
+                // The deleted row might be the one currently loaded in the form —
+                // clear it so a stray Save can't silently recreate what was just deleted.
+                if (data.categoryCode === code) {
+                    reset();
+                }
                 fetchCategories();
             } else {
                 await notify('error', 'Delete Error', 'Failed to Delete Category', response.message || 'An unexpected error occurred.');

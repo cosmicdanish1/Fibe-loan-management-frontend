@@ -66,10 +66,10 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                 },
             }}
         >
-            <div className="h-screen flex flex-col bg-slate-50 font-sans selection:bg-green-100 overflow-hidden text-slate-900">
+            <div className="ls-root h-screen flex flex-col bg-slate-50 font-sans selection:bg-green-100 overflow-hidden text-slate-900">
 
                 {/* Compact Admin Header */}
-                <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-2 py-1 flex items-center justify-between z-10 shrink-0 shadow-lg border-b border-white/5">
+                <div className="ls-header bg-gradient-to-r from-slate-900 to-slate-900 px-2 py-1 flex items-center justify-between z-10 shrink-0 shadow-lg border-b border-white/5">
                     <div className="flex items-center gap-1.5">
                         <div className="bg-emerald-600 p-1 rounded-lg text-white shadow-lg shadow-emerald-600/20">
                             <BadgeCheck size={14} />
@@ -380,7 +380,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                 </div>
 
                 {/* Global Footer Metadata */}
-                <div className="px-2 py-1 bg-white border-t border-slate-100 flex items-center justify-between opacity-60 shrink-0">
+                <div className="ls-footer px-2 py-1 bg-white border-t border-slate-100 flex items-center justify-between opacity-60 shrink-0">
                     <div className="flex items-center gap-2">
                         <Building2 size={9} className="text-slate-400" />
                         <div className="flex items-center gap-2">
@@ -447,6 +447,59 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
             background: #dcfce7 !important;
             border-radius: 10px !important;
         }
+
+        /* ── Dark mode ── */
+        html.dark .ls-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .ls-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ls-root .bg-slate-50,
+        html.dark .ls-root .bg-slate-50\\/50 { background-color: #000000 !important; }
+        html.dark .ls-root .bg-white { background-color: #1c1c1e !important; }
+        html.dark .ls-root .border-slate-200,
+        html.dark .ls-root .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ls-root .text-slate-900,
+        html.dark .ls-root .text-slate-800,
+        html.dark .ls-root .text-slate-700 { color: #f5f5f7 !important; }
+        html.dark .ls-root .text-slate-600,
+        html.dark .ls-root .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .ls-root .text-slate-400 { color: #71717a !important; }
+        html.dark .ls-root label { color: #8e8e93 !important; }
+        html.dark .ls-root .text-emerald-600 { color: #34d399 !important; }
+        html.dark .ls-root .text-rose-600 { color: #ff453a !important; }
+        html.dark .ls-root .bg-indigo-50 { background-color: rgba(99,102,241,.12) !important; }
+        html.dark .ls-root .border-indigo-100 { border-color: rgba(99,102,241,.3) !important; }
+        html.dark .ls-root .text-indigo-700 { color: #60a5fa !important; }
+        html.dark .ls-root .bg-orange-50\\/50 { background-color: rgba(251,146,60,.10) !important; }
+        html.dark .ls-root .border-orange-100,
+        html.dark .ls-root .border-orange-200\\/50 { border-color: rgba(251,146,60,.3) !important; }
+        html.dark .ls-root .text-orange-400,
+        html.dark .ls-root .text-orange-700 { color: #fb923c !important; }
+        html.dark .ls-root .bg-purple-50 { background-color: rgba(192,132,252,.12) !important; }
+        html.dark .ls-root .border-purple-100 { border-color: rgba(192,132,252,.3) !important; }
+        html.dark .ls-root .text-purple-700 { color: #c4b5fd !important; }
+        html.dark .ls-root .bg-emerald-50\\/50,
+        html.dark .ls-root .bg-emerald-50\\/30,
+        html.dark .ls-root .bg-emerald-50\\/20 { background-color: rgba(52,211,153,.12) !important; }
+        html.dark .ls-root .border-emerald-200,
+        html.dark .ls-root .border-emerald-100 { border-color: rgba(52,211,153,.3) !important; }
+        html.dark .ls-root .text-amber-800 { color: #fbbf24 !important; }
+        html.dark .ls-root .text-fuchsia-700 { color: #e879f9 !important; }
+        /* footer */
+        html.dark .ls-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .ls-root .bg-slate-200 { background-color: rgba(255,255,255,.08) !important; }
+        /* antd inputs / selects */
+        html.dark .ls-root .ant-input,
+        html.dark .ls-root input.ant-input,
+        html.dark .ls-root .custom-select-premium .ant-select-selector {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .ls-root .ant-select-selection-item,
+        html.dark .ls-root .ant-select-selection-search-input { color: #f5f5f7 !important; }
+        html.dark .ls-root .ant-select-selection-placeholder,
+        html.dark .ls-root .ant-input::placeholder { color: #71717a !important; }
+        html.dark .ls-root .ant-input[readonly] { background-color: rgba(255,255,255,.03) !important; color: #8e8e93 !important; }
+        html.dark .premium-dropdown-list { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .premium-dropdown-list .ant-select-item { color: #f5f5f7 !important; }
+        html.dark .premium-dropdown-list .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; color: #34d399 !important; }
       `}</style>
         </ConfigProvider>
     );

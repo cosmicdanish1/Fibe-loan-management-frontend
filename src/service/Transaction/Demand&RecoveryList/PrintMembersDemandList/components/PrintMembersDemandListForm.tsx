@@ -15,10 +15,10 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
 }) => {
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="pmd-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="pmd-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
                             <Printer size={13} className="text-white" />
@@ -147,7 +147,7 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="pmd-footer px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5"><Building2 size={9} className="text-slate-400" /><span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Administration</span></div>
                     <span className="fz-mini font-black text-indigo-400 uppercase tracking-wide">Reporting Mode</span>
                 </div>
@@ -155,6 +155,27 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
             <style>{`
                 .pmd-sel .ant-select-selector { height: 28px !important; min-height: 28px !important; font-size: 10px !important; font-weight: 700 !important; }
                 .pmd-sel .ant-select-selection-item { line-height: 26px !important; font-size: 10px !important; }
+
+                /* ── Dark mode ── */
+                html.dark .pmd-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .pmd-header { background: #0c0c0e !important; }
+                html.dark .pmd-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .pmd-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .pmd-root .border-slate-200,
+                html.dark .pmd-root .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .pmd-root .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .pmd-root .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .pmd-root .text-slate-400,
+                html.dark .pmd-root .text-slate-300 { color: #71717a !important; }
+                html.dark .pmd-root .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .pmd-root .ant-input {
+                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .pmd-sel .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                html.dark .pmd-root button.bg-white { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
+                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
             `}</style>
         </ConfigProvider>
     );

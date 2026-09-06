@@ -117,10 +117,10 @@ const CashBook2: React.FC = () => {
         colorBorder: isDark ? '#334155' : '#e2e8f0',
       },
     }}>
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+      <div className={`cashbook2-page h-screen flex flex-col font-sans overflow-hidden ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
 
         {/* Header */}
-        <div className={`px-4 py-2.5 flex items-center justify-between z-10 shrink-0 ${header}`}>
+        <div className={`cashbook2-header px-4 py-2.5 flex items-center justify-between z-10 shrink-0 ${header}`}>
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-2 rounded-lg text-white">
               <BookOpen size={18} />
@@ -152,8 +152,8 @@ const CashBook2: React.FC = () => {
           {/* Left panel */}
           <div className="cb2-no-print w-[260px] flex flex-col gap-3 shrink-0">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className={`rounded-xl overflow-hidden ${panel}`}>
-              <div className={`px-3 py-2 flex items-center justify-between ${panelHd}`}>
+              className={`cashbook2-params-card rounded-xl overflow-hidden ${panel}`}>
+              <div className={`cashbook2-card-header px-3 py-2 flex items-center justify-between ${panelHd}`}>
                 <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
                   <Settings size={11} className="text-indigo-400" /> Parameters
                 </h3>
@@ -201,8 +201,8 @@ const CashBook2: React.FC = () => {
           </div>
 
           {/* Report panel */}
-          <div className={`flex-1 rounded-xl flex flex-col overflow-hidden ${panel}`}>
-            <div className={`px-4 py-2.5 flex items-center justify-between shrink-0 ${panelHd}`}>
+          <div className={`cashbook2-report-panel flex-1 rounded-xl flex flex-col overflow-hidden ${panel}`}>
+            <div className={`cashbook2-card-header px-4 py-2.5 flex items-center justify-between shrink-0 ${panelHd}`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-slate-100 border-slate-200'}`}>
                   <Database size={14} className="text-indigo-400" />
@@ -217,14 +217,14 @@ const CashBook2: React.FC = () => {
             <div className="flex-1 overflow-auto p-3">
               <Spin spinning={loading} tip="Loading...">
                 {data?.entries?.length ? (
-                  <div className="cb2-print-report font-mono text-xs">
+                  <div className="cb2-print-report cashbook2-report-body font-mono text-xs">
                     <div className={`text-center mb-3 border-b border-dashed pb-2 ${tblBdr}`}>
                       <div className={`text-sm font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
                       <div className={`fz-caption ${muted}`}>Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
                     </div>
 
                     <div className={`border rounded-lg overflow-hidden ${tblBdr}`}>
-                      <table className="w-full text-xs">
+                      <table className="cashbook2-table w-full text-xs">
                         <thead>
                           <tr className={`border-b ${tblBdr} ${tblHd}`}>
                             <th rowSpan={2} className={`text-left py-2 px-3 border-r font-bold w-20 align-bottom ${tblBdr} ${tblHdTx}`}>CODE</th>
@@ -313,7 +313,7 @@ const CashBook2: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className={`px-4 py-2 flex items-center justify-between shrink-0 ${ftrBg}`}>
+        <div className={`cashbook2-footer px-4 py-2 flex items-center justify-between shrink-0 ${ftrBg}`}>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
             <span className={`fz-small font-bold uppercase tracking-wide ${subtle}`}>Financial Ledger v2</span>
@@ -362,6 +362,38 @@ const CashBook2: React.FC = () => {
 
           @page { margin:0.5in; size:A4 portrait; }
         }
+
+        /* ── Cash Book 2 — dark mode (reinforces the page's own isDark styling
+           with the app-wide Settings palette when html.dark is active) ── */
+        html.dark .cashbook2-page { background-color: #000000 !important; }
+        html.dark .cashbook2-header,
+        html.dark .cashbook2-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
+        html.dark .cashbook2-params-card,
+        html.dark .cashbook2-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cashbook2-card-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cashbook2-report-body { background-color: #1c1c1e !important; }
+        html.dark .cashbook2-page .bg-\[\#0f172a\] { background-color: #000000 !important; }
+        html.dark .cashbook2-page .bg-slate-800,
+        html.dark .cashbook2-page .bg-slate-700,
+        html.dark .cashbook2-page .bg-slate-700\/60 { background-color: #1c1c1e !important; }
+        html.dark .cashbook2-page .bg-slate-900\/50,
+        html.dark .cashbook2-page .bg-slate-900\/60,
+        html.dark .cashbook2-page .bg-slate-900\/40 { background-color: #0c0c0e !important; }
+        html.dark .cashbook2-page .border-slate-700,
+        html.dark .cashbook2-page .border-slate-600,
+        html.dark .cashbook2-page .border-slate-500 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cashbook2-page .text-slate-100,
+        html.dark .cashbook2-page .text-slate-200,
+        html.dark .cashbook2-page .text-slate-300 { color: #f5f5f7 !important; }
+        html.dark .cashbook2-page .text-slate-400,
+        html.dark .cashbook2-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .cashbook2-page label { color: #8e8e93 !important; }
+        html.dark .cashbook2-table thead tr { background-color: #1c1c1e !important; }
+        html.dark .cashbook2-table td,
+        html.dark .cashbook2-table th { border-color: rgba(255,255,255,.07) !important; }
+        html.dark .cashbook2-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .cashbook2-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .cashbook2-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
       `}</style>
     </ConfigProvider>
   );

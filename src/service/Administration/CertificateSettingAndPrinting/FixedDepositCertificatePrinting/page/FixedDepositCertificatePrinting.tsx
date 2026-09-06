@@ -102,11 +102,11 @@ const FixedDepositCertificatePrinting: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 8, colorBgContainer: '#1e293b', colorBorder: '#334155' } }}>
-      <div className="h-screen flex flex-col overflow-hidden bg-[#0f172a] text-slate-100 font-sans">
+      <div className="fdcp-app h-screen flex flex-col overflow-hidden bg-[#0f172a] text-slate-100 font-sans">
 
         {/* Header */}
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700 bg-slate-800">
+          className="fdcp-header px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700 bg-slate-800">
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/30"><Printer size={18} className="text-white" /></div>
             <div>
@@ -132,7 +132,7 @@ const FixedDepositCertificatePrinting: React.FC = () => {
           {/* Form Panel */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
             className="md:w-5/12 overflow-auto space-y-4 pr-1">
-            <div className="rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
+            <div className="fdcp-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
               <div className="px-5 py-3.5 border-b border-slate-700 flex items-center gap-2.5">
                 <FileText size={15} className="text-indigo-400" />
                 <h2 className="text-xs font-black text-white uppercase tracking-wider">Account Details</h2>
@@ -197,7 +197,7 @@ const FixedDepositCertificatePrinting: React.FC = () => {
 
           {/* Certificate Preview */}
           <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-            className="md:w-7/12 flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/40">
+            className="fdcp-preview-wrap md:w-7/12 flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/40">
             <p className="fz-small text-slate-500 uppercase tracking-widest mb-4 font-bold">Certificate Preview</p>
             <motion.div
               animate={{ y: form.id ? 0 : 4 }} transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -243,6 +243,30 @@ const FixedDepositCertificatePrinting: React.FC = () => {
             </motion.div>
           </motion.div>
         </div>
+
+        <style>{`
+          /* ── FD Certificate Printing — dark mode (Settings-panel palette) ── */
+          html.dark .fdcp-app { background-color: #000000 !important; color: #f5f5f7 !important; }
+          html.dark .fdcp-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .fdcp-header .text-slate-400 { color: #8e8e93 !important; }
+          html.dark .fdcp-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .fdcp-card .text-slate-400 { color: #8e8e93 !important; }
+          html.dark .fdcp-card .text-slate-500 { color: #71717a !important; }
+          /* Inputs (form panel only — certificate preview paper stays untouched) */
+          html.dark .fdcp-card input,
+          html.dark .fdcp-card select,
+          html.dark .fdcp-card textarea {
+            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+          }
+          html.dark .fdcp-card label { color: #8e8e93 !important; }
+          html.dark .fdcp-app .bg-slate-700 { background-color: rgba(255,255,255,.05) !important; }
+          html.dark .fdcp-app .border-slate-600,
+          html.dark .fdcp-app .border-slate-700 { border-color: rgba(255,255,255,.08) !important; }
+          html.dark .fdcp-app .bg-slate-800 { background-color: #1c1c1e !important; }
+          /* Preview chrome (dashed wrapper) — the paper certificate itself is intentionally left light */
+          html.dark .fdcp-preview-wrap { background-color: rgba(255,255,255,.03) !important; border-color: rgba(255,255,255,.08) !important; }
+          html.dark .fdcp-preview-wrap > p.text-slate-500 { color: #71717a !important; }
+        `}</style>
       </div>
     </ConfigProvider>
   );

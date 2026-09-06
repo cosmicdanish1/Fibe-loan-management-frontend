@@ -8,8 +8,12 @@ const LoanEntry: React.FC = () => {
   const loanProps = useLoanEntry();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="loanentry-page h-screen bg-slate-50 overflow-hidden">
       <LoanEntryForm {...loanProps} />
+
+      <style>{`
+        html.dark .loanentry-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

@@ -25,9 +25,24 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
     handleSave, handleReset, handleExit,
     addVoucherEntry, updateVoucherEntry, removeVoucherEntry,
 }) => {
-    const installmentAmt = formData.sanctionLoanAmount
-        ? (parseFloat(formData.sanctionLoanAmount) / (parseInt(formData.noOfInstallments) || 1)).toFixed(2)
-        : '0.00';
+    // BUG FIX: was a flat sanctionAmount/installments split (no interest at all) —
+    // purely cosmetic, since the actual EMI that gets stored to loan_master.instal_amt
+    // and used by real repayment (voucher.service.ts's generateLoanVoucher) already
+    // uses a proper reducing-balance formula. But showing the wrong figure here before
+    // disbursement is misleading to the operator (e.g. a real ₹10,000/60mo/12.5% loan
+    // showed ₹166.67 here vs the ₹224.98 actually charged) — mirror the same formula so
+    // the preview matches what will actually be posted.
+    const installmentAmt = (() => {
+        const principal = parseFloat(formData.sanctionLoanAmount) || 0;
+        const n = parseInt(formData.noOfInstallments) || 0;
+        if (!principal || !n) return '0.00';
+        const annualRate = parseFloat(modalData.rate) || 12;
+        const monthlyRate = annualRate / 100 / 12;
+        const emi = monthlyRate > 0
+            ? (principal * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
+            : principal / n;
+        return emi.toFixed(2);
+    })();
 
     usePageToolbarActions({
         onSave: handleSave,
@@ -36,10 +51,10 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
 
     return (
         <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+            <div className="lp-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
 
                 {/* ── Header ── */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
+                <div className="lp-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
                             <CreditCard size={13} className="text-white" />
@@ -335,7 +350,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                 </div>
 
                 {/* ── Footer ── */}
-                <div className="px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+                <div className="lp-footer px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1.5">
                         <CreditCard size={9} className="text-slate-400" />
                         <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Loan Payment</span>
@@ -370,6 +385,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                 }
                 open={modalData.isOpen} onCancel={closeModal} footer={null}
                 width={520} centered styles={{ body: { padding: '12px' } }}
+                className="lp-modal"
             >
                 <div className="grid grid-cols-2 gap-2 bg-slate-50 border border-slate-200 rounded-lg p-2.5 mb-3">
                     {([
@@ -429,6 +445,83 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                 .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
                 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
                 input[type=number] { -moz-appearance: textfield; }
+
+                /* ── Dark mode ── */
+                html.dark .lp-root { background-color: #000000 !important; color: #f5f5f7 !important; }
+                html.dark .lp-header { background-image: none !important; background-color: #0c0c0e !important; border-bottom: 1px solid rgba(255,255,255,.08) !important; }
+                html.dark .lp-root .bg-white { background-color: #1c1c1e !important; }
+                html.dark .lp-root .bg-slate-50,
+                html.dark .lp-root .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .lp-root .border-slate-200,
+                html.dark .lp-root .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .lp-root .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+                html.dark .lp-root .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
+                html.dark .lp-root .text-slate-900,
+                html.dark .lp-root .text-slate-800,
+                html.dark .lp-root .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .lp-root .text-slate-600,
+                html.dark .lp-root .text-slate-500 { color: #8e8e93 !important; }
+                html.dark .lp-root .text-slate-400 { color: #71717a !important; }
+                html.dark .lp-root label { color: #8e8e93 !important; }
+                html.dark .lp-root .text-emerald-600,
+                html.dark .lp-root .text-emerald-700,
+                html.dark .lp-root .text-emerald-400 { color: #34d399 !important; }
+                html.dark .lp-root .text-rose-600,
+                html.dark .lp-root .text-rose-500 { color: #ff453a !important; }
+                html.dark .lp-root .bg-emerald-50 { background-color: rgba(52,211,153,.12) !important; }
+                html.dark .lp-root .border-emerald-200,
+                html.dark .lp-root .border-emerald-100 { border-color: rgba(52,211,153,.3) !important; }
+                html.dark .lp-root .bg-rose-50 { background-color: rgba(255,69,58,.12) !important; }
+                html.dark .lp-root .border-rose-200 { border-color: rgba(255,69,58,.3) !important; }
+                html.dark .lp-root .bg-indigo-50 { background-color: rgba(99,102,241,.12) !important; }
+                html.dark .lp-root .border-indigo-100 { border-color: rgba(99,102,241,.3) !important; }
+                html.dark .lp-root .text-indigo-700,
+                html.dark .lp-root .text-blue-700 { color: #60a5fa !important; }
+                html.dark .lp-root .text-purple-700 { color: #c4b5fd !important; }
+                /* inactive toggle / white buttons */
+                html.dark .lp-root button.bg-white { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+                /* footer strip */
+                html.dark .lp-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+                /* table */
+                html.dark .lp-root table thead { background-color: #1c1c1e !important; }
+                html.dark .lp-root table th { color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+                html.dark .lp-root table td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
+                html.dark .lp-root table tr:hover { background-color: rgba(255,255,255,.05) !important; }
+                /* antd inputs / selects / pickers */
+                html.dark .lp-root .ant-input,
+                html.dark .lp-root input.ant-input,
+                html.dark .lp-root .ant-picker,
+                html.dark .lp-sel .ant-select-selector,
+                html.dark .lp-tbl-sel .ant-select-selector {
+                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+                }
+                html.dark .lp-root .ant-select-selection-item,
+                html.dark .lp-root .ant-select-selection-search-input,
+                html.dark .lp-root .ant-picker input { color: #f5f5f7 !important; }
+                html.dark .lp-root .ant-select-selection-placeholder,
+                html.dark .lp-root .ant-input::placeholder,
+                html.dark .lp-root .ant-picker input::placeholder { color: #71717a !important; }
+                html.dark .lp-root .ant-select-arrow,
+                html.dark .lp-root .ant-picker-suffix { color: #8e8e93 !important; }
+                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
+                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
+                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
+                /* Sanction modal */
+                html.dark .lp-modal .ant-modal-content { background-color: #1c1c1e !important; }
+                html.dark .lp-modal .ant-modal-header { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .lp-modal .ant-modal-title { background-color: transparent !important; }
+                html.dark .lp-modal .text-slate-800 { color: #f5f5f7 !important; }
+                html.dark .lp-modal .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
+                html.dark .lp-modal .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+                html.dark .lp-modal .text-slate-400 { color: #8e8e93 !important; }
+                html.dark .lp-modal .text-slate-700 { color: #f5f5f7 !important; }
+                html.dark .lp-modal .text-emerald-700 { color: #34d399 !important; }
+                html.dark .lp-modal .text-indigo-700 { color: #60a5fa !important; }
+                html.dark .lp-modal .bg-emerald-50 { background-color: rgba(52,211,153,.12) !important; border-color: rgba(52,211,153,.3) !important; }
+                html.dark .lp-modal .bg-indigo-50 { background-color: rgba(99,102,241,.12) !important; border-color: rgba(99,102,241,.3) !important; }
+                html.dark .lp-modal .bg-rose-50 { background-color: rgba(255,69,58,.12) !important; border-color: rgba(255,69,58,.3) !important; }
+                html.dark .lp-modal .text-rose-700 { color: #ff453a !important; }
+                html.dark .lp-modal .bg-slate-100 { background-color: #1c1c1e !important; border: 1px solid rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
             `}</style>
         </ConfigProvider>
     );

@@ -122,12 +122,12 @@ const PLBalanceSheet: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-        
+      <div className={`plbs-page h-screen flex font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+
         {/* Main Content - Full Width Legacy Style */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className={`border-b px-4 py-2 shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
+          <div className={`plbs-header border-b px-4 py-2 shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-3">
               <div className="bg-purple-600 p-2 rounded-lg text-white shadow-lg">
                 <Scale size={18} />
@@ -144,7 +144,7 @@ const PLBalanceSheet: React.FC = () => {
 
           {/* Legacy Tab Interface */}
           <div className="flex-1 p-2 overflow-auto">
-            <div className={`rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className={`plbs-card rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
               
               {/* Custom Tab Headers - Legacy Style */}
               <div className={`border-b ${isDark ? 'border-slate-700 bg-slate-900/50' : 'border-slate-200 bg-slate-50'}`}>
@@ -451,6 +451,26 @@ const PLBalanceSheet: React.FC = () => {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        /* ── PL Balance Sheet — dark mode (screen chrome; legacy report table already isDark-aware) ── */
+        html.dark .plbs-page { background-color: #000000 !important; }
+        html.dark .plbs-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .plbs-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .plbs-page .bg-slate-900\/50 { background-color: #0c0c0e !important; }
+        html.dark .plbs-page .bg-slate-700\/40,
+        html.dark .plbs-page .bg-slate-700 { background-color: #1c1c1e !important; }
+        html.dark .plbs-page .border-slate-600,
+        html.dark .plbs-page .border-slate-700 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .plbs-page .text-slate-100,
+        html.dark .plbs-page .text-slate-200,
+        html.dark .plbs-page .text-slate-300 { color: #f5f5f7 !important; }
+        html.dark .plbs-page .text-slate-400,
+        html.dark .plbs-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .plbs-page label { color: #8e8e93 !important; }
+        html.dark .plbs-page .ant-picker,
+        html.dark .plbs-page .ant-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .plbs-page .ant-picker input { color: #f5f5f7 !important; }
+        html.dark .plbs-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
       `}</style>
     </ConfigProvider>
   );

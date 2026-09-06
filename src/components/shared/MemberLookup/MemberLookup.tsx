@@ -49,7 +49,11 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
             }
             url.searchParams.append('limit', '500');
 
-            const response = await fetch(url.toString(), { signal: controller.signal });
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(url.toString(), {
+                signal: controller.signal,
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             if (response.ok) {
                 const result = await response.json();
                 const data = result.data || result || [];

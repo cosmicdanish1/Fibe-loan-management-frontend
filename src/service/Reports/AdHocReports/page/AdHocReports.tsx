@@ -174,8 +174,8 @@ const AdHocReports: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-slate-50 font-sans p-4 overflow-hidden flex flex-col">
-      <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+    <div className="adhoc-reports-page h-screen bg-slate-50 font-sans p-4 overflow-hidden flex flex-col">
+      <div className="adhoc-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
         <h1 className="fz-caption font-black text-white tracking-tight uppercase">ADHOC REPORTING ENGINE</h1>
       </div>
       <div className="max-w-[1400px] mx-auto w-full flex-1 flex flex-col gap-4 overflow-hidden">
@@ -214,8 +214,8 @@ const AdHocReports: React.FC = () => {
         <div className="flex-1 flex gap-4 overflow-hidden">
 
           {/* Sidebar Filters */}
-          <div className="w-80 flex flex-col gap-4 overflow-y-auto pr-1 no-print">
-            <Card className="rounded-2xl border-slate-200 shadow-sm overflow-hidden" bodyStyle={{ padding: 16 }}>
+          <div className="adhoc-sidebar w-80 flex flex-col gap-4 overflow-y-auto pr-1 no-print">
+            <Card className="adhoc-filter-card rounded-2xl border-slate-200 shadow-sm overflow-hidden" bodyStyle={{ padding: 16 }}>
               <div className="flex items-center gap-2 mb-6">
                 <Filter size={16} className="text-indigo-500" />
                 <h3 className="fz-small font-black text-slate-400 uppercase tracking-widest leading-none">Configuration</h3>
@@ -339,7 +339,7 @@ const AdHocReports: React.FC = () => {
               </div>
             </Card>
 
-            <div className="bg-slate-100 rounded-2xl p-4 flex items-center gap-3 border border-slate-200 border-dashed">
+            <div className="adhoc-info-box bg-slate-100 rounded-2xl p-4 flex items-center gap-3 border border-slate-200 border-dashed">
               <div className="p-2 bg-white rounded-lg text-indigo-500 shadow-sm">
                 <ShieldCheck size={16} />
               </div>
@@ -351,14 +351,14 @@ const AdHocReports: React.FC = () => {
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="adhoc-main flex-1 flex flex-col overflow-hidden">
             {reportData ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.99 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden"
+                className="adhoc-results-card flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden"
               >
-                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div className="adhoc-results-header px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-slate-50 text-indigo-600 rounded-xl">
                       <TableIcon size={18} />
@@ -408,7 +408,7 @@ const AdHocReports: React.FC = () => {
                 </div>
               </motion.div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-[32px] border border-slate-100 border-dashed m-4 no-print">
+              <div className="adhoc-empty-state flex-1 flex flex-col items-center justify-center bg-white rounded-[32px] border border-slate-100 border-dashed m-4 no-print">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -460,6 +460,47 @@ const AdHocReports: React.FC = () => {
           .bg-slate-50 { background: white !important; }
           .ant-table-body { max-height: none !important; }
         }
+
+        /* ── AdHoc Reports — dark mode ── */
+        html.dark .adhoc-reports-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .adhoc-reports-page .bg-slate-50 { background-color: #000000 !important; }
+        html.dark .adhoc-topbar { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .adhoc-filter-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .adhoc-info-box { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .adhoc-results-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .adhoc-results-header { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .adhoc-empty-state { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .adhoc-reports-page input,
+        html.dark .adhoc-reports-page textarea,
+        html.dark .adhoc-reports-page .ant-input,
+        html.dark .adhoc-reports-page .ant-picker,
+        html.dark .adhoc-reports-page .ant-select-selector {
+          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
+        }
+        html.dark .adhoc-reports-page .ant-picker-input > input,
+        html.dark .adhoc-reports-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .adhoc-reports-page label { color: #8e8e93 !important; }
+        html.dark .adhoc-reports-page .text-slate-800 { color: #f5f5f7 !important; }
+        html.dark .adhoc-reports-page .text-slate-700 { color: #f5f5f7 !important; }
+        html.dark .adhoc-reports-page .text-slate-600 { color: #8e8e93 !important; }
+        html.dark .adhoc-reports-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .adhoc-reports-page .text-slate-400 { color: #71717a !important; }
+        html.dark .adhoc-reports-page .text-slate-300 { color: #71717a !important; }
+        html.dark .adhoc-reports-page .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .adhoc-reports-page .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
+        html.dark .adhoc-reports-page .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
+        html.dark .adhoc-reports-page .bg-white { background-color: #1c1c1e !important; }
+        html.dark .adhoc-reports-page .bg-indigo-50 { background-color: rgba(99,102,241,0.12) !important; }
+        html.dark .adhoc-reports-page button.bg-white { background-color: #1c1c1e !important; color: #f5f5f7 !important; }
+        html.dark .adhoc-reports-page .ant-tag { background-color: rgba(255,255,255,.05) !important; }
+        html.dark .custom-modern-table .ant-table-thead > tr > th {
+          background: #1c1c1e !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.07) !important;
+        }
+        html.dark .custom-modern-table .ant-table-tbody > tr > td {
+          border-bottom-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; background-color: #1c1c1e !important;
+        }
+        html.dark .custom-modern-table .ant-table-tbody > tr:hover > td { background-color: rgba(255,255,255,.08) !important; }
+        html.dark .custom-modern-table { background-color: #1c1c1e !important; }
       `}</style>
     </div>
   );

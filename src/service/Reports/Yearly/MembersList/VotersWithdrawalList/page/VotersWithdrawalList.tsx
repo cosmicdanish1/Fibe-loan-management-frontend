@@ -190,14 +190,14 @@ const VotersWithdrawalList: React.FC = () => {
         },
       }}
     >
-      <div className={`h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-        <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+      <div className={`voters-withdrawal-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        <div className="voters-withdrawal-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
           <h1 className="fz-caption font-black text-white tracking-tight uppercase">5.2.1 Voters/Withdrawal List</h1>
         </div>
         <div className="flex-1 flex overflow-hidden">
 
         {/* Compact Sidebar */}
-        <div className={`w-80 flex flex-col shrink-0 border-r ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className={`voters-withdrawal-sidebar w-80 flex flex-col shrink-0 border-r ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           {/* Header */}
           <div className={`p-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
             <div className="flex items-center gap-3">
@@ -345,7 +345,7 @@ const VotersWithdrawalList: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className={`px-4 py-3 shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className={`voters-withdrawal-mainbar px-4 py-3 shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center justify-between">
               <div>
                 <h2 className={`fz-heading font-black ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Member Registry Report</h2>
@@ -377,7 +377,7 @@ const VotersWithdrawalList: React.FC = () => {
 
           {/* Legacy Report Table */}
           <div className="flex-1 p-4 overflow-auto">
-            <div className={`rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className={`voters-withdrawal-card rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
               
               {loading ? (
                 <div className="flex items-center justify-center py-12">
@@ -566,6 +566,17 @@ const VotersWithdrawalList: React.FC = () => {
           border-radius: 6px !important;
           font-weight: 600 !important;
         }
+
+        /* ── Voters/Withdrawal List — dark mode (reinforces the page's own isDark styling) ── */
+        html.dark .voters-withdrawal-page { background-color: #000000 !important; }
+        html.dark .voters-withdrawal-topbar { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .voters-withdrawal-sidebar,
+        html.dark .voters-withdrawal-mainbar,
+        html.dark .voters-withdrawal-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .voters-withdrawal-page label { color: #8e8e93 !important; }
+        html.dark .voters-withdrawal-page .ant-select-selector,
+        html.dark .voters-withdrawal-page .ant-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .voters-withdrawal-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
       `}</style>
     </ConfigProvider>
   );

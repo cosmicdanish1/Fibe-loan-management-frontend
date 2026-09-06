@@ -163,9 +163,32 @@ const InterestCertificate: React.FC = () => {
         token: { colorPrimary: '#0891b2', borderRadius: 6, fontSize: 12 },
       }}
     >
-      <div className={`h-screen flex flex-col overflow-hidden ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 via-cyan-50/20 to-slate-50'}`}>
+      <style>{`
+        /* ── Dark-mode overrides (Settings palette, html.dark only) ── */
+        html.dark .intcert-page { background-color: #000000 !important; background-image: none !important; }
+        html.dark .intcert-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .intcert-card,
+        html.dark .intcert-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .intcert-report-body { background-color: #1c1c1e !important; }
+        html.dark .intcert-report-body pre { color: #f5f5f7 !important; }
+        html.dark .intcert-page h1 { color: #f5f5f7 !important; }
+        html.dark .intcert-page .text-slate-400,
+        html.dark .intcert-page .text-slate-500 { color: #8e8e93 !important; }
+        html.dark .intcert-page .text-slate-300 { color: #71717a !important; }
+        html.dark .intcert-page label { color: #8e8e93 !important; }
+        html.dark .intcert-page .ant-input,
+        html.dark .intcert-page .ant-input-affix-wrapper,
+        html.dark .intcert-page .ant-select .ant-select-selector,
+        html.dark .intcert-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .intcert-page .ant-input-affix-wrapper .ant-input { background-color: transparent !important; }
+        html.dark .intcert-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .intcert-page .ant-radio-wrapper { color: #f5f5f7 !important; }
+        html.dark .intcert-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+      `}</style>
+
+      <div className={`intcert-page h-screen flex flex-col overflow-hidden ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 via-cyan-50/20 to-slate-50'}`}>
         {/* Header */}
-        <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
+        <div className={`intcert-header border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-cyan-600 to-cyan-700 p-1.5 rounded-lg text-white shadow-md">
               <BadgePercent size={14} />
@@ -190,7 +213,7 @@ const InterestCertificate: React.FC = () => {
           {/* Sidebar */}
           <div className="w-[220px] flex flex-col gap-2 shrink-0">
             {/* Member */}
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-cyan-200/60'}`}>
+            <div className={`intcert-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-cyan-200/60'}`}>
               <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-2 py-1 flex items-center gap-1">
                 <User size={10} className="text-white" />
                 <span className="fz-caption font-black text-white uppercase">Member</span>
@@ -216,7 +239,7 @@ const InterestCertificate: React.FC = () => {
             </div>
 
             {/* Year */}
-            <div className={`border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-cyan-200/60'}`}>
+            <div className={`intcert-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-cyan-200/60'}`}>
               <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-2 py-1 flex items-center gap-1">
                 <span className="fz-caption font-black text-white uppercase">Financial Year</span>
               </div>
@@ -232,7 +255,7 @@ const InterestCertificate: React.FC = () => {
             </div>
 
             {/* Output */}
-            <div className={`border rounded-lg p-2 shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-cyan-200/60'}`}>
+            <div className={`intcert-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-cyan-200/60'}`}>
               <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
               <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
                 <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
@@ -250,12 +273,12 @@ const InterestCertificate: React.FC = () => {
           </div>
 
           {/* Certificate Area */}
-          <div className={`flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-cyan-200/60'}`}>
+          <div className={`intcert-report-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-cyan-200/60'}`}>
             <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-3 py-1.5 flex items-center gap-1.5 shrink-0">
               <FileText size={12} className="text-white" />
               <span className="fz-caption font-black text-white uppercase">Interest Certificate — Member: {memberNo || 'N/A'} — Year: {year}</span>
             </div>
-            <div className="flex-1 overflow-auto p-3">
+            <div className="intcert-report-body flex-1 overflow-auto p-3">
               <Spin spinning={loading} size="small">
                 {certText ? (
                   <pre className="font-mono leading-relaxed whitespace-pre" style={{ fontFamily: "'Courier New', monospace", fontSize: 12 }}>

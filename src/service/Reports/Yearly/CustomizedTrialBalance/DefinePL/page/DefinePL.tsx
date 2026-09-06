@@ -281,8 +281,8 @@ const DefinePL: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 p-6">
-      <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
+    <div className="define-pl-page min-h-screen flex flex-col bg-slate-50 p-6">
+      <div className="define-pl-header bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
         <h1 className="fz-caption font-black text-white tracking-tight uppercase">P & L Account Definition</h1>
       </div>
       <div className="max-w-5xl mx-auto w-full">
@@ -374,6 +374,34 @@ const DefinePL: React.FC = () => {
           />
         </Card>
       </div>
+      <style>{`
+        /* ── Define P&L — dark mode (app-wide Settings palette) ── */
+        html.dark .define-pl-page { background-color: #000000 !important; color: #f5f5f7 !important; }
+        html.dark .define-pl-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .define-pl-page .ant-typography { color: #f5f5f7 !important; }
+        html.dark .define-pl-page .ant-typography-secondary,
+        html.dark .define-pl-page .text-slate-500,
+        html.dark .define-pl-page .text-slate-700 { color: #8e8e93 !important; }
+        html.dark .define-pl-page .ant-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .define-pl-page .ant-card .bg-white { background-color: #1c1c1e !important; }
+        html.dark .define-pl-page .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
+        html.dark .define-pl-page .ant-input,
+        html.dark .define-pl-page .ant-input-affix-wrapper,
+        html.dark .define-pl-page .ant-select:not(.ant-select-customize-input) .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .define-pl-page .ant-input::placeholder,
+        html.dark .define-pl-page .ant-select-selection-placeholder { color: #71717a !important; }
+        html.dark .define-pl-page .ant-select-arrow,
+        html.dark .define-pl-page .ant-select-selection-item { color: #f5f5f7 !important; }
+        html.dark .define-pl-page .ant-table,
+        html.dark .define-pl-page .ant-table-container,
+        html.dark .define-pl-page .ant-table-body { background-color: #1c1c1e !important; color: #f5f5f7 !important; }
+        html.dark .define-pl-page .ant-table-thead > tr > th { background-color: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
+        html.dark .define-pl-page .ant-table-tbody > tr > td { background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.07) !important; }
+        html.dark .define-pl-page .ant-table-tbody > tr:hover > td { background-color: rgba(255,255,255,.04) !important; }
+        html.dark .define-pl-page .ant-table-placeholder .ant-empty-description { color: #8e8e93 !important; }
+        html.dark .define-pl-page .ant-checkbox-inner { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.2) !important; }
+        html.dark .define-pl-page .ant-btn:not(.ant-btn-primary):not(.ant-btn-text):not(.ant-btn-link) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+      `}</style>
     </div>
   );
 };

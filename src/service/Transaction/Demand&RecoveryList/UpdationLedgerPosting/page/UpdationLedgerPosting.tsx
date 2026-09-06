@@ -8,8 +8,11 @@ const UpdationLedgerPosting: React.FC = () => {
   const props = useUpdationLedgerPosting();
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="ulp-page h-screen bg-slate-50 overflow-hidden">
       <UpdationLedgerPostingForm {...props} />
+      <style>{`
+        html.dark .ulp-page { background-color: #000000 !important; }
+      `}</style>
     </div>
   );
 };

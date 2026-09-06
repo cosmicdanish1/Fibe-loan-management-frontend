@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   Loader2,
   Camera,
+  Mail,
 } from 'lucide-react';
 import { useUserManagement } from '../hook/useUserManagement';
 import type { UserLevel } from '../interface/types';
@@ -303,32 +304,32 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
         /* ── Dark mode ── */
         html.dark .cmu-page { background: #0d0d0d !important; }
         html.dark .cmu-page .cmu-card       { background: #151515 !important; border-color: #222 !important; }
-        html.dark .cmu-page .cmu-card-icon  { background: #1a1a1a !important; color: #94a3b8 !important; }
-        html.dark .cmu-page .cmu-label      { color: #64748b !important; }
+        html.dark .cmu-page .cmu-card-icon  { background: #1a1a1a !important; color: #8e8e93 !important; }
+        html.dark .cmu-page .cmu-label      { color: #71717a !important; }
         html.dark .cmu-page .cmu-label-icon { color: #4b5563 !important; }
-        html.dark .cmu-page .cmu-input      { background: #1a1a1a !important; border-color: #222 !important; color: #e2e8f0 !important; }
+        html.dark .cmu-page .cmu-input      { background: #1a1a1a !important; border-color: #222 !important; color: #f5f5f7 !important; }
         html.dark .cmu-page .cmu-input::placeholder { color: #374151 !important; }
         html.dark .cmu-page .cmu-input:focus { border-color: #4f46e5 !important; background: #1e1e35 !important; }
-        html.dark .cmu-page .cmu-select     { background: #1a1a1a !important; border-color: #222 !important; color: #e2e8f0 !important; }
-        html.dark .cmu-page .cmu-select option { background: #1a1a1a; color: #e2e8f0; }
+        html.dark .cmu-page .cmu-select     { background: #1a1a1a !important; border-color: #222 !important; color: #f5f5f7 !important; }
+        html.dark .cmu-page .cmu-select option { background: #1a1a1a; color: #f5f5f7; }
         html.dark .cmu-page .cmu-auth-toggle { background: #1a1a1a !important; border-color: #222 !important; }
-        html.dark .cmu-page .cmu-auth-label { color: #94a3b8 !important; }
+        html.dark .cmu-page .cmu-auth-label { color: #8e8e93 !important; }
         html.dark .cmu-page .cmu-rights-list { background: #111 !important; border-color: #222 !important; }
-        html.dark .cmu-page .perm-normal  { color: #cbd5e1; }
+        html.dark .cmu-page .perm-normal  { color: #f5f5f7; }
         html.dark .cmu-page .perm-normal:hover  { background: #1f1f1f; }
         html.dark .cmu-page .cmu-transfer-panel { background: #1a1a1a !important; border-color: #222 !important; }
-        html.dark .cmu-page .cmu-transfer-btn   { background: #222 !important; border-color: #2a2a2a !important; color: #94a3b8 !important; }
+        html.dark .cmu-page .cmu-transfer-btn   { background: #222 !important; border-color: #2a2a2a !important; color: #8e8e93 !important; }
         html.dark .cmu-page .cmu-transfer-btn:hover:not(:disabled)  { background: #4f46e5 !important; color: white !important; border-color: #4f46e5 !important; }
         html.dark .cmu-page .cmu-transfer-btn:disabled { opacity: 0.2 !important; }
         html.dark .cmu-page .cmu-transfer-divider { background: #222 !important; }
-        html.dark .cmu-page .cmu-badge     { background: #1a1a1a !important; color: #94a3b8 !important; }
-        html.dark .cmu-page .cmu-search-btn { background: #222 !important; border-color: #222 !important; color: #e2e8f0 !important; }
-        html.dark .cmu-page .cmu-info-icon  { background: #1a1a1a !important; color: #64748b !important; }
-        html.dark .cmu-page .cmu-info-title { color: #64748b !important; }
+        html.dark .cmu-page .cmu-badge     { background: #1a1a1a !important; color: #8e8e93 !important; }
+        html.dark .cmu-page .cmu-search-btn { background: #222 !important; border-color: #222 !important; color: #f5f5f7 !important; }
+        html.dark .cmu-page .cmu-info-icon  { background: #1a1a1a !important; color: #71717a !important; }
+        html.dark .cmu-page .cmu-info-title { color: #71717a !important; }
         html.dark .cmu-page .cmu-info-body  { color: #4b5563 !important; }
-        html.dark .cmu-page .cmu-hdr-btn   { color: #94a3b8 !important; }
-        html.dark .cmu-page .cmu-hdr-btn:hover { background: rgba(255,255,255,.08) !important; color: #e2e8f0 !important; }
-        html.dark .cmu-page .cmu-section-title { color: #e2e8f0 !important; }
+        html.dark .cmu-page .cmu-hdr-btn   { color: #8e8e93 !important; }
+        html.dark .cmu-page .cmu-hdr-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        html.dark .cmu-page .cmu-section-title { color: #f5f5f7 !important; }
         html.dark .cmu-page .cmu-section-sub   { color: #4b5563 !important; }
         html.dark .cmu-page .cmu-pw-hint        { color: #374151 !important; }
       `}</style>
@@ -449,6 +450,18 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                           className="cmu-search-btn h-6 px-2 bg-slate-800 border-2 border-slate-800 text-white rounded-lg hover:bg-slate-700 transition-all flex items-center justify-center active:scale-95">
                           <Search size={12} />
                         </button>
+                      </div>
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="cmu-label fz-caption font-black text-slate-600 uppercase tracking-wider flex items-center gap-1 ml-0.5">
+                        <Mail size={10} className="cmu-label-icon text-slate-600" /> Email <span className="fz-mini font-bold normal-case text-slate-400">(optional)</span>
+                      </label>
+                      <div className="relative">
+                        <Mail size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input type="email" value={formData.email}
+                          onChange={(e) => updateFormData('email', e.target.value)}
+                          className="cmu-input w-full h-6 bg-slate-50 border-2 border-slate-200 rounded-lg pl-7 pr-2 fz-caption font-black text-slate-900 outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all"
+                          placeholder="leave blank to auto-generate" />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
