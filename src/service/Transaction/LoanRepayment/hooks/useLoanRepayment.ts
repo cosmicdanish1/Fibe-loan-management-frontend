@@ -17,6 +17,20 @@ export interface UnpaidInstallment {
     interestDue: number;
     penalDue: number;
     monthsOverdue: number;
+    /** 0 = within grace, no penal yet. 1 = same-month late fee. 2 = monthly-step penal. */
+    tier: 0 | 1 | 2;
+}
+
+export interface EmiBreakdown {
+    loanAmt: number;
+    instalAmt: number;
+    noOfInstal: number;
+    monthlyPrincipal: number;
+    monthlyInterestForEMI: number;
+    totalInterestForEMI: number;
+    totalRBInterestFullSchedule: number;
+    compulsorySlotInterest: number;
+    hasRbSchedule: boolean;
 }
 
 export interface DueStatus {
@@ -27,6 +41,12 @@ export interface DueStatus {
     totalInterestDue: number;
     totalPenalDue: number;
     totalDue: number;
+    /** Full contracted term. */
+    totalInstallments: number;
+    /** Installments already due (their month has started) AND fully settled. */
+    paidInstallments: number;
+    /** How the constant EMI itself was built — purely informational. */
+    emiBreakdown: EmiBreakdown;
 }
 
 export interface RepaymentForm {
@@ -111,7 +131,7 @@ export const useLoanRepayment = () => {
         try {
             const base = await getApiBaseUrl();
             const token = localStorage.getItem('accessToken');
-            const res = await fetch(`${base}/loans/case/${loancaseno}/due-status`, {
+            const res = await fetch(`${base}/loans/due-status/${loancaseno}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
             if (!res.ok) throw new Error('Failed to load due status');
@@ -135,17 +155,13 @@ export const useLoanRepayment = () => {
     }, [fetchMemberLoans, fetchRepaymentHistory]);
 
     const handleLoanSelect = useCallback(async (loancaseno: string) => {
-        const loan = activeLoans.find(l => l.loancaseno === loancaseno);
         setForm(prev => ({ ...prev, selectedLoanCase: loancaseno, paymentAmount: 0 }));
         const status = await fetchDueStatus(loancaseno);
-        // Default the payment amount to what's actually owed (principal + interest
-        // + penal across every unpaid installment); fall back to the plain EMI
-        // when nothing is overdue yet (e.g. paying the very first installment on time).
-        const defaultAmount = status && status.totalDue > 0
-            ? status.totalDue
-            : (loan ? parseFloat(loan.instal_amt as any) || 0 : 0);
-        setForm(prev => ({ ...prev, paymentAmount: defaultAmount }));
-    }, [activeLoans, fetchDueStatus]);
+        // "Pay What's Due" (the default mode) means exactly that — 0 when
+        // nothing is overdue, not the next not-yet-due EMI. A member who is
+        // fully caught up shouldn't see a payable amount sitting in the box.
+        setForm(prev => ({ ...prev, paymentAmount: status?.totalDue || 0 }));
+    }, [fetchDueStatus]);
 
     const handleSubmit = async () => {
         if (!form.mbno || !form.selectedLoanCase || form.paymentAmount <= 0) {

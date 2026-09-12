@@ -8,10 +8,10 @@ import {
 } from 'lucide-react';
 import { ConfigProvider, Switch } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useBusinessRules, BusinessRulesData, GeneralSettings, LoanType } from '../hook/useBusinessRules';
+import { useBusinessRules, BusinessRulesData, GeneralSettings, LoanType, RdSystemRules } from '../hook/useBusinessRules';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
-type TabType = 'loanParameters' | 'generalSettings' | 'fundManagement';
+type TabType = 'loanParameters' | 'generalSettings' | 'fundManagement' | 'rdSystem';
 
 const showDialog = async (
   type: 'info' | 'warning' | 'error',
@@ -62,6 +62,10 @@ const ModifyBusinessRules: React.FC = () => {
 
   const updateFundManagement = (field: string, value: any) => {
     setBusinessRules(prev => ({ ...prev, fundManagement: { ...prev.fundManagement, [field]: value } }));
+  };
+
+  const updateRdSystem = (field: keyof RdSystemRules, value: any) => {
+    setBusinessRules(prev => ({ ...prev, rdSystem: { ...prev.rdSystem, [field]: value } }));
   };
 
   const handleChartChange = (index: number, field: 'monthlyContribution' | 'yearlyInterest', value: number) => {
@@ -310,6 +314,7 @@ const ModifyBusinessRules: React.FC = () => {
             { key: 'loanParameters',  icon: <IndianRupee size={11} />, label: '1. Loan Parameters' },
             { key: 'generalSettings', icon: <Settings size={11} />,    label: '2. General Setting' },
             { key: 'fundManagement',  icon: <TrendingUp size={11} />,  label: '3. Fund Management' },
+            { key: 'rdSystem',        icon: <Percent size={11} />,     label: '4. RD System' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={`mbr-tab-btn px-3 py-2.5 fz-caption font-black uppercase tracking-widest transition-all relative ${
@@ -466,10 +471,39 @@ const ModifyBusinessRules: React.FC = () => {
                           }))}
                           className={inputCls} />
                       </div>
+                      <div className="col-span-full grid grid-cols-3 gap-2 pt-1">
+                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
+                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Regular Loan</span>
+                          <Switch size="small"
+                            checked={businessRules.regularLoanEligibility.applyToRegularLoan}
+                            onChange={val => setBusinessRules(prev => ({
+                              ...prev,
+                              regularLoanEligibility: { ...prev.regularLoanEligibility, applyToRegularLoan: val }
+                            }))} />
+                        </div>
+                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
+                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Additional Loan</span>
+                          <Switch size="small"
+                            checked={businessRules.regularLoanEligibility.applyToAdditionalLoan}
+                            onChange={val => setBusinessRules(prev => ({
+                              ...prev,
+                              regularLoanEligibility: { ...prev.regularLoanEligibility, applyToAdditionalLoan: val }
+                            }))} />
+                        </div>
+                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
+                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Emergency Loan</span>
+                          <Switch size="small"
+                            checked={businessRules.regularLoanEligibility.applyToEmergencyLoan}
+                            onChange={val => setBusinessRules(prev => ({
+                              ...prev,
+                              regularLoanEligibility: { ...prev.regularLoanEligibility, applyToEmergencyLoan: val }
+                            }))} />
+                        </div>
+                      </div>
                       <div className="col-span-full fz-mini text-slate-500 leading-tight pt-0.5">
-                        Applies to Regular Loans only. RD/Share requirements are calculated on total exposure
-                        (existing regular outstanding + new loan) and are never added to the loan amount — any
-                        shortfall is withheld from the disbursement.
+                        Independently switchable per loan type (all on by default). RD/Share requirements are
+                        calculated on total exposure (existing outstanding of that same loan type + new loan) and
+                        are never added to the loan amount — any shortfall is withheld from the disbursement.
                       </div>
                     </div>
                   </div>
@@ -487,9 +521,11 @@ const ModifyBusinessRules: React.FC = () => {
                           onChange={e => updateOthers('minMembership', parseInt(e.target.value) || 0)}
                           className={inputCls} />
                       </div>
+                      {/* Min./Max. CD Amt removed — dead legacy fields, never
+                          enforced by any real validation. CD and RD are the
+                          same product here; the real, enforced minimum is
+                          the RD System tab's Minimum Monthly RD Amount. */}
                       {[
-                        { label: 'Min. CD Amt',    field: 'minCDAmt' },
-                        { label: 'Max. CD Amt',    field: 'maxCDAmt' },
                         { label: 'Min. Share Amt', field: 'minShareAmt' },
                         { label: 'Max. Share Amt', field: 'maxShareAmt' },
                         { label: 'Security Dep',   field: 'securityDep' },
@@ -603,6 +639,26 @@ const ModifyBusinessRules: React.FC = () => {
                               className="mbr-input w-full h-6 px-2 pr-6 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
                             <Database size={9} className="mbr-icon absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                           </div>
+                        </div>
+                      </div>
+
+                      <div className="mbr-divider h-px bg-slate-100" />
+
+                      {/* Loan Early Closure protection — password re-entry and a
+                          minimum-role gate are deliberately deferred; only the
+                          type-to-confirm toggle exists so far. */}
+                      <div>
+                        <div className="fz-mini font-black text-slate-400 uppercase tracking-widest mb-1">Loan Early Closure Protection</div>
+                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
+                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600 max-w-[280px]">
+                            Require typing the loan case number to confirm before executing
+                          </span>
+                          <Switch size="small"
+                            checked={businessRules.earlyClosureProtection.requireTypeConfirm}
+                            onChange={val => setBusinessRules(prev => ({
+                              ...prev,
+                              earlyClosureProtection: { ...prev.earlyClosureProtection, requireTypeConfirm: val }
+                            }))} />
                         </div>
                       </div>
                     </div>
@@ -732,6 +788,122 @@ const ModifyBusinessRules: React.FC = () => {
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── 4. RD System ── */}
+            {activeTab === 'rdSystem' && (
+              <motion.div key="rdSystem"
+                initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.03 }}
+                transition={{ duration: 0.2 }}
+                className="mbr-workspace h-full overflow-auto p-2 bg-slate-50/50">
+                <div className="max-w-6xl mx-auto space-y-2">
+
+                  {/* Core settings */}
+                  <div className="mbr-fm-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                    <div className="mbr-fm-card-header bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-2 py-1 flex items-center gap-1.5">
+                      <div className="bg-slate-100 p-1 rounded-lg text-slate-600"><IndianRupee size={9} /></div>
+                      <h3 className="mbr-fm-section-title fz-mini font-black text-slate-700 uppercase tracking-widest">Core RD Settings</h3>
+                    </div>
+                    <div className="p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <div className="space-y-0.5">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Minimum Monthly RD Amount (₹)</label>
+                        <div className="relative">
+                          <IndianRupee size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                          <input type="number" step="1" value={businessRules.rdSystem.minMonthlyAmount}
+                            onChange={e => updateRdSystem('minMonthlyAmount', parseFloat(e.target.value) || 0)}
+                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
+                        </div>
+                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Floor a member may select for their monthly RD contribution</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Opening-Balance Interest Rate (%)</label>
+                        <div className="relative">
+                          <Percent size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                          <input type="number" step="0.01" value={businessRules.rdSystem.openingBalanceRate}
+                            onChange={e => updateRdSystem('openingBalanceRate', parseFloat(e.target.value) || 0)}
+                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
+                        </div>
+                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Annual rate on the opening balance timeline — frozen per financial year at closing</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Min. Balance After Withdrawal (₹)</label>
+                        <div className="relative">
+                          <IndianRupee size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                          <input type="number" step="1" value={businessRules.rdSystem.minBalanceAfterWithdrawal}
+                            onChange={e => updateRdSystem('minBalanceAfterWithdrawal', parseFloat(e.target.value) || 0)}
+                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
+                        </div>
+                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">A withdrawal must never take the balance below this</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment-pattern eligibility thresholds */}
+                  <div className="mbr-others-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                    <div className="mbr-others-header bg-slate-900 px-2 py-1 flex items-center gap-1">
+                      <TrendingUp size={9} className="text-emerald-400" />
+                      <h3 className="fz-mini font-black text-white tracking-widest uppercase">
+                        Full-Interest Eligibility Thresholds
+                      </h3>
+                    </div>
+                    <div className="mbr-others-body p-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 bg-white">
+                      {([
+                        { label: 'Min. Consecutive Installments', field: 'minConsecutiveInstallments' as const },
+                        { label: 'Max. Payment Gap (Months)',     field: 'maxPaymentGapMonths' as const },
+                        { label: 'Max. Missed Installments',      field: 'maxMissedInstallments' as const },
+                        { label: 'Min. Regular After Recovery',   field: 'minRegularAfterRecovery' as const },
+                        { label: 'Max. Arrears Clearance (Months)', field: 'maxArrearsClearanceMonths' as const },
+                      ]).map(item => (
+                        <div key={item.field} className="space-y-0.5">
+                          <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">{item.label}</label>
+                          <input type="number" step="1"
+                            value={businessRules.rdSystem[item.field]}
+                            onChange={e => updateRdSystem(item.field, parseInt(e.target.value, 10) || 0)}
+                            className={inputCls} />
+                        </div>
+                      ))}
+                      <div className="col-span-full grid grid-cols-2 gap-2 pt-1">
+                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
+                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Allow Recovery From an Initial-Month Gap</span>
+                          <Switch size="small"
+                            checked={businessRules.rdSystem.allowInitialMissRecovery}
+                            onChange={val => updateRdSystem('allowInitialMissRecovery', val)} />
+                        </div>
+                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
+                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Allow Recovery From a Later Gap</span>
+                          <Switch size="small"
+                            checked={businessRules.rdSystem.allowLaterMissRecovery}
+                            onChange={val => updateRdSystem('allowLaterMissRecovery', val)} />
+                        </div>
+                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
+                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Allow Multiple Separate Gaps in One Year</span>
+                          <Switch size="small"
+                            checked={businessRules.rdSystem.allowMultipleGaps}
+                            onChange={val => updateRdSystem('allowMultipleGaps', val)} />
+                        </div>
+                      </div>
+                      <div className="col-span-full fz-mini text-slate-500 leading-tight pt-0.5">
+                        These thresholds drive one automatic rule engine that evaluates each member's real 12-month
+                        payment history — not a fixed list of patterns. A member who doesn't automatically qualify
+                        still receives their normal RD interest in full; an authority can separately upgrade them to
+                        full annual interest as an exception, never a prerequisite.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Policy notice */}
+                  <div className="mbr-notice bg-white border-2 border-slate-200 border-l-4 border-l-amber-500 rounded-lg p-2 flex items-center gap-2 shadow-sm">
+                    <div className="mbr-notice-icon bg-slate-50 p-1 rounded-lg text-amber-600 shadow-sm shrink-0">
+                      <Info size={10} />
+                    </div>
+                    <p className="mbr-notice-text fz-mini text-slate-600 font-semibold leading-relaxed">
+                      <strong className="uppercase tracking-widest font-black mr-1">Placeholder Values:</strong>
+                      The numbers shown above are working defaults, not finalized policy. Update them once the society
+                      confirms the real thresholds — nothing about the eligibility engine itself is hardcoded to these.
+                    </p>
                   </div>
                 </div>
               </motion.div>

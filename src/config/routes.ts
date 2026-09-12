@@ -49,7 +49,6 @@ export const ROUTES = {
 
     // Administration - Certificate Setting and Printing
     CERTIFICATE_PARAMETER_SETTING: '/certificate/parameter-setting',
-    CERTIFICATE_FD_PRINTING: '/certificate/fd-printing',
     CERTIFICATE_SHARE_PRINTING: '/certificate/share-printing',
     CERTIFICATE_PASSBOOK_PARAMETER: '/certificate/passbook-parameter',
 
@@ -60,7 +59,6 @@ export const ROUTES = {
     RD_ACCOUNT_PASS: '/masters/rd-account/pass',
     SAVING_ACCOUNT_OPENING: '/masters/saving-account-opening',
     WING_OFFICE_MASTER: '/masters/wing-office',
-    MODIFY_FD_ACCOUNT: '/masters/modify-fd-account',
     MODIFY_MEMBER_BALANCE: '/masters/modify-member-balance',
     CAST_CATEGORY: '/masters/cast-category',
     DESIGNATION_MASTER: '/masters/designation',
@@ -74,11 +72,6 @@ export const ROUTES = {
     VOUCHER_PAYMENT: '/transaction/receipt-payment/voucher-payment',
     RECEIPT: '/transaction/receipt-payment/receipt',
     DIVIDEND_PAYMENT: '/transaction/receipt-payment/dividend-payment',
-
-    // Transaction - Fixed Deposit
-    FD_RECEIPT: '/transaction/fixed-deposit/receipt',
-    FD_INTEREST_VOUCHER_POSTING: '/transaction/fixed-deposit/interest-voucher-posting',
-    FD_WITHDRAWAL_INTEREST_PAYMENT: '/transaction/fixed-deposit/withdrawal-interest-payment',
 
     // Transaction - Other Types
     SAVING: '/transaction/saving',
@@ -145,16 +138,13 @@ export const ROUTES = {
     MEMBER_STATEMENT: '/reports/member-statement/member-statement',
     SAVING_STATEMENT: '/reports/member-statement/saving-statement',
     RD_STATEMENT: '/reports/member-statement/rd-statement',
-    FD_STATEMENT: '/reports/member-statement/fd-statement',
     RD_STATEMENT_NEW: '/reports/member-statement/rd-statement-new',
-    FD_STATEMENT_NEW: '/reports/member-statement/fd-statement-new',
     NEW_SHARE_CERTIFICATE: '/reports/member-statement/new-share-certificate',
     INTEREST_CERTIFICATE: '/reports/member-statement/interest-certificate',
     LOAN_NIL_CERTIFICATE: '/reports/member-statement/loan-nil-certificate',
 
     // Reports - Account Reports
     ACCOUNT_CLOSING_REGISTER: '/reports/account-reports/account-closing-register',
-    FIXED_DEPOSIT_CERTIFICATE: '/reports/account-reports/fixed-deposit-certificate',
     SHARE_CERTIFICATE: '/reports/account-reports/share-certificate',
     RECURRING_DETAILS: '/reports/account-reports/recurring-details',
     RECOVERY_DETAILS: '/reports/account-reports/recovery-details',

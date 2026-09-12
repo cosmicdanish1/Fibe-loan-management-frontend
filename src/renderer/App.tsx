@@ -57,20 +57,22 @@ const DemandPrintOrder = lazy(() => import('../service/Administration/DemandPrin
 const SaakhScore = lazy(() => import('../service/Administration/SaakhScore/page/SaakhScore'));
 // Lazy load certificate setting components
 const CertificateParameterSetting = lazy(() => import('../service/Administration/CertificateSettingAndPrinting/CertificateParameterSetting/page/CertificateParameterSetting'));
-const FixedDepositCertificatePrinting = lazy(() => import('../service/Administration/CertificateSettingAndPrinting/FixedDepositCertificatePrinting/page/FixedDepositCertificatePrinting'));
 const ShareCertificatePrinting = lazy(() => import('../service/Administration/CertificateSettingAndPrinting/ShareCertificatePrinting/page/ShareCertificatePrinting'));
 const PassbookParameterSetting = lazy(() => import('../service/Administration/CertificateSettingAndPrinting/PassbookParameterSetting/page/PassbookParameterSetting'));
 
 // Lazy load master components
 const MemberMaster = lazy(() => import('../service/Masters/MemberMaster/page/MemberMaster'));
 const SignatureScanning = lazy(() => import('../service/Masters/SignatureScanning/page/SignatureScanning'));
-const RdAccountOpening = lazy(() => import('../service/Masters/RdAccount/RdAccountOpening/page/RdAccountOpening'));
-const PassRdAccount = lazy(() => import('../service/Masters/RdAccount/PassRdAccount/page/PassRdAccount'));
 const SavingAccountOpening = lazy(() => import('../service/Masters/SavingAccountOpening/page/SavingAccountOpening'));
 const WingOfficeMaster = lazy(() => import('../service/Masters/WingOfficeMaster/page/WingOfficeMaster'));
 // Lazy load more master components
-const ModifyFdAccount = lazy(() => import('../service/Masters/ModifyFdAccount/page/ModifyFdAccount'));
 const ModifyMemberBalance = lazy(() => import('../service/Masters/ModifyMemberBalance/page/ModifyMemberBalance'));
+const RdMemberSetup = lazy(() => import('../service/Masters/RdMemberSetup/page/RdMemberSetup'));
+const RdWithdrawal = lazy(() => import('../service/Masters/RdWithdrawal/page/RdWithdrawal'));
+const RdRepayment = lazy(() => import('../service/Masters/RdRepayment/page/RdRepayment'));
+const RdFinancialYearClosing = lazy(() => import('../service/Administration/RdFinancialYearClosing/page/RdFinancialYearClosing'));
+const DividendCalculation = lazy(() => import('../service/Administration/DividendCalculation/page/DividendCalculation'));
+const DividendCredit = lazy(() => import('../service/Administration/DividendCredit/page/DividendCredit'));
 const CastCategory = lazy(() => import('../service/Masters/CastCategory/page/CastCategory'));
 const DesignationMaster = lazy(() => import('../service/Masters/DesignationMaster/page/DesignationMaster'));
 const FdRdSbEntry = lazy(() => import('../service/Masters/DataEntry/FdRdSbEntry/page/FdRdSbEntry'));
@@ -82,11 +84,6 @@ const VoucherPayment = lazy(() => import('../service/Transaction/Receipt&Payment
 // Lazy load more transaction components
 const Receipt = lazy(() => import('../service/Transaction/Receipt&Payment/Receipt/page/Receipt'));
 const DividendPayment = lazy(() => import('../service/Transaction/Receipt&Payment/DividendPayment/page/DividendPayment'));
-
-// Lazy load fixed deposit components
-const FixedDepositReceipt = lazy(() => import('../service/Transaction/FixedDeposit/FixedDepositReceipt/page/FixedDepositReceipt'));
-const FDInterestVoucherPosting = lazy(() => import('../service/Transaction/FixedDeposit/FDInterestVoucherPosting/page/FDInterestVoucherPosting'));
-const FDWithdrawalInterestPayment = lazy(() => import('../service/Transaction/FixedDeposit/FDWithdrawalInterestPayment/page/FDWithdrawalInterestPayment'));
 
 // Lazy load report components
 const MemberLedgerReport = lazy(() => import('../service/Reports/MemberLedgerReport/page/page/MemberLedgerReport'));
@@ -141,14 +138,12 @@ const MemberLedger = lazy(() => import('../service/Reports/Yearly/MemberLedger/p
 const MemberStatement = lazy(() => import('../service/Reports/MemberStatement/MemberStatement/page/MemberStatement'));
 const SavingStatement = lazy(() => import('../service/Reports/MemberStatement/SavingStatement/page/SavingStatement'));
 const RDStatement = lazy(() => import('../service/Reports/MemberStatement/RDStatement/page/RDStatement'));
-const FDStatement = lazy(() => import('../service/Reports/MemberStatement/FDStatement/page/FDStatement'));
 const NewShareCertificate = lazy(() => import('../service/Reports/MemberStatement/NewShareCertificate/page/NewShareCertificate'));
 const InterestCertificate = lazy(() => import('../service/Reports/MemberStatement/InterestCertificate/page/InterestCertificate'));
 const LoanNilCertificate = lazy(() => import('../service/Reports/MemberStatement/LoanNilCertificate/page/LoanNilCertificate'));
 
 // Lazy load Account Reports components
 const AccountClosingRegister = lazy(() => import('../service/Reports/AccountReports/AccountClosingRegister/page/AccountClosingRegister'));
-const FixedDepositCertificate = lazy(() => import('../service/Reports/AccountReports/FixedDepositCertificate/page/FixedDepositCertificate'));
 const ShareCertificate = lazy(() => import('../service/Reports/AccountReports/ShareCertificate/page/ShareCertificate'));
 const RecurringDetails = lazy(() => import('../service/Reports/AccountReports/RecurringDetails/page/RecurringDetails'));
 const RecoveryDetails = lazy(() => import('../service/Reports/AccountReports/RecoveryDetails/page/RecoveryDetails'));
@@ -156,7 +151,6 @@ const LoanContributionsRegister = lazy(() => import('../service/Reports/AccountR
 const LienAccountInformation = lazy(() => import('../service/Reports/AccountReports/LienAccountInformation/page/LienAccountInformation'));
 
 // Lazy load Utility components
-const PrematureInformationRD = lazy(() => import('../service/Utility/PrematureInformation/RD/page/PrematureInformationRD'));
 const PrematureInformationSB = lazy(() => import('../service/Utility/PrematureInformation/SB/page/PrematureInformationSB'));
 const Calculator = lazy(() => import('../service/Utility/Calculator/page/Calculator'));
 const Find = lazy(() => import('../service/Utility/Find/page/Find'));
@@ -349,7 +343,6 @@ const App: React.FC = () => {
                   <Route path="/modify-business-rules" element={<ModifyBusinessRules />} />
                   <Route path="/demand-print-order" element={<DemandPrintOrder />} />
                   <Route path="/certificate/parameter-setting" element={<CertificateParameterSetting />} />
-                  <Route path="/certificate/fd-printing" element={<FixedDepositCertificatePrinting />} />
                   <Route path="/certificate/share-printing" element={<ShareCertificatePrinting />} />
                   <Route path="/certificate/passbook-parameter" element={<PassbookParameterSetting />} />
 
@@ -357,7 +350,6 @@ const App: React.FC = () => {
                   <Route path="/reports/yearly/member-statement" element={<MemberStatement />} />
                   <Route path="/reports/yearly/member-statement/saving-statement" element={<SavingStatement />} />
                   <Route path="/reports/yearly/member-statement/rd-statement" element={<RDStatement />} />
-                  <Route path="/reports/yearly/member-statement/fd-statement" element={<FDStatement />} />
                   <Route path="/reports/yearly/member-statement/new-share-certificate" element={<NewShareCertificate />} />
                   <Route path="/reports/yearly/member-statement/interest-certificate" element={<InterestCertificate />} />
                   <Route path="/reports/yearly/member-statement/loan-nil-certificate" element={<LoanNilCertificate />} />
@@ -366,7 +358,6 @@ const App: React.FC = () => {
                   <Route path="/reports/member-statement/member-statement" element={<MemberStatement />} />
                   <Route path="/reports/member-statement/saving-statement" element={<SavingStatement />} />
                   <Route path="/reports/member-statement/rd-statement" element={<RDStatement />} />
-                  <Route path="/reports/member-statement/fd-statement" element={<FDStatement />} />
                   <Route path="/reports/member-statement/new-share-certificate" element={<NewShareCertificate />} />
                   <Route path="/reports/member-statement/interest-certificate" element={<InterestCertificate />} />
                   <Route path="/reports/member-statement/loan-nil-certificate" element={<LoanNilCertificate />} />
@@ -382,7 +373,6 @@ const App: React.FC = () => {
 
                   {/* Reports - Account Reports */}
                   <Route path="/reports/account-reports/account-closing-register" element={<AccountClosingRegister />} />
-                  <Route path="/reports/account-reports/fixed-deposit-certificate" element={<FixedDepositCertificate />} />
                   <Route path="/reports/account-reports/share-certificate" element={<ShareCertificate />} />
                   <Route path="/reports/account-reports/recurring-details" element={<RecurringDetails />} />
                   <Route path="/reports/account-reports/recovery-details" element={<RecoveryDetails />} />
@@ -428,7 +418,6 @@ const App: React.FC = () => {
                   <Route path="/reports/yearly/member-ledger" element={<MemberLedger />} />
 
                   {/* Utility Routes */}
-                  <Route path="/utility/premature-information/rd" element={<PrematureInformationRD />} />
                   <Route path="/utility/premature-information/sb" element={<PrematureInformationSB />} />
                   <Route path="/utility/calculator" element={<Calculator />} />
                   <Route path="/utility/find" element={<Find />} />
@@ -457,12 +446,15 @@ const App: React.FC = () => {
                   {/* Masters Routes */}
                   <Route path="/masters/member" element={<MemberMaster />} />
                   <Route path="/masters/signature-scanning" element={<SignatureScanning />} />
-                  <Route path="/masters/rd-account/opening" element={<RdAccountOpening />} />
-                  <Route path="/masters/rd-account/pass" element={<PassRdAccount />} />
                   <Route path="/masters/saving-account-opening" element={<SavingAccountOpening />} />
                   <Route path="/masters/wing-office" element={<WingOfficeMaster />} />
-                  <Route path="/masters/modify-fd-account" element={<ModifyFdAccount />} />
                   <Route path="/masters/modify-member-balance" element={<ModifyMemberBalance />} />
+                  <Route path="/masters/rd-member-setup" element={<RdMemberSetup />} />
+                  <Route path="/masters/rd-withdrawal" element={<RdWithdrawal />} />
+                  <Route path="/masters/rd-repayment" element={<RdRepayment />} />
+                  <Route path="/administration/rd-fy-closing" element={<RdFinancialYearClosing />} />
+                  <Route path="/administration/dividend-calculation" element={<DividendCalculation />} />
+                  <Route path="/administration/dividend-credit" element={<DividendCredit />} />
                   <Route path="/masters/cast-category" element={<CastCategory />} />
                   <Route path="/masters/designation" element={<DesignationMaster />} />
 
@@ -476,10 +468,6 @@ const App: React.FC = () => {
                   <Route path="/transaction/receipt-payment/receipt" element={<Receipt />} />
                   <Route path="/transaction/receipt-payment/dividend-payment" element={<DividendPayment />} />
 
-                  {/* Transaction - Fixed Deposit */}
-                  <Route path="/transaction/fixed-deposit/receipt" element={<FixedDepositReceipt />} />
-                  <Route path="/transaction/fixed-deposit/interest-voucher-posting" element={<FDInterestVoucherPosting />} />
-                  <Route path="/transaction/fixed-deposit/withdrawal-interest-payment" element={<FDWithdrawalInterestPayment />} />
 
                   {/* Transaction - Other Types */}
                   <Route path="/transaction/saving" element={<Saving />} />

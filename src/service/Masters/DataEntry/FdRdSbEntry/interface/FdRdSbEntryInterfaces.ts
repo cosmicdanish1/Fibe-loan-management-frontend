@@ -1,6 +1,6 @@
 // interface/FdRdSbEntryInterfaces.ts
 
-export type EntryType = 'FD' | 'RD' | 'SB';
+export type EntryType = 'RD' | 'SB';
 
 export interface AccountOption {
   accountNo: string;

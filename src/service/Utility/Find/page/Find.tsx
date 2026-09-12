@@ -77,7 +77,7 @@ const flattenSearchResults = (payload: any): SearchResult[] => {
       accountNo: d.accountNumber,
       type: 'account',
       title: d.name || String(d.mbno),
-      subtitle: `${d.fdrdflag === 'R' ? 'RD' : 'FD'} A/c ${d.accountNumber}`,
+      subtitle: `RD A/c ${d.accountNumber}`,
       details: '',
     });
   });

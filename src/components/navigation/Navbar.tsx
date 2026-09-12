@@ -71,12 +71,14 @@ const navConfig: NavItem[] = [
       },
       { title: 'Saakh Score — Member Health', action: 'SAAKH_SCORE' },
       { title: 'Modify Business Rules', action: 'MODIFY_BIZ_RULES' },
+      { title: 'RD Financial Year Closing', action: 'RD_FY_CLOSING' },
+      { title: 'Dividend Calculation', action: 'DIVIDEND_CALCULATION' },
+      { title: 'Dividend Credit', action: 'DIVIDEND_CREDIT' },
       { title: 'Demand Print Order', action: 'DEMAND_PRINT_ORDER' },
       {
         title: 'Certificate Setting and Printing',
         submenu: [
           { title: 'Certificate Parameter Setting', action: 'CERT_PARAM_SETTING' },
-          { title: 'Fixed Deposit Certificate Printing', action: 'FD_CERT_PRINT' },
           { title: 'Share Certificate Printing', action: 'SHARE_CERT_PRINT' },
           { title: 'Passbook parameter setting', action: 'PASSBOOK_PARAM_SETTING' },
         ]
@@ -89,17 +91,12 @@ const navConfig: NavItem[] = [
     items: [
       { title: 'Member Master', action: 'MEMBER_MASTER' },
       { title: 'Signature Scanning', action: 'SIGNATURE_SCANNING' },
-      {
-        title: 'RD Account',
-        submenu: [
-          { title: 'RD A/c Opening', action: 'RD_AC_OPENING' },
-          { title: 'Pass RD A/C', action: 'PASS_RD_AC' },
-        ]
-      },
       { title: 'Saving A/c Opening', action: 'SAVING_AC_OPENING' },
       { title: 'Wing / Office Master', action: 'WING_OFFICE_MASTER' },
-      { title: 'Modify FD A/cr', action: 'MODIFY_FD_AC' },
       { title: 'Modify Member Balance', action: 'MODIFY_MEMBER_BAL' },
+      { title: 'RD Member Setup', action: 'RD_MEMBER_SETUP' },
+      { title: 'RD Withdrawal', action: 'RD_WITHDRAWAL' },
+      { title: 'RD Repayment', action: 'RD_REPAYMENT' },
       { title: 'Cast Category', action: 'CAST_CATEGORY' },
       { title: 'Designation Master', action: 'DESIGNATION_MASTER' },
       // Hidden: legacy Data Entry windows not used in current app
@@ -123,14 +120,6 @@ const navConfig: NavItem[] = [
           { title: 'Voucher Payment', action: 'VOUCHER_PAYMENT' },
           { title: 'Receipt', action: 'RECEIPT_PAYMENT' },
           { title: 'Dividend Payment', action: 'RECEIPT_DIVIDEND_PAYMENT' },
-        ]
-      },
-      {
-        title: 'Fixed Deposit',
-        submenu: [
-          { title: 'Fixed Deposit Receipt', action: 'FD_RECEIPT' },
-          { title: 'FD / Interest Voucher Posting', action: 'FD_INTEREST_VOUCHER_POSTING' },
-          { title: 'FD Withdrawal / Int. Payment', action: 'FD_WITHDRAWAL_INT_PAYMENT' },
         ]
       },
       { title: 'Saving [Receipt -- Payment]', action: 'SAVING_RECEIPT_PAYMENT' },
@@ -223,7 +212,6 @@ const navConfig: NavItem[] = [
         submenu: [
           { title: '9.1 Saving Statement', action: 'SAVING_STATEMENT' },
           { title: '9.2 RD Statement', action: 'RD_STATEMENT' },
-          { title: '9.3 FD Statement', action: 'FD_STATEMENT' },
           { title: '9.4 Member Statement', action: 'MEMBER_STATEMENT' },
           { title: '9.5 New Share Certificate', action: 'NEW_SHARE_CERTIFICATE' },
           { title: '9.6 Interest Certificate', action: 'INTEREST_CERTIFICATE' },
@@ -236,7 +224,6 @@ const navConfig: NavItem[] = [
         title: '12. Account Reports',
         submenu: [
           { title: '1. Account Closing Register', action: 'ACCOUNT_CLOSING_REGISTER' },
-          { title: '2. Fixed Deposit Certificate', action: 'FIXED_DEPOSIT_CERTIFICATE' },
           { title: '3. Share Certificate', action: 'SHARE_CERTIFICATE' },
           { title: '4. Recurring Details', action: 'RECURRING_DETAILS' },
           { title: '5. Recovery Details', action: 'RECOVERY_DETAILS' },
@@ -251,13 +238,7 @@ const navConfig: NavItem[] = [
     id: 'utility',
     title: 'Utility',
     items: [
-      {
-        title: 'Premature Information Of Intt.',
-        submenu: [
-          { title: 'For RD A/c', action: 'PREMATURE_RD_AC' },
-          { title: 'For SB A/c', action: 'PREMATURE_SB_AC' },
-        ]
-      },
+      { title: 'Premature Information Of Intt. (SB A/c)', action: 'PREMATURE_SB_AC' },
       { title: 'Calculator', action: 'CALCULATOR' },
       { title: 'Find', action: 'FIND' },
       { title: 'Member Balance', action: 'MEMBER_BALANCE' },

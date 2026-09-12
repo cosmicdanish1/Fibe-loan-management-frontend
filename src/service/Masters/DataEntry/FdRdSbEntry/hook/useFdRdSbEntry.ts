@@ -20,7 +20,7 @@ const showDialog = async (
   }
 };
 
-const emptyForm = (entryType: EntryType = 'FD'): FdRdSbEntryData => ({
+const emptyForm = (entryType: EntryType = 'RD'): FdRdSbEntryData => ({
   entryType,
   memberNo: '',
   memberName: '',
@@ -36,7 +36,7 @@ const emptyForm = (entryType: EntryType = 'FD'): FdRdSbEntryData => ({
 });
 
 export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
-  const [formData, setFormData] = useState<FdRdSbEntryData>(emptyForm('FD'));
+  const [formData, setFormData] = useState<FdRdSbEntryData>(emptyForm('RD'));
   const [isLoading, setIsLoading] = useState(false);
 
   const updateField = useCallback((field: keyof FdRdSbEntryData, value: any) => {
@@ -90,10 +90,6 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
       await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before saving.');
       return;
     }
-    if (!formData.accountNo && formData.entryType === 'FD') {
-      await showDialog('warning', 'Input Validation Error', 'FD Account Required', 'Please select an FD account before saving.');
-      return;
-    }
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       await showDialog('warning', 'Input Validation Error', 'Invalid Amount', 'Please enter a valid amount greater than zero.');
       return;
@@ -108,7 +104,7 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
       const payload = {
         entryType: formData.entryType,
         memberNo: parseInt(formData.memberNo),
-        accountNo: formData.entryType === 'FD' && formData.accountNo ? parseInt(formData.accountNo) : 0,
+        accountNo: 0,
         transDate: formData.transDate,
         transType: formData.transType,
         amount: parseFloat(formData.amount),

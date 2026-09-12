@@ -121,7 +121,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                         <div className="mt-4 p-3 bg-slate-50 rounded border border-slate-200 text-left max-w-md">
                             <p className="fz-mini font-black text-slate-500 uppercase tracking-wider mb-1">Expected Excel Format</p>
                             <p className="fz-tiny text-slate-600 leading-relaxed">
-                                S.NO. | YYMM | CODE | MS.NO. | PS.NO. | NAME | TOTAL | F/D | R/LOAN | E/LOAN | INTT.
+                                S.NO. | YYMM | CODE | MS.NO. | PS.NO. | NAME | TOTAL | R/D | R/LOAN | E/LOAN | INTT.
                             </p>
                         </div>
                     </div>

@@ -19,7 +19,6 @@ const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wid
 const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const ENTRY_TYPES = [
-    { id: 'FD', label: 'Compulsory Deposit (CD)', accType: 'CD', code: 'L1004' },
     { id: 'RD', label: 'Monthly Deposit (MD)',    accType: 'MD', code: 'L1002' },
     { id: 'SB', label: 'Monthly Deposit 2 (MD1)', accType: 'MD1', code: 'L1045' },
 ];

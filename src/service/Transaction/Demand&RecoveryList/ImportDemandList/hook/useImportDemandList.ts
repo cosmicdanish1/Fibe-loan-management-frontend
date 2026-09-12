@@ -114,7 +114,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
                 setPreviewData(rows);
 
                 if (rows.length === 0) {
-                    await showDialog('warning', 'electron-react-ts', 'No Records', 'The file did not contain any valid demand records.\n\nMake sure the sheet has column headers like S.NO., YYMM, CODE, MS.NO., PS.NO., NAME, TOTAL, F/D, R/LOAN, E/LOAN, INTT.');
+                    await showDialog('warning', 'electron-react-ts', 'No Records', 'The file did not contain any valid demand records.\n\nMake sure the sheet has column headers like S.NO., YYMM, CODE, MS.NO., PS.NO., NAME, TOTAL, R/D, R/LOAN, E/LOAN, INTT.');
                 } else {
                     const msg =
                         `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +

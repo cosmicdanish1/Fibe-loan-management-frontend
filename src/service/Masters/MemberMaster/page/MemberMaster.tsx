@@ -131,6 +131,27 @@ const MemberMaster: React.FC = () => {
     })();
   }, []);
 
+  // Prefill Compulsory Deposit with the currently-configured RD minimum
+  // monthly amount, but ONLY for a genuinely fresh new-member form (never
+  // overwrites a value already loaded for an existing member, and only
+  // runs once on mount — loading an existing member afterward goes through
+  // a different code path that sets formData directly).
+  useEffect(() => {
+    (async () => {
+      if (formData.memberNumber || formData.compulsatoryDeposit) return;
+      try {
+        const response = await apiService.getBusinessRules();
+        const minAmount = response.success ? Number(response.data?.RULE_RD_MIN_MONTHLY_AMOUNT) : NaN;
+        if (Number.isFinite(minAmount) && minAmount > 0) {
+          handleInputChange('compulsatoryDeposit', String(minAmount));
+        }
+      } catch (error) {
+        console.error('Failed to load RD minimum amount default:', error);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
@@ -405,6 +426,14 @@ const MemberMaster: React.FC = () => {
         gross_salary: parseFloat(formData.monthlyContribution) || 0,
         basic_pay: parseFloat(formData.basicPay) || 0,
         compulsory_deposit: parseFloat(formData.compulsatoryDeposit) || 0,
+        // Only meaningful for a new member — RD auto-starts using the
+        // Compulsory Deposit amount as the monthly RD contribution unless
+        // unchecked (see the checkbox next to that field).
+        startRd: formData.startRd,
+        username: (() => {
+          try { return JSON.parse(localStorage.getItem('user') || '{}')?.username || 'system'; }
+          catch { return 'system'; }
+        })(),
         share_amount: parseFloat(formData.shareAmt) || 0,
         cast_category: formData.castCategory || '',
         nominee_name: formData.nomineeName || '',
@@ -1008,6 +1037,19 @@ const MemberMaster: React.FC = () => {
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
                   placeholder="0.00"
                 />
+                {/* RD starts automatically for a new member using this amount
+                    as their monthly RD contribution — defaults to the
+                    configured RD minimum, editable, and skippable via this
+                    checkbox for a member who shouldn't have RD started yet. */}
+                <label className="flex items-center gap-1 mt-1 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={formData.startRd}
+                    onChange={(e) => handleInputChange('startRd', e.target.checked)}
+                    className="accent-violet-600"
+                  />
+                  <span className="text-slate-500 fz-tiny font-medium">Start RD for this member</span>
+                </label>
               </div>
             </div>
 

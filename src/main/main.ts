@@ -717,17 +717,14 @@ const WINDOW_CONFIGS: Record<string, {
 
   // Certificate Setting and Printing
   '/certificate/parameter-setting': { title: 'Certificate Parameter Setting', frameless: false, width: 900, height: 650 },
-  '/certificate/fd-printing': { title: 'Fixed Deposit Certificate Printing', frameless: false, width: 1000, height: 700 },
   '/certificate/share-printing': { title: 'Share Certificate Printing', frameless: false, width: 1000, height: 700 },
   '/certificate/passbook-parameter': { title: 'Passbook Parameter Setting', frameless: false, width: 900, height: 650 },
 
   // Member Statement Reports
   '/reports/member-statement/saving-statement': { title: 'Saving Statement', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/rd-statement': { title: 'RD Statement', frameless: false, width: 1000, height: 750 },
-  '/reports/member-statement/fd-statement': { title: 'FD Statement', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/member-statement': { title: 'Member Statement', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/rd-statement-new': { title: 'RD Statement New', frameless: false, width: 1000, height: 750 },
-  '/reports/member-statement/fd-statement-new': { title: 'FD Statement New', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/new-share-certificate': { title: 'New Share Certificate', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/interest-certificate': { title: 'Interest Certificate', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/loan-nil-certificate': { title: 'Loan Nil Certificate', frameless: false, width: 1000, height: 750 },
@@ -740,7 +737,6 @@ const WINDOW_CONFIGS: Record<string, {
   '/masters/rd-account/pass': { title: 'Pass RD A/C', frameless: false, width: 900, height: 650 },
   '/masters/saving-account-opening': { title: 'Saving A/c Opening', frameless: false, width: 1000, height: 750 },
   '/masters/wing-office': { title: 'Wing / Office Master', frameless: false, width: 800, height: 600 },
-  '/masters/modify-fd-account': { title: 'Modify FD A/cr', frameless: false, width: 900, height: 700 },
   '/masters/modify-member-balance': { title: 'Modify Member Balance', frameless: false, width: 800, height: 600 },
   '/masters/cast-category': { title: 'Cast Category', frameless: false, width: 700, height: 500 },
   '/masters/designation': { title: 'Designation Master', frameless: false, width: 700, height: 500 },
@@ -754,11 +750,6 @@ const WINDOW_CONFIGS: Record<string, {
   '/transaction/receipt-payment/voucher-payment': { title: 'Voucher Payment', frameless: false, width: 900, height: 700 },
   '/transaction/receipt-payment/receipt': { title: 'Receipt', frameless: false, width: 900, height: 700 },
   '/transaction/receipt-payment/dividend-payment': { title: 'Dividend Payment', frameless: false, width: 1000, height: 750 },
-
-  // Fixed Deposit
-  '/transaction/fixed-deposit/receipt': { title: 'Fixed Deposit Receipt', frameless: false, width: 1000, height: 750 },
-  '/transaction/fixed-deposit/interest-voucher-posting': { title: 'FD / Interest Voucher Posting', frameless: false, width: 1100, height: 800 },
-  '/transaction/fixed-deposit/withdrawal-interest-payment': { title: 'FD Withdrawal / Int. Payment', frameless: false, width: 1100, height: 800 },
 
   // Other Transactions
   '/transaction/saving': { title: 'Saving [Receipt -- Payment]', frameless: false, width: 1000, height: 750 },
@@ -828,16 +819,13 @@ const WINDOW_CONFIGS: Record<string, {
   // Member Statement Sub-Reports
   '/reports/yearly/member-statement/saving-statement': { title: 'Saving Statement', frameless: false, width: 1200, height: 850 },
   '/reports/yearly/member-statement/rd-statement': { title: 'RD Statement', frameless: false, width: 1200, height: 850 },
-  '/reports/yearly/member-statement/fd-statement': { title: 'FD Statement', frameless: false, width: 1200, height: 850 },
   '/reports/yearly/member-statement/rd-statement-new': { title: 'RD Statement New', frameless: false, width: 1200, height: 850 },
-  '/reports/yearly/member-statement/fd-statement-new': { title: 'FD Statement New', frameless: false, width: 1200, height: 850 },
   '/reports/yearly/member-statement/new-share-certificate': { title: 'New Share Certificate', frameless: false, width: 1000, height: 750 },
   '/reports/yearly/member-statement/interest-certificate': { title: 'Interest Certificate', frameless: false, width: 1000, height: 750 },
   '/reports/yearly/member-statement/loan-nil-certificate': { title: 'Loan Nil Certificate', frameless: false, width: 1000, height: 750 },
 
   // Account Reports
   '/reports/account-reports/account-closing-register': { title: 'Account Closing Register', frameless: false, width: 1300, height: 900 },
-  '/reports/account-reports/fixed-deposit-certificate': { title: 'Fixed Deposit Certificate', frameless: false, width: 1100, height: 800 },
   '/reports/account-reports/share-certificate': { title: 'Share Certificate', frameless: false, width: 1100, height: 800 },
   '/reports/account-reports/recurring-details': { title: 'Recurring Details', frameless: false, width: 1200, height: 850 },
   '/reports/account-reports/recovery-details': { title: 'Recovery Details', frameless: false, width: 1200, height: 850 },

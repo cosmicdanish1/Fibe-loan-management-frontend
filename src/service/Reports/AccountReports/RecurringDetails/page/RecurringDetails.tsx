@@ -4,20 +4,21 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { FileText, Printer, Search, RotateCcw, Repeat, User, Users, Monitor } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
-import dayjs from 'dayjs';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 
+// One row per FINANCIAL YEAR the member has RD activity in — the real RD
+// system is a rolling per-year collection (same product as CD, no account
+// number or maturity date), so what used to be "multiple RD accounts" here
+// is now "multiple financial years' RD records" for the same member.
 interface RDItem {
   key: string;
-  accountNo: string;
+  yearLabel: string;
   memberNo: string;
   memberName: string;
-  startDate: string;
-  maturityDate: string;
-  amount: number;
-  installmentsPaid: number;
-  installmentsMissed: number;
-  totalDeposited: number;
+  monthlyRdAmount: number;
+  totalInstallmentsPaid: number;
+  totalMissed: number;
+  currentBalance: number;
   status: string;
 }
 
@@ -31,27 +32,24 @@ const col = (s: string, w: number, align: 'l' | 'r' = 'l') =>
 
 const fmtAmt = (n: number) =>
   (n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtDate = (d?: string) => (d ? dayjs(d).format('DD-MMM-YY') : '---');
 
 const buildReportText = (data: RDItem[], memberNo: string): string => {
   const lines: string[] = [];
-  const name = data.length > 0 ? data[0].memberName : '';
+  const name = data[0]?.memberName || '';
 
   lines.push(ctr('Espat Karmchari Co-Operative Credit Society Limited.'));
   lines.push(ctr('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006'));
   lines.push(ctr('Reg No: A.R/DRG/1796'));
   lines.push(rl());
-  lines.push(ctr('Statement Showing Details of RD Accounts Of The Members'));
+  lines.push(ctr('Statement Showing RD Details Of The Member, By Financial Year'));
   lines.push(rl());
   lines.push('');
   lines.push(lr(`Member No : ${memberNo}`, `Name : ${name}`));
   lines.push('');
 
-  // ── Pivoted layout: RD1, RD2, ... as column groups ──────────
-  // Each RD group: AccNo(12) NO.Of Inst(8) Total Inst(12) = ~32 per RD
-  // With Name(20) prefix for first line
-  // Max ~3 RDs per row at W=100
-
+  // ── Pivoted layout: FY1, FY2, ... as column groups (one column group
+  // per financial year the member has RD activity in — the real RD
+  // system has no separate "accounts", just one rolling record per year).
   const perGroup = 28;
   const maxPerRow = Math.floor((W - 8) / perGroup) || 1;
   const chunks: RDItem[][] = [];
@@ -60,18 +58,17 @@ const buildReportText = (data: RDItem[], memberNo: string): string => {
   }
 
   chunks.forEach((chunk, ci) => {
-    // Header line 1: RD labels
+    // Header line 1: FY labels
     let hdr1 = col('', 8);
-    chunk.forEach((_, j) => {
-      const rdNum = ci * maxPerRow + j + 1;
-      hdr1 += col(`RD${rdNum}`, 10) + col('NO. Of', 8) + col('Total', 10);
+    chunk.forEach((rd) => {
+      hdr1 += col(rd.yearLabel, 10) + col('NO. Of', 8) + col('Balance', 10);
     });
     lines.push(hdr1);
 
     // Header line 2
     let hdr2 = col('Name', 8);
     chunk.forEach(() => {
-      hdr2 += col('Acc_No', 10) + col('Inst', 8) + col('Inst', 10);
+      hdr2 += col('Fin. Year', 10) + col('Inst', 8) + col('Amount', 10);
     });
     lines.push(hdr2);
     lines.push(rl());
@@ -79,30 +76,27 @@ const buildReportText = (data: RDItem[], memberNo: string): string => {
     // Data line
     let row = col(ci === 0 ? name.substring(0, 7) : '', 8);
     chunk.forEach(rd => {
-      row += col(rd.accountNo.substring(0, 9), 10) +
-             col(String(rd.installmentsPaid || 0), 8) +
-             col(fmtAmt(rd.totalDeposited), 10, 'r');
+      row += col(rd.yearLabel.substring(0, 9), 10) +
+             col(String(rd.totalInstallmentsPaid || 0), 8) +
+             col(fmtAmt(rd.currentBalance), 10, 'r');
     });
     lines.push(row);
 
-    // Detail lines: Start Date / Maturity / Monthly / Status
     let detailRow1 = col('', 8);
     chunk.forEach(rd => {
-      detailRow1 += col(fmtDate(rd.startDate), 10) +
-                    col(fmtDate(rd.maturityDate), 8) +
-                    col(fmtAmt(rd.amount), 10, 'r');
+      detailRow1 += col('', 10) + col('', 8) + col(fmtAmt(rd.monthlyRdAmount), 10, 'r');
     });
     lines.push(detailRow1);
 
     let detailRow2 = col('', 8);
-    chunk.forEach(rd => {
-      detailRow2 += col('Start Dt', 10) + col('Mat Dt', 8) + col('Monthly', 10);
+    chunk.forEach(() => {
+      detailRow2 += col('', 10) + col('', 8) + col('Monthly', 10);
     });
     lines.push(detailRow2);
 
     let statusRow = col('', 8);
     chunk.forEach(rd => {
-      statusRow += col(`Missed:${rd.installmentsMissed || 0}`, 10) +
+      statusRow += col(`Missed:${rd.totalMissed || 0}`, 10) +
                    col(`Status:`, 8) +
                    col(rd.status || '', 10);
     });
@@ -112,15 +106,15 @@ const buildReportText = (data: RDItem[], memberNo: string): string => {
   });
 
   if (data.length === 0) {
-    lines.push(ctr('No RD accounts found for this member'));
+    lines.push(ctr('No RD activity found for this member'));
     lines.push(rl());
   }
 
   // ── Summary ─────────────────────────────────────────────────
-  const totDep = data.reduce((s, r) => s + r.totalDeposited, 0);
-  const totAmt = data.reduce((s, r) => s + r.amount, 0);
+  const totBal = data.reduce((s, r) => s + r.currentBalance, 0);
+  const totAmt = data.reduce((s, r) => s + r.monthlyRdAmount, 0);
   lines.push('');
-  lines.push(lr(`Total RD Accounts : ${data.length}`, `Total Deposited : Rs. ${fmtAmt(totDep)}`));
+  lines.push(lr(`Total Financial Years : ${data.length}`, `Total Balance : Rs. ${fmtAmt(totBal)}`));
   lines.push(lr('', `Total Monthly     : Rs. ${fmtAmt(totAmt)}`));
   lines.push(rl());
   lines.push(ctr('Report as per data available'));
@@ -175,7 +169,7 @@ const RecurringDetails: React.FC = () => {
         ? (response as any).data
         : Array.isArray(response) ? (response as any) : [];
 
-      if (items.length > 0 && items[0].memberName) setMemberName(items[0].memberName);
+      if (items[0]?.memberName) setMemberName(items[0].memberName);
 
       const text = buildReportText(items, memberNo);
       setReportText(text);

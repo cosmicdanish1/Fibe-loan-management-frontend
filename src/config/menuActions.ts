@@ -15,11 +15,6 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'RECEIPT_PAYMENT': { route: '/transaction/receipt-payment/receipt', electronMethod: 'openNewWindow' },
   'RECEIPT_DIVIDEND_PAYMENT': { route: '/transaction/receipt-payment/dividend-payment', electronMethod: 'openNewWindow' },
 
-  // Fixed Deposit related
-  'FD_RECEIPT': { route: '/transaction/fixed-deposit/receipt', electronMethod: 'openNewWindow' },
-  'FD_INTEREST_VOUCHER_POSTING': { route: '/transaction/fixed-deposit/interest-voucher-posting', electronMethod: 'openNewWindow' },
-  'FD_WITHDRAWAL_INT_PAYMENT': { route: '/transaction/fixed-deposit/withdrawal-interest-payment', electronMethod: 'openNewWindow' },
-
   // Transaction components
   'SAVING_RECEIPT_PAYMENT': { route: '/transaction/saving', electronMethod: 'openNewWindow' },
   'JOURNAL_TRANSFER_ENTRY': { route: '/transaction/journal-transfer', electronMethod: 'openNewWindow' },
@@ -59,7 +54,6 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
 
   // Certificate Setting and Printing
   'CERT_PARAM_SETTING': { route: '/certificate/parameter-setting', electronMethod: 'openNewWindow' },
-  'FD_CERT_PRINT': { route: '/certificate/fd-printing', electronMethod: 'openNewWindow' },
   'SHARE_CERT_PRINT': { route: '/certificate/share-printing', electronMethod: 'openNewWindow' },
   'PASSBOOK_PARAM_SETTING': { route: '/certificate/passbook-parameter', electronMethod: 'openNewWindow' },
 
@@ -68,14 +62,17 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'SIGNATURE_SCANNING': { route: '/masters/signature-scanning', electronMethod: 'openNewWindow' },
   'SAVING_AC_OPENING': { route: '/masters/saving-account-opening', electronMethod: 'openNewWindow' },
   'WING_OFFICE_MASTER': { route: '/masters/wing-office', electronMethod: 'openNewWindow' },
-  'MODIFY_FD_AC': { route: '/masters/modify-fd-account', electronMethod: 'openNewWindow' },
   'MODIFY_MEMBER_BAL': { route: '/masters/modify-member-balance', electronMethod: 'openNewWindow' },
+  'RD_MEMBER_SETUP': { route: '/masters/rd-member-setup', electronMethod: 'openNewWindow' },
+  'RD_WITHDRAWAL': { route: '/masters/rd-withdrawal', electronMethod: 'openNewWindow' },
+  'RD_REPAYMENT': { route: '/masters/rd-repayment', electronMethod: 'openNewWindow' },
+  'RD_FY_CLOSING': { route: '/administration/rd-fy-closing', electronMethod: 'openNewWindow' },
+  'DIVIDEND_CALCULATION': { route: '/administration/dividend-calculation', electronMethod: 'openNewWindow' },
+  'DIVIDEND_CREDIT': { route: '/administration/dividend-credit', electronMethod: 'openNewWindow' },
   'CAST_CATEGORY': { route: '/masters/cast-category', electronMethod: 'openNewWindow' },
   'DESIGNATION_MASTER': { route: '/masters/designation', electronMethod: 'openNewWindow' },
   'FD_RD_SB_ENTRY': { route: '/masters/data-entry/fd-rd-sb', electronMethod: 'openNewWindow' },
   'LOAN_ENTRY': { route: '/masters/data-entry/loan', electronMethod: 'openNewWindow' },
-  'RD_AC_OPENING': { route: '/masters/rd-account/opening', electronMethod: 'openNewWindow' },
-  'PASS_RD_AC': { route: '/masters/rd-account/pass', electronMethod: 'openNewWindow' },
 
   // Demand & Recovery List
   'IMPORT_DEMAND_LIST': { route: '/transaction/demand-recovery/import-demand-list', electronMethod: 'openNewWindow' },
@@ -133,12 +130,10 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'MEMBER_STATEMENT': { route: '/reports/yearly/member-statement', electronMethod: 'openNewWindow' },
   'SAVING_STATEMENT': { route: '/reports/yearly/member-statement/saving-statement', electronMethod: 'openNewWindow' },
   'RD_STATEMENT': { route: '/reports/yearly/member-statement/rd-statement', electronMethod: 'openNewWindow' },
-  'FD_STATEMENT': { route: '/reports/yearly/member-statement/fd-statement', electronMethod: 'openNewWindow' },
   'NEW_SHARE_CERTIFICATE': { route: '/reports/yearly/member-statement/new-share-certificate', electronMethod: 'openNewWindow' },
   'INTEREST_CERTIFICATE': { route: '/reports/yearly/member-statement/interest-certificate', electronMethod: 'openNewWindow' },
   'LOAN_NIL_CERTIFICATE': { route: '/reports/yearly/member-statement/loan-nil-certificate', electronMethod: 'openNewWindow' },
   // Utility Routes
-  'PREMATURE_RD_AC': { route: '/utility/premature-information/rd', electronMethod: 'openNewWindow' },
   'PREMATURE_SB_AC': { route: '/utility/premature-information/sb', electronMethod: 'openNewWindow' },
   'CALCULATOR': { route: '/utility/calculator', electronMethod: 'openNewWindow' },
   'FIND': { route: '/utility/find', electronMethod: 'openNewWindow' },
@@ -153,7 +148,6 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'CONTENTS': { route: '/help/contents', electronMethod: 'openNewWindow' },
   // Other Reports
   'ACCOUNT_CLOSING_REGISTER': { route: '/reports/account-reports/account-closing-register', electronMethod: 'openNewWindow' },
-  'FIXED_DEPOSIT_CERTIFICATE': { route: '/reports/account-reports/fixed-deposit-certificate', electronMethod: 'openNewWindow' },
   'SHARE_CERTIFICATE': { route: '/reports/account-reports/share-certificate', electronMethod: 'openNewWindow' },
   'RECURRING_DETAILS': { route: '/reports/account-reports/recurring-details', electronMethod: 'openNewWindow' },
   'RECOVERY_DETAILS': { route: '/reports/account-reports/recovery-details', electronMethod: 'openNewWindow' },

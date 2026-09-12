@@ -24,7 +24,7 @@ interface SlabRow {
   _dirty?: boolean;
 }
 
-type DepositType = 'FD' | 'RD' | 'LN';
+type DepositType = 'RD' | 'LN';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -35,14 +35,12 @@ const PERIOD_UNITS = [
 ];
 
 const TYPE_LABELS: Record<DepositType, string> = {
-  FD: 'Fixed Deposit',
   RD: 'Recurring Deposit',
   LN: 'Loan',
 };
 
 // Map UI type codes to backend enum values
 const TO_BACKEND_TYPE: Record<DepositType, string> = {
-  FD: 'fixed_deposit',
   RD: 'recurring_deposit',
   LN: 'loan',
 };
@@ -137,7 +135,7 @@ const NumCell: React.FC<{ value: number; onChange: (v: number) => void; step?: n
 // ── Main component ────────────────────────────────────────────────────────────
 
 const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
-  const [selectedType, setSelectedType] = useState<DepositType>('FD');
+  const [selectedType, setSelectedType] = useState<DepositType>('RD');
   const [rows, setRows] = useState<SlabRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -377,7 +375,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
           <div className="flex items-center gap-2">
             {/* Type tabs */}
             <div className="slab-type-tabs flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
-              {(['FD', 'RD', 'LN'] as DepositType[]).map((type) => (
+              {(['RD', 'LN'] as DepositType[]).map((type) => (
                 <button
                   key={type}
                   onClick={() => setSelectedType(type)}

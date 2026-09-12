@@ -62,6 +62,11 @@ export interface RegularLoanEligibility {
   rdHeadCode: string;
   /** GL head the Share shortfall is credited to at disbursement. */
   shareHeadCode: string;
+  /** Per-loan-type on/off — same 5%/5% rule, independently switchable per
+   *  type. All default to true (applies everywhere) until switched off. */
+  applyToRegularLoan: boolean;
+  applyToAdditionalLoan: boolean;
+  applyToEmergencyLoan: boolean;
 }
 
 /**
@@ -85,6 +90,55 @@ export interface RegularLoanEligibility {
  * No stored value moves between columns; only the labels and the field they
  * are attached to change.
  */
+/**
+ * Loan Early Closure screen protections. Each is independently switchable —
+ * requireTypeConfirm is the only one built so far (type the loan case number
+ * to enable the irreversible "Close Loan" button). Password re-entry and a
+ * minimum-role gate are deliberately deferred for later; this interface is
+ * shaped to have them added the same way when that's picked back up.
+ */
+export interface EarlyClosureProtection {
+  requireTypeConfirm: boolean;
+}
+
+/**
+ * RD (Recurring Deposit) system rules — built from scratch, distinct from
+ * the old fdmaster-based RD account system removed earlier (zero real
+ * production data). RD and CD share the same GL head and collection
+ * pipeline (per the user's explicit decision); these are purely the
+ * policy thresholds that drive the payment-pattern eligibility engine, the
+ * opening-balance interest rate, and the minimum RD amount/balance —
+ * persisted to system_configs, same as the loan eligibility rule above.
+ */
+export interface RdSystemRules {
+  /** Minimum monthly RD amount a member may select. */
+  minMonthlyAmount: number;
+  /** Annual opening-balance interest rate (%), frozen per financial year
+   *  at closing time so a later change never alters a closed year. */
+  openingBalanceRate: number;
+  /** Minimum balance a member must retain after any withdrawal. */
+  minBalanceAfterWithdrawal: number;
+  /** Minimum consecutive on-time installments for a "regular" record. */
+  minConsecutiveInstallments: number;
+  /** Longest single run of consecutively missed months still tolerated. */
+  maxPaymentGapMonths: number;
+  /** Total missed installments across the year still tolerated. */
+  maxMissedInstallments: number;
+  /** Consecutive regular payments required after a gap before "back to
+   *  regular". */
+  minRegularAfterRecovery: number;
+  /** Whether a gap at the START of the financial year can be recovered. */
+  allowInitialMissRecovery: boolean;
+  /** Whether a gap LATER in the financial year can be recovered. */
+  allowLaterMissRecovery: boolean;
+  /** Maximum months allowed to fully clear an arrear for it to still
+   *  count as "recovered". */
+  maxArrearsClearanceMonths: number;
+  /** Whether more than one separate gap in the same year can still
+   *  qualify for automatic full interest. */
+  allowMultipleGaps: boolean;
+}
+
 export interface BusinessRulesData {
   regularLoanEligibility: RegularLoanEligibility;
   regularLoan: LoanType;
@@ -97,12 +151,15 @@ export interface BusinessRulesData {
     minMembership: number;
     minShareAmt: number;
     maxShareAmt: number;
-    minCDAmt: number;
-    maxCDAmt: number;
+    // minCDAmt/maxCDAmt removed — dead legacy fields, never enforced by any
+    // real validation (confirmed by search). CD and RD are the same
+    // product here; the real, enforced minimum is rdSystem.minMonthlyAmount.
     securityDep: number;
   };
   generalSettings: GeneralSettings;
   fundManagement: FundManagement;
+  earlyClosureProtection: EarlyClosureProtection;
+  rdSystem: RdSystemRules;
 }
 
 export interface FundManagement {
@@ -122,6 +179,9 @@ const initialData: BusinessRulesData = {
     limitCalc: 'OUTSTANDING_PLUS_NEW',
     rdHeadCode: 'L1004', // Compulsory Deposit head — RD has no head of its own; same code used everywhere else RD posts to the ledger
     shareHeadCode: 'L1001',
+    applyToRegularLoan: true,
+    applyToAdditionalLoan: true,
+    applyToEmergencyLoan: true,
   },
   // Regular Loan → rln*  (legacy: 1,000,000 / 7% / 120 install / 0 gr / 15% penal)
   regularLoan: { maxAmount: 1000000, rate: 7, numberOfInstallments: 120, numberOfGuarantors: 0, penalRate: 15, graceDays: 0, sameMonthPenalPercent: 1, sameMonthPenalDivisor: 4 },
@@ -135,8 +195,8 @@ const initialData: BusinessRulesData = {
   loanOnDeposit: { maxAmount: 500000, rate: 2, numberOfInstallments: 50, numberOfGuarantors: 0 },
   // Loan Against Deposits  (legacy: shareValue=0, FD=90%, overallLimit=500000, basicPay=0)
   loanAgainstDeposits: { shareValue: 0, fdPercentage: 90, overallLimit: 500000, basicPay: 0 },
-  // Others  (legacy: minMembership=25 months, minCD=200, maxCD=200)
-  others: { minMembership: 25, minShareAmt: 0, maxShareAmt: 0, minCDAmt: 200, maxCDAmt: 200, securityDep: 0 },
+  // Others  (legacy: minMembership=25 months)
+  others: { minMembership: 25, minShareAmt: 0, maxShareAmt: 0, securityDep: 0 },
   generalSettings: {
     dataEntryMode: false,
     printDemandFormatHorizontal: true,   // legacy: checked
@@ -159,7 +219,26 @@ const initialData: BusinessRulesData = {
     dividendPercent: 0,
     groupInsuranceAmount: 0,
     interestChart: []
-  }
+  },
+  earlyClosureProtection: {
+    requireTypeConfirm: true,
+  },
+  // Placeholder thresholds pending the society's final policy numbers — not
+  // authoritative, just defaults so the screen has something sensible to
+  // show until they're set for real.
+  rdSystem: {
+    minMonthlyAmount: 200,
+    openingBalanceRate: 7,
+    minBalanceAfterWithdrawal: 1000,
+    minConsecutiveInstallments: 4,
+    maxPaymentGapMonths: 3,
+    maxMissedInstallments: 3,
+    minRegularAfterRecovery: 3,
+    allowInitialMissRecovery: true,
+    allowLaterMissRecovery: true,
+    maxArrearsClearanceMonths: 3,
+    allowMultipleGaps: false,
+  },
 };
 
 export const useBusinessRules = () => {
@@ -211,6 +290,13 @@ export const useBusinessRules = () => {
             limitCalc: str(d.RULE_LOAN_R_LIMIT_CALC, def.regularLoanEligibility.limitCalc) as RegularLoanEligibility['limitCalc'],
             rdHeadCode: str(d.RULE_LOAN_R_RD_HEAD_CODE, def.regularLoanEligibility.rdHeadCode),
             shareHeadCode: str(d.RULE_LOAN_R_SHARE_HEAD_CODE, def.regularLoanEligibility.shareHeadCode),
+            // Per-loan-type on/off — keyed by the loan's real type code
+            // (RLN/ALN/ELN), not the card label: additionalLoan's card is aln*
+            // (real Emergency Loan), emergencyLoan's card is eln* (real Loan
+            // Against Recovery) — see the aln*/eln* mapping note above.
+            applyToRegularLoan: bool(d.RULE_LOAN_ELIGIBILITY_APPLY_RLN, def.regularLoanEligibility.applyToRegularLoan),
+            applyToAdditionalLoan: bool(d.RULE_LOAN_ELIGIBILITY_APPLY_ALN, def.regularLoanEligibility.applyToAdditionalLoan),
+            applyToEmergencyLoan: bool(d.RULE_LOAN_ELIGIBILITY_APPLY_ELN, def.regularLoanEligibility.applyToEmergencyLoan),
           },
           regularLoan: {
             maxAmount: num(d.RULE_LOAN_R_MAX_AMT, def.regularLoan.maxAmount),
@@ -267,8 +353,6 @@ export const useBusinessRules = () => {
             minMembership: num(d.RULE_MEMBER_MIN_TENURE_MONTHS, def.others.minMembership),
             minShareAmt: num(d.RULE_SHARE_MIN_AMT, def.others.minShareAmt),
             maxShareAmt: num(d.RULE_SHARE_MAX_AMT, def.others.maxShareAmt),
-            minCDAmt: num(d.RULE_CD_MIN_AMT, def.others.minCDAmt),
-            maxCDAmt: num(d.RULE_CD_MAX_AMT, def.others.maxCDAmt),
             securityDep: num(d.RULE_SECURITY_DEP_AMT, def.others.securityDep),
           },
           generalSettings: {
@@ -290,7 +374,23 @@ export const useBusinessRules = () => {
             dividendPercent: num(d.RULE_DIVIDEND_PCT, def.fundManagement.dividendPercent),
             groupInsuranceAmount: num(d.RULE_GRP_INSURANCE_AMT, def.fundManagement.groupInsuranceAmount),
             interestChart: parsedInterestChart
-          }
+          },
+          earlyClosureProtection: {
+            requireTypeConfirm: bool(d.RULE_EARLY_CLOSURE_REQUIRE_TYPE_CONFIRM, def.earlyClosureProtection.requireTypeConfirm),
+          },
+          rdSystem: {
+            minMonthlyAmount: num(d.RULE_RD_MIN_MONTHLY_AMOUNT, def.rdSystem.minMonthlyAmount),
+            openingBalanceRate: num(d.RULE_RD_OPENING_BALANCE_RATE, def.rdSystem.openingBalanceRate),
+            minBalanceAfterWithdrawal: num(d.RULE_RD_MIN_BALANCE_AFTER_WITHDRAWAL, def.rdSystem.minBalanceAfterWithdrawal),
+            minConsecutiveInstallments: num(d.RULE_RD_MIN_CONSECUTIVE_INSTALLMENTS, def.rdSystem.minConsecutiveInstallments),
+            maxPaymentGapMonths: num(d.RULE_RD_MAX_PAYMENT_GAP_MONTHS, def.rdSystem.maxPaymentGapMonths),
+            maxMissedInstallments: num(d.RULE_RD_MAX_MISSED_INSTALLMENTS, def.rdSystem.maxMissedInstallments),
+            minRegularAfterRecovery: num(d.RULE_RD_MIN_REGULAR_AFTER_RECOVERY, def.rdSystem.minRegularAfterRecovery),
+            allowInitialMissRecovery: bool(d.RULE_RD_ALLOW_INITIAL_MISS_RECOVERY, def.rdSystem.allowInitialMissRecovery),
+            allowLaterMissRecovery: bool(d.RULE_RD_ALLOW_LATER_MISS_RECOVERY, def.rdSystem.allowLaterMissRecovery),
+            maxArrearsClearanceMonths: num(d.RULE_RD_MAX_ARREARS_CLEARANCE_MONTHS, def.rdSystem.maxArrearsClearanceMonths),
+            allowMultipleGaps: bool(d.RULE_RD_ALLOW_MULTIPLE_GAPS, def.rdSystem.allowMultipleGaps),
+          },
         });
       }
     } catch (error) {
@@ -312,6 +412,9 @@ export const useBusinessRules = () => {
         RULE_LOAN_R_LIMIT_CALC: currentData.regularLoanEligibility.limitCalc,
         RULE_LOAN_R_RD_HEAD_CODE: currentData.regularLoanEligibility.rdHeadCode,
         RULE_LOAN_R_SHARE_HEAD_CODE: currentData.regularLoanEligibility.shareHeadCode,
+        RULE_LOAN_ELIGIBILITY_APPLY_RLN: currentData.regularLoanEligibility.applyToRegularLoan,
+        RULE_LOAN_ELIGIBILITY_APPLY_ALN: currentData.regularLoanEligibility.applyToAdditionalLoan,
+        RULE_LOAN_ELIGIBILITY_APPLY_ELN: currentData.regularLoanEligibility.applyToEmergencyLoan,
 
         // Regular Loan → rln* (RULE_PENAL_RATE is rlnpenalrate)
         RULE_LOAN_R_MAX_AMT: currentData.regularLoan.maxAmount,
@@ -365,8 +468,6 @@ export const useBusinessRules = () => {
         RULE_MEMBER_MIN_TENURE_MONTHS: currentData.others.minMembership,
         RULE_SHARE_MIN_AMT: currentData.others.minShareAmt,
         RULE_SHARE_MAX_AMT: currentData.others.maxShareAmt,
-        RULE_CD_MIN_AMT: currentData.others.minCDAmt,
-        RULE_CD_MAX_AMT: currentData.others.maxCDAmt,
         RULE_SECURITY_DEP_AMT: currentData.others.securityDep,
 
         // General Settings
@@ -388,6 +489,22 @@ export const useBusinessRules = () => {
         RULE_DIVIDEND_PCT: currentData.fundManagement.dividendPercent,
         RULE_GRP_INSURANCE_AMT: currentData.fundManagement.groupInsuranceAmount,
         RULE_CD_INTEREST_CHART: JSON.stringify(currentData.fundManagement.interestChart),
+
+        // Loan Early Closure protection
+        RULE_EARLY_CLOSURE_REQUIRE_TYPE_CONFIRM: currentData.earlyClosureProtection.requireTypeConfirm,
+
+        // RD system — built from scratch, own tab
+        RULE_RD_MIN_MONTHLY_AMOUNT: currentData.rdSystem.minMonthlyAmount,
+        RULE_RD_OPENING_BALANCE_RATE: currentData.rdSystem.openingBalanceRate,
+        RULE_RD_MIN_BALANCE_AFTER_WITHDRAWAL: currentData.rdSystem.minBalanceAfterWithdrawal,
+        RULE_RD_MIN_CONSECUTIVE_INSTALLMENTS: currentData.rdSystem.minConsecutiveInstallments,
+        RULE_RD_MAX_PAYMENT_GAP_MONTHS: currentData.rdSystem.maxPaymentGapMonths,
+        RULE_RD_MAX_MISSED_INSTALLMENTS: currentData.rdSystem.maxMissedInstallments,
+        RULE_RD_MIN_REGULAR_AFTER_RECOVERY: currentData.rdSystem.minRegularAfterRecovery,
+        RULE_RD_ALLOW_INITIAL_MISS_RECOVERY: currentData.rdSystem.allowInitialMissRecovery,
+        RULE_RD_ALLOW_LATER_MISS_RECOVERY: currentData.rdSystem.allowLaterMissRecovery,
+        RULE_RD_MAX_ARREARS_CLEARANCE_MONTHS: currentData.rdSystem.maxArrearsClearanceMonths,
+        RULE_RD_ALLOW_MULTIPLE_GAPS: currentData.rdSystem.allowMultipleGaps,
       };
 
       const response = await apiService.updateBusinessRules(flatRules);

@@ -654,19 +654,19 @@ class ApiService {
     fromMember?: string;
     toMember?: string;
   }): Promise<ApiResponse> {
-    return this.request('/report/loans/interest-statement', {
+    return this.request('/reports/loans/interest-statement', {
       method: 'POST',
       body: JSON.stringify(options),
     });
   }
 
   async getReportWings(): Promise<ApiResponse> {
-    return this.request('/report/wings');
+    return this.request('/reports/wings');
   }
 
   async getReportOffices(wingNo?: string): Promise<ApiResponse> {
     const query = wingNo ? `?wingNo=${wingNo}` : '';
-    return this.request(`/report/offices${query}`);
+    return this.request(`/reports/offices${query}`);
   }
 
   // Deposit/Loan Slab methods — calls /admin/config/deposit-slabs
@@ -861,12 +861,6 @@ class ApiService {
     return this.request(`/member-ledger/validate-member?${params.toString()}`);
   }
 
-  // RD Premature Information methods
-  async getRDAccounts(memberNo: string): Promise<ApiResponse> {
-    const params = new URLSearchParams({ memberNo, type: 'RD' });
-    return this.request(`/utilities/search/deposits?${params.toString()}`);
-  }
-
   // User Preferences
   async getUserPreferences(): Promise<ApiResponse> {
     return this.request('/utilities/preferences');
@@ -956,20 +950,6 @@ class ApiService {
     });
   }
 
-  // ==================== FD Account ====================
-
-  async getAllFdAccounts(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/admin/fd-accounts');
-  }
-
-  async getFdAccountsByMember(memberNo: string): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>(`/admin/fd-accounts?memberNo=${memberNo}`);
-  }
-
-  async getFdAccount(accountNumber: string): Promise<ApiResponse<any>> {
-    return this.request<any>(`/admin/fd-accounts/${accountNumber}`);
-  }
-
   // ==================== FD/RD/SB Data Entry ====================
 
   async getFdRdSbAccounts(memberNo: string, type: 'FD' | 'RD' | 'SB'): Promise<ApiResponse<any[]>> {
@@ -1028,12 +1008,6 @@ class ApiService {
     });
   }
 
-  async updateFdAccount(accountNumber: string, data: any): Promise<ApiResponse<any>> {
-    return this.request<any>(`/admin/fd-accounts/${accountNumber}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-  }
 
   // ==================== Office Master ====================
 
@@ -1129,33 +1103,125 @@ class ApiService {
     });
   }
 
-  // ==================== RD Account Master ====================
+  // ==================== RD System — Member Config ====================
+  // Reuses the existing, already-corrected getCurrentFinancialYear() below
+  // (GET /admin/financial-year/current — see its own "BUG FIX 1b" note) for
+  // the current FY, rather than duplicating it.
 
-  async getRdAccounts(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/admin/rd-accounts');
-  }
-
-  async getRdAccount(id: number): Promise<ApiResponse<any>> {
-    return this.request<any>(`/admin/rd-accounts/${id}`);
-  }
-
-  async createRdAccount(data: any): Promise<ApiResponse<any>> {
-    return this.request<any>('/admin/rd-accounts', {
+  async setRdMonthlyAmount(mbno: string, yearcode: number, monthlyRdAmount: number): Promise<ApiResponse<any>> {
+    return this.request(`/rd/member-config/${mbno}/${yearcode}`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ monthlyRdAmount }),
     });
   }
 
-  async updateRdAccount(id: number, data: any): Promise<ApiResponse<any>> {
-    return this.request<any>(`/admin/rd-accounts/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
+  async getRdCurrentAmount(mbno: string, yearcode: number): Promise<ApiResponse<{ monthlyRdAmount: number }>> {
+    return this.request(`/rd/member-config/${mbno}/${yearcode}/current`);
+  }
+
+  async getRdAmountHistory(mbno: string, yearcode: number): Promise<ApiResponse<any[]>> {
+    return this.request(`/rd/member-config/${mbno}/${yearcode}/history`);
+  }
+
+  async getRdCurrentBalance(mbno: string, yearcode: number): Promise<ApiResponse<{ balance: number; maxWithdrawable: number }>> {
+    return this.request(`/rd/balance/${mbno}/${yearcode}/current`);
+  }
+
+  async getRdBalanceTimeline(mbno: string, yearcode: number): Promise<ApiResponse<any[]>> {
+    return this.request(`/rd/balance/${mbno}/${yearcode}/timeline`);
+  }
+
+  async withdrawRd(mbno: string, yearcode: number, amount: number, narration?: string): Promise<ApiResponse<{ newBalance: number }>> {
+    return this.request(`/rd/balance/${mbno}/${yearcode}/withdraw`, {
+      method: 'POST',
+      body: JSON.stringify({ amount, narration }),
     });
   }
 
-  async deleteRdAccount(id: number): Promise<ApiResponse<void>> {
-    return this.request<void>(`/admin/rd-accounts/${id}`, {
-      method: 'DELETE',
+  async getRdClosingMembers(yearcode: number): Promise<ApiResponse<string[]>> {
+    return this.request(`/rd/closing/${yearcode}/members`);
+  }
+
+  async previewRdClosingAll(yearcode: number, limit = 200, offset = 0): Promise<ApiResponse<{ total: number; members: any[] }>> {
+    return this.request(`/rd/closing/${yearcode}/preview?limit=${limit}&offset=${offset}`);
+  }
+
+  async previewRdClosingOne(mbno: string, yearcode: number, overrideEligible?: boolean): Promise<ApiResponse<any>> {
+    const qs = overrideEligible === undefined ? '' : `?overrideEligible=${overrideEligible}`;
+    return this.request(`/rd/closing/${mbno}/${yearcode}/preview${qs}`);
+  }
+
+  async closeRdMemberYear(
+    mbno: string,
+    yearcode: number,
+    closedBy: string,
+    overrideEligible?: boolean,
+    overrideReason?: string,
+  ): Promise<ApiResponse<any>> {
+    return this.request(`/rd/closing/${mbno}/${yearcode}/close`, {
+      method: 'POST',
+      body: JSON.stringify({ closedBy, overrideEligible, overrideReason }),
+    });
+  }
+
+  async closeRdFinancialYear(
+    yearcode: number,
+    closedBy: string,
+    overrides?: Record<string, { eligible: boolean; reason: string }>,
+  ): Promise<ApiResponse<{ succeeded: any[]; failed: Array<{ mbno: string; error: string }> }>> {
+    return this.request(`/rd/closing/${yearcode}/close-all`, {
+      method: 'POST',
+      body: JSON.stringify({ closedBy, overrides }),
+    });
+  }
+
+  // ── Dividend: monthly Share snapshot, Total Product calculation, credit ──
+  async captureShareMonthEndSnapshot(month: number, year: number): Promise<ApiResponse<{ success: boolean; captured: number; message: string }>> {
+    return this.request('/dividend/share-snapshot', {
+      method: 'POST',
+      body: JSON.stringify({ month, year }),
+    });
+  }
+
+  async previewDividendCalculation(yearcode: number, dividendRate: number): Promise<ApiResponse<any>> {
+    return this.request(`/dividend/calculation/preview?yearcode=${yearcode}&dividendRate=${dividendRate}`);
+  }
+
+  async commitDividendCalculation(yearcode: number, dividendRate: number): Promise<ApiResponse<{ success: boolean; calculationYear: number; membersCommitted: number }>> {
+    return this.request('/dividend/calculation/commit', {
+      method: 'POST',
+      body: JSON.stringify({ yearcode, dividendRate }),
+    });
+  }
+
+  async previewDividendCredit(yearcode: number): Promise<ApiResponse<any>> {
+    return this.request(`/dividend/credit/preview?yearcode=${yearcode}`);
+  }
+
+  async commitDividendCredit(yearcode: number, creditedBy: string): Promise<ApiResponse<{ creditYearcode: number; credited: any[]; failed: Array<{ mbno: string; error: string }> }>> {
+    return this.request('/dividend/credit/commit', {
+      method: 'POST',
+      body: JSON.stringify({ yearcode, creditedBy }),
+    });
+  }
+
+  async getRdPendingInstallments(mbno: string, yearcode: number): Promise<ApiResponse<any[]>> {
+    return this.request(`/rd/repayment/${mbno}/${yearcode}/pending`);
+  }
+
+  async recordRdRepayment(
+    mbno: string,
+    yearcode: number,
+    installmentMonth: number,
+    installmentYear: number,
+    amount: number,
+    recordedBy: string,
+    narration?: string,
+    paidDate?: string,
+  ): Promise<ApiResponse<any>> {
+    return this.request(`/rd/repayment/${mbno}/${yearcode}`, {
+      method: 'POST',
+      body: JSON.stringify({ installmentMonth, installmentYear, amount, recordedBy, narration, paidDate }),
     });
   }
 
@@ -1233,12 +1299,8 @@ class ApiService {
   }
 
 
-  // Premature Information — account-holder dropdowns (only members who actually
-  // have the relevant account type, instead of a blind member-number search)
-  async listRdAccountHolders(): Promise<ApiResponse> {
-    return this.request('/utilities/rd-accounts/holders');
-  }
-
+  // Premature Information — account-holder dropdown (only members who actually
+  // have an SB account, instead of a blind member-number search)
   async listSbAccountHolders(): Promise<ApiResponse> {
     return this.request('/utilities/sb-accounts/holders');
   }
@@ -1255,24 +1317,6 @@ class ApiService {
         success: true,
         data: responseData.data,
         message: responseData.message || 'SB accounts retrieved successfully'
-      };
-    }
-
-    return response;
-  }
-
-  // RD Premature Information methods
-  async searchRDAccounts(memberNo: string): Promise<ApiResponse> {
-    const params = new URLSearchParams({ memberNo, type: 'RD' });
-    const response = await this.request(`/utilities/search/deposits?${params.toString()}`);
-
-    // Handle nested response structure from utilities controller
-    const responseData = response.data as any;
-    if (response.success && responseData && responseData.data) {
-      return {
-        success: true,
-        data: responseData.data,
-        message: responseData.message || 'RD accounts retrieved successfully'
       };
     }
 
@@ -1324,7 +1368,7 @@ class ApiService {
       fromAccountNo: data.fromAccountNo,
       toAccountNo: data.toAccountNo
     });
-    return this.request(`/report/member-balance-range?${params.toString()}`);
+    return this.request(`/reports/member-balance-range?${params.toString()}`);
   }
 
   async getDayBookInterestRate(): Promise<ApiResponse> {
@@ -1337,7 +1381,7 @@ class ApiService {
     toDate: string;
     headCode?: string;
   }): Promise<ApiResponse> {
-    return this.request('/report/saving/statement', {
+    return this.request('/reports/saving/statement', {
       method: 'POST',
       body: JSON.stringify(data)
     });
@@ -1413,7 +1457,7 @@ class ApiService {
     params.append('memberFrom', data.memberFrom);
     params.append('memberTo', data.memberTo);
     if (data.loanType) params.append('loanType', data.loanType);
-    return this.request(`/report/surety-register?${params.toString()}`);
+    return this.request(`/reports/surety-register?${params.toString()}`);
   }
 
   async getDepositMaturity(data: {
@@ -1441,20 +1485,7 @@ class ApiService {
     if (data.accountType) params.append('accountType', data.accountType);
     if (data.outputType) params.append('outputType', data.outputType);
 
-    return this.request(`/report/account-closing?${params.toString()}`);
-  }
-
-  async getFixedDepositCertificate(data: {
-    memberNo: string;
-    certificateNo?: string;
-    outputType?: string;
-  }): Promise<ApiResponse> {
-    const params = new URLSearchParams();
-    params.append('memberNo', data.memberNo);
-    if (data.certificateNo) params.append('certificateNo', data.certificateNo);
-    if (data.outputType) params.append('outputType', data.outputType);
-
-    return this.request(`/report/fd-certificate?${params.toString()}`);
+    return this.request(`/reports/account-closing?${params.toString()}`);
   }
 
   async getShareCertificate(data: {
@@ -1471,7 +1502,7 @@ class ApiService {
     if (data.certificateNo) params.append('certificateNo', data.certificateNo);
     if (data.outputType) params.append('outputType', data.outputType);
 
-    return this.request(`/report/share-certificate?${params.toString()}`);
+    return this.request(`/reports/share-certificate?${params.toString()}`);
   }
 
   async getRecurringDetails(data: {
@@ -1482,7 +1513,7 @@ class ApiService {
     params.append('memberNo', data.memberNo);
     if (data.outputType) params.append('outputType', data.outputType);
 
-    return this.request(`/report/recurring-details?${params.toString()}`);
+    return this.request(`/reports/recurring-details?${params.toString()}`);
   }
 
   async getRecoveryDetails(data: {
@@ -1497,7 +1528,7 @@ class ApiService {
     params.append('year', data.year);
     if (data.outputType) params.append('outputType', data.outputType);
 
-    return this.request(`/report/recovery-details?${params.toString()}`);
+    return this.request(`/reports/recovery-details?${params.toString()}`);
   }
 
   async getLoanContributionsRegister(data: {
@@ -1512,7 +1543,7 @@ class ApiService {
     params.append('toDate', data.toDate);
     if (data.outputType) params.append('outputType', data.outputType);
 
-    return this.request(`/report/loan-contributions-register?${params.toString()}`);
+    return this.request(`/reports/loan-contributions-register?${params.toString()}`);
   }
 
   async getLienAccountInformation(data: {
@@ -1521,7 +1552,7 @@ class ApiService {
     const params = new URLSearchParams();
     if (data.outputType) params.append('outputType', data.outputType);
 
-    return this.request(`/report/lien-account-information?${params.toString()}`);
+    return this.request(`/reports/lien-account-information?${params.toString()}`);
   }
 
   async getAdHocReports(data: {
@@ -1542,7 +1573,7 @@ class ApiService {
     if (data.customQuery) params.append('customQuery', data.customQuery);
     if (data.outputType) params.append('outputType', data.outputType);
 
-    return this.request(`/report/adhoc-reports?${params.toString()}`);
+    return this.request(`/reports/adhoc-reports?${params.toString()}`);
   }
 
   async getPassBookPrinting(data: {
@@ -1556,7 +1587,7 @@ class ApiService {
     if (data.accountType) params.append('accountType', data.accountType);
     if (data.fromDate) params.append('fromDate', data.fromDate);
     if (data.toDate) params.append('toDate', data.toDate);
-    return this.request(`/report/passbook-printing?${params.toString()}`);
+    return this.request(`/reports/passbook-printing?${params.toString()}`);
   }
 
   async resetPassbookPrinting(memberNo: string, accountType?: string): Promise<ApiResponse> {
@@ -1684,7 +1715,7 @@ class ApiService {
     hideZeroClosing: boolean,
     hideZeroTrans: boolean
   ): Promise<ApiResponse> {
-    return this.request(`/report/financial-summary?fromDate=${fromDate}&toDate=${toDate}&includeOpBal=${includeOpBal}&hideZeroClosing=${hideZeroClosing}&hideZeroTrans=${hideZeroTrans}`);
+    return this.request(`/reports/financial-summary?fromDate=${fromDate}&toDate=${toDate}&includeOpBal=${includeOpBal}&hideZeroClosing=${hideZeroClosing}&hideZeroTrans=${hideZeroTrans}`);
   }
 
   async getMemberLoanDetail(memberFrom: string, memberTo: string, loanType?: string): Promise<ApiResponse> {
@@ -2061,12 +2092,6 @@ class ApiService {
     return this.request(`/deposits/member/${memberNo}`);
   }
 
-  async generateFDCertificate(id: string): Promise<ApiResponse> {
-    return this.request(`/deposits/fixed-deposits/${id}/certificate`, {
-      method: 'POST'
-    });
-  }
-
   // Passbook Templates
   async getPassbookTemplates(): Promise<ApiResponse> {
     return this.request('/admin/passbook-templates');
@@ -2205,38 +2230,6 @@ class ApiService {
     return this.request<any>('/utilities/dividend/pay', {
       method: 'POST',
       body: JSON.stringify(data),
-    });
-  }
-
-  async createFixedDeposit(data: any): Promise<ApiResponse<any>> {
-    return this.request<any>('/utilities/fd-receipt', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  }
-
-  async getMemberActiveFDs(memberNo: string): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>(`/utilities/fd-accounts/member?memberNo=${memberNo}`);
-  }
-
-  async payFdInterest(data: any): Promise<ApiResponse<any>> {
-    return this.request<any>('/utilities/fd-interest/pay', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  }
-
-  async createInterestVoucher(data: any): Promise<ApiResponse<any>> {
-    return this.request<any>('/utilities/fd-interest/post', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  }
-
-  async closeFixedDeposit(data: any): Promise<ApiResponse<any>> {
-    return this.request<any>('/transactions/fixed-deposit/close', {
-      method: 'POST',
-      body: JSON.stringify(data)
     });
   }
 

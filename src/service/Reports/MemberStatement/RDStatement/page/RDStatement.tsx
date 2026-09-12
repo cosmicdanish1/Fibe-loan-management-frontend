@@ -16,22 +16,32 @@ import dayjs, { Dayjs } from 'dayjs';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 
 // ── types ────────────────────────────────────────────────────────────────────
-interface RDAccount {
+// One row per FINANCIAL YEAR the member has RD activity in — the real RD
+// system (rd_member_config/rd_balance_events/rd_installment_ledger/
+// rd_financial_year_summary) is a rolling per-year collection sharing CD's
+// GL head, not a fixed-term account, so there is no account number or
+// maturity date/amount here. A CLOSED year's interest figures are frozen at
+// closing time; an OPEN year shows a live snapshot instead.
+interface RDYearRecord {
   key: string;
-  accountNo: string;
+  yearcode: number;
+  yearLabel: string;
   memberNo: string;
   memberName: string;
-  officeName: string;
-  monthlyAmount: number;
-  interestRate: number;
-  depositDate: string | Date;
-  maturityDate: string | Date;
-  totalDeposited: number;
-  maturityAmount: number;
-  tenureMonths: number;
-  installmentsPaid: number;
-  installmentsMissed: number;
-  status: string;
+  startDate: string | Date;
+  endDate: string | Date;
+  monthlyRdAmount: number;
+  openingBalance: number;
+  totalInstallmentsDue: number;
+  totalInstallmentsPaid: number;
+  totalMissed: number;
+  paymentPattern: string | null;
+  finalEligibleFullInterest: boolean | null;
+  rdInstallmentInterest: number;
+  openingBalanceInterest: number;
+  totalInterestCredited: number;
+  currentBalance: number;
+  status: 'OPEN' | 'CLOSED';
 }
 
 // ── report layout ────────────────────────────────────────────────────────────
@@ -43,20 +53,20 @@ const DSEP  = '='.repeat(SEP_W);
 const centre = (s: string, w = SEP_W) =>
   s.length >= w ? s : ' '.repeat(Math.floor((w - s.length) / 2)) + s;
 
-const fmtDate = (d: string | Date | null) => {
-  if (!d) return 'N/A';
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dd = d instanceof Date ? d : new Date(d);
-  if (isNaN(dd.getTime())) return String(d).slice(0, 10);
-  return `${String(dd.getDate()).padStart(2,'0')}-${months[dd.getMonth()]}-${dd.getFullYear()}`;
-};
-
 const fmtAmt = (n: number) =>
   n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ── report builder ───────────────────────────────────────────────────────────
+const PATTERN_LABEL: Record<string, string> = {
+  FULLY_REGULAR: 'Fully Regular',
+  INITIAL_GAP_RECOVERED: 'Initial Gap (Recovered)',
+  LATER_GAP_RECOVERED: 'Later Gap (Recovered)',
+  MULTIPLE_GAPS: 'Multiple Gaps',
+  GAP_UNRECOVERED: 'Unpaid Installment(s)',
+};
+
 const buildReportText = (
-  accounts: RDAccount[],
+  years: RDYearRecord[],
   memberNo: string,
   memberName: string,
   fromDate: string,
@@ -71,30 +81,32 @@ const buildReportText = (
     '',
     `Member No :- ${memberNo}   Member Name :- ${memberName}`,
     `From Date :- ${dayjs(fromDate).format('DD-MMM-YYYY')}   To Date :- ${dayjs(toDate).format('DD-MMM-YYYY')}`,
-    `Total Accounts :- ${accounts.length}`,
+    `Total Financial Years :- ${years.length}`,
     SEP,
   ];
 
-  let totalDeposited = 0;
-  let totalMaturity  = 0;
+  let totalInterest = 0;
 
-  for (const acc of accounts) {
-    totalDeposited += acc.totalDeposited;
-    totalMaturity  += acc.maturityAmount;
+  for (const y of years) {
+    totalInterest += y.totalInterestCredited;
 
     lines.push(
-      `Account No : ${(acc.accountNo || '').padEnd(20)}  Status  : ${acc.status || ''}`,
-      `Start Date : ${fmtDate(acc.depositDate).padEnd(20)}  Maturity: ${fmtDate(acc.maturityDate)}`,
-      `Monthly    : ${fmtAmt(acc.monthlyAmount).padEnd(20)}  Rate    : ${acc.interestRate}%   Tenure: ${acc.tenureMonths || 'N/A'} Months`,
-      `Installed  : ${acc.installmentsPaid || 0} Paid / ${acc.installmentsMissed || 0} Missed`,
-      `Deposited  : ${fmtAmt(acc.totalDeposited).padEnd(20)}  Maturity Amt: ${fmtAmt(acc.maturityAmount)}`,
+      `Financial Year : ${y.yearLabel.padEnd(20)}  Status   : ${y.status}`,
+      `Monthly RD     : ${fmtAmt(y.monthlyRdAmount).padEnd(20)}  Opening  : ${fmtAmt(y.openingBalance)}`,
+      `Installments   : ${y.totalInstallmentsPaid}/${y.totalInstallmentsDue} Paid, ${y.totalMissed} Missed` +
+        (y.paymentPattern ? `   Pattern: ${PATTERN_LABEL[y.paymentPattern] || y.paymentPattern}` : ''),
+      `Installment Int: ${fmtAmt(y.rdInstallmentInterest).padEnd(20)}  Opening Bal. Int: ${fmtAmt(y.openingBalanceInterest)}`,
+      `Total Interest : ${fmtAmt(y.totalInterestCredited).padEnd(20)}  Closing Balance : ${fmtAmt(y.currentBalance)}`,
     );
-    if (acc.officeName) lines.push(`Office     : ${acc.officeName}`);
     lines.push(SEP);
   }
 
+  if (years.length === 0) {
+    lines.push(centre('No RD activity found for this member in the selected range'), SEP);
+  }
+
   lines.push(
-    `Total Deposited : ${fmtAmt(totalDeposited).padStart(16)}   Total Maturity : ${fmtAmt(totalMaturity)}`,
+    `Total Interest Credited (all years shown) : ${fmtAmt(totalInterest)}`,
     DSEP,
     '',
     'Report As Per Data Available....',
@@ -172,18 +184,18 @@ const RDStatement: React.FC = () => {
       });
 
       if (response.success && response.data) {
-        const accounts: RDAccount[] = Array.isArray(response.data) ? response.data : [];
-        if (accounts.length === 0) {
-          message.info('No RD accounts found for this member in the selected range');
+        const years: RDYearRecord[] = Array.isArray(response.data) ? response.data : [];
+        if (years.length === 0) {
+          message.info('No RD activity found for this member in the selected range');
           setReportText('');
           reportTextRef.current = '';
           return;
         }
-        const name = accounts[0]?.memberName || memberName;
+        const name = years[0]?.memberName || memberName;
         if (name) setMemberName(name);
 
         const text = buildReportText(
-          accounts, memberNo, name,
+          years, memberNo, name,
           fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'),
         );
         reportTextRef.current = text;
