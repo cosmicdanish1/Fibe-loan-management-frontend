@@ -41,18 +41,30 @@ export interface ClosureQuote {
     loanCaseNo: string;
     closureDate: string;
     outstandingPrincipal: number;
-    /** Slot 1/2 interest, always charged regardless of when the loan closes. */
-    compulsorySlotInterest: number;
-    /** True reducing-balance interest accrued for installments 1..k (up to the closure point). */
-    rbInterestTillClosure: number;
-    /** Flat interest actually collected so far via the constant EMI. */
-    flatInterestCollected: number;
-    /** rbInterestTillClosure - flatInterestCollected — can be positive, zero, or negative. */
-    rbAdjustment: number;
-    /** compulsorySlotInterest + rbAdjustment — the actual interest charged at closure. */
+    /** Flat principal still owed across installments already due but unpaid. */
+    nrPrincipal: number;
+    /** Flat interest still owed across installments already due but unpaid. */
+    nrInterest: number;
+    /** How many installments haven't reached their due month yet — 0 collapses
+     *  the AP term below to 0, since there's nothing left to average over. */
+    futureInstallmentCount: number;
+    /** (first future opening balance + last future opening balance) / 2. */
+    averageRemainingPrincipal: number;
+    /** averageRemainingPrincipal × monthly rate. */
+    averageRbInterest: number;
+    /** (monthlyInterestForEMI − averageRbInterest) × futureInstallmentCount —
+     *  the AP (average-principal) closure interest on the future installments. */
+    apInterest: number;
+    /** nrInterest + apInterest — the actual interest charged at closure. */
     closureInterest: number;
     penalInterest: number;
     adjustment: number;
+    /** Payroll-lag credit, DETECTED (see backend recordLoanRepayment) but
+     *  never auto-applied — negative, NOT included in finalClosureAmount
+     *  below. 0 when no such credit applies to this loan. The UI offers this
+     *  as a one-click suggestion for the Adjustment field; the operator must
+     *  accept it and hit Recalc before it affects what's charged. */
+    suggestedAdjustment: number;
     finalClosureAmount: number;
     /** null when applyRdShare was false in the request. */
     rdShareAdjustment: RdShareClosureAdjustment | null;
@@ -71,8 +83,6 @@ export interface ClosureQuote {
     instalAmt: number;
     noOfInstal: number;
     totalPrincipalPaid: number;
-    totalRBInterestFullSchedule: number;
-    hasRbSchedule: boolean;
 }
 
 export interface ClosureForm {
@@ -148,7 +158,7 @@ export const useLoanEarlyClosure = () => {
         }
     }, []);
 
-    const fetchQuote = useCallback(async (loancaseno: string, adjustment: number, closureDate: string, applyRdShare: boolean) => {
+    const fetchQuote = useCallback(async (loancaseno: string, adjustment: number, closureDate: string, applyRdShare: boolean, mbno: string) => {
         if (!loancaseno) return;
         setQuoteLoading(true);
         setMessage(null);
@@ -161,7 +171,11 @@ export const useLoanEarlyClosure = () => {
                     'Content-Type': 'application/json',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify({ adjustment, closureDate, applyRdShare }),
+                // mbno scopes the lookup — loancaseno alone isn't unique
+                // across members, so without this a case-number collision
+                // with an unrelated member's loan can silently quote the
+                // wrong one.
+                body: JSON.stringify({ adjustment, closureDate, applyRdShare, mbno }),
             });
             if (!res.ok) throw new Error('Failed to load closure quote');
             const data = await res.json();
@@ -184,17 +198,30 @@ export const useLoanEarlyClosure = () => {
     const handleLoanSelect = useCallback(async (loancaseno: string) => {
         setForm(prev => ({ ...prev, selectedLoanCase: loancaseno, adjustment: 0 }));
         setClosed(false);
-        await fetchQuote(loancaseno, 0, form.closureDate, form.applyRdShare);
-    }, [fetchQuote, form.closureDate, form.applyRdShare]);
+        await fetchQuote(loancaseno, 0, form.closureDate, form.applyRdShare, form.mbno);
+    }, [fetchQuote, form.closureDate, form.applyRdShare, form.mbno]);
 
     const recalculate = useCallback(async () => {
-        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare);
-    }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, fetchQuote]);
+        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno);
+    }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, fetchQuote]);
 
     const toggleApplyRdShare = useCallback(async (value: boolean) => {
         setForm(prev => ({ ...prev, applyRdShare: value }));
-        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, value);
-    }, [form.selectedLoanCase, form.adjustment, form.closureDate, fetchQuote]);
+        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, value, form.mbno);
+    }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.mbno, fetchQuote]);
+
+    /** One-click accept for quote.suggestedAdjustment (the detected
+     *  payroll-lag credit) — per the user's explicit decision, this is
+     *  NEVER applied silently. Copies the suggested value into the
+     *  Adjustment field and immediately re-quotes with it, so the operator
+     *  sees the new total before doing anything further (e.g. executing the
+     *  closure) — a deliberate accept action, not an automatic one. */
+    const applySuggestedAdjustment = useCallback(async () => {
+        if (!quote || !form.selectedLoanCase || quote.suggestedAdjustment === 0) return;
+        const value = form.adjustment + quote.suggestedAdjustment;
+        setForm(prev => ({ ...prev, adjustment: value }));
+        await fetchQuote(form.selectedLoanCase, value, form.closureDate, form.applyRdShare, form.mbno);
+    }, [quote, form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, fetchQuote]);
 
     const handleExecuteClosure = async () => {
         if (!form.selectedLoanCase || !quote) return;
@@ -214,6 +241,7 @@ export const useLoanEarlyClosure = () => {
                     receiptNo: form.receiptNo,
                     closureDate: form.closureDate,
                     applyRdShare: form.applyRdShare,
+                    mbno: form.mbno,
                 }),
             });
             const data = await res.json();
@@ -250,6 +278,7 @@ export const useLoanEarlyClosure = () => {
         handleLoanSelect,
         recalculate,
         toggleApplyRdShare,
+        applySuggestedAdjustment,
         handleExecuteClosure,
         handleReset,
     };
