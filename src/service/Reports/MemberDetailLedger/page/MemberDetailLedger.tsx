@@ -47,6 +47,7 @@ interface DetailEntry {
   debit: number;
   credit: number;
   code: string;
+  balance?: number;
 }
 interface DetailLedger {
   memberNumber: string;
@@ -127,7 +128,7 @@ const buildReportText = (data: DetailLedger, now: Date): string => {
     let totalRec = 0;
 
     for (const e of group) {
-      running  += e.credit - e.debit;
+      running  = typeof e.balance === 'number' ? e.balance : running + e.credit - e.debit;
       totalPay += e.debit;
       totalRec += e.credit;
 

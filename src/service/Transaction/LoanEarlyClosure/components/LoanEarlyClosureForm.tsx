@@ -410,6 +410,49 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 )}
 
                                 {/* Amount grid */}
+                                {quote.payrollAdjustments?.length > 0 && (
+                                    <div style={{ marginBottom: 10, background: '#eef5fc', border: '1px solid #bcd7ef', borderRadius: 7, padding: '11px 13px' }}>
+                                        <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#2563a8', marginBottom: 7 }}>
+                                            Previous-Loan Payroll Adjustment
+                                        </div>
+                                        <div style={{ fontSize: 11.5, color: '#315575', marginBottom: 8 }}>
+                                            This BSP deduction is included in the outstanding balance, but it does not advance the current loan&apos;s installment schedule.
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                                            {quote.payrollAdjustments.map((item, index) => (
+                                                <React.Fragment key={`${item.date}-${item.receiptNo || index}`}>
+                                                    <div>
+                                                        <div className="lec-amount-label">Previous loan case</div>
+                                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#1e3a5f' }}>{item.predecessorLoanCaseNo || 'Previous loan'}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="lec-amount-label">Source payment</div>
+                                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#1e3a5f' }}>{item.date}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="lec-amount-label">Voucher</div>
+                                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#1e3a5f' }}>{item.receiptNo || 'Not recorded'}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="lec-amount-label">Previous-loan principal</div>
+                                                        <div className="lec-amount-value" style={{ color: '#15803d' }}>₹{fmt(item.principal)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="lec-amount-label">Previous-loan interest</div>
+                                                        <div className="lec-amount-value" style={{ color: '#15803d' }}>₹{fmt(item.interest)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="lec-amount-label">Total adjustment</div>
+                                                        <div className="lec-amount-value" style={{ color: '#15803d' }}>₹{fmt(item.total)}</div>
+                                                    </div>
+                                                </React.Fragment>
+                                            ))}
+                                        </div>
+                                        <div style={{ marginTop: 8, fontSize: 11, color: '#315575' }}>
+                                            Balance effect: <b>included</b>. Current-loan installment effect: <b>excluded</b>. The amount is not deducted a second time from the final closure total.
+                                        </div>
+                                    </div>
+                                )}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                                     <div className="lec-amount-cell">
                                         <div className="lec-amount-label">Outstanding Principal</div>

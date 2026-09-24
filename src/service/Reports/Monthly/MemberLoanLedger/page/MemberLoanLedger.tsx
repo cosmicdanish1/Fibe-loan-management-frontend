@@ -166,6 +166,10 @@ const MemberLoanLedger: React.FC = () => {
       await showDialog('warning', 'Validation', 'Please enter member number');
       return;
     }
+    if (!loanCaseNo) {
+      await showDialog('warning', 'Select Loan Case', 'Select a loan case to view reducing-balance principal. The all-cases view mixes consolidated loans and is not a principal ledger.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -541,6 +545,9 @@ const MemberLoanLedger: React.FC = () => {
                     )}
                     <div className="fz-label text-slate-600 mt-1">
                       Opening Balance: <span className="font-bold">{formatCurrency(openingBalance)}</span>
+                    </div>
+                    <div className="fz-caption text-slate-500 mt-1 italic">
+                      Balance = outstanding principal; credit amount includes principal + interest + penalty.
                     </div>
                   </div>
 

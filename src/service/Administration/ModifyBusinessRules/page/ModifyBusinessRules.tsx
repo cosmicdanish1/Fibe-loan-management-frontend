@@ -620,6 +620,20 @@ const ModifyBusinessRules: React.FC = () => {
 
                       <div className="mbr-divider h-px bg-slate-100" />
 
+                      <div className="rounded-lg border-2 border-indigo-100 bg-indigo-50/50 p-2">
+                        <label className="mbr-label fz-label font-black text-indigo-700 uppercase tracking-widest ml-0.5">
+                          Loan Interest Method
+                        </label>
+                        <div className={`${inputCls} bg-white text-indigo-800 font-bold`}>
+                          Reducing Balance
+                        </div>
+                        <div className="mt-1 text-[10px] text-indigo-700">
+                          Fixed application rule. Principal and reducing-balance interest are posted separately.
+                        </div>
+                      </div>
+
+                      <div className="mbr-divider h-px bg-slate-100" />
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {[
                           { label: 'Min. Balance For Saving A/c',      field: 'minBalanceForSavingAc',          type: 'float' },

@@ -546,6 +546,8 @@ export const useBusinessRules = () => {
         SYS_AVG_INT_CALC_SLOT: currentData.generalSettings.averageInterestCalculationSlot,
         SYS_PROFIT_HEAD: currentData.generalSettings.profitHead,
         SYS_DAYEND_AUTO_CLOSE: currentData.generalSettings.autoDayEndCloseEnabled,
+        // Reducing balance is the single supported loan-interest method.
+        RULE_LOAN_INTEREST_METHOD: 'REDUCING_BALANCE',
 
         // Fund Management — these were missing and never persisted
         RULE_FUND_INT_RATE: currentData.fundManagement.fundInterestRate,

@@ -38,6 +38,18 @@ export interface RepaymentHistoryEntry {
     penal: number;
     receiptNo: string | null;
     narration: string | null;
+    isPayrollLagCredit?: boolean;
+}
+
+export interface PayrollAdjustment {
+    date: string;
+    principal: number;
+    interest: number;
+    total: number;
+    receiptNo: string | null;
+    predecessorLoanCaseNo: string | null;
+    affectsOutstandingBalance: boolean;
+    countsTowardCurrentInstallments: boolean;
 }
 
 export interface RbScheduleRow {
@@ -109,6 +121,7 @@ export interface ClosureQuote {
      *  rdShareAdjustment is null or nothing was available to apply. */
     payableByMember: number;
     unpaidInstallments: ClosureUnpaidInstallment[];
+    payrollAdjustments: PayrollAdjustment[];
     /** Full contracted term. */
     totalInstallments: number;
     /** Installments already due (their month has started) AND fully settled —
