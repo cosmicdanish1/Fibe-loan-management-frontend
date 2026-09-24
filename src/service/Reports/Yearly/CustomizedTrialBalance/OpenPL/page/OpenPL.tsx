@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../../services/api';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -153,7 +154,12 @@ const OpenPL: React.FC = () => {
           key: 'currReceipts',
           width: 120,
           align: 'right' as const,
-          render: (val: number) => <span className="fz-caption">{formatCurrency(val)}</span>
+          render: (val: number) => (
+            <span className="fz-caption">
+              {val > 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
+              {formatCurrency(val)}
+            </span>
+          )
         },
         {
           title: 'Credit',
@@ -161,7 +167,12 @@ const OpenPL: React.FC = () => {
           key: 'currPayments',
           width: 120,
           align: 'right' as const,
-          render: (val: number) => <span className="fz-caption">{formatCurrency(val)}</span>
+          render: (val: number) => (
+            <span className="fz-caption">
+              {val > 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
+              {formatCurrency(val)}
+            </span>
+          )
         },
         {
           title: 'Balance',
@@ -186,7 +197,12 @@ const OpenPL: React.FC = () => {
           key: 'progReceipts',
           width: 120,
           align: 'right' as const,
-          render: (val: number) => <span className="fz-caption">{formatCurrency(val)}</span>
+          render: (val: number) => (
+            <span className="fz-caption">
+              {val > 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
+              {formatCurrency(val)}
+            </span>
+          )
         },
         {
           title: 'Credit Total',
@@ -194,7 +210,12 @@ const OpenPL: React.FC = () => {
           key: 'progPayments',
           width: 120,
           align: 'right' as const,
-          render: (val: number) => <span className="fz-caption">{formatCurrency(val)}</span>
+          render: (val: number) => (
+            <span className="fz-caption">
+              {val > 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
+              {formatCurrency(val)}
+            </span>
+          )
         },
         {
           title: 'Balance',
@@ -400,18 +421,22 @@ const OpenPL: React.FC = () => {
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={1}></Table.Summary.Cell>
                       <Table.Summary.Cell index={2} align="right" className="font-bold text-slate-600 fz-caption">
+                        {grandTotals.currentReceipts > 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
                         {formatCurrency(grandTotals.currentReceipts)}
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={3} align="right" className="font-bold text-slate-600 fz-caption">
+                        {grandTotals.currentPayments > 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
                         {formatCurrency(grandTotals.currentPayments)}
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={4} align="right" className={`font-black fz-caption ${grandTotals.currentBalance < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                         {formatCurrency(grandTotals.currentBalance)}
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={5} align="right" className="font-bold text-slate-600 fz-caption">
+                        {grandTotals.progressiveReceipts > 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
                         {formatCurrency(grandTotals.progressiveReceipts)}
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={6} align="right" className="font-bold text-slate-600 fz-caption">
+                        {grandTotals.progressivePayments > 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
                         {formatCurrency(grandTotals.progressivePayments)}
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={7} align="right" className={`font-black fz-caption ${grandTotals.progressiveBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>

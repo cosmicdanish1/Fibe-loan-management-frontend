@@ -9,6 +9,7 @@ import { RootState } from '../../../../../store';
 import { setInterfaceMode } from '../../../../../store/slices/themeSlice';
 import { apiService } from '../../../../../services/api';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import dayjs, { Dayjs } from 'dayjs';
 
 interface LedgerEntry {
@@ -461,10 +462,10 @@ const MemberLedgerReport: React.FC = () => {
                               {e.voucherNo}
                             </td>
                             <td className={`py-0.5 px-2 text-right font-semibold ${isDark ? 'text-rose-300' : 'text-rose-600'}`} style={{ width: '90px' }}>
-                              {e.debit > 0 ? fmt(e.debit) : ''}
+                              {e.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.debit)}</>) : ''}
                             </td>
                             <td className={`py-0.5 px-2 text-right font-semibold ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`} style={{ width: '90px' }}>
-                              {e.credit > 0 ? fmt(e.credit) : ''}
+                              {e.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.credit)}</>) : ''}
                             </td>
                             <td className={`py-0.5 px-2 text-right font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`} style={{ width: '110px' }}>
                               {balLabel(e.balance)}

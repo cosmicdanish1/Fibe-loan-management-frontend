@@ -6,6 +6,7 @@ import MemberLookup from '../../../../../../components/shared/MemberLookup/Membe
 import dayjs, { Dayjs } from 'dayjs';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const { Option } = Select;
 
@@ -441,7 +442,10 @@ const DividendWarrant: React.FC = () => {
               {/* Summary */}
               {filteredData.length > 0 && (
                 <div className={`p-2 rounded-lg border text-center ${isDark ? 'bg-teal-900/20 border-teal-800' : 'bg-teal-50 border-teal-200'}`}>
-                  <div className={`fz-label font-black ${isDark ? 'text-teal-300' : 'text-teal-700'}`}>₹{fmt(totals.dividendAmount)}</div>
+                  <div className={`fz-label font-black flex items-center justify-center ${isDark ? 'text-teal-300' : 'text-teal-700'}`}>
+                    {totals.dividendAmount > 0 && <CrDrIndicator type="credit" className="mr-1" />}
+                    ₹{fmt(totals.dividendAmount)}
+                  </div>
                   <div className={`fz-caption ${muted}`}>Total Dividend</div>
                 </div>
               )}
@@ -504,7 +508,10 @@ const DividendWarrant: React.FC = () => {
                         <td className={`p-2 fz-caption ${muted}`}>{r.address || '-'}</td>
                         <td className={`p-2 ${tblTxt}`}>{r.officeName || '-'}</td>
                         <td className={`p-2 text-right font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>₹{fmt(r.shareBalance)}</td>
-                        <td className={`p-2 text-right font-black ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>₹{fmt(r.dividendAmount)}</td>
+                        <td className={`p-2 text-right font-black ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
+                          {r.dividendAmount > 0 && <CrDrIndicator type="credit" className="mr-1" />}
+                          ₹{fmt(r.dividendAmount)}
+                        </td>
                         <td className={`p-2 text-center font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>{r.dividendRate}%</td>
                         <td className={`p-2 font-bold ${tblTxt}`}>{r.chequeNo || '-'}</td>
                         <td className={`p-2 text-center ${tblTxt}`}>{r.paymentDate ? dayjs(r.paymentDate).format('DD/MM/YY') : '-'}</td>
@@ -516,7 +523,10 @@ const DividendWarrant: React.FC = () => {
                       <tr className={`font-bold border-t-2 border-teal-300 ${tblHd}`}>
                         <td colSpan={5} className="p-2 font-black uppercase">Total: {filteredData.length} records</td>
                         <td className="p-2 text-right font-black">₹{fmt(totals.shareBalance)}</td>
-                        <td className="p-2 text-right font-black">₹{fmt(totals.dividendAmount)}</td>
+                        <td className="p-2 text-right font-black">
+                          {totals.dividendAmount > 0 && <CrDrIndicator type="credit" className="mr-1" />}
+                          ₹{fmt(totals.dividendAmount)}
+                        </td>
                         <td colSpan={3} />
                       </tr>
                     </tfoot>

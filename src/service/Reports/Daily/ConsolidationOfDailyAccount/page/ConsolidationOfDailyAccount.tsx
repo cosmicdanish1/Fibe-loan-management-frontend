@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { setInterfaceMode } from '../../../../../store/slices/themeSlice';
 import { apiService } from '../../../../../services/api';
+import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import dayjs from 'dayjs';
 
 interface SubEntry {
@@ -224,7 +225,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                 ${label === 'RECEIPT'
                   ? (isDark ? 'text-emerald-300' : 'text-emerald-600')
                   : (isDark ? 'text-rose-300' : 'text-rose-600')}`}>
-                {fmt(e.amount)}
+                {e.amount > 0 && <CrDrIndicator type={label === 'RECEIPT' ? 'credit' : 'debit'} className="mr-1" />}{fmt(e.amount)}
               </td>
             </tr>
           ))}
@@ -232,7 +233,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
           <tr className={`border-b-2 ${isDark ? 'border-slate-500' : 'border-slate-300'} ${totalRowBg}`}>
             <td colSpan={2} className={`px-3 py-1 ${muted}`} />
             <td className={`px-3 py-1 text-right fz-caption font-black font-mono border-t ${isDark ? 'border-slate-500 text-slate-200' : 'border-slate-300 text-slate-700'}`}>
-              {fmt(g.total)}
+              {g.total > 0 && <CrDrIndicator type={label === 'RECEIPT' ? 'credit' : 'debit'} className="mr-1" />}{fmt(g.total)}
             </td>
           </tr>
         </React.Fragment>
@@ -395,15 +396,15 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                       {/* Summary */}
                       <tbody>
                         {[
-                          { label: 'Opening Balance :', value: fmtSigned(data.openingBalance), cls: text },
-                          { label: 'Total Receipt :', value: fmt(data.totalReceipts), cls: isDark ? 'text-emerald-300' : 'text-emerald-600' },
-                          { label: 'Total Cash :', value: fmtSigned(data.totalCash), cls: text },
-                          { label: 'Total Payment :', value: fmt(data.totalPayments), cls: isDark ? 'text-rose-300' : 'text-rose-600' },
-                          { label: 'Closing Balance :', value: fmtSigned(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-violet-300' : 'text-violet-700') : (isDark ? 'text-rose-300' : 'text-rose-600') },
-                        ].map(({ label, value, cls }, i) => (
+                          { label: 'Opening Balance :', value: fmtSigned(data.openingBalance), cls: text, crdr: null },
+                          { label: 'Total Receipt :', value: fmt(data.totalReceipts), cls: isDark ? 'text-emerald-300' : 'text-emerald-600', crdr: 'credit' as const },
+                          { label: 'Total Cash :', value: fmtSigned(data.totalCash), cls: text, crdr: null },
+                          { label: 'Total Payment :', value: fmt(data.totalPayments), cls: isDark ? 'text-rose-300' : 'text-rose-600', crdr: 'debit' as const },
+                          { label: 'Closing Balance :', value: fmtSigned(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-violet-300' : 'text-violet-700') : (isDark ? 'text-rose-300' : 'text-rose-600'), crdr: null },
+                        ].map(({ label, value, cls, crdr }, i) => (
                           <tr key={i} className={`border-b ${border} ${summaryBg}`}>
                             <td colSpan={2} className={`px-3 py-1.5 text-right text-xs font-bold ${muted}`}>{label}</td>
-                            <td className={`px-3 py-1.5 text-right text-xs font-black font-mono ${cls}`}>{value}</td>
+                            <td className={`px-3 py-1.5 text-right text-xs font-black font-mono ${cls}`}>{crdr && <CrDrIndicator type={crdr} className="mr-1" />}{value}</td>
                           </tr>
                         ))}
                       </tbody>

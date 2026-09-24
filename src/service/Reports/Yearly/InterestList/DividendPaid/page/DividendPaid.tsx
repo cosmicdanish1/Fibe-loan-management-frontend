@@ -5,6 +5,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const { Option } = Select;
 
@@ -341,8 +342,10 @@ const DividendPaid: React.FC = () => {
                   const wg   = (r.officeName || '-').substring(0, 10).padEnd(11);
                   const amt  = formatCurrency(r.dividendAmount).padStart(10);
                   return (
-                    <div key={i} className={`whitespace-pre hover:${isDark ? 'bg-slate-800' : 'bg-slate-50'} ${rpTxt}`}>
-                      {`${sr}${dt}${vou}${mbno}${nm}${wg}${amt}`}
+                    <div key={i} className={`whitespace-pre hover:${isDark ? 'bg-slate-800' : 'bg-slate-50'} ${rpTxt} flex items-center`}>
+                      <span>{`${sr}${dt}${vou}${mbno}${nm}${wg}`}</span>
+                      {r.dividendAmount > 0 && <CrDrIndicator type="credit" className="mr-1" />}
+                      <span>{amt}</span>
                     </div>
                   );
                 })}

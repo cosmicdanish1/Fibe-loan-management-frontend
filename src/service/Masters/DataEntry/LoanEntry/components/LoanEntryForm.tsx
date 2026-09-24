@@ -18,9 +18,9 @@ const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wid
 const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const LOAN_TYPES = [
-    { id: 'ALN', label: 'Advance Loan (ALN)' },
+    { id: 'ALN', label: 'Emergency Loan (ALN)' },
     { id: 'RLN', label: 'Regular Loan (RLN)' },
-    { id: 'ELN', label: 'Emergency Loan (ELN)' },
+    { id: 'ELN', label: 'Loan Against Recovery (ELN)' },
 ];
 
 type LookupTarget = 'member' | 'g1' | 'g2' | null;

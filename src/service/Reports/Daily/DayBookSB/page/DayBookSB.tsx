@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
+import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import dayjs from 'dayjs';
 
 interface SBEntry {
@@ -372,22 +373,22 @@ const DayBookSB: React.FC = () => {
                               <td className={`border ${tblBdr} px-2 py-0.5 text-amber-500 font-semibold`}>{e.accNo}</td>
                               <td className={`border ${tblBdr} px-2 py-0.5 ${text}`}>{e.acName}</td>
                               <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-sky-300' : 'text-sky-600'}`}>
-                                {e.depositCash > 0 ? fmt(e.depositCash) : '0.00'}
+                                {e.depositCash > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash)}</>) : '0.00'}
                               </td>
                               <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-sky-400' : 'text-sky-500'}`}>
-                                {e.depositTransfer > 0 ? fmt(e.depositTransfer) : '0.00'}
+                                {e.depositTransfer > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositTransfer)}</>) : '0.00'}
                               </td>
                               <td className={`border ${tblBdr} px-2 py-0.5 text-right font-semibold ${isDark ? 'text-sky-200' : 'text-sky-700'}`}>
-                                {(e.depositCash + e.depositTransfer) > 0 ? fmt(e.depositCash + e.depositTransfer) : '0.00'}
+                                {(e.depositCash + e.depositTransfer) > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash + e.depositTransfer)}</>) : '0.00'}
                               </td>
                               <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>
-                                {e.withdrawalCash > 0 ? fmt(e.withdrawalCash) : '0.00'}
+                                {e.withdrawalCash > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash)}</>) : '0.00'}
                               </td>
                               <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-rose-400' : 'text-rose-500'}`}>
-                                {e.withdrawalTransfer > 0 ? fmt(e.withdrawalTransfer) : '0.00'}
+                                {e.withdrawalTransfer > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalTransfer)}</>) : '0.00'}
                               </td>
                               <td className={`border ${tblBdr} px-2 py-0.5 text-right font-semibold ${isDark ? 'text-rose-200' : 'text-rose-700'}`}>
-                                {(e.withdrawalCash + e.withdrawalTransfer) > 0 ? fmt(e.withdrawalCash + e.withdrawalTransfer) : '0.00'}
+                                {(e.withdrawalCash + e.withdrawalTransfer) > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash + e.withdrawalTransfer)}</>) : '0.00'}
                               </td>
                             </tr>
                           ))}
@@ -395,27 +396,27 @@ const DayBookSB: React.FC = () => {
                           {/* Grand total */}
                           <tr className={totalRow}>
                             <td colSpan={3} className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black uppercase text-xs ${text}`}>TOTAL :-</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-300' : 'text-sky-600'}`}>{fmt(data.totalDepositCash)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-400' : 'text-sky-500'}`}>{fmt(data.totalDepositTransfer)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-200' : 'text-sky-700'}`}>{fmt(data.totalDeposit)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>{fmt(data.totalWithdrawalCash)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-400' : 'text-rose-500'}`}>{fmt(data.totalWithdrawalTransfer)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-200' : 'text-rose-700'}`}>{fmt(data.totalWithdrawal)}</td>
+                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-300' : 'text-sky-600'}`}>{data.totalDepositCash > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositCash)}</td>
+                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-400' : 'text-sky-500'}`}>{data.totalDepositTransfer > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositTransfer)}</td>
+                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-200' : 'text-sky-700'}`}>{data.totalDeposit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDeposit)}</td>
+                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>{data.totalWithdrawalCash > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalCash)}</td>
+                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-400' : 'text-rose-500'}`}>{data.totalWithdrawalTransfer > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalTransfer)}</td>
+                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-200' : 'text-rose-700'}`}>{data.totalWithdrawal > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawal)}</td>
                           </tr>
 
                           {/* Summary rows */}
                           {[
-                            { label: 'Opening Balance [SB]', value: fmtSigned(data.openingBalance), cls: text },
-                            { label: 'Total Deposit [SB]', value: fmt(data.totalDeposit), cls: isDark ? 'text-sky-300' : 'text-sky-600' },
-                            { label: 'Total Cash In Hand [SB]', value: fmt(data.totalCashInHand), cls: text },
-                            { label: 'Total Withdrawal [SB]', value: fmt(data.totalWithdrawal), cls: isDark ? 'text-rose-300' : 'text-rose-600' },
-                            { label: 'Closing Balance [SB]', value: fmtSigned(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-sky-200' : 'text-sky-700') : (isDark ? 'text-rose-300' : 'text-rose-600') },
-                          ].map(({ label, value, cls }, i) => (
+                            { label: 'Opening Balance [SB]', value: fmtSigned(data.openingBalance), cls: text, crdr: null },
+                            { label: 'Total Deposit [SB]', value: fmt(data.totalDeposit), cls: isDark ? 'text-sky-300' : 'text-sky-600', crdr: 'credit' as const },
+                            { label: 'Total Cash In Hand [SB]', value: fmt(data.totalCashInHand), cls: text, crdr: null },
+                            { label: 'Total Withdrawal [SB]', value: fmt(data.totalWithdrawal), cls: isDark ? 'text-rose-300' : 'text-rose-600', crdr: 'debit' as const },
+                            { label: 'Closing Balance [SB]', value: fmtSigned(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-sky-200' : 'text-sky-700') : (isDark ? 'text-rose-300' : 'text-rose-600'), crdr: null },
+                          ].map(({ label, value, cls, crdr }, i) => (
                             <tr key={`sum-${i}`} className={`border-b ${tblBdr} ${sumRowBg}`}>
                               <td colSpan={7} className={`border ${tblBdr} px-2 py-1 text-right text-xs font-bold ${sumLbl}`}>
                                 {label}
                               </td>
-                              <td colSpan={2} className={`border ${tblBdr} px-2 py-1 text-right text-xs font-black ${cls}`}>{value}</td>
+                              <td colSpan={2} className={`border ${tblBdr} px-2 py-1 text-right text-xs font-black ${cls}`}>{crdr && <CrDrIndicator type={crdr} className="mr-1" />}{value}</td>
                             </tr>
                           ))}
                         </tbody>

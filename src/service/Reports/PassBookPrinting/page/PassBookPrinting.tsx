@@ -7,6 +7,7 @@ import { RootState } from '../../../../store';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../services/api';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const { Option } = Select;
 
@@ -703,15 +704,15 @@ const PassBookPrinting: React.FC = () => {
                               <td className={`px-2 py-1.5 font-mono border-r ${tblBdr} ${subtle}`}>{i + 1}</td>
                               <td className={`px-2 py-1.5 whitespace-nowrap border-r ${tblBdr} ${rowTx}`}>{fmtDate(r.transDate)}</td>
                               <td className={`px-2 py-1.5 font-mono border-r ${tblBdr} ${muted}`}>{r.vchrNo || '—'}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{fmt(r.SH_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmt(r.SH_Cr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.SH_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.SH_Dr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.SH_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.SH_Cr_Amt)}</td>
                               <td className={`px-2 py-1.5 text-right font-mono font-bold border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>{fmt(r.SH_Bal_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{fmt(r.FD_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmt(r.FD_Cr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.FD_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.FD_Dr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.FD_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.FD_Cr_Amt)}</td>
                               <td className={`px-2 py-1.5 text-right font-mono font-bold border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>{fmt(r.FD_Bal_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{fmt(r.FRS_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmt(r.FRS_Cr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>{fmt(r.FRS_Cr_Amt1)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.FRS_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.FRS_Dr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.FRS_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.FRS_Cr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>{r.FRS_Cr_Amt1 > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.FRS_Cr_Amt1)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -738,11 +739,11 @@ const PassBookPrinting: React.FC = () => {
                               <td className={`px-2 py-1.5 font-mono border-r ${tblBdr} ${subtle}`}>{i + 1}</td>
                               <td className={`px-2 py-1.5 whitespace-nowrap border-r ${tblBdr} ${rowTx}`}>{fmtDate(r.transDate)}</td>
                               <td className={`px-2 py-1.5 font-mono border-r ${tblBdr} ${muted}`}>{r.vchrNo || '—'}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{fmt(r.RLN_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmt(r.RLN_Cr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.RLN_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.RLN_Dr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.RLN_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.RLN_Cr_Amt)}</td>
                               <td className={`px-2 py-1.5 text-right font-mono font-bold border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>{fmt(r.RLN_Bal_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{fmt(r.ALN_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmt(r.ALN_Cr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.ALN_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.ALN_Dr_Amt)}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.ALN_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.ALN_Cr_Amt)}</td>
                               <td className={`px-2 py-1.5 text-right font-mono font-bold ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>{fmt(r.ALN_Bal_Amt)}</td>
                             </tr>
                           ))}

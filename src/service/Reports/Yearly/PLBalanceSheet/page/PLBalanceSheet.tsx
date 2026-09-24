@@ -15,6 +15,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -345,6 +346,7 @@ const PLBalanceSheet: React.FC = () => {
                                         </div>
                                       </td>
                                       <td className={`py-1 px-2 text-right font-bold fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                                        {item.closingBalance !== 0 && <CrDrIndicator type="credit" className="mr-1 cr-dr-print-hide" />}
                                         {formatCurrency(item.closingBalance)}
                                       </td>
                                     </tr>
@@ -355,11 +357,14 @@ const PLBalanceSheet: React.FC = () => {
                                       </td>
                                     </tr>
                                   )}
-                                  
+
                                   {/* Total Liabilities */}
                                   <tr className={`border-t-2 border-slate-400 font-bold ${isDark ? 'bg-slate-700' : 'bg-slate-50'}`}>
                                     <td className={`py-1 px-2 uppercase tracking-wider font-black fz-label ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>TOTAL</td>
-                                    <td className={`py-1 px-2 text-right font-black fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{data.totals && formatCurrency(data.totals.totalLiabilities || 0)}</td>
+                                    <td className={`py-1 px-2 text-right font-black fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                                      {!!(data.totals && data.totals.totalLiabilities) && <CrDrIndicator type="credit" className="mr-1 cr-dr-print-hide" />}
+                                      {data.totals && formatCurrency(data.totals.totalLiabilities || 0)}
+                                    </td>
                                   </tr>
                                 </tbody>
                               </table>
@@ -384,6 +389,7 @@ const PLBalanceSheet: React.FC = () => {
                                         </div>
                                       </td>
                                       <td className={`py-1 px-2 text-right font-bold fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                                        {item.closingBalance !== 0 && <CrDrIndicator type="debit" className="mr-1 cr-dr-print-hide" />}
                                         {formatCurrency(item.closingBalance)}
                                       </td>
                                     </tr>
@@ -394,11 +400,14 @@ const PLBalanceSheet: React.FC = () => {
                                       </td>
                                     </tr>
                                   )}
-                                  
+
                                   {/* Total Assets */}
                                   <tr className={`border-t-2 border-slate-400 font-bold ${isDark ? 'bg-slate-700' : 'bg-slate-50'}`}>
                                     <td className={`py-1 px-2 uppercase tracking-wider font-black fz-label ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>TOTAL</td>
-                                    <td className={`py-1 px-2 text-right font-black fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{data.totals && formatCurrency(data.totals.totalAssets || 0)}</td>
+                                    <td className={`py-1 px-2 text-right font-black fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                                      {!!(data.totals && data.totals.totalAssets) && <CrDrIndicator type="debit" className="mr-1 cr-dr-print-hide" />}
+                                      {data.totals && formatCurrency(data.totals.totalAssets || 0)}
+                                    </td>
                                   </tr>
                                 </tbody>
                               </table>
@@ -441,6 +450,7 @@ const PLBalanceSheet: React.FC = () => {
           tr { page-break-inside: avoid; page-break-after: auto; }
           thead { display: table-header-group; }
           tfoot { display: table-footer-group; }
+          .cr-dr-print-hide { display: none !important; }
         }
         
         .legacy-report-compact table {

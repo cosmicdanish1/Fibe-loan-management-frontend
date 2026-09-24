@@ -5,6 +5,7 @@ import { Printer, Download, BookOpen, RefreshCw, Settings, Calculator, TrendingU
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import dayjs from 'dayjs';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -345,13 +346,17 @@ const JournalTransferVoucher: React.FC = () => {
                 <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 rounded-xl p-2 text-white shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
                   <TrendingUp size={40} className="absolute -right-1 -bottom-1 opacity-10" />
                   <div className="fz-caption font-black uppercase tracking-wider opacity-95 mb-0.5">Total Debit</div>
-                  <div className="fz-body font-black font-mono relative z-10">₹{formatCurrency(totalDebit)}</div>
+                  <div className="fz-body font-black font-mono relative z-10 flex items-center">
+                    {totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}₹{formatCurrency(totalDebit)}
+                  </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-rose-500 via-rose-600 to-rose-700 rounded-xl p-2 text-white shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
                   <TrendingDown size={40} className="absolute -right-1 -bottom-1 opacity-10" />
                   <div className="fz-caption font-black uppercase tracking-wider opacity-95 mb-0.5">Total Credit</div>
-                  <div className="fz-body font-black font-mono relative z-10">₹{formatCurrency(totalCredit)}</div>
+                  <div className="fz-body font-black font-mono relative z-10 flex items-center">
+                    {totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(totalCredit)}
+                  </div>
                 </div>
 
                 <div className={`rounded-xl p-2 text-white shadow-lg hover:shadow-xl transition-shadow ${Math.abs(totalDebit - totalCredit) < 0.01 ? 'bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800' : 'bg-gradient-to-br from-rose-600 via-rose-700 to-rose-800'}`}>
@@ -418,10 +423,10 @@ const JournalTransferVoucher: React.FC = () => {
                             <td className={`px-1.5 py-1 border ${tblBdr} font-black text-amber-500`}>{entry.head_code}</td>
                             <td className={`px-1.5 py-1 border ${tblBdr} font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>{entry.head_name}</td>
                             <td className="px-1.5 py-1 border-gray-300 text-right font-black text-emerald-500">
-                              {entry.debit > 0 ? formatCurrency(entry.debit) : ''}
+                              {entry.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(entry.debit)}</>) : ''}
                             </td>
                             <td className="px-1.5 py-1 text-right font-black text-rose-500">
-                              {entry.credit > 0 ? formatCurrency(entry.credit) : ''}
+                              {entry.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(entry.credit)}</>) : ''}
                             </td>
                           </tr>
                         ))}
@@ -430,10 +435,10 @@ const JournalTransferVoucher: React.FC = () => {
                             TOTAL
                           </td>
                           <td className={`px-1.5 py-1.5 text-right border-t-2 border-b-2 ${isDark ? 'border-slate-500' : 'border-gray-800'} text-emerald-500 font-black`}>
-                            {formatCurrency(totalDebit)}
+                            {totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebit)}
                           </td>
                           <td className={`px-1.5 py-1.5 text-right border-t-2 border-b-2 ${isDark ? 'border-slate-500' : 'border-gray-800'} text-rose-500 font-black`}>
-                            {formatCurrency(totalCredit)}
+                            {totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredit)}
                           </td>
                         </tr>
                       </tbody>

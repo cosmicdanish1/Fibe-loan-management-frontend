@@ -13,6 +13,7 @@ import { apiService } from '../../../../../../services/api';
 import MemberLookup from '../../../../../../components/shared/MemberLookup/MemberLookup';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const { Option } = Select;
 
@@ -368,7 +369,8 @@ const InterestListCDMDSHRt: React.FC = () => {
             </div>
             <div className={`p-3 rounded-lg border ${isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
               <div className={`fz-label font-bold uppercase ${muted}`}>Total Interest</div>
-              <div className={`fz-heading font-black ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+              <div className={`fz-heading font-black flex items-center gap-1 ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                {totals.totalInterest > 0 && <CrDrIndicator type="credit" />}
                 ₹{formatCurrency(totals.totalInterest)}
               </div>
             </div>
@@ -457,7 +459,10 @@ const InterestListCDMDSHRt: React.FC = () => {
                             <td className={`border px-2 py-1 ${tblCBdr} ${tblTxt}`}>{r.officeName || '-'}</td>
                             <td className={`border px-2 py-1 font-bold uppercase ${tblCBdr} ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>{r.depositType || 'DEPOSIT'}</td>
                             <td className={`border px-2 py-1 text-right font-bold ${tblCBdr} ${tblEmp}`}>₹{formatCurrency(r.principalAmount)}</td>
-                            <td className={`border px-2 py-1 text-right font-bold ${tblCBdr} ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>₹{formatCurrency(r.interestAmount)}</td>
+                            <td className={`border px-2 py-1 text-right font-bold ${tblCBdr} ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                              {r.interestAmount > 0 && <CrDrIndicator type="credit" className="mr-1" />}
+                              ₹{formatCurrency(r.interestAmount)}
+                            </td>
                             <td className={`border px-2 py-1 ${tblCBdr} ${tblTxt}`}>{dayjs(r.fromDate).format('DD/MM/YYYY')}</td>
                           </tr>
                         ))}
@@ -471,6 +476,7 @@ const InterestListCDMDSHRt: React.FC = () => {
                             ₹{formatCurrency(totals.totalPrincipal)}
                           </td>
                           <td className={`border px-2 py-2 text-right font-black ${tblBdr} ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                            {totals.totalInterest > 0 && <CrDrIndicator type="credit" className="mr-1" />}
                             ₹{formatCurrency(totals.totalInterest)}
                           </td>
                           <td className={`border px-2 py-2 ${tblBdr}`} />

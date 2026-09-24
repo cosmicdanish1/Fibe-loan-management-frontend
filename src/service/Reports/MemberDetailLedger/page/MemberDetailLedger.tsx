@@ -25,6 +25,7 @@ import { RootState } from '../../../../store';
 import { apiService } from '../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import { renderCrDrText } from '../../../../components/shared/CrDrIndicator';
 
 // ── layout constants ─────────────────────────────────────────────────────────
 const W_DATE    = 14;
@@ -425,7 +426,7 @@ const MemberDetailLedger: React.FC = () => {
                       whiteSpace: 'pre',
                     }}
                   >
-                    {reportText}
+                    {renderCrDrText(reportText)}
                   </pre>
                 ) : (
                   <div className="py-32 text-center">

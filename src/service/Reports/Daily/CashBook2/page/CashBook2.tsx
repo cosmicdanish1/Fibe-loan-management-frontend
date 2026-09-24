@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
+import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import dayjs from 'dayjs';
 
 interface CashBookEntry {
@@ -247,16 +248,16 @@ const CashBook2: React.FC = () => {
                               <td className={`py-1 px-3 border-r font-semibold ${tblBdr} ${codeTx}`}>{entry.headCode}</td>
                               <td className={`cb2-wrap py-1 px-3 border-r ${tblBdr} ${headTx}`}>{entry.headName}</td>
                               <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                                {entry.receiptCash > 0 ? fmt(entry.receiptCash) : ''}
+                                {entry.receiptCash > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(entry.receiptCash)}</>) : ''}
                               </td>
                               <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                                {entry.receiptTransfer > 0 ? fmt(entry.receiptTransfer) : ''}
+                                {entry.receiptTransfer > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(entry.receiptTransfer)}</>) : ''}
                               </td>
                               <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>
-                                {entry.paymentCash > 0 ? fmt(entry.paymentCash) : ''}
+                                {entry.paymentCash > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(entry.paymentCash)}</>) : ''}
                               </td>
                               <td className={`text-right py-1 px-3 font-semibold ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>
-                                {entry.paymentTransfer > 0 ? fmt(entry.paymentTransfer) : ''}
+                                {entry.paymentTransfer > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(entry.paymentTransfer)}</>) : ''}
                               </td>
                             </motion.tr>
                           ))}
@@ -264,10 +265,10 @@ const CashBook2: React.FC = () => {
                           {/* Totals */}
                           <tr className={`border-b-2 font-bold ${totalRow}`}>
                             <td colSpan={2} className={`py-1.5 px-3 border-r ${tblBdr} ${totalTx}`}>TOTAL</td>
-                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceiptsCash)}</td>
-                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceiptsTransfer)}</td>
-                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPaymentsCash)}</td>
-                            <td className={`text-right py-1.5 px-3 ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPaymentsTransfer)}</td>
+                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{data.totalReceiptsCash > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalReceiptsCash)}</td>
+                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{data.totalReceiptsTransfer > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalReceiptsTransfer)}</td>
+                            <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{data.totalPaymentsCash > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalPaymentsCash)}</td>
+                            <td className={`text-right py-1.5 px-3 ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{data.totalPaymentsTransfer > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalPaymentsTransfer)}</td>
                           </tr>
 
                           {/* Balance summary */}
@@ -278,14 +279,14 @@ const CashBook2: React.FC = () => {
                             <td className={`text-center py-1 px-3 font-bold fz-small ${muted}`}>Clearing</td>
                           </tr>
                           {[
-                            { label: 'Opening Balance :', v1: data.openingBalance, col: text },
-                            { label: 'Total Credit :', v1: data.totalReceipts, col: isDark ? 'text-emerald-300' : 'text-emerald-700' },
-                            { label: 'Total :', v1: data.openingBalance + data.totalReceipts, col: text },
-                            { label: 'Total Debit :', v1: data.totalPayments, col: isDark ? 'text-rose-300' : 'text-rose-700' },
-                          ].map(({ label, v1, col }, i) => (
+                            { label: 'Opening Balance :', v1: data.openingBalance, col: text, crdr: null },
+                            { label: 'Total Credit :', v1: data.totalReceipts, col: isDark ? 'text-emerald-300' : 'text-emerald-700', crdr: 'credit' as const },
+                            { label: 'Total :', v1: data.openingBalance + data.totalReceipts, col: text, crdr: null },
+                            { label: 'Total Debit :', v1: data.totalPayments, col: isDark ? 'text-rose-300' : 'text-rose-700', crdr: 'debit' as const },
+                          ].map(({ label, v1, col, crdr }, i) => (
                             <tr key={i} className={`border-b ${tblBdr}`}>
                               <td colSpan={4} className={`text-right py-1 px-3 border-r font-bold ${tblBdr} ${totalTx}`}>{label}</td>
-                              <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${col}`}>{fmt(v1)}</td>
+                              <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${col}`}>{crdr && v1 > 0 && <CrDrIndicator type={crdr} className="mr-1" />}{fmt(v1)}</td>
                               <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${subtle}`}>0.00</td>
                               <td className={`text-right py-1 px-3 font-semibold ${subtle}`}>0.00</td>
                             </tr>

@@ -16,6 +16,7 @@ import { RootState } from '../../../../store';
 import { setInterfaceMode } from '../../../../store/slices/themeSlice';
 import { apiService } from '../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -295,10 +296,10 @@ const GeneralLedger: React.FC = () => {
                         <td className={`py-1 px-2 border-r ${tblBdr} ${text}`}>{e.voucherNo || '–'}</td>
                         <td className={`py-1 px-2 border-r ${tblBdr} ${muted}`}>{e.narration}</td>
                         <td className={`text-right py-1 px-2 border-r ${tblBdr} font-semibold ${e.debit > 0 ? 'text-rose-500' : muted}`}>
-                          {e.debit > 0 ? fmt(e.debit) : '–'}
+                          {e.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.debit)}</>) : '–'}
                         </td>
                         <td className={`text-right py-1 px-2 border-r ${tblBdr} font-semibold ${e.credit > 0 ? 'text-emerald-500' : muted}`}>
-                          {e.credit > 0 ? fmt(e.credit) : '–'}
+                          {e.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.credit)}</>) : '–'}
                         </td>
                         <td className="text-right py-1 px-2 font-bold text-teal-400">{fmt(e.balance)}</td>
                       </tr>
@@ -312,12 +313,16 @@ const GeneralLedger: React.FC = () => {
                     </tr>
                     <tr className={`border-b ${tblBdr} ${sumRow}`}>
                       <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Payments :</td>
-                      <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-rose-500`}>{fmt(ledgerData.totalDebits)}</td>
+                      <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-rose-500`}>
+                        {ledgerData.totalDebits > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(ledgerData.totalDebits)}
+                      </td>
                       <td className="py-1.5 px-2" />
                     </tr>
                     <tr className={`border-b ${tblBdr} ${sumRow}`}>
                       <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Receipts :</td>
-                      <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-emerald-500`}>{fmt(ledgerData.totalCredits)}</td>
+                      <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-emerald-500`}>
+                        {ledgerData.totalCredits > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(ledgerData.totalCredits)}
+                      </td>
                       <td className="py-1.5 px-2" />
                     </tr>
                     <tr className={`${sumRow}`}>

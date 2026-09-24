@@ -636,7 +636,7 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <thead>
                                         <tr>
-                                            {['Loan Case', 'Type', 'Month/Year', 'Amount', 'Receipt', 'Remaining', 'Date'].map(h => (
+                                            {['Loan Case', 'Type', 'Month/Year', 'Amount', 'Receipt', 'Remaining', 'Date', 'Narration'].map(h => (
                                                 <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
                                             ))}
                                         </tr>
@@ -651,6 +651,12 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                                 <td style={{ fontSize: 12, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{row.receipt_no || '—'}</td>
                                                 <td style={{ fontSize: 12, color: '#dc2626', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.remaining_balance)}</td>
                                                 <td style={{ fontSize: 12, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{row.payment_date ? new Date(row.payment_date).toLocaleDateString('en-IN') : '—'}</td>
+                                                {/* Surfaces rows like "Consolidated into loan case #X (principal
+                                                    ₹... + closure interest ₹...)" written by passTransaction()'s
+                                                    consolidation branch — previously fetched from the backend but
+                                                    never rendered, so a case that hit ₹0 balance via consolidation
+                                                    looked identical to an unexplained data gap. */}
+                                                <td style={{ fontSize: 11.5, color: row.narration?.startsWith('Consolidated into') ? '#92400e' : '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5', maxWidth: 260 }}>{row.narration || '—'}</td>
                                             </tr>
                                         ))}
                                     </tbody>

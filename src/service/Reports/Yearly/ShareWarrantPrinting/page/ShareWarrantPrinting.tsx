@@ -18,6 +18,7 @@ import { apiService } from '../../../../../services/api';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 
 interface ShareWarrantItem {
@@ -286,7 +287,10 @@ const ShareWarrantPrinting: React.FC = () => {
                 <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg p-3 text-white shadow-md hover:shadow-lg transition-all relative overflow-hidden group">
                   <IndianRupee size={50} className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-110 transition-transform" />
                   <div className="fz-caption font-bold uppercase tracking-wide opacity-90 mb-0.5">Total Shares</div>
-                  <div className="fz-body font-black font-mono relative z-10">₹{formatCurrency(totalShares)}</div>
+                  <div className="fz-body font-black font-mono relative z-10 flex items-center gap-1">
+                    {totalShares > 0 && <CrDrIndicator type="credit" />}
+                    ₹{formatCurrency(totalShares)}
+                  </div>
                 </div>
               </div>
             )}
@@ -328,7 +332,10 @@ const ShareWarrantPrinting: React.FC = () => {
                             <td className={`border px-2 py-1 font-semibold uppercase ${isDark ? 'border-slate-600 text-blue-400' : 'border-slate-300 text-blue-600'}`}>{item.memberName}</td>
                             <td className={`border px-2 py-1 ${isDark ? 'border-slate-600 text-slate-300' : 'border-slate-300 text-slate-700'}`}>{item.pfno}</td>
                             <td className={`border px-2 py-1 ${isDark ? 'border-slate-600 text-slate-300' : 'border-slate-300 text-slate-700'}`}>{item.officeno}</td>
-                            <td className={`border px-2 py-1 text-right font-bold ${isDark ? 'border-slate-600 text-indigo-300' : 'border-slate-300 text-indigo-700'}`}>₹ {item.shareAmount}</td>
+                            <td className={`border px-2 py-1 text-right font-bold ${isDark ? 'border-slate-600 text-indigo-300' : 'border-slate-300 text-indigo-700'}`}>
+                              {parseFloat((item.shareAmount || '0').toString().replace(/,/g, '')) > 0 && <CrDrIndicator type="credit" className="mr-1" />}
+                              ₹ {item.shareAmount}
+                            </td>
                             <td className={`border px-2 py-1 text-center ${isDark ? 'border-slate-600 text-slate-300' : 'border-slate-300 text-slate-700'}`}>{item.warrantDate}</td>
                           </tr>
                         ))}
@@ -339,6 +346,7 @@ const ShareWarrantPrinting: React.FC = () => {
                             TOTAL ({tableData.length} warrants):
                           </td>
                           <td className={`border px-2 py-1.5 text-right font-black ${isDark ? 'border-slate-600 text-indigo-300' : 'border-slate-300 text-indigo-700'}`}>
+                            {totalShares > 0 && <CrDrIndicator type="credit" className="mr-1" />}
                             ₹ {formatCurrency(totalShares)}
                           </td>
                           <td className={`border ${isDark ? 'border-slate-600' : 'border-slate-300'}`} />

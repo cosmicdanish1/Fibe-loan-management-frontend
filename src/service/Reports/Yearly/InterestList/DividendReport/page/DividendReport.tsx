@@ -15,6 +15,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -464,6 +465,7 @@ const DividendReport: React.FC = () => {
                               {dividendRate}%
                             </td>
                             <td className={`border px-2 py-1 fz-label text-right font-bold ${isDark ? 'border-slate-700 text-emerald-400' : 'border-slate-300 text-emerald-700'}`}>
+                              {item.dividendAmount > 0 && <CrDrIndicator type="credit" className="mr-1" />}
                               ₹{formatCurrency(item.dividendAmount)}
                             </td>
                           </tr>
@@ -483,6 +485,7 @@ const DividendReport: React.FC = () => {
                             {dividendRate}%
                           </td>
                           <td className={`border px-2 py-2 fz-label text-right font-black ${isDark ? 'border-slate-600 text-emerald-400' : 'border-slate-400 text-emerald-700'}`}>
+                            {totals.totalDividend > 0 && <CrDrIndicator type="credit" className="mr-1" />}
                             ₹{formatCurrency(totals.totalDividend)}
                           </td>
                         </tr>

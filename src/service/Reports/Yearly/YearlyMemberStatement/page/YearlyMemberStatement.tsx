@@ -29,6 +29,7 @@ import {
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 
@@ -648,16 +649,20 @@ const YearlyMemberStatement: React.FC = () => {
                                                         <td style={{ textAlign: 'center', fontWeight: 600 }}>{(currentPage - 1) * pageSize + idx + 1}</td>
                                                         <td style={{ fontWeight: 700 }}>{item.memberNo}</td>
                                                         <td style={{ fontWeight: 600 }}>{item.memberName}</td>
-                                                        <td style={{ textAlign: 'right' }} className="amount-positive">
+                                                                        <td style={{ textAlign: 'right' }} className="amount-positive">
+                                                            {parseFloat(item.shares || '0') !== 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
                                                             ₹{formatCurrency(item.shares)}
                                                         </td>
                                                         <td style={{ textAlign: 'right' }} className="amount-positive">
+                                                            {parseFloat(item.compulsoryDeposit || '0') !== 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
                                                             ₹{formatCurrency(item.compulsoryDeposit)}
                                                         </td>
                                                         <td style={{ textAlign: 'right' }} className="amount-negative">
+                                                            {parseFloat(item.regularLoan || '0') !== 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
                                                             ₹{formatCurrency(item.regularLoan)}
                                                         </td>
                                                         <td style={{ textAlign: 'right' }} className="amount-negative">
+                                                            {parseFloat(item.emergencyLoan || '0') !== 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
                                                             ₹{formatCurrency(item.emergencyLoan)}
                                                         </td>
                                                     </tr>
@@ -666,15 +671,19 @@ const YearlyMemberStatement: React.FC = () => {
                                                 <tr className="total-row">
                                                     <td colSpan={3} style={{ textAlign: 'right', fontWeight: 900, letterSpacing: '1px' }}>TOTAL:</td>
                                                     <td style={{ textAlign: 'right', fontWeight: 900 }}>
+                                                        {totals.shares !== 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
                                                         ₹{formatCurrency(totals.shares)}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontWeight: 900 }}>
+                                                        {totals.cd !== 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
                                                         ₹{formatCurrency(totals.cd)}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontWeight: 900 }}>
+                                                        {totals.regularLoan !== 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
                                                         ₹{formatCurrency(totals.regularLoan)}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontWeight: 900 }}>
+                                                        {totals.emergencyLoan !== 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
                                                         ₹{formatCurrency(totals.emergencyLoan)}
                                                     </td>
                                                 </tr>

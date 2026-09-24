@@ -124,8 +124,8 @@ const buildReportText = (d: RecoveryData, monthLabel: string, year: number): str
   lines.push(`  ${'Loan Recoveries'.padEnd(30)} ${'Deposit Recoveries'.padEnd(30)} ${'Charges'}`);
   lines.push(rl());
   lines.push(`  ${'Regular Loan (RLN)'.padEnd(20)} ${fmtAmt(lr_.regularLoan).padStart(10)}   ${'Recurring Dep (RD)'.padEnd(20)} ${fmtAmt(dr_.recurringDeposit).padStart(10)}   ${'Bank Charges'.padEnd(16)} ${fmtAmt(ch_.bankCharges).padStart(10)}`);
-  lines.push(`  ${'Emergency Loan (ELN)'.padEnd(20)} ${fmtAmt(lr_.emergencyLoan).padStart(10)}   ${'Monthly Dep (MD)'.padEnd(20)} ${fmtAmt(dr_.monthlyDeposit).padStart(10)}   ${'Other Charges'.padEnd(16)} ${fmtAmt(ch_.otherCharges).padStart(10)}`);
-  lines.push(`  ${'Advance Loan (ALN)'.padEnd(20)} ${fmtAmt(lr_.advanceLoan).padStart(10)}   ${'Compulsory Dep (CD)'.padEnd(20)} ${fmtAmt(dr_.compulsoryDeposit).padStart(10)}`);
+  lines.push(`  ${'Loan Against Recovery (ELN)'.padEnd(20)} ${fmtAmt(lr_.emergencyLoan).padStart(10)}   ${'Monthly Dep (MD)'.padEnd(20)} ${fmtAmt(dr_.monthlyDeposit).padStart(10)}   ${'Other Charges'.padEnd(16)} ${fmtAmt(ch_.otherCharges).padStart(10)}`);
+  lines.push(`  ${'Emergency Loan (ALN)'.padEnd(20)} ${fmtAmt(lr_.advanceLoan).padStart(10)}   ${'Compulsory Dep (CD)'.padEnd(20)} ${fmtAmt(dr_.compulsoryDeposit).padStart(10)}`);
   lines.push(`  ${''.padEnd(20)} ${''.padStart(10)}   ${'Share Amount'.padEnd(20)} ${fmtAmt(dr_.shareAmount).padStart(10)}`);
   lines.push(rl());
   lines.push(`  ${'Sub-Total'.padEnd(20)} ${fmtAmt(totLoans).padStart(10)}   ${'Sub-Total'.padEnd(20)} ${fmtAmt(totDeps).padStart(10)}   ${'Sub-Total'.padEnd(16)} ${fmtAmt(totCharges).padStart(10)}`);

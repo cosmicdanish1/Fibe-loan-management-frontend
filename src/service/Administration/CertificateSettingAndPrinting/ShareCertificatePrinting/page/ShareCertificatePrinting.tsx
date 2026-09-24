@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ConfigProvider, message, Spin, theme as antdTheme } from 'antd';
+import { message, Spin } from 'antd';
 import { Printer, User, Calendar, IndianRupee, RotateCcw, Hash, Share2, ArrowRightLeft, Building } from 'lucide-react';
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
@@ -72,8 +72,7 @@ const ShareCertificatePrinting: React.FC = () => {
   const handleClear = () => { setForm(BLANK); setMemberName(''); };
 
   return (
-    <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 8, colorBgContainer: '#1e293b', colorBorder: '#334155' } }}>
-      <div className="scp-app h-screen flex flex-col overflow-hidden bg-[#0f172a] text-slate-100 font-sans print:bg-white">
+      <div className="scp-app h-screen flex flex-col overflow-hidden font-sans print:bg-white" style={{ background: 'var(--scp-page-bg)', color: 'var(--scp-text)' }}>
 
         {/* Header */}
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -241,33 +240,19 @@ const ShareCertificatePrinting: React.FC = () => {
         </div>
 
         <style>{`
-          /* ── Share Certificate Printing — dark mode (Settings-panel palette) ── */
-          html.dark .scp-app { background-color: #000000 !important; color: #f5f5f7 !important; }
-          html.dark .scp-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-          html.dark .scp-header .text-slate-400 { color: #8e8e93 !important; }
-          html.dark .scp-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-          html.dark .scp-card .text-slate-400 { color: #8e8e93 !important; }
-          html.dark .scp-card .text-slate-500 { color: #71717a !important; }
-          /* Inputs (form panel only — certificate preview paper stays untouched) */
-          html.dark .scp-card input,
-          html.dark .scp-card select,
-          html.dark .scp-card textarea {
-            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-          }
-          html.dark .scp-card input.text-emerald-300 { color: #34d399 !important; }
-          html.dark .scp-card label { color: #8e8e93 !important; }
-          html.dark .scp-app .bg-slate-700 { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .scp-app .border-slate-600,
-          html.dark .scp-app .border-slate-700 { border-color: rgba(255,255,255,.08) !important; }
-          html.dark .scp-app .bg-slate-800 { background-color: #1c1c1e !important; }
-          html.dark .scp-header button.bg-slate-700 { background-color: #1c1c1e !important; border: 1px solid rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+          .scp-app { --scp-page-bg: #f8fafc; --scp-surface: #ffffff; --scp-surface-alt: #f1f5f9; --scp-border: #dbe4ee; --scp-text: #172033; --scp-muted: #526278; }
+          .scp-header, .scp-card { background: var(--scp-surface) !important; border-color: var(--scp-border) !important; }
+          .scp-header > div:first-child .text-white, .scp-card .text-white { color: var(--scp-text) !important; }
+          .scp-header .text-slate-400, .scp-card .text-slate-400, .scp-card .text-slate-500, .scp-preview-wrap > p.text-slate-500 { color: var(--scp-muted) !important; }
+          .scp-header button.bg-slate-700 { background: var(--scp-surface-alt) !important; color: var(--scp-text) !important; border: 1px solid var(--scp-border) !important; }
+          .scp-card input { background: var(--scp-surface) !important; color: var(--scp-text) !important; border-color: var(--scp-border) !important; }
+          .scp-card input.text-emerald-300 { color: #047857 !important; }
+          .scp-card label { color: var(--scp-muted) !important; }
+          .scp-preview-wrap { background: var(--scp-surface-alt) !important; border-color: var(--scp-border) !important; }
+          html.dark .scp-app { --scp-page-bg: #0e1116; --scp-surface: #151a21; --scp-surface-alt: #1c2530; --scp-border: #232b36; --scp-text: #e6e9ef; --scp-muted: #8b95a5; }
           html.dark .scp-app .text-emerald-400 { color: #34d399 !important; }
-          /* Preview chrome (dashed wrapper) — the paper certificate itself is intentionally left light */
-          html.dark .scp-preview-wrap { background-color: rgba(255,255,255,.03) !important; border-color: rgba(255,255,255,.08) !important; }
-          html.dark .scp-preview-wrap > p.text-slate-500 { color: #71717a !important; }
         `}</style>
       </div>
-    </ConfigProvider>
   );
 };
 

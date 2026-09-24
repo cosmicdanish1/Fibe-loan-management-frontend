@@ -22,6 +22,7 @@ import { ConfigProvider, Table, Button, DatePicker, Spin, Tag, Tooltip, Radio } 
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '../../../../../services/api';
 import { usePrintDialog } from '../../../../../components/shared/PrintDialog/usePrintDialog';
+import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import dayjs from 'dayjs';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
@@ -381,14 +382,14 @@ const CashBook: React.FC = () => {
                                   <td className="py-1 px-1.5 text-slate-600">{entry.sno}</td>
                                   <td className="py-1 px-1.5 text-slate-700 font-medium">{entry.headCode} {entry.headName}</td>
                                   <td className="py-1 px-1.5 text-slate-600">{entry.description}</td>
-                                  <td className="text-right py-1 px-1.5 font-semibold text-rose-600">{entry.payment > 0 ? formatCurrency(entry.payment) : ''}</td>
-                                  <td className="text-right py-1 px-1.5 font-semibold text-emerald-600">{entry.receipt > 0 ? formatCurrency(entry.receipt) : ''}</td>
+                                  <td className="text-right py-1 px-1.5 font-semibold text-rose-600">{entry.payment > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(entry.payment)}</>) : ''}</td>
+                                  <td className="text-right py-1 px-1.5 font-semibold text-emerald-600">{entry.receipt > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(entry.receipt)}</>) : ''}</td>
                                 </tr>
                               ))}
                               <tr className="border-b border-dashed border-slate-400 font-bold bg-slate-50">
                                 <td colSpan={3} className="py-1 px-1.5 text-right text-slate-700">Total:</td>
-                                <td className="text-right py-1 px-1.5 text-rose-700">{formatCurrency(voucher.totalPayment)}</td>
-                                <td className="text-right py-1 px-1.5 text-emerald-700">{formatCurrency(voucher.totalReceipt)}</td>
+                                <td className="text-right py-1 px-1.5 text-rose-700">{voucher.totalPayment > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(voucher.totalPayment)}</td>
+                                <td className="text-right py-1 px-1.5 text-emerald-700">{voucher.totalReceipt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(voucher.totalReceipt)}</td>
                               </tr>
                             </tbody>
                           </table>
@@ -405,7 +406,7 @@ const CashBook: React.FC = () => {
                         </div>
                         <div className="flex justify-between mb-1 text-slate-700">
                           <span>Total Credit:</span>
-                          <span className="font-bold font-mono text-emerald-600">{formatCurrency(data.totalReceipts)}</span>
+                          <span className="font-bold font-mono text-emerald-600">{data.totalReceipts > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(data.totalReceipts)}</span>
                         </div>
                         <div className="flex justify-between mb-1 border-t border-dashed border-slate-300 pt-1 text-slate-700">
                           <span>Total:</span>
@@ -413,7 +414,7 @@ const CashBook: React.FC = () => {
                         </div>
                         <div className="flex justify-between mb-1 text-slate-700">
                           <span>Total Debit:</span>
-                          <span className="font-bold font-mono text-rose-600">{formatCurrency(data.totalPayments)}</span>
+                          <span className="font-bold font-mono text-rose-600">{data.totalPayments > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(data.totalPayments)}</span>
                         </div>
                         <div className="flex justify-between border-t border-dashed border-slate-300 pt-1 text-slate-800">
                           <span className="font-bold">Closing Balance:</span>

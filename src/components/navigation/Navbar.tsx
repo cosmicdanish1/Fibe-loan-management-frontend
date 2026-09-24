@@ -229,6 +229,7 @@ const navConfig: NavItem[] = [
           { title: '5. Recovery Details', action: 'RECOVERY_DETAILS' },
           { title: '6. Loan Contributions Register', action: 'LOAN_CONTRIBUTIONS_REGISTER' },
           { title: '7. Lien Account Information', action: 'LIEN_ACCOUNT_INFORMATION' },
+          { title: '8. Loan Consolidation Chain', action: 'LOAN_CONSOLIDATION_CHAIN' },
         ]
       },
       { title: '13. Pass Book Printing', action: 'PASS_BOOK_PRINTING' },

@@ -15,6 +15,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -145,6 +146,7 @@ const OpenProfitLoss: React.FC = () => {
           align: 'right',
           render: (val: number) => (
             <span className={`fz-caption font-bold ${val < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+              <CrDrIndicator type={val < 0 ? 'debit' : 'credit'} className="mr-1 no-print" />
               {formatCurrency(Math.abs(val))} {val < 0 ? 'Dr' : 'Cr'}
             </span>
           )
@@ -161,6 +163,7 @@ const OpenProfitLoss: React.FC = () => {
           align: 'right',
           render: (val: number) => (
             <span className={`fz-caption font-bold ${val < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+              <CrDrIndicator type={val < 0 ? 'debit' : 'credit'} className="mr-1 no-print" />
               {formatCurrency(Math.abs(val))} {val < 0 ? 'Dr' : 'Cr'}
             </span>
           )

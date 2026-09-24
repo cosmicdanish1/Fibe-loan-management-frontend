@@ -102,6 +102,47 @@ export interface EarlyClosureProtection {
 }
 
 /**
+ * The two loan slots (loan-rb-schedule.util.ts). There are always exactly two
+ * — that structure is the society's source of truth and is not configurable —
+ * but both what decides a slot and what it costs are:
+ *
+ *  - slot1StartDay/slot1EndDay: which application days land in Slot 1
+ *    (inclusive). The window may wrap the month boundary, which the society's
+ *    original 25th–5th window does. Slot 2 is every OTHER day by definition,
+ *    so it is never configured separately and the two can never overlap or
+ *    leave a gap.
+ *  - slot1DelayMonths/slot2DelayMonths: how many months of delay each slot
+ *    carries — driving both the EMI's delay-interest sizing AND the
+ *    installment due-date schedule itself.
+ *
+ * All four are resolved at disbursement and frozen onto the loan, so editing
+ * them never reprices a loan that has already gone out.
+ */
+export interface LoanSlotDelay {
+  slot1DelayMonths: number;
+  slot2DelayMonths: number;
+  slot1StartDay: number;
+  slot1EndDay: number;
+}
+
+/**
+ * How loan money is rounded — the constant monthly interest when an EMI is
+ * sized, and every early-closure line item. The society's manual worksheets
+ * work in whole rupees (a constant monthly interest of 1687.50 is written as
+ * 1688 and multiplied through every later step), so NEAREST (half-up:
+ * .00–.49 down, .50–.99 up) reproduces the manual closure figure; NONE keeps
+ * full paisa precision.
+ *
+ * The EMI side is applied once at disbursement and frozen into the loan's
+ * stored instal_amt, so changing this never repricings an existing loan — but
+ * the closure side is applied live, so it does change what an existing loan
+ * quotes at closure.
+ */
+export interface LoanRounding {
+  mode: 'NONE' | 'NEAREST' | 'UP' | 'DOWN';
+}
+
+/**
  * RD (Recurring Deposit) system rules — built from scratch, distinct from
  * the old fdmaster-based RD account system removed earlier (zero real
  * production data). RD and CD share the same GL head and collection
@@ -159,6 +200,8 @@ export interface BusinessRulesData {
   generalSettings: GeneralSettings;
   fundManagement: FundManagement;
   earlyClosureProtection: EarlyClosureProtection;
+  loanSlotDelay: LoanSlotDelay;
+  loanRounding: LoanRounding;
   rdSystem: RdSystemRules;
 }
 
@@ -222,6 +265,17 @@ const initialData: BusinessRulesData = {
   },
   earlyClosureProtection: {
     requireTypeConfirm: true,
+  },
+  // Society's original hardcoded values (loan-rb-schedule.util.ts).
+  loanSlotDelay: {
+    slot1DelayMonths: 1,
+    slot2DelayMonths: 2,
+    slot1StartDay: 25,
+    slot1EndDay: 5,
+  },
+  // Whole-rupee half-up, matching the society's manual/legacy closure worksheets.
+  loanRounding: {
+    mode: 'NEAREST',
   },
   // Placeholder thresholds pending the society's final policy numbers — not
   // authoritative, just defaults so the screen has something sensible to
@@ -378,6 +432,15 @@ export const useBusinessRules = () => {
           earlyClosureProtection: {
             requireTypeConfirm: bool(d.RULE_EARLY_CLOSURE_REQUIRE_TYPE_CONFIRM, def.earlyClosureProtection.requireTypeConfirm),
           },
+          loanSlotDelay: {
+            slot1DelayMonths: num(d.RULE_LOAN_SLOT1_DELAY_MONTHS, def.loanSlotDelay.slot1DelayMonths),
+            slot2DelayMonths: num(d.RULE_LOAN_SLOT2_DELAY_MONTHS, def.loanSlotDelay.slot2DelayMonths),
+            slot1StartDay: num(d.RULE_LOAN_SLOT1_START_DAY, def.loanSlotDelay.slot1StartDay),
+            slot1EndDay: num(d.RULE_LOAN_SLOT1_END_DAY, def.loanSlotDelay.slot1EndDay),
+          },
+          loanRounding: {
+            mode: str(d.RULE_LOAN_ROUNDING_MODE, def.loanRounding.mode) as LoanRounding['mode'],
+          },
           rdSystem: {
             minMonthlyAmount: num(d.RULE_RD_MIN_MONTHLY_AMOUNT, def.rdSystem.minMonthlyAmount),
             openingBalanceRate: num(d.RULE_RD_OPENING_BALANCE_RATE, def.rdSystem.openingBalanceRate),
@@ -492,6 +555,13 @@ export const useBusinessRules = () => {
 
         // Loan Early Closure protection
         RULE_EARLY_CLOSURE_REQUIRE_TYPE_CONFIRM: currentData.earlyClosureProtection.requireTypeConfirm,
+
+        // Loan Slot delay months
+        RULE_LOAN_SLOT1_DELAY_MONTHS: currentData.loanSlotDelay.slot1DelayMonths,
+        RULE_LOAN_SLOT2_DELAY_MONTHS: currentData.loanSlotDelay.slot2DelayMonths,
+        RULE_LOAN_SLOT1_START_DAY: currentData.loanSlotDelay.slot1StartDay,
+        RULE_LOAN_SLOT1_END_DAY: currentData.loanSlotDelay.slot1EndDay,
+        RULE_LOAN_ROUNDING_MODE: currentData.loanRounding.mode,
 
         // RD system — built from scratch, own tab
         RULE_RD_MIN_MONTHLY_AMOUNT: currentData.rdSystem.minMonthlyAmount,

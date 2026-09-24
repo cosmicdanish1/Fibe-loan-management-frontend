@@ -17,6 +17,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -351,13 +352,17 @@ const CashBookMonthly: React.FC = () => {
                 <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-3 text-white shadow-md hover:shadow-lg transition-all relative overflow-hidden group">
                   <TrendingUp size={50} className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-110 transition-transform" />
                   <div className="fz-caption font-black uppercase tracking-wide opacity-90 mb-0.5">Receipts</div>
-                  <div className="fz-heading font-black font-mono relative z-10">₹{formatCurrency(totalReceipt)}</div>
+                  <div className="fz-heading font-black font-mono relative z-10 flex items-center">
+                    {totalReceipt > 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(totalReceipt)}
+                  </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-lg p-3 text-white shadow-md hover:shadow-lg transition-all relative overflow-hidden group">
                   <TrendingDown size={50} className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-110 transition-transform" />
                   <div className="fz-caption font-black uppercase tracking-wide opacity-90 mb-0.5">Payments</div>
-                  <div className="fz-heading font-black font-mono relative z-10">₹{formatCurrency(totalPayment)}</div>
+                  <div className="fz-heading font-black font-mono relative z-10 flex items-center">
+                    {totalPayment > 0 && <CrDrIndicator type="debit" className="mr-1" />}₹{formatCurrency(totalPayment)}
+                  </div>
                 </div>
               </div>
             )}
@@ -410,20 +415,20 @@ const CashBookMonthly: React.FC = () => {
                             <td className={`py-1.5 px-3 font-semibold ${isDark ? 'text-indigo-400' : 'text-blue-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#ccc'}` }}>{item.code}</td>
                             <td className={`py-1.5 px-3 font-semibold ${isDark ? 'text-indigo-400' : 'text-blue-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#ccc'}` }}>{item.headName}</td>
                             <td className={`text-right py-1.5 px-3 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#ccc'}` }}>
-                              {item.receipt > 0 ? formatCurrency(item.receipt) : '0.00'}
+                              {item.receipt > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(item.receipt)}</>) : '0.00'}
                             </td>
                             <td className={`text-right py-1.5 px-3 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#ccc'}` }}>
-                              {item.payment > 0 ? formatCurrency(item.payment) : '0.00'}
+                              {item.payment > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(item.payment)}</>) : '0.00'}
                             </td>
                           </tr>
                         ))}
                         <tr style={{ backgroundColor: isDark ? '#1e293b' : '#fff' }}>
                           <td colSpan={2} className="py-2 px-3" style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}></td>
                           <td className={`text-right py-2 px-3 font-black fz-body ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>
-                            {formatCurrency(totalReceipt)}
+                            {totalReceipt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalReceipt)}
                           </td>
                           <td className={`text-right py-2 px-3 font-black fz-body ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>
-                            {formatCurrency(totalPayment)}
+                            {totalPayment > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalPayment)}
                           </td>
                         </tr>
                       </tbody>
@@ -442,7 +447,7 @@ const CashBookMonthly: React.FC = () => {
                           <tr>
                             <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Total Credit :</td>
                             <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-rose-400' : 'text-red-700'}`}>
-                              {formatCurrency(totalReceipt)}
+                              {totalReceipt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalReceipt)}
                             </td>
                           </tr>
                           <tr style={{ borderTop: `1px solid ${isDark ? '#374151' : '#999'}` }}>
@@ -454,7 +459,7 @@ const CashBookMonthly: React.FC = () => {
                           <tr>
                             <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Total Debit :</td>
                             <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-rose-400' : 'text-red-700'}`}>
-                              {formatCurrency(totalPayment)}
+                              {totalPayment > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalPayment)}
                             </td>
                           </tr>
                           <tr style={{ borderTop: `1px solid ${isDark ? '#374151' : '#999'}` }}>

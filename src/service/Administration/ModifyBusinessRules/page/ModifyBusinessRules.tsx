@@ -37,6 +37,27 @@ const closeWindow = () => {
 const inputCls = 'mbr-input w-full h-6 px-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner';
 const inputIconCls = 'mbr-input w-full h-6 pl-5 pr-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner';
 
+/**
+ * Human-readable day windows for the two loan slots, derived from Slot 1's
+ * configured window alone. Slot 2 is always the complement, so its label is
+ * computed rather than configured — there is no way to describe a gap or an
+ * overlap between them. Handles the wrapping case (25–5) the society's
+ * original window uses, and the degenerate case where Slot 1 covers the whole
+ * month.
+ */
+const slotWindowLabels = (startDay: number, endDay: number): { slot1: string; slot2: string } => {
+  const s = Math.min(31, Math.max(1, Math.trunc(startDay) || 1));
+  const e = Math.min(31, Math.max(1, Math.trunc(endDay) || 1));
+  const slot1 = `${s}–${e}`;
+  // Slot 1 wrapping (25–5) leaves a contiguous middle for Slot 2 (6–24);
+  // a plain Slot 1 range (1–10) leaves a wrapping remainder (11–1 of the
+  // next month), written the same inclusive way.
+  if (s === 1 && e >= 31) return { slot1, slot2: 'none — Slot 1 covers the whole month' };
+  const s2 = e >= 31 ? 1 : e + 1;
+  const e2 = s <= 1 ? 31 : s - 1;
+  return { slot1, slot2: `${s2}–${e2}` };
+};
+
 const ModifyBusinessRules: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('loanParameters');
   const { businessRules, setBusinessRules, loading, saveBusinessRules } = useBusinessRules();
@@ -347,11 +368,19 @@ const ModifyBusinessRules: React.FC = () => {
                         aln columns the disbursement path reads, and a third
                         "Additional Loan" card had no backing columns at all
                         (always zeros, never saved). */}
-                    {renderLoanSection('Regular Loan',      'regularLoan',     businessRules.regularLoan)}
-                    {renderLoanSection('Additional Loan',   'additionalLoan',  businessRules.additionalLoan)}
-                    {renderLoanSection('Grain Loan',        'mediumTermLoan',  businessRules.mediumTermLoan)}
-                    {renderLoanSection('Emergency Loan',    'emergencyLoan',   businessRules.emergencyLoan)}
-                    {renderLoanSection('Loan On Deposit',   'loanOnDeposit',   businessRules.loanOnDeposit)}
+                    {/* Card titles fixed to match the aln/eln column authority
+                        (see useBusinessRules.ts's mapping note): additionalLoan's
+                        card writes the aln columns — the real ALN/Emergency Loan
+                        — and emergencyLoan's card writes the eln columns — the
+                        real ELN/Loan Against Recovery. Only the titles changed
+                        here; the prop names and RULE_LOAN_ADD_/RULE_LOAN_EMG_
+                        config keys are unchanged, so no stored value moves
+                        between columns. */}
+                    {renderLoanSection('Regular Loan',           'regularLoan',     businessRules.regularLoan)}
+                    {renderLoanSection('Emergency Loan',         'additionalLoan',  businessRules.additionalLoan)}
+                    {renderLoanSection('Grain Loan',             'mediumTermLoan',  businessRules.mediumTermLoan)}
+                    {renderLoanSection('Loan Against Recovery',  'emergencyLoan',   businessRules.emergencyLoan)}
+                    {renderLoanSection('Loan On Deposit',        'loanOnDeposit',   businessRules.loanOnDeposit)}
 
                     {/* Loan Against Deposits — custom layout */}
                     <div className="mbr-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
@@ -482,7 +511,7 @@ const ModifyBusinessRules: React.FC = () => {
                             }))} />
                         </div>
                         <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Additional Loan</span>
+                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Emergency Loan</span>
                           <Switch size="small"
                             checked={businessRules.regularLoanEligibility.applyToAdditionalLoan}
                             onChange={val => setBusinessRules(prev => ({
@@ -491,7 +520,7 @@ const ModifyBusinessRules: React.FC = () => {
                             }))} />
                         </div>
                         <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Emergency Loan</span>
+                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Loan Against Recovery</span>
                           <Switch size="small"
                             checked={businessRules.regularLoanEligibility.applyToEmergencyLoan}
                             onChange={val => setBusinessRules(prev => ({
@@ -659,6 +688,100 @@ const ModifyBusinessRules: React.FC = () => {
                               ...prev,
                               earlyClosureProtection: { ...prev.earlyClosureProtection, requireTypeConfirm: val }
                             }))} />
+                        </div>
+                      </div>
+
+                      <div className="mbr-divider h-px bg-slate-100" />
+
+                      {/* Loan Slot delay months — Slot 1/2 (loan-rb-schedule.util.ts)
+                          already charge 1/2 extra months of delay interest to cover
+                          the real processing gap before salary-deduction recovery
+                          starts; these two fields control how many months that gap
+                          is, and now also push the installment due-date schedule
+                          back by the same amount so the member is never billed for
+                          a delay their collection schedule doesn't reflect. */}
+                      <div>
+                        <div className="fz-mini font-black text-slate-400 uppercase tracking-widest mb-1">Loan Slots (Application Day Window &amp; Delay)</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {/* Slot 1's window is the only thing stored — Slot 2 is its
+                              complement, shown read-only below so an operator can see
+                              exactly what the other slot became. The window may wrap the
+                              month boundary (the society's original 25–5 does). */}
+                          <div className="space-y-0.5">
+                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
+                              Slot 1 Window — From Day
+                            </label>
+                            <input type="number" min={1} max={31} step="1"
+                              value={businessRules.loanSlotDelay.slot1StartDay}
+                              onChange={e => setBusinessRules(prev => ({
+                                ...prev,
+                                loanSlotDelay: { ...prev.loanSlotDelay, slot1StartDay: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) }
+                              }))}
+                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
+                          </div>
+                          <div className="space-y-0.5">
+                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
+                              Slot 1 Window — To Day
+                            </label>
+                            <input type="number" min={1} max={31} step="1"
+                              value={businessRules.loanSlotDelay.slot1EndDay}
+                              onChange={e => setBusinessRules(prev => ({
+                                ...prev,
+                                loanSlotDelay: { ...prev.loanSlotDelay, slot1EndDay: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) }
+                              }))}
+                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
+                          </div>
+                          <div className="sm:col-span-2 fz-mini font-bold text-slate-500 bg-slate-50 border-2 border-slate-200 rounded-lg px-2 py-1">
+                            Slot 1 = application day {slotWindowLabels(businessRules.loanSlotDelay.slot1StartDay, businessRules.loanSlotDelay.slot1EndDay).slot1}
+                            {'  ·  '}
+                            Slot 2 = application day {slotWindowLabels(businessRules.loanSlotDelay.slot1StartDay, businessRules.loanSlotDelay.slot1EndDay).slot2}
+                          </div>
+                          <div className="space-y-0.5">
+                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
+                              Slot 1 (day {slotWindowLabels(businessRules.loanSlotDelay.slot1StartDay, businessRules.loanSlotDelay.slot1EndDay).slot1}) Delay
+                            </label>
+                            <input type="number" min={0} step="1"
+                              value={businessRules.loanSlotDelay.slot1DelayMonths}
+                              onChange={e => setBusinessRules(prev => ({
+                                ...prev,
+                                loanSlotDelay: { ...prev.loanSlotDelay, slot1DelayMonths: parseInt(e.target.value) || 0 }
+                              }))}
+                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
+                          </div>
+                          <div className="space-y-0.5">
+                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
+                              Slot 2 (day {slotWindowLabels(businessRules.loanSlotDelay.slot1StartDay, businessRules.loanSlotDelay.slot1EndDay).slot2}) Delay
+                            </label>
+                            <input type="number" min={0} step="1"
+                              value={businessRules.loanSlotDelay.slot2DelayMonths}
+                              onChange={e => setBusinessRules(prev => ({
+                                ...prev,
+                                loanSlotDelay: { ...prev.loanSlotDelay, slot2DelayMonths: parseInt(e.target.value) || 0 }
+                              }))}
+                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
+                          </div>
+                          {/* Governs both the EMI's constant monthly interest at
+                              disbursement (frozen into instal_amt, so it never reprices
+                              an existing loan) and every early-closure line item (applied
+                              live). NEAREST reproduces the society's manual whole-rupee
+                              worksheets. */}
+                          <div className="space-y-0.5">
+                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
+                              Loan Rounding (EMI &amp; Closure)
+                            </label>
+                            <select
+                              value={businessRules.loanRounding.mode}
+                              onChange={e => setBusinessRules(prev => ({
+                                ...prev,
+                                loanRounding: { mode: e.target.value as typeof prev.loanRounding.mode }
+                              }))}
+                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner">
+                              <option value="NEAREST">Nearest Rupee — .00-.49 down, .50-.99 up (manual)</option>
+                              <option value="UP">Always Round Up (whole rupee)</option>
+                              <option value="DOWN">Always Round Down (whole rupee)</option>
+                              <option value="NONE">No Rounding (paisa precision)</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
                     </div>

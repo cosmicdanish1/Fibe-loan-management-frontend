@@ -15,6 +15,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -471,12 +472,16 @@ const MemberLoanLedger: React.FC = () => {
             <div className="grid grid-cols-2 gap-2">
               <div className={`p-2 rounded-lg ${isDark ? 'bg-emerald-900/40' : 'bg-emerald-100'}`}>
                 <div className={`fz-label font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Credits</div>
-                <div className={`fz-body font-black ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>₹{formatCurrency(totalCredits)}</div>
+                <div className={`fz-body font-black flex items-center ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                  {totalCredits > 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(totalCredits)}
+                </div>
               </div>
-              
+
               <div className={`p-2 rounded-lg ${isDark ? 'bg-rose-900/40' : 'bg-rose-100'}`}>
                 <div className={`fz-label font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Debits</div>
-                <div className={`fz-body font-black ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>₹{formatCurrency(totalDebits)}</div>
+                <div className={`fz-body font-black flex items-center ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>
+                  {totalDebits > 0 && <CrDrIndicator type="debit" className="mr-1" />}₹{formatCurrency(totalDebits)}
+                </div>
               </div>
             </div>
           </div>
@@ -562,12 +567,12 @@ const MemberLoanLedger: React.FC = () => {
                             <td className="py-2 px-2 text-slate-700 border-r border-dashed border-slate-200 font-medium">{item.narration}</td>
                             <td className="py-2 px-2 text-right border-r border-dashed border-slate-200">
                               {(item.type === 'DR' || item.type === 'D') && (
-                                <span className="text-rose-600 font-black">{formatCurrency(item.amount)}</span>
+                                <span className="text-rose-600 font-black inline-flex items-center"><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(item.amount)}</span>
                               )}
                             </td>
                             <td className="py-2 px-2 text-right border-r border-dashed border-slate-200">
                               {(item.type === 'CR' || item.type === 'C') && (
-                                <span className="text-emerald-600 font-black">{formatCurrency(item.amount)}</span>
+                                <span className="text-emerald-600 font-black inline-flex items-center"><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(item.amount)}</span>
                               )}
                             </td>
                             <td className="py-2 px-2 text-right text-blue-700 font-bold">{formatCurrency(item.balance)}</td>
@@ -580,10 +585,10 @@ const MemberLoanLedger: React.FC = () => {
                             TOTAL
                           </td>
                           <td className="py-2 px-2 text-right border-r border-dashed border-slate-300">
-                            <span className="text-rose-700 font-black">{formatCurrency(totalDebits)}</span>
+                            <span className="text-rose-700 font-black inline-flex items-center">{totalDebits > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebits)}</span>
                           </td>
                           <td className="py-2 px-2 text-right border-r border-dashed border-slate-300">
-                            <span className="text-emerald-700 font-black">{formatCurrency(totalCredits)}</span>
+                            <span className="text-emerald-700 font-black inline-flex items-center">{totalCredits > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredits)}</span>
                           </td>
                           <td className="py-2 px-2 text-right">
                             <span className="text-blue-700 font-black">{formatCurrency(closingBalance)}</span>

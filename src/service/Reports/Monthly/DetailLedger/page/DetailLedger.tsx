@@ -18,6 +18,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -434,13 +435,17 @@ const DetailLedger: React.FC = () => {
                 <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-3 text-white shadow-md hover:shadow-lg transition-all relative overflow-hidden group">
                   <TrendingUp size={50} className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-110 transition-transform" />
                   <div className="fz-caption font-black uppercase tracking-wide opacity-90 mb-0.5">Debit</div>
-                  <div className="fz-heading font-black font-mono relative z-10">₹{formatCurrency(totalDebit)}</div>
+                  <div className="fz-heading font-black font-mono relative z-10 flex items-center">
+                    {totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}₹{formatCurrency(totalDebit)}
+                  </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-lg p-3 text-white shadow-md hover:shadow-lg transition-all relative overflow-hidden group">
                   <TrendingDown size={50} className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-110 transition-transform" />
                   <div className="fz-caption font-black uppercase tracking-wide opacity-90 mb-0.5">Credit</div>
-                  <div className="fz-heading font-black font-mono relative z-10">₹{formatCurrency(totalCredit)}</div>
+                  <div className="fz-heading font-black font-mono relative z-10 flex items-center">
+                    {totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(totalCredit)}
+                  </div>
                 </div>
               </div>
             )}
@@ -505,10 +510,10 @@ const DetailLedger: React.FC = () => {
                               {item.narration}
                             </td>
                             <td className="text-right py-1.5 px-3 font-semibold text-slate-800" style={{ border: '1px solid #ccc' }}>
-                              {item.debit > 0 ? formatCurrency(item.debit) : '0.00'}
+                              {item.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(item.debit)}</>) : '0.00'}
                             </td>
                             <td className="text-right py-1.5 px-3 font-semibold text-slate-800" style={{ border: '1px solid #ccc' }}>
-                              {item.credit > 0 ? formatCurrency(item.credit) : '0.00'}
+                              {item.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(item.credit)}</>) : '0.00'}
                             </td>
                             <td className="text-right py-1.5 px-3 font-semibold text-slate-800" style={{ border: '1px solid #ccc' }}>
                               {formatCurrency(Math.abs(item.balance))} {item.balance >= 0 ? 'DR' : 'CR'}
@@ -520,10 +525,10 @@ const DetailLedger: React.FC = () => {
                             TOTAL:
                           </td>
                           <td className="text-right py-2 px-3 font-black text-red-700 fz-body" style={{ border: '1px solid #999' }}>
-                            {formatCurrency(totalDebit)}
+                            {totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebit)}
                           </td>
                           <td className="text-right py-2 px-3 font-black text-red-700 fz-body" style={{ border: '1px solid #999' }}>
-                            {formatCurrency(totalCredit)}
+                            {totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredit)}
                           </td>
                           <td className="text-right py-2 px-3 font-black text-slate-800 fz-body" style={{ border: '1px solid #999' }}>
                             {formatCurrency(Math.abs(closingBalance))} {closingBalance >= 0 ? 'DR' : 'CR'}
@@ -539,13 +544,13 @@ const DetailLedger: React.FC = () => {
                           <tr>
                             <td className="text-right py-1 px-4 font-bold text-slate-700">Total Debit :</td>
                             <td className="text-right py-1 px-4 font-bold text-red-700" style={{ minWidth: '150px' }}>
-                              {formatCurrency(totalDebit)}
+                              {totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebit)}
                             </td>
                           </tr>
                           <tr>
                             <td className="text-right py-1 px-4 font-bold text-slate-700">Total Credit :</td>
                             <td className="text-right py-1 px-4 font-bold text-red-700">
-                              {formatCurrency(totalCredit)}
+                              {totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredit)}
                             </td>
                           </tr>
                           <tr style={{ borderTop: '1px solid #999' }}>

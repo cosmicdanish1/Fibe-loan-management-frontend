@@ -89,6 +89,30 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
         try {
             const response = await apiService.passTransaction(voucherNo);
             if (response.success) {
+                // Surface loan consolidation explicitly — passTransaction()
+                // now returns a `consolidation` block whenever this
+                // disbursement absorbed an existing same-type loan (see
+                // pass-transaction.service.ts). Previously this happened
+                // silently: an old case got zeroed and a new combined one
+                // created with no indication to the operator it occurred.
+                const consolidation = (response.data as any)?.consolidation;
+                let consolidationDetail = '';
+                if (consolidation) {
+                    const caseLines = consolidation.consolidatedCases
+                        .map((c: any) =>
+                            `    • Case ${c.loancaseno}: old balance ₹${c.oldBalance.toLocaleString('en-IN')} `
+                            + `+ closure interest ₹${c.closureInterest.toLocaleString('en-IN')} `
+                            + `(NR ₹${c.nrInterest.toLocaleString('en-IN')} + AP ₹${c.apInterest.toLocaleString('en-IN')} `
+                            + `+ penal ₹${c.penalInterest.toLocaleString('en-IN')})`
+                        )
+                        .join('\n');
+                    consolidationDetail =
+                        `\n\n⚠ LOAN CONSOLIDATION OCCURRED\n` +
+                        `This disbursement absorbed ${consolidation.consolidatedCases.length} existing loan(s) ` +
+                        `into new case ${consolidation.newLoanCaseNo}:\n${caseLines}\n` +
+                        `Combined principal: ₹${consolidation.combinedPrincipal.toLocaleString('en-IN')}\n` +
+                        `Total closure interest withheld from payout: ₹${consolidation.oldClosureInterestTotal.toLocaleString('en-IN')}`;
+                }
                 await showDialog(
                     'info',
                     'electron-react-ts',
@@ -98,7 +122,8 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `✓ Transaction posted to ledger\n` +
                     `✓ Cashbook updated\n` +
-                    `✓ Voucher status: POSTED`
+                    `✓ Voucher status: POSTED` +
+                    consolidationDetail
                 );
                 fetchPendingVouchers();
             } else {

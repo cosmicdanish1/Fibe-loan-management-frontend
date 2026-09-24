@@ -21,6 +21,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'LOAN_PAYMENT': { route: '/transaction/loan-payment', electronMethod: 'openNewWindow' },
   'LOAN_REPAYMENT': { route: '/transaction/loan-repayment', electronMethod: 'openNewWindow' },
   'LOAN_EARLY_CLOSURE': { route: '/transaction/loan-early-closure', electronMethod: 'openNewWindow' },
+  'LOAN_CONSOLIDATION_CHAIN': { route: '/reports/loan-consolidation-chain', electronMethod: 'openNewWindow' },
   'COMPULSORY_DEPOSIT_TRANSACTION': { route: '/transaction/compulsory-deposit', electronMethod: 'openNewWindow' },
   'MEMBER_BALANCE_TRANSFER': { route: '/transaction/member-balance-transfer', electronMethod: 'openNewWindow' },
   'PASS_TRANSACTIONS': { route: '/transaction/pass-transactions', electronMethod: 'openNewWindow' },

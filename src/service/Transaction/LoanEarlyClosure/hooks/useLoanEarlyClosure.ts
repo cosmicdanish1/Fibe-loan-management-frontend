@@ -9,6 +9,43 @@ export interface ActiveLoan {
     balance: number;
     no_of_instal: number;
     instal_amt: number;
+    /** Set once this case has been closed and folded into a successor —
+     *  either by a real-time consolidation (PassTransactionService) or by
+     *  legacy migration replay. null while the loan is still open/standalone. */
+    consolidatedIntoLoancaseno: string | null;
+}
+
+export interface ConsolidationHistoryEntry {
+    loancaseno: string;
+    loantype: string;
+    originalLoanAmt: number;
+    closedBalance: number;
+    closureDate: string | null;
+}
+
+export interface ConsolidationHistory {
+    /** Cases this loan absorbed when they were closed into it. */
+    absorbedCases: ConsolidationHistoryEntry[];
+    /** Set if this loan was itself later closed into another case. */
+    consolidatedIntoLoancaseno: string | null;
+}
+
+export interface RepaymentHistoryEntry {
+    date: string;
+    amount: number;
+    principal: number;
+    interest: number;
+    penal: number;
+    receiptNo: string | null;
+    narration: string | null;
+}
+
+export interface RbScheduleRow {
+    installmentNo: number;
+    openingBalance: number;
+    rbInterest: number;
+    principal: number;
+    closingBalance: number;
 }
 
 export interface ClosureUnpaidInstallment {
@@ -83,6 +120,11 @@ export interface ClosureQuote {
     instalAmt: number;
     noOfInstal: number;
     totalPrincipalPaid: number;
+    /** Full history so nothing needs re-deriving or looking up separately
+     *  before deciding whether/how to close this loan. */
+    consolidationHistory: ConsolidationHistory;
+    repaymentHistory: RepaymentHistoryEntry[];
+    rbSchedule: RbScheduleRow[];
 }
 
 export interface ClosureForm {
@@ -147,9 +189,15 @@ export const useLoanEarlyClosure = () => {
             });
             if (!res.ok) throw new Error('Member not found or no active loans');
             const data = await res.json();
-            const loans: ActiveLoan[] = (data.data || data || []).filter((l: any) => parseFloat(l.balance || 0) > 0);
+            // No longer filtered to balance > 0 — closed/consolidated cases are
+            // kept so the UI can show a member's FULL loan history (which case
+            // absorbed which), not just what's currently open. The form only
+            // lets an operator SELECT an open (balance > 0) case to close.
+            const loans: ActiveLoan[] = data.data || data || [];
             setActiveLoans(loans);
-            if (loans.length === 0) setMessage({ type: 'error', text: 'No active loans found for this member.' });
+            if (loans.filter(l => parseFloat(String(l.balance || 0)) > 0).length === 0) {
+                setMessage({ type: 'error', text: 'No active loans found for this member.' });
+            }
         } catch (err: any) {
             setActiveLoans([]);
             setMessage({ type: 'error', text: err.message });

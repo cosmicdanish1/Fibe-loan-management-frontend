@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal } from 'antd';
-import { Search, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Search, AlertTriangle, CheckCircle2, RefreshCw, ChevronDown, ChevronRight, GitMerge, History, Table2 } from 'lucide-react';
 import type { useLoanEarlyClosure } from '../hooks/useLoanEarlyClosure';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
@@ -18,18 +18,27 @@ const TIER_LABEL: Record<number, string> = { 0: 'Grace', 1: 'Same-Month', 2: 'Mo
 
 const LoanEarlyClosureForm: React.FC<Props> = ({
     form, activeLoans, quote, quoteLoading, loading, message, closed, requireTypeConfirm,
-    updateForm, handleMemberLookup, handleLoanSelect, recalculate, toggleApplyRdShare, handleExecuteClosure, handleReset,
+    updateForm, handleMemberLookup, handleLoanSelect, recalculate, toggleApplyRdShare,
+    applySuggestedAdjustment, handleExecuteClosure, handleReset,
 }) => {
     const [showLookup, setShowLookup] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [loanSearch, setLoanSearch] = useState('');
     const [confirmTypedCase, setConfirmTypedCase] = useState('');
+    const [showClosedLoans, setShowClosedLoans] = useState(false);
+    const [showRepaymentHistory, setShowRepaymentHistory] = useState(false);
+    const [showRbSchedule, setShowRbSchedule] = useState(false);
 
     const selectedLoan = activeLoans.find(l => l.loancaseno === form.selectedLoanCase);
+    const selectedLoanIsClosed = !!selectedLoan && Number(selectedLoan.balance) <= 0;
 
-    const filteredLoans = activeLoans.filter(l =>
-        loanSearch.trim() === '' || l.loancaseno.includes(loanSearch.trim())
-    );
+    const openLoans = activeLoans.filter(l => Number(l.balance) > 0);
+    const closedLoans = activeLoans.filter(l => Number(l.balance) <= 0);
+
+    const matchesSearch = (l: typeof activeLoans[number]) =>
+        loanSearch.trim() === '' || l.loancaseno.includes(loanSearch.trim());
+    const filteredLoans = openLoans.filter(matchesSearch);
+    const filteredClosedLoans = closedLoans.filter(matchesSearch);
 
     const onMemberSelected = (member: any) => {
         const memberNo = String(member.memberNo || '');
@@ -42,7 +51,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
     usePageToolbarActions({
         onSave: () => setShowConfirm(true),
         saveLabel: loading ? 'Closing...' : 'Close Loan',
-        saveEnabled: !(loading || closed || !quote),
+        saveEnabled: !(loading || closed || !quote || selectedLoanIsClosed),
     });
 
     return (
@@ -180,11 +189,60 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     </div>
                                 )}
                             </div>
+
+                            {/* Closed / consolidated cases — full history, view-only */}
+                            {closedLoans.length > 0 && (
+                                <div style={{ marginTop: 10, borderTop: '1px solid #eceef1', paddingTop: 8 }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowClosedLoans(v => !v)}
+                                        className="lec-toggle-row"
+                                    >
+                                        {showClosedLoans ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                        Closed / Consolidated ({closedLoans.length})
+                                    </button>
+                                    {showClosedLoans && (
+                                        <div className="flex flex-col gap-1.5" style={{ maxHeight: 200, overflowY: 'auto', paddingRight: 2, marginTop: 6 }}>
+                                            {filteredClosedLoans.map(loan => {
+                                                const selected = form.selectedLoanCase === loan.loancaseno;
+                                                return (
+                                                    <label
+                                                        key={loan.loancaseno}
+                                                        onClick={() => handleLoanSelect(loan.loancaseno)}
+                                                        style={{
+                                                            display: 'flex', gap: 9, alignItems: 'flex-start',
+                                                            padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
+                                                            border: `1px solid ${selected ? '#c9b6f0' : '#eceef1'}`,
+                                                            background: selected ? '#f2edfb' : '#f7f8fa',
+                                                            opacity: 0.85,
+                                                        }}
+                                                    >
+                                                        <GitMerge size={13} style={{ marginTop: 2, color: '#8b90a0', flexShrink: 0 }} />
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div className="flex justify-between gap-2 mb-0.5">
+                                                                <span style={{ fontSize: 12, fontWeight: 600, color: '#5b6072' }}>
+                                                                    {LOAN_TYPE_LABEL[loan.loantype] || loan.loantype}
+                                                                </span>
+                                                                <span style={{ fontSize: 11, color: '#8b90a0' }}>#{loan.loancaseno}</span>
+                                                            </div>
+                                                            <div style={{ fontSize: 11, color: '#8b90a0' }}>
+                                                                {loan.consolidatedIntoLoancaseno
+                                                                    ? <>Closed — folded into #{loan.consolidatedIntoLoancaseno}</>
+                                                                    : <>Closed</>}
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* ③ Closure parameters */}
-                    {form.selectedLoanCase && (
+                    {/* ③ Closure parameters — only for a loan that's still open */}
+                    {form.selectedLoanCase && !selectedLoanIsClosed && (
                         <div className="lec-card" style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
                             <div className="lec-section-label">Closure Date, Adjustment &amp; Receipt</div>
                             <div className="flex flex-col gap-2.5">
@@ -251,16 +309,18 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                     {/* Quote header */}
                     <div className="flex items-center justify-between" style={{ padding: '11px 16px', borderBottom: '1px solid #eceef1' }}>
                         <div>
-                            <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1d29' }}>Closure Quote</div>
+                            <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1d29' }}>
+                                {selectedLoanIsClosed ? 'Loan History' : 'Closure Quote'}
+                            </div>
                             {form.memberName && (
                                 <div style={{ fontSize: 11.5, color: '#8b90a0', marginTop: 1 }}>
                                     {form.memberName}
                                     {form.mbno && ` — #${form.mbno}`}
-                                    {quote && ` — as of ${new Date(quote.closureDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                                    {quote && !selectedLoanIsClosed && ` — as of ${new Date(quote.closureDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}
                                 </div>
                             )}
                         </div>
-                        {quote && !closed && (
+                        {quote && !closed && !selectedLoanIsClosed && (
                             <span className="lec-badge-warn flex items-center gap-1.5">
                                 <AlertTriangle size={11} /> Irreversible action
                             </span>
@@ -291,10 +351,55 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     <div className="flex flex-wrap" style={{ gap: '4px 22px', fontSize: 12, color: '#8b90a0', borderBottom: '1px solid #eceef1', paddingBottom: 11 }}>
                                         <span>Original Loan Amount: <b style={{ color: '#1a1d29', fontWeight: 600 }}>₹{fmt(selectedLoan.loan_amt)}</b></span>
                                         <span>EMI: <b style={{ color: '#1a1d29', fontWeight: 600 }}>₹{fmt(selectedLoan.instal_amt)}</b></span>
-                                        <span>Installments Paid: <b style={{ color: '#1a1d29', fontWeight: 600 }}>{quote.paidInstallments} of {quote.totalInstallments}</b></span>
+                                        {!selectedLoanIsClosed && (
+                                            <span>Installments Paid: <b style={{ color: '#1a1d29', fontWeight: 600 }}>{quote.paidInstallments} of {quote.totalInstallments}</b></span>
+                                        )}
+                                        {selectedLoanIsClosed && (
+                                            <span style={{ color: '#7c3aed', fontWeight: 600 }}>Closed{selectedLoan.consolidatedIntoLoancaseno ? ` — folded into #${selectedLoan.consolidatedIntoLoancaseno}` : ''}</span>
+                                        )}
                                     </div>
                                 )}
 
+                                {/* Consolidation History — absorbed cases and/or the case this rolled into.
+                                    Shown for both open and closed loans: an open loan can still have
+                                    absorbed older cases; a closed loan shows what it became. */}
+                                {(quote.consolidationHistory.absorbedCases.length > 0 || quote.consolidationHistory.consolidatedIntoLoancaseno) && (
+                                    <div style={{ background: '#eef5fc', border: '1px solid #bcd7ef', borderRadius: 8, padding: '11px 13px' }}>
+                                        <div className="flex items-center gap-1.5" style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#2563a8', marginBottom: 8 }}>
+                                            <GitMerge size={12} /> Consolidation History
+                                        </div>
+                                        {quote.consolidationHistory.absorbedCases.length > 0 && (
+                                            <div style={{ marginBottom: quote.consolidationHistory.consolidatedIntoLoancaseno ? 8 : 0 }}>
+                                                <div style={{ fontSize: 11.5, color: '#2563a8', marginBottom: 5 }}>
+                                                    This loan absorbed {quote.consolidationHistory.absorbedCases.length} earlier case{quote.consolidationHistory.absorbedCases.length === 1 ? '' : 's'}:
+                                                </div>
+                                                <div className="flex flex-col" style={{ gap: 5 }}>
+                                                    {quote.consolidationHistory.absorbedCases.map(c => (
+                                                        <div key={c.loancaseno} className="flex items-center justify-between" style={{ fontSize: 11.5, color: '#1a1d29', background: '#fff', borderRadius: 6, padding: '6px 10px' }}>
+                                                            <span>
+                                                                <b>#{c.loancaseno}</b> ({LOAN_TYPE_LABEL[c.loantype] || c.loantype}) — original ₹{fmt(c.originalLoanAmt)}
+                                                            </span>
+                                                            <span style={{ color: '#8b90a0' }}>{c.closureDate ? `closed ${c.closureDate}` : ''}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {quote.consolidationHistory.consolidatedIntoLoancaseno && (
+                                            <div style={{ fontSize: 11.5, color: '#2563a8' }}>
+                                                This loan was closed and folded into <b>#{quote.consolidationHistory.consolidatedIntoLoancaseno}</b>.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {selectedLoanIsClosed && (
+                                    <div style={{ fontSize: 11.5, color: '#6b7280', background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 6, padding: '8px 11px' }}>
+                                        This loan is already closed — nothing to collect. Showing its history only.
+                                    </div>
+                                )}
+
+                                {!selectedLoanIsClosed && <>
                                 {/* Future installments note */}
                                 {quote.totalInstallments - quote.paidInstallments - quote.unpaidInstallments.length > 0 && (
                                     <div style={{ fontSize: 11.5, color: '#6b7280', background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 6, padding: '8px 11px' }}>
@@ -311,22 +416,22 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                         <div className="lec-amount-value">₹{fmt(quote.outstandingPrincipal)}</div>
                                     </div>
                                     <div className="lec-amount-cell">
-                                        <div className="lec-amount-label">Compulsory Slot Interest</div>
-                                        <div className="lec-amount-value">₹{fmt(quote.compulsorySlotInterest)}</div>
+                                        <div className="lec-amount-label">NR Interest (already-due installments)</div>
+                                        <div className="lec-amount-value">₹{fmt(quote.nrInterest)}</div>
                                     </div>
-                                    <div className="lec-amount-cell" style={{ gridColumn: '1 / -1' }}>
-                                        <div className="lec-amount-label">
-                                            RB Adjustment ({quote.rbAdjustment >= 0 ? 'member owes the difference' : 'reduces what is owed'})
+                                    {quote.futureInstallmentCount > 0 && (
+                                        <div className="lec-amount-cell" style={{ gridColumn: '1 / -1' }}>
+                                            <div className="lec-amount-label">
+                                                AP Closure Interest ({quote.futureInstallmentCount} future installment{quote.futureInstallmentCount === 1 ? '' : 's'})
+                                            </div>
+                                            <div className="lec-amount-value">₹{fmt(quote.apInterest)}</div>
+                                            <div style={{ fontSize: 11, color: '#a3a8b3', marginTop: 3 }}>
+                                                Average remaining principal ₹{fmt(quote.averageRemainingPrincipal)} × monthly rate = ₹{fmt(quote.averageRbInterest)} average RB interest/month
+                                            </div>
                                         </div>
-                                        <div className="lec-amount-value" style={{ color: quote.rbAdjustment >= 0 ? '#1a1d29' : '#15803d' }}>
-                                            ₹{fmt(quote.rbAdjustment)}
-                                        </div>
-                                        <div style={{ fontSize: 11, color: '#a3a8b3', marginTop: 3 }}>
-                                            ₹{fmt(quote.rbInterestTillClosure)} true reducing-balance interest accrued − ₹{fmt(quote.flatInterestCollected)} flat interest actually collected so far
-                                        </div>
-                                    </div>
+                                    )}
                                     <div className="lec-amount-cell">
-                                        <div className="lec-amount-label">Closure Interest (Slot + RB Adj)</div>
+                                        <div className="lec-amount-label">Closure Interest (NR + AP)</div>
                                         <div className="lec-amount-value">₹{fmt(quote.closureInterest)}</div>
                                     </div>
                                     <div className="lec-amount-cell">
@@ -339,39 +444,69 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                             <div className="lec-amount-value">₹{fmt(quote.adjustment)}</div>
                                         </div>
                                     )}
+                                    {quote.suggestedAdjustment !== 0 && (
+                                        <div className="lec-amount-cell" style={{ gridColumn: '1 / -1', background: '#eef5fc', borderColor: '#bcd7ef' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                                                <div>
+                                                    <div className="lec-amount-label" style={{ color: '#2563a8' }}>
+                                                        Detected: Payroll-Lag Credit — not applied yet
+                                                    </div>
+                                                    <div className="lec-amount-value" style={{ color: '#15803d' }}>₹{fmt(quote.suggestedAdjustment)}</div>
+                                                </div>
+                                                <button
+                                                    onClick={applySuggestedAdjustment}
+                                                    disabled={quoteLoading}
+                                                    className="lec-btn-secondary"
+                                                    style={{ background: '#2563a8', color: '#fff', border: 'none', whiteSpace: 'nowrap' }}
+                                                >
+                                                    Apply &amp; Recalc
+                                                </button>
+                                            </div>
+                                            <div style={{ fontSize: 11, color: '#5b7a99', marginTop: 6 }}>
+                                                One more EMI at the predecessor loan's old rate was still deducted through BSP's payroll
+                                                pipeline before it could switch to this loan. This is a suggested credit only — it is
+                                                <b> not</b> included in the Final Closure Amount below. Review it, then click Apply &amp;
+                                                Recalc to add it to the Adjustment field and see the updated total, or leave it and close
+                                                without applying it.
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Calculation trace */}
                                 <div style={{ background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 7, padding: '11px 13px' }}>
                                     <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#6b7280', marginBottom: 7 }}>
-                                        How This Was Calculated
+                                        How This Was Calculated (AP / Average-Principal Method)
                                     </div>
                                     <div style={{ fontFamily: "'IBM Plex Mono', 'Courier New', monospace", fontSize: 11, color: '#5b6072', lineHeight: 1.55, display: 'flex', flexDirection: 'column', gap: 5 }}>
                                         <div>
                                             Outstanding Principal = Loan Amount (₹{fmt(quote.loanAmt)}) − Principal Paid So Far (₹{fmt(quote.totalPrincipalPaid)})
                                             {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.outstandingPrincipal)}</b>
                                         </div>
-                                        {quote.hasRbSchedule ? (
+                                        <div>
+                                            NR Interest = flat interest still due on installments already past their due month (see table below)
+                                            {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.nrInterest)}</b>
+                                        </div>
+                                        {quote.futureInstallmentCount > 0 ? (
                                             <>
                                                 <div>
-                                                    Compulsory Slot Interest = (EMI × Installments: ₹{fmt(quote.instalAmt)} × {quote.noOfInstal}) − Loan Amount (₹{fmt(quote.loanAmt)}) − Total RB Interest for the full schedule (₹{fmt(quote.totalRBInterestFullSchedule)})
-                                                    {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.compulsorySlotInterest)}</b>
+                                                    Average Remaining Principal = (Future Principal Opening + Last Future Opening) / 2
+                                                    {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.averageRemainingPrincipal)}</b>
                                                 </div>
                                                 <div>
-                                                    RB Adjustment = RB Interest Accrued Till Closure (₹{fmt(quote.rbInterestTillClosure)}) − Flat Interest Actually Collected (₹{fmt(quote.flatInterestCollected)})
-                                                    {' '}= <b style={{ color: quote.rbAdjustment >= 0 ? '#1a1d29' : '#15803d' }}>₹{fmt(quote.rbAdjustment)}</b>
-                                                </div>
-                                                <div>
-                                                    Closure Interest = Compulsory Slot Interest (₹{fmt(quote.compulsorySlotInterest)}) + RB Adjustment (₹{fmt(quote.rbAdjustment)})
-                                                    {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.closureInterest)}</b>
+                                                    AP Closure Interest = (Monthly Interest on EMI − Average Remaining Principal × Monthly Rate) × Future Installments ({quote.futureInstallmentCount})
+                                                    {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.apInterest)}</b>
                                                 </div>
                                             </>
                                         ) : (
                                             <div>
-                                                This loan predates the RB-schedule feature — Closure Interest falls back to the flat interest still due on unpaid installments (see table below), not the Slot + RB formula.
-                                                {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.closureInterest)}</b>
+                                                No installments remain beyond those already due, so AP Closure Interest = <b style={{ color: '#1a1d29' }}>₹0</b>.
                                             </div>
                                         )}
+                                        <div>
+                                            Closure Interest = NR Interest (₹{fmt(quote.nrInterest)}) + AP Closure Interest (₹{fmt(quote.apInterest)})
+                                            {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.closureInterest)}</b>
+                                        </div>
                                         <div>
                                             Penal Interest = sum of each unpaid installment's tiered penalty (see table below)
                                             {' '}= <b style={{ color: '#dc2626' }}>₹{fmt(quote.penalInterest)}</b>
@@ -380,6 +515,11 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                             Final Closure Amount = Outstanding Principal (₹{fmt(quote.outstandingPrincipal)}) + Closure Interest (₹{fmt(quote.closureInterest)}) + Penal Interest (₹{fmt(quote.penalInterest)})
                                             {quote.adjustment !== 0 && ` + Adjustment (₹${fmt(quote.adjustment)})`}
                                             {' '}= <b style={{ color: '#5b21b6' }}>₹{fmt(quote.finalClosureAmount)}</b>
+                                            {quote.suggestedAdjustment !== 0 && (
+                                                <span style={{ color: '#2563a8' }}>
+                                                    {' '}(a ₹{fmt(Math.abs(quote.suggestedAdjustment))} payroll-lag credit is available but not yet applied — see above)
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -467,12 +607,86 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                         </table>
                                     </div>
                                 )}
+                                </>}
+
+                                {/* Repayment History — collapsible, every real payment on this case */}
+                                {quote.repaymentHistory.length > 0 && (
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowRepaymentHistory(v => !v)}
+                                            className="lec-toggle-row"
+                                        >
+                                            {showRepaymentHistory ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                            <History size={12} /> Repayment History ({quote.repaymentHistory.length})
+                                        </button>
+                                        {showRepaymentHistory && (
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
+                                                <thead>
+                                                    <tr>
+                                                        {['Date', 'Amount', 'Principal', 'Interest', 'Penal', 'Receipt No.'].map(h => (
+                                                            <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '6px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {quote.repaymentHistory.map((r, i) => (
+                                                        <tr key={i}>
+                                                            <td style={{ fontSize: 12, color: '#5b6072', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{r.date}</td>
+                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5', fontWeight: 600 }}>₹{fmt(r.amount)}</td>
+                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(r.principal)}</td>
+                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(r.interest)}</td>
+                                                            <td style={{ fontSize: 12, color: r.penal > 0 ? '#dc2626' : '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(r.penal)}</td>
+                                                            <td style={{ fontSize: 11.5, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{r.receiptNo || '—'}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* RB Schedule — collapsible, the full amortization plan */}
+                                {quote.rbSchedule.length > 0 && (
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowRbSchedule(v => !v)}
+                                            className="lec-toggle-row"
+                                        >
+                                            {showRbSchedule ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                            <Table2 size={12} /> Reducing-Balance Schedule ({quote.rbSchedule.length} installments)
+                                        </button>
+                                        {showRbSchedule && (
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
+                                                <thead>
+                                                    <tr>
+                                                        {['#', 'Opening Balance', 'RB Interest', 'Principal', 'Closing Balance'].map(h => (
+                                                            <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '6px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {quote.rbSchedule.map(row => (
+                                                        <tr key={row.installmentNo}>
+                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{row.installmentNo}</td>
+                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.openingBalance)}</td>
+                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.rbInterest)}</td>
+                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.principal)}</td>
+                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.closingBalance)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
 
                     {/* Sticky footer CTA */}
-                    {quote && !closed && (
+                    {quote && !closed && !selectedLoanIsClosed && (
                         <div style={{ padding: '12px 16px', borderTop: '1px solid #eceef1' }}>
                             <button
                                 onClick={() => setShowConfirm(true)}
@@ -590,6 +804,13 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                 }
                 .lec-amount-label { font-size: 11px; color: #8b90a0; margin-bottom: 3px; }
                 .lec-amount-value { font-size: 14px; font-weight: 600; color: #1a1d29; }
+                .lec-toggle-row {
+                    display: flex; align-items: center; gap: 6px;
+                    font-size: 11.5px; font-weight: 600; color: #5b21b6;
+                    background: transparent; border: none; padding: 4px 0;
+                    cursor: pointer; width: 100%; text-align: left;
+                }
+                .lec-toggle-row:hover { color: #4c1d95; }
 
                 /* ── Dark mode ── */
                 html.dark .lec-root { background: #000 !important; color: #f5f5f7 !important; }
@@ -644,6 +865,13 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                 html.dark .lec-root label[style*="background:#f2edfb"] { background: rgba(167,139,250,.15) !important; border-color: rgba(167,139,250,.4) !important; }
                 html.dark .lec-root label[style*="background: #fff"],
                 html.dark .lec-root label[style*="background:#fff"] { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
+                html.dark .lec-toggle-row { color: #c4b5fd !important; }
+                html.dark .lec-root [style*="background: #eef5fc"],
+                html.dark .lec-root [style*="background:#eef5fc"] { background: rgba(37,99,168,.14) !important; }
+                html.dark .lec-root [style*="border: 1px solid #bcd7ef"],
+                html.dark .lec-root [style*="border:1px solid #bcd7ef"] { border-color: rgba(37,99,168,.35) !important; }
+                html.dark .lec-root [style*="color: #2563a8"],
+                html.dark .lec-root [style*="color:#2563a8"] { color: #7fb3e8 !important; }
             `}</style>
         </div>
     );

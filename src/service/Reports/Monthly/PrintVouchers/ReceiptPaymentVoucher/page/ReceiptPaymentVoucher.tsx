@@ -21,6 +21,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { setInterfaceMode } from '../../../../../../store/slices/themeSlice';
 import dayjs, { Dayjs } from 'dayjs';
+import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -375,7 +376,9 @@ const ReceiptPaymentVoucher: React.FC = () => {
               {totalAmount > 0 && (
                 <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg p-3 text-white shadow-md">
                   <div className="fz-caption font-bold uppercase tracking-wide opacity-90 mb-0.5">Total Amount</div>
-                  <div className="fz-heading font-black font-mono">₹{formatCurrency(totalAmount)}</div>
+                  <div className="fz-heading font-black font-mono flex items-center">
+                    <CrDrIndicator type={vchrType === 'Receipt' ? 'credit' : 'debit'} className="mr-1" />₹{formatCurrency(totalAmount)}
+                  </div>
                 </div>
               )}
             </div>
