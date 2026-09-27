@@ -168,9 +168,9 @@ const ModifyBusinessRules: React.FC = () => {
               className={inputIconCls} />
           </div>
         </div>
-        {data.penalRate !== undefined && (
+        {data.penalRate !== undefined && loanType === 'regularLoan' && (
           <div className="space-y-0.5">
-            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Penal Rate (%)</label>
+            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5" title="One global annual Tier 2 rate used for every loan type.">Global Penal Rate (% p.a.)</label>
             <div className="relative">
               <Percent size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
               <input type="number" step="0.01" value={data.penalRate}
@@ -607,6 +607,7 @@ const ModifyBusinessRules: React.FC = () => {
                           { label: 'Show Consolidate Intt. Amount in Demand',    field: 'showConsolidateIntAmountInDemand' },
                           { label: 'Get Working Charges (Rs.)',                  field: 'getWorkingCharges' },
                           { label: 'Auto Day-End (Nightly Close, 11:30 PM)',      field: 'autoDayEndCloseEnabled' },
+                          { label: 'Enable tiered penalties for all loans',       field: 'tieredLoanPenaltiesEnabled' },
                         ].map(item => (
                           <div key={item.field}
                             className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
@@ -630,6 +631,10 @@ const ModifyBusinessRules: React.FC = () => {
                         <div className="mt-1 text-[10px] text-indigo-700">
                           Fixed application rule. Principal and reducing-balance interest are posted separately.
                         </div>
+                      </div>
+
+                      <div className="text-xs text-slate-500">
+                        Existing overdue loans start accruing penalties from the activation date, never retroactively. Re-enabling after a pause starts a new penalty period today. The global annual penal rate is configured on the Regular Loan card and applies to every loan type.
                       </div>
 
                       <div className="mbr-divider h-px bg-slate-100" />

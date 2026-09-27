@@ -52,6 +52,12 @@ export interface PayrollAdjustment {
     countsTowardCurrentInstallments: boolean;
 }
 
+export interface ClosurePenaltyPolicy {
+    enabled: boolean;
+    annualRate: number;
+    activationDate: string | null;
+}
+
 export interface RbScheduleRow {
     installmentNo: number;
     openingBalance: number;
@@ -97,7 +103,7 @@ export interface ClosureQuote {
     /** How many installments haven't reached their due month yet — 0 collapses
      *  the AP term below to 0, since there's nothing left to average over. */
     futureInstallmentCount: number;
-    /** (first future opening balance + last future opening balance) / 2. */
+    /** (future principal opening + standard monthly principal) / 2. */
     averageRemainingPrincipal: number;
     /** averageRemainingPrincipal × monthly rate. */
     averageRbInterest: number;
@@ -107,6 +113,10 @@ export interface ClosureQuote {
     /** nrInterest + apInterest — the actual interest charged at closure. */
     closureInterest: number;
     penalInterest: number;
+    penaltyPolicy?: ClosurePenaltyPolicy;
+    /** Post-consolidation predecessor principal already recovered through BSP;
+     *  reduces closure principal but does not settle/advance an EMI. */
+    payrollLagPrincipalOffset: number;
     adjustment: number;
     /** Payroll-lag credit, DETECTED (see backend recordLoanRepayment) but
      *  never auto-applied — negative, NOT included in finalClosureAmount
@@ -130,6 +140,17 @@ export interface ClosureQuote {
     // Raw ingredients behind the figures above, so the UI can show the actual
     // formulas instead of just the computed totals.
     loanAmt: number;
+    originationLoanAmt?: number;
+    effectiveSchedule?: {
+        versionNo: number;
+        source: string;
+        effectiveDate: string;
+        firstDueMonth: string;
+        openingPrincipal: number;
+        monthlyPrincipal: number;
+        installmentCount: number;
+        delayMonths: number;
+    } | null;
     instalAmt: number;
     noOfInstal: number;
     totalPrincipalPaid: number;

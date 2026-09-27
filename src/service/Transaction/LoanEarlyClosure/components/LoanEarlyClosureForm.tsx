@@ -349,7 +349,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 {/* Loan summary bar */}
                                 {selectedLoan && (
                                     <div className="flex flex-wrap" style={{ gap: '4px 22px', fontSize: 12, color: '#8b90a0', borderBottom: '1px solid #eceef1', paddingBottom: 11 }}>
-                                        <span>Original Loan Amount: <b style={{ color: '#1a1d29', fontWeight: 600 }}>₹{fmt(selectedLoan.loan_amt)}</b></span>
+                                        <span>Active Loan Amount: <b style={{ color: '#1a1d29', fontWeight: 600 }}>₹{fmt(quote.loanAmt)}</b></span>
                                         <span>EMI: <b style={{ color: '#1a1d29', fontWeight: 600 }}>₹{fmt(selectedLoan.instal_amt)}</b></span>
                                         {!selectedLoanIsClosed && (
                                             <span>Installments Paid: <b style={{ color: '#1a1d29', fontWeight: 600 }}>{quote.paidInstallments} of {quote.totalInstallments}</b></span>
@@ -416,7 +416,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                             Previous-Loan Payroll Adjustment
                                         </div>
                                         <div style={{ fontSize: 11.5, color: '#315575', marginBottom: 8 }}>
-                                            This BSP deduction is included in the outstanding balance, but it does not advance the current loan&apos;s installment schedule.
+                                            These BSP deductions belong to predecessor-loan payroll. Principal collected after this loan&apos;s consolidation is credited once against closure principal, but never counts as or advances a current-loan installment. The predecessor interest is shown for audit and is not charged again here.
                                         </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                                             {quote.payrollAdjustments.map((item, index) => (
@@ -445,11 +445,16 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                         <div className="lec-amount-label">Total adjustment</div>
                                                         <div className="lec-amount-value" style={{ color: '#15803d' }}>₹{fmt(item.total)}</div>
                                                     </div>
+                                                    <div style={{ gridColumn: '1 / -1', fontSize: 10.5, color: item.affectsOutstandingBalance ? '#166534' : '#64748b' }}>
+                                                        {item.affectsOutstandingBalance
+                                                            ? 'This principal is included as a one-time reduction in the closure principal below; installment count unchanged.'
+                                                            : 'This payment predates the current schedule and is already reflected in its opening principal.'}
+                                                    </div>
                                                 </React.Fragment>
                                             ))}
                                         </div>
                                         <div style={{ marginTop: 8, fontSize: 11, color: '#315575' }}>
-                                            Balance effect: <b>included</b>. Current-loan installment effect: <b>excluded</b>. The amount is not deducted a second time from the final closure total.
+                                            Applied post-consolidation principal offset: <b>−₹{fmt(quote.payrollLagPrincipalOffset || 0)}</b>. Pre-consolidation payroll principal is already included in the effective opening principal. No predecessor interest is added again.
                                         </div>
                                     </div>
                                 )}
@@ -480,6 +485,11 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     <div className="lec-amount-cell">
                                         <div className="lec-amount-label">Penal Interest</div>
                                         <div className="lec-amount-value" style={{ color: '#dc2626' }}>₹{fmt(quote.penalInterest)}</div>
+                                        <div style={{ fontSize: 10.5, color: '#7b8190', marginTop: 3 }}>
+                                            {quote.penaltyPolicy?.enabled
+                                                ? `Global rate ${fmt(quote.penaltyPolicy.annualRate)}% p.a.; active from ${quote.penaltyPolicy.activationDate || 'configured activation date'}.`
+                                                : 'Tiered loan penalty policy is disabled.'}
+                                        </div>
                                     </div>
                                     {quote.adjustment !== 0 && (
                                         <div className="lec-amount-cell" style={{ gridColumn: '1 / -1' }}>
@@ -522,8 +532,17 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                         How This Was Calculated (AP / Average-Principal Method)
                                     </div>
                                     <div style={{ fontFamily: "'IBM Plex Mono', 'Courier New', monospace", fontSize: 11, color: '#5b6072', lineHeight: 1.55, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                                        {quote.effectiveSchedule && (
+                                            <div style={{ color: '#4b5563' }}>
+                                                Current schedule v{quote.effectiveSchedule.versionNo} ({quote.effectiveSchedule.source}):
+                                                effective {quote.effectiveSchedule.effectiveDate}, first due month {quote.effectiveSchedule.firstDueMonth};
+                                                opening principal ₹{fmt(quote.effectiveSchedule.openingPrincipal)},
+                                                fixed principal ₹{fmt(quote.effectiveSchedule.monthlyPrincipal)} × {quote.effectiveSchedule.installmentCount} installments,
+                                                slot delay {quote.effectiveSchedule.delayMonths} month(s).
+                                            </div>
+                                        )}
                                         <div>
-                                            Outstanding Principal = Loan Amount (₹{fmt(quote.loanAmt)}) − Principal Paid So Far (₹{fmt(quote.totalPrincipalPaid)})
+                                            Outstanding Principal = {quote.effectiveSchedule ? 'Current Schedule Opening Principal' : 'Loan Amount'} (₹{fmt(quote.loanAmt)}) − Current-loan Principal Paid (₹{fmt(quote.totalPrincipalPaid)}) − Eligible Post-consolidation Payroll Principal Offset (₹{fmt(quote.payrollLagPrincipalOffset || 0)})
                                             {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.outstandingPrincipal)}</b>
                                         </div>
                                         <div>
@@ -533,7 +552,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                         {quote.futureInstallmentCount > 0 ? (
                                             <>
                                                 <div>
-                                                    Average Remaining Principal = (Future Principal Opening + Last Future Opening) / 2
+                                                Average Remaining Principal = (Future Principal Opening + Standard Monthly Principal) / 2
                                                     {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.averageRemainingPrincipal)}</b>
                                                 </div>
                                                 <div>

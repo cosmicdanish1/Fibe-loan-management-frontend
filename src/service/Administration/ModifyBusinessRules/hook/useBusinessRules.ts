@@ -39,6 +39,8 @@ export interface GeneralSettings {
   averageInterestCalculationSlot: number;
   profitHead: string;
   autoDayEndCloseEnabled: boolean;
+  /** Global on/off control for tiered penalties across all active loans. */
+  tieredLoanPenaltiesEnabled: boolean;
 }
 
 /**
@@ -256,6 +258,7 @@ const initialData: BusinessRulesData = {
     // keep a heavy-volume business day open across multiple real days until
     // they've finished entering that day's vouchers. Admin-only toggle.
     autoDayEndCloseEnabled: false,
+    tieredLoanPenaltiesEnabled: false,
   },
   fundManagement: {
     fundInterestRate: 0,
@@ -422,6 +425,7 @@ export const useBusinessRules = () => {
             averageInterestCalculationSlot: num(d.SYS_AVG_INT_CALC_SLOT, def.generalSettings.averageInterestCalculationSlot),
             profitHead: str(d.SYS_PROFIT_HEAD, def.generalSettings.profitHead),
             autoDayEndCloseEnabled: bool(d.SYS_DAYEND_AUTO_CLOSE, def.generalSettings.autoDayEndCloseEnabled),
+            tieredLoanPenaltiesEnabled: bool(d.RULE_TIERED_LOAN_PENALTY_ENABLED, def.generalSettings.tieredLoanPenaltiesEnabled),
           },
           fundManagement: {
             fundInterestRate: num(d.RULE_FUND_INT_RATE, def.fundManagement.fundInterestRate),
@@ -546,6 +550,7 @@ export const useBusinessRules = () => {
         SYS_AVG_INT_CALC_SLOT: currentData.generalSettings.averageInterestCalculationSlot,
         SYS_PROFIT_HEAD: currentData.generalSettings.profitHead,
         SYS_DAYEND_AUTO_CLOSE: currentData.generalSettings.autoDayEndCloseEnabled,
+        RULE_TIERED_LOAN_PENALTY_ENABLED: currentData.generalSettings.tieredLoanPenaltiesEnabled,
         // Reducing balance is the single supported loan-interest method.
         RULE_LOAN_INTEREST_METHOD: 'REDUCING_BALANCE',
 

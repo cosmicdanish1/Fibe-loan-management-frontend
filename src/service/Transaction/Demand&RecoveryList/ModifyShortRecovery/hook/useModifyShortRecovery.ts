@@ -27,7 +27,7 @@ const showDialog = async (
     }
 };
 
-// BUG FIX: zeroing a member's balance is irreversible — requires explicit confirmation.
+// Adjustments reduce only the requested shortfall amount and require confirmation.
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
     if ((window as any).electronAPI?.showMessageBox) {
         const result = await (window as any).electronAPI.showMessageBox({
@@ -113,22 +113,20 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
             await showDialog('warning', 'electron-react-ts', 'Reason Required', 'Please enter an adjustment reason before proceeding. This is required for the audit trail.');
             return;
         }
-        // BUG FIX: parseInt(selectedRecord.id) can produce NaN if id is undefined/empty string,
-        // causing the backend to receive demandId=NaN and silently throw "Demand not found".
-        const demandId = parseInt(selectedRecord.id);
-        if (isNaN(demandId) || demandId <= 0) {
+        const demandId = String(selectedRecord.id || '').trim();
+        if (!/^\d{4}-\d{1,2}-\d+$/.test(demandId)) {
             await showDialog('error', 'electron-react-ts', 'Invalid Record', 'The selected record has an invalid ID. Please refresh the list and try again.');
             return;
         }
 
-        // BUG FIX: zeroing a member's shortfall balance is irreversible — confirm before executing.
+        // Reducing a member's shortfall changes financial data — confirm before executing.
         const confirmed = await showConfirm(
             'Confirm Short Recovery Adjustment',
             `Member No     : ${selectedRecord.memberNo}\n` +
             `Member Name   : ${selectedRecord.memberName || '—'}\n` +
             `Shortfall Amt : ₹${Number(selectedRecord.shortfallAmount).toLocaleString('en-IN')}\n` +
             `Reason        : ${formData.adjustmentReason}\n\n` +
-            `This will permanently zero the shortfall balance for this member. Continue?`
+            `This will reduce the shortfall by the adjustment amount. Continue?`
         );
         if (!confirmed) return;
 
@@ -149,7 +147,7 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
                     `SHORTFALL AMT : ₹${Number(selectedRecord.shortfallAmount).toLocaleString('en-IN')}\n` +
                     `REASON        : ${formData.adjustmentReason}\n` +
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                    `✓ Demand balance set to zero\n` +
+                    `✓ Demand shortfall adjusted\n` +
                     `✓ Adjustment record saved`
                 );
                 // Remove the adjusted record from local list
