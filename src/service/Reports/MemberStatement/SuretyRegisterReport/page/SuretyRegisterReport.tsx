@@ -58,8 +58,7 @@ const printReport = (reportHtml: string) => {
 
 const SuretyRegisterReport: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const [memberFrom, setMemberFrom]   = useState('');
   const [memberTo, setMemberTo]       = useState('');

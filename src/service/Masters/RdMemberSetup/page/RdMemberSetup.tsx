@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Modal } from 'antd';
-import { Search, IndianRupee, Calendar, History } from 'lucide-react';
-import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import { IndianRupee, Calendar, History, User, Wallet } from 'lucide-react';
+import MemberField from '../../../../components/shared/kit/MemberField';
 import { useRdMemberSetup } from '../hooks/useRdMemberSetup';
 
 const fmt = (n: number) => Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -15,7 +14,6 @@ const RdMemberSetup: React.FC = () => {
     } = useRdMemberSetup();
 
     const [lookupInput, setLookupInput] = useState('');
-    const [showLookup, setShowLookup] = useState(false);
 
     useEffect(() => { loadFinancialYear(); }, [loadFinancialYear]);
 
@@ -24,143 +22,121 @@ const RdMemberSetup: React.FC = () => {
         const name = member.memberName || member.name || '';
         setLookupInput(memberNo);
         loadMember(memberNo, name);
-        setShowLookup(false);
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden" style={{ background: '#f4f5f7', color: '#1a1d29', fontSize: 13 }}>
-            <div className="flex items-center justify-between px-5 py-2.5 shrink-0" style={{ background: '#161822', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-baseline gap-2.5">
-                    <h1 className="m-0 font-semibold text-white" style={{ fontSize: 15 }}>RD Member Setup</h1>
-                    <span style={{ fontSize: 11.5, color: '#9296a8' }}>Set a member's monthly RD contribution for the current financial year</span>
+        <div className="app-window">
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">RD Member Setup</h1>
+                    <p className="aw-desc">Set a member's monthly RD contribution for the current financial year</p>
                 </div>
                 {yearLabel && (
-                    <div className="flex items-center gap-1.5" style={{ fontSize: 11.5, color: '#9296a8' }}>
-                        <Calendar size={12} /> {yearLabel}
-                    </div>
+                    <span className="aw-pill" style={{ gap: 6 }}><Calendar size={12} /> {yearLabel}</span>
                 )}
             </div>
 
-            <div className="flex gap-3.5 p-3.5 flex-1 overflow-auto items-start">
-                <div className="flex flex-col gap-3" style={{ width: 380, flexShrink: 0 }}>
+            <div className="aw-content">
+                <div className="aw-split aw-split-form">
+                    <div className="aw-stack">
 
-                    <div style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                        <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4, color: '#6b7280', marginBottom: 8 }}>Member</div>
-                        <div className="flex gap-1.5">
-                            <input
-                                type="text" placeholder="Member No." value={lookupInput}
-                                onChange={e => setLookupInput(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && loadMember(lookupInput, '')}
-                                style={{ width: 100, fontSize: 12.5, padding: '6px 8px', border: '1px solid #d7dae0', borderRadius: 6, outline: 'none' }}
-                            />
-                            <input
-                                type="text" placeholder="Member name" value={memberName} readOnly
-                                style={{ flex: 1, minWidth: 0, fontSize: 12.5, padding: '6px 8px', border: '1px solid #eceef1', borderRadius: 6, background: '#f7f8fa', color: '#4b5160' }}
-                            />
-                            <button
-                                onClick={() => loadMember(lookupInput, '')}
-                                disabled={loading || !lookupInput}
-                                style={{ fontSize: 12, fontWeight: 600, padding: '6px 12px', border: 'none', borderRadius: 6, background: '#2563eb', color: '#fff', cursor: 'pointer', opacity: (loading || !lookupInput) ? 0.5 : 1 }}
-                            >
-                                Search
-                            </button>
-                            <button
-                                type="button" onClick={() => setShowLookup(true)} title="Member Lookup"
-                                style={{ width: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 6, background: '#f0f1f4', color: '#5b6072', cursor: 'pointer' }}
-                            >
-                                <Search size={13} />
-                            </button>
-                        </div>
+                        <section className="aw-card">
+                            <div className="aw-card-head">
+                                <span className="aw-card-icon"><User size={14} /></span>
+                                <h2 className="aw-card-title">Member</h2>
+                            </div>
+                            <div className="aw-stack">
+                                <div className="aw-inline">
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <MemberField value={lookupInput} onChange={setLookupInput} onSelect={onMemberSelected}
+                                            onSubmit={v => loadMember(v, '')} />
+                                    </div>
+                                    <button type="button" onClick={() => loadMember(lookupInput, '')} disabled={loading || !lookupInput} className="aw-btn aw-btn-secondary">
+                                        Search
+                                    </button>
+                                </div>
+                                <input type="text" placeholder="Member name" aria-label="Member name" value={memberName} readOnly className="aw-input" />
+                            </div>
+                        </section>
+
+                        {mbno && (
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon"><Wallet size={14} /></span>
+                                    <h2 className="aw-card-title">Monthly RD Amount</h2>
+                                </div>
+                                <div className="aw-stack">
+                                    <p className="aw-muted">
+                                        Currently effective: <strong className="aw-strong">{currentAmount !== null ? `₹${fmt(currentAmount)}` : '— not set —'}</strong>
+                                    </p>
+
+                                    <div>
+                                        <label className="aw-label" htmlFor="rms-amount">New Monthly Amount (₹)</label>
+                                        <div className="aw-input-wrap has-icon">
+                                            <IndianRupee size={13} />
+                                            <input id="rms-amount"
+                                                type="number" value={newAmount || ''}
+                                                onChange={e => setNewAmount(Number(e.target.value))}
+                                                className="aw-input"
+                                            />
+                                        </div>
+                                        <p className="aw-meta" style={{ marginTop: 6 }}>
+                                            Takes effect immediately (mid-year changes are allowed) — this financial year's earlier months keep whatever amount was in effect at the time.
+                                        </p>
+                                    </div>
+
+                                    {message && (
+                                        <div className={`aw-alert aw-fade-in ${message.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} role="status" style={{ marginBottom: 0 }}>
+                                            {message.text}
+                                        </div>
+                                    )}
+
+                                    <button type="button" onClick={save} disabled={saving || loading || newAmount <= 0} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
+                                        {saving ? 'Saving…' : 'Save Monthly Amount'}
+                                    </button>
+                                </div>
+                            </section>
+                        )}
                     </div>
 
                     {mbno && (
-                        <div style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4, color: '#6b7280', marginBottom: 8 }}>Monthly RD Amount</div>
-
-                            <div style={{ marginBottom: 10, fontSize: 11.5, color: '#8b90a0' }}>
-                                Currently effective: <b style={{ color: '#1a1d29' }}>{currentAmount !== null ? `₹${fmt(currentAmount)}` : '— not set —'}</b>
-                            </div>
-
-                            <label style={{ display: 'block', fontSize: 11, color: '#8b90a0', marginBottom: 4 }}>New Monthly Amount (₹)</label>
-                            <div className="relative">
-                                <IndianRupee size={11} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#8b90a0' }} />
-                                <input
-                                    type="number" value={newAmount || ''}
-                                    onChange={e => setNewAmount(Number(e.target.value))}
-                                    style={{ width: '100%', fontSize: 13, fontWeight: 600, padding: '7px 8px 7px 24px', border: '1px solid #d7dae0', borderRadius: 6, outline: 'none' }}
-                                />
-                            </div>
-                            <p style={{ fontSize: 10.5, color: '#a3a8b3', marginTop: 4 }}>
-                                Takes effect immediately (mid-year changes are allowed) — this financial year's earlier months keep whatever amount was in effect at the time.
-                            </p>
-
-                            {message && (
-                                <div style={{
-                                    marginTop: 10, padding: '9px 11px', borderRadius: 6, fontSize: 12,
-                                    background: message.type === 'success' ? '#f0fdf4' : '#fef2f2',
-                                    color: message.type === 'success' ? '#15803d' : '#b91c1c',
-                                    border: `1px solid ${message.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-                                }}>
-                                    {message.text}
+                        <section className="aw-card aw-main aw-fade-in">
+                            <div className="aw-main-head">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                                    <span className="aw-card-icon"><History size={14} /></span>
+                                    <h2 className="aw-card-title">Amount History — {yearLabel}</h2>
                                 </div>
-                            )}
-
-                            <button
-                                onClick={save}
-                                disabled={saving || loading || newAmount <= 0}
-                                style={{
-                                    width: '100%', marginTop: 12, padding: 10, background: '#16a34a', color: '#fff',
-                                    border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600,
-                                    cursor: (saving || loading || newAmount <= 0) ? 'not-allowed' : 'pointer',
-                                    opacity: (saving || loading || newAmount <= 0) ? 0.5 : 1,
-                                }}
-                            >
-                                {saving ? 'Saving…' : 'Save Monthly Amount'}
-                            </button>
-                        </div>
+                            </div>
+                            <div className="aw-main-body" style={{ padding: 0 }}>
+                                {history.length === 0 ? (
+                                    <div className="aw-empty">
+                                        <History size={32} />
+                                        <span>No amount set yet for this financial year.</span>
+                                    </div>
+                                ) : (
+                                    <table className="aw-table">
+                                        <thead>
+                                            <tr>
+                                                {['Effective From', 'Monthly Amount', 'Set By', 'Saved At'].map(h => <th key={h}>{h}</th>)}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {history.map(row => (
+                                                <tr key={row.id}>
+                                                    <td>{new Date(row.effectiveFromDate).toLocaleDateString('en-IN')}</td>
+                                                    <td>₹{fmt(row.monthlyRdAmount)}</td>
+                                                    <td className="is-muted">{row.setBy || '—'}</td>
+                                                    <td className="is-muted">{new Date(row.createdAt).toLocaleString('en-IN')}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </section>
                     )}
                 </div>
-
-                {mbno && (
-                    <div className="flex-1" style={{ minWidth: 0, background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, overflow: 'hidden' }}>
-                        <div className="flex items-center gap-1.5" style={{ padding: '10px 14px', borderBottom: '1px solid #eceef1' }}>
-                            <History size={12} className="text-slate-500" />
-                            <h2 style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1d29', margin: 0 }}>Amount History — {yearLabel}</h2>
-                        </div>
-                        <div style={{ overflow: 'auto' }}>
-                            {history.length === 0 ? (
-                                <div className="flex items-center justify-center" style={{ height: 100, color: '#8b90a0', fontSize: 13 }}>
-                                    No amount set yet for this financial year.
-                                </div>
-                            ) : (
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead>
-                                        <tr>
-                                            {['Effective From', 'Monthly Amount', 'Set By', 'Saved At'].map(h => (
-                                                <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {history.map(row => (
-                                            <tr key={row.id}>
-                                                <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{new Date(row.effectiveFromDate).toLocaleDateString('en-IN')}</td>
-                                                <td style={{ fontSize: 12, fontWeight: 500, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.monthlyRdAmount)}</td>
-                                                <td style={{ fontSize: 12, color: '#5b6072', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{row.setBy || '—'}</td>
-                                                <td style={{ fontSize: 12, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{new Date(row.createdAt).toLocaleString('en-IN')}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    </div>
-                )}
             </div>
-
-            <Modal open={showLookup} onCancel={() => setShowLookup(false)} footer={null} width={800} styles={{ body: { padding: 0 } }} destroyOnClose>
-                <MemberLookup isModal onSelect={onMemberSelected} onClose={() => setShowLookup(false)} />
-            </Modal>
         </div>
     );
 };

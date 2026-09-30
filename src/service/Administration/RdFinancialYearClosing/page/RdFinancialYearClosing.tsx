@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { Calendar, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight, Lock, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../../../auth/context/AuthContext';
 import { useRdFinancialYearClosing } from '../hooks/useRdFinancialYearClosing';
 
@@ -29,6 +29,7 @@ const RdFinancialYearClosing: React.FC = () => {
 
     const needsReviewCount = members.filter((m) => !m.patternEvaluation.autoEligibleFullInterest).length;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const closeDisabled = closing || loading || !yearcode || total === 0;
 
     const applyOverride = (mbno: string, eligible: boolean) => {
         const reason = (reasonDrafts[mbno] || '').trim();
@@ -37,165 +38,166 @@ const RdFinancialYearClosing: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden" style={{ background: '#f4f5f7', color: '#1a1d29', fontSize: 13 }}>
-            <div className="flex items-center justify-between px-5 py-2.5 shrink-0" style={{ background: '#161822', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-baseline gap-2.5">
-                    <h1 className="m-0 font-semibold text-white" style={{ fontSize: 15 }}>RD Financial Year Closing</h1>
-                    <span style={{ fontSize: 11.5, color: '#9296a8' }}>Bulk review, override, and close the RD year</span>
+        <div className="app-window">
+            {/* ── Header ── */}
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">RD Financial Year Closing</h1>
+                    <p className="aw-desc">Bulk review, override, and close the RD year</p>
                 </div>
-                {yearLabel && (
-                    <div className="flex items-center gap-1.5" style={{ fontSize: 11.5, color: '#9296a8' }}>
-                        <Calendar size={12} /> {yearLabel} (yearcode {yearcode})
-                    </div>
-                )}
-            </div>
-
-            <div className="flex items-center justify-between px-5 py-2.5 shrink-0" style={{ background: '#fff', borderBottom: '1px solid #e4e6eb' }}>
-                <div className="flex items-center gap-4" style={{ fontSize: 12 }}>
-                    <span>Total members: <b>{total}</b></span>
-                    <span style={{ color: needsReviewCount > 0 ? '#b45309' : '#15803d' }}>
-                        Needs review (this page): <b>{needsReviewCount}</b>
-                    </span>
-                    <span>Overrides set: <b>{Object.keys(overrides).length}</b></span>
-                </div>
-                <button
-                    onClick={() => closeAll(closedBy)}
-                    disabled={closing || loading || !yearcode || total === 0}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600,
-                        padding: '7px 14px', border: 'none', borderRadius: 6, background: '#dc2626', color: '#fff',
-                        cursor: (closing || loading || total === 0) ? 'not-allowed' : 'pointer',
-                        opacity: (closing || loading || total === 0) ? 0.5 : 1,
-                    }}
-                >
-                    <Lock size={13} /> {closing ? 'Closing all…' : `Close Financial Year (${total} members)`}
-                </button>
-            </div>
-
-            {error && (
-                <div className="px-5 py-2 shrink-0" style={{ background: '#fef2f2', color: '#b91c1c', fontSize: 12, borderBottom: '1px solid #fecaca' }}>
-                    {error}
-                </div>
-            )}
-
-            {closeResult && (
-                <div className="px-5 py-2 shrink-0" style={{ background: '#f0fdf4', color: '#15803d', fontSize: 12, borderBottom: '1px solid #bbf7d0' }}>
-                    Closed {closeResult.succeeded.length} member(s).
-                    {closeResult.failed.length > 0 && (
-                        <> {closeResult.failed.length} failed: {closeResult.failed.map((f) => `${f.mbno} (${f.error})`).join('; ')}</>
+                <div className="aw-actions">
+                    {yearLabel && (
+                        <span className="aw-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                            <Calendar size={12} /> {yearLabel} (yearcode {yearcode})
+                        </span>
                     )}
+                    <button type="button" onClick={() => closeAll(closedBy)} disabled={closeDisabled} className="aw-btn aw-btn-danger">
+                        {closing ? <RefreshCw size={13} className="aw-spin" /> : <Lock size={13} />}
+                        {closing ? 'Closing all…' : `Close Financial Year (${total} members)`}
+                    </button>
                 </div>
-            )}
-
-            <div className="flex-1 overflow-auto px-5 py-3">
-                {loading ? (
-                    <div className="flex items-center justify-center" style={{ height: 200, color: '#8b90a0' }}>Loading…</div>
-                ) : members.length === 0 ? (
-                    <div className="flex items-center justify-center" style={{ height: 200, color: '#8b90a0' }}>No members with RD activity this financial year.</div>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8 }}>
-                        <thead>
-                            <tr>
-                                {['Member', 'Pattern', 'Paid/Due', 'Installment Int.', 'Opening-Bal. Int.', 'Total Int.', 'Balance', 'Decision', 'Action'].map((h) => (
-                                    <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '8px 10px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {members.map((m) => {
-                                const auto = m.patternEvaluation.autoEligibleFullInterest;
-                                const override = overrides[m.mbno];
-                                return (
-                                    <tr key={m.mbno}>
-                                        <td style={{ fontSize: 12, fontWeight: 600, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>{m.mbno}</td>
-                                        <td style={{ fontSize: 11.5, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>
-                                            <div className="flex items-center gap-1.5" style={{ color: auto ? '#15803d' : '#b45309' }}>
-                                                {auto ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
-                                                {PATTERN_LABEL[m.patternEvaluation.detectedPattern] || m.patternEvaluation.detectedPattern}
-                                            </div>
-                                            {!auto && m.patternEvaluation.disqualifyingReasons.length > 0 && (
-                                                <div style={{ fontSize: 10.5, color: '#8b90a0', marginTop: 2 }}>{m.patternEvaluation.disqualifyingReasons[0]}</div>
-                                            )}
-                                        </td>
-                                        <td style={{ fontSize: 12, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>
-                                            {m.patternEvaluation.totalPaidOnTime + m.patternEvaluation.totalPaidLate}/{m.patternEvaluation.totalDue}
-                                        </td>
-                                        <td style={{ fontSize: 12, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(m.installmentInterest.totalInterest)}</td>
-                                        <td style={{ fontSize: 12, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(m.openingBalanceInterest.totalInterest)}</td>
-                                        <td style={{ fontSize: 12, fontWeight: 600, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(m.totalInterestIfClosedNow)}</td>
-                                        <td style={{ fontSize: 12, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(m.currentBalance)}</td>
-                                        <td style={{ fontSize: 11.5, padding: '8px 10px', borderBottom: '1px solid #f2f3f5', minWidth: 220 }}>
-                                            {auto && !override ? (
-                                                <span style={{ color: '#15803d' }}>Auto: Full Interest</span>
-                                            ) : override ? (
-                                                <div>
-                                                    <span style={{ color: override.eligible ? '#15803d' : '#b91c1c', fontWeight: 600 }}>
-                                                        Override: {override.eligible ? 'Full Interest' : 'Reduced Interest'}
-                                                    </span>
-                                                    <div style={{ color: '#8b90a0' }}>{override.reason}</div>
-                                                    <button onClick={() => setOverride(m.mbno, null)} style={{ fontSize: 10.5, color: '#6b7280', background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>clear</button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col gap-1">
-                                                    <input
-                                                        type="text" placeholder="Reason for override…"
-                                                        value={reasonDrafts[m.mbno] || ''}
-                                                        onChange={(e) => setReasonDrafts((prev) => ({ ...prev, [m.mbno]: e.target.value }))}
-                                                        style={{ fontSize: 11, padding: '4px 6px', border: '1px solid #d7dae0', borderRadius: 4 }}
-                                                    />
-                                                    <div className="flex gap-1">
-                                                        <button
-                                                            onClick={() => applyOverride(m.mbno, true)}
-                                                            disabled={!(reasonDrafts[m.mbno] || '').trim()}
-                                                            style={{ fontSize: 10.5, padding: '3px 8px', border: 'none', borderRadius: 4, background: '#dcfce7', color: '#15803d', cursor: (reasonDrafts[m.mbno] || '').trim() ? 'pointer' : 'not-allowed', opacity: (reasonDrafts[m.mbno] || '').trim() ? 1 : 0.5 }}
-                                                        >
-                                                            Grant Full
-                                                        </button>
-                                                        <button
-                                                            onClick={() => applyOverride(m.mbno, false)}
-                                                            disabled={!(reasonDrafts[m.mbno] || '').trim()}
-                                                            style={{ fontSize: 10.5, padding: '3px 8px', border: 'none', borderRadius: 4, background: '#fee2e2', color: '#b91c1c', cursor: (reasonDrafts[m.mbno] || '').trim() ? 'pointer' : 'not-allowed', opacity: (reasonDrafts[m.mbno] || '').trim() ? 1 : 0.5 }}
-                                                        >
-                                                            Keep Reduced
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>
-                                            <button
-                                                onClick={() => closeOne(m.mbno, closedBy)}
-                                                style={{ fontSize: 11, fontWeight: 600, padding: '5px 10px', border: 'none', borderRadius: 5, background: '#161822', color: '#fff', cursor: 'pointer' }}
-                                            >
-                                                Close
-                                            </button>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                )}
             </div>
 
-            <div className="flex items-center justify-between px-5 py-2 shrink-0" style={{ background: '#fff', borderTop: '1px solid #e4e6eb' }}>
-                <span style={{ fontSize: 11.5, color: '#8b90a0' }}>Page {page + 1} of {totalPages}</span>
-                <div className="flex gap-1.5">
-                    <button
-                        onClick={() => yearcode && loadPage(yearcode, page - 1)}
-                        disabled={page <= 0 || loading}
-                        style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, padding: '5px 10px', border: '1px solid #d7dae0', borderRadius: 5, background: '#fff', cursor: page <= 0 ? 'not-allowed' : 'pointer', opacity: page <= 0 ? 0.5 : 1 }}
-                    >
+            <div className="aw-content">
+                <div className="aw-stack">
+                    {/* ── Summary ── */}
+                    <div className="aw-stats aw-stats-3">
+                        <div className="aw-stat aw-stat-left">
+                            <div className="aw-stat-label">Total members</div>
+                            <div className="aw-stat-value">{total}</div>
+                        </div>
+                        <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: needsReviewCount > 0 ? 'var(--aw-warning)' : 'var(--aw-success)' }}>
+                            <div className="aw-stat-label">Needs review (this page)</div>
+                            <div className="aw-stat-value">{needsReviewCount}</div>
+                        </div>
+                        <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}>
+                            <div className="aw-stat-label">Overrides set</div>
+                            <div className="aw-stat-value">{Object.keys(overrides).length}</div>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="aw-alert aw-alert-danger aw-fade-in" style={{ marginBottom: 0 }} role="alert">
+                            <AlertCircle size={15} /><span>{error}</span>
+                        </div>
+                    )}
+
+                    {closeResult && (
+                        <div className="aw-alert aw-alert-success aw-fade-in" style={{ marginBottom: 0 }} role="status">
+                            <CheckCircle2 size={15} />
+                            <span>
+                                Closed {closeResult.succeeded.length} member(s).
+                                {closeResult.failed.length > 0 && (
+                                    <> {closeResult.failed.length} failed: {closeResult.failed.map((f) => `${f.mbno} (${f.error})`).join('; ')}</>
+                                )}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* ── Members ── */}
+                    <section className="aw-card">
+                        {loading ? (
+                            <div className="aw-empty" style={{ padding: 40 }}>
+                                <RefreshCw size={28} className="aw-spin" />
+                                <strong className="aw-strong">Loading…</strong>
+                            </div>
+                        ) : members.length === 0 ? (
+                            <div className="aw-empty" style={{ padding: 40 }}>
+                                <Calendar size={28} />
+                                <strong className="aw-strong">No members with RD activity this financial year.</strong>
+                            </div>
+                        ) : (
+                            <div className="aw-table-wrap" style={{ maxHeight: '58vh' }}>
+                                <table className="aw-table" style={{ minWidth: 1000 }}>
+                                    <thead>
+                                        <tr>
+                                            <th>Member</th>
+                                            <th>Pattern</th>
+                                            <th className="is-right">Paid/Due</th>
+                                            <th className="is-right">Installment Int.</th>
+                                            <th className="is-right">Opening-Bal. Int.</th>
+                                            <th className="is-right">Total Int.</th>
+                                            <th className="is-right">Balance</th>
+                                            <th style={{ minWidth: 230 }}>Decision</th>
+                                            <th style={{ width: 80 }}>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {members.map((m) => {
+                                            const auto = m.patternEvaluation.autoEligibleFullInterest;
+                                            const override = overrides[m.mbno];
+                                            const hasReason = !!(reasonDrafts[m.mbno] || '').trim();
+                                            return (
+                                                <tr key={m.mbno}>
+                                                    <td className="is-accent">{m.mbno}</td>
+                                                    <td>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: auto ? 'var(--aw-success)' : 'var(--aw-warning)' }}>
+                                                            {auto ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
+                                                            {PATTERN_LABEL[m.patternEvaluation.detectedPattern] || m.patternEvaluation.detectedPattern}
+                                                        </div>
+                                                        {!auto && m.patternEvaluation.disqualifyingReasons.length > 0 && (
+                                                            <span className="aw-meta">{m.patternEvaluation.disqualifyingReasons[0]}</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="is-right">
+                                                        {m.patternEvaluation.totalPaidOnTime + m.patternEvaluation.totalPaidLate}/{m.patternEvaluation.totalDue}
+                                                    </td>
+                                                    <td className="is-right">₹{fmt(m.installmentInterest.totalInterest)}</td>
+                                                    <td className="is-right">₹{fmt(m.openingBalanceInterest.totalInterest)}</td>
+                                                    <td className="is-right is-info">₹{fmt(m.totalInterestIfClosedNow)}</td>
+                                                    <td className="is-right">₹{fmt(m.currentBalance)}</td>
+                                                    <td>
+                                                        {auto && !override ? (
+                                                            <span className="aw-pill tone-success">Auto: Full Interest</span>
+                                                        ) : override ? (
+                                                            <div>
+                                                                <span className={`aw-pill tone-${override.eligible ? 'success' : 'danger'}`}>
+                                                                    Override: {override.eligible ? 'Full Interest' : 'Reduced Interest'}
+                                                                </span>
+                                                                <span className="aw-meta">{override.reason}</span>
+                                                                <button type="button" onClick={() => setOverride(m.mbno, null)} className="aw-btn aw-btn-ghost aw-btn-sm" style={{ padding: '0 6px' }}>Clear</button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="aw-stack" style={{ gap: 6 }}>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Reason for override…"
+                                                                    aria-label={`Override reason for ${m.mbno}`}
+                                                                    value={reasonDrafts[m.mbno] || ''}
+                                                                    onChange={(e) => setReasonDrafts((prev) => ({ ...prev, [m.mbno]: e.target.value }))}
+                                                                    className="aw-input"
+                                                                />
+                                                                <div className="aw-btn-row" style={{ gap: 6 }}>
+                                                                    <button type="button" onClick={() => applyOverride(m.mbno, true)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">Grant Full</button>
+                                                                    <button type="button" onClick={() => applyOverride(m.mbno, false)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">Keep Reduced</button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        <button type="button" onClick={() => closeOne(m.mbno, closedBy)} className="aw-btn aw-btn-primary aw-btn-sm">Close</button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </section>
+                </div>
+            </div>
+
+            <div className="aw-footer">
+                <span>Page {page + 1} of {totalPages}</span>
+                <span style={{ display: 'inline-flex', gap: 6 }}>
+                    <button type="button" onClick={() => yearcode && loadPage(yearcode, page - 1)} disabled={page <= 0 || loading} className="aw-btn aw-btn-secondary aw-btn-sm">
                         <ChevronLeft size={12} /> Prev
                     </button>
-                    <button
-                        onClick={() => yearcode && loadPage(yearcode, page + 1)}
-                        disabled={page + 1 >= totalPages || loading}
-                        style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, padding: '5px 10px', border: '1px solid #d7dae0', borderRadius: 5, background: '#fff', cursor: (page + 1 >= totalPages) ? 'not-allowed' : 'pointer', opacity: (page + 1 >= totalPages) ? 0.5 : 1 }}
-                    >
+                    <button type="button" onClick={() => yearcode && loadPage(yearcode, page + 1)} disabled={page + 1 >= totalPages || loading} className="aw-btn aw-btn-secondary aw-btn-sm">
                         Next <ChevronRight size={12} />
                     </button>
-                </div>
+                </span>
             </div>
         </div>
     );

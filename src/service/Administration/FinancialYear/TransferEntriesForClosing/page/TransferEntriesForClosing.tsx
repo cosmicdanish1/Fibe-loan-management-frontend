@@ -5,7 +5,7 @@ import {
   Lock, ChevronRight, Database, Building2,
   Calendar, X, CheckCircle2, AlertCircle, RefreshCw, Plus,
 } from 'lucide-react';
-import { ConfigProvider } from 'antd';
+import { Select } from 'antd';
 import { apiService } from '../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
@@ -184,182 +184,125 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
   });
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 8 } }}>
-      <style>{`
-        html.dark .tefc-page { background: #000000 !important; }
-        html.dark .tefc-page .tefc-header { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .tefc-page .tefc-header-icon { background: #312e81 !important; color: #818cf8 !important; }
-        html.dark .tefc-page .tefc-title { color: #f5f5f7 !important; }
-        html.dark .tefc-page .tefc-sub { color: #818cf8 !important; }
-        html.dark .tefc-page .tefc-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .tefc-page .tefc-select { background: rgba(255,255,255,.05) !important; border-color: #4f46e5 !important; color: #f5f5f7 !important; }
-        html.dark .tefc-page .tefc-select option { background: #1c1c1e; color: #f5f5f7; }
-        html.dark .tefc-page .tefc-detail-box { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .tefc-page .tefc-detail-label { color: #71717a !important; }
-        html.dark .tefc-page .tefc-detail-value { color: #f5f5f7 !important; }
-        html.dark .tefc-page .tefc-cancel-btn { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
-        html.dark .tefc-page .tefc-cancel-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .tefc-page .tefc-footer { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .tefc-page .tefc-footer-text { color: #71717a !important; }
-      `}</style>
-
-      <div className={`tefc-page h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-slate-50 font-sans overflow-hidden ${className}`}>
-
-        {/* ── Header ── */}
-        <div className="tefc-header bg-white border-b-2 border-indigo-100 px-3 py-2 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="tefc-header-icon bg-indigo-100 p-1.5 rounded-lg">
-              <Database size={13} className="text-indigo-600" />
-            </div>
-            <div>
-              <h1 className="tefc-title fz-caption font-black text-slate-800 uppercase tracking-tight leading-none">Transfer Entries For Closing</h1>
-              <p className="tefc-sub fz-caption text-indigo-400 font-bold leading-none mt-0.5">Financial Year · Ledger Transit</p>
-            </div>
-          </div>
-          <button onClick={closeWindow} title="Close"
-            className="w-6 h-6 text-slate-400 hover:text-white hover:bg-red-500 rounded transition-all flex items-center justify-center">
-            <X size={12} />
+    <div className={`app-window ${className}`}>
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Transfer Entries For Closing</h1>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Database size={12} /> Financial Year · Ledger Transit
+          </p>
+        </div>
+        <div className="aw-actions">
+          <button type="button" onClick={handleSubmit} disabled={!selectedCode || isLoading || isLoadingYears} className="aw-btn aw-btn-primary">
+            {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <ChevronRight size={13} />}
+            {isLoading ? 'Processing...' : 'Initiate Transfer'}
+          </button>
+          <button type="button" onClick={closeWindow} disabled={isLoading} className="aw-btn aw-btn-ghost">
+            <X size={13} /> Close
           </button>
         </div>
+      </div>
 
-        {/* ── Body ── */}
-        <div className="flex-1 flex flex-col p-3 overflow-auto">
-          <div className="max-w-md w-full mx-auto space-y-2">
+      <div className="aw-content">
+        <div className="aw-stack aw-narrow" style={{ maxWidth: 520 }}>
 
-            {/* Main Card */}
-            <div className="tefc-card bg-white rounded-xl border-2 border-indigo-100 shadow-md overflow-hidden">
+          {/* ── Select financial year ── */}
+          <section className="aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><Lock size={14} /></span>
+              <h2 className="aw-card-title">Select Financial Year</h2>
+              <button
+                type="button"
+                onClick={loadYears}
+                disabled={isLoadingYears}
+                className="aw-icon-btn is-sm"
+                aria-label="Refresh years"
+                data-tip="Refresh"
+                data-tip-pos="bottom-end"
+                style={{ marginLeft: 'auto' }}
+              >
+                <RefreshCw size={13} className={isLoadingYears ? 'aw-spin' : ''} />
+              </button>
+            </div>
 
-              {/* Card header */}
-              <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-3 py-2 flex items-center justify-between">
-                <label className="fz-caption font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <Lock size={10} className="text-indigo-200" />
-                  Select Financial Year
-                </label>
-                <button onClick={loadYears} disabled={isLoadingYears}
-                  className="text-indigo-200 hover:text-white transition-colors disabled:opacity-50">
-                  <RefreshCw size={10} className={isLoadingYears ? 'animate-spin' : ''} />
+            <div className="aw-stack">
+              <div>
+                <label className="aw-label" htmlFor="tefc-year">Financial Year</label>
+                <Select
+                  id="tefc-year"
+                  className="aw-select"
+                  popupClassName="aw-select-popup"
+                  value={selectedCode || undefined}
+                  onChange={(v) => setSelectedCode(v ?? '')}
+                  disabled={isLoading || isLoadingYears}
+                  placeholder="— Select Financial Year —"
+                  suffixIcon={<Calendar size={14} />}
+                  options={years.map(fy => ({
+                    value: String(fy.yearCode),
+                    label: `${yearLabel(fy)} (Code: ${fy.yearCode})${fy.closedAt ? ' ✓ Closed' : ''}`,
+                  }))}
+                />
+              </div>
+
+              {selectedYear && (
+                <dl className="aw-facts aw-fade-in" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+                  <div><dt>From</dt><dd>{fmtDate(selectedYear.startDate)}</dd></div>
+                  <div><dt>To</dt><dd>{fmtDate(selectedYear.endDate)}</dd></div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd><span className={`aw-pill tone-${selectedYear.closedAt ? 'success' : 'warning'}`}>{selectedYear.closedAt ? 'Closed' : 'Open'}</span></dd>
+                  </div>
+                </dl>
+              )}
+
+              {statusMsg ? (
+                <div className={`aw-alert aw-fade-in ${statusMsg.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0 }} role="status">
+                  {statusMsg.type === 'success' ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+                  <span>{statusMsg.text}</span>
+                </div>
+              ) : (
+                <p className="aw-meta" style={{ display: 'flex', alignItems: 'center' }}><i className="aw-status-dot" />System ready</p>
+              )}
+            </div>
+          </section>
+
+          {/* ── No financial year exists yet — genesis create form ── */}
+          {!isLoadingYears && years.length === 0 && (
+            <section className="aw-card aw-fade-in">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Plus size={14} /></span>
+                <h2 className="aw-card-title">No Financial Year Set Up Yet</h2>
+              </div>
+              <div className="aw-stack">
+                <p className="aw-meta" style={{ lineHeight: 1.5 }}>
+                  No financial year exists yet. Create the first one to begin using Transfer Entries and Financial Year Closing.
+                </p>
+                <div className="aw-two">
+                  <div>
+                    <label className="aw-label" htmlFor="tefc-start">Start Date</label>
+                    <input id="tefc-start" type="date" value={newStart} onChange={e => setNewStart(e.target.value)} disabled={isCreatingYear} className="aw-input" />
+                  </div>
+                  <div>
+                    <label className="aw-label" htmlFor="tefc-end">End Date</label>
+                    <input id="tefc-end" type="date" value={newEnd} onChange={e => setNewEnd(e.target.value)} disabled={isCreatingYear} className="aw-input" />
+                  </div>
+                </div>
+                <button type="button" onClick={handleCreateYear} disabled={isCreatingYear || !newStart || !newEnd} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
+                  {isCreatingYear ? <RefreshCw size={13} className="aw-spin" /> : <Plus size={13} />}
+                  {isCreatingYear ? 'Creating...' : 'Create Financial Year'}
                 </button>
               </div>
-
-              <div className="p-3 space-y-2">
-                {/* Year selector */}
-                <div className="relative">
-                  <Calendar size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none" />
-                  <select
-                    value={selectedCode}
-                    onChange={e => setSelectedCode(e.target.value)}
-                    disabled={isLoading || isLoadingYears}
-                    className="tefc-select w-full h-8 bg-indigo-50 border-2 border-indigo-200 rounded-lg pl-8 pr-3 fz-caption font-black text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500 transition-all appearance-none disabled:opacity-60 cursor-pointer"
-                  >
-                    <option value="">— Select Financial Year —</option>
-                    {years.map(fy => (
-                      <option key={fy.yearCode} value={fy.yearCode}>
-                        {yearLabel(fy)} (Code: {fy.yearCode}){fy.closedAt ? ' ✓ Closed' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Selected year detail */}
-                {selectedYear && (
-                  <div className="tefc-detail-box bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1.5 grid grid-cols-3 gap-2">
-                    <div>
-                      <p className="tefc-detail-label fz-caption font-bold text-indigo-400 uppercase leading-none mb-0.5" style={{ fontSize: '9px' }}>From</p>
-                      <p className="tefc-detail-value fz-caption font-black text-slate-700 leading-none">{fmtDate(selectedYear.startDate)}</p>
-                    </div>
-                    <div>
-                      <p className="tefc-detail-label fz-caption font-bold text-indigo-400 uppercase leading-none mb-0.5" style={{ fontSize: '9px' }}>To</p>
-                      <p className="tefc-detail-value fz-caption font-black text-slate-700 leading-none">{fmtDate(selectedYear.endDate)}</p>
-                    </div>
-                    <div>
-                      <p className="tefc-detail-label fz-caption font-bold text-indigo-400 uppercase leading-none mb-0.5" style={{ fontSize: '9px' }}>Status</p>
-                      <p className={`fz-caption font-black leading-none ${selectedYear.closedAt ? 'text-emerald-600' : 'text-amber-500'}`}>
-                        {selectedYear.closedAt ? 'Closed' : 'Open'}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Status indicator */}
-                <div className="flex items-center gap-1.5 px-0.5">
-                  {statusMsg ? (
-                    statusMsg.type === 'success'
-                      ? <><CheckCircle2 size={11} className="text-emerald-500 shrink-0" /><span className="fz-caption font-bold text-emerald-600 leading-tight">{statusMsg.text}</span></>
-                      : <><AlertCircle size={11} className="text-rose-500 shrink-0" /><span className="fz-caption font-bold text-rose-600 leading-tight">{statusMsg.text}</span></>
-                  ) : (
-                    <><div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse shrink-0" />
-                    <span className="fz-caption font-bold text-indigo-500 uppercase tracking-tight">System Ready</span></>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* No financial year exists yet — genesis create form */}
-            {!isLoadingYears && years.length === 0 && (
-              <div className="tefc-card bg-white rounded-xl border-2 border-indigo-100 shadow-md overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-3 py-2">
-                  <h2 className="fz-caption font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                    <Plus size={10} className="text-indigo-200" />
-                    No Financial Year Set Up Yet
-                  </h2>
-                </div>
-                <div className="p-3 space-y-2">
-                  <p className="fz-caption text-slate-500 font-semibold leading-snug">
-                    No financial year exists yet. Create the first one to begin using Transfer Entries and Financial Year Closing.
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-0.5">
-                      <label className="fz-caption font-black text-slate-600 uppercase tracking-tight">Start Date</label>
-                      <input type="date" value={newStart} onChange={e => setNewStart(e.target.value)}
-                        disabled={isCreatingYear}
-                        className="w-full h-8 bg-indigo-50 border-2 border-indigo-200 rounded-lg px-2 fz-caption font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-60" />
-                    </div>
-                    <div className="space-y-0.5">
-                      <label className="fz-caption font-black text-slate-600 uppercase tracking-tight">End Date</label>
-                      <input type="date" value={newEnd} onChange={e => setNewEnd(e.target.value)}
-                        disabled={isCreatingYear}
-                        className="w-full h-8 bg-indigo-50 border-2 border-indigo-200 rounded-lg px-2 fz-caption font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-60" />
-                    </div>
-                  </div>
-                  <button onClick={handleCreateYear} disabled={isCreatingYear || !newStart || !newEnd}
-                    className="w-full h-8 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-400 text-white font-black rounded-lg fz-caption shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:cursor-not-allowed">
-                    {isCreatingYear
-                      ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /><span className="uppercase tracking-wider">Creating...</span></>
-                      : <><Plus size={12} /><span className="uppercase tracking-wider">Create Financial Year</span></>}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div className="flex gap-2">
-              <button onClick={closeWindow} disabled={isLoading}
-                className="tefc-cancel-btn flex-1 h-8 bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-black rounded-lg fz-caption transition-all">
-                Cancel
-              </button>
-              <button onClick={handleSubmit}
-                disabled={!selectedCode || isLoading || isLoadingYears}
-                className="flex-[2] h-8 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-400 text-white font-black rounded-lg fz-caption shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:cursor-not-allowed group">
-                {isLoading
-                  ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /><span className="uppercase tracking-wider">Processing...</span></>
-                  : <><span className="uppercase tracking-wider">Initiate Transfer</span><ChevronRight size={11} className="group-hover:translate-x-0.5 transition-transform" /></>}
-              </button>
-            </div>
-
-          </div>
+            </section>
+          )}
         </div>
-
-        {/* ── Footer ── */}
-        <div className="tefc-footer bg-white border-t border-slate-100 px-3 py-1 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-1">
-            <Building2 size={9} className="text-slate-400" />
-            <span className="tefc-footer-text fz-caption font-bold text-slate-400 uppercase tracking-tight" style={{ fontSize: '9px' }}>Financial Year Management</span>
-          </div>
-          <span className="tefc-footer-text fz-caption font-bold text-slate-300 uppercase tracking-tight" style={{ fontSize: '9px' }}>Ledger Transit System</span>
-        </div>
-
       </div>
-    </ConfigProvider>
+
+      <div className="aw-footer">
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> Financial Year Management</span>
+        <span>Ledger Transit System</span>
+      </div>
+    </div>
   );
 };
 

@@ -20,7 +20,7 @@ HeadOpeningBalance/
 - **Modern Design**: Clean, professional styling with gradients and shadows
 - **Responsive**: Works on desktop, tablet, and mobile devices
 - **Build Tree Button**: Green gradient button with tree icon
-- **Trust Nagpur Header**: Purple gradient company header section
+- **Company Header**: company header section
 - **Data Grid**: 4-column table structure matching screenshot
 - **Empty State**: Shows helpful message when no data is configured
 
@@ -46,7 +46,7 @@ The component maintains the exact same structure as the original:
 
 1. **Title Bar**: "HEAD OPENING BALANCE"
 2. **Build Tree Button**: Green gradient button with tree icon
-3. **Trust Nagpur Section**: Purple gradient company header
+3. **Company Section**: company header
 4. **Data Grid**: 4-column table with headers:
    - Column 1: "0"
    - Column 2: "Opening"

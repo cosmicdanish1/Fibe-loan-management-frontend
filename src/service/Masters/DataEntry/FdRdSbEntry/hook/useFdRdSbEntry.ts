@@ -62,7 +62,7 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
         amount: a.amount?.toString() || '0',
         label: `${a.accountNo} — ${a.certNo || ''} (₹${parseFloat(a.amount || 0).toLocaleString()})`
       }));
-      setFormData(prev => ({ ...prev, accounts, accountNo: accounts.length === 1 ? accounts[0].accountNo : '' }));
+      setFormData(prev => ({ ...prev, accounts, accountNo: accounts.length === 1 ? (accounts[0]?.accountNo ?? '') : '' }));
     } catch (err) {
       console.error('[FdRdSbEntry] Failed to load accounts:', err);
     }

@@ -39,8 +39,7 @@ interface HeadMaster {
 
 const JottingReport: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
   const [selectedHead, setSelectedHead] = useState<string>('');
   const [selectedWing, setSelectedWing] = useState<string>('');
   const [selectedOffice, setSelectedOffice] = useState<string>('');

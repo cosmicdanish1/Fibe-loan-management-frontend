@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Progress, Alert, Button, Tabs, Table, Tag, Badge, Timeline, Tooltip, Switch, InputNumber, Form } from 'antd';
+import { Card, Row, Col, Statistic, Progress, Alert, Button, Tabs, Tag, Badge, Timeline, Switch, InputNumber, Form } from 'antd';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { 
-  HeartOutlined, 
   AlertOutlined, 
   ThunderboltOutlined, 
   DatabaseOutlined,
   ApiOutlined,
   CloudServerOutlined,
-  SettingOutlined,
-  BellOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   CloseCircleOutlined,
@@ -23,7 +20,7 @@ const { TabPane } = Tabs;
 const SystemMonitoringDashboard: React.FC = () => {
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [performanceProfiles, setPerformanceProfiles] = useState<PerformanceProfile[]>([]);
-  const [alertHistory, setAlertHistory] = useState<Array<any>>([]);
+  const [, setAlertHistory] = useState<Array<any>>([]);
   const [config, setConfig] = useState<MonitoringConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -107,7 +104,7 @@ const SystemMonitoringDashboard: React.FC = () => {
   }
 
   // Prepare performance chart data
-  const performanceChartData = performanceProfiles.slice(0, 20).reverse().map((profile, index) => ({
+  const performanceChartData = performanceProfiles.slice(0, 20).reverse().map((profile) => ({
     time: new Date(profile.timestamp).toLocaleTimeString(),
     duration: profile.duration,
     memory: (profile.memoryAfter - profile.memoryBefore) / 1024 / 1024, // MB

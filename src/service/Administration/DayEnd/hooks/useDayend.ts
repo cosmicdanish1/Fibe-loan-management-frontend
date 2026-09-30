@@ -1,7 +1,7 @@
 // hooks/useDayend.ts
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { DayendData, UseDayendReturn } from '../interface/dayend';
-import { API_BASE_URL, getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
 
 // Helper function to get current date in YYYY-MM-DD format
 const getCurrentDate = (): string => {

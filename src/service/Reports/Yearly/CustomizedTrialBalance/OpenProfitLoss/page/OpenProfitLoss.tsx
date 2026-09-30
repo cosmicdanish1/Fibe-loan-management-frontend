@@ -60,8 +60,7 @@ const OpenProfitLoss: React.FC = () => {
   const [societyInfo, setSocietyInfo] = useState<{ name: string; address: string } | null>(null);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   useEffect(() => {
     fetchSchedules();

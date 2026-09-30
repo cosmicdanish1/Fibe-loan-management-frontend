@@ -26,20 +26,22 @@ const MainLayout: React.FC = () => {
         // runs in every window, so tool windows get it too rather than the
         // dashboard alone.
         <div
-            className="relative flex flex-col min-h-screen font-sans overflow-hidden"
+            className="relative flex flex-col h-screen font-sans overflow-hidden"
             style={{ background: 'transparent' }}
         >
             {/* Top Navigation Bar + Sub Navigation Bar — pinned together so
                 neither scrolls out of view when the page content underneath
-                scrolls (a page's own layout shouldn't be able to carry the
-                toolbar away with it). */}
+                scrolls. The layout is exactly one window tall (h-screen) and
+                only the content area below scrolls; with min-h-screen the whole
+                page grew past the window and overflow-hidden here disabled
+                sticky, so the bars scrolled away with it. */}
             <div className="sticky top-0 z-40 shrink-0">
                 {showNavbar && <Navbar />}
                 <SubNavbar />
             </div>
 
             {/* Main Content Area - Render Outlet for child routes */}
-            <div className="flex-grow flex flex-col overflow-auto">
+            <div className="flex-1 min-h-0 flex flex-col overflow-auto">
                 <Outlet />
             </div>
 

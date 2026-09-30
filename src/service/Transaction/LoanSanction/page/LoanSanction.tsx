@@ -7,14 +7,7 @@ import LoanSanctionForm from '../components/LoanSanctionForm';
 const LoanSanction: React.FC = () => {
   const props = useLoanSanction();
 
-  return (
-    <div className="loan-sanction-page h-screen bg-slate-50 overflow-hidden">
-      <LoanSanctionForm {...props} />
-      <style>{`
-        html.dark .loan-sanction-page { background-color: #000000 !important; }
-      `}</style>
-    </div>
-  );
+  return <LoanSanctionForm {...props} />;
 };
 
 export default LoanSanction;

@@ -85,8 +85,7 @@ const printReportText = (text: string) => {
 
 const LienAccountInformation: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const [outputType, setOutputType] = useState<'screen' | 'printer'>('screen');
   const [loading, setLoading]       = useState(false);

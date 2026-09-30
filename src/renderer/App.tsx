@@ -10,9 +10,7 @@ import { LicenseProvider } from '../components/license/LicenseContext';
 import LicenseGate from '../components/license/LicenseGate';
 import LicenseWarningBanner from '../components/license/LicenseWarningBanner';
 import ServerSetup from '../pages/setup/ServerSetup';
-import { applyAppFont, FONT_STORAGE_KEY, FONT_SYNC_CHANNEL } from '../config/fontOptions';
 
-const FloatingChatBot = lazy(() => import('../components/chat/FloatingChatBot'));
 
 // Lazy load pages
 const LoginPage = lazy(() => import('../pages/LoginPage'));
@@ -101,7 +99,6 @@ const CashBookReceiptwiseRough = lazy(() => import('../service/Reports/Daily/Cas
 const CashBook = lazy(() => import('../service/Reports/Daily/CashBook/page/CashBook'));
 const CashBook2 = lazy(() => import('../service/Reports/Daily/CashBook2/page/CashBook2'));
 const DayBook = lazy(() => import('../service/Reports/Daily/DayBook/page/DayBook'));
-const DayBookSB = lazy(() => import('../service/Reports/Daily/DayBookSB/page/DayBookSB'));
 const ConsolidationOfDailyAccount = lazy(() => import('../service/Reports/Daily/ConsolidationOfDailyAccount/page/ConsolidationOfDailyAccount'));
 
 // Lazy load monthly report components
@@ -149,6 +146,7 @@ const RecurringDetails = lazy(() => import('../service/Reports/AccountReports/Re
 const RecoveryDetails = lazy(() => import('../service/Reports/AccountReports/RecoveryDetails/page/RecoveryDetails'));
 const LoanContributionsRegister = lazy(() => import('../service/Reports/AccountReports/LoanContributionsRegister/page/LoanContributionsRegister'));
 const LienAccountInformation = lazy(() => import('../service/Reports/AccountReports/LienAccountInformation/page/LienAccountInformation'));
+const ReportPro = lazy(() => import('../service/Reports/ReportPro/page/ReportPro'));
 
 // Lazy load Utility components
 const PrematureInformationSB = lazy(() => import('../service/Utility/PrematureInformation/SB/page/PrematureInformationSB'));
@@ -215,35 +213,7 @@ const App: React.FC = () => {
     return isMainWindow && !sessionStorage.getItem('fibe_splash_shown');
   });
 
-  // Apply saved font size on load, then keep in sync with Settings window
-  useEffect(() => {
-    const saved = localStorage.getItem('lms-font-size');
-    if (saved) document.documentElement.style.setProperty('--fz-base', saved);
-
-    const bc = new BroadcastChannel('lms_font_size');
-    bc.onmessage = (e) => {
-      if (e.data?.fontBase) {
-        document.documentElement.style.setProperty('--fz-base', e.data.fontBase);
-        localStorage.setItem('lms-font-size', e.data.fontBase);
-      }
-    };
-    return () => bc.close();
-  }, []);
-
-  // Apply saved font style on load, then keep in sync with Settings window
-  useEffect(() => {
-    const saved = localStorage.getItem(FONT_STORAGE_KEY);
-    if (saved) applyAppFont(saved);
-
-    const bc = new BroadcastChannel(FONT_SYNC_CHANNEL);
-    bc.onmessage = (e) => {
-      if (e.data?.fontFamily) {
-        applyAppFont(e.data.fontFamily);
-        localStorage.setItem(FONT_STORAGE_KEY, e.data.fontFamily);
-      }
-    };
-    return () => bc.close();
-  }, []);
+  // Text size and font style now come from the shared theme state (ThemeProvider).
 
   // Apply saved bold text mode on load, then keep in sync with Settings window
   useEffect(() => {
@@ -373,6 +343,7 @@ const App: React.FC = () => {
                   <Route path="/reports/deposit-due-date-register" element={<DepositDueDateRegister />} />
 
                   {/* Reports - Account Reports */}
+                  <Route path="/reports/report-pro" element={<ReportPro />} />
                   <Route path="/reports/account-reports/account-closing-register" element={<AccountClosingRegister />} />
                   <Route path="/reports/account-reports/share-certificate" element={<ShareCertificate />} />
                   <Route path="/reports/account-reports/recurring-details" element={<RecurringDetails />} />
@@ -388,7 +359,8 @@ const App: React.FC = () => {
                   <Route path="/reports/daily/cash-book" element={<CashBook2 />} />
                   <Route path="/reports/daily/cash-book-old" element={<CashBook />} />
                   <Route path="/reports/daily/day-book" element={<DayBook />} />
-                  <Route path="/reports/daily/day-book-sb" element={<DayBookSB />} />
+                  <Route path="/reports/daily/day-book-cd" element={<DayBook filterType="cd" />} />
+                  <Route path="/reports/daily/day-book-sb" element={<DayBook filterType="cd" />} />
                   <Route path="/reports/daily/consolidation" element={<ConsolidationOfDailyAccount />} />
 
                   {/* Reports - Monthly */}

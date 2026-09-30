@@ -1,22 +1,12 @@
 // components/FdRdSbEntryForm.tsx
 
-import React, { useEffect, useRef } from 'react';
-import { ConfigProvider, Input, Select, DatePicker } from 'antd';
-import {
-    Database, Save, RotateCcw, X, ShieldCheck, Building2,
-    Users, ArrowDownCircle, ArrowUpCircle, Hash, Search,
-    Calendar, IndianRupee,
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useEffect } from 'react';
+import { Select, DatePicker } from 'antd';
+import { Database, Save, RotateCcw, X, Users, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import dayjs from 'dayjs';
 import { FdRdSbEntryHookReturn } from '../interface/FdRdSbEntryInterfaces';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
-
-const { Option } = Select;
-const { TextArea } = Input;
-
-const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
+import MemberField from '@/components/shared/kit/MemberField';
 
 const ENTRY_TYPES = [
     { id: 'RD', label: 'Monthly Deposit (MD)',    accType: 'MD', code: 'L1002' },
@@ -32,13 +22,6 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
     handleExit,
     isLoading,
 }) => {
-    const lastSpaceRef = useRef<number>(0);
-
-    const openMemberLookup = () => {
-        const eAPI = (window as any).electronAPI;
-        if (eAPI?.openNewWindow) eAPI.openNewWindow('/common/member-lookup');
-    };
-
     useEffect(() => {
         // BUG FIX 19 (same as SavingAccountForm.tsx): window.electron.ipcRenderer.on strips the
         // raw Electron event before calling back — func(data), not func(event, data) — so the
@@ -57,17 +40,14 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
         }
     }, [handleMemberSelect]);
 
-    const handleMemberKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'F2') { e.preventDefault(); openMemberLookup(); return; }
-        if (e.key === 'Enter' && formData.memberNo) { handleMemberSelect(formData.memberNo); return; }
-        if (e.key === ' ') {
-            const now = Date.now();
-            if (now - lastSpaceRef.current < 500) { e.preventDefault(); openMemberLookup(); return; }
-            lastSpaceRef.current = now;
-        }
+    const onMemberPicked = (member: any) => {
+        const no = String(member.memberNo || member.mbno || '');
+        const name = member.memberName || member.fullname || '';
+        if (no) handleMemberSelect(no, { memberNo: no, memberName: name });
     };
 
-    const activeType = ENTRY_TYPES.find(t => t.id === formData.entryType) || ENTRY_TYPES[0];
+    const activeType = ENTRY_TYPES.find(t => t.id === formData.entryType) || ENTRY_TYPES[0]!;
+    const typeIndex = Math.max(0, ENTRY_TYPES.findIndex(t => t.id === formData.entryType));
 
     usePageToolbarActions({
         onSave: handleSave,
@@ -76,264 +56,123 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
     });
 
     return (
-        <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="fdrdsb-form h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+        <div className="app-window">
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">FD / RD / SB Entry</h1>
+                    <p className="aw-desc">Writes to ledger{formData.memberName ? ` · ${formData.memberName}` : ''}</p>
+                </div>
+                <div className="aw-actions">
+                    <div className="aw-seg" role="tablist" style={{ ['--seg-index' as any]: typeIndex, ['--seg-count' as any]: ENTRY_TYPES.length }}>
+                        {ENTRY_TYPES.map(tab => (
+                            <button key={tab.id} type="button" role="tab" aria-selected={formData.entryType === tab.id} onClick={() => updateField('entryType', tab.id)}>
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                    <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Clear</button>
+                    <button type="button" onClick={handleSave} disabled={isLoading} className="aw-btn aw-btn-primary">
+                        {isLoading ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />}
+                        {isLoading ? 'Saving…' : 'Save'}
+                    </button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
+                </div>
+            </div>
 
-                {/* Header */}
-                <div className="fdrdsb-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                            <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
-                                <Database size={13} className="text-white" />
+            <div className="aw-content">
+                <div className="aw-stack" style={{ maxWidth: 860 }}>
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><Users size={14} /></span>
+                            <h2 className="aw-card-title">Member</h2>
+                            {formData.memberName && <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-accent)' }}>{formData.memberName}</span>}
+                        </div>
+                        <div style={{ maxWidth: 420 }}>
+                            <span className="aw-label">Member No.</span>
+                            <MemberField
+                                value={formData.memberNo}
+                                onChange={v => { updateField('memberNo', v); updateField('memberName', ''); }}
+                                onSelect={onMemberPicked}
+                                onSubmit={v => { if (v) handleMemberSelect(v); }}
+                                placeholder="Click or press F2 to search…"
+                                shortcuts
+                                openOnClick
+                            />
+                        </div>
+                    </section>
+
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><Database size={14} /></span>
+                            <h2 className="aw-card-title">Transaction Details</h2>
+                            <span className="aw-pill tone-info" style={{ marginLeft: 'auto' }}>{activeType.accType} / {activeType.code}</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 'var(--aw-gap)' }}>
+                            <div>
+                                <label className="aw-label" htmlFor="fd-date">Transaction Date</label>
+                                <DatePicker id="fd-date" value={formData.transDate ? dayjs(formData.transDate) : null}
+                                    onChange={d => updateField('transDate', d ? d.format('YYYY-MM-DD') : '')}
+                                    format="DD-MMM-YY" className="aw-picker" popupClassName="aw-select-popup" />
                             </div>
                             <div>
-                                <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">FD / RD / SB Entry</h1>
-                                <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
-                                    <ShieldCheck size={7} className="text-indigo-400" /> Writes to ledger
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Entry type tabs */}
-                        <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/10 gap-0.5">
-                            {ENTRY_TYPES.map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => updateField('entryType', tab.id)}
-                                    className={`relative px-2.5 h-6 fz-mini font-black uppercase tracking-wide transition-all rounded-md ${
-                                        formData.entryType === tab.id
-                                            ? 'bg-indigo-600 text-white shadow-lg'
-                                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                                    }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                        <button onClick={handleClear} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
-                            <RotateCcw size={11} /> Clear
-                        </button>
-                        <button onClick={handleSave} disabled={isLoading}
-                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                            {isLoading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
-                            {isLoading ? 'Saving…' : 'Save'}
-                        </button>
-                        <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
-                            <X size={11} /> Exit
-                        </button>
-                    </div>
-                </div>
-
-                {/* Body */}
-                <div className="flex-1 overflow-auto">
-                    <div className="max-w-3xl mx-auto p-3 pb-4 space-y-2">
-
-                        {/* ── Member ── */}
-                        <div className="fdrdsb-card bg-white rounded-xl border border-slate-200 shadow-sm">
-                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                                <Users size={11} className="text-slate-400" />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member</span>
-                                {formData.memberName && (
-                                    <span className="ml-auto fz-tiny font-black text-indigo-600">{formData.memberName}</span>
-                                )}
-                            </div>
-                            <div className="p-3">
-                                <label className={labelCls}>Member No.</label>
-                                <div className="flex gap-1">
-                                    <div className="relative flex-1">
-                                        <Hash size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <Input
-                                            value={formData.memberNo}
-                                            onChange={e => {
-                                                updateField('memberNo', e.target.value);
-                                                updateField('memberName', '');
-                                            }}
-                                            onKeyDown={handleMemberKeyDown}
-                                            onClick={openMemberLookup}
-                                            placeholder="Click or press F2 to search…"
-                                            className={`${inputCls} pl-6`}
-                                        />
-                                    </div>
-                                    <button onClick={openMemberLookup}
-                                        className="h-7 w-7 bg-slate-100 hover:bg-indigo-600 hover:text-white rounded text-slate-500 flex items-center justify-center transition-colors shrink-0">
-                                        <Search size={12} />
+                                <span className="aw-label">Transaction Type</span>
+                                <div className="aw-seg" role="tablist" style={{ ['--seg-index' as any]: formData.transType === 'DR' ? 1 : 0, ['--seg-count' as any]: 2 }}>
+                                    <button type="button" role="tab" aria-selected={formData.transType === 'CR'} onClick={() => updateField('transType', 'CR')}>
+                                        <ArrowDownCircle size={13} /> CR
+                                    </button>
+                                    <button type="button" role="tab" aria-selected={formData.transType === 'DR'} onClick={() => updateField('transType', 'DR')}>
+                                        <ArrowUpCircle size={13} /> DR
                                     </button>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* ── Transaction Details ── */}
-                        <div className="fdrdsb-card bg-white rounded-xl border border-slate-200 shadow-sm">
-                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                                <Database size={11} className="text-slate-400" />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Transaction Details</span>
-                                <span className="ml-auto fz-mini font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                                    {activeType.accType} / {activeType.code}
-                                </span>
+                            <div>
+                                <label className="aw-label" htmlFor="fd-amount">Amount</label>
+                                <input id="fd-amount" type="number" value={formData.amount} onChange={e => updateField('amount', e.target.value)}
+                                    placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
                             </div>
-                            <div className="p-3 grid grid-cols-3 gap-x-4 gap-y-2">
-
-                                <div>
-                                    <label className={labelCls}>Transaction Date</label>
-                                    <DatePicker
-                                        value={formData.transDate ? dayjs(formData.transDate) : null}
-                                        onChange={d => updateField('transDate', d ? d.format('YYYY-MM-DD') : '')}
-                                        format="DD-MMM-YY"
-                                        className="w-full h-7 fz-caption"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className={labelCls}>Transaction Type</label>
-                                    <div className="flex gap-1">
-                                        <button onClick={() => updateField('transType', 'CR')}
-                                            className={`flex-1 h-7 rounded-lg fz-tiny font-black flex items-center justify-center gap-1 transition-all border ${
-                                                formData.transType === 'CR'
-                                                    ? 'bg-emerald-600 text-white border-emerald-500'
-                                                    : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
-                                            }`}>
-                                            <ArrowDownCircle size={11} /> CR
-                                        </button>
-                                        <button onClick={() => updateField('transType', 'DR')}
-                                            className={`flex-1 h-7 rounded-lg fz-tiny font-black flex items-center justify-center gap-1 transition-all border ${
-                                                formData.transType === 'DR'
-                                                    ? 'bg-rose-600 text-white border-rose-500'
-                                                    : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
-                                            }`}>
-                                            <ArrowUpCircle size={11} /> DR
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className={labelCls}>Amount</label>
-                                    <div className="relative">
-                                        <IndianRupee size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <Input type="number" value={formData.amount}
-                                            onChange={e => updateField('amount', e.target.value)}
-                                            placeholder="0.00"
-                                            className={`${inputCls} pl-6 text-right font-bold text-slate-700`} />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className={labelCls}>Receipt / Voucher No</label>
-                                    <Input value={formData.receiptVchrNo}
-                                        onChange={e => updateField('receiptVchrNo', e.target.value)}
-                                        placeholder="R001"
-                                        className={inputCls} />
-                                </div>
-
-                                <div>
-                                    <label className={labelCls}>Voucher Type</label>
-                                    <Select value={formData.vchrType} onChange={v => updateField('vchrType', v)}
-                                        className="w-full" style={{ height: 28 }}>
-                                        <Option value="R">Receipt (R)</Option>
-                                        <Option value="P">Payment (P)</Option>
-                                        <Option value="J">Journal (J)</Option>
-                                        <Option value="C">Contra (C)</Option>
-                                    </Select>
-                                </div>
-
-                                <div>
-                                    <label className={labelCls}>Mode of Payment</label>
-                                    <Select value={formData.modeOfPay} onChange={v => updateField('modeOfPay', v)}
-                                        className="w-full" style={{ height: 28 }}>
-                                        <Option value="C">Cash</Option>
-                                        <Option value="Q">Cheque</Option>
-                                        <Option value="T">Transfer</Option>
-                                        <Option value="O">Online</Option>
-                                    </Select>
-                                </div>
-
+                            <div>
+                                <label className="aw-label" htmlFor="fd-receipt">Receipt / Voucher No</label>
+                                <input id="fd-receipt" value={formData.receiptVchrNo} onChange={e => updateField('receiptVchrNo', e.target.value)}
+                                    placeholder="R001" className="aw-input" />
                             </div>
-
-                            <div className="px-3 pb-3">
-                                <label className={labelCls}>Narration</label>
-                                <TextArea value={formData.narration}
-                                    onChange={e => updateField('narration', e.target.value)}
-                                    placeholder="Enter narration / remarks…"
-                                    rows={2}
-                                    className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
+                            <div>
+                                <label className="aw-label" htmlFor="fd-vtype">Voucher Type</label>
+                                <Select id="fd-vtype" value={formData.vchrType} onChange={v => updateField('vchrType', v)}
+                                    className="aw-select" popupClassName="aw-select-popup"
+                                    options={[
+                                        { value: 'R', label: 'Receipt (R)' },
+                                        { value: 'P', label: 'Payment (P)' },
+                                        { value: 'J', label: 'Journal (J)' },
+                                        { value: 'C', label: 'Contra (C)' },
+                                    ]} />
+                            </div>
+                            <div>
+                                <label className="aw-label" htmlFor="fd-mode">Mode of Payment</label>
+                                <Select id="fd-mode" value={formData.modeOfPay} onChange={v => updateField('modeOfPay', v)}
+                                    className="aw-select" popupClassName="aw-select-popup"
+                                    options={[
+                                        { value: 'C', label: 'Cash' },
+                                        { value: 'Q', label: 'Cheque' },
+                                        { value: 'T', label: 'Transfer' },
+                                        { value: 'O', label: 'Online' },
+                                    ]} />
                             </div>
                         </div>
-
-                    </div>
+                        <div>
+                            <label className="aw-label" htmlFor="fd-narr">Narration</label>
+                            <textarea id="fd-narr" value={formData.narration} onChange={e => updateField('narration', e.target.value)}
+                                placeholder="Enter narration / remarks…" rows={2}
+                                className="aw-input" style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
+                        </div>
+                    </section>
                 </div>
-
-                {/* Footer */}
-                <div className="fdrdsb-footer px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-1.5">
-                        <Building2 size={9} className="text-slate-400" />
-                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">{activeType.label}</span>
-                        {formData.memberName && (
-                            <>
-                                <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="fz-mini font-black text-indigo-500">{formData.memberName}</span>
-                            </>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1 text-indigo-500">
-                        <Calendar size={9} />
-                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
-                    </div>
-                </div>
-
             </div>
 
-            <style>{`
-                .ant-select-selector { font-size: 11px !important; }
-                .ant-picker-input > input { font-size: 11px !important; font-weight: 600 !important; }
-                .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
-                input[type=number]::-webkit-inner-spin-button,
-                input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-                input[type=number] { -moz-appearance: textfield; }
-
-                /* ── FD/RD/SB Entry — dark mode ── */
-                html.dark .fdrdsb-form { background-color: #000000 !important; color: #f5f5f7 !important; }
-                html.dark .fdrdsb-header { background-image: none !important; background-color: #0c0c0e !important; }
-                html.dark .fdrdsb-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .fdrdsb-card .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
-                html.dark .fdrdsb-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-
-                html.dark .fdrdsb-form label { color: #8e8e93 !important; }
-                html.dark .fdrdsb-form .text-slate-500 { color: #8e8e93 !important; }
-                html.dark .fdrdsb-form .text-slate-400 { color: #71717a !important; }
-                html.dark .fdrdsb-form .text-slate-700 { color: #f5f5f7 !important; }
-                html.dark .fdrdsb-form .text-slate-900 { color: #f5f5f7 !important; }
-
-                html.dark .fdrdsb-form .ant-input,
-                html.dark .fdrdsb-form .ant-select-selector,
-                html.dark .fdrdsb-form .ant-picker,
-                html.dark .fdrdsb-form textarea {
-                    background-color: rgba(255,255,255,.05) !important;
-                    color: #f5f5f7 !important;
-                    border-color: rgba(255,255,255,.08) !important;
-                }
-                html.dark .fdrdsb-form .ant-input::placeholder { color: #71717a !important; }
-                html.dark .fdrdsb-form .ant-picker-input > input { color: #f5f5f7 !important; }
-                html.dark .fdrdsb-form .ant-picker svg { fill: #8e8e93 !important; }
-                html.dark .fdrdsb-form .ant-select-selection-item { color: #f5f5f7 !important; }
-                html.dark .fdrdsb-form .ant-select-arrow { color: #8e8e93 !important; }
-
-                html.dark .fdrdsb-form .bg-slate-50 { background-color: rgba(255,255,255,.03) !important; }
-                html.dark .fdrdsb-form .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
-                html.dark .fdrdsb-form .border-slate-200,
-                html.dark .fdrdsb-form .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
-                html.dark .fdrdsb-form .bg-white:not(.fdrdsb-card):not(.fdrdsb-footer) { background-color: rgba(255,255,255,.05) !important; }
-
-                /* Transaction type inactive buttons */
-                html.dark .fdrdsb-form button.bg-white { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
-
-                html.dark .fdrdsb-form .bg-indigo-50 { background-color: rgba(99,102,241,.15) !important; }
-                html.dark .fdrdsb-form .border-indigo-100 { border-color: rgba(99,102,241,.3) !important; }
-                html.dark .fdrdsb-form .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
-            `}</style>
-        </ConfigProvider>
+            <div className="aw-footer">
+                <span>{activeType.label}{formData.memberName && <> · <strong style={{ color: 'var(--aw-accent)' }}>{formData.memberName}</strong></>}</span>
+                <span>{dayjs().format('DD-MMM-YY')}</span>
+            </div>
+        </div>
     );
 };
 

@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Select, Checkbox, message, Modal, List, Tag, theme as antdTheme } from 'antd';
-import { Book, Building2, FileText, Save, Search, Layers, Layout, Hash, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Select, message } from 'antd';
+import { Building2, FileText, Save, Search, Layers, Layout, Hash, ChevronRight } from 'lucide-react';
+import AwDialog from '@/components/shared/kit/AwDialog';
 import apiService from '../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
-
-const { Option } = Select;
 
 interface BankPassbookSettings { formatName: string; accountType: string; }
 interface PageSettings { bankFormat: string; totalPages: string; linesPerPage: string; lineStartNumber: string; incrementLevel: string; }
@@ -47,9 +45,6 @@ const DEFAULT_PARAMS: PassbookParameters = {
     ],
   },
 };
-
-const inputCls = 'w-full h-10 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors';
-const numCls  = `${inputCls} text-center`;
 
 const PassbookParameterSetting: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'bank' | 'page' | 'detail' | 'first'>('bank');
@@ -167,274 +162,224 @@ const PassbookParameterSetting: React.FC = () => {
     saveEnabled: !loading,
   });
 
+  const ACCOUNT_OPTIONS = ['Saving Bank - SE', 'Current Account', 'Recurring Deposit'].map(v => ({ value: v, label: v }));
+
+  const patchDetail = (idx: number, patch: Partial<DetailField>) =>
+    setParams(prev => ({
+      ...prev,
+      detailPageSetting: { ...prev.detailPageSetting, fields: prev.detailPageSetting.fields.map((f, i) => (i === idx ? { ...f, ...patch } : f)) },
+    }));
+
+  const patchFirst = (idx: number, patch: Partial<FirstPageField>) =>
+    setParams(prev => ({
+      ...prev,
+      firstPageSetting: { ...prev.firstPageSetting, fields: prev.firstPageSetting.fields.map((f, i) => (i === idx ? { ...f, ...patch } : f)) },
+    }));
+
+  const checkbox = (checked: boolean, label: string, onChange: (v: boolean) => void) => (
+    <input type="checkbox" aria-label={label} checked={checked} onChange={e => onChange(e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
+  );
+
   return (
-    <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 8, colorBgContainer: '#1e293b', colorBorder: '#334155' } }}>
-      <div className="pbps-app h-screen flex flex-col overflow-hidden bg-[#0f172a] text-slate-100 font-sans">
-
-        {/* Header */}
-        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="pbps-header px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700 bg-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/30"><Book size={18} className="text-white" /></div>
-            <div>
-              <h1 className="text-sm font-black text-white uppercase">Passbook Parameter Setting</h1>
-              <p className="fz-small text-slate-400 mt-0.5">Configure passbook layout, page settings and field positions</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={handleFind} disabled={loading}
-              className="h-9 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50">
-              <Search size={13} /> Find
-            </button>
-            <button onClick={handleSave} disabled={loading}
-              className="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50">
-              <Save size={13} /> {loading ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Tab Navigation */}
-        <div className="pbps-tabs flex gap-0 px-4 shrink-0 border-b border-slate-700 bg-slate-800 overflow-x-auto">
-          {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-              className={`px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all relative whitespace-nowrap flex items-center gap-2
-                ${activeTab === tab.id ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}>
-              {tab.icon} {tab.label}
-              {activeTab === tab.id && (
-                <motion.div layoutId="pb-tab-indicator"
-                  className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-t-full" />
-              )}
-            </button>
-          ))}
+    <div className="app-window">
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Passbook Parameter Setting</h1>
+          <p className="aw-desc">Configure passbook layout, page settings and field positions</p>
         </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}
-              className="h-full overflow-auto p-5">
-              <div className="max-w-3xl mx-auto">
-
-                {/* Identity Tab */}
-                {activeTab === 'bank' && (
-                  <div className="pbps-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-700 flex items-center gap-3">
-                      <div className="bg-indigo-500/20 p-2 rounded-lg text-indigo-400"><Building2 size={16} /></div>
-                      <div>
-                        <h2 className="text-sm font-black text-white">Identity</h2>
-                        <p className="text-xs text-slate-400">Template name and account type</p>
-                      </div>
-                    </div>
-                    <div className="p-6 space-y-5">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Format Name</label>
-                        <div className="relative">
-                          <FileText size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                          <input value={params.bankPassbookSettings.formatName}
-                            onChange={e => setBankField('formatName', e.target.value)}
-                            placeholder="IDENT_V1"
-                            className="w-full h-10 bg-slate-700 border border-slate-600 text-white rounded-lg pl-9 pr-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Type</label>
-                        <Select value={params.bankPassbookSettings.accountType}
-                          onChange={v => setBankField('accountType', v)} className="w-full" style={{ height: 40 }}>
-                          <Option value="Saving Bank - SE">Saving Bank - SE</Option>
-                          <Option value="Current Account">Current Account</Option>
-                          <Option value="Recurring Deposit">Recurring Deposit</Option>
-                        </Select>
-                      </div>
-                      <div className="flex items-center gap-3 pt-3 border-t border-slate-700">
-                        <Checkbox checked={params.isDefault}
-                          onChange={e => setParams(prev => ({ ...prev, isDefault: e.target.checked }))} />
-                        <span className="text-sm text-slate-300 font-semibold">Set as system default template</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Page Layout Tab */}
-                {activeTab === 'page' && (
-                  <div className="pbps-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-700 flex items-center gap-3">
-                      <div className="bg-amber-500/20 p-2 rounded-lg text-amber-400"><Layers size={16} /></div>
-                      <div>
-                        <h2 className="text-sm font-black text-white">Page Layout</h2>
-                        <p className="text-xs text-slate-400">Page dimensions and line configuration</p>
-                      </div>
-                    </div>
-                    <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {PAGE_FIELDS.map(item => (
-                        <div key={item.field} className="space-y-2">
-                          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.label}</label>
-                          <div className="relative">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">{item.icon}</div>
-                            <input value={(params.pageSettings as any)[item.field]}
-                              onChange={e => setPageField(item.field, e.target.value)}
-                              className="w-full h-10 bg-slate-700 border border-slate-600 text-white rounded-lg pl-9 pr-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Transactions Tab */}
-                {activeTab === 'detail' && (
-                  <div className="pbps-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
-                    <div className="px-5 py-3.5 border-b border-indigo-700/50 bg-indigo-600/20 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Layout size={15} className="text-indigo-400" />
-                        <h2 className="text-xs font-black text-white uppercase tracking-wider">Transaction Columns</h2>
-                      </div>
-                      <input value={params.detailPageSetting.bankFormat}
-                        onChange={e => setParams(prev => ({ ...prev, detailPageSetting: { ...prev.detailPageSetting, bankFormat: e.target.value } }))}
-                        placeholder="Map key…"
-                        className="h-7 w-36 bg-white/10 border border-white/20 text-xs text-white rounded px-3 focus:outline-none placeholder:text-white/30" />
-                    </div>
-                    <div className="overflow-auto">
-                      <table className="w-full text-xs">
-                        <thead><tr className="border-b border-slate-700 bg-slate-900/60">
-                          <th className="text-left px-4 py-2.5 text-slate-400 font-bold uppercase tracking-wider">Column Name</th>
-                          <th className="text-center px-3 py-2.5 text-slate-400 font-bold uppercase tracking-wider w-16">Row</th>
-                          <th className="text-center px-3 py-2.5 text-slate-400 font-bold uppercase tracking-wider w-16">Col</th>
-                          <th className="text-center px-3 py-2.5 text-slate-400 font-bold uppercase tracking-wider w-16">Visible</th>
-                        </tr></thead>
-                        <tbody>
-                          {params.detailPageSetting.fields.map((f, idx) => (
-                            <tr key={idx} className={`border-b border-slate-700/50 ${idx % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60'}`}>
-                              <td className="px-4 py-2"><input value={f.name} readOnly className="bg-transparent text-slate-200 font-semibold w-full" /></td>
-                              <td className="px-3 py-2"><input type="number" value={f.row} onChange={e => {
-                                const nf = [...params.detailPageSetting.fields]; nf[idx].row = parseInt(e.target.value) || 0;
-                                setParams(prev => ({ ...prev, detailPageSetting: { ...prev.detailPageSetting, fields: nf } }));
-                              }} className={numCls} /></td>
-                              <td className="px-3 py-2"><input type="number" value={f.col} onChange={e => {
-                                const nf = [...params.detailPageSetting.fields]; nf[idx].col = parseInt(e.target.value) || 0;
-                                setParams(prev => ({ ...prev, detailPageSetting: { ...prev.detailPageSetting, fields: nf } }));
-                              }} className={numCls} /></td>
-                              <td className="px-3 py-2 text-center">
-                                <Checkbox checked={f.visible} onChange={e => {
-                                  const nf = [...params.detailPageSetting.fields]; nf[idx].visible = e.target.checked;
-                                  setParams(prev => ({ ...prev, detailPageSetting: { ...prev.detailPageSetting, fields: nf } }));
-                                }} />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* First Page Tab */}
-                {activeTab === 'first' && (
-                  <div className="pbps-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
-                    <div className="px-5 py-3.5 border-b border-emerald-700/50 bg-emerald-600/20 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <FileText size={15} className="text-emerald-400" />
-                        <h2 className="text-xs font-black text-white uppercase tracking-wider">First Page Fields</h2>
-                      </div>
-                      <input value={params.firstPageSetting.formatForBank}
-                        onChange={e => setParams(prev => ({ ...prev, firstPageSetting: { ...prev.firstPageSetting, formatForBank: e.target.value } }))}
-                        placeholder="Map key…"
-                        className="h-7 w-36 bg-white/10 border border-white/20 text-xs text-white rounded px-3 focus:outline-none placeholder:text-white/30" />
-                    </div>
-                    <div className="overflow-auto">
-                      <table className="w-full text-xs">
-                        <thead><tr className="border-b border-slate-700 bg-slate-900/60">
-                          <th className="text-left px-4 py-2.5 text-slate-400 font-bold uppercase tracking-wider">Field Name</th>
-                          <th className="text-center px-3 py-2.5 text-slate-400 font-bold uppercase tracking-wider w-14">Row</th>
-                          <th className="text-center px-3 py-2.5 text-slate-400 font-bold uppercase tracking-wider w-14">Col</th>
-                          <th className="text-center px-3 py-2.5 text-slate-400 font-bold uppercase tracking-wider w-16">Label</th>
-                          <th className="text-center px-3 py-2.5 text-slate-400 font-bold uppercase tracking-wider w-16">Visible</th>
-                        </tr></thead>
-                        <tbody>
-                          {params.firstPageSetting.fields.map((f, idx) => (
-                            <tr key={idx} className={`border-b border-slate-700/50 ${idx % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60'}`}>
-                              <td className="px-4 py-2"><span className="text-slate-200 font-semibold">{f.name}</span></td>
-                              <td className="px-3 py-2"><input type="number" value={f.row} onChange={e => {
-                                const nf = [...params.firstPageSetting.fields]; nf[idx].row = parseInt(e.target.value) || 0;
-                                setParams(prev => ({ ...prev, firstPageSetting: { ...prev.firstPageSetting, fields: nf } }));
-                              }} className={numCls} /></td>
-                              <td className="px-3 py-2"><input type="number" value={f.col} onChange={e => {
-                                const nf = [...params.firstPageSetting.fields]; nf[idx].col = parseInt(e.target.value) || 0;
-                                setParams(prev => ({ ...prev, firstPageSetting: { ...prev.firstPageSetting, fields: nf } }));
-                              }} className={numCls} /></td>
-                              <td className="px-3 py-2 text-center">
-                                <Checkbox checked={f.displayNameFlag} onChange={e => {
-                                  const nf = [...params.firstPageSetting.fields]; nf[idx].displayNameFlag = e.target.checked;
-                                  setParams(prev => ({ ...prev, firstPageSetting: { ...prev.firstPageSetting, fields: nf } }));
-                                }} />
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <Checkbox checked={f.visibleFlag} onChange={e => {
-                                  const nf = [...params.firstPageSetting.fields]; nf[idx].visibleFlag = e.target.checked;
-                                  setParams(prev => ({ ...prev, firstPageSetting: { ...prev.firstPageSetting, fields: nf } }));
-                                }} />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </AnimatePresence>
+        <div className="aw-actions">
+          <button type="button" onClick={handleFind} disabled={loading} className="aw-btn aw-btn-secondary">
+            <Search size={13} /> Find
+          </button>
+          <button type="button" onClick={handleSave} disabled={loading} className="aw-btn aw-btn-primary">
+            <Save size={13} /> {loading ? 'Saving…' : 'Save'}
+          </button>
         </div>
-
-        {/* Find Modal */}
-        <Modal title="Select Passbook Template" open={showFindModal}
-          onCancel={() => setShowFindModal(false)} footer={null} width={480}>
-          <List dataSource={templates} renderItem={(t: any) => (
-            <List.Item onClick={() => { mapBackendToFrontend(t); setShowFindModal(false); }}
-              className="cursor-pointer rounded-xl mb-2 transition-all hover:bg-slate-700/50 px-4 py-3">
-              <div className="flex items-center justify-between w-full">
-                <div>
-                  <div className="text-sm font-bold text-white">{t.templateName}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">{t.accountType}</div>
-                </div>
-                {t.isDefault && <Tag color="gold" className="text-xs">Default</Tag>}
-              </div>
-            </List.Item>
-          )} />
-        </Modal>
-
-        <style>{`
-          /* ── Passbook Parameter Setting — dark mode (Settings-panel palette) ── */
-          html.dark .pbps-app { background-color: #000000 !important; color: #f5f5f7 !important; }
-          html.dark .pbps-header,
-          html.dark .pbps-tabs { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-          html.dark .pbps-header .text-slate-400 { color: #8e8e93 !important; }
-          html.dark .pbps-tabs button:not(.text-indigo-400) { color: #8e8e93 !important; }
-          html.dark .pbps-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-          /* Inputs */
-          html.dark .pbps-app input,
-          html.dark .pbps-app select,
-          html.dark .pbps-app textarea {
-            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-          }
-          html.dark .pbps-app label { color: #8e8e93 !important; }
-          html.dark .pbps-app .text-slate-400 { color: #8e8e93 !important; }
-          html.dark .pbps-app .text-slate-300 { color: #f5f5f7 !important; }
-          html.dark .pbps-app .text-slate-200 { color: #f5f5f7 !important; }
-          html.dark .pbps-app .bg-slate-700 { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .pbps-app .border-slate-600,
-          html.dark .pbps-app .border-slate-700 { border-color: rgba(255,255,255,.08) !important; }
-          html.dark .pbps-app .border-slate-700\\/50 { border-color: rgba(255,255,255,.07) !important; }
-          html.dark .pbps-app .bg-slate-800 { background-color: #1c1c1e !important; }
-          html.dark .pbps-app .bg-slate-800\\/60 { background-color: rgba(255,255,255,.03) !important; }
-          html.dark .pbps-app .bg-slate-900\\/60 { background-color: #0c0c0e !important; }
-          /* Field-position tables */
-          html.dark .pbps-card table thead tr { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.07) !important; }
-          html.dark .pbps-card table th { border-color: rgba(255,255,255,.07) !important; }
-          html.dark .pbps-card table td { border-color: rgba(255,255,255,.07) !important; }
-        `}</style>
       </div>
-    </ConfigProvider>
+
+      {/* ── Tabs ── */}
+      <div className="aw-tabs" role="tablist" style={{ overflowX: 'auto' }}>
+        {TABS.map(tab => (
+          <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id as any)} className="aw-tab">
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="aw-content">
+        <div key={activeTab} className="aw-fade-in aw-narrow" style={{ maxWidth: 820, margin: '0 auto' }}>
+
+          {/* Identity */}
+          {activeTab === 'bank' && (
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Building2 size={14} /></span>
+                <div>
+                  <h2 className="aw-card-title">Identity</h2>
+                  <p className="aw-meta">Template name and account type</p>
+                </div>
+              </div>
+              <div className="aw-stack">
+                <div>
+                  <label className="aw-label" htmlFor="pb-name">Format Name</label>
+                  <div className="aw-input-wrap has-icon">
+                    <FileText size={13} />
+                    <input id="pb-name" value={params.bankPassbookSettings.formatName} onChange={e => setBankField('formatName', e.target.value)} placeholder="IDENT_V1" className="aw-input" />
+                  </div>
+                </div>
+                <div>
+                  <label className="aw-label" htmlFor="pb-acc">Account Type</label>
+                  <Select id="pb-acc" className="aw-select" popupClassName="aw-select-popup" value={params.bankPassbookSettings.accountType} onChange={v => setBankField('accountType', v)} options={ACCOUNT_OPTIONS} />
+                </div>
+                <div className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <span className="aw-strong" style={{ fontWeight: 600 }}>Set as system default template</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={params.isDefault}
+                    aria-label="Set as system default template"
+                    onClick={() => setParams(prev => ({ ...prev, isDefault: !prev.isDefault }))}
+                    className="aw-switch"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Page layout */}
+          {activeTab === 'page' && (
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Layers size={14} /></span>
+                <div>
+                  <h2 className="aw-card-title">Page Layout</h2>
+                  <p className="aw-meta">Page dimensions and line configuration</p>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 'var(--aw-gap)' }}>
+                {PAGE_FIELDS.map(item => (
+                  <div key={item.field}>
+                    <label className="aw-label" htmlFor={`pb-${item.field}`}>{item.label}</label>
+                    <div className="aw-input-wrap has-icon">
+                      {item.icon}
+                      <input id={`pb-${item.field}`} value={(params.pageSettings as any)[item.field]} onChange={e => setPageField(item.field, e.target.value)} className="aw-input" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Transactions */}
+          {activeTab === 'detail' && (
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Layout size={14} /></span>
+                <h2 className="aw-card-title">Transaction Columns</h2>
+                <input
+                  value={params.detailPageSetting.bankFormat}
+                  onChange={e => setParams(prev => ({ ...prev, detailPageSetting: { ...prev.detailPageSetting, bankFormat: e.target.value } }))}
+                  placeholder="Map key…"
+                  aria-label="Map key"
+                  className="aw-input"
+                  style={{ marginLeft: 'auto', width: 180 }}
+                />
+              </div>
+              <div className="aw-table-wrap" style={{ maxHeight: '58vh' }}>
+                <table className="aw-table">
+                  <thead>
+                    <tr>
+                      <th>Column Name</th>
+                      <th className="is-center" style={{ width: 100 }}>Row</th>
+                      <th className="is-center" style={{ width: 100 }}>Col</th>
+                      <th className="is-center" style={{ width: 90 }}>Visible</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {params.detailPageSetting.fields.map((f, idx) => (
+                      <tr key={idx}>
+                        <td>{f.name}</td>
+                        <td className="has-input"><input type="number" aria-label={`Row ${f.name}`} value={f.row} onChange={e => patchDetail(idx, { row: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="has-input"><input type="number" aria-label={`Col ${f.name}`} value={f.col} onChange={e => patchDetail(idx, { col: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="is-center">{checkbox(f.visible, `Visible ${f.name}`, v => patchDetail(idx, { visible: v }))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* First page */}
+          {activeTab === 'first' && (
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><FileText size={14} /></span>
+                <h2 className="aw-card-title">First Page Fields</h2>
+                <input
+                  value={params.firstPageSetting.formatForBank}
+                  onChange={e => setParams(prev => ({ ...prev, firstPageSetting: { ...prev.firstPageSetting, formatForBank: e.target.value } }))}
+                  placeholder="Map key…"
+                  aria-label="Map key"
+                  className="aw-input"
+                  style={{ marginLeft: 'auto', width: 180 }}
+                />
+              </div>
+              <div className="aw-table-wrap" style={{ maxHeight: '58vh' }}>
+                <table className="aw-table">
+                  <thead>
+                    <tr>
+                      <th>Field Name</th>
+                      <th className="is-center" style={{ width: 100 }}>Row</th>
+                      <th className="is-center" style={{ width: 100 }}>Col</th>
+                      <th className="is-center" style={{ width: 80 }}>Label</th>
+                      <th className="is-center" style={{ width: 80 }}>Visible</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {params.firstPageSetting.fields.map((f, idx) => (
+                      <tr key={idx}>
+                        <td>{f.name}</td>
+                        <td className="has-input"><input type="number" aria-label={`Row ${f.name}`} value={f.row} onChange={e => patchFirst(idx, { row: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="has-input"><input type="number" aria-label={`Col ${f.name}`} value={f.col} onChange={e => patchFirst(idx, { col: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="is-center">{checkbox(f.displayNameFlag, `Label ${f.name}`, v => patchFirst(idx, { displayNameFlag: v }))}</td>
+                        <td className="is-center">{checkbox(f.visibleFlag, `Visible ${f.name}`, v => patchFirst(idx, { visibleFlag: v }))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
+
+      {/* Find dialog */}
+      <AwDialog open={showFindModal} title="Select Passbook Template" icon={<Search size={14} />} onClose={() => setShowFindModal(false)} maxWidth="30rem">
+        {templates.length === 0 ? (
+          <div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">No templates found</span></div>
+        ) : (
+          <div className="aw-stack" style={{ gap: 6 }}>
+            {templates.map((t: any, i: number) => (
+              <button
+                key={t.id ?? i}
+                type="button"
+                onClick={() => { mapBackendToFrontend(t); setShowFindModal(false); }}
+                className="aw-right-cell"
+                style={{ justifyContent: 'space-between', width: '100%', padding: '10px 12px' }}
+              >
+                <span>
+                  <span className="aw-strong" style={{ display: 'block' }}>{t.templateName}</span>
+                  <span className="aw-meta">{t.accountType}</span>
+                </span>
+                {t.isDefault && <span className="aw-pill">Default</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </AwDialog>
+    </div>
   );
 };
 

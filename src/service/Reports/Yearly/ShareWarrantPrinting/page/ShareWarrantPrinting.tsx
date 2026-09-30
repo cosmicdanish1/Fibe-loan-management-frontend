@@ -43,8 +43,7 @@ const ShareWarrantPrinting: React.FC = () => {
   const [lookupTarget, setLookupTarget] = useState<'from' | 'to'>('from');
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const handleSearch = useCallback(async (): Promise<ShareWarrantItem[]> => {
     if (!memberFrom || !memberTo) return [];

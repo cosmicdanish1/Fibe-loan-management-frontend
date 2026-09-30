@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Modal } from 'antd';
-import { Search, IndianRupee, Calendar, History, AlertTriangle } from 'lucide-react';
-import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import { IndianRupee, Calendar, History, AlertTriangle, User, ArrowDownLeft } from 'lucide-react';
+import MemberField from '../../../../components/shared/kit/MemberField';
 import { useRdWithdrawal } from '../hooks/useRdWithdrawal';
 
 const fmt = (n: number) => Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -23,7 +22,6 @@ const RdWithdrawal: React.FC = () => {
     } = useRdWithdrawal();
 
     const [lookupInput, setLookupInput] = useState('');
-    const [showLookup, setShowLookup] = useState(false);
 
     useEffect(() => { loadFinancialYear(); }, [loadFinancialYear]);
 
@@ -32,158 +30,142 @@ const RdWithdrawal: React.FC = () => {
         const name = member.memberName || member.name || '';
         setLookupInput(memberNo);
         loadMember(memberNo, name);
-        setShowLookup(false);
     };
 
     const overLimit = maxWithdrawable !== null && amount > maxWithdrawable;
 
     return (
-        <div className="flex flex-col h-full overflow-hidden" style={{ background: '#f4f5f7', color: '#1a1d29', fontSize: 13 }}>
-            <div className="flex items-center justify-between px-5 py-2.5 shrink-0" style={{ background: '#161822', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-baseline gap-2.5">
-                    <h1 className="m-0 font-semibold text-white" style={{ fontSize: 15 }}>RD Withdrawal</h1>
-                    <span style={{ fontSize: 11.5, color: '#9296a8' }}>Withdraw from a member's RD balance</span>
+        <div className="app-window">
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">RD Withdrawal</h1>
+                    <p className="aw-desc">Withdraw from a member's RD balance</p>
                 </div>
                 {yearLabel && (
-                    <div className="flex items-center gap-1.5" style={{ fontSize: 11.5, color: '#9296a8' }}>
-                        <Calendar size={12} /> {yearLabel}
-                    </div>
+                    <span className="aw-pill" style={{ gap: 6 }}><Calendar size={12} /> {yearLabel}</span>
                 )}
             </div>
 
-            <div className="flex gap-3.5 p-3.5 flex-1 overflow-auto items-start">
-                <div className="flex flex-col gap-3" style={{ width: 380, flexShrink: 0 }}>
+            <div className="aw-content">
+                <div className="aw-split aw-split-form">
+                    <div className="aw-stack">
 
-                    <div style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                        <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4, color: '#6b7280', marginBottom: 8 }}>Member</div>
-                        <div className="flex gap-1.5">
-                            <input
-                                type="text" placeholder="Member No." value={lookupInput}
-                                onChange={e => setLookupInput(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && loadMember(lookupInput, '')}
-                                style={{ width: 100, fontSize: 12.5, padding: '6px 8px', border: '1px solid #d7dae0', borderRadius: 6, outline: 'none' }}
-                            />
-                            <input
-                                type="text" placeholder="Member name" value={memberName} readOnly
-                                style={{ flex: 1, minWidth: 0, fontSize: 12.5, padding: '6px 8px', border: '1px solid #eceef1', borderRadius: 6, background: '#f7f8fa', color: '#4b5160' }}
-                            />
-                            <button
-                                onClick={() => loadMember(lookupInput, '')}
-                                disabled={loading || !lookupInput}
-                                style={{ fontSize: 12, fontWeight: 600, padding: '6px 12px', border: 'none', borderRadius: 6, background: '#2563eb', color: '#fff', cursor: 'pointer', opacity: (loading || !lookupInput) ? 0.5 : 1 }}
-                            >
-                                Search
-                            </button>
-                            <button
-                                type="button" onClick={() => setShowLookup(true)} title="Member Lookup"
-                                style={{ width: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 6, background: '#f0f1f4', color: '#5b6072', cursor: 'pointer' }}
-                            >
-                                <Search size={13} />
-                            </button>
-                        </div>
+                        <section className="aw-card">
+                            <div className="aw-card-head">
+                                <span className="aw-card-icon"><User size={14} /></span>
+                                <h2 className="aw-card-title">Member</h2>
+                            </div>
+                            <div className="aw-stack">
+                                <div className="aw-inline">
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <MemberField value={lookupInput} onChange={setLookupInput} onSelect={onMemberSelected}
+                                            onSubmit={v => loadMember(v, '')} />
+                                    </div>
+                                    <button type="button" onClick={() => loadMember(lookupInput, '')} disabled={loading || !lookupInput} className="aw-btn aw-btn-secondary">
+                                        Search
+                                    </button>
+                                </div>
+                                <input type="text" placeholder="Member name" aria-label="Member name" value={memberName} readOnly className="aw-input" />
+                            </div>
+                        </section>
+
+                        {mbno && (
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon"><ArrowDownLeft size={14} /></span>
+                                    <h2 className="aw-card-title">Withdraw</h2>
+                                </div>
+                                <div className="aw-stack">
+                                    <div className="aw-rows">
+                                        <div className="aw-row">
+                                            <span className="aw-row-label">Current Balance</span>
+                                            <span className="aw-row-value">₹{balance !== null ? fmt(balance) : '—'}</span>
+                                        </div>
+                                        <div className="aw-row">
+                                            <span className="aw-row-label">Max Withdrawable</span>
+                                            <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>₹{maxWithdrawable !== null ? fmt(maxWithdrawable) : '—'}</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="aw-label" htmlFor="rw-amount">Amount (₹)</label>
+                                        <div className="aw-input-wrap has-icon">
+                                            <IndianRupee size={13} />
+                                            <input id="rw-amount"
+                                                type="number" value={amount || ''}
+                                                onChange={e => setAmount(Number(e.target.value))}
+                                                className={`aw-input ${overLimit ? 'is-invalid' : ''}`}
+                                                aria-invalid={overLimit}
+                                            />
+                                        </div>
+                                        {overLimit && (
+                                            <p className="aw-meta aw-fade-in" style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginTop: 6, color: 'var(--aw-danger)' }}>
+                                                <AlertTriangle size={13} style={{ flex: 'none', marginTop: 2 }} />
+                                                Exceeds the maximum withdrawable amount — the minimum balance requirement would be breached.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="aw-label" htmlFor="rw-narration">Narration</label>
+                                        <input id="rw-narration" type="text" value={narration} onChange={e => setNarration(e.target.value)} className="aw-input" />
+                                    </div>
+
+                                    {message && (
+                                        <div className={`aw-alert aw-fade-in ${message.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} role="status" style={{ marginBottom: 0 }}>
+                                            {message.text}
+                                        </div>
+                                    )}
+
+                                    <button type="button" onClick={withdraw} disabled={saving || loading || amount <= 0 || overLimit} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
+                                        {saving ? 'Processing…' : 'Withdraw'}
+                                    </button>
+                                </div>
+                            </section>
+                        )}
                     </div>
 
                     {mbno && (
-                        <div style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4, color: '#6b7280', marginBottom: 8 }}>Withdraw</div>
-
-                            <div className="flex justify-between" style={{ marginBottom: 10, fontSize: 11.5, color: '#8b90a0' }}>
-                                <span>Current Balance: <b style={{ color: '#1a1d29' }}>₹{balance !== null ? fmt(balance) : '—'}</b></span>
-                                <span>Max Withdrawable: <b style={{ color: '#15803d' }}>₹{maxWithdrawable !== null ? fmt(maxWithdrawable) : '—'}</b></span>
-                            </div>
-
-                            <label style={{ display: 'block', fontSize: 11, color: '#8b90a0', marginBottom: 4 }}>Amount (₹)</label>
-                            <div className="relative">
-                                <IndianRupee size={11} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#8b90a0' }} />
-                                <input
-                                    type="number" value={amount || ''}
-                                    onChange={e => setAmount(Number(e.target.value))}
-                                    style={{ width: '100%', fontSize: 13, fontWeight: 600, padding: '7px 8px 7px 24px', border: `1px solid ${overLimit ? '#fca5a5' : '#d7dae0'}`, borderRadius: 6, outline: 'none' }}
-                                />
-                            </div>
-
-                            {overLimit && (
-                                <div className="flex items-center gap-1.5" style={{ marginTop: 6, fontSize: 11, color: '#b91c1c' }}>
-                                    <AlertTriangle size={11} /> Exceeds the maximum withdrawable amount — the minimum balance requirement would be breached.
+                        <section className="aw-card aw-main aw-fade-in">
+                            <div className="aw-main-head">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                                    <span className="aw-card-icon"><History size={14} /></span>
+                                    <h2 className="aw-card-title">Balance Timeline — {yearLabel}</h2>
                                 </div>
-                            )}
-
-                            <label style={{ display: 'block', fontSize: 11, color: '#8b90a0', marginTop: 10, marginBottom: 4 }}>Narration</label>
-                            <input
-                                type="text" value={narration} onChange={e => setNarration(e.target.value)}
-                                style={{ width: '100%', fontSize: 12.5, padding: '6px 8px', border: '1px solid #d7dae0', borderRadius: 6, outline: 'none' }}
-                            />
-
-                            {message && (
-                                <div style={{
-                                    marginTop: 10, padding: '9px 11px', borderRadius: 6, fontSize: 12,
-                                    background: message.type === 'success' ? '#f0fdf4' : '#fef2f2',
-                                    color: message.type === 'success' ? '#15803d' : '#b91c1c',
-                                    border: `1px solid ${message.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-                                }}>
-                                    {message.text}
-                                </div>
-                            )}
-
-                            <button
-                                onClick={withdraw}
-                                disabled={saving || loading || amount <= 0 || overLimit}
-                                style={{
-                                    width: '100%', marginTop: 12, padding: 10, background: '#dc2626', color: '#fff',
-                                    border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600,
-                                    cursor: (saving || loading || amount <= 0 || overLimit) ? 'not-allowed' : 'pointer',
-                                    opacity: (saving || loading || amount <= 0 || overLimit) ? 0.5 : 1,
-                                }}
-                            >
-                                {saving ? 'Processing…' : 'Withdraw'}
-                            </button>
-                        </div>
+                            </div>
+                            <div className="aw-main-body" style={{ padding: 0 }}>
+                                {timeline.length === 0 ? (
+                                    <div className="aw-empty">
+                                        <History size={32} />
+                                        <span>No balance events yet for this financial year.</span>
+                                    </div>
+                                ) : (
+                                    <table className="aw-table">
+                                        <thead>
+                                            <tr>
+                                                {['Date', 'Event', 'Amount', 'Resulting Balance', 'Narration'].map((h, i) => <th key={h} className={i === 2 || i === 3 ? 'is-right' : ''}>{h}</th>)}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {timeline.map(row => (
+                                                <tr key={row.id}>
+                                                    <td>{new Date(row.eventDate).toLocaleDateString('en-IN')}</td>
+                                                    <td className="is-muted">{EVENT_LABEL[row.eventType] || row.eventType}</td>
+                                                    <td className={`is-right ${row.eventType === 'WITHDRAWAL' ? 'is-danger' : 'is-success'}`}>
+                                                        {row.eventType === 'WITHDRAWAL' ? '−' : '+'}₹{fmt(row.amount)}
+                                                    </td>
+                                                    <td className="is-right">₹{fmt(row.resultingBalance)}</td>
+                                                    <td className="is-muted">{row.narration || '—'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </section>
                     )}
                 </div>
-
-                {mbno && (
-                    <div className="flex-1" style={{ minWidth: 0, background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, overflow: 'hidden' }}>
-                        <div className="flex items-center gap-1.5" style={{ padding: '10px 14px', borderBottom: '1px solid #eceef1' }}>
-                            <History size={12} className="text-slate-500" />
-                            <h2 style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1d29', margin: 0 }}>Balance Timeline — {yearLabel}</h2>
-                        </div>
-                        <div style={{ overflow: 'auto' }}>
-                            {timeline.length === 0 ? (
-                                <div className="flex items-center justify-center" style={{ height: 100, color: '#8b90a0', fontSize: 13 }}>
-                                    No balance events yet for this financial year.
-                                </div>
-                            ) : (
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead>
-                                        <tr>
-                                            {['Date', 'Event', 'Amount', 'Resulting Balance', 'Narration'].map(h => (
-                                                <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {timeline.map(row => (
-                                            <tr key={row.id}>
-                                                <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{new Date(row.eventDate).toLocaleDateString('en-IN')}</td>
-                                                <td style={{ fontSize: 12, color: '#5b6072', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{EVENT_LABEL[row.eventType] || row.eventType}</td>
-                                                <td style={{ fontSize: 12, color: row.eventType === 'WITHDRAWAL' ? '#dc2626' : '#15803d', fontWeight: 500, padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>
-                                                    {row.eventType === 'WITHDRAWAL' ? '−' : '+'}₹{fmt(row.amount)}
-                                                </td>
-                                                <td style={{ fontSize: 12, fontWeight: 600, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.resultingBalance)}</td>
-                                                <td style={{ fontSize: 12, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{row.narration || '—'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    </div>
-                )}
             </div>
-
-            <Modal open={showLookup} onCancel={() => setShowLookup(false)} footer={null} width={800} styles={{ body: { padding: 0 } }} destroyOnClose>
-                <MemberLookup isModal onSelect={onMemberSelected} onClose={() => setShowLookup(false)} />
-            </Modal>
         </div>
     );
 };

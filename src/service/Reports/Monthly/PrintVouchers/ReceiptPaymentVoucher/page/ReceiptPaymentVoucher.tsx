@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiService } from '../../../../../../services/api';
 import {
   DatePicker, Select, Button, Spin, ConfigProvider, theme as antdTheme
@@ -13,13 +13,10 @@ import {
   User,
   CreditCard,
   Building2,
-  Sun,
-  Moon,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSelector, useDispatch } from 'react-redux';
+import { motion } from 'framer-motion';
+import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
-import { setInterfaceMode } from '../../../../../../store/slices/themeSlice';
 import dayjs, { Dayjs } from 'dayjs';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 
@@ -38,15 +35,31 @@ interface VoucherEntry {
   head_name: string;
   narration: string;
   amount: number;
+  direction: 'Payment' | 'Receipt';
+  member_no: number | string;
+  member_name: string;
 }
 
+interface VoucherReference {
+  voucher_no: string;
+  voucher_date: string;
+}
+
+const voucherRefValue = (voucher: VoucherReference) => `${voucher.voucher_no}|${voucher.voucher_date}`;
+
+const csvCell = (value: unknown): string => {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  let text = String(value ?? '');
+  if (/^[\t\r ]*[=+@-]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+};
+
 const ReceiptPaymentVoucher: React.FC = () => {
-  const dispatch = useDispatch();
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' || (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const toggleTheme = () => dispatch(setInterfaceMode(isDark ? 'light' : 'dark'));
+  const isDark = interfaceMode === 'dark';
 
   const [date, setDate] = useState<Dayjs | null>(dayjs());
+  const [voucherDateKey, setVoucherDateKey] = useState('');
   const [voucherNo, setVoucherNo] = useState<string>('');
   const [vchrType, setVchrType] = useState<string>('Receipt');
   const [mode, setMode] = useState<string>('Cash');
@@ -56,10 +69,11 @@ const ReceiptPaymentVoucher: React.FC = () => {
   const [chequeNo, setChequeNo] = useState<string>('');
   const [bank, setBank] = useState<string>('');
   const [chequeDate, setChequeDate] = useState<Dayjs | null>(null);
-  const [voucherList, setVoucherList] = useState<string[]>([]);
+  const [voucherList, setVoucherList] = useState<VoucherReference[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [entries, setEntries] = useState<VoucherEntry[]>([]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
+  const voucherRequestId = useRef(0);
 
   useEffect(() => {
     fetchVoucherList();
@@ -67,7 +81,7 @@ const ReceiptPaymentVoucher: React.FC = () => {
 
   const fetchVoucherList = async () => {
     try {
-      const response = await apiService.getAllVoucherNos();
+      const response = await apiService.getAllVoucherReferences();
       if (response.success && Array.isArray(response.data)) {
         setVoucherList(response.data);
       }
@@ -77,15 +91,34 @@ const ReceiptPaymentVoucher: React.FC = () => {
   };
 
   const handleVoucherSelect = async (value: string): Promise<void> => {
-    setVoucherNo(value);
-    if (!value) return;
+    const separator = value.lastIndexOf('|');
+    const selectedVoucherNo = separator >= 0 ? value.slice(0, separator) : value;
+    const selectedVoucherDate = separator >= 0 ? value.slice(separator + 1) : '';
+    setVoucherNo(selectedVoucherNo);
+    setVoucherDateKey(selectedVoucherDate);
+    setDate(null);
+    setVchrType('');
+    setMode('');
+    const requestId = ++voucherRequestId.current;
+    setEntries([]);
+    setTotalAmount(0);
+    setMemberNo('');
+    setMemberName('');
+    setNarration('');
+    setChequeNo('');
+    setBank('');
+    setChequeDate(null);
+    if (!value) { setVoucherNo(''); setVoucherDateKey(''); setIsLoading(false); return; }
 
     setIsLoading(true);
     try {
-      const response = await apiService.getVoucherByNo(value);
+      const response = selectedVoucherDate
+        ? await apiService.getVoucherByNoAndDate(selectedVoucherNo, selectedVoucherDate)
+        : await apiService.getVoucherByNo(selectedVoucherNo);
       if (response.success && response.data) {
         const data = response.data;
-        setDate(dayjs(data.trans_date));
+        if (requestId !== voucherRequestId.current) return;
+        setDate(dayjs(selectedVoucherDate || data.trans_date));
         setVchrType(data.dr_cr);
         setMode(data.mode);
         setMemberNo(data.member_no ? data.member_no.toString() : '');
@@ -109,16 +142,21 @@ const ReceiptPaymentVoucher: React.FC = () => {
           head_code: e.head_code,
           head_name: e.head_name,
           narration: e.narration,
-          amount: e.amount
+          amount: Number(e.amount) || 0,
+          direction: e.direction === 'Payment' ? 'Payment' : 'Receipt',
+          member_no: e.mbno ?? '',
+          member_name: e.member_name || '',
         }));
         setEntries(mappedEntries);
       } else {
+        if (requestId !== voucherRequestId.current) return;
         await showDialog('warning', 'Not Found', 'Voucher not found');
       }
     } catch (error) {
+      if (requestId !== voucherRequestId.current) return;
       await showDialog('error', 'Error', 'Error fetching voucher');
     } finally {
-      setIsLoading(false);
+      if (requestId === voucherRequestId.current) setIsLoading(false);
     }
   };
 
@@ -154,7 +192,10 @@ const ReceiptPaymentVoucher: React.FC = () => {
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Courier New',monospace; font-size:9pt; color:#000; background:#fff; }
   table { width:100%; border-collapse:collapse; }
+  td { overflow-wrap:anywhere; }
   th, td { padding:3px 6px; font-size:8.5pt; }
+  thead { display:table-header-group; }
+  tr { break-inside:avoid; page-break-inside:avoid; }
 
   .text-center { text-align:center; }
   .text-right { text-align:right; }
@@ -193,7 +234,7 @@ const ReceiptPaymentVoucher: React.FC = () => {
   .w-16 { width:45px; }
   .w-28 { width:80px; }
   .ml-auto { margin-left:auto; }
-  .h-16 { height:45px; }
+  .h-16 { display:none; }
   .fz-caption { font-size:8pt; }
   .fz-label { font-size:8.5pt; }
 
@@ -212,16 +253,30 @@ const ReceiptPaymentVoucher: React.FC = () => {
 
   const handleExportCSV = () => {
     if (!entries.length) return;
-    let csv = 'Voucher No,Date,Type,Mode,Member No,Member Name,Narration,Srno,Head Code,Head Name,Payment,Receipt\n';
-    entries.forEach((e, idx) => {
-      const payment = vchrType === 'Payment' ? e.amount : '';
-      const receipt = vchrType === 'Receipt' ? e.amount : '';
-      csv += `${voucherNo},${date?.format('DD-MMM-YYYY') || ''},${vchrType},${mode},${memberNo},"${memberName}","${narration}",${idx + 1},${e.head_code},"${e.head_name}",${payment},${receipt}\n`;
+    const paymentTotal = entries.reduce((sum, entry) => sum + (entry.direction === 'Payment' ? entry.amount : 0), 0);
+    const receiptTotal = entries.reduce((sum, entry) => sum + (entry.direction === 'Receipt' ? entry.amount : 0), 0);
+    const headers = ['Record Type', 'Voucher No', 'Date', 'Direction', 'Mode', 'Voucher Member No', 'Voucher Member Name', 'Cheque No', 'Cheque Date', 'Bank', 'Voucher Narration', 'Line No', 'Transaction No', 'Member No', 'Member Name', 'Head Code', 'Head Name', 'Line Narration', 'Payment', 'Receipt', 'Line Total', 'Total Payments', 'Total Receipts', 'Voucher Total'];
+    const rows: unknown[][] = entries.map((entry, index) => [
+      'TRANSACTION', voucherNo, date?.format('YYYY-MM-DD') || '', entry.direction, mode,
+      memberNo, memberName, chequeNo, chequeDate?.format('YYYY-MM-DD') || '', bank,
+      narration, index + 1, entry.trans_no, entry.member_no, entry.member_name, entry.head_code, entry.head_name, entry.narration,
+      entry.direction === 'Payment' ? entry.amount : '',
+      entry.direction === 'Receipt' ? entry.amount : '', entry.amount, '', '', '',
+    ]);
+    const totalRow: unknown[] = Array(headers.length).fill('');
+    Object.assign(totalRow, {
+      0: 'TOTAL', 1: voucherNo, 2: date?.format('YYYY-MM-DD') || '', 3: vchrType, 4: mode,
+      5: memberNo, 6: memberName, 7: chequeNo, 8: chequeDate?.format('YYYY-MM-DD') || '',
+      9: bank, 10: narration, 21: paymentTotal, 22: receiptTotal, 23: totalAmount,
     });
+    rows.push(totalRow);
+    const csv = '\uFEFF' + [headers, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    a.href = url;
     a.download = `Voucher_${voucherNo}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const bg      = isDark ? 'bg-[#0f172a]'             : 'bg-gradient-to-br from-slate-50 to-indigo-50/30';
@@ -255,11 +310,6 @@ const ReceiptPaymentVoucher: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={toggleTheme}
-            className={`h-8 w-8 flex items-center justify-center rounded-lg border ${border} transition hover:border-indigo-500`}
-            title={isDark ? 'Switch to Light' : 'Switch to Dark'}>
-            {isDark ? <Sun size={14} className="text-yellow-400" /> : <Moon size={14} className="text-slate-500" />}
-          </button>
           <Button
             icon={<Printer size={12} />}
             className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide border-slate-200 hover:border-indigo-500 hover:text-indigo-600 transition-all"
@@ -296,7 +346,7 @@ const ReceiptPaymentVoucher: React.FC = () => {
               <div className="space-y-1">
                 <label className={`fz-caption font-bold ${muted} uppercase tracking-tight`}>Voucher No</label>
                 <Select
-                  value={voucherNo}
+                  value={voucherNo && voucherDateKey ? `${voucherNo}|${voucherDateKey}` : ''}
                   onChange={handleVoucherSelect}
                   className="w-full voucher-select"
                   placeholder="Select Voucher"
@@ -313,8 +363,8 @@ const ReceiptPaymentVoucher: React.FC = () => {
                   size="small"
                 >
                   {voucherList.map(v => (
-                    <Option key={v} value={v}>
-                      <span className="font-bold fz-caption">#{v}</span>
+                    <Option key={voucherRefValue(v)} value={voucherRefValue(v)}>
+                      <span className="font-bold fz-caption">#{v.voucher_no} · {dayjs(v.voucher_date).format('DD-MMM-YYYY')}</span>
                     </Option>
                   ))}
                 </Select>
@@ -425,7 +475,7 @@ const ReceiptPaymentVoucher: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-pink-500 w-24">Vchr Type</span>
-                        <span className={`font-bold ${isDark ? 'text-rose-400' : 'text-red-700'} uppercase`}>{vchrType === 'Receipt' ? 'DEMAND' : 'PAYMENT'}</span>
+                        <span className={`font-bold ${isDark ? 'text-rose-400' : 'text-red-700'} uppercase`}>{vchrType}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-pink-500 w-24">Mode</span>
@@ -470,7 +520,9 @@ const ReceiptPaymentVoucher: React.FC = () => {
                       <thead>
                         <tr className={`${tblHd} border-b ${tblBdrH}`}>
                           <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold w-16`}>Srno</th>
-                          <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold w-24`}>Head</th>
+                          <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold`}>Member No</th>
+                          <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold`}>Member Name</th>
+                          <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold`}>Head</th>
                           <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold`}>Description</th>
                           <th className={`text-right py-1.5 px-2 border-r ${tblBdrH} font-bold w-28`}>Payment</th>
                           <th className={`text-right py-1.5 px-2 font-bold w-28`}>Receipt</th>
@@ -486,19 +538,23 @@ const ReceiptPaymentVoucher: React.FC = () => {
                             transition={{ delay: Math.min(idx * 0.02, 0.5) }}
                           >
                             <td className={`py-1 px-2 border-r ${tblBdr} ${muted} font-semibold text-center`}>{idx + 1}</td>
+                            <td className={`py-1 px-2 border-r ${tblBdr} ${text}`}>{entry.member_no}</td>
+                            <td className={`py-1 px-2 border-r ${tblBdr} ${text}`}>{entry.member_name}</td>
                             <td className={`py-1 px-2 border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-blue-700'} font-bold`}>{entry.head_code}</td>
                             <td className={`py-1 px-2 border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-blue-700'} font-semibold uppercase`}>{entry.head_name}</td>
                             <td className={`text-right py-1 px-2 border-r ${tblBdr} ${text} font-semibold`}>
-                              {vchrType === 'Payment' ? formatCurrency(entry.amount) : ''}
+                              {entry.direction === 'Payment' ? formatCurrency(entry.amount) : ''}
                             </td>
                             <td className={`text-right py-1 px-2 ${isDark ? 'text-indigo-300' : 'text-blue-700'} font-bold`}>
-                              {vchrType === 'Receipt' ? formatCurrency(entry.amount) : ''}
+                              {entry.direction === 'Receipt' ? formatCurrency(entry.amount) : ''}
                             </td>
                           </motion.tr>
                         ))}
 
                         <tr className={`border-b ${tblBdr}`}>
                           <td className={`py-1 px-2 border-r ${tblBdr}`}>&nbsp;</td>
+                          <td className={`py-1 px-2 border-r ${tblBdr}`}></td>
+                          <td className={`py-1 px-2 border-r ${tblBdr}`}></td>
                           <td className={`py-1 px-2 border-r ${tblBdr}`}></td>
                           <td className={`py-1 px-2 border-r ${tblBdr}`}></td>
                           <td className={`py-1 px-2 border-r ${tblBdr}`}></td>

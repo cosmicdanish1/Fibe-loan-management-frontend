@@ -1,9 +1,9 @@
 // hooks.ts
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import type { LoanApplicationState, LoanDetails } from '../types/loan';
 import type { NomineeDetail } from '../types/nominee';
 import type { EmployeeDetail } from '../types/employee';
-import type { FDRDetail, LoanAgainstDeposit } from '../types/fdr';
+import type { FDRDetail } from '../types/fdr';
 
 const initialLoanDetails: LoanDetails = {
   applDate: new Date().toISOString().split('T')[0] as string,

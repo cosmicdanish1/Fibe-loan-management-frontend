@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileText,
   Printer,
@@ -6,14 +6,11 @@ import {
   BookOpen,
   RefreshCw,
   ShieldCheck,
-  Sun,
-  Moon,
 } from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Spin, Select, theme as antdTheme } from 'antd';
+import { ConfigProvider, Button, DatePicker, Spin, Select, theme as antdTheme, message } from 'antd';
 import { motion } from 'framer-motion';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '../../../../store';
-import { setInterfaceMode } from '../../../../store/slices/themeSlice';
 import { apiService } from '../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
@@ -36,6 +33,7 @@ interface GeneralLedgerEntry {
   balance: number;
   transactionType: 'DR' | 'CR';
   memberNumber?: number | string;
+  accountNumber?: number | string;
   username: string;
 }
 
@@ -60,19 +58,108 @@ interface HeadMaster {
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 
+const GL_PRINT_WIDTH = 100;
+const GL_PRINT_COLUMNS = { date: 11, member: 12, voucher: 10, particulars: 28, amount: 13 };
+const glPadRight = (value: string, width: number) => value.length > width ? value.slice(0, width) : value.padEnd(width);
+const glPadLeft = (value: string, width: number) => value.length > width ? value.slice(-width) : value.padStart(width);
+const glCenter = (value: string) => {
+  const text = value.length > GL_PRINT_WIDTH ? value.slice(0, GL_PRINT_WIDTH) : value;
+  return `${' '.repeat(Math.floor((GL_PRINT_WIDTH - text.length) / 2))}${text}`;
+};
+const glWrap = (value: string, width: number) => {
+  const words = value.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    if (!line && word.length > width) {
+      for (let offset = 0; offset < word.length; offset += width) {
+        const part = word.slice(offset, offset + width);
+        if (offset + width < word.length) lines.push(part);
+        else line = part;
+      }
+    } else if (!line) line = word;
+    else if (`${line} ${word}`.length <= width) line += ` ${word}`;
+    else { lines.push(line); line = word; }
+  }
+  if (line || !lines.length) lines.push(line);
+  return lines;
+};
+const glEscapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[char] || char));
+
+const buildGeneralLedgerPrintLines = (data: GeneralLedgerData): string[] => {
+  const { date, member, voucher, particulars, amount } = GL_PRINT_COLUMNS;
+  const firstAmountColumn = date + member + voucher + particulars;
+  const dash = '-'.repeat(GL_PRINT_WIDTH);
+  const lines: string[] = [
+    glCenter('Espat Karmchari Co-Operative Credit Society Limited.'),
+    glCenter('Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006'),
+    glCenter('GENERAL LEDGER'),
+    '',
+  ];
+  lines.push(...glWrap(`Account Head: ${data.headCode} - ${data.headName}`, GL_PRINT_WIDTH));
+  lines.push(`Period: ${dayjs(data.fromDate).format('DD-MMM-YYYY')} to ${dayjs(data.toDate).format('DD-MMM-YYYY')}`);
+  lines.push(`Printed: ${dayjs().format('DD-MMM-YYYY h:mm A')}`);
+  lines.push(`Opening Balance: ${fmt(data.openingBalance)}`);
+  lines.push(dash);
+  lines.push(
+    glPadRight('Date', date) + glPadRight('MB No', member) + glPadRight('Voucher', voucher) +
+    glPadRight('Particulars', particulars) + glPadLeft('Payment', amount) +
+    glPadLeft('Receipt', amount) + glPadLeft('Balance', amount),
+  );
+  lines.push(dash);
+
+  for (const entry of data.entries) {
+    const parts = glWrap(entry.narration || '', particulars);
+    lines.push(
+      glPadRight(dayjs(entry.transactionDate).format('DD-MMM-YYYY'), date) +
+      glPadRight(String(entry.memberNumber ?? ''), member) +
+      glPadRight(entry.voucherNo || '', voucher) + glPadRight(parts[0] || '', particulars) +
+      glPadLeft(entry.debit > 0 ? fmt(entry.debit) : '-', amount) +
+      glPadLeft(entry.credit > 0 ? fmt(entry.credit) : '-', amount) +
+      glPadLeft(fmt(entry.balance), amount),
+    );
+    for (const part of parts.slice(1)) {
+      lines.push(`${' '.repeat(date + member + voucher)}${glPadRight(part, particulars)}`);
+    }
+  }
+
+  lines.push(dash);
+  lines.push(glPadLeft('Total Payments:', firstAmountColumn) + glPadLeft(fmt(data.totalDebits), amount));
+  lines.push(glPadLeft('Total Receipts:', firstAmountColumn) + ' '.repeat(amount) + glPadLeft(fmt(data.totalCredits), amount));
+  lines.push(glPadLeft('Closing Balance:', firstAmountColumn + amount) + glPadLeft(fmt(data.closingBalance), amount));
+  lines.push(`Transactions: ${data.totalTransactions}`);
+  lines.push(dash);
+  lines.push('* Report as per data available');
+  return lines;
+};
+
+const csvCell = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  let text = String(value ?? '');
+  if (/^[\t\r ]*[=+@-]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+};
+
+const currentFinancialYearStart = () => {
+  const today = dayjs();
+  return today.month() >= 3 ? today.month(3).date(1) : today.subtract(1, 'year').month(3).date(1);
+};
+
 const GeneralLedger: React.FC = () => {
-  const dispatch = useDispatch();
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' || (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const toggleTheme = () => dispatch(setInterfaceMode(isDark ? 'light' : 'dark'));
+  const isDark = interfaceMode === 'dark';
 
   const [headCode, setHeadCode]     = useState<string>('');
-  const [fromDate, setFromDate]     = useState<Dayjs | null>(dayjs('2024-01-01'));
-  const [toDate, setToDate]         = useState<Dayjs | null>(dayjs('2024-01-31'));
+  const [fromDate, setFromDate]     = useState<Dayjs | null>(currentFinancialYearStart());
+  const [toDate, setToDate]         = useState<Dayjs | null>(dayjs());
   const [headMasters, setHeadMasters]   = useState<HeadMaster[]>([]);
   const [ledgerData, setLedgerData]     = useState<GeneralLedgerData | null>(null);
   const [isLoading, setIsLoading]       = useState(false);
   const [isLoadingHeads, setIsLoadingHeads] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const reportRequestId = useRef(0);
 
   useEffect(() => { loadHeadMasters(); }, []);
 
@@ -97,6 +184,15 @@ const GeneralLedger: React.FC = () => {
       await showDialog('warning', 'Validation', 'Please select Account Head and Date Range');
       return;
     }
+    if (fromDate.isAfter(toDate, 'day')) {
+      setLedgerData(null);
+      setReportError('From date must be on or before the To date.');
+      message.error('From date must be on or before the To date.');
+      return;
+    }
+    const requestId = ++reportRequestId.current;
+    setLedgerData(null);
+    setReportError(null);
     setIsLoading(true);
     try {
       const response = await apiService.getGeneralLedgerReport({
@@ -108,35 +204,97 @@ const GeneralLedger: React.FC = () => {
       if (response.success && response.data) {
         let actualData = response.data;
         if (actualData.data) actualData = actualData.data;
-        setLedgerData(actualData);
+        if (requestId === reportRequestId.current) {
+          setLedgerData({ ...actualData, entries: Array.isArray(actualData.entries) ? actualData.entries : [] });
+        }
       } else {
-        await showDialog('error', 'Load Failed', response.message || 'Failed to fetch ledger data');
+        const error = response.message || 'Failed to fetch ledger data';
+        if (requestId === reportRequestId.current) {
+          setLedgerData(null);
+          const friendlyError = error.toLowerCase().includes('unsupported general-ledger transaction type')
+            ? 'The ledger contains a transaction type this report cannot safely classify. No totals were produced.'
+            : error;
+          setReportError(friendlyError);
+          message.error(friendlyError);
+        }
       }
     } catch {
-      await showDialog('error', 'Error', 'An error occurred while fetching report');
+      if (requestId === reportRequestId.current) {
+        setLedgerData(null);
+        setReportError('Could not load the General Ledger. Check the connection and try again.');
+        message.error('Could not load the General Ledger. Check the connection and try again.');
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === reportRequestId.current) setIsLoading(false);
     }
   };
 
   const handleExportCSV = async () => {
-    if (!ledgerData?.entries?.length) { await showDialog('warning', 'No Data', 'No data to export'); return; }
-    const headers = ['Date', 'MB No', 'Voucher', 'Narration', 'Payment', 'Receipt', 'Balance'];
+    if (!ledgerData) { await showDialog('warning', 'No Report', 'Generate a report before exporting.'); return; }
+    const headers = [
+      'Record Type', 'Head Code', 'Head Name', 'From Date', 'To Date', 'Transaction Date',
+      'Member Number', 'Account Number', 'Voucher Number', 'Narration', 'Payment', 'Receipt',
+      'Running Balance', 'Transaction Type', 'User', 'Opening Balance', 'Total Payments',
+      'Total Receipts', 'Closing Balance', 'Transaction Count',
+    ];
     const rows = ledgerData.entries.map(e => [
-      dayjs(e.transactionDate).format('DD-MMM-YYYY'),
+      'TRANSACTION', ledgerData.headCode, ledgerData.headName, ledgerData.fromDate, ledgerData.toDate,
+      dayjs(e.transactionDate).format('YYYY-MM-DD'),
       e.memberNumber || '',
-      e.voucherNo || '',
-      e.narration || '',
-      e.debit > 0 ? e.debit.toFixed(2) : '0.00',
-      e.credit > 0 ? e.credit.toFixed(2) : '0.00',
-      e.balance.toFixed(2),
+      e.accountNumber || '', e.voucherNo || '', e.narration || '', e.debit, e.credit, e.balance,
+      e.transactionType, e.username || '', '', '', '', '', '',
     ]);
-    const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+    rows.push([
+      'REPORT_TOTALS', ledgerData.headCode, ledgerData.headName, ledgerData.fromDate, ledgerData.toDate,
+      '', '', '', '', '', '', '', '', '', '', ledgerData.openingBalance, ledgerData.totalDebits,
+      ledgerData.totalCredits, ledgerData.closingBalance, ledgerData.totalTransactions,
+    ]);
+    const csv = `\uFEFF${[headers, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n')}`;
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `general_ledger_${headCode}_${dayjs().format('YYYYMMDD')}.csv`;
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = `general_ledger_${headCode}_${ledgerData.fromDate}_${ledgerData.toDate}.csv`;
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const handlePrint = () => {
+    if (!ledgerData) return;
+    const lines = buildGeneralLedgerPrintLines(ledgerData);
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) {
+      iframe.remove();
+      message.error('Could not prepare the General Ledger for printing.');
+      return;
+    }
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>General Ledger</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  html, body { margin: 0; color: #1f2933; background: #ffffff; }
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; line-height: 1.2; white-space: pre; width: fit-content; max-width: 100%; margin: 0 auto; }
+  @media print { pre { break-inside: auto; page-break-inside: auto; } }
+</style></head><body><pre>${glEscapeHtml(lines.join('\n'))}</pre></body></html>`);
+    doc.close();
+    window.setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      window.setTimeout(() => iframe.remove(), 1500);
+    }, 300);
+  };
+
+  const invalidateReport = () => {
+    reportRequestId.current += 1;
+    setLedgerData(null);
+    setReportError(null);
+    setIsLoading(false);
   };
 
   const selectedHead = headMasters.find(h => h.code === headCode);
@@ -171,13 +329,9 @@ const GeneralLedger: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <button onClick={toggleTheme}
-              className={`h-7 w-7 flex items-center justify-center rounded-lg border ${panelBdr} transition hover:border-emerald-500`}>
-              {isDark ? <Sun size={13} className="text-yellow-400" /> : <Moon size={13} className="text-slate-500" />}
-            </button>
-            <Button size="small" icon={<Printer size={11} />} onClick={() => window.print()}
+            <Button size="small" icon={<Printer size={11} />} onClick={handlePrint} disabled={!ledgerData}
               className="h-7 px-2 fz-small font-bold uppercase">Print</Button>
-            <Button size="small" type="primary" icon={<FileDown size={11} />} onClick={handleExportCSV}
+            <Button size="small" type="primary" icon={<FileDown size={11} />} onClick={handleExportCSV} disabled={!ledgerData}
               className="h-7 px-2 fz-small font-bold uppercase bg-emerald-600 border-0 hover:!bg-emerald-700">Export CSV</Button>
           </div>
         </div>
@@ -189,7 +343,7 @@ const GeneralLedger: React.FC = () => {
             <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>Head Name</label>
             <Select
               value={headCode || undefined}
-              onChange={setHeadCode}
+              onChange={value => { setHeadCode(value ?? ''); invalidateReport(); }}
               placeholder="Select head code"
               showSearch
               size="small"
@@ -214,13 +368,13 @@ const GeneralLedger: React.FC = () => {
           {/* From */}
           <div className="flex flex-col gap-0.5">
             <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>From</label>
-            <DatePicker size="small" value={fromDate} onChange={setFromDate} format="DD-MMM-YYYY" className="w-32" />
+            <DatePicker size="small" value={fromDate} onChange={value => { setFromDate(value); invalidateReport(); }} format="DD-MMM-YYYY" className="w-32" />
           </div>
 
           {/* To */}
           <div className="flex flex-col gap-0.5">
             <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>To</label>
-            <DatePicker size="small" value={toDate} onChange={setToDate} format="DD-MMM-YYYY" className="w-32" />
+            <DatePicker size="small" value={toDate} onChange={value => { setToDate(value); invalidateReport(); }} format="DD-MMM-YYYY" className="w-32" />
           </div>
 
           <Button type="primary" size="small" icon={<RefreshCw size={12} />} onClick={generateReport} loading={isLoading}
@@ -253,8 +407,13 @@ const GeneralLedger: React.FC = () => {
 
         {/* ── Report Table ── */}
         <div className="gl-report-panel flex-1 overflow-auto p-3 custom-scrollbar-emerald">
+          {reportError && (
+            <div role="alert" className="mb-3 rounded border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+              {reportError}
+            </div>
+          )}
           <Spin spinning={isLoading} tip="Loading…" size="small">
-            {ledgerData && ledgerData.entries.length > 0 ? (
+            {ledgerData ? (
               <div className="font-mono fz-small">
                 {/* Company header */}
                 <div className={`text-center mb-2 pb-2 border-b border-dashed ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
@@ -305,30 +464,34 @@ const GeneralLedger: React.FC = () => {
                       </tr>
                     ))}
 
+                    {ledgerData.entries.length === 0 && (
+                      <tr className={`border-b ${tblBdr}`}>
+                        <td colSpan={7} className={`py-5 text-center ${muted}`}>
+                          No transactions for this account head and period.
+                        </td>
+                      </tr>
+                    )}
+
                     {/* Summary footer */}
-                    <tr className={`border-t-2 ${tblBdr} ${sumRow}`}>
-                      <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Opening Balance :</td>
-                      <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold ${text}`}>{fmt(ledgerData.openingBalance)}</td>
-                      <td className="py-1.5 px-2" />
-                    </tr>
-                    <tr className={`border-b ${tblBdr} ${sumRow}`}>
+                    <tr className={`border-t-2 border-b ${tblBdr} ${sumRow}`}>
                       <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Payments :</td>
-                      <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-rose-500`}>
+                      <td className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-rose-500`}>
                         {ledgerData.totalDebits > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(ledgerData.totalDebits)}
                       </td>
+                      <td className={`text-right py-1.5 px-2 border-r ${tblBdr} ${muted}`}>–</td>
                       <td className="py-1.5 px-2" />
                     </tr>
                     <tr className={`border-b ${tblBdr} ${sumRow}`}>
                       <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Receipts :</td>
-                      <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-emerald-500`}>
+                      <td className={`text-right py-1.5 px-2 border-r ${tblBdr} ${muted}`}>–</td>
+                      <td className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-emerald-500`}>
                         {ledgerData.totalCredits > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(ledgerData.totalCredits)}
                       </td>
                       <td className="py-1.5 px-2" />
                     </tr>
                     <tr className={`${sumRow}`}>
-                      <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold text-emerald-500`}>Closing Balance :</td>
-                      <td colSpan={2} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-black text-emerald-500`}>{fmt(ledgerData.closingBalance)}</td>
-                      <td className="py-1.5 px-2" />
+                      <td colSpan={6} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold text-emerald-500`}>Closing Balance :</td>
+                      <td className="text-right py-1.5 px-2 font-black text-emerald-500">{fmt(ledgerData.closingBalance)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -352,16 +515,16 @@ const GeneralLedger: React.FC = () => {
         .custom-scrollbar-emerald::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar-emerald::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
         @media print {
-          header, .shrink-0 { display: none !important; }
-          .flex-1 { overflow: visible !important; }
-          /* Strip all the on-screen accent colors (rose/emerald/teal for
-             debit/credit/balance) — printed output should be plain black
-             text on white, not a copy of the dark-mode color scheme. */
-          .gl-report-panel, .gl-report-panel * {
-            color: #000 !important;
-            background: #fff !important;
-            border-color: #999 !important;
-          }
+          @page { size: A4 portrait; margin: 12mm; }
+          html, body, #root { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+          .gl-page { height: auto !important; min-height: 0 !important; overflow: visible !important; background: oklch(100% 0.004 200) !important; }
+          .gl-header, .gl-filter-bar, .gl-stats-bar { display: none !important; }
+          .gl-report-panel { height: auto !important; min-height: 0 !important; overflow: visible !important; padding: 0 !important; color: oklch(18% 0.01 200) !important; background: oklch(100% 0.004 200) !important; }
+          .gl-report-panel, .gl-report-panel * { color: oklch(18% 0.01 200) !important; background-color: oklch(100% 0.004 200) !important; border-color: oklch(75% 0.01 200) !important; }
+          .gl-table { width: 100% !important; table-layout: fixed; font-size: 9pt !important; }
+          .gl-table thead { display: table-header-group; }
+          .gl-table tr { break-inside: avoid; page-break-inside: avoid; }
+          .gl-report-panel .text-center { break-inside: avoid; }
         }
 
         /* ── General Ledger — dark mode ── */

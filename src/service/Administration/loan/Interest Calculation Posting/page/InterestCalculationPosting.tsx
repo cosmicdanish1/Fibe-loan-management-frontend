@@ -1,16 +1,16 @@
 import React from 'react';
+import { Select, DatePicker } from 'antd';
 import {
-  Calculator, FileText, Send, Loader2, Search,
-  RotateCcw, ChevronDown, IndianRupee, TrendingUp,
-  ArrowUpRight, ArrowDownLeft, Database, User, X
+  Calculator, FileText, Send, RefreshCw, Search, RotateCcw, TrendingUp, Database, X,
 } from 'lucide-react';
-import { DatePicker } from 'antd';
-import MemberLookup from '@/components/shared/MemberLookup/MemberLookup';
-import DataTable from '../components/DataTable';
 import dayjs from 'dayjs';
+import MemberLookupDialog from '@/components/shared/kit/MemberLookupDialog';
+import DataTable from '../components/DataTable';
 import { useInterestCalculation } from '../hooks/useInterestCalculation';
 import { interestCalculationOptions, accountTypeOptions } from '../constants/options';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+
+const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
 const InterestCalculationPosting: React.FC = () => {
   const {
@@ -29,116 +29,46 @@ const InterestCalculationPosting: React.FC = () => {
 
   const isYearly = formData.calcInterestFor === 'yearly_fund_process';
   const isSpecific = formData.calcInterestFor === 'specific_member';
+  const postDisabled = memberRecords.length === 0 || isLoading;
 
   usePageToolbarActions({
     onSave: handlePost,
     saveLabel: 'Post Transaction',
-    saveEnabled: !(memberRecords.length === 0 || isLoading),
+    saveEnabled: !postDisabled,
   });
 
+  const glHead =
+    formData.accountType === 'SB' ? 'A1001 — Savings' :
+    formData.accountType === 'RD' ? 'A1002 — Recurring' : 'A1003 — Fixed Deposit';
+
+  const totals = {
+    principal: memberRecords.reduce((s, r) => s + r.balance, 0),
+    interest: memberRecords.reduce((s, r) => s + r.interest, 0),
+    debit: memberRecords.reduce((s, r) => s + r.debit, 0),
+    credit: memberRecords.reduce((s, r) => s + r.credit, 0),
+  };
+
   return (
-    <div className="int-calc h-screen flex flex-col bg-slate-50 font-sans selection:bg-indigo-100 overflow-hidden">
-      <style>{`
-        html.dark .int-calc { background: #0f0f0f; }
-        html.dark .int-calc .int-hdr { background: #141414 !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-hdr-title { color: #f5f5f7 !important; }
-        html.dark .int-calc .int-hdr-sub { color: #71717a !important; }
-        html.dark .int-calc .int-version-badge { background: #1e1b4b !important; color: #a5b4fc !important; border-color: #3730a3 !important; }
-        html.dark .int-calc .int-reset-btn { color: #8e8e93 !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-reset-btn:hover { background: #1e1e1e !important; color: #f5f5f7 !important; }
-        html.dark .int-calc .int-close-btn { color: #8e8e93 !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-close-btn:hover { background: #2d1515 !important; color: #ff453a !important; border-color: #7f1d1d !important; }
-
-        html.dark .int-calc .int-scope-card { background: linear-gradient(to right,#1a1f2e,#161b30) !important; border-color: #3730a3 !important; }
-        html.dark .int-calc .int-scope-card label { color: #a5b4fc !important; }
-        html.dark .int-calc .int-scope-card select,
-        html.dark .int-calc .int-scope-card input[type="number"],
-        html.dark .int-calc .int-scope-card input[type="text"] { background: #1f1f1f !important; border-color: #3730a3 !important; color: #f5f5f7 !important; }
-        html.dark .int-calc .int-rate-badge { background: #1e1b4b !important; border-color: #3730a3 !important; color: #a5b4fc !important; }
-        html.dark .int-calc .int-all-badge { background: #022c22 !important; border-color: #14532d !important; color: #6ee7b7 !important; }
-        html.dark .int-calc .int-member-chip { background: #1e1b4b !important; border-color: #3730a3 !important; color: #a5b4fc !important; }
-        html.dark .int-calc .int-yearly-tip { color: #a5b4fc !important; }
-        html.dark .int-calc .ant-picker { background: #1f1f1f !important; border-color: #3730a3 !important; }
-        html.dark .int-calc .ant-picker input { color: #f5f5f7 !important; background: transparent !important; }
-        html.dark .int-calc .ant-picker .ant-picker-suffix { color: #6366f1 !important; }
-        html.dark .int-calc .ant-picker-focused,
-        html.dark .int-calc .ant-picker:hover { border-color: #6366f1 !important; }
-
-        html.dark .int-calc .int-actions-card { background: linear-gradient(to right,#0d1f1a,#0d1c1e) !important; border-color: #065f46 !important; }
-        html.dark .int-calc .int-gl-info { background: #141414 !important; border-color: #065f46 !important; }
-        html.dark .int-calc .int-gl-label { color: #8e8e93 !important; }
-        html.dark .int-calc .int-gl-value { color: #6ee7b7 !important; }
-        html.dark .int-calc .int-preview-btn { background: #141414 !important; border-color: #059669 !important; color: #6ee7b7 !important; }
-        html.dark .int-calc .int-preview-btn:hover:not(:disabled) { background: #059669 !important; color: #fff !important; }
-        html.dark .int-calc .int-preview-tip { color: #6ee7b7 !important; opacity: 0.7; }
-
-        html.dark .int-calc .int-table-area { background: #141414 !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-table-hdr { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-table-hdr h2 { color: #f5f5f7 !important; }
-        html.dark .int-calc .int-db-icon-bg { background: #252525 !important; color: #8e8e93 !important; }
-        html.dark .int-calc .int-records-badge { background: #1e1b4b !important; color: #a5b4fc !important; border-color: #3730a3 !important; }
-        html.dark .int-calc .int-loading-indicator { color: #818cf8 !important; }
-        html.dark .int-calc .int-stat-box { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .int-calc .int-stat-label { color: #71717a !important; }
-        html.dark .int-calc .int-principal-val { color: #f5f5f7 !important; }
-        html.dark .int-calc .int-empty-icon { background: #1f1f1f !important; color: #4b5563 !important; }
-        html.dark .int-calc .int-empty-txt { color: #4b5563 !important; }
-
-        html.dark .int-calc .int-lookup-overlay { background: rgba(0,0,0,0.75) !important; }
-        html.dark .int-calc .int-lookup-modal { background: #1f1f1f !important; border-color: #2a2a2a !important; }
-
-        html.dark .int-data-table { border-color: #2a2a2a !important; }
-        html.dark .int-data-table .int-thead-row { background: #1a1a1a !important; border-color: #2a2a2a !important; }
-        html.dark .int-data-table .int-th { color: #71717a !important; border-color: #2a2a2a !important; }
-        html.dark .int-data-table .int-row { border-color: #222 !important; }
-        html.dark .int-data-table .int-row.even-row { background: #141414 !important; }
-        html.dark .int-data-table .int-row.odd-row { background: #1a1a1a !important; }
-        html.dark .int-data-table .int-row:hover { background: rgba(79,70,229,0.12) !important; }
-        html.dark .int-data-table td { border-color: #222 !important; }
-        html.dark .int-data-table .td-sr { color: #71717a !important; }
-        html.dark .int-data-table .td-mbno { color: #818cf8 !important; }
-        html.dark .int-data-table .td-name { color: #f5f5f7 !important; }
-        html.dark .int-data-table .td-obal { color: #8e8e93 !important; }
-        html.dark .int-data-table .td-debit { color: #ff453a !important; }
-        html.dark .int-data-table .td-credit { color: #34d399 !important; }
-        html.dark .int-data-table .td-cbal { color: #f5f5f7 !important; }
-        html.dark .int-data-table .td-avg { color: #8e8e93 !important; }
-        html.dark .int-data-table .td-days { color: #8e8e93 !important; }
-        html.dark .int-data-table .td-interest { color: #60a5fa !important; }
-      `}</style>
-
-      {/* Header */}
-      <div className="int-hdr bg-white border-b border-slate-200 px-3 py-1.5 flex items-center justify-between z-10 shadow-md shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="bg-indigo-600 p-1.5 rounded-lg text-white shadow-lg shadow-indigo-200">
-            <Calculator size={14} />
-          </div>
-          <div>
-            <h1 className="int-hdr-title fz-body font-black text-slate-800 tracking-tight leading-none uppercase flex items-center gap-2">
-              Interest Calculation & Posting
-              <span className="int-version-badge fz-caption bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-md font-black ring-1 ring-indigo-200">v3.0</span>
-            </h1>
-            <p className="int-hdr-sub fz-caption text-slate-400 font-bold uppercase tracking-widest leading-none mt-0.5">
-              Daily Balance Method · Ledger Auto-Post
-            </p>
-          </div>
+    <div className="app-window">
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Interest Calculation &amp; Posting</h1>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Calculator size={12} /> Daily Balance Method · Ledger Auto-Post
+            <span className="aw-pill" style={{ marginLeft: 4 }}>v3.0</span>
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={resetForm}
-            className="int-reset-btn h-7 px-3 text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 rounded-lg fz-label font-black transition-all flex items-center gap-1.5 uppercase tracking-widest shadow-sm active:scale-95"
-          >
-            <RotateCcw size={12} /> Reset
+        <div className="aw-actions">
+          <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary">
+            <RotateCcw size={13} /> Reset
           </button>
-          <button
-            onClick={handlePost}
-            disabled={memberRecords.length === 0 || isLoading}
-            className="h-7 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg fz-label font-black shadow-md shadow-indigo-200 transition-all flex items-center gap-1.5 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 whitespace-nowrap"
-          >
-            {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+          <button type="button" onClick={handlePost} disabled={postDisabled} className="aw-btn aw-btn-primary">
+            {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <Send size={13} />}
             Post Transaction
           </button>
           <button
+            type="button"
             onClick={() => {
               if (window.electronAPI?.ipcRenderer) {
                 window.electronAPI.ipcRenderer.send('window-close');
@@ -146,273 +76,195 @@ const InterestCalculationPosting: React.FC = () => {
                 window.close();
               }
             }}
-            className="int-close-btn h-7 px-3 text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg fz-label font-black transition-all flex items-center gap-1.5 uppercase tracking-widest shadow-sm active:scale-95"
+            className="aw-btn aw-btn-ghost"
           >
-            <X size={12} /> Close
+            <X size={13} /> Close
           </button>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="shrink-0 p-2 grid grid-cols-12 gap-2">
-
-        {/* Calculation Scope */}
-        <div className="int-scope-card col-span-8 border border-indigo-300 rounded-xl p-2 bg-gradient-to-r from-indigo-50 to-blue-50 shadow-md">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="bg-indigo-600 text-white px-2 py-0.5 rounded-lg fz-caption font-black uppercase tracking-wider shadow-sm">
-              Calculation Scope
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-
-            {/* Interest Type */}
-            <div className="space-y-1">
-              <label className="fz-caption font-black text-indigo-900 uppercase tracking-tight block">Interest Type</label>
-              <div className="relative">
-                <select
-                  value={formData.calcInterestFor}
-                  onChange={(e) => handleInputChange('calcInterestFor', e.target.value)}
-                  className="w-full h-7 bg-white border border-indigo-200 rounded-lg px-2.5 fz-label font-bold text-slate-700 outline-none focus:ring-1 focus:ring-indigo-500 transition-all appearance-none cursor-pointer shadow-sm"
-                >
-                  {interestCalculationOptions.map(opt => (
-                    <option key={opt.id} value={opt.id}>{opt.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={11} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-indigo-400" />
+      <div className="aw-content">
+        <div className="aw-stack">
+          <div className="aw-split aw-split-wide" style={{ height: 'auto', gridTemplateColumns: 'minmax(0, 2fr) minmax(260px, 1fr)' }}>
+            {/* ── Calculation scope ── */}
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Calculator size={14} /></span>
+                <h2 className="aw-card-title">Calculation Scope</h2>
               </div>
-            </div>
-
-            {/* Account Type (SB / RD / FD) */}
-            <div className="space-y-1">
-              <label className="fz-caption font-black text-indigo-900 uppercase tracking-tight block">Account Type</label>
-              <div className="relative">
-                <select
-                  value={formData.accountType}
-                  onChange={(e) => handleInputChange('accountType', e.target.value)}
-                  className="w-full h-7 bg-white border border-indigo-200 rounded-lg px-2.5 fz-label font-bold text-slate-700 outline-none focus:ring-1 focus:ring-indigo-500 transition-all appearance-none cursor-pointer shadow-sm"
-                >
-                  {accountTypeOptions.map(opt => (
-                    <option key={opt.id} value={opt.id}>{opt.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={11} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-indigo-400" />
-              </div>
-            </div>
-
-            {/* Interest Rate — hidden for yearly fund */}
-            {!isYearly ? (
-              <div className="space-y-1">
-                <label className="fz-caption font-black text-indigo-900 uppercase tracking-tight block">Annual Rate (%)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="50"
-                  value={formData.interestRate}
-                  onChange={(e) => handleInputChange('interestRate', parseFloat(e.target.value))}
-                  className="w-full h-7 bg-white border border-indigo-200 rounded-lg px-2.5 fz-label font-bold text-slate-700 outline-none focus:ring-1 focus:ring-indigo-500 shadow-sm"
-                />
-              </div>
-            ) : (
-              <div className="flex items-end pb-0.5">
-                <div className="int-rate-badge flex items-center gap-1.5 bg-indigo-100 border border-indigo-200 rounded-lg px-2 py-1 w-full">
-                  <TrendingUp size={11} className="text-indigo-600 shrink-0" />
-                  <span className="fz-caption font-black text-indigo-800">Rate from Business Rules</span>
-                </div>
-              </div>
-            )}
-
-            {/* From Date */}
-            <div className="space-y-1">
-              <label className="fz-caption font-black text-indigo-900 uppercase tracking-tight block">
-                {isYearly ? 'FY Start Date' : 'From Date'}
-              </label>
-              <DatePicker
-                value={dayjs(formData.fromDate)}
-                onChange={(date) => handleInputChange('fromDate', date ? date.format('YYYY-MM-DD') : '')}
-                format="DD-MMM-YYYY"
-                size="small"
-                className="w-full h-7 border border-indigo-200 rounded-lg hover:border-indigo-400 shadow-sm"
-              />
-            </div>
-
-            {/* To Date */}
-            <div className="space-y-1">
-              <label className="fz-caption font-black text-indigo-900 uppercase tracking-tight block">
-                {isYearly ? 'FY End Date' : 'To Date'}
-              </label>
-              <DatePicker
-                value={dayjs(formData.toDate)}
-                onChange={(date) => handleInputChange('toDate', date ? date.format('YYYY-MM-DD') : '')}
-                format="DD-MMM-YYYY"
-                size="small"
-                className="w-full h-7 border border-indigo-200 rounded-lg hover:border-indigo-400 shadow-sm"
-              />
-            </div>
-
-            {/* Member No — only for specific_member */}
-            {isSpecific ? (
-              <div className="space-y-1">
-                <label className="fz-caption font-black text-indigo-900 uppercase tracking-tight block">Member Number</label>
-                <div className="flex gap-1.5">
-                  <input
-                    type="text"
-                    value={formData.memberNo}
-                    onChange={(e) => handleInputChange('memberNo', e.target.value)}
-                    placeholder="Enter MBNO"
-                    className="flex-1 h-7 bg-white border border-indigo-200 rounded-lg px-2.5 fz-label font-bold text-slate-700 outline-none focus:ring-1 focus:ring-indigo-500 shadow-sm uppercase"
+              <div className="aw-form-3">
+                <div>
+                  <label className="aw-label" htmlFor="ic-type">Interest Type</label>
+                  <Select
+                    id="ic-type"
+                    className="aw-select"
+                    popupClassName="aw-select-popup"
+                    value={formData.calcInterestFor}
+                    onChange={(v) => handleInputChange('calcInterestFor', v)}
+                    options={interestCalculationOptions.map(o => ({ value: o.id, label: o.name }))}
                   />
-                  <button
-                    onClick={handleMemberLookup}
-                    className="h-7 px-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm active:scale-95"
-                  >
-                    <Search size={12} />
-                  </button>
                 </div>
-                {formData.memberName && (
-                  <div className="int-member-chip px-2 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg fz-caption font-black flex items-center gap-1.5">
-                    <User size={10} className="text-indigo-400 shrink-0" />
-                    {formData.memberName}
+
+                <div>
+                  <label className="aw-label" htmlFor="ic-acc">Account Type</label>
+                  <Select
+                    id="ic-acc"
+                    className="aw-select"
+                    popupClassName="aw-select-popup"
+                    value={formData.accountType}
+                    onChange={(v) => handleInputChange('accountType', v)}
+                    options={accountTypeOptions.map(o => ({ value: o.id, label: o.name }))}
+                  />
+                </div>
+
+                {/* Interest Rate — hidden for yearly fund */}
+                {!isYearly ? (
+                  <div>
+                    <label className="aw-label" htmlFor="ic-rate">Annual Rate (%)</label>
+                    <input
+                      id="ic-rate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="50"
+                      value={formData.interestRate}
+                      onChange={(e) => handleInputChange('interestRate', parseFloat(e.target.value))}
+                      className="aw-input"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <span className="aw-label">Annual Rate</span>
+                    <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', gap: 6, height: 'var(--aw-control-h)', padding: '0 10px' }}>
+                      <TrendingUp size={13} style={{ color: 'var(--aw-accent)' }} />
+                      <span className="aw-strong">Rate from Business Rules</span>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="aw-label" htmlFor="ic-from">{isYearly ? 'FY Start Date' : 'From Date'}</label>
+                  <DatePicker
+                    id="ic-from"
+                    value={dayjs(formData.fromDate)}
+                    onChange={(date) => handleInputChange('fromDate', date ? date.format('YYYY-MM-DD') : '')}
+                    format="DD-MMM-YYYY"
+                    className="aw-picker"
+                    popupClassName="aw-select-popup"
+                    allowClear={false}
+                  />
+                </div>
+
+                <div>
+                  <label className="aw-label" htmlFor="ic-to">{isYearly ? 'FY End Date' : 'To Date'}</label>
+                  <DatePicker
+                    id="ic-to"
+                    value={dayjs(formData.toDate)}
+                    onChange={(date) => handleInputChange('toDate', date ? date.format('YYYY-MM-DD') : '')}
+                    format="DD-MMM-YYYY"
+                    className="aw-picker"
+                    popupClassName="aw-select-popup"
+                    allowClear={false}
+                  />
+                </div>
+
+                {/* Member No — only for specific_member */}
+                {isSpecific ? (
+                  <div>
+                    <label className="aw-label" htmlFor="ic-member">Member Number</label>
+                    <div className="aw-input-wrap has-action">
+                      <input
+                        id="ic-member"
+                        type="text"
+                        value={formData.memberNo}
+                        onChange={(e) => handleInputChange('memberNo', e.target.value)}
+                        placeholder="Enter MBNO"
+                        className="aw-input"
+                      />
+                      <button
+                        type="button"
+                        className="aw-input-action"
+                        onClick={handleMemberLookup}
+                        aria-label="Look up member"
+                        data-tip="Look up member"
+                        data-tip-pos="top-end"
+                      >
+                        <Search size={13} />
+                      </button>
+                    </div>
+                    {formData.memberName && (
+                      <p className="aw-strong aw-fade-in" style={{ marginTop: 6, color: 'var(--aw-accent)' }}>{formData.memberName}</p>
+                    )}
+                  </div>
+                ) : isYearly ? (
+                  <div>
+                    <span className="aw-label">Applies</span>
+                    <p className="aw-meta">Opening Balance Interest · Monthly Contribution · Dividend &amp; Group Insurance Deduction</p>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="aw-label">Members</span>
+                    <span className="aw-pill tone-success">Processing all eligible members</span>
                   </div>
                 )}
               </div>
-            ) : isYearly ? (
-              <div className="flex items-start pt-4 col-span-1">
-                <p className="int-yearly-tip fz-caption text-indigo-700 leading-snug">
-                  Applies: Opening Balance Interest · Monthly Contribution · Dividend & Group Insurance Deduction
-                </p>
-              </div>
-            ) : (
-              <div className="flex items-end pb-0.5">
-                <div className="int-all-badge flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-1 w-full">
-                  <span className="fz-caption font-black text-emerald-700">Processing all eligible members</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+            </section>
 
-        {/* Actions */}
-        <div className="int-actions-card col-span-4 border border-emerald-300 rounded-xl p-2 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md flex flex-col gap-2">
-          <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-lg fz-caption font-black uppercase tracking-wider shadow-sm self-start">
-            Actions
-          </span>
-
-          {/* GL Account info */}
-          <div className="int-gl-info flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-2.5 py-1.5 shadow-sm">
-            <Database size={11} className="text-emerald-600 shrink-0" />
-            <div>
-              <span className="int-gl-label fz-caption font-black text-slate-500 uppercase">GL Head: </span>
-              <span className="int-gl-value fz-caption font-black text-emerald-700">
-                {formData.accountType === 'SB' ? 'A1001 — Savings' :
-                 formData.accountType === 'RD' ? 'A1002 — Recurring' : 'A1003 — Fixed Deposit'}
-              </span>
-            </div>
+            {/* ── Actions ── */}
+            <section className="aw-card" style={{ alignSelf: 'start' }}>
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Database size={14} /></span>
+                <h2 className="aw-card-title">Actions</h2>
+              </div>
+              <div className="aw-stack">
+                <dl className="aw-facts" style={{ gridTemplateColumns: '1fr' }}>
+                  <div><dt>GL Head</dt><dd style={{ color: 'var(--aw-success)' }}>{glHead}</dd></div>
+                </dl>
+                <button type="button" onClick={handlePrintList} disabled={isLoading} className="aw-btn aw-btn-secondary" style={{ width: '100%' }}>
+                  {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <FileText size={13} />}
+                  Preview Interest List
+                </button>
+                <p className="aw-meta" style={{ textAlign: 'center' }}>Preview records · then click Post Transaction</p>
+              </div>
+            </section>
           </div>
 
-          <button
-            onClick={handlePrintList}
-            disabled={isLoading}
-            className="int-preview-btn flex-1 bg-white border border-emerald-500 text-emerald-700 font-black fz-label rounded-lg hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center gap-1.5 shadow-sm uppercase tracking-widest active:scale-95 disabled:opacity-50 min-h-[28px]"
-          >
-            {isLoading ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />}
-            Preview Interest List
-          </button>
-          <p className="int-preview-tip fz-caption text-emerald-600 text-center opacity-70 leading-tight">
-            Preview records · then click Post Transaction
-          </p>
-        </div>
-      </div>
-
-      {/* Records Table */}
-      <div className="int-table-area flex-1 overflow-hidden mx-2 mb-2 bg-white border border-slate-200 rounded-xl shadow-md flex flex-col">
-        <div className="int-table-hdr bg-slate-50 border-b border-slate-200 px-3 py-1.5 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="int-db-icon-bg bg-slate-200 p-1 rounded-lg text-slate-600">
-              <Database size={13} />
+          {/* ── Preview records ── */}
+          <section className="aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><Database size={14} /></span>
+              <h2 className="aw-card-title">Interest Preview Records</h2>
+              {memberRecords.length > 0 && <span className="aw-pill">{memberRecords.length} Records</span>}
+              {isLoading && (
+                <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <RefreshCw size={12} className="aw-spin" /> Processing...
+                </span>
+              )}
             </div>
-            <h2 className="fz-label font-black text-slate-800 tracking-tight uppercase">Interest Preview Records</h2>
+
             {memberRecords.length > 0 && (
-              <span className="int-records-badge bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full fz-caption font-black border border-indigo-200">
-                {memberRecords.length} Records
-              </span>
-            )}
-            {isLoading && (
-              <div className="int-loading-indicator flex items-center gap-1.5 text-indigo-600 fz-caption font-black">
-                <Loader2 size={12} className="animate-spin" /> Processing...
+              <div className="aw-stats aw-fade-in" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 'var(--aw-gap)' }}>
+                <div className="aw-stat"><div className="aw-stat-label">Principal</div><div className="aw-stat-value">{inr(totals.principal)}</div></div>
+                <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}><div className="aw-stat-label">Interest</div><div className="aw-stat-value">{inr(totals.interest)}</div></div>
+                <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-danger)' }}><div className="aw-stat-label">Debit</div><div className="aw-stat-value">{inr(totals.debit)}</div></div>
+                <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-success)' }}><div className="aw-stat-label">Credit</div><div className="aw-stat-value">{inr(totals.credit)}</div></div>
               </div>
             )}
-          </div>
 
-          {/* Inline summary stats */}
-          {memberRecords.length > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="int-stat-box flex items-center gap-1.5 bg-white border border-indigo-100 rounded-lg px-2 py-1 shadow-sm">
-                <IndianRupee size={10} className="text-indigo-500" />
-                <span className="int-stat-label fz-caption font-black text-slate-500 uppercase">Principal</span>
-                <span className="int-principal-val fz-caption font-black text-slate-800">
-                  ₹{memberRecords.reduce((s, r) => s + r.balance, 0).toLocaleString('en-IN')}
-                </span>
+            {memberRecords.length > 0 ? (
+              <DataTable data={memberRecords} />
+            ) : !isLoading ? (
+              <div className="aw-empty" style={{ padding: 32 }}>
+                <Search size={26} />
+                <strong className="aw-strong">No records loaded</strong>
+                <span className="aw-meta">Set parameters and click Preview Interest List</span>
               </div>
-              <div className="int-stat-box flex items-center gap-1.5 bg-white border border-blue-100 rounded-lg px-2 py-1 shadow-sm">
-                <TrendingUp size={10} className="text-blue-500" />
-                <span className="int-stat-label fz-caption font-black text-slate-500 uppercase">Interest</span>
-                <span className="fz-caption font-black text-blue-600">
-                  ₹{memberRecords.reduce((s, r) => s + r.interest, 0).toLocaleString('en-IN')}
-                </span>
-              </div>
-              <div className="int-stat-box flex items-center gap-1.5 bg-white border border-red-100 rounded-lg px-2 py-1 shadow-sm">
-                <ArrowUpRight size={10} className="text-red-500" />
-                <span className="int-stat-label fz-caption font-black text-slate-500 uppercase">Debit</span>
-                <span className="fz-caption font-black text-red-600">
-                  ₹{memberRecords.reduce((s, r) => s + r.debit, 0).toLocaleString('en-IN')}
-                </span>
-              </div>
-              <div className="int-stat-box flex items-center gap-1.5 bg-white border border-emerald-100 rounded-lg px-2 py-1 shadow-sm">
-                <ArrowDownLeft size={10} className="text-emerald-500" />
-                <span className="int-stat-label fz-caption font-black text-slate-500 uppercase">Credit</span>
-                <span className="fz-caption font-black text-emerald-600">
-                  ₹{memberRecords.reduce((s, r) => s + r.credit, 0).toLocaleString('en-IN')}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-auto p-2">
-          <DataTable data={memberRecords} />
-          {memberRecords.length === 0 && !isLoading && (
-            <div className="int-empty-txt flex flex-col items-center justify-center h-full text-slate-400 py-8">
-              <div className="int-empty-icon bg-slate-100 p-3 rounded-full mb-3">
-                <Search size={24} strokeWidth={1.5} />
-              </div>
-              <p className="fz-label font-black uppercase tracking-widest">No records loaded</p>
-              <p className="fz-caption mt-1">Set parameters and click Preview Interest List</p>
-            </div>
-          )}
+            ) : null}
+          </section>
         </div>
       </div>
 
-      {/* Member Lookup Modal */}
-      {isLookupOpen && (
-        <div className="int-lookup-overlay fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="int-lookup-modal bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-200 relative">
-            <button
-              onClick={() => setIsLookupOpen(false)}
-              className="absolute top-4 right-4 z-[110] p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors shadow-sm"
-              title="Close"
-            >
-              <X size={16} className="text-slate-600" />
-            </button>
-            <MemberLookup
-              isModal={true}
-              onSelect={(member) => handleMemberSelect(member)}
-              onClose={() => setIsLookupOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+      <MemberLookupDialog open={isLookupOpen} onClose={() => setIsLookupOpen(false)} onSelect={handleMemberSelect} />
     </div>
   );
 };

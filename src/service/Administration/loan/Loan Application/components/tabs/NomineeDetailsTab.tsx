@@ -46,10 +46,10 @@ const NomineeDetailsTab: React.FC<NomineeDetailsTabProps> = ({
   ];
 
   return (
-    <div className="h-full">
-      <div className="mb-4">
-        <h3 className="fz-heading font-semibold text-slate-800">Nominee Details</h3>
-        <p className="fz-body text-slate-600 mt-1">Add nominee information for the loan application</p>
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <h2 className="aw-card-title">Nominee Details</h2>
+        <p className="aw-desc">Add nominee information for the loan application</p>
       </div>
       <DataTable
         data={nomineeDetails}

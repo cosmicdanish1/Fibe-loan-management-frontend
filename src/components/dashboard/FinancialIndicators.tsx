@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Spin, Statistic, Table, Typography } from 'antd';
+import { Spin } from 'antd';
 import { TrendingUp, Percent, ShieldCheck, PieChart, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiService } from '../../services/api';
-
-const { Title, Text } = Typography;
 
 interface BusinessRules {
     RULE_FUND_INT_RATE: number;
@@ -72,10 +70,6 @@ const FinancialIndicators: React.FC<Props> = ({
         return <div className="p-4 text-center"><Spin /></div>;
     }
 
-    const chartColumns = [
-        { title: 'Monthly Contrib.', dataIndex: 'monthlyContribution', key: 'monthlyContribution', render: (val: number) => `₹ ${val}` },
-        { title: 'Yearly Interest', dataIndex: 'yearlyInterest', key: 'yearlyInterest', render: (val: number) => <span className="text-emerald-600 font-bold">₹ {val}</span> },
-    ];
 
     return (
         <div className="w-full max-w-7xl mx-auto mt-8">

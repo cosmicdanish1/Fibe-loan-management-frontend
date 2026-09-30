@@ -77,8 +77,7 @@ const YearlyMemberStatement: React.FC = () => {
     });
 
     const { interfaceMode } = useSelector((state: RootState) => state.theme);
-    const isDark = interfaceMode === 'dark' ||
-        (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const isDark = interfaceMode === 'dark';
 
     const sortOptions = [
         { label: 'Member No', value: 'MBNO' },

@@ -126,8 +126,7 @@ const DetailLedger: React.FC = () => {
   const [headName, setHeadName] = useState<string>('');
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   useEffect(() => {
     fetchHeadList();

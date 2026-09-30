@@ -104,6 +104,7 @@ export const ROUTES = {
     CASH_BOOK_RECEIPTWISE: '/reports/daily/cash-book-receiptwise',
     CASH_BOOK: '/reports/daily/cash-book',
     DAY_BOOK: '/reports/daily/day-book',
+    DAY_BOOK_CD: '/reports/daily/day-book-cd',
     DAY_BOOK_SB: '/reports/daily/day-book-sb',
     CONSOLIDATION_DAILY_ACCOUNT: '/reports/daily/consolidation',
 

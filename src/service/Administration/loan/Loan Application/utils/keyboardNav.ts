@@ -14,6 +14,8 @@ export function handleEnterAsTab(e: KeyboardEvent<HTMLElement>) {
   const target = e.target as HTMLElement;
   // Let textareas keep native Enter (newline) and don't hijack buttons.
   if (target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON') return;
+  // Dropdown search inputs use Enter to pick an option.
+  if (target.getAttribute('role') === 'combobox') return;
 
   const container = e.currentTarget;
   const focusables = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))

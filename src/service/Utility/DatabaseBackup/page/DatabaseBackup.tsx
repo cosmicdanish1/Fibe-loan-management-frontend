@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Database, Download, RefreshCw, Folder, Settings, Clock, HardDrive,
-  FileText, Trash2, Lock, Info, ShieldCheck, Building2, Activity,
+  Database, Download, RefreshCw, Folder, Settings,
+  FileText, Trash2, Activity,
   History, Terminal, Server, Search
 } from 'lucide-react';
 import { apiService } from '../../../../services/api';
-import { ConfigProvider, Switch, Spin, Input, Badge, Empty } from 'antd';
 import dayjs from 'dayjs';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
@@ -25,8 +24,6 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
 interface BackupInfo { fileName: string; filePath: string; fileSize: number; createdAt: string; type: 'full' | 'schema' | 'data'; }
 interface DatabaseInfo { host: string; port: number; database: string; username: string; }
 
-const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inp = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded px-2 w-full focus:outline-none focus:border-indigo-400";
 
 const DatabaseBackup: React.FC = () => {
   const [destinationPath, setDestinationPath] = useState('C:\\DatabaseBackups');
@@ -111,239 +108,198 @@ const DatabaseBackup: React.FC = () => {
   const filteredBackups = useMemo(() => backupList.filter(b => b.fileName.toLowerCase().includes(searchQuery.toLowerCase())), [backupList, searchQuery]);
 
   const STATS = [
-    { label: 'Registered Backups', value: backupList.length, icon: FileText, color: 'bg-indigo-50 text-indigo-600' },
-    { label: 'Database Node', value: dbInfo?.host || 'N/A', icon: Server, color: 'bg-blue-50 text-blue-600' },
-    { label: 'Port Protocol', value: dbInfo?.port || 'N/A', icon: Terminal, color: 'bg-slate-100 text-slate-600' },
-    { label: 'Backup Engine', value: 'pg_dump v14+', icon: Activity, color: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Registered Backups', value: backupList.length, icon: FileText, tone: '' },
+    { label: 'Database Node', value: dbInfo?.host || 'N/A', icon: Server, tone: 'tone-info' },
+    { label: 'Port Protocol', value: dbInfo?.port || 'N/A', icon: Terminal, tone: 'tone-warning' },
+    { label: 'Backup Engine', value: 'pg_dump v14+', icon: Activity, tone: 'tone-success' },
   ];
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="dbbackup-app h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+    <div className="app-window">
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
-              <Database size={13} className="text-white" />
-            </div>
-            <div>
-              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Database Backup Registry</h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                <Badge status={connectionStatus === 'connected' ? 'success' : 'error'}
-                  text={<span className="fz-micro font-black text-slate-300 uppercase tracking-wider">
-                    {connectionStatus === 'connected' ? 'Live Connection' : 'Disconnected'}
-                  </span>} />
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {lastBackupDate && (
-              <div className="hidden lg:flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-lg border border-white/10">
-                <Activity size={10} className="text-indigo-300" />
-                <div className="flex flex-col items-end">
-                  <span className="fz-micro font-black text-slate-300 uppercase">Last Activity</span>
-                  <span className="fz-tiny font-bold text-white">{dayjs(lastBackupDate).format('DD MMM YY HH:mm')}</span>
-                </div>
-              </div>
-            )}
-            <button onClick={handleBackup} disabled={isBackingUp}
-              className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-400 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 transition-all uppercase tracking-wide">
-              {isBackingUp ? <RefreshCw size={11} className="animate-spin" /> : <Download size={11} />}
-              {isBackingUp ? `${backupProgress}%` : 'Trigger Backup'}
-            </button>
-          </div>
+      {/* Header */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Database Backup Registry</h1>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className={`aw-pill ${connectionStatus === 'connected' ? 'tone-success' : 'tone-danger'}`}>
+              <i className="aw-status-dot" style={{ background: 'var(--aw-tone)' }} />
+              {connectionStatus === 'connected' ? 'Live Connection' : 'Disconnected'}
+            </span>
+          </p>
         </div>
+        <div className="aw-actions">
+          {isLoading && (
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+              <RefreshCw size={12} className="aw-spin" /> Syncing with database server...
+            </span>
+          )}
+          {lastBackupDate && (
+            <div style={{ textAlign: 'right' }}>
+              <span className="aw-stat-label" style={{ display: 'block' }}>Last Activity</span>
+              <span className="aw-strong">{dayjs(lastBackupDate).format('DD MMM YY HH:mm')}</span>
+            </div>
+          )}
+          <button type="button" onClick={handleBackup} disabled={isBackingUp} className="aw-btn aw-btn-primary" data-tip="Create a new backup now" data-tip-pos="bottom-end">
+            {isBackingUp ? <RefreshCw size={13} className="aw-spin" /> : <Download size={13} />}
+            {isBackingUp ? `${backupProgress}%` : 'Trigger Backup'}
+          </button>
+        </div>
+      </div>
 
-        {/* Body */}
-        <Spin spinning={isLoading} tip="Syncing with database server...">
-          <div className="flex-1 overflow-auto p-2 space-y-2">
+      {/* Body */}
+      <div className="aw-content">
+        <div className="aw-stack">
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-4 gap-1.5 shrink-0">
-              {STATS.map(stat => (
-                <div key={stat.label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-2.5 flex items-center justify-between">
-                  <div className={`p-1.5 rounded-lg ${stat.color}`}><stat.icon size={14} /></div>
-                  <div className="flex flex-col items-end">
-                    <span className="fz-mini font-black text-slate-400 uppercase tracking-wider">{stat.label}</span>
-                    <span className="fz-label font-black text-slate-800">{stat.value}</span>
+          {/* Stats Overview */}
+          <div className="aw-stats aw-stats-4">
+            {STATS.map(stat => (
+              <div key={stat.label} className={`aw-stat aw-stat-left ${stat.tone}`}>
+                <div className="aw-stat-head">
+                  <stat.icon size={14} />
+                  <span className="aw-stat-label">{stat.label}</span>
+                </div>
+                <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 3px)' }}>{stat.value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="aw-split aw-split-wide">
+
+            {/* Config Panel */}
+            <div className="aw-stack">
+              <section className="aw-card">
+                <div className="aw-card-head">
+                  <span className="aw-card-icon"><Settings size={14} /></span>
+                  <h2 className="aw-card-title">Configuration</h2>
+                </div>
+                <div className="aw-stack">
+                  <div>
+                    <label className="aw-label" htmlFor="dbb-path">Destination Path</label>
+                    <div className="aw-input-wrap has-icon">
+                      <Folder size={13} />
+                      <input id="dbb-path" value={destinationPath} onChange={e => setDestinationPath(e.target.value)} className="aw-input" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="aw-label" htmlFor="dbb-name">Custom Name (optional)</label>
+                    <input id="dbb-name" value={backupOptions.customName} onChange={e => setBackupOptions(p => ({ ...p, customName: e.target.value }))}
+                      placeholder="Leave blank for auto..." className="aw-input" />
+                  </div>
+                  <div className="aw-stack" style={{ gap: 10 }}>
+                    <div className="aw-switch-row">
+                      <button type="button" role="switch" id="dbb-schema" aria-checked={backupOptions.includeSchema}
+                        onClick={() => setBackupOptions(p => ({ ...p, includeSchema: !p.includeSchema }))} className="aw-switch" />
+                      <label htmlFor="dbb-schema" style={{ cursor: 'pointer' }}>Include Schema</label>
+                    </div>
+                    <div className="aw-switch-row">
+                      <button type="button" role="switch" id="dbb-data" aria-checked={backupOptions.includeData}
+                        onClick={() => setBackupOptions(p => ({ ...p, includeData: !p.includeData }))} className="aw-switch" />
+                      <label htmlFor="dbb-data" style={{ cursor: 'pointer' }}>Include Data</label>
+                    </div>
+                  </div>
+                  <div className="aw-btn-row" style={{ paddingTop: 12, borderTop: '1px solid var(--aw-border)' }}>
+                    <button type="button" onClick={initializeComponent} className="aw-btn aw-btn-secondary" data-tip="Reload connection and backup list" data-tip-pos="top-start">
+                      <RefreshCw size={13} /> Refresh
+                    </button>
+                    <button type="button" onClick={handleCleanup} className="aw-btn aw-btn-danger" data-tip="Delete backups older than 30 days" data-tip-pos="top-end">
+                      <Trash2 size={13} /> Purge Old
+                    </button>
                   </div>
                 </div>
-              ))}
+              </section>
+
+              {/* DB Info */}
+              {dbInfo && (
+                <section className="aw-card aw-fade-in">
+                  <div className="aw-card-head">
+                    <span className="aw-card-icon"><Server size={14} /></span>
+                    <h2 className="aw-card-title">DB Connection</h2>
+                  </div>
+                  <div className="aw-rows">
+                    {[{ l: 'Host', v: dbInfo.host }, { l: 'Port', v: dbInfo.port }, { l: 'Database', v: dbInfo.database }, { l: 'User', v: dbInfo.username }].map(r => (
+                      <div key={r.l} className="aw-row">
+                        <span className="aw-row-label">{r.l}</span>
+                        <span className="aw-row-value">{r.v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
 
-            <div className="grid grid-cols-12 gap-1.5">
-
-              {/* Config Panel */}
-              <div className="col-span-4 space-y-1.5">
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                  <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                    <Settings size={10} className="text-slate-400" />
-                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Configuration</span>
-                  </div>
-                  <div className="p-2.5 space-y-2">
-                    <div>
-                      <label className={lbl}>Destination Path</label>
-                      <Input value={destinationPath} onChange={e => setDestinationPath(e.target.value)}
-                        prefix={<Folder size={10} className="text-slate-400" />}
-                        className="h-7 fz-small font-semibold" />
-                    </div>
-                    <div>
-                      <label className={lbl}>Custom Name (optional)</label>
-                      <input value={backupOptions.customName} onChange={e => setBackupOptions(p => ({ ...p, customName: e.target.value }))}
-                        placeholder="Leave blank for auto..." className={inp} />
-                    </div>
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <Switch size="small" checked={backupOptions.includeSchema} onChange={v => setBackupOptions(p => ({ ...p, includeSchema: v }))} />
-                          <label className="fz-tiny font-semibold text-slate-600">Include Schema</label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch size="small" checked={backupOptions.includeData} onChange={v => setBackupOptions(p => ({ ...p, includeData: v }))} />
-                          <label className="fz-tiny font-semibold text-slate-600">Include Data</label>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-1.5 pt-1 border-t border-slate-100">
-                      <button onClick={initializeComponent}
-                        className="flex-1 h-7 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded fz-tiny font-black uppercase flex items-center justify-center gap-1 transition-all">
-                        <RefreshCw size={10} /> Refresh
-                      </button>
-                      <button onClick={handleCleanup}
-                        className="flex-1 h-7 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-600 rounded fz-tiny font-black uppercase flex items-center justify-center gap-1 transition-all border border-rose-200">
-                        <Trash2 size={10} /> Purge Old
-                      </button>
-                    </div>
-                  </div>
+            {/* Backup History */}
+            <section className="aw-card aw-main">
+              <div className="aw-main-head">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span className="aw-card-icon"><History size={14} /></span>
+                  <h2 className="aw-card-title">Backup History</h2>
+                  <span className="aw-pill">{filteredBackups.length} files</span>
                 </div>
-
-                {/* DB Info */}
-                {dbInfo && (
-                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                      <Server size={10} className="text-slate-400" />
-                      <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">DB Connection</span>
-                    </div>
-                    <div className="p-2.5 space-y-1.5 fz-tiny">
-                      {[{ l: 'Host', v: dbInfo.host }, { l: 'Port', v: dbInfo.port }, { l: 'Database', v: dbInfo.database }, { l: 'User', v: dbInfo.username }].map(r => (
-                        <div key={r.l} className="flex justify-between border-b border-slate-50 pb-1">
-                          <span className="font-black text-slate-400 uppercase">{r.l}</span>
-                          <span className="font-black text-slate-700">{r.v}</span>
-                        </div>
+                <div className="aw-input-wrap has-icon aw-search">
+                  <Search size={13} />
+                  <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search..." aria-label="Search backups" className="aw-input" />
+                </div>
+              </div>
+              <div className="aw-main-body" style={{ padding: 0, maxHeight: '60vh' }}>
+                {filteredBackups.length > 0 ? (
+                  <table className="aw-table">
+                    <thead>
+                      <tr>
+                        {['File Name', 'Type', 'Size', 'Created', 'Path'].map(h => (
+                          <th key={h}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredBackups.map((backup, i) => (
+                        <tr key={i}>
+                          <td>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                              <FileText size={14} style={{ color: 'var(--aw-accent)', flex: 'none' }} />
+                              <span style={{ maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{backup.fileName}</span>
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`aw-pill ${backup.type === 'full' ? 'tone-success' : backup.type === 'schema' ? 'tone-info' : 'tone-warning'}`} style={{ textTransform: 'uppercase' }}>
+                              {backup.type}
+                            </span>
+                          </td>
+                          <td className="is-muted" style={{ whiteSpace: 'nowrap' }}>{formatFileSize(backup.fileSize)}</td>
+                          <td className="is-muted" style={{ whiteSpace: 'nowrap' }}>{dayjs(backup.createdAt).format('DD MMM YY HH:mm')}</td>
+                          <td className="is-muted" title={backup.filePath} style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{backup.filePath}</td>
+                        </tr>
                       ))}
-                    </div>
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="aw-empty">
+                    <FileText size={34} />
+                    <span>No backups found</span>
                   </div>
                 )}
               </div>
+            </section>
 
-              {/* Backup History */}
-              <div className="col-span-8 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-                <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <History size={10} className="text-slate-400" />
-                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Backup History</span>
-                    <span className="fz-mini font-black text-indigo-600 ml-1">{filteredBackups.length} files</span>
-                  </div>
-                  <div className="relative">
-                    <Search size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                      placeholder="Search..." className="h-6 pl-6 pr-2 fz-tiny bg-slate-50 border border-slate-200 rounded focus:outline-none focus:border-indigo-400 w-40" />
-                  </div>
-                </div>
-                <div className="flex-1 overflow-auto">
-                  {filteredBackups.length > 0 ? (
-                    <table className="w-full">
-                      <thead className="sticky top-0 bg-[#f8fafc]">
-                        <tr>
-                          {['File Name', 'Type', 'Size', 'Created', 'Path'].map(h => (
-                            <th key={h} className="px-3 py-2 text-left fz-mini font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredBackups.map((backup, i) => (
-                          <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td className="px-3 py-1.5">
-                              <div className="flex items-center gap-1.5">
-                                <FileText size={11} className="text-indigo-400 shrink-0" />
-                                <span className="fz-tiny font-black text-slate-700 truncate max-w-[160px]">{backup.fileName}</span>
-                              </div>
-                            </td>
-                            <td className="px-3 py-1.5">
-                              <span className={`px-1.5 py-0.5 rounded-full fz-mini font-black uppercase ${backup.type === 'full' ? 'bg-emerald-50 text-emerald-600' : backup.type === 'schema' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
-                                {backup.type}
-                              </span>
-                            </td>
-                            <td className="px-3 py-1.5 fz-tiny text-slate-600">{formatFileSize(backup.fileSize)}</td>
-                            <td className="px-3 py-1.5 fz-tiny text-slate-600">{dayjs(backup.createdAt).format('DD MMM YY HH:mm')}</td>
-                            <td className="px-3 py-1.5 fz-tiny text-slate-400 truncate max-w-[120px]" title={backup.filePath}>{backup.filePath}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="h-full flex items-center justify-center">
-                      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={<span className="fz-tiny font-black text-slate-400 uppercase">No backups found</span>} />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-            </div>
           </div>
-        </Spin>
-
-        {/* Progress Overlay */}
-        {isBackingUp && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-xl p-6 w-80 text-center">
-              <Database size={32} className="text-indigo-600 mx-auto mb-3" />
-              <h3 className="fz-caption font-black text-slate-800 uppercase mb-1">Backup in Progress</h3>
-              <p className="fz-tiny text-slate-400 mb-4">Please wait while the database is being backed up...</p>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-600 rounded-full transition-all duration-300" style={{ width: `${backupProgress}%` }} />
-              </div>
-              <p className="fz-small font-black text-indigo-600 mt-2">{backupProgress}%</p>
-            </div>
-          </div>
-        )}
-
-        <style>{`
-          /* ── Database Backup — dark mode ── */
-          html.dark .dbbackup-app { background-color: #000000 !important; color: #f5f5f7 !important; }
-          html.dark .dbbackup-app .bg-white { background-color: #1c1c1e !important; }
-          html.dark .dbbackup-app .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .dbbackup-app .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .dbbackup-app .bg-\\[\\#f8fafc\\] { background-color: #1c1c1e !important; }
-          html.dark .dbbackup-app .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
-          html.dark .dbbackup-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
-          html.dark .dbbackup-app input,
-          html.dark .dbbackup-app .ant-input,
-          html.dark .dbbackup-app .ant-input-affix-wrapper {
-            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-          }
-          html.dark .dbbackup-app label { color: #8e8e93 !important; }
-          html.dark .dbbackup-app .text-slate-900 { color: #f5f5f7 !important; }
-          html.dark .dbbackup-app .text-slate-800 { color: #f5f5f7 !important; }
-          html.dark .dbbackup-app .text-slate-700 { color: #f5f5f7 !important; }
-          html.dark .dbbackup-app .text-slate-600 { color: #8e8e93 !important; }
-          html.dark .dbbackup-app .text-slate-500 { color: #8e8e93 !important; }
-          html.dark .dbbackup-app .text-slate-400 { color: #71717a !important; }
-          html.dark .dbbackup-app .hover\\:bg-slate-50:hover { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .dbbackup-app .hover\\:bg-slate-200:hover { background-color: rgba(255,255,255,.08) !important; }
-          html.dark .dbbackup-app .bg-slate-400 { background-color: rgba(255,255,255,.15) !important; }
-          html.dark .dbbackup-app .bg-emerald-50 { background-color: rgba(52,211,153,0.08) !important; }
-          html.dark .dbbackup-app .text-emerald-600 { color: #34d399 !important; }
-          html.dark .dbbackup-app .bg-amber-50 { background-color: rgba(251,191,36,0.08) !important; }
-          html.dark .dbbackup-app .text-amber-600 { color: #fbbf24 !important; }
-          html.dark .dbbackup-app .bg-rose-50 { background-color: rgba(255,69,58,0.08) !important; }
-          html.dark .dbbackup-app .text-rose-600 { color: #ff453a !important; }
-          html.dark .dbbackup-app .border-rose-200 { border-color: rgba(255,69,58,0.3) !important; }
-        `}</style>
-
+        </div>
       </div>
-    </ConfigProvider>
+
+      {/* Progress Overlay */}
+      {isBackingUp && (
+        <div className="aw-modal-backdrop">
+          <div className="aw-modal" role="alertdialog" aria-modal="true" aria-label="Backup in progress" style={{ maxWidth: '20rem', height: 'auto', padding: 24, textAlign: 'center' }}>
+            <Database size={32} style={{ color: 'var(--aw-accent)', margin: '0 auto 12px' }} />
+            <h3 className="aw-card-title" style={{ marginBottom: 4 }}>Backup in Progress</h3>
+            <p className="aw-muted" style={{ marginBottom: 16 }}>Please wait while the database is being backed up...</p>
+            <div className="aw-bar" role="progressbar" aria-valuenow={backupProgress} aria-valuemin={0} aria-valuemax={100}>
+              <span style={{ width: `${backupProgress}%` }} />
+            </div>
+            <p className="aw-strong" style={{ marginTop: 8, color: 'var(--aw-accent)' }}>{backupProgress}%</p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

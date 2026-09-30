@@ -25,6 +25,13 @@ import {
   MonthEndOutstandingWidget, MemberBalanceDistributionWidget,
 } from './AnalyticsWidgets';
 import apiService from '../../services/api';
+import BentoGrid from './BentoGrid';
+import { loadLayout, saveLayout, clearLayout, DEFAULT_ROWS, DEFAULT_WIDGET_CONFIG, type RowLayout, type WidgetConfig } from './dashboardLayout';
+import {
+  useDashboardSummary, PendingVouchersWidget, CashPositionWidget, DayEndStatusWidget, DemandRecoveryWidget,
+  DepositsSummaryWidget, UpcomingMaturitiesWidget, LoanApplicationsWidget, OverdueLoansWidget,
+  RetiringMembersWidget, NewMembersWidget,
+} from './SummaryWidgets';
 import dayjs from 'dayjs';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -38,29 +45,15 @@ interface Notice {
   postedBy: string;
 }
 
-interface WidgetConfig {
-  fyBanner: boolean;
-  quickActions: boolean;
-  noticeBoard: boolean;
-  shortcuts: boolean;
-  activeMembers: boolean;
-  sanctionedLoans: boolean;
-  monthEndOutstanding: boolean;
-  balanceDistribution: boolean;
-}
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const WIDGET_CONFIG_KEY = 'lms-dashboard-widgets';
 const BANNER_OPACITY_KEY = 'lms-fy-banner-opacity';
-const DEFAULT_WIDGETS: WidgetConfig = {
-  fyBanner: true, quickActions: true, noticeBoard: true, shortcuts: true,
-  activeMembers: true, sanctionedLoans: true, monthEndOutstanding: true, balanceDistribution: true,
-};
 
 const loadWidgetConfig = (): WidgetConfig => {
-  try { return { ...DEFAULT_WIDGETS, ...JSON.parse(localStorage.getItem(WIDGET_CONFIG_KEY) || '{}') }; }
-  catch { return DEFAULT_WIDGETS; }
+  try { return { ...DEFAULT_WIDGET_CONFIG, ...JSON.parse(localStorage.getItem(WIDGET_CONFIG_KEY) || '{}') }; }
+  catch { return DEFAULT_WIDGET_CONFIG; }
 };
 
 const loadBannerOpacity = (): number => {
@@ -128,12 +121,17 @@ const SHORTCUTS = [
   { label: 'Exit form',     keys: ['Esc'] },
 ];
 
-// ─── Notice style maps ───────────────────────────────────────────────────────
+// ─── Notice style map (kit alert variants) ───────────────────────────────────
 
 const NOTICE_STYLES = {
-  info:    { border: 'border-indigo-400', bg: 'bg-indigo-50',  title: 'text-indigo-800',  body: 'text-indigo-600',  meta: 'text-indigo-400',  Icon: Info },
-  warning: { border: 'border-amber-400',  bg: 'bg-amber-50',   title: 'text-amber-800',   body: 'text-amber-600',   meta: 'text-amber-400',   Icon: AlertTriangle },
-  success: { border: 'border-emerald-400',bg: 'bg-emerald-50', title: 'text-emerald-800', body: 'text-emerald-600', meta: 'text-emerald-400', Icon: CheckCircle },
+  info:    { cls: 'aw-alert-info',    Icon: Info },
+  warning: { cls: 'aw-alert-warning', Icon: AlertTriangle },
+  success: { cls: 'aw-alert-success', Icon: CheckCircle },
+};
+
+const kbdStyle: React.CSSProperties = {
+  border: '1px solid var(--aw-border-strong)', background: 'var(--aw-surface-muted)', borderRadius: 5,
+  padding: '2px 7px', fontSize: 'calc(var(--type-body-size) - 2px)', fontWeight: 700, lineHeight: 1.2, color: 'var(--aw-text)',
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -141,14 +139,10 @@ const NOTICE_STYLES = {
 const Dashboard: React.FC = () => {
   const fy = useMemo(() => getFYInfo(), []);
 
-  // Theme — drives background so it responds immediately on dark↔light toggle
-  const interfaceMode = useSelector((s: RootState) => s.theme.interfaceMode);
-  const isDark = interfaceMode === 'dark'
-    || (interfaceMode === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-  // Dashboard background (user-customisable in light mode; forced dark in dark mode)
-  const [dashBg, setDashBg] = useState(() => localStorage.getItem('lms-dashboard-bg') || '#f5f6fa');
-  const effectiveBg = isDark ? '#0f172a' : dashBg;
+  // Optional custom background chosen in Settings (light mode only). Left empty
+  // when the user has never picked one so the window uses the theme background.
+  const isDark = useSelector((s: RootState) => s.theme.interfaceMode) === 'dark';
+  const [customBg, setCustomBg] = useState(() => localStorage.getItem('lms-dashboard-bg') || '');
 
   // Widget visibility & banner opacity — synced from Settings via BroadcastChannel
   const [widgets, setWidgets] = useState<WidgetConfig>(loadWidgetConfig);
@@ -164,11 +158,12 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const bgCh = new BroadcastChannel('lms_dashboard_bg');
-    bgCh.onmessage = (e) => { if (e.data?.dashboardBg) setDashBg(e.data.dashboardBg); };
+    bgCh.onmessage = (e) => { if (e.data?.dashboardBg) setCustomBg(e.data.dashboardBg); };
 
     const cfgCh = new BroadcastChannel('lms_dashboard_config');
     cfgCh.onmessage = (e) => {
-      if (e.data?.widgets)      setWidgets(e.data.widgets);
+      if (e.data?.widgets)      setWidgets({ ...DEFAULT_WIDGET_CONFIG, ...e.data.widgets });
+      if (e.data?.resetLayout)  resetLayoutRef.current();
       if (e.data?.bannerOpacity !== undefined) setBannerOpacity(e.data.bannerOpacity);
     };
 
@@ -177,6 +172,9 @@ const Dashboard: React.FC = () => {
 
     return () => { bgCh.close(); cfgCh.close(); qaCh.close(); };
   }, []);
+
+  // Settings → Dashboard Layout sends a message that resets the arrangement.
+  const resetLayoutRef = useRef<() => void>(() => {});
 
   const visibleActions = useMemo(() =>
     enabledQaIds
@@ -278,255 +276,216 @@ const Dashboard: React.FC = () => {
     }
   }, [addNotice, closeForm]);
 
-  // Banner glass style — opacity controlled by Settings
-  // When opacity < 45 the dark layer is mostly transparent → background shows through (likely light)
-  // so we flip to dark text for readability; above 45 we use the classic white-on-dark scheme.
-  const isDarkBanner = bannerOpacity >= 45;
-  const bannerStyle: React.CSSProperties = {
-    backdropFilter: 'blur(20px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-    background: `rgba(15,23,42,${(bannerOpacity / 100).toFixed(2)})`,
-    border: isDarkBanner ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(0,0,0,0.08)',
-    boxShadow: isDarkBanner
-      ? '0 8px 32px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.07)'
-      : '0 4px 20px rgba(0,0,0,0.06)',
-  };
-
-  // Derived text / decoration tokens for the banner
-  const bt = {
-    label:   isDarkBanner ? '#94a3b8' : '#475569',   // "Current Financial Year" label
-    value:   isDarkBanner ? '#ffffff' : '#0f172a',   // FY year, dates, progress %
-    accent:  isDarkBanner ? '#fcd34d' : '#d97706',   // days-remaining number
-    divider: isDarkBanner ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
-    chipBg:  isDarkBanner ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-    chipBdr: isDarkBanner ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
-    icon:    isDarkBanner ? '#94a3b8' : '#475569',
-    track:   isDarkBanner ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
-  };
 
   const anyVisible = Object.values(widgets).some(Boolean);
 
-  return (
-    <div className="flex-grow flex flex-col overflow-hidden relative" style={{ backgroundColor: effectiveBg }}>
+  // The banner keeps its Settings-controlled strength: the accent tint scales with the opacity slider.
+  const bannerTint = Math.round(4 + (bannerOpacity / 100) * 26);
 
-      {/* ── Decorative blobs (give glass something to blur) ───── */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-        <div className="absolute -top-16 -right-16 w-80 h-80 bg-violet-500/8 rounded-full blur-3xl" />
-        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-emerald-500/8 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-sky-400/6 rounded-full blur-2xl" />
-      </div>
+  // Bento layout: rows of cards. Drag a card by its grip to move it, drag the edge between two
+  // cards to resize them (the neighbour gives way so the row keeps filling the window), and drag
+  // a row's bottom edge to change its height. Saved on this PC.
+  const [rows, setRows] = useState<RowLayout[]>(loadLayout);
+  const handleLayout = useCallback((next: RowLayout[], commit: boolean) => {
+    setRows(next);
+    if (commit) saveLayout(next);
+  }, []);
+  const resetLayout = useCallback(() => { clearLayout(); setRows(DEFAULT_ROWS()); }, []);
+  resetLayoutRef.current = resetLayout;
+  const hidden = useMemo(
+    () => new Set<string>(Object.entries(widgets).filter(([, on]) => !on).map(([id]) => id)),
+    [widgets]
+  );
 
-      {/* ── Content ───────────────────────────────────────────── */}
-      <div className="relative flex-1 overflow-y-auto p-3 space-y-3">
+  const summaryState = useDashboardSummary();
 
-        {/* FY Banner — glass, opacity + text colour both adapt to opacity level */}
-        {widgets.fyBanner && (
-          <div className="rounded-xl px-4 py-3 flex items-center justify-between shrink-0" style={bannerStyle}>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg" style={{ background: bt.chipBg, border: `1px solid ${bt.chipBdr}` }}>
-                <Calendar size={16} style={{ color: bt.icon }} />
-              </div>
-              <div>
-                <p className="fz-mini font-black uppercase tracking-widest leading-none" style={{ color: bt.label }}>Current Financial Year</p>
-                <p className="font-black text-[15px] leading-tight mt-0.5" style={{ color: bt.value }}>{fy.label}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-5">
-              <div className="text-center">
-                <p className="fz-micro font-black uppercase tracking-wider" style={{ color: bt.label }}>Started</p>
-                <p className="fz-caption font-black" style={{ color: bt.value }}>{fy.startDate}</p>
-              </div>
-              <div className="w-px h-8" style={{ background: bt.divider }} />
-              <div className="text-center">
-                <p className="fz-micro font-black uppercase tracking-wider" style={{ color: bt.label }}>Ends</p>
-                <p className="fz-caption font-black" style={{ color: bt.value }}>{fy.endDate}</p>
-              </div>
-              <div className="w-px h-8" style={{ background: bt.divider }} />
-              <div className="rounded-xl px-4 py-2 text-center min-w-[72px]" style={{ background: bt.chipBg, border: `1px solid ${bt.chipBdr}` }}>
-                <p className="font-black text-2xl leading-none" style={{ color: bt.accent }}>{fy.remaining}</p>
-                <p className="fz-micro font-black uppercase tracking-wider mt-0.5" style={{ color: bt.label }}>days left</p>
-              </div>
-              <div className="w-28">
-                <div className="flex justify-between mb-1">
-                  <span className="fz-micro font-black uppercase tracking-wider" style={{ color: bt.label }}>Progress</span>
-                  <span className="fz-tiny font-black" style={{ color: bt.value }}>{fy.progress}%</span>
+  const cards: Record<string, React.ReactNode> = {
+    fyBanner: (
+            <section className="aw-card" style={{ background: `color-mix(in srgb, var(--aw-accent) ${bannerTint}%, var(--aw-surface))` }}>
+              <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                <div className="aw-inline" style={{ alignItems: 'center', gap: 12 }}>
+                  <span className="aw-card-icon" style={{ width: 36, height: 36 }}><Calendar size={17} /></span>
+                  <div>
+                    <p className="aw-label" style={{ margin: 0 }}>Current Financial Year</p>
+                    <p className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 4px)', marginTop: 2 }}>{fy.label}</p>
+                  </div>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: bt.track }}>
-                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${fy.progress}%` }} />
+                <div className="aw-inline" style={{ alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <p className="aw-label" style={{ margin: 0 }}>Started</p>
+                    <p className="aw-strong">{fy.startDate}</p>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <p className="aw-label" style={{ margin: 0 }}>Ends</p>
+                    <p className="aw-strong">{fy.endDate}</p>
+                  </div>
+                  <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-warning)', minWidth: 84 }}>
+                    <div className="aw-stat-value">{fy.remaining}</div>
+                    <div className="aw-stat-label">days left</div>
+                  </div>
+                  <div style={{ width: 140 }}>
+                    <div className="aw-inline" style={{ justifyContent: 'space-between' }}>
+                      <span className="aw-label" style={{ margin: 0 }}>Progress</span>
+                      <strong>{fy.progress}%</strong>
+                    </div>
+                    <div className="aw-bar" role="progressbar" aria-valuenow={fy.progress} aria-valuemin={0} aria-valuemax={100} aria-label="Financial year progress" style={{ marginTop: 6 }}>
+                      <span style={{ width: `${fy.progress}%`, background: 'var(--aw-success)' }} />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        {widgets.quickActions && (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
-            <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2">
-              <LayoutGrid size={11} className="text-slate-400" />
-              <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Quick Actions</span>
-              <span className="fz-micro text-slate-400 ml-1">— one click to open</span>
-              {visibleActions.length > 0 && (
-                <span className="ml-auto fz-micro text-slate-400">{visibleActions.length} configured</span>
-              )}
-            </div>
-            <div className={`p-3 gap-2 ${
-              visibleActions.length === 0 ? 'flex' :
-              visibleActions.length <= 4 ? 'grid grid-cols-4' :
-              visibleActions.length <= 6 ? 'grid grid-cols-6' : 'grid grid-cols-8'
-            }`}>
+            </section>
+    ),
+    quickActions: (
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><LayoutGrid size={14} /></span>
+                <h2 className="aw-card-title">Quick Actions</h2>
+                <span className="aw-meta">— one click to open</span>
+                {visibleActions.length > 0 && <span className="aw-meta" style={{ marginLeft: 'auto' }}>{visibleActions.length} configured</span>}
+              </div>
               {visibleActions.length === 0 ? (
-                <div className="flex-1 py-6 text-center text-slate-300">
-                  <LayoutGrid size={24} className="mx-auto mb-2" />
-                  <p className="fz-tiny font-black uppercase tracking-wider text-slate-400">No quick actions configured</p>
-                  <p className="fz-mini text-slate-400 mt-1">Go to Settings → Dashboard to add some</p>
+                <div className="aw-empty" style={{ padding: 24 }}>
+                  <LayoutGrid size={26} />
+                  <p className="aw-strong">No quick actions configured</p>
+                  <span className="aw-meta">Go to Settings → Dashboard to add some</span>
                 </div>
-              ) : visibleActions.map(qa => {
-                const IconComp = ICON_MAP[qa.iconName] ?? Zap;
-                return (
-                  <button key={qa.id} onClick={() => openWindow(qa.route)}
-                    className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-md bg-white group transition-all hover:-translate-y-0.5 active:translate-y-0 active:shadow-none">
-                    <div className={`p-2 rounded-lg border ${qa.colorCls} group-hover:scale-110 transition-transform`}>
-                      <IconComp size={16} />
-                    </div>
-                    <span className="text-[7.5px] font-black text-slate-600 text-center leading-tight uppercase tracking-tight">{qa.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Notice Board + Keyboard Shortcuts */}
-        {(widgets.noticeBoard || widgets.shortcuts) && (
-          <div className="flex flex-wrap gap-3">
-
-            {widgets.noticeBoard && (
-              <div className="flex-[2_1_380px] min-w-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-                <style dangerouslySetInnerHTML={{ __html: `
-                  @keyframes noticeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-                ` }} />
-                <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-2">
-                    <Bell size={11} className="text-slate-400" />
-                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Notice Board</span>
-                    {notices.length > 0 && (
-                      <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-600 fz-micro font-black rounded-full leading-none">{notices.length}</span>
-                    )}
-                  </div>
-                  <button onClick={() => setShowAddForm(v => !v)}
-                    className="flex items-center gap-1 px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded fz-mini font-black uppercase transition-all">
-                    <Plus size={9} /> Add Notice
-                  </button>
-                </div>
-
-                <div className={`grid shrink-0 transition-all duration-300 ease-out ${showAddForm ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                  <div className="overflow-hidden">
-                  <div className="px-3 py-2 border-b border-slate-100 bg-slate-50 space-y-1.5" onKeyDown={handleFormKeyDown}>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-                        placeholder="Notice title..."
-                        className="col-span-2 h-6 px-2 fz-tiny bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400" />
-                      <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as Notice['type'] }))}
-                        className="h-6 px-1 fz-tiny bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400">
-                        <option value="info">Info</option>
-                        <option value="warning">Warning</option>
-                        <option value="success">Success</option>
-                      </select>
-                    </div>
-                    <textarea value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
-                      placeholder="Notice message..." rows={2}
-                      className="w-full px-2 py-1 fz-tiny bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-400 resize-none" />
-                    <div className="flex gap-1.5">
-                      <button onClick={addNotice} className="h-6 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded fz-mini font-black uppercase transition-all">Post</button>
-                      <button onClick={closeForm}
-                        className="h-6 px-3 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded fz-mini font-black uppercase transition-all">Cancel</button>
-                    </div>
-                  </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-[140px] max-h-[280px]">
-                  {notices.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center py-8 text-slate-300">
-                      <Bell size={28} className="mb-2" />
-                      <p className="fz-tiny font-black uppercase tracking-wider">No notices posted yet</p>
-                      <p className="fz-mini mt-1">Click "Add Notice" to post one</p>
-                    </div>
-                  ) : notices.map((n) => {
-                    const s = NOTICE_STYLES[n.type];
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(104px, 1fr))', gap: 'var(--aw-gap)' }}>
+                  {visibleActions.map(qa => {
+                    const IconComp = ICON_MAP[qa.iconName] ?? Zap;
                     return (
-                      <div key={n.id}
-                        draggable
-                        onDragStart={() => { dragIdRef.current = n.id; }}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={() => handleNoticeDrop(n.id)}
-                        className={`border-l-[3px] ${s.border} ${s.bg} rounded-r-lg p-2 relative group transition-all duration-200 ${removingIds.includes(n.id) ? 'opacity-0 -translate-y-1' : 'animate-[noticeIn_0.25s_ease-out]'}`}>
-                        <div className="flex items-start justify-between gap-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <GripVertical size={11} className="text-slate-300 cursor-grab shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <s.Icon size={11} className={s.title} />
-                            <span className={`fz-small font-black ${s.title} truncate`}>{n.title}</span>
-                          </div>
-                          <button onClick={() => deleteNotice(n.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-rose-500 shrink-0"><X size={10} /></button>
-                        </div>
-                        <p className={`fz-tiny ${s.body} mt-0.5 leading-snug`}>{n.message}</p>
-                        <p className={`text-[7.5px] ${s.meta} mt-1 uppercase tracking-wide`}>{n.postedBy} · {dayjs(n.postedAt).format('D MMM, h:mm A')}</p>
-                      </div>
+                      <button key={qa.id} type="button" onClick={() => openWindow(qa.route)} className="aw-panel"
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
+                        <span className="aw-card-icon" style={{ width: 34, height: 34 }}><IconComp size={16} /></span>
+                        <span style={{ fontSize: 'calc(var(--type-body-size) - 2px)', fontWeight: 700, textAlign: 'center', lineHeight: 1.2, textTransform: 'uppercase', letterSpacing: '.02em' }}>{qa.label}</span>
+                      </button>
                     );
                   })}
                 </div>
-              </div>
-            )}
+              )}
+            </section>
+    ),
+    noticeBoard: (
+                <section className="aw-card">
+                  <div className="aw-card-head">
+                    <span className="aw-card-icon"><Bell size={14} /></span>
+                    <h2 className="aw-card-title">Notice Board</h2>
+                    {notices.length > 0 && <span className="aw-pill">{notices.length}</span>}
+                    <button type="button" onClick={() => setShowAddForm(v => !v)} className="aw-btn aw-btn-primary aw-btn-sm" style={{ marginLeft: 'auto' }}>
+                      <Plus size={12} /> Add Notice
+                    </button>
+                  </div>
 
-            {widgets.shortcuts && (
-              <div className="flex-[1_1_240px] min-w-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-                <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2 shrink-0">
-                  <Command size={11} className="text-slate-400" />
-                  <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Keyboard Shortcuts</span>
-                </div>
-                <div className="p-2 flex-1 divide-y divide-slate-50">
-                  {SHORTCUTS.map(s => (
-                    <div key={s.label} className="flex items-center justify-between py-1.5">
-                      <span className="fz-small text-slate-600 font-semibold">{s.label}</span>
-                      <div className="flex items-center gap-1">
-                        {s.keys.map((k, i) => (
-                          <React.Fragment key={k}>
-                            {i > 0 && <span className="fz-mini text-slate-300">+</span>}
-                            <kbd className="bg-slate-100 border border-slate-200 rounded fz-tiny font-black text-slate-700 px-1.5 py-0.5 leading-none">{k}</kbd>
-                          </React.Fragment>
-                        ))}
+                  {showAddForm && (
+                    <div className="aw-panel aw-fade-in" onKeyDown={handleFormKeyDown}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--aw-gap)' }}>
+                        <input aria-label="Notice title" className="aw-input" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Notice title..." />
+                        <select aria-label="Notice type" className="aw-input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as Notice['type'] }))}>
+                          <option value="info">Info</option>
+                          <option value="warning">Warning</option>
+                          <option value="success">Success</option>
+                        </select>
+                      </div>
+                      <textarea aria-label="Notice message" className="aw-input" value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
+                        placeholder="Notice message..." rows={2} style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
+                      <div className="aw-btn-row">
+                        <button type="button" onClick={addNotice} className="aw-btn aw-btn-primary aw-btn-sm">Post</button>
+                        <button type="button" onClick={closeForm} className="aw-btn aw-btn-secondary aw-btn-sm">Cancel</button>
                       </div>
                     </div>
-                  ))}
-                </div>
-                <div className="px-3 py-2 border-t border-slate-100 shrink-0">
-                  <p className="text-[7.5px] text-slate-400 uppercase tracking-wider">Ctrl+N is wired · other shortcuts active in open forms</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                  )}
 
-        {/* Analytics widgets */}
-        {(widgets.activeMembers || widgets.sanctionedLoans || widgets.monthEndOutstanding || widgets.balanceDistribution) && (
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
-            {widgets.activeMembers && <ActiveMembersWidget />}
-            {widgets.sanctionedLoans && <SanctionedLoansWidget />}
-            {widgets.monthEndOutstanding && <MonthEndOutstandingWidget />}
-            {widgets.balanceDistribution && <MemberBalanceDistributionWidget />}
-          </div>
-        )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 120, maxHeight: 300, overflowY: 'auto' }}>
+                    {notices.length === 0 ? (
+                      <div className="aw-empty" style={{ padding: 24 }}>
+                        <Bell size={28} />
+                        <p className="aw-strong">No notices posted yet</p>
+                        <span className="aw-meta">Click "Add Notice" to post one</span>
+                      </div>
+                    ) : notices.map((n) => {
+                      const s = NOTICE_STYLES[n.type];
+                      return (
+                        <div key={n.id}
+                          draggable
+                          onDragStart={() => { dragIdRef.current = n.id; }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => handleNoticeDrop(n.id)}
+                          className={`aw-alert ${s.cls} aw-fade-in`}
+                          style={{ opacity: removingIds.includes(n.id) ? 0 : 1, transition: 'opacity .2s', alignItems: 'flex-start', cursor: 'grab' }}>
+                          <GripVertical size={13} style={{ flex: 'none', marginTop: 2 }} />
+                          <s.Icon size={14} style={{ flex: 'none', marginTop: 2 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <strong>{n.title}</strong>
+                            <p>{n.message}</p>
+                            <p className="aw-meta" style={{ textTransform: 'uppercase', marginTop: 4 }}>{n.postedBy} · {dayjs(n.postedAt).format('D MMM, h:mm A')}</p>
+                          </div>
+                          <button type="button" className="aw-icon-btn is-sm is-danger" onClick={() => deleteNotice(n.id)} aria-label="Delete notice" data-tip="Delete notice" data-tip-pos="left"><X size={13} /></button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+    ),
+    shortcuts: (
+                <section className="aw-card">
+                  <div className="aw-card-head">
+                    <span className="aw-card-icon"><Command size={14} /></span>
+                    <h2 className="aw-card-title">Keyboard Shortcuts</h2>
+                  </div>
+                  <div className="aw-rows">
+                    {SHORTCUTS.map(s => (
+                      <div key={s.label} className="aw-row" style={{ alignItems: 'center' }}>
+                        <span>{s.label}</span>
+                        <span className="aw-inline" style={{ alignItems: 'center', gap: 4 }}>
+                          {s.keys.map((k, i) => (
+                            <React.Fragment key={k}>
+                              {i > 0 && <span className="aw-meta">+</span>}
+                              <kbd style={kbdStyle}>{k}</kbd>
+                            </React.Fragment>
+                          ))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="aw-meta" style={{ textTransform: 'uppercase' }}>Ctrl+N is wired · other shortcuts active in open forms</p>
+                </section>
+    ),
+    activeMembers: <ActiveMembersWidget />,
+    sanctionedLoans: <SanctionedLoansWidget />,
+    monthEndOutstanding: <MonthEndOutstandingWidget />,
+    balanceDistribution: <MemberBalanceDistributionWidget />,
+    pendingVouchers: <PendingVouchersWidget onOpen={route => openWindow(route)} />,
+    cashPosition: <CashPositionWidget />,
+    dayEndStatus: <DayEndStatusWidget onOpen={route => openWindow(route)} />,
+    demandRecovery: <DemandRecoveryWidget state={summaryState} />,
+    depositsSummary: <DepositsSummaryWidget state={summaryState} />,
+    upcomingMaturities: <UpcomingMaturitiesWidget state={summaryState} />,
+    loanApplications: <LoanApplicationsWidget state={summaryState} onOpen={route => openWindow(route)} />,
+    overdueLoans: <OverdueLoansWidget />,
+    retiringMembers: <RetiringMembersWidget state={summaryState} />,
+    newMembers: <NewMembersWidget state={summaryState} />,
+  };
 
-        {/* All widgets hidden */}
-        {!anyVisible && (
-          <div className="flex flex-col items-center justify-center py-24 text-slate-300">
-            <EyeOff size={40} className="mb-3 text-slate-200" />
-            <p className="fz-caption font-black uppercase tracking-widest text-slate-400">All widgets hidden</p>
-            <p className="fz-tiny mt-1.5 text-slate-400">Go to Settings → Dashboard to turn them back on</p>
-          </div>
-        )}
+  return (
+    <div className="app-window" style={{ flex: '1 1 auto', height: 'auto', minHeight: 0, ...(customBg && !isDark ? { background: customBg } : {}) }}>
+      <div className="aw-content">
+        <div className="aw-stack">
 
+          {anyVisible && (
+            <BentoGrid rows={rows} hidden={hidden} onChange={handleLayout} renderCard={id => cards[id] ?? null} />
+          )}
+
+          {/* All widgets hidden */}
+          {!anyVisible && (
+            <div className="aw-empty" style={{ padding: '80px 16px' }}>
+              <EyeOff size={40} />
+              <p className="aw-strong">All widgets hidden</p>
+              <span className="aw-meta">Go to Settings → Dashboard to turn them back on</span>
+            </div>
+          )}
+
+        </div>
       </div>
       <Suspense fallback={null}><FloatingChatBot /></Suspense>
     </div>

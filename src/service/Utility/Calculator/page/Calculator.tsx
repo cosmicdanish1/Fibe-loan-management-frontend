@@ -10,18 +10,11 @@ import {
   RefreshCw,
   BarChart3,
   PieChart,
-  Target,
-  AlertCircle,
-  CheckCircle,
   X,
   Settings,
-  Building2,
-  ShieldCheck,
-  Info,
-  Database,
-  ArrowRight
+  ShieldCheck
 } from 'lucide-react';
-import { ConfigProvider, Spin } from 'antd';
+import { Select } from 'antd';
 import { apiService } from '../../../../services/api';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
 
@@ -62,7 +55,6 @@ const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detai
   } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
 };
 
-const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
 
 const Calculator: React.FC = () => {
   const [principal, setPrincipal] = useState<string>('500000');
@@ -76,7 +68,7 @@ const Calculator: React.FC = () => {
   const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
   const [showMemberLookup, setShowMemberLookup] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [comparisonLoans, setComparisonLoans] = useState<LoanCalculation[]>([]);
 
   const formatCurrency = useMemo(() => (amount: number): string =>
@@ -186,352 +178,317 @@ const Calculator: React.FC = () => {
     { id: 'comparison', label: 'Compare', icon: PieChart },
   ];
 
-  return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="calc-app h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+  const principalValue = parseFloat(principal);
+  const selectedType = selectedLoanType !== 'custom' ? loanTypes.find(l => l.code === selectedLoanType) : undefined;
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
-              <CalcIcon size={13} className="text-white" />
-            </div>
-            <div>
-              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Loan Calculator</h1>
-              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Financial Analyzer</p>
-            </div>
-          </div>
-          <button onClick={resetForm} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
-            <RefreshCw size={11} /> Reset
+  return (
+    <div className="app-window">
+
+      {/* Header */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Loan Calculator</h1>
+          <p className="aw-desc">Financial Analyzer</p>
+        </div>
+        <div className="aw-actions">
+          {loading && (
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+              <RefreshCw size={12} className="aw-spin" /> Loading...
+            </span>
+          )}
+          <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary">
+            <RefreshCw size={13} /> Reset
           </button>
         </div>
+      </div>
 
-        {/* Tab Bar */}
-        <div className="bg-white border-b border-slate-200 px-2 flex gap-0.5 shrink-0">
-          {tabs.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-2 fz-tiny font-black uppercase tracking-wide transition-all relative whitespace-nowrap flex items-center gap-1.5 ${activeTab === tab.id ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
-              <tab.icon size={11} />{tab.label}
-              {activeTab === tab.id && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600" />}
-            </button>
-          ))}
-        </div>
+      {/* Tab Bar */}
+      <div className="aw-tabs" role="tablist">
+        {tabs.map(tab => (
+          <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)} className="aw-tab">
+            <tab.icon size={13} />{tab.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Body */}
-        <Spin spinning={loading} tip="Loading...">
-          <div className="flex-1 overflow-hidden p-2">
-            <div className="h-full grid grid-cols-12 gap-2">
+      {/* Body */}
+      <div className="aw-fit">
+        <div className="aw-split">
 
-              {/* Sidebar */}
-              <div className="col-span-3 space-y-2 overflow-y-auto pr-1">
+          {/* Sidebar */}
+          <div className="aw-side">
 
-                {/* Member Card */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                  <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                    <User size={10} className="text-slate-400" />
-                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member</span>
-                  </div>
-                  <div className="p-2 space-y-1.5">
-                    <div className="relative">
-                      <input type="text" value={memberNo} onChange={(e) => setMemberNo(e.target.value.replace(/[^0-9]/g, ''))}
-                        placeholder="Member ID..." className="w-full h-7 pl-2 pr-8 fz-small font-semibold bg-slate-50 border border-slate-200 rounded focus:outline-none focus:border-indigo-400" />
-                      <button onClick={() => setShowMemberLookup(true)} className="absolute right-0.5 top-0.5 w-6 h-6 bg-indigo-600 text-white flex items-center justify-center rounded hover:bg-indigo-500 transition-colors">
-                        <Search size={10} />
-                      </button>
-                    </div>
-                    {selectedMember ? (
-                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-2">
-                        <p className="fz-tiny font-black text-indigo-800 uppercase truncate">{selectedMember.name}</p>
-                        <div className="grid grid-cols-2 gap-1 mt-1">
-                          <div className="bg-white/70 p-1 rounded">
-                            <label className="fz-micro font-black text-indigo-500 uppercase block">Salary</label>
-                            <span className="fz-tiny font-black text-indigo-700">{formatCurrency(selectedMember.basicPay)}</span>
-                          </div>
-                          <div className="bg-white/70 p-1 rounded">
-                            <label className="fz-micro font-black text-emerald-500 uppercase block">Eligible</label>
-                            <span className="fz-tiny font-black text-emerald-600">{formatCurrency(selectedMember.eligibleAmount)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="fz-mini text-slate-400 italic text-center py-1">No member selected</div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Loan Type Card */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                  <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                    <ShieldCheck size={10} className="text-slate-400" />
-                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Loan Type</span>
-                  </div>
-                  <div className="p-2 space-y-1.5">
-                    <div>
-                      <label className={lbl}>Type</label>
-                      <select value={selectedLoanType} onChange={(e) => handleLoanTypeChange(e.target.value)}
-                        className="w-full h-7 px-2 fz-small font-semibold bg-slate-50 border border-slate-200 rounded focus:outline-none focus:border-indigo-400">
-                        <option value="custom">Custom</option>
-                        {loanTypes.map(lt => <option key={lt.code} value={lt.code}>{lt.name}</option>)}
-                      </select>
-                    </div>
-                    {selectedLoanType !== 'custom' && (() => {
-                      const lt = loanTypes.find(l => l.code === selectedLoanType);
-                      return lt ? (
-                        <div className="bg-slate-50 border border-slate-100 rounded p-1.5">
-                          <p className="fz-mini text-slate-500 italic leading-snug mb-1">{lt.description}</p>
-                          <div className="flex items-center justify-between fz-mini font-black text-indigo-600 uppercase">
-                            <span>Max: {formatCurrency(lt.maxAmount)}</span>
-                            <span>{lt.maxTenure}M</span>
-                          </div>
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                </div>
-
-                {/* Parameters Card */}
-                <div className="bg-indigo-600 rounded-xl border border-indigo-500 shadow-lg">
-                  <div className="px-3 py-1.5 border-b border-white/10 flex items-center gap-1.5">
-                    <Settings size={10} className="text-indigo-200" />
-                    <span className="fz-mini font-black text-indigo-100 uppercase tracking-widest">Parameters</span>
-                  </div>
-                  <div className="p-2 space-y-2">
-                    {[
-                      { label: 'Principal (₹)', value: principal, setter: setPrincipal, icon: IndianRupee },
-                      { label: 'Rate (%)', value: annualRate, setter: setAnnualRate, icon: Percent, disabled: selectedLoanType !== 'custom' },
-                      { label: 'Months', value: tenure, setter: setTenure, icon: Calendar },
-                    ].map(({ label, value, setter, icon: Icon, disabled }) => (
-                      <div key={label}>
-                        <label className="block fz-mini font-black text-indigo-200/70 uppercase tracking-wider mb-0.5">{label}</label>
-                        <div className="relative">
-                          <Icon size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-white/50" />
-                          <input type="number" value={value} onChange={(e) => setter(e.target.value)} disabled={disabled}
-                            className="w-full h-7 pl-7 pr-2 bg-white/10 border border-white/20 rounded fz-small font-black text-white outline-none focus:bg-white/20 transition-all disabled:opacity-50" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
+            {/* Member Card */}
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><User size={14} /></span>
+                <h2 className="aw-card-title">Member</h2>
               </div>
-
-              {/* Main Workspace */}
-              <div className="col-span-9 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-
-                {calculation ? (
-                  <div className="flex-1 overflow-auto p-3">
-
-                    {activeTab === 'calculator' && (
-                      <div className="space-y-3 max-w-3xl mx-auto">
-                        <div className="grid grid-cols-3 gap-2">
-                          {[
-                            { label: 'Monthly EMI', value: formatCurrency(calculation.emi), color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100', icon: TrendingUp },
-                            { label: 'Total Amount', value: formatCurrency(calculation.totalAmount), color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', icon: ShieldCheck },
-                            { label: 'Interest', value: formatCurrency(calculation.totalInterest), color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100', icon: Percent },
-                          ].map(m => (
-                            <div key={m.label} className={`${m.bg} border rounded-xl p-3`}>
-                              <div className="flex items-center gap-1.5 mb-1.5">
-                                <m.icon size={12} className={m.color} />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-wider">{m.label}</span>
-                              </div>
-                              <span className={`text-[18px] font-black leading-none ${m.color}`}>{m.value}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="bg-white border border-slate-100 rounded-xl p-3">
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <PieChart size={11} className="text-indigo-500" />
-                            <span className="fz-mini font-black text-slate-700 uppercase tracking-wider">Breakdown</span>
-                          </div>
-                          <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
-                            <div className="h-full bg-indigo-600 transition-all duration-500" style={{ width: `${(parseFloat(principal) / calculation.totalAmount) * 100}%` }} />
-                            <div className="flex-1 h-full bg-indigo-200" />
-                          </div>
-                          <div className="flex items-center gap-3 mt-1.5 fz-mini font-semibold text-slate-500">
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-600 inline-block" /> Principal</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-200 inline-block" /> Interest</span>
-                          </div>
-                          <div className="grid grid-cols-4 gap-2 mt-3 fz-tiny">
-                            {[
-                              { l: 'Principal', v: formatCurrency(parseFloat(principal)) },
-                              { l: 'Interest', v: formatCurrency(calculation.totalInterest) },
-                              { l: 'Rate', v: `${annualRate}%` },
-                              { l: 'Multiplier', v: `${(calculation.totalAmount / parseFloat(principal)).toFixed(2)}x` },
-                            ].map(r => (
-                              <div key={r.l} className="border-b border-slate-100 pb-1">
-                                <span className="text-slate-400 uppercase fz-micro block">{r.l}</span>
-                                <span className="font-black text-slate-700">{r.v}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="bg-indigo-50 border-l-4 border-indigo-600 rounded-lg p-2.5 flex items-start gap-2">
-                          <ShieldCheck size={13} className="text-indigo-600 shrink-0 mt-0.5" />
-                          <p className="fz-tiny text-indigo-700 leading-snug">
-                            <strong className="uppercase">Note: </strong>
-                            For {formatCurrency(parseFloat(principal))} over {tenure} months at {annualRate}%, your monthly EMI is <strong>{formatCurrency(calculation.emi)}</strong>.
-                          </p>
-                        </div>
+              <div className="aw-stack">
+                <div className="aw-input-wrap has-action">
+                  <input type="text" value={memberNo} onChange={(e) => setMemberNo(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="Member ID..." aria-label="Member ID" className="aw-input" />
+                  <button type="button" onClick={() => setShowMemberLookup(true)} className="aw-input-action" aria-label="Search members" data-tip="Search members" data-tip-pos="bottom-end">
+                    <Search size={13} />
+                  </button>
+                </div>
+                {selectedMember ? (
+                  <div className="aw-panel aw-panel-accent aw-fade-in">
+                    <p className="aw-strong" style={{ textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedMember.name}</p>
+                    <dl className="aw-facts" style={{ marginTop: 8 }}>
+                      <div>
+                        <dt>Salary</dt>
+                        <dd>{formatCurrency(selectedMember.basicPay)}</dd>
                       </div>
-                    )}
-
-                    {activeTab === 'schedule' && (
-                      <div className="bg-white border border-slate-100 rounded-xl overflow-hidden">
-                        <div className="bg-slate-900 px-4 py-2.5 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <BarChart3 size={12} className="text-indigo-400" />
-                            <span className="fz-tiny font-black text-white uppercase tracking-wider">Amortization Schedule</span>
-                          </div>
-                          <span className="fz-mini font-black text-indigo-300 uppercase">{tenure} installments</span>
-                        </div>
-                        <div className="max-h-[60vh] overflow-auto">
-                          <table className="w-full">
-                            <thead className="sticky top-0 bg-[#f8fafc]">
-                              <tr>
-                                {['#', 'Installment', 'Principal', 'Interest', 'Balance'].map(h => (
-                                  <th key={h} className="px-4 py-2 text-left fz-mini font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">{h}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {calculation.monthlyBreakdown.map(row => (
-                                <tr key={row.month} className="hover:bg-slate-50 border-b border-slate-100">
-                                  <td className="px-4 py-1.5 fz-tiny font-black text-indigo-600">{row.month}</td>
-                                  <td className="px-4 py-1.5 fz-tiny font-black text-slate-800">{formatCurrency(row.emi)}</td>
-                                  <td className="px-4 py-1.5 fz-tiny font-semibold text-slate-600">{formatCurrency(row.principal)}</td>
-                                  <td className="px-4 py-1.5 fz-tiny font-semibold text-indigo-500">{formatCurrency(row.interest)}</td>
-                                  <td className="px-4 py-1.5 fz-tiny font-black text-slate-700">{formatCurrency(row.balance)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                      <div>
+                        <dt>Eligible</dt>
+                        <dd style={{ color: 'var(--aw-success)' }}>{formatCurrency(selectedMember.eligibleAmount)}</dd>
                       </div>
-                    )}
-
-                    {activeTab === 'comparison' && (
-                      <div className="grid grid-cols-2 gap-2">
-                        {comparisonLoans.length > 0 ? (comparisonLoans as any[]).map((loan, i) => (
-                          <div key={i} className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-indigo-300 transition-colors flex flex-col">
-                            <div className="bg-slate-50 px-3 py-1.5 flex items-center justify-between border-b border-slate-100">
-                              <span className="fz-tiny font-black text-slate-800 uppercase">{loan.loanType}</span>
-                              <span className="bg-indigo-600 text-white fz-mini font-black px-2 py-0.5 rounded-full">{loan.rate}%</span>
-                            </div>
-                            <div className="p-2.5 space-y-1.5 flex-1">
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {[{ l: 'Principal', v: formatCurrency(loan.adjustedAmount) }, { l: 'Tenure', v: `${loan.adjustedTenure}M` }].map(r => (
-                                  <div key={r.l} className="bg-slate-50 border border-slate-100 rounded p-1.5">
-                                    <label className="fz-micro font-black text-slate-400 uppercase block">{r.l}</label>
-                                    <span className="fz-tiny font-black text-slate-700">{r.v}</span>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="space-y-1 fz-tiny">
-                                <div className="flex justify-between border-b border-slate-100 pb-1">
-                                  <span className="text-slate-400 font-semibold uppercase">EMI</span>
-                                  <span className="font-black text-indigo-600">{formatCurrency(loan.emi)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-slate-400 font-semibold uppercase">Interest</span>
-                                  <span className="font-black text-slate-500">{formatCurrency(loan.totalInterest)}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="px-3 py-1.5 bg-slate-900 flex items-center justify-between">
-                              <span className="fz-mini font-black text-indigo-300 uppercase">Total</span>
-                              <span className="fz-caption font-black text-white">{formatCurrency(loan.totalAmount)}</span>
-                            </div>
-                          </div>
-                        )) : (
-                          <div className="col-span-full py-12 flex flex-col items-center text-slate-300">
-                            <PieChart size={36} className="mb-2 opacity-20" />
-                            <p className="fz-tiny font-black uppercase">No comparison data</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
+                    </dl>
                   </div>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8">
-                    <CalcIcon size={48} className="mb-3 opacity-10" />
-                    <p className="fz-tiny font-black uppercase tracking-widest">Enter parameters to calculate</p>
+                  <p className="aw-muted" style={{ textAlign: 'center' }}>No member selected</p>
+                )}
+              </div>
+            </section>
+
+            {/* Loan Type Card */}
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><ShieldCheck size={14} /></span>
+                <h2 className="aw-card-title">Loan Type</h2>
+              </div>
+              <div className="aw-stack">
+                <div>
+                  <label className="aw-label" htmlFor="calc-type">Type</label>
+                  <Select
+                    id="calc-type"
+                    value={selectedLoanType}
+                    onChange={handleLoanTypeChange}
+                    className="aw-select"
+                    popupClassName="aw-select-popup"
+                    options={[
+                      { value: 'custom', label: 'Custom' },
+                      ...loanTypes.map(lt => ({ value: lt.code, label: lt.name })),
+                    ]}
+                  />
+                </div>
+                {selectedType && (
+                  <div className="aw-panel aw-fade-in">
+                    <p className="aw-muted" style={{ marginBottom: 6 }}>{selectedType.description}</p>
+                    <div className="aw-row-value" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--aw-accent)' }}>
+                      <span>Max: {formatCurrency(selectedType.maxAmount)}</span>
+                      <span>{selectedType.maxTenure}M</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Parameters Card */}
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Settings size={14} /></span>
+                <h2 className="aw-card-title">Parameters</h2>
+              </div>
+              <div className="aw-stack">
+                {[
+                  { id: 'calc-principal', label: 'Principal (₹)', value: principal, setter: setPrincipal, icon: IndianRupee, disabled: false },
+                  { id: 'calc-rate', label: 'Rate (%)', value: annualRate, setter: setAnnualRate, icon: Percent, disabled: selectedLoanType !== 'custom' },
+                  { id: 'calc-months', label: 'Months', value: tenure, setter: setTenure, icon: Calendar, disabled: false },
+                ].map(({ id, label, value, setter, icon: Icon, disabled }) => (
+                  <div key={id}>
+                    <label className="aw-label" htmlFor={id}>{label}</label>
+                    <div className="aw-input-wrap has-icon">
+                      <Icon size={13} />
+                      <input id={id} type="number" value={value} onChange={(e) => setter(e.target.value)} disabled={disabled} className="aw-input" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+          </div>
+
+          {/* Main Workspace */}
+          <section className="aw-card aw-main">
+
+            {calculation ? (
+              <div className="aw-main-body">
+
+                {activeTab === 'calculator' && (
+                  <div className="aw-stack aw-narrow aw-fade-in">
+                    <div className="aw-stats aw-stats-3">
+                      {[
+                        { label: 'Monthly EMI', value: formatCurrency(calculation.emi), tone: 'tone-info', icon: TrendingUp },
+                        { label: 'Total Amount', value: formatCurrency(calculation.totalAmount), tone: 'tone-success', icon: ShieldCheck },
+                        { label: 'Interest', value: formatCurrency(calculation.totalInterest), tone: 'tone-warning', icon: Percent },
+                      ].map(m => (
+                        <div key={m.label} className={`aw-stat aw-stat-left ${m.tone}`}>
+                          <div className="aw-stat-head">
+                            <m.icon size={14} />
+                            <span className="aw-stat-label">{m.label}</span>
+                          </div>
+                          <div className="aw-stat-value">{m.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="aw-panel">
+                      <div className="aw-stat-head">
+                        <PieChart size={14} style={{ color: 'var(--aw-accent)' }} />
+                        <span className="aw-stat-label">Breakdown</span>
+                      </div>
+                      <div className="aw-bar" role="img" aria-label="Principal versus interest">
+                        <span style={{ width: `${(principalValue / calculation.totalAmount) * 100}%` }} />
+                      </div>
+                      <div className="aw-legend">
+                        <span><i className="aw-dot" />Principal</span>
+                        <span><i className="aw-dot aw-dot-soft" />Interest</span>
+                      </div>
+                      <dl className="aw-facts aw-facts-4" style={{ marginTop: 12 }}>
+                        {[
+                          { l: 'Principal', v: formatCurrency(principalValue) },
+                          { l: 'Interest', v: formatCurrency(calculation.totalInterest) },
+                          { l: 'Rate', v: `${annualRate}%` },
+                          { l: 'Multiplier', v: `${(calculation.totalAmount / principalValue).toFixed(2)}x` },
+                        ].map(r => (
+                          <div key={r.l}>
+                            <dt>{r.l}</dt>
+                            <dd>{r.v}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+
+                    <div className="aw-alert aw-alert-info" style={{ marginBottom: 0 }}>
+                      <ShieldCheck size={14} />
+                      <p>
+                        <strong>Note: </strong>
+                        For {formatCurrency(principalValue)} over {tenure} months at {annualRate}%, your monthly EMI is <strong>{formatCurrency(calculation.emi)}</strong>.
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                {/* Footer bar inside workspace */}
-                <div className="px-4 py-2 bg-white border-t border-slate-100 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-3 fz-mini font-black text-slate-400 uppercase tracking-wider">
-                    <span>Computation: <span className="text-slate-700">Dynamic</span></span>
-                    <span>Audit: <span className="text-emerald-500">Verified</span></span>
+                {activeTab === 'schedule' && (
+                  <div className="aw-fade-in">
+                    <div className="aw-stat-head" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <BarChart3 size={14} style={{ color: 'var(--aw-accent)' }} />
+                        <span className="aw-stat-label">Amortization Schedule</span>
+                      </span>
+                      <span className="aw-pill">{tenure} installments</span>
+                    </div>
+                    <div className="aw-table-wrap">
+                      <table className="aw-table">
+                        <thead>
+                          <tr>
+                            {['#', 'Installment', 'Principal', 'Interest', 'Balance'].map(h => (
+                              <th key={h}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {calculation.monthlyBreakdown.map(row => (
+                            <tr key={row.month}>
+                              <td className="is-accent">{row.month}</td>
+                              <td>{formatCurrency(row.emi)}</td>
+                              <td className="is-muted">{formatCurrency(row.principal)}</td>
+                              <td className="is-accent">{formatCurrency(row.interest)}</td>
+                              <td>{formatCurrency(row.balance)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                  <span className="fz-mini font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">V4.2 ENGINE</span>
-                </div>
-              </div>
+                )}
 
+                {activeTab === 'comparison' && (
+                  <div className="aw-two aw-fade-in">
+                    {comparisonLoans.length > 0 ? (comparisonLoans as any[]).map((loan, i) => (
+                      <div key={i} className="aw-compare-card">
+                        <div className="aw-compare-head">
+                          <span className="aw-strong" style={{ textTransform: 'uppercase' }}>{loan.loanType}</span>
+                          <span className="aw-pill">{loan.rate}%</span>
+                        </div>
+                        <div className="aw-compare-body">
+                          <dl className="aw-facts">
+                            {[{ l: 'Principal', v: formatCurrency(loan.adjustedAmount) }, { l: 'Tenure', v: `${loan.adjustedTenure}M` }].map(r => (
+                              <div key={r.l}>
+                                <dt>{r.l}</dt>
+                                <dd>{r.v}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                          <div className="aw-rows">
+                            <div className="aw-row">
+                              <span className="aw-row-label">EMI</span>
+                              <span className="aw-row-value" style={{ color: 'var(--aw-accent)' }}>{formatCurrency(loan.emi)}</span>
+                            </div>
+                            <div className="aw-row">
+                              <span className="aw-row-label">Interest</span>
+                              <span className="aw-row-value">{formatCurrency(loan.totalInterest)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="aw-compare-total">
+                          <span>Total</span>
+                          <span>{formatCurrency(loan.totalAmount)}</span>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="aw-empty" style={{ gridColumn: '1 / -1' }}>
+                        <PieChart size={36} />
+                        <span>No comparison data</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+            ) : (
+              <div className="aw-empty" style={{ flex: 1 }}>
+                <CalcIcon size={44} />
+                <span>Enter parameters to calculate</span>
+              </div>
+            )}
+
+            {/* Footer bar inside workspace */}
+            <div className="aw-main-foot">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <span>Computation: <span style={{ color: 'var(--aw-text)' }}>Dynamic</span></span>
+                <span>Audit: <span style={{ color: 'var(--aw-success)' }}>Verified</span></span>
+              </div>
+              <span className="aw-pill">V4.2 ENGINE</span>
             </div>
-          </div>
-        </Spin>
+          </section>
 
-        {/* Member Lookup Modal */}
-        {showMemberLookup && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl h-4/5 flex flex-col overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-4 py-3 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                  <User size={14} className="text-indigo-300" />
-                  <h2 className="fz-caption font-black text-white uppercase tracking-wider">Select Member</h2>
-                </div>
-                <button onClick={() => setShowMemberLookup(false)} className="w-7 h-7 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center justify-center">
-                  <X size={14} />
-                </button>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowMemberLookup(false)} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <style>{`
-          .scrollbar-hide::-webkit-scrollbar { display: none; }
-          .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-          input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-          input[type=number] { -moz-appearance: textfield; }
-
-          /* ── Calculator — dark mode ── */
-          html.dark .calc-app { background-color: #000000 !important; color: #f5f5f7 !important; }
-          html.dark .calc-app .bg-white { background-color: #1c1c1e !important; }
-          html.dark .calc-app .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .calc-app .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .calc-app .bg-slate-900 { background-color: #0c0c0e !important; }
-          html.dark .calc-app .bg-\\[\\#f8fafc\\] { background-color: #1c1c1e !important; }
-          html.dark .calc-app .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
-          html.dark .calc-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
-          html.dark .calc-app input,
-          html.dark .calc-app select,
-          html.dark .calc-app textarea {
-            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-          }
-          html.dark .calc-app label { color: #8e8e93 !important; }
-          html.dark .calc-app .text-slate-900 { color: #f5f5f7 !important; }
-          html.dark .calc-app .text-slate-800 { color: #f5f5f7 !important; }
-          html.dark .calc-app .text-slate-700 { color: #f5f5f7 !important; }
-          html.dark .calc-app .text-slate-600 { color: #8e8e93 !important; }
-          html.dark .calc-app .text-slate-500 { color: #8e8e93 !important; }
-          html.dark .calc-app .text-slate-400 { color: #71717a !important; }
-          html.dark .calc-app .text-slate-300 { color: #71717a !important; }
-          html.dark .calc-app .hover\\:bg-slate-50:hover { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .calc-app .text-emerald-500 { color: #34d399 !important; }
-          html.dark .calc-app .text-emerald-600 { color: #34d399 !important; }
-          html.dark .calc-app .bg-emerald-50 { background-color: rgba(52,211,153,0.08) !important; }
-          html.dark .calc-app .text-amber-600 { color: #fbbf24 !important; }
-          html.dark .calc-app .bg-amber-50 { background-color: rgba(251,191,36,0.08) !important; }
-        `}</style>
+        </div>
       </div>
-    </ConfigProvider>
+
+      {/* Member Lookup Modal */}
+      {showMemberLookup && (
+        <div className="aw-modal-backdrop" onClick={() => setShowMemberLookup(false)}>
+          <div className="aw-modal" role="dialog" aria-modal="true" aria-label="Select Member" onClick={(e) => e.stopPropagation()}>
+            <div className="aw-modal-head">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="aw-card-icon"><User size={14} /></span>
+                <h2 className="aw-card-title">Select Member</h2>
+              </div>
+              <button type="button" onClick={() => setShowMemberLookup(false)} className="aw-icon-btn" aria-label="Close">
+                <X size={15} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowMemberLookup(false)} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

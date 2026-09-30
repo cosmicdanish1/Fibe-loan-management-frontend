@@ -109,7 +109,7 @@ export class AnalyticsErrorBoundary extends Component<Props, State> {
     if (!stackTrace) return undefined;
     
     const match = stackTrace.match(/at .* \((.+):(\d+):(\d+)\)/);
-    if (match) {
+    if (match && match[1]) {
       const fullPath = match[1];
       return fullPath.split('/').pop() || fullPath;
     }

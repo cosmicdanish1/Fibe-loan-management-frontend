@@ -47,7 +47,7 @@ const LoanApplication: React.FC = () => {
   const [selectedMember, setSelectedMember] = React.useState<any>(null);
   const [memberLoanCases, setMemberLoanCases] = React.useState<any[]>([]);
   const [isLoadingLoanCases, setIsLoadingLoanCases] = React.useState(false);
-  const [lookupTarget, setLookupTarget] = React.useState<'memberNo' | 'surety1' | 'surety2'>('memberNo');
+  const [, setLookupTarget] = React.useState<'memberNo' | 'surety1' | 'surety2'>('memberNo');
 
   // Surety rows managed as local state (simpler, guaranteed re-render)
   const [suretyRows, setSuretyRows] = React.useState([
@@ -537,7 +537,6 @@ const LoanApplication: React.FC = () => {
 
     try {
       let finalLoanCaseNo = state.loanDetails.loanCaseNo;
-      let isNewCase = !finalLoanCaseNo;
 
       // Prepare loan data for backend
       const loanApplicationData = {
@@ -764,100 +763,43 @@ const LoanApplication: React.FC = () => {
     saveEnabled: !isSaving && !isCheckingEligibility && !(eligibilityStatus != null && !eligibilityStatus.isEligible),
   });
 
+  const saveDisabled = isSaving || isCheckingEligibility || (eligibilityStatus != null && !eligibilityStatus.isEligible);
+  const saveLabel = isSaving ? 'Saving...' : isCheckingEligibility ? 'Checking Eligibility...' : 'Save';
+
   return (
-    <div className="loan-app h-screen flex flex-col bg-white">
-      {/* Tab Navigation */}
-      <div className="loan-tab-bar px-3 pt-2 pb-0 bg-slate-50 border-b border-slate-200">
-        <TabNavigation
-          activeTab={state.activeTab}
-          onTabChange={setActiveTab}
-        />
+    <div className="app-window">
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Loan Application</h1>
+          <p className="aw-desc">Enter a new loan application for a member</p>
+        </div>
+        <div className="aw-actions">
+          <button
+            type="button"
+            onClick={() => {
+              if ((window as any).electronAPI?.ipcRenderer) {
+                (window as any).electronAPI.ipcRenderer.send('window-close');
+              } else {
+                window.close();
+              }
+            }}
+            className="aw-btn aw-btn-ghost"
+          >
+            Cancel
+          </button>
+          <button type="button" onClick={handleSave} disabled={saveDisabled} className="aw-btn aw-btn-primary">
+            {saveLabel}
+          </button>
+        </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="loan-content flex-1 p-3 overflow-auto bg-white">
-        {renderTabContent()}
-      </div>
+      <TabNavigation activeTab={state.activeTab} onTabChange={setActiveTab} />
 
-      {/* Action Buttons */}
-      <div className="loan-actions px-3 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={() => {
-            if ((window as any).electronAPI?.ipcRenderer) {
-              (window as any).electronAPI.ipcRenderer.send('window-close');
-            } else {
-              window.close();
-            }
-          }}
-          className="px-6 py-2 fz-button font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={isSaving || isCheckingEligibility || (eligibilityStatus != null && !eligibilityStatus.isEligible)}
-          className={`px-6 py-2 fz-button font-medium text-white rounded transition-colors ${isSaving || isCheckingEligibility || (eligibilityStatus != null && !eligibilityStatus.isEligible)
-            ? 'bg-blue-400 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-        >
-          {isSaving ? 'Saving...' : isCheckingEligibility ? 'Checking Eligibility...' : 'Save'}
-        </button>
+      <div className="aw-content">
+        <div key={state.activeTab} className="aw-fade-in">
+          {renderTabContent()}
+        </div>
       </div>
-
-      <style>{`
-        /* ── Loan Application — dark mode (Settings-panel palette trial) ── */
-        html.dark .loan-app { background-color: #000000 !important; color: #f5f5f7 !important; }
-        html.dark .loan-tab-bar { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .loan-tab-bar button { background-color: transparent !important; color: #8e8e93 !important; }
-        html.dark .loan-tab-bar button.border-b-2 { background-color: transparent !important; color: #60a5fa !important; border-bottom-color: #3b82f6 !important; }
-        html.dark .loan-content { background-color: #000000 !important; }
-        html.dark .loan-actions { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .loan-actions button:not(.bg-blue-600):not(.bg-blue-400) {
-          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
-        }
-        /* Left & right panels (cards) */
-        html.dark .loan-left-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .loan-right-panel { background-image: none !important; background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .loan-member-hdr { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .loan-member-hdr .text-slate-800 { color: #f5f5f7 !important; }
-        html.dark .loan-member-card { background-color: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
-        /* All form inputs */
-        html.dark .loan-app input,
-        html.dark .loan-app select,
-        html.dark .loan-app textarea {
-          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-        }
-        html.dark .loan-app label { color: #8e8e93 !important; }
-        /* Text colours */
-        html.dark .loan-app .text-slate-800 { color: #f5f5f7 !important; }
-        html.dark .loan-app .text-slate-700 { color: #f5f5f7 !important; }
-        html.dark .loan-app .text-slate-600 { color: #8e8e93 !important; }
-        html.dark .loan-app .text-slate-500 { color: #71717a !important; }
-        html.dark .loan-app .text-slate-400 { color: #71717a !important; }
-        /* Surety table */
-        html.dark .surety-table thead tr,
-        html.dark .surety-table .surety-hdr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.07) !important; }
-        html.dark .surety-table th { color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
-        html.dark .surety-table td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
-        html.dark .surety-table tr:hover { background-color: rgba(255,255,255,.05) !important; }
-        /* Misc */
-        html.dark .loan-app .bg-slate-50 { background-color: #1c1c1e !important; }
-        html.dark .loan-app .bg-slate-100 { background-color: #1c1c1e !important; }
-        html.dark .loan-app .bg-white { background-color: #1c1c1e !important; }
-        html.dark .loan-app .bg-blue-50 { background-color: rgba(59,130,246,0.08) !important; }
-        html.dark .loan-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .loan-app .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
-        /* Loading spinner text */
-        html.dark .loan-app .text-blue-600 { color: #60a5fa !important; }
-        html.dark .loan-app .text-green-600 { color: #34d399 !important; }
-        html.dark .loan-app .text-amber-600 { color: #fbbf24 !important; }
-        html.dark .loan-app .text-orange-600 { color: #fb923c !important; }
-        html.dark .loan-app .text-red-600 { color: #ff453a !important; }
-        html.dark .loan-app .text-slate-300 { color: rgba(255,255,255,.08) !important; }
-      `}</style>
     </div>
   );
 };

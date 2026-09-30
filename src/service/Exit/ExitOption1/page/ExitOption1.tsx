@@ -1,16 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  LogOut,
-  AlertTriangle,
-  CheckCircle,
-  X,
-  Zap,
-  Shield,
-  Heart
-} from 'lucide-react';
-import { ConfigProvider } from 'antd';
+import { LogOut, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -33,12 +23,12 @@ const ExitOption1: React.FC = () => {
   const handleExit = useCallback(() => {
     setIsExiting(true);
     setShowConfirmation(false);
-    
+
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
-          
+
           if (window.electronAPI) {
             window.electronAPI.quitApp();
             setTimeout(() => {
@@ -46,7 +36,7 @@ const ExitOption1: React.FC = () => {
                 window.electronAPI.forceQuitApp();
               }
             }, 1000);
-          } 
+          }
           else if (window.electron?.ipcRenderer) {
             window.electron.ipcRenderer.send('app-quit');
             setTimeout(() => {
@@ -65,7 +55,7 @@ const ExitOption1: React.FC = () => {
               // Silent fail
             }
           }
-          
+
           return 100;
         }
         return prev + 2;
@@ -92,265 +82,81 @@ const ExitOption1: React.FC = () => {
     return exitMessages[Math.min(index, exitMessages.length - 1)];
   }, [progress, exitMessages]);
 
+  const steps = [
+    { label: 'Saved', at: 20 },
+    { label: 'Closed', at: 50 },
+    { label: 'Done', at: 80 },
+  ];
+
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#ef4444',
-          borderRadius: 12,
-        },
-      }}
-    >
-      <div className="exit-page h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-rose-900/30 to-slate-900 font-sans selection:bg-rose-100 overflow-hidden">
-        <AnimatePresence mode="wait">
-          {showConfirmation && (
-            <motion.div
-              key="confirmation"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: -20 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-              className="exit-card bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4"
-            >
-              {/* Icon */}
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-rose-100 to-red-100 mb-4 shadow-lg shadow-rose-200/50"
-              >
-                <AlertTriangle className="h-10 w-10 text-rose-600" />
-              </motion.div>
-
-              {/* Title */}
-              <motion.h3
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-2xl font-black text-slate-900 mb-2 text-center uppercase tracking-tight"
-              >
-                Exit Application
-              </motion.h3>
-
-              {/* Description */}
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-sm font-bold text-slate-500 mb-6 text-center uppercase tracking-wide"
-              >
-                Are you sure you want to exit Paper White Technology LMS?
-              </motion.p>
-
-              {/* Warning Box */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-6"
-              >
-                <div className="flex items-start gap-2">
-                  <Shield size={14} className="text-rose-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="fz-small font-black text-rose-900 uppercase tracking-tight leading-tight mb-1">
-                      Important Notice
-                    </p>
-                    <p className="fz-tiny font-bold text-rose-700 leading-tight">
-                      All unsaved changes will be lost. Make sure you've saved your work before exiting.
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="flex gap-3"
-              >
-                <button
-                  onClick={handleCancel}
-                  className="flex-1 px-4 py-3 border-2 border-slate-300 rounded-xl text-slate-700 font-black text-sm uppercase tracking-wider hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 flex items-center justify-center gap-2 group"
-                >
-                  <X size={16} className="group-hover:rotate-90 transition-transform" />
-                  Cancel
-                </button>
-                <button
-                  onClick={handleExit}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 text-white rounded-xl font-black text-sm uppercase tracking-wider hover:from-rose-700 hover:via-red-700 hover:to-rose-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 shadow-lg shadow-rose-200/50 flex items-center justify-center gap-2 group"
-                >
-                  <LogOut size={16} className="group-hover:translate-x-1 transition-transform" />
-                  Exit
-                </button>
-              </motion.div>
-
-              {/* Footer */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-                className="mt-4 text-center"
-              >
-                <p className="fz-mini font-bold text-slate-400 uppercase tracking-widest">
-                  Press ESC to cancel
-                </p>
-              </motion.div>
-            </motion.div>
-          )}
-
-          {isExiting && (
-            <motion.div
-              key="exiting"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center max-w-md w-full px-4"
-            >
-              {/* Animated Icon */}
-              <motion.div
-                animate={{
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-                className="mb-6"
-              >
-                <div className="mx-auto w-28 h-28 rounded-full bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-sm flex items-center justify-center shadow-2xl shadow-rose-500/20 border border-white/10">
-                  <LogOut className="w-14 h-14 text-white" />
-                </div>
-              </motion.div>
-
-              {/* Title */}
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-5xl font-black text-white mb-3 uppercase tracking-tight"
-              >
-                Goodbye!
-              </motion.h1>
-
-              {/* Subtitle */}
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-lg font-bold text-slate-300 mb-6 uppercase tracking-wider"
-              >
-                Thank you for using Paper White Technology
-              </motion.p>
-
-              {/* Progress Bar Container */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 }}
-                className="w-full max-w-sm mx-auto"
-              >
-                {/* Progress Bar */}
-                <div className="relative w-full h-3 bg-slate-800/50 rounded-full overflow-hidden backdrop-blur-sm border border-white/10 shadow-inner mb-3">
-                  <motion.div
-                    initial={{ width: '0%' }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.3, ease: 'linear' }}
-                    className="h-full bg-gradient-to-r from-rose-500 via-red-500 to-rose-600 rounded-full shadow-lg shadow-rose-500/50 relative overflow-hidden"
-                  >
-                    <motion.div
-                      animate={{
-                        x: ['-100%', '100%'],
-                      }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 1,
-                        ease: 'linear',
-                      }}
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                    />
-                  </motion.div>
-                </div>
-
-                {/* Progress Percentage */}
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                    {currentMessage}
-                  </span>
-                  <span className="text-xs font-black text-white tabular-nums">
-                    {progress}%
-                  </span>
-                </div>
-              </motion.div>
-
-              {/* Status Icons */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center justify-center gap-4 mt-6"
-              >
-                <motion.div
-                  animate={{
-                    opacity: progress > 20 ? 1 : 0.3,
-                    scale: progress > 20 ? 1 : 0.8,
-                  }}
-                  className="flex items-center gap-1.5"
-                >
-                  <CheckCircle size={14} className="text-emerald-400" />
-                  <span className="fz-tiny font-bold text-slate-400 uppercase">Saved</span>
-                </motion.div>
-                <motion.div
-                  animate={{
-                    opacity: progress > 50 ? 1 : 0.3,
-                    scale: progress > 50 ? 1 : 0.8,
-                  }}
-                  className="flex items-center gap-1.5"
-                >
-                  <CheckCircle size={14} className="text-emerald-400" />
-                  <span className="fz-tiny font-bold text-slate-400 uppercase">Closed</span>
-                </motion.div>
-                <motion.div
-                  animate={{
-                    opacity: progress > 80 ? 1 : 0.3,
-                    scale: progress > 80 ? 1 : 0.8,
-                  }}
-                  className="flex items-center gap-1.5"
-                >
-                  <CheckCircle size={14} className="text-emerald-400" />
-                  <span className="fz-tiny font-bold text-slate-400 uppercase">Done</span>
-                </motion.div>
-              </motion.div>
-
-              {/* Footer Message */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="mt-8 flex items-center justify-center gap-2"
-              >
-                <Heart size={12} className="text-rose-400" />
-                <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest">
-                  See you soon!
-                </span>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <style>{`
-          /* ── Exit — dark mode (Settings-panel palette) ── */
-          html.dark .exit-page { background-image: none !important; background-color: #000000 !important; }
-          html.dark .exit-card { background-color: #1c1c1e !important; border: 1px solid rgba(255,255,255,.08); }
-          html.dark .exit-card .text-slate-900 { color: #f5f5f7 !important; }
-          html.dark .exit-card .text-slate-700 { color: #f5f5f7 !important; }
-          html.dark .exit-card .text-slate-500 { color: #8e8e93 !important; }
-          html.dark .exit-card .text-slate-400 { color: #71717a !important; }
-          html.dark .exit-card .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
-          html.dark .exit-card .hover\\:bg-slate-50:hover { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.14) !important; }
-          html.dark .exit-card .bg-rose-50 { background-color: rgba(255,69,58,.12) !important; border-color: rgba(255,69,58,.3) !important; }
-          html.dark .exit-card .text-rose-900 { color: #ff453a !important; }
-          html.dark .exit-card .text-rose-700 { color: #f5f5f7 !important; }
-        `}</style>
+    <div className="app-window">
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Exit Application</h1>
+          <p className="aw-desc">Paper White Technology - LMS</p>
+        </div>
       </div>
-    </ConfigProvider>
+
+      <div className="aw-content" style={{ display: 'grid', placeItems: 'center' }}>
+        {showConfirmation && (
+          <section className="aw-card aw-fade-in" style={{ width: '100%', maxWidth: 460, textAlign: 'center' }}>
+            <div className="aw-card-icon" style={{ margin: '0 auto', width: 52, height: 52, ['--aw-tone' as any]: 'var(--aw-danger)' }}>
+              <AlertTriangle size={26} style={{ color: 'var(--aw-danger)' }} />
+            </div>
+            <h2 className="aw-title" style={{ textAlign: 'center' }}>Exit Application</h2>
+            <p className="aw-meta">Are you sure you want to exit Paper White Technology - LMS?</p>
+
+            <div className="aw-alert aw-alert-danger" role="alert" style={{ textAlign: 'left' }}>
+              <div>
+                <strong>Important Notice</strong>
+                <p>All unsaved changes will be lost. Make sure you've saved your work before exiting.</p>
+              </div>
+            </div>
+
+            <div className="aw-btn-row" style={{ justifyContent: 'center' }}>
+              <button type="button" onClick={handleCancel} className="aw-btn aw-btn-secondary" style={{ flex: 1 }}>
+                <X size={14} /> Cancel
+              </button>
+              <button type="button" onClick={handleExit} className="aw-btn aw-btn-danger" style={{ flex: 1 }}>
+                <LogOut size={14} /> Exit
+              </button>
+            </div>
+          </section>
+        )}
+
+        {isExiting && (
+          <section className="aw-card aw-fade-in" style={{ width: '100%', maxWidth: 460, textAlign: 'center' }}>
+            <div className="aw-card-icon" style={{ margin: '0 auto', width: 52, height: 52 }}>
+              <LogOut size={26} />
+            </div>
+            <h2 className="aw-title" style={{ textAlign: 'center' }}>Goodbye!</h2>
+            <p className="aw-meta">Thank you for using Paper White Technology</p>
+
+            <div className="aw-bar" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Exit progress">
+              <span style={{ width: `${progress}%`, transition: 'width .3s linear' }} />
+            </div>
+            <div className="aw-row" style={{ borderBottom: 0 }}>
+              <span className="aw-meta">{currentMessage}</span>
+              <strong>{progress}%</strong>
+            </div>
+
+            <div className="aw-inline" style={{ justifyContent: 'center', gap: 16 }}>
+              {steps.map(step => (
+                <span key={step.label} className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, opacity: progress > step.at ? 1 : 0.4, transition: 'opacity .3s' }}>
+                  <CheckCircle2 size={14} style={{ color: 'var(--aw-success)' }} /> {step.label}
+                </span>
+              ))}
+            </div>
+            <p className="aw-meta">See you soon!</p>
+          </section>
+        )}
+      </div>
+
+      <div className="aw-footer">
+        <span>{showConfirmation ? 'Press ESC to cancel' : 'Closing application…'}</span>
+        <span>Exit</span>
+      </div>
+    </div>
   );
 };
 

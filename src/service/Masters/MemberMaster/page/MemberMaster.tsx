@@ -1,23 +1,49 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Save, RotateCcw, PenTool, Upload as UploadIcon, X as XIcon, CheckCircle2, User, Camera, Sun, Moon } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
+import { Search, Save, RotateCcw, PenTool, Upload as UploadIcon, X as XIcon, CheckCircle2, User, Camera } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import apiService from '../../../../services/api';
 import { getApiBaseUrlSync } from '../../../../services/apiVersionConfig';
 import { useMemberForm } from '../Hook/useMemberForm';
-import { Modal } from 'antd';
-import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
-import { API_BASE_URL, getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { Select as AntSelect } from 'antd';
+import MemberLookupDialog from '../../../../components/shared/kit/MemberLookupDialog';
+import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
-import { setTheme } from '../../../../store/slices/themeSlice';
 import type { RootState } from '../../../../store';
+
+type MemberSelectProps = {
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+  ariaLabel: string;
+  searchable?: boolean;
+  className?: string;
+};
+
+// Keep the existing option values while using the app's animated, keyboard-accessible popup.
+const MemberSelect: React.FC<MemberSelectProps> = ({ value, onChange, children, ariaLabel, searchable = false, className = '' }) => {
+  const options = React.Children.toArray(children)
+    .filter((child): child is React.ReactElement<React.OptionHTMLAttributes<HTMLOptionElement>> => React.isValidElement(child))
+    .map((child) => ({ value: String(child.props.value ?? ''), label: child.props.children }));
+
+  return (
+    <AntSelect
+      className={`mm-select ${className}`.trim()}
+      popupClassName="aw-select-popup"
+      aria-label={ariaLabel}
+      value={value}
+      onChange={onChange}
+      options={options}
+      showSearch={searchable}
+      optionFilterProp="label"
+      virtual={options.length > 30}
+    />
+  );
+};
 
 const MemberMaster: React.FC = () => {
   const { formData, handleInputChange, resetForm, setFormValues } = useMemberForm();
-  const dispatch = useDispatch();
   const interfaceMode = useSelector((s: RootState) => s.theme.interfaceMode);
-  const isDarkMode = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const toggleTheme = () => dispatch(setTheme({ interfaceMode: isDarkMode ? 'light' : 'dark' }));
+  const isDarkMode = interfaceMode === 'dark';
   const [showLookupModal, setShowLookupModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingMember, setIsLoadingMember] = useState(false);
@@ -168,10 +194,11 @@ const MemberMaster: React.FC = () => {
       const r = canvas.getBoundingClientRect();
       return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
     };
-    const onTS = (e: TouchEvent) => { e.preventDefault(); isDrawingRef.current = true; lastPosRef.current = scaled(e.touches[0].clientX, e.touches[0].clientY); };
+    const onTS = (e: TouchEvent) => { e.preventDefault(); const t = e.touches[0]; if (!t) return; isDrawingRef.current = true; lastPosRef.current = scaled(t.clientX, t.clientY); };
     const onTM = (e: TouchEvent) => {
       e.preventDefault(); if (!isDrawingRef.current) return;
-      const p = scaled(e.touches[0].clientX, e.touches[0].clientY);
+      const t = e.touches[0]; if (!t) return;
+      const p = scaled(t.clientX, t.clientY);
       ctx.beginPath(); ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y); ctx.lineTo(p.x, p.y); ctx.stroke();
       lastPosRef.current = p;
       if (!hasDrawingRef.current) { hasDrawingRef.current = true; setHasDrawing(true); }
@@ -725,19 +752,14 @@ const MemberMaster: React.FC = () => {
   });
 
   return (
-    <div className="mm-form h-screen flex flex-col overflow-auto bg-white">
+    <div className="app-window mm-form h-screen flex flex-col overflow-auto">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg border-b border-white/5">
-        <h1 className="fz-caption font-black text-white tracking-tight uppercase">Member Master</h1>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="flex items-center gap-1 px-2 py-1 rounded-md border border-white/15 text-white/80 hover:text-white hover:bg-white/10 transition-colors fz-tiny font-semibold uppercase tracking-wide"
-        >
-          {isDarkMode ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
-          <span>{isDarkMode ? 'Light' : 'Dark'}</span>
-        </button>
+      <div className="mm-page-header px-4 py-3 flex items-center justify-between gap-4 shrink-0">
+        <div className="min-w-0">
+          <p className="mm-eyebrow">Member records</p>
+          <h1 className="mm-page-title">Member Master</h1>
+          <p className="mm-page-description">Create and manage member information.</p>
+        </div>
       </div>
 
       {/* Notification */}
@@ -784,12 +806,16 @@ const MemberMaster: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 p-1 overflow-auto bg-slate-50">
-        <div className="mx-auto" style={{ minWidth: 700 }}>
+      <div className="mm-content flex-1 px-4 py-4 overflow-auto">
+        <div className="mm-content-inner mx-auto">
           {/* Identity Card */}
-          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            <div className="mm-section-heading">
+              <span className="mm-section-number" aria-hidden="true">01</span>
+              <h2>Member identity</h2>
+            </div>
             {/* Top Row: Avatar, Member Number, Search, Active */}
-            <div className="flex flex-row flex-wrap items-center gap-2 mb-2">
+            <div className="mm-record-toolbar flex flex-row flex-wrap items-center gap-2 mb-2">
               {/* Circular profile photo (with initials-avatar fallback) */}
               <div className="relative group shrink-0">
                 <input id="photo-profile-header" type="file" accept="image/jpeg,image/png" className="hidden"
@@ -840,17 +866,17 @@ const MemberMaster: React.FC = () => {
                 <button
                   onClick={() => document.getElementById('kyc-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                   className="px-2 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md fz-caption font-semibold transition-colors flex items-center gap-1 uppercase tracking-wide"
-                  title="Jump to KYC Documents"
+                  data-tip="Jump to KYC Documents" data-tip-pos="bottom"
                 >
                   <UploadIcon className="w-3 h-3" /> <span>KYC Docs</span>
                 </button>
               </div>
 
-              <span className={`fz-tiny font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${formData.memberNumber
+              <span className={`mm-record-mode fz-tiny font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${formData.memberNumber
                 ? 'bg-green-50 text-green-700 border border-green-200'
                 : 'bg-violet-50 text-violet-700 border border-violet-200'
                 }`}>
-                {formData.memberNumber ? '📝 Edit' : '🆕 New'}
+                {formData.memberNumber ? 'Editing member' : 'New member'}
               </span>
 
               <div className="ml-auto flex items-center gap-1.5">
@@ -890,17 +916,17 @@ const MemberMaster: React.FC = () => {
             <div className="grid grid-cols-12 gap-2">
               <div className="col-span-2">
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Title</label>
-                <select
+                <MemberSelect
+                  ariaLabel="Title"
                   value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  onChange={(value) => handleInputChange('title', value)}
                 >
                   <option value="Mr">Mr</option>
                   <option value="Mrs">Mrs</option>
                   <option value="Ms">Ms</option>
                   <option value="Smt.">Smt.</option>
                   <option value="Dr">Dr</option>
-                </select>
+                </MemberSelect>
               </div>
               <div className="col-span-3">
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">First Name *</label>
@@ -949,8 +975,11 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Personal & Employment Details Card */}
-          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
-            <span className="inline-block bg-violet-50 text-violet-700 fz-tiny font-bold uppercase tracking-wide px-2 py-1 rounded mb-2">Personal &amp; Employment</span>
+          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            <div className="mm-section-heading">
+              <span className="mm-section-number" aria-hidden="true">02</span>
+              <h2>Personal &amp; employment</h2>
+            </div>
 
             {/* Row 1: Gender, DOB, Age, Monthly Contribution, Compulsary Deposit */}
             <div className="grid grid-cols-12 gap-2 mb-2">
@@ -959,7 +988,7 @@ const MemberMaster: React.FC = () => {
                 <div className="flex gap-1.5">
                   <div
                     onClick={() => handleInputChange('gender', 'male')}
-                    className={`flex-1 text-center px-1.5 py-1 rounded-md fz-tiny font-bold cursor-pointer uppercase border transition-colors ${formData.gender === 'male'
+                    className={`mm-gender-option flex-1 text-center px-1.5 py-1 rounded-md fz-tiny font-bold cursor-pointer uppercase border transition-colors ${formData.gender === 'male'
                       ? 'border-violet-500 bg-violet-50 text-violet-700'
                       : 'border-slate-300 bg-white text-slate-500'
                       }`}
@@ -968,7 +997,7 @@ const MemberMaster: React.FC = () => {
                   </div>
                   <div
                     onClick={() => handleInputChange('gender', 'female')}
-                    className={`flex-1 text-center px-1.5 py-1 rounded-md fz-tiny font-bold cursor-pointer uppercase border transition-colors ${formData.gender === 'female'
+                    className={`mm-gender-option flex-1 text-center px-1.5 py-1 rounded-md fz-tiny font-bold cursor-pointer uppercase border transition-colors ${formData.gender === 'female'
                       ? 'border-violet-500 bg-violet-50 text-violet-700'
                       : 'border-slate-300 bg-white text-slate-500'
                       }`}
@@ -1066,10 +1095,11 @@ const MemberMaster: React.FC = () => {
               </div>
               <div className="col-span-2">
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Designation</label>
-                <select
+                <MemberSelect
+                  ariaLabel="Designation"
+                  searchable
                   value={formData.designation}
-                  onChange={(e) => handleInputChange('designation', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  onChange={(value) => handleInputChange('designation', value)}
                 >
                   <option value="">Select...</option>
                   <option value="A./M.">A./M.</option>
@@ -1348,7 +1378,7 @@ const MemberMaster: React.FC = () => {
                   <option value="WG">WG</option>
                   <option value="WGC">WGC</option>
                   <option value="W./ATTDT">W./ATTDT</option>
-                </select>
+                </MemberSelect>
               </div>
               <div className="col-span-2">
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Basic Pay</label>
@@ -1504,8 +1534,11 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Address & Status Details Card */}
-          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
-            <span className="inline-block bg-violet-50 text-violet-700 fz-tiny font-bold uppercase tracking-wide px-2 py-1 rounded mb-2">Address &amp; Status</span>
+          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            <div className="mm-section-heading">
+              <span className="mm-section-number" aria-hidden="true">03</span>
+              <h2>Address &amp; status</h2>
+            </div>
 
             {/* Row 1: Home Address, Status, Date Withdrawl/Retire */}
             <div className="grid grid-cols-12 gap-2 mb-2">
@@ -1520,16 +1553,16 @@ const MemberMaster: React.FC = () => {
               </div>
               <div className="col-span-3">
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Status</label>
-                <select
+                <MemberSelect
+                  ariaLabel="Status"
                   value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  onChange={(value) => handleInputChange('status', value)}
                 >
                   <option value="Regular">Regular</option>
                   <option value="Retire">Retire</option>
                   <option value="Withdrawl">Withdrawl</option>
                   <option value="Expire">Expire</option>
-                </select>
+                </MemberSelect>
               </div>
               <div className="col-span-3">
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Date Withdrawl/Retire</label>
@@ -1546,10 +1579,10 @@ const MemberMaster: React.FC = () => {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Cast Category</label>
-                <select
+                <MemberSelect
+                  ariaLabel="Cast Category"
                   value={formData.castCategory}
-                  onChange={(e) => handleInputChange('castCategory', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  onChange={(value) => handleInputChange('castCategory', value)}
                 >
                   {/* The loaded member's own category is kept even if it's since been
                       removed from the master list, so editing doesn't silently blank it. */}
@@ -1559,47 +1592,50 @@ const MemberMaster: React.FC = () => {
                   ).map((name) => (
                     <option key={name} value={name}>{name}</option>
                   ))}
-                </select>
+                </MemberSelect>
               </div>
               <div>
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Member Type</label>
-                <select
+                <MemberSelect
+                  ariaLabel="Member Type"
                   value={formData.memberType}
-                  onChange={(e) => handleInputChange('memberType', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  onChange={(value) => handleInputChange('memberType', value)}
                 >
                   <option value="Regular">Regular</option>
                   <option value="Other">Other</option>
                   <option value="Nominal">Nominal</option>
                   <option value="Co-Op Member">Co-Op Member</option>
                   <option value="Well Wisher Member">Well Wisher Member</option>
-                </select>
+                </MemberSelect>
               </div>
             </div>
           </div>
 
           {/* Organization & Nominee Details Card */}
-          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
-            <span className="inline-block bg-violet-50 text-violet-700 fz-tiny font-bold uppercase tracking-wide px-2 py-1 rounded mb-2">Organization &amp; Nominee</span>
+          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            <div className="mm-section-heading">
+              <span className="mm-section-number" aria-hidden="true">04</span>
+              <h2>Organization &amp; nominee</h2>
+            </div>
 
             {/* Division/RO and Branch */}
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Division/RO *</label>
-                <select
+                <MemberSelect
+                  ariaLabel="Division/RO"
                   value={formData.divisionRo}
-                  onChange={(e) => handleInputChange('divisionRo', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  onChange={(value) => handleInputChange('divisionRo', value)}
                 >
                   <option value="1-BHILAI">BHILAI</option>
-                </select>
+                </MemberSelect>
               </div>
               <div>
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Branch</label>
-                <select
+                <MemberSelect
+                  ariaLabel="Branch"
                   value={formData.branch}
-                  onChange={(e) => handleInputChange('branch', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  onChange={(value) => handleInputChange('branch', value)}
                 >
                   <option value="">Select...</option>
                   <option value="1-BHILAI-BHILAI-61">1-BHILAI-BHILAI-61</option>
@@ -1608,7 +1644,7 @@ const MemberMaster: React.FC = () => {
                   <option value="4-NANDINI-NANDINI-13">4-NANDINI-NANDINI-13</option>
                   <option value="5-DALLI RAJHRA-DALLI RAJHRA-03">5-DALLI RAJHRA-DALLI RAJHRA-03</option>
                   <option value="6-MECON-BHILAI-90">6-MECON-BHILAI-90</option>
-                </select>
+                </MemberSelect>
               </div>
             </div>
 
@@ -1634,10 +1670,10 @@ const MemberMaster: React.FC = () => {
               </div>
               <div className="col-span-2">
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Relation</label>
-                <select
+                <MemberSelect
+                  ariaLabel="Relation"
                   value={formData.relationWithNominee}
-                  onChange={(e) => handleInputChange('relationWithNominee', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  onChange={(value) => handleInputChange('relationWithNominee', value)}
                 >
                   <option value="">Select...</option>
                   <option value="Wife">Wife</option>
@@ -1650,7 +1686,7 @@ const MemberMaster: React.FC = () => {
                   <option value="Brother">Brother</option>
                   <option value="Sister">Sister</option>
                   <option value="Nephew">Nephew</option>
-                </select>
+                </MemberSelect>
               </div>
               <div className="col-span-2">
                 <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Declaration Date</label>
@@ -1675,8 +1711,11 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Documents & Media Card */}
-          <div className="border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
-            <span className="inline-block bg-violet-50 text-violet-700 fz-tiny font-bold uppercase tracking-wide px-2 py-1 rounded mb-2">Documents &amp; Media</span>
+          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
+            <div className="mm-section-heading">
+              <span className="mm-section-number" aria-hidden="true">05</span>
+              <h2>Documents &amp; media</h2>
+            </div>
 
             {/* Mobile + Email */}
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -1747,10 +1786,9 @@ const MemberMaster: React.FC = () => {
                   {kycDocuments.length > 0 && <span className="bg-violet-50 text-violet-700 px-1.5 rounded-full fz-mini">{kycDocuments.length}</span>}
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <select value={kycDocType} onChange={(e) => setKycDocType(e.target.value)}
-                    className="px-1.5 py-1 border border-slate-300 rounded-md bg-white fz-caption font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                  <MemberSelect ariaLabel="KYC document type" value={kycDocType} onChange={setKycDocType} className="mm-kyc-select">
                     {DOC_TYPES.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
+                  </MemberSelect>
                   <input id="kyc-file" type="file" accept="image/jpeg,image/png,application/pdf" className="hidden"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleKycUpload(f); e.target.value = ''; }} />
                   <button onClick={() => document.getElementById('kyc-file')?.click()} disabled={kycUploading || !formData.memberNumber}
@@ -1858,42 +1896,124 @@ const MemberMaster: React.FC = () => {
 
         </div>
       </div>
-      {/* Member Lookup Modal */}
-      <Modal
+      {/* Member Lookup */}
+      <MemberLookupDialog
         open={showLookupModal}
-        onCancel={() => setShowLookupModal(false)}
-        footer={null}
-        width={800}
-        bodyStyle={{ padding: 0 }}
-        closable={false}
-        destroyOnClose
-      >
-        <MemberLookup
-          isModal={true}
-          onSelect={(member) => {
-            handleMemberSelect(member.memberNo);
-            setShowLookupModal(false);
-          }}
-          onClose={() => setShowLookupModal(false)}
-        />
-      </Modal>
+        onClose={() => setShowLookupModal(false)}
+        onSelect={(member) => handleMemberSelect(member.memberNo)}
+      />
 
-      {/* Scoped polish — most of the previous rainbow-scheme dark-mode overrides
-          are gone: the page now uses plain neutral slate and violet utility
-          classes, which ThemeProvider's global html.dark rules already repaint.
-          Only the slate-300 input border isn't covered by those global rules,
-          so it gets one here. */}
+      {/* Member Master presentation. Colors, sizes, spacing, radius, and shadows all come from the shared
+          window tokens (--aw-*), so every Settings option applies here without a local copy. */}
       <style>{`
-        /* ── Subtle entrance animation for each section card ── */
-        @keyframes mmCardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-        .mm-form input, .mm-form select, .mm-form textarea { transition: border-color .15s, box-shadow .15s, background-color .15s; }
-        .mm-form button { transition: transform .12s ease, background-color .15s, box-shadow .15s; }
-        .mm-form button:active { transform: scale(.96); }
+        .mm-form {
+          --mm-control-height: max(30px, calc(var(--fz-base) * 2.45 * var(--ui-density, 1)));
+          --mm-card-padding-y: calc(15px * var(--ui-density, 1));
+          --mm-card-padding-x: calc(18px * var(--ui-density, 1));
+          --mm-field-gap-x: calc(13px * var(--ui-density, 1));
+          --mm-field-gap-y: calc(11px * var(--ui-density, 1));
+          --mm-radius: var(--aw-radius);
+          --mm-bg: var(--aw-bg);
+          --mm-surface: var(--aw-surface);
+          --mm-surface-muted: var(--aw-surface-muted);
+          --mm-text: var(--aw-text);
+          --mm-muted: var(--aw-muted);
+          --mm-border: var(--aw-border);
+          --mm-border-strong: var(--aw-border-strong);
+          --mm-accent: var(--aw-accent);
+          --mm-accent-soft: var(--aw-accent-soft);
+          --mm-focus: var(--aw-focus);
+          --mm-shadow: var(--aw-shadow);
+          background: var(--mm-bg);
+          color: var(--mm-text);
+        }
+        .mm-page-header { background: var(--mm-surface); border-bottom: 1px solid var(--mm-border); }
+        .mm-page-title { margin: 0; color: var(--mm-text); font-size: var(--type-page-title); line-height: 1.2; font-weight: 700; letter-spacing: -.025em; }
+        .mm-page-description { margin: 3px 0 0; color: var(--mm-muted); font-size: calc(var(--type-body-size) - 1px); line-height: 1.35; }
+        .mm-eyebrow { margin: 0 0 3px; color: var(--mm-accent); font-size: calc(var(--fz-base) - 3px); line-height: 1; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+        .mm-content { padding: 14px 16px; background: var(--mm-bg); }
+        .mm-content-inner { max-width: 1440px; }
+        .mm-form .mm-section { margin-bottom: 12px; padding: var(--mm-card-padding-y) var(--mm-card-padding-x); border-color: var(--mm-border) !important; border-radius: calc(var(--mm-radius) * 1.8); background: var(--mm-surface) !important; box-shadow: var(--mm-shadow); }
+        .mm-section-heading { display: flex; align-items: center; gap: 9px; padding-bottom: 10px; margin-bottom: 11px; border-bottom: 1px solid var(--mm-border); }
+        .mm-section-heading h2 { margin: 0; color: var(--mm-text); font-size: var(--type-panel-title); line-height: 1.25; font-weight: 700; letter-spacing: -.01em; }
+        .mm-section-number { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; flex: none; border-radius: calc(var(--mm-radius) * .9); color: var(--mm-accent); background: var(--mm-accent-soft); font-size: calc(var(--fz-base) - 2px); font-weight: 700; font-variant-numeric: tabular-nums; }
+        .mm-section > .grid { column-gap: var(--mm-field-gap-x); row-gap: var(--mm-field-gap-y); margin-bottom: 0; }
+        .mm-section > .grid + .grid { margin-top: var(--mm-field-gap-y); }
+        .mm-section .grid label:not(.flex), .mm-record-toolbar label { display: block; margin-bottom: 4px; color: var(--mm-muted); font-size: calc(var(--type-label-size) + 1px); line-height: 1.2; font-weight: 700; letter-spacing: .04em; }
+        .mm-section input:not([type="checkbox"]):not([type="file"]):not(.ant-select-selection-search-input), .mm-section textarea { min-height: var(--mm-control-height); padding: 5px 10px; border-radius: var(--mm-radius); font-size: var(--type-field-size); line-height: 1.35; }
+        .mm-section textarea { min-height: 64px; }
+        .mm-form input:not(.ant-select-selection-search-input), .mm-form textarea { border-color: var(--mm-border-strong); background: var(--mm-surface-muted); color: var(--mm-text); transition-property: border-color, box-shadow, background-color !important; transition-duration: .22s !important; transition-timing-function: var(--aw-ease) !important; }
+        .mm-form input:not(.ant-select-selection-search-input):hover, .mm-form textarea:hover { border-color: color-mix(in srgb, var(--mm-accent) 45%, var(--mm-border-strong)); }
+        .mm-form input:not(.ant-select-selection-search-input):focus, .mm-form textarea:focus { border-color: var(--mm-accent) !important; background: var(--mm-surface) !important; box-shadow: 0 0 0 3px var(--mm-focus) !important; outline: none; }
+        .mm-form input:disabled, .mm-form textarea:disabled { background: var(--mm-surface-muted); color: var(--mm-muted); opacity: .8; }
+        .mm-form input::placeholder, .mm-form textarea::placeholder { color: var(--mm-muted); opacity: .8; }
 
-        html.dark .mm-form .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mm-form select option { background: #151A21; color: #E6E9EF; }
-        html.dark .mm-form input::placeholder,
-        html.dark .mm-form textarea::placeholder { color: #71717a !important; }
+        .mm-form .mm-select { display: block; width: 100%; min-width: 0; font-size: var(--type-field-size); }
+        .mm-form .mm-select .ant-select-selector { min-height: var(--mm-control-height); padding: 1px 10px; border: 1px solid var(--mm-border-strong) !important; border-radius: var(--mm-radius); background: var(--mm-surface-muted) !important; color: var(--mm-text); box-shadow: none; transition-property: border-color, box-shadow, background-color !important; transition-duration: .22s !important; transition-timing-function: var(--aw-ease) !important; }
+        .mm-form .mm-select:hover .ant-select-selector { border-color: color-mix(in srgb, var(--mm-accent) 45%, var(--mm-border-strong)) !important; }
+        .mm-form .mm-select.ant-select-focused .ant-select-selector { border-color: var(--mm-accent) !important; background: var(--mm-surface) !important; box-shadow: 0 0 0 3px var(--mm-focus); }
+        .mm-form .mm-select .ant-select-selection-item, .mm-form .mm-select .ant-select-selection-placeholder { color: var(--mm-text); line-height: calc(var(--mm-control-height) - 4px); }
+        .mm-form .mm-select .ant-select-arrow { color: var(--mm-muted); }
+        .mm-form .mm-select.ant-select-open .ant-select-arrow { color: var(--mm-accent); transform: rotate(180deg); transition: transform .26s var(--aw-ease) !important; transition-duration: .26s !important; }
+        .mm-form .mm-select .ant-select-selection-search-input { background: transparent; color: var(--mm-text); box-shadow: none !important; }
+        .mm-form .mm-kyc-select { min-width: 160px; }
+
+        .mm-gender-option { display: inline-flex; align-items: center; justify-content: center; min-height: var(--mm-control-height); font-size: var(--type-label-size); border-radius: var(--mm-radius); transition-property: border-color, background-color, color !important; transition-duration: .22s !important; transition-timing-function: var(--aw-ease) !important; }
+        .mm-record-toolbar { padding-bottom: 11px; margin-bottom: 12px; border-bottom: 1px solid var(--mm-border); gap: 8px; }
+        .mm-record-toolbar label { margin-bottom: 0; }
+        .mm-record-toolbar button { min-height: calc(var(--mm-control-height) - 1px); padding: 6px 12px; border-radius: var(--mm-radius); font-size: var(--type-label-size); }
+        .mm-record-toolbar .bg-slate-700 { background: var(--mm-surface-muted) !important; color: var(--mm-text); border: 1px solid var(--mm-border-strong); box-shadow: none; }
+        .mm-record-toolbar .bg-slate-700:hover { background: var(--mm-accent-soft) !important; }
+        .mm-record-toolbar .bg-violet-600 { box-shadow: var(--aw-shadow-btn); }
+        .mm-record-mode { padding: 6px 10px; border-radius: 999px; font-size: var(--type-label-size); letter-spacing: .02em; }
+        .mm-form button:focus-visible, .mm-form [role="checkbox"]:focus-visible { outline: 3px solid var(--mm-focus); outline-offset: 2px; }
+
+        /* The window was written with Tailwind colors. Re-point them at the theme so the accent,
+           success, warning, and danger colors and Light/Dark all follow Settings. */
+        .app-window.mm-form :not(img).bg-white { background-color: var(--aw-surface) !important; }
+        .app-window.mm-form input.bg-white:not(:focus), .app-window.mm-form textarea.bg-white:not(:focus) { background-color: var(--aw-surface-muted) !important; }
+        .app-window.mm-form .bg-slate-50 { background-color: var(--aw-surface-muted) !important; }
+        .app-window.mm-form .text-slate-700, .app-window.mm-form .text-slate-600, .app-window.mm-form .text-gray-800 { color: var(--aw-text) !important; }
+        .app-window.mm-form .text-slate-500, .app-window.mm-form .text-slate-400, .app-window.mm-form .text-slate-300, .app-window.mm-form .text-gray-500, .app-window.mm-form .text-gray-400 { color: var(--aw-muted) !important; }
+        .app-window.mm-form .border-slate-300, .app-window.mm-form .border-slate-400 { border-color: var(--aw-border-strong) !important; }
+        .app-window.mm-form .border-slate-200 { border-color: var(--aw-border) !important; }
+        .app-window.mm-form .hover\\:bg-slate-50:hover, .app-window.mm-form .hover\\:bg-slate-100:hover { background-color: var(--aw-accent-soft) !important; }
+
+        .app-window.mm-form .bg-violet-600 { background-color: var(--aw-accent) !important; }
+        .app-window.mm-form .hover\\:bg-violet-700:hover, .app-window.mm-form .hover\\:bg-violet-500:hover { background-color: color-mix(in srgb, var(--aw-accent) 88%, #000) !important; }
+        .app-window.mm-form .bg-violet-50, .app-window.mm-form .hover\\:bg-violet-50:hover { background-color: var(--aw-accent-soft) !important; }
+        .app-window.mm-form .text-violet-700, .app-window.mm-form .text-violet-800, .app-window.mm-form .text-violet-600, .app-window.mm-form .text-violet-400, .app-window.mm-form .hover\\:text-violet-800:hover { color: var(--aw-accent) !important; }
+        .app-window.mm-form .text-violet-200 { color: color-mix(in srgb, var(--aw-accent) 40%, #fff) !important; }
+        .app-window.mm-form .border-violet-500, .app-window.mm-form .border-violet-600, .app-window.mm-form .hover\\:border-violet-500:hover, .app-window.mm-form .hover\\:border-violet-400:hover { border-color: var(--aw-accent) !important; }
+        .app-window.mm-form .border-violet-200, .app-window.mm-form .border-violet-100 { border-color: color-mix(in srgb, var(--aw-accent) 25%, transparent) !important; }
+        .app-window.mm-form .focus\\:border-violet-500:focus { border-color: var(--aw-accent) !important; }
+        .app-window.mm-form .focus\\:ring-violet-500\\/20:focus { --tw-ring-color: var(--aw-focus) !important; }
+        .app-window.mm-form .accent-violet-600 { accent-color: var(--aw-accent); }
+
+        .app-window.mm-form .bg-green-50, .app-window.mm-form .bg-emerald-50 { background-color: color-mix(in srgb, var(--aw-success) 10%, var(--aw-surface)) !important; }
+        .app-window.mm-form .text-green-700, .app-window.mm-form .text-green-800, .app-window.mm-form .text-emerald-600, .app-window.mm-form .text-emerald-700 { color: var(--aw-success) !important; }
+        .app-window.mm-form .border-green-200, .app-window.mm-form .border-green-300, .app-window.mm-form .border-emerald-200 { border-color: color-mix(in srgb, var(--aw-success) 30%, transparent) !important; }
+        .app-window.mm-form .bg-green-600 { background-color: var(--aw-success) !important; }
+        .app-window.mm-form .bg-red-50 { background-color: color-mix(in srgb, var(--aw-danger) 10%, var(--aw-surface)) !important; }
+        .app-window.mm-form .text-red-800, .app-window.mm-form .text-red-500 { color: var(--aw-danger) !important; }
+        .app-window.mm-form .border-red-200 { border-color: color-mix(in srgb, var(--aw-danger) 30%, transparent) !important; }
+        .app-window.mm-form .bg-red-500, .app-window.mm-form .hover\\:bg-red-600:hover, .app-window.mm-form .hover\\:bg-red-500:hover { background-color: var(--aw-danger) !important; }
+        .app-window.mm-form .text-amber-600 { color: var(--aw-warning) !important; }
+
+        @media (max-width: 1050px) {
+          .mm-content { padding: 11px; }
+          .mm-page-header { padding: 9px 12px; }
+          .mm-record-toolbar { gap: 6px; }
+        }
+        @media (max-width: 720px) {
+          .mm-section > .grid.grid-cols-12 > div { grid-column: span 6 / span 6; }
+          .mm-section > .grid.grid-cols-12 > .col-span-12, .mm-section > .grid.grid-cols-12 > .col-span-6 { grid-column: span 12 / span 12; }
+          .mm-section > .grid.grid-cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 520px) {
+          .mm-section > .grid.grid-cols-12 > div { grid-column: span 12 / span 12; }
+          .mm-section > .grid.grid-cols-2, .mm-section > .grid.grid-cols-3 { grid-template-columns: minmax(0, 1fr); }
+        }
       `}</style>
 
     </div>

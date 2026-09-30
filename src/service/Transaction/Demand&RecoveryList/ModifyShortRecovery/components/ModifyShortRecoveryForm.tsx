@@ -1,14 +1,10 @@
 // components/ModifyShortRecoveryForm.tsx
 
 import React from 'react';
-import { ConfigProvider, Select, Table } from 'antd';
-import { Banknote, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, Save, Building2 } from 'lucide-react';
+import { Select } from 'antd';
+import { X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, Save, Navigation, Layers, FileText } from 'lucide-react';
 import { ModifyShortRecoveryHookReturn } from '../interface/ModifyShortRecoveryInterfaces';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
-
-const { Option } = Select;
-
-const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
 
 const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
     formData, updateField, shortRecoveryList, selectedRecord,
@@ -17,158 +13,101 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
     const [currentIndex, setCurrentIndex] = React.useState(0);
     const total = shortRecoveryList.length;
 
-    const columns = [
-        { title: <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Member No</span>, dataIndex: 'memberNo', key: 'memberNo', width: 120, render: (t: string) => <span className="fz-small font-black text-indigo-700 font-mono">{t}</span> },
-        { title: <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Name</span>, dataIndex: 'memberName', key: 'memberName', width: 200, render: (t: string) => <span className="fz-small font-black text-slate-800 uppercase">{t}</span> },
-        { title: <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Type</span>, dataIndex: 'recoveryType', key: 'recoveryType', width: 100, render: (t: string) => <span className="fz-small font-bold text-slate-600">{t}</span> },
-        { title: <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Expected</span>, dataIndex: 'expectedAmount', key: 'expectedAmount', align: 'right' as const, width: 100, render: (v: number) => <span className="fz-small font-black text-slate-700 font-mono">{v.toLocaleString()}</span> },
-        { title: <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Recovered</span>, dataIndex: 'recoveredAmount', key: 'recoveredAmount', align: 'right' as const, width: 100, render: (v: number) => <span className="fz-small font-black text-emerald-600 font-mono">{v.toLocaleString()}</span> },
-        { title: <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Shortfall</span>, dataIndex: 'shortfallAmount', key: 'shortfallAmount', align: 'right' as const, width: 100, render: (v: number) => <span className="fz-small font-black text-rose-600 font-mono">{v.toLocaleString()}</span> },
-        {
-            title: <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Status</span>,
-            dataIndex: 'status', key: 'status', align: 'center' as const, width: 80,
-            render: (s: string) => (
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full fz-mini font-black uppercase ${s === 'Adjusted' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
-                    {s}
-                </span>
-            ),
-        },
-    ];
-
-    const navBtn = "h-7 w-8 flex items-center justify-center bg-white border border-slate-200 hover:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-300 text-slate-500 rounded transition-all active:scale-95";
-
     usePageToolbarActions({
         onSave: handleSaveAdjustment,
         saveLabel: 'Save',
     });
 
     return (
-        <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="msr-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
-
-                {/* Header */}
-                <div className="msr-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
-                            <Banknote size={13} className="text-white" />
-                        </div>
-                        <div>
-                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Modify Short Recovery</h1>
-                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Demand &amp; Recovery</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <button onClick={handleRefresh} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-white/20 uppercase tracking-wide transition-all">
-                            <RotateCcw size={11} /> Refresh
-                        </button>
-                        <button onClick={handleSaveAdjustment} className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide transition-all">
-                            <Save size={11} /> Save
-                        </button>
-                        <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide transition-all">
-                            <X size={11} /> Exit
-                        </button>
-                    </div>
+        <div className="app-window">
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">Modify Short Recovery</h1>
+                    <p className="aw-desc">Demand &amp; Recovery</p>
                 </div>
-
-                {/* Body */}
-                <div className="flex-1 flex flex-col min-h-0 p-2 gap-1.5">
-
-                    {/* Wing selector */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
-                        <div className="px-3 py-1.5 border-b border-slate-100">
-                            <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Select Wing</span>
-                        </div>
-                        <div className="px-3 py-2">
-                            <label className={lbl}>Wing</label>
-                            <Select value={formData.wing || undefined} onChange={(v) => updateField('wing', v)} size="small" className="msr-sel w-full" placeholder="Select Wing...">
-                                {wings.map(w => <Option key={w.id} value={w.id}>{w.name}</Option>)}
-                            </Select>
-                        </div>
-                    </div>
-
-                    {/* Navigation */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
-                        <div className="px-3 py-1.5 border-b border-slate-100">
-                            <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Navigation</span>
-                        </div>
-                        <div className="px-3 py-2 flex items-center justify-between">
-                            <div className="flex items-center gap-1">
-                                <button onClick={() => setCurrentIndex(0)} disabled={currentIndex === 0} className={navBtn}><ChevronsLeft size={13} /></button>
-                                <button onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))} disabled={currentIndex === 0} className={navBtn}><ChevronLeft size={13} /></button>
-                                <div className="h-7 w-28 bg-slate-50 border border-slate-200 rounded flex items-center justify-center">
-                                    <span className="fz-tiny font-black text-indigo-600">{total > 0 ? `${currentIndex + 1} / ${total}` : '—'}</span>
-                                </div>
-                                <button onClick={() => setCurrentIndex(Math.min(total - 1, currentIndex + 1))} disabled={currentIndex >= total - 1} className={navBtn}><ChevronRight size={13} /></button>
-                                <button onClick={() => setCurrentIndex(total - 1)} disabled={currentIndex >= total - 1} className={navBtn}><ChevronsRight size={13} /></button>
-                            </div>
-                            <span className="fz-tiny font-black text-slate-400 uppercase">{total} record(s)</span>
-                        </div>
-                    </div>
-
-                    {/* Table */}
-                    <div className="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-                        <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between shrink-0">
-                            <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Short Recovery Records</span>
-                            {selectedRecord && (
-                                <span className="fz-mini font-black text-indigo-600 uppercase">Selected: {selectedRecord.memberNo}</span>
-                            )}
-                        </div>
-                        <div className="flex-1 min-h-0">
-                            <Table
-                                columns={columns}
-                                dataSource={shortRecoveryList}
-                                rowKey="id"
-                                pagination={false}
-                                size="small"
-                                className="msr-table"
-                                scroll={{ y: 'calc(100vh - 270px)' }}
-                                onRow={(record) => ({
-                                    onClick: () => handleSelectRecord(record),
-                                    className: `cursor-pointer transition-colors ${selectedRecord?.id === record.id ? 'bg-indigo-50' : 'hover:bg-slate-50'}`,
-                                })}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="msr-footer px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-1.5"><Building2 size={9} className="text-slate-400" /><span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Recoveries</span></div>
-                    <span className="fz-mini font-black text-indigo-400 uppercase tracking-wide">Supervisor Mode</span>
+                <div className="aw-actions">
+                    <button type="button" onClick={handleRefresh} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Refresh</button>
+                    <button type="button" onClick={handleSaveAdjustment} className="aw-btn aw-btn-primary"><Save size={13} /> Save</button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
                 </div>
             </div>
-            <style>{`
-                .msr-sel .ant-select-selector { height: 28px !important; min-height: 28px !important; font-size: 10px !important; font-weight: 700 !important; }
-                .msr-sel .ant-select-selection-item { line-height: 26px !important; font-size: 10px !important; }
-                .msr-table .ant-table-thead > tr > th { background: #f8fafc !important; padding: 5px 8px !important; border-bottom: 1px solid #e2e8f0 !important; }
-                .msr-table .ant-table-tbody > tr > td { padding: 4px 8px !important; border-bottom: 1px solid #f1f5f9 !important; }
-                .msr-table .ant-table-tbody > tr:hover > td { background: #f8fafc !important; }
 
-                /* ── Dark mode ── */
-                html.dark .msr-root { background-color: #000000 !important; color: #f5f5f7 !important; }
-                html.dark .msr-header { background: #0c0c0e !important; }
-                html.dark .msr-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .msr-root .bg-white { background-color: #1c1c1e !important; }
-                html.dark .msr-root .border-slate-200,
-                html.dark .msr-root .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
-                html.dark .msr-root .text-slate-800,
-                html.dark .msr-root .text-slate-700 { color: #f5f5f7 !important; }
-                html.dark .msr-root .text-slate-500,
-                html.dark .msr-root .text-slate-600 { color: #8e8e93 !important; }
-                html.dark .msr-root .text-slate-400,
-                html.dark .msr-root .text-slate-300 { color: #71717a !important; }
-                html.dark .msr-root .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
-                html.dark .msr-root .bg-indigo-50 { background-color: rgba(99,102,241,.15) !important; }
-                html.dark .msr-sel .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-                html.dark .msr-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
-                html.dark .msr-table .ant-table-tbody > tr > td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; background-color: #1c1c1e !important; }
-                html.dark .msr-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
-                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
-                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
-                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
-            `}</style>
-        </ConfigProvider>
+            <div className="aw-content">
+                <div className="aw-stack">
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><Layers size={14} /></span>
+                            <h2 className="aw-card-title">Select Wing</h2>
+                        </div>
+                        <div style={{ maxWidth: 420 }}>
+                            <label className="aw-label" htmlFor="msr-wing">Wing</label>
+                            <Select id="msr-wing" value={(formData.wing || undefined) as string} onChange={(v) => updateField('wing', v)}
+                                className="aw-select" popupClassName="aw-select-popup" placeholder="Select Wing..."
+                                options={wings.map(w => ({ value: w.id, label: w.name }))} />
+                        </div>
+                    </section>
+
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><Navigation size={14} /></span>
+                            <h2 className="aw-card-title">Navigation</h2>
+                            <span className="aw-meta" style={{ marginLeft: 'auto' }}>{total} record(s)</span>
+                        </div>
+                        <div className="aw-inline" style={{ gap: 6 }}>
+                            <button type="button" className="aw-icon-btn" onClick={() => setCurrentIndex(0)} disabled={currentIndex === 0} aria-label="First record" data-tip="First" data-tip-pos="bottom"><ChevronsLeft size={15} /></button>
+                            <button type="button" className="aw-icon-btn" onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))} disabled={currentIndex === 0} aria-label="Previous record" data-tip="Previous" data-tip-pos="bottom"><ChevronLeft size={15} /></button>
+                            <span className="aw-pill" style={{ minWidth: 96, justifyContent: 'center' }}>{total > 0 ? `${currentIndex + 1} / ${total}` : '—'}</span>
+                            <button type="button" className="aw-icon-btn" onClick={() => setCurrentIndex(Math.min(total - 1, currentIndex + 1))} disabled={currentIndex >= total - 1} aria-label="Next record" data-tip="Next" data-tip-pos="bottom"><ChevronRight size={15} /></button>
+                            <button type="button" className="aw-icon-btn" onClick={() => setCurrentIndex(total - 1)} disabled={currentIndex >= total - 1} aria-label="Last record" data-tip="Last" data-tip-pos="bottom"><ChevronsRight size={15} /></button>
+                        </div>
+                    </section>
+
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><FileText size={14} /></span>
+                            <h2 className="aw-card-title">Short Recovery Records</h2>
+                            {selectedRecord && <span className="aw-pill tone-info" style={{ marginLeft: 'auto' }}>Selected: {selectedRecord.memberNo}</span>}
+                        </div>
+                        <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 480px)', minHeight: 180 }}>
+                            <table className="aw-table" style={{ minWidth: 820 }}>
+                                <thead>
+                                    <tr>
+                                        <th>Member No</th>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th className="is-right">Expected</th>
+                                        <th className="is-right">Recovered</th>
+                                        <th className="is-right">Shortfall</th>
+                                        <th className="is-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {shortRecoveryList.length === 0 ? (
+                                        <tr><td colSpan={7}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-meta">No records</span></div></td></tr>
+                                    ) : shortRecoveryList.map(record => (
+                                        <tr key={record.id} className="is-clickable" aria-selected={selectedRecord?.id === record.id}
+                                            onClick={() => handleSelectRecord(record)}>
+                                            <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{record.memberNo}</td>
+                                            <td style={{ fontWeight: 700, textTransform: 'uppercase' }}>{record.memberName}</td>
+                                            <td className="is-muted">{record.recoveryType}</td>
+                                            <td className="is-right">{record.expectedAmount.toLocaleString()}</td>
+                                            <td className="is-right is-success">{record.recoveredAmount.toLocaleString()}</td>
+                                            <td className="is-right is-danger">{record.shortfallAmount.toLocaleString()}</td>
+                                            <td className="is-center"><span className={`aw-pill ${record.status === 'Adjusted' ? 'tone-success' : 'tone-warning'}`}>{record.status}</span></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div className="aw-footer">
+                <span>Recoveries</span>
+                <span>Supervisor Mode</span>
+            </div>
+        </div>
     );
 };
 

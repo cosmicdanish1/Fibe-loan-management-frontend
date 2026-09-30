@@ -38,7 +38,7 @@ const SECTION_CATALOG: [string, string[]][] = [
   ]],
   ['Reports', [
     '1.1 Cash Book (Receiptwise Rough)', 'Cash Book Receiptwise Rough', '1.2 Cash-Book', 'Cash Book',
-    '1.3 Day-Book', 'Day Book', '1.4 Day-Book [SB]', 'Day Book SB', '1.5 Consolidation Of Daily A/c',
+    '1.3 Day-Book', 'Day Book', '1.4 Day-Book [CD]', 'Day Book CD', '1.5 Consolidation Of Daily A/c',
     'Consolidation Of Daily A/c', '2. Member Ledger Report', 'Member Ledger Report', '3. General Ledger',
     'General Ledger', '4. Monthly', '4.1 Print Vouchers', '4.1.1 Receipt/Payment Voucher',
     'Receipt/Payment Voucher', '4.1.2. Journal/Transfer Voucher', 'Journal/Transfer Voucher',

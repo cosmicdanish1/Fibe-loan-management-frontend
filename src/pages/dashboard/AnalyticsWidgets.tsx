@@ -1,38 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Donut, LegendRow, type Slice } from './DashCharts';
 import apiService from '../../services/api';
 
-// ─── Shared card shell — matches the Notice Board / Shortcuts widget look ──
-const WidgetCard: React.FC<{
+// ─── Shared card shell — the kit card, with a small tone marker in the head ──
+export const WidgetCard: React.FC<{
   title: string;
-  dotColor: string;
+  tone: string;
   children: React.ReactNode;
-}> = ({ title, dotColor, children }) => (
-  <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
-    <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2 shrink-0">
-      <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: dotColor }} />
-      <span className="fz-mini font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{title}</span>
+}> = ({ title, tone, children }) => (
+  <section className="aw-card">
+    <div className="aw-card-head">
+      <span style={{ width: 8, height: 8, borderRadius: 2, background: tone, flex: 'none' }} />
+      <h2 className="aw-card-title">{title}</h2>
     </div>
-    <div className="p-3 flex-1">{children}</div>
+    {children}
+  </section>
+);
+
+export const ErrorNote: React.FC<{ message: string }> = ({ message }) => (
+  <div className="aw-empty" style={{ padding: 16 }}>
+    <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertCircle size={12} /> {message}</span>
   </div>
 );
 
-const ErrorNote: React.FC<{ message: string }> = ({ message }) => (
-  <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 fz-tiny font-bold py-4 justify-center">
-    <AlertCircle size={12} /> {message}
-  </div>
+export const Loading: React.FC<{ height?: number }> = ({ height = 64 }) => (
+  <div className="aw-empty" style={{ height, padding: 0 }}><span className="aw-spin" /></div>
 );
 
-const money = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
+export const money = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 
-// Fixed, non-cycled colors — one per widget, matching the app's existing accents.
-const COLOR_INDIGO = '#4f46e5';
-const COLOR_BLUE = '#2563eb';
-const COLOR_AMBER = '#d97706';
-const COLOR_EMERALD = '#059669';
+export const dateLabel = (value: unknown) => {
+  if (!value) return '—';
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime())
+    ? '—'
+    : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+};
 
-// ─── 1. Active Members — single headline number, no chart needed ──────────
+// API responses can be either a direct array or a report envelope containing
+// `{ metadata, data }`. Keep the widgets tolerant of both formats.
+const arrayPayload = (value: unknown): any[] => {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object' && Array.isArray((value as any).data)) {
+    return (value as any).data;
+  }
+  return [];
+};
+
+// One tone per widget, taken from the shared theme so Settings changes apply.
+export const TONE_ACCENT = 'var(--aw-accent)';
+export const TONE_INFO = 'var(--aw-info, var(--aw-accent))';
+export const TONE_WARNING = 'var(--aw-warning)';
+export const TONE_SUCCESS = 'var(--aw-success)';
+
+export const bigNumber: React.CSSProperties = { fontSize: 'calc(var(--type-body-size) + 14px)', fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums' };
+
+// ─── 1. Active Members — live register count ───────────────────────────────
 export const ActiveMembersWidget: React.FC = () => {
   const [count, setCount] = useState<number | null>(null);
   const [error, setError] = useState(false);
@@ -48,18 +72,23 @@ export const ActiveMembersWidget: React.FC = () => {
   }, []);
 
   return (
-    <WidgetCard title="Active Members" dotColor={COLOR_INDIGO}>
+    <WidgetCard title="Active Members" tone={TONE_ACCENT}>
       {error ? (
         <ErrorNote message="Could not load member count" />
       ) : count === null ? (
-        <div className="h-16 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-        </div>
+        <Loading />
       ) : (
-        <div className="flex items-center justify-center h-16">
-          <div className="text-center">
-            <p className="font-black text-3xl leading-none" style={{ color: COLOR_INDIGO }}>{count.toLocaleString('en-IN')}</p>
-            <p className="fz-micro font-black text-slate-400 uppercase tracking-widest mt-1">Currently Active</p>
+        <div className="aw-stack">
+          <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <p style={{ ...bigNumber, color: TONE_ACCENT }}>{count.toLocaleString('en-IN')}</p>
+              <p className="aw-label" style={{ marginTop: 6 }}>Currently Active</p>
+            </div>
+            <span className="aw-pill tone-success">Live register</span>
+          </div>
+          <div className="aw-row" style={{ borderBottom: 0, borderTop: '1px solid var(--aw-border)' }}>
+            <span className="aw-meta">Active member records</span>
+            <strong>{count.toLocaleString('en-IN')}</strong>
           </div>
         </div>
       )}
@@ -69,39 +98,56 @@ export const ActiveMembersWidget: React.FC = () => {
 
 // ─── 2. Sanctioned Loans — headline count + total value, one call ─────────
 export const SanctionedLoansWidget: React.FC = () => {
-  const [summary, setSummary] = useState<{ count: number; totalValue: number } | null>(null);
+  const [summary, setSummary] = useState<{
+    count: number;
+    totalValue: number;
+    regular: number;
+    emergency: number;
+    oldestDate: string | null;
+  } | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     apiService.getSanctionedLoans().then((res) => {
       if (cancelled) return;
-      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res as any) ? (res as any) : []);
-      if (!res.success && !Array.isArray(res as any)) { setError(true); return; }
+      const list = arrayPayload(res.data);
+      if (!res.success) { setError(true); return; }
       const totalValue = list.reduce((sum: number, loan: any) =>
         sum + (parseFloat(loan.sanctionedAmount) || parseFloat(loan.appliedAmount) || 0), 0);
-      setSummary({ count: list.length, totalValue });
+      const regular = list.filter((loan: any) => !/emergency|eln|aln|(^|\W)e(ln)?($|\W)/i.test(String(loan.loanType || ''))).length;
+      const emergency = list.length - regular;
+      const oldestDate = list
+        .map((loan: any) => loan.applicationDate)
+        .filter(Boolean)
+        .sort((a: string, b: string) => new Date(a).getTime() - new Date(b).getTime())[0] || null;
+      setSummary({ count: list.length, totalValue, regular, emergency, oldestDate });
     }).catch(() => { if (!cancelled) setError(true); });
     return () => { cancelled = true; };
   }, []);
 
   return (
-    <WidgetCard title="Sanctioned Loans (Pending Disbursal)" dotColor={COLOR_AMBER}>
+    <WidgetCard title="Sanctioned Loans (Pending Disbursal)" tone={TONE_WARNING}>
       {error ? (
         <ErrorNote message="Could not load sanctioned loans" />
       ) : summary === null ? (
-        <div className="h-16 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-        </div>
+        <Loading />
       ) : summary.count === 0 ? (
         <ErrorNote message="No sanctioned loans awaiting disbursal" />
       ) : (
-        <div className="flex items-center justify-center h-16">
-          <div className="text-center">
-            <p className="font-black text-3xl leading-none text-slate-900 dark:text-slate-100">
-              {summary.count} <span className="text-sm font-bold text-slate-400">loan{summary.count === 1 ? '' : 's'}</span>
-            </p>
-            <p className="text-[11.5px] font-bold text-slate-500 dark:text-slate-400 mt-1">{money(summary.totalValue)} total value</p>
+        <div className="aw-stack">
+          <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <p style={bigNumber}>
+                {summary.count} <span className="aw-meta" style={{ fontSize: 'var(--type-body-size)', fontWeight: 700 }}>loan{summary.count === 1 ? '' : 's'}</span>
+              </p>
+              <p className="aw-meta" style={{ marginTop: 6, fontWeight: 700 }}>{money(summary.totalValue)} total value</p>
+            </div>
+            <span className="aw-pill tone-warning">Awaiting payout</span>
+          </div>
+          <div className="aw-row" style={{ borderBottom: 0, borderTop: '1px solid var(--aw-border)' }}>
+            <span className="aw-meta">Regular {summary.regular} · Emergency {summary.emergency}</span>
+            <span className="aw-meta">Oldest {dateLabel(summary.oldestDate)}</span>
           </div>
         </div>
       )}
@@ -111,7 +157,14 @@ export const SanctionedLoansWidget: React.FC = () => {
 
 // ─── 3. Month-End Outstanding — current month total + regular/emergency split
 export const MonthEndOutstandingWidget: React.FC = () => {
-  const [totals, setTotals] = useState<{ regular: number; emergency: number; total: number } | null>(null);
+  const [totals, setTotals] = useState<{
+    regular: number;
+    emergency: number;
+    total: number;
+    regularCount: number;
+    emergencyCount: number;
+    snapshotDate: string | null;
+  } | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -125,33 +178,35 @@ export const MonthEndOutstandingWidget: React.FC = () => {
         regular: acc.regular + (parseFloat(r.regular_loan_balance) || 0),
         emergency: acc.emergency + (parseFloat(r.emergency_loan_balance) || 0),
         total: acc.total + (parseFloat(r.total_outstanding) || 0),
-      }), { regular: 0, emergency: 0, total: 0 });
+        regularCount: acc.regularCount + (parseFloat(r.regular_loan_balance) > 0 ? 1 : 0),
+        emergencyCount: acc.emergencyCount + (parseFloat(r.emergency_loan_balance) > 0 ? 1 : 0),
+        snapshotDate: acc.snapshotDate || r.snapshot_date || null,
+      }), { regular: 0, emergency: 0, total: 0, regularCount: 0, emergencyCount: 0, snapshotDate: null as string | null });
       setTotals(totals);
     }).catch(() => { if (!cancelled) setError(true); });
     return () => { cancelled = true; };
   }, []);
 
   return (
-    <WidgetCard title="Loan Outstanding (This Month)" dotColor={COLOR_BLUE}>
+    <WidgetCard title="Loan Outstanding (This Month)" tone={TONE_INFO}>
       {error ? (
         <ErrorNote message="Could not load month-end totals" />
       ) : totals === null ? (
-        <div className="h-16 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-        </div>
+        <Loading />
       ) : totals.total === 0 ? (
         <ErrorNote message="No month-end snapshot for this month yet" />
       ) : (
-        <div className="space-y-2">
-          <p className="font-black text-2xl leading-none" style={{ color: COLOR_BLUE }}>{money(totals.total)}</p>
-          <div className="h-2 rounded-full overflow-hidden flex bg-slate-100 dark:bg-slate-700">
-            <div style={{ width: `${(totals.regular / totals.total) * 100}%`, background: COLOR_BLUE }} />
-            <div style={{ width: `${(totals.emergency / totals.total) * 100}%`, background: COLOR_AMBER }} />
+        <div className="aw-stack" style={{ gap: 8 }}>
+          <p style={{ ...bigNumber, fontSize: 'calc(var(--type-body-size) + 10px)', color: TONE_INFO }}>{money(totals.total)}</p>
+          <div className="aw-bar" role="img" aria-label="Regular versus emergency loan outstanding">
+            <span style={{ width: `${(totals.regular / totals.total) * 100}%`, background: TONE_INFO }} />
+            <span style={{ width: `${(totals.emergency / totals.total) * 100}%`, background: TONE_WARNING }} />
           </div>
-          <div className="flex items-center justify-between fz-micro font-bold text-slate-400 uppercase tracking-wider">
-            <span><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: COLOR_BLUE }} />Regular {money(totals.regular)}</span>
-            <span><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: COLOR_AMBER }} />Emergency {money(totals.emergency)}</span>
+          <div className="aw-inline" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span className="aw-meta"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 5, background: TONE_INFO }} />Regular {money(totals.regular)} · {totals.regularCount}</span>
+            <span className="aw-meta"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 5, background: TONE_WARNING }} />Emergency {money(totals.emergency)} · {totals.emergencyCount}</span>
           </div>
+          <p className="aw-meta">Snapshot {dateLabel(totals.snapshotDate)}</p>
         </div>
       )}
     </WidgetCard>
@@ -159,6 +214,8 @@ export const MonthEndOutstandingWidget: React.FC = () => {
 };
 
 // ─── 4. Member Balance Distribution — bucketed net balance, one call ───────
+const BALANCE_COLORS = ['var(--aw-danger)', 'var(--aw-muted)', 'var(--aw-warning)', 'var(--aw-info, var(--aw-accent))', 'var(--aw-success)'];
+
 const BALANCE_BUCKETS = [
   { label: '< 0', min: -Infinity, max: 0 },
   { label: '0-10K', min: 0, max: 10_000 },
@@ -168,47 +225,66 @@ const BALANCE_BUCKETS = [
 ];
 
 export const MemberBalanceDistributionWidget: React.FC = () => {
-  const [rows, setRows] = useState<{ label: string; count: number }[] | null>(null);
+  const [rows, setRows] = useState<{ label: string; count: number; balance: number; share: number }[] | null>(null);
+  const [totalMembers, setTotalMembers] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     apiService.getMemberBalanceRangeReport({ fromAccountNo: '0', toAccountNo: '999999999' }).then((res) => {
       if (cancelled) return;
-      const list = Array.isArray(res.data) ? res.data : [];
+      const list = arrayPayload(res.data);
       if (!res.success) { setError(true); return; }
-      const buckets = BALANCE_BUCKETS.map(b => ({ label: b.label, count: 0 }));
+      const buckets = BALANCE_BUCKETS.map(b => ({ label: b.label, count: 0, balance: 0, share: 0 }));
       for (const m of list) {
-        const bal = parseFloat(m.netBalance) || 0;
+        // The account-range report calls this field `totalBalance`.
+        const bal = parseFloat(m.totalBalance ?? m.netBalance) || 0;
         const idx = BALANCE_BUCKETS.findIndex(b => bal >= b.min && bal < b.max);
         const bucket = idx >= 0 ? buckets[idx] : undefined;
-        if (bucket) bucket.count += 1;
+        if (bucket) {
+          bucket.count += 1;
+          bucket.balance += bal;
+        }
       }
+      const total = list.reduce((sum: number, m: any) => sum + (parseFloat(m.totalBalance ?? m.netBalance) || 0), 0);
+      setTotalMembers(list.length);
+      setTotalBalance(total);
+      for (const bucket of buckets) bucket.share = list.length ? (bucket.count / list.length) * 100 : 0;
       setRows(buckets);
     }).catch(() => { if (!cancelled) setError(true); });
     return () => { cancelled = true; };
   }, []);
 
   return (
-    <WidgetCard title="Member Balance Distribution" dotColor={COLOR_EMERALD}>
+    <WidgetCard title="Member Balance Distribution" tone={TONE_SUCCESS}>
       {error ? (
         <ErrorNote message="Could not load balance distribution" />
       ) : rows === null ? (
-        <div className="h-32 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-        </div>
+        <Loading height={128} />
       ) : (
-        <ResponsiveContainer width="100%" height={130}>
-          <BarChart data={rows} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-            <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={28} />
-            <Tooltip
-              formatter={(v: number | undefined) => [`${v ?? 0} member${v === 1 ? '' : 's'}`, 'Count'] as [string, string]}
-              contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e2e8f0' }}
+        <div className="aw-stack" style={{ gap: 8 }}>
+          <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <p style={{ ...bigNumber, fontSize: 'calc(var(--type-body-size) + 10px)', color: TONE_SUCCESS }}>{totalMembers.toLocaleString('en-IN')}</p>
+              <p className="aw-label" style={{ marginTop: 6 }}>Members · {money(totalBalance)} total</p>
+            </div>
+            <span className="aw-pill tone-success">By balance</span>
+          </div>
+          <div className="aw-inline" style={{ alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <Donut
+              ariaLabel="Members by balance range"
+              slices={rows.map((r, i): Slice => ({ label: r.label, value: r.count, color: BALANCE_COLORS[i % BALANCE_COLORS.length] as string }))}
+              center={<><strong style={{ fontSize: 'calc(var(--type-body-size) + 6px)' }}>{totalMembers.toLocaleString('en-IN')}</strong><span className="aw-meta">members</span></>}
             />
-            <Bar dataKey="count" fill={COLOR_EMERALD} radius={[4, 4, 0, 0]} maxBarSize={36} />
-          </BarChart>
-        </ResponsiveContainer>
+            <div className="aw-rows" style={{ flex: 1, minWidth: 150 }}>
+              {rows.map((r, i) => (
+                <LegendRow key={r.label} color={BALANCE_COLORS[i % BALANCE_COLORS.length] as string} label={r.label}
+                  value={`${r.count.toLocaleString('en-IN')} · ${r.share.toFixed(1)}%`} />
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </WidgetCard>
   );

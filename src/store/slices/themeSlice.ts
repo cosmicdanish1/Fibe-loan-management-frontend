@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface ThemeState {
-    interfaceMode: 'light' | 'dark' | 'system';
+    interfaceMode: 'light' | 'dark';
     accentColor: string;
     fontScale: number;
     density: number;
@@ -16,17 +16,12 @@ export interface ThemeState {
     textColor?: string;
     notifications?: boolean;
     soundEffects?: boolean;
-    inactivityLogout?: boolean;
-    inactivityTimeoutMinutes?: number;
     boldText?: boolean;
     showChatbot?: boolean;
-
-    dashboardWidgets?: {
-        showFundInterestRate: boolean;
-        showDividendPayout: boolean;
-        showGroupInsurance: boolean;
-        showDepositInterestSlabs: boolean;
-    };
+    /** Soft shadows on cards, buttons, and popups. Stored on this device only. */
+    shadows?: boolean;
+    /** Decorative header background: none | waves | blobs | mesh. Stored on this device only. */
+    headerStyle?: 'none' | 'waves' | 'blobs' | 'mesh';
 }
 
 const initialState: ThemeState = {
@@ -46,15 +41,8 @@ const initialState: ThemeState = {
     notifications: true,
     soundEffects: true,
     showChatbot: true,
-    inactivityLogout: true,
-    inactivityTimeoutMinutes: 60,
-
-    dashboardWidgets: {
-        showFundInterestRate: true,
-        showDividendPayout: true,
-        showGroupInsurance: true,
-        showDepositInterestSlabs: true,
-    },
+    shadows: true,
+    headerStyle: 'waves',
 };
 
 const themeSlice = createSlice({
@@ -62,10 +50,13 @@ const themeSlice = createSlice({
     initialState,
     reducers: {
         setTheme: (state, action: PayloadAction<Partial<ThemeState>>) => {
-            return { ...state, ...action.payload };
+            const next = { ...state, ...action.payload };
+            // The old "system" mode no longer exists; stored or synced values fall back to light.
+            next.interfaceMode = next.interfaceMode === 'dark' ? 'dark' : 'light';
+            return next;
         },
         setInterfaceMode: (state, action: PayloadAction<ThemeState['interfaceMode']>) => {
-            state.interfaceMode = action.payload;
+            state.interfaceMode = action.payload === 'dark' ? 'dark' : 'light';
         },
         setAccentColor: (state, action: PayloadAction<string>) => {
             state.accentColor = action.payload;

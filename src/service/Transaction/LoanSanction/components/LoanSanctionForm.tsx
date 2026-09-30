@@ -1,43 +1,33 @@
 // components/LoanSanctionForm.tsx
 
 import React from 'react';
+import { Select } from 'antd';
 import {
-    ConfigProvider,
-    Input,
-    Select,
-    Button,
-    Row,
-    Col
-} from 'antd';
-import {
-    BadgeCheck,
     CheckCircle,
     X,
     ShieldCheck,
     Building2,
-    Calendar,
-    CreditCard,
     User,
-    Wallet,
-    Briefcase,
     FileText,
-    BadgePercent,
-    TrendingUp,
     Scale,
-    Users
+    Users,
+    RefreshCw,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { LoanSanctionHookReturn } from '../interface/LoanSanctionInterfaces';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 
-const { Option } = Select;
+const Fact: React.FC<{ label: string; tone?: string; span2?: boolean; children: React.ReactNode }> = ({ label, tone, span2, children }) => (
+    <div style={span2 ? { gridColumn: 'span 2' } : undefined}>
+        <span className="aw-label">{label}</span>
+        <div className="aw-strong" style={{ color: tone, overflow: 'hidden', textOverflow: 'ellipsis' }}>{children}</div>
+    </div>
+);
 
 const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
     loanCases,
     selectedLoanCase,
     isLoadingCases,
-    isLoadingDetails,
     isSaving,
     loanDetails,
     sanctionDetails,
@@ -57,451 +47,202 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
         saveEnabled: !!selectedLoanCase && !isSaving,
     });
 
+    const surety = (n: 1 | 2) => {
+        const gr = n === 1 ? loanDetails.surety1Gr : loanDetails.surety2Gr;
+        const name = n === 1 ? loanDetails.surety1Name : loanDetails.surety2Name;
+        const office = n === 1 ? loanDetails.surety1Office : loanDetails.surety2Office;
+        const bal = n === 1 ? loanDetails.surety1LoanBalance : loanDetails.surety2LoanBalance;
+        return (
+            <div className="aw-panel">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span className="aw-label" style={{ marginBottom: 0 }}>Surety 0{n}</span>
+                    <span className="aw-strong" style={{ color: 'var(--aw-accent)', fontFamily: 'monospace' }}>{gr || '-'}</span>
+                </div>
+                <div className="aw-strong" style={{ marginTop: 4, minHeight: 18 }}>{name || '-'}</div>
+                <div className="aw-meta" style={{ minHeight: 18 }}>{office || '-'}</div>
+                <div className="aw-row" style={{ marginTop: 6, paddingBottom: 0 }}>
+                    <span className="aw-row-label">Loan Bal</span>
+                    <span className="aw-row-value" style={{ color: 'var(--aw-danger)' }}>{bal ? formatCurrency(bal) : '-'}</span>
+                </div>
+            </div>
+        );
+    };
+
+    const applied10 = formatCurrency((parseFloat(loanDetails.appliedAmount) || 0) * 0.10).replace('₹', '');
+
     return (
-        <ConfigProvider
-            theme={{
-                token: {
-                    colorPrimary: '#16a34a', // Green primary for Sanction (Approval)
-                    borderRadius: 8,
-                },
-            }}
-        >
-            <div className="ls-root h-screen flex flex-col bg-slate-50 font-sans selection:bg-green-100 overflow-hidden text-slate-900">
-
-                {/* Compact Admin Header */}
-                <div className="ls-header bg-gradient-to-r from-slate-900 to-slate-900 px-2 py-1 flex items-center justify-between z-10 shrink-0 shadow-lg border-b border-white/5">
-                    <div className="flex items-center gap-1.5">
-                        <div className="bg-emerald-600 p-1 rounded-lg text-white shadow-lg shadow-emerald-600/20">
-                            <BadgeCheck size={14} />
-                        </div>
-                        <div>
-                            <h1 className="fz-caption font-black text-white tracking-tight leading-none uppercase">Loan Sanction Console</h1>
-                            <div className="flex items-center gap-1 mt-0.5 fz-label font-black text-slate-400 uppercase tracking-[0.2em] leading-none">
-                                <ShieldCheck size={7} className="text-emerald-400" /> Executive Authority
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                        <div className="px-2 py-0.5 bg-white/5 rounded-lg fz-body font-black text-slate-400 border border-white/5 hidden md:block uppercase tracking-wider">
-                            {loanCases.length} PENDING
-                        </div>
-                        <div className="h-4 w-px bg-slate-700 mx-0.5" />
-                        <button onClick={handleSanctionSave} disabled={!selectedLoanCase || isSaving} className="h-6 px-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white rounded-lg fz-body font-black transition-all flex items-center gap-1 transform active:scale-95 uppercase tracking-widest shadow-lg shadow-emerald-600/20">
-                            <CheckCircle size={10} /> {isSaving ? 'Processing...' : 'Sanction'}
-                        </button>
-                        <button onClick={handleExit} className="h-6 px-3 bg-white/5 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg fz-body font-black transition-all flex items-center gap-1 transform active:scale-95 uppercase tracking-widest border border-white/5">
-                            <X size={10} /> Exit
-                        </button>
-                    </div>
+        <div className="app-window">
+            {/* ── Header ── */}
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">Loan Sanction Console</h1>
+                    <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <ShieldCheck size={12} /> Executive Authority
+                    </p>
                 </div>
-
-                {/* Workspace */}
-                <div className="flex-1 overflow-auto p-1.5 bg-slate-50/50">
-                    <div className="max-w-7xl mx-auto space-y-1.5 pb-2">
-
-                        {/* Case Selection Panel */}
-                        <motion.div
-                            initial={{ opacity: 0, y: -5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden"
-                        >
-                            <div className="bg-slate-50 px-2 py-1 border-b border-slate-100 flex items-center gap-1.5">
-                                <FileText size={10} className="text-emerald-600" />
-                                <span className="fz-body font-black text-slate-700 uppercase tracking-widest">Loan Case No</span>
-                            </div>
-                            <div className="p-1.5">
-                                <Select
-                                    showSearch
-                                    value={selectedLoanCase}
-                                    onChange={handleLoanCaseChange}
-                                    loading={isLoadingCases}
-                                    className="w-full h-7 custom-select-premium"
-                                    placeholder="Select a loan case for review..."
-                                    optionFilterProp="children"
-                                    listHeight={400}
-                                    popupClassName="premium-dropdown-list"
-                                >
-                                    {loanCases.map(loan => (
-                                        <Option key={loan.loanCaseNo} value={loan.loanCaseNo}>
-                                            {loan.loanCaseNo} - {loan.memberName} ({loan.loanType}) | {formatCurrency(loan.appliedAmount)}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </div>
-                        </motion.div>
-
-                        {selectedLoanCase && (
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-1.5">
-                                {/* Left Column: Loan Details (Read-only) */}
-                                <motion.div
-                                    initial={{ opacity: 0, x: -5 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    className="lg:col-span-8 space-y-1.5"
-                                >
-                                    {/* Applicant Identity */}
-                                    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                                        <div className="bg-slate-50 px-2 py-1 border-b border-slate-100 flex items-center justify-between">
-                                            <div className="flex items-center gap-1.5">
-                                                <User size={10} className="text-indigo-600" />
-                                                <span className="fz-body font-black text-slate-700 uppercase tracking-widest">Applicant Profile</span>
-                                            </div>
-                                            <div className="px-1.5 py-0.5 bg-indigo-50 border border-indigo-100 rounded fz-body font-black text-indigo-700 tracking-wide uppercase">
-                                                {loanDetails.loanType}
-                                            </div>
-                                        </div>
-
-                                        <div className="p-2 grid grid-cols-2 md:grid-cols-4 gap-3">
-                                            <div className="space-y-0.5">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Member No</span>
-                                                <div className="fz-caption font-black text-slate-700">{loanDetails.memberNo}</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Application Date</span>
-                                                <div className="fz-caption font-black text-slate-700">
-                                                    {dayjs(loanDetails.applicationDate).isValid()
-                                                        ? dayjs(loanDetails.applicationDate).format('DD-MM-YYYY')
-                                                        : '-'}
-                                                </div>
-                                            </div>
-                                            <div className="space-y-0.5 md:col-span-2">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Full Name</span>
-                                                <div className="fz-caption font-black text-slate-800">{loanDetails.memberName}</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Form No.</span>
-                                                <div className="fz-caption font-black text-slate-600">{loanDetails.formNumber}</div>
-                                            </div>
-
-                                            <div className="space-y-0.5 md:col-span-2">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Office / Dept</span>
-                                                <div className="fz-caption font-black text-slate-600 truncate">{loanDetails.officeNo} - {loanDetails.officeName}</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Purpose</span>
-                                                <div className="fz-caption font-black text-slate-600 truncate">{loanDetails.purpose}</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Share Amount</span>
-                                                <div className="fz-caption font-black text-emerald-600">{formatCurrency(loanDetails.shareAmount)}</div>
-                                            </div>
-
-                                            <div className="space-y-0.5">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Basic Pay</span>
-                                                <div className="fz-caption font-black text-slate-600">{formatCurrency(loanDetails.basicPay)}</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Applied Amount</span>
-                                                <div className="fz-caption font-black text-emerald-600">{formatCurrency(loanDetails.appliedAmount)}</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <span className="fz-label font-black text-slate-400 uppercase tracking-widest">Existing Balance</span>
-                                                <div className="fz-caption font-black text-rose-600">{formatCurrency(loanDetails.currentBalance)}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Surety Matrix */}
-                                    {/* Surety Matrix - Always Visible */}
-                                    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                                        <div className="bg-slate-50 px-2 py-1 border-b border-slate-100 flex items-center gap-1.5">
-                                            <Users size={10} className="text-orange-600" />
-                                            <span className="fz-body font-black text-slate-700 uppercase tracking-widest">Surety Obligations</span>
-                                        </div>
-                                        <div className="p-2 grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {/* Surety 1 */}
-                                            <div className="p-2 bg-orange-50/50 rounded-lg border border-orange-100 flex flex-col gap-0.5">
-                                                <div className="flex justify-between items-start">
-                                                    <span className="fz-body font-black text-orange-400 uppercase tracking-widest">Surety 01</span>
-                                                    <span className="fz-body font-mono font-black text-orange-700">{loanDetails.surety1Gr || '-'}</span>
-                                                </div>
-                                                <div className="fz-caption font-black text-slate-700 truncate min-h-[1rem]">{loanDetails.surety1Name || '-'}</div>
-                                                <div className="fz-body font-bold text-slate-500 truncate min-h-[1rem]">{loanDetails.surety1Office || '-'}</div>
-                                                <div className="mt-1 pt-1 border-t border-orange-200/50 flex justify-between">
-                                                    <span className="fz-label font-black text-slate-400 uppercase">Loan Bal</span>
-                                                    <span className="fz-body font-black text-rose-600">{loanDetails.surety1LoanBalance ? formatCurrency(loanDetails.surety1LoanBalance) : '-'}</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Surety 2 */}
-                                            <div className="p-2 bg-orange-50/50 rounded-lg border border-orange-100 flex flex-col gap-0.5">
-                                                <div className="flex justify-between items-start">
-                                                    <span className="fz-body font-black text-orange-400 uppercase tracking-widest">Surety 02</span>
-                                                    <span className="fz-body font-mono font-black text-orange-700">{loanDetails.surety2Gr || '-'}</span>
-                                                </div>
-                                                <div className="fz-caption font-black text-slate-700 truncate min-h-[1rem]">{loanDetails.surety2Name || '-'}</div>
-                                                <div className="fz-body font-bold text-slate-500 truncate min-h-[1rem]">{loanDetails.surety2Office || '-'}</div>
-                                                <div className="mt-1 pt-1 border-t border-orange-200/50 flex justify-between">
-                                                    <span className="fz-label font-black text-slate-400 uppercase">Loan Bal</span>
-                                                    <span className="fz-body font-black text-rose-600">{loanDetails.surety2LoanBalance ? formatCurrency(loanDetails.surety2LoanBalance) : '-'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-
-                                {/* Right Column: Sanction Controls */}
-                                <motion.div
-                                    initial={{ opacity: 0, x: 5 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    className="lg:col-span-4 space-y-1.5"
-                                >
-                                    {/* Rules Card */}
-                                    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                                        <div className="grid grid-cols-2 bg-purple-50 border-b border-purple-100">
-                                            <div className="px-2 py-0.5 fz-body font-black text-purple-700 border-r border-purple-100 uppercase tracking-wider">Rules</div>
-                                            <div className="px-2 py-0.5 fz-body font-black text-purple-700 text-right uppercase tracking-wider">Amount</div>
-                                        </div>
-                                        <div className="grid grid-cols-2 border-b border-slate-100 last:border-0 bg-emerald-50/50">
-                                            <label className="px-2 py-0.5 flex items-center gap-1 border-r border-slate-100 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={rules.sharesBalance}
-                                                    onChange={() => toggleRule('sharesBalance')}
-                                                    className="w-2.5 h-2.5 rounded-[2px] border-slate-400 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
-                                                />
-                                                <span className="fz-body font-black text-amber-800 uppercase tracking-wider">Shares Balance</span>
-                                            </label>
-                                            <div className="px-2 py-0.5 fz-body font-mono font-black text-rose-600 text-right">
-                                                {formatCurrency(loanDetails.shareAmount).replace('₹', '')}
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 bg-white">
-                                            <label className="px-2 py-0.5 flex items-center gap-1 border-r border-slate-100 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={rules.tenPercentOfLoan}
-                                                    onChange={() => toggleRule('tenPercentOfLoan')}
-                                                    className="w-2.5 h-2.5 rounded-[2px] border-slate-400 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
-                                                />
-                                                <span className="fz-body font-black text-fuchsia-700 uppercase tracking-wider">10 % Of Loan</span>
-                                            </label>
-                                            <div className="px-2 py-0.5 fz-body font-mono font-black text-rose-600 text-right">
-                                                {formatCurrency((parseFloat(loanDetails.appliedAmount) || 0) * 0.10).replace('₹', '')}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Approval Parameters (Existing) */}
-                                    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-                                        <div className="bg-emerald-600 px-2 py-1 border-b border-emerald-700 flex items-center gap-1.5 shrink-0">
-                                            <Scale size={12} className="text-emerald-100" />
-                                            <span className="fz-body font-black text-white uppercase tracking-widest">Approval Parameters</span>
-                                        </div>
-
-                                        <div className="p-2 flex-1 space-y-2">
-
-
-                                            {/* Amount */}
-                                            <div className="space-y-0.5">
-                                                <label className="fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Sanction Amount</label>
-                                                <div className="relative">
-                                                    <Input
-                                                        value={sanctionDetails.sanctionedAmount}
-                                                        onChange={(e) => updateSanctionField('sanctionedAmount', e.target.value)}
-                                                        className="h-8 fz-heading font-black text-emerald-600 border-emerald-200 bg-emerald-50/30 focus:bg-white"
-                                                    />
-                                                    <span className="absolute right-2 top-2 fz-caption font-black text-emerald-300">INR</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Terms */}
-                                            <div className="grid grid-cols-2 gap-1.5">
-                                                <div className="space-y-0.5">
-                                                    <label className="fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Installments</label>
-                                                    <Input
-                                                        value={sanctionDetails.noOfInstallments}
-                                                        onChange={(e) => updateSanctionField('noOfInstallments', e.target.value)}
-                                                        className="h-7 font-black text-slate-700 fz-caption"
-                                                    />
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                    <label className="fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Rate %</label>
-                                                    <Input
-                                                        value={sanctionDetails.rate}
-                                                        onChange={(e) => updateSanctionField('rate', e.target.value)}
-                                                        className="h-7 font-black text-slate-700 fz-caption"
-                                                        suffix={<span className="fz-body text-slate-400">%</span>}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Dates & Penalty */}
-                                            <div className="grid grid-cols-2 gap-1.5">
-                                                <div className="space-y-0.5">
-                                                    <label className="fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Sanction Date</label>
-                                                    <Input
-                                                        value={sanctionDetails.sanctionDate}
-                                                        readOnly
-                                                        className="h-7 font-black text-slate-500 bg-slate-50 fz-caption"
-                                                        placeholder="DD-MM-YYYY"
-                                                    />
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                    <label className="fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Penalty %</label>
-                                                    <Input
-                                                        value={sanctionDetails.penalRate}
-                                                        onChange={(e) => updateSanctionField('penalRate', e.target.value)}
-                                                        className="h-7 font-black text-rose-600 fz-caption"
-                                                        suffix={<span className="fz-body text-slate-400">%</span>}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Installment & Interest Inputs (Previously Summary) */}
-                                            <div className="pt-1 border-t border-slate-100 flex flex-col gap-1.5">
-                                                <div className="space-y-0.5">
-                                                    <label className="fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Installment Amt</label>
-                                                    <Input
-                                                        value={sanctionDetails.installmentAmount}
-                                                        onChange={(e) => updateSanctionField('installmentAmount', e.target.value)}
-                                                        className="h-7 font-black text-slate-800 border-slate-200 fz-caption"
-                                                        prefix={<span className="fz-body text-slate-400 mr-0.5">₹</span>}
-                                                    />
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                    <label className="fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Total Interest</label>
-                                                    <Input
-                                                        value={sanctionDetails.interestAmount}
-                                                        onChange={(e) => updateSanctionField('interestAmount', e.target.value)}
-                                                        className="h-7 font-black text-emerald-600 border-emerald-100 bg-emerald-50/20 fz-caption"
-                                                        prefix={<span className="fz-body text-slate-400 mr-0.5">₹</span>}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </div>
-                        )}
-
-
-                    </div>
+                <div className="aw-actions">
+                    <span className="aw-pill">{loanCases.length} pending</span>
+                    <button type="button" onClick={handleSanctionSave} disabled={!selectedLoanCase || isSaving} className="aw-btn aw-btn-primary">
+                        {isSaving ? <RefreshCw size={13} className="aw-spin" /> : <CheckCircle size={13} />}
+                        {isSaving ? 'Processing...' : 'Sanction'}
+                    </button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost">
+                        <X size={13} /> Exit
+                    </button>
                 </div>
-
-                {/* Global Footer Metadata */}
-                <div className="ls-footer px-2 py-1 bg-white border-t border-slate-100 flex items-center justify-between opacity-60 shrink-0">
-                    <div className="flex items-center gap-2">
-                        <Building2 size={9} className="text-slate-400" />
-                        <div className="flex items-center gap-2">
-                            <span className="fz-body font-black text-slate-800 uppercase tracking-tight leading-none">Credit Approval Dept</span>
-                            <div className="w-px h-2.5 bg-slate-200" />
-                            <span className="fz-label font-black text-slate-400 uppercase tracking-[0.2em] leading-none">
-                                Auth Level: EXECUTIVE
-                            </span>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1 text-emerald-500 fz-label font-black uppercase tracking-widest">
-                        <ShieldCheck size={10} /> Secure Transaction
-                    </div>
-                </div>
-
             </div>
 
-            <style>{`
-        .custom-select-premium .ant-select-selector {
-           background-color: #f8fafc !important;
-           border: 1px solid #f1f5f9 !important;
-           height: 28px !important;
-           padding: 0 8px !important;
-           display: flex !important;
-           align-items: center !important;
-           border-radius: 6px !important;
-           font-weight: 900 !important;
-           font-size: 10px !important;
-           color: #334155 !important;
-           box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.04) !important;
-        }
+            <div className="aw-content">
+                <div className="aw-stack">
 
-        .ant-input:focus, .ant-picker-focused, .ant-select-focused .ant-select-selector {
-          box-shadow: none !important;
-          border-color: #16a34a !important;
-        }
+                    {/* ── Case selection ── */}
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><FileText size={14} /></span>
+                            <h2 className="aw-card-title">Loan Case No</h2>
+                        </div>
+                        <Select
+                            id="ls-case"
+                            showSearch
+                            value={(selectedLoanCase || undefined) as string}
+                            onChange={handleLoanCaseChange}
+                            loading={isLoadingCases}
+                            className="aw-select"
+                            popupClassName="aw-select-popup"
+                            placeholder="Select a loan case for review..."
+                            optionFilterProp="label"
+                            listHeight={400}
+                            options={loanCases.map(loan => ({
+                                value: loan.loanCaseNo,
+                                label: `${loan.loanCaseNo} - ${loan.memberName} (${loan.loanType}) | ${formatCurrency(loan.appliedAmount)}`,
+                            }))}
+                        />
+                    </section>
 
-        .premium-dropdown-list {
-            border-radius: 8px !important;
-            padding: 6px !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
-            border: 1px solid #f1f5f9 !important;
-        }
-        .premium-dropdown-list .ant-select-item {
-            border-radius: 6px !important;
-            margin-bottom: 2px !important;
-            transition: all 0.2s ease !important;
-            font-size: 10px !important;
-            font-weight: 700 !important;
-            padding: 4px 8px !important;
-        }
-        .premium-dropdown-list .ant-select-item-option-active {
-            background-color: #f0fdf4 !important;
-            color: #16a34a !important;
-        }
-        .premium-dropdown-list .ant-select-item-option-selected {
-            background-color: #16a34a !important;
-            color: white !important;
-        }
-        .premium-dropdown-list .rc-virtual-list-scrollbar {
-            width: 5px !important;
-        }
-        .premium-dropdown-list .rc-virtual-list-scrollbar-thumb {
-            background: #dcfce7 !important;
-            border-radius: 10px !important;
-        }
+                    {selectedLoanCase && (
+                        <div className="aw-split aw-split-wide aw-fade-in" style={{ height: 'auto', gridTemplateColumns: 'minmax(0, 8fr) minmax(300px, 4fr)', alignItems: 'start' }}>
 
-        /* ── Dark mode ── */
-        html.dark .ls-root { background-color: #000000 !important; color: #f5f5f7 !important; }
-        html.dark .ls-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .ls-root .bg-slate-50,
-        html.dark .ls-root .bg-slate-50\\/50 { background-color: #000000 !important; }
-        html.dark .ls-root .bg-white { background-color: #1c1c1e !important; }
-        html.dark .ls-root .border-slate-200,
-        html.dark .ls-root .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .ls-root .text-slate-900,
-        html.dark .ls-root .text-slate-800,
-        html.dark .ls-root .text-slate-700 { color: #f5f5f7 !important; }
-        html.dark .ls-root .text-slate-600,
-        html.dark .ls-root .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .ls-root .text-slate-400 { color: #71717a !important; }
-        html.dark .ls-root label { color: #8e8e93 !important; }
-        html.dark .ls-root .text-emerald-600 { color: #34d399 !important; }
-        html.dark .ls-root .text-rose-600 { color: #ff453a !important; }
-        html.dark .ls-root .bg-indigo-50 { background-color: rgba(99,102,241,.12) !important; }
-        html.dark .ls-root .border-indigo-100 { border-color: rgba(99,102,241,.3) !important; }
-        html.dark .ls-root .text-indigo-700 { color: #60a5fa !important; }
-        html.dark .ls-root .bg-orange-50\\/50 { background-color: rgba(251,146,60,.10) !important; }
-        html.dark .ls-root .border-orange-100,
-        html.dark .ls-root .border-orange-200\\/50 { border-color: rgba(251,146,60,.3) !important; }
-        html.dark .ls-root .text-orange-400,
-        html.dark .ls-root .text-orange-700 { color: #fb923c !important; }
-        html.dark .ls-root .bg-purple-50 { background-color: rgba(192,132,252,.12) !important; }
-        html.dark .ls-root .border-purple-100 { border-color: rgba(192,132,252,.3) !important; }
-        html.dark .ls-root .text-purple-700 { color: #c4b5fd !important; }
-        html.dark .ls-root .bg-emerald-50\\/50,
-        html.dark .ls-root .bg-emerald-50\\/30,
-        html.dark .ls-root .bg-emerald-50\\/20 { background-color: rgba(52,211,153,.12) !important; }
-        html.dark .ls-root .border-emerald-200,
-        html.dark .ls-root .border-emerald-100 { border-color: rgba(52,211,153,.3) !important; }
-        html.dark .ls-root .text-amber-800 { color: #fbbf24 !important; }
-        html.dark .ls-root .text-fuchsia-700 { color: #e879f9 !important; }
-        /* footer */
-        html.dark .ls-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .ls-root .bg-slate-200 { background-color: rgba(255,255,255,.08) !important; }
-        /* antd inputs / selects */
-        html.dark .ls-root .ant-input,
-        html.dark .ls-root input.ant-input,
-        html.dark .ls-root .custom-select-premium .ant-select-selector {
-            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-        }
-        html.dark .ls-root .ant-select-selection-item,
-        html.dark .ls-root .ant-select-selection-search-input { color: #f5f5f7 !important; }
-        html.dark .ls-root .ant-select-selection-placeholder,
-        html.dark .ls-root .ant-input::placeholder { color: #71717a !important; }
-        html.dark .ls-root .ant-input[readonly] { background-color: rgba(255,255,255,.03) !important; color: #8e8e93 !important; }
-        html.dark .premium-dropdown-list { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .premium-dropdown-list .ant-select-item { color: #f5f5f7 !important; }
-        html.dark .premium-dropdown-list .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; color: #34d399 !important; }
-      `}</style>
-        </ConfigProvider>
+                            {/* ── Left: loan details (read-only) ── */}
+                            <div className="aw-stack" style={{ minWidth: 0 }}>
+                                <section className="aw-card">
+                                    <div className="aw-card-head">
+                                        <span className="aw-card-icon"><User size={14} /></span>
+                                        <h2 className="aw-card-title">Applicant Profile</h2>
+                                        <span className="aw-pill" style={{ marginLeft: 'auto', textTransform: 'uppercase' }}>{loanDetails.loanType}</span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--aw-gap)' }}>
+                                        <Fact label="Member No">{loanDetails.memberNo}</Fact>
+                                        <Fact label="Application Date">
+                                            {dayjs(loanDetails.applicationDate).isValid() ? dayjs(loanDetails.applicationDate).format('DD-MM-YYYY') : '-'}
+                                        </Fact>
+                                        <Fact label="Full Name" span2>{loanDetails.memberName}</Fact>
+                                        <Fact label="Form No.">{loanDetails.formNumber}</Fact>
+                                        <Fact label="Office / Dept" span2>{loanDetails.officeNo} - {loanDetails.officeName}</Fact>
+                                        <Fact label="Purpose">{loanDetails.purpose}</Fact>
+                                        <Fact label="Share Amount" tone="var(--aw-success)">{formatCurrency(loanDetails.shareAmount)}</Fact>
+                                        <Fact label="Basic Pay">{formatCurrency(loanDetails.basicPay)}</Fact>
+                                        <Fact label="Applied Amount" tone="var(--aw-success)">{formatCurrency(loanDetails.appliedAmount)}</Fact>
+                                        <Fact label="Existing Balance" tone="var(--aw-danger)">{formatCurrency(loanDetails.currentBalance)}</Fact>
+                                    </div>
+                                </section>
+
+                                <section className="aw-card">
+                                    <div className="aw-card-head">
+                                        <span className="aw-card-icon"><Users size={14} /></span>
+                                        <h2 className="aw-card-title">Surety Obligations</h2>
+                                    </div>
+                                    <div className="aw-two">
+                                        {surety(1)}
+                                        {surety(2)}
+                                    </div>
+                                </section>
+                            </div>
+
+                            {/* ── Right: sanction controls ── */}
+                            <div className="aw-stack" style={{ minWidth: 0 }}>
+                                <section className="aw-card">
+                                    <div className="aw-card-head">
+                                        <h2 className="aw-card-title">Rules</h2>
+                                        <span className="aw-label" style={{ marginLeft: 'auto', marginBottom: 0 }}>Amount</span>
+                                    </div>
+                                    <div className="aw-rows">
+                                        <label className="aw-row" style={{ cursor: 'pointer', alignItems: 'center' }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                                <input type="checkbox" checked={rules.sharesBalance} onChange={() => toggleRule('sharesBalance')} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
+                                                <span className="aw-row-label" style={{ color: 'var(--aw-text)' }}>Shares Balance</span>
+                                            </span>
+                                            <span className="aw-row-value" style={{ color: 'var(--aw-danger)' }}>{formatCurrency(loanDetails.shareAmount).replace('₹', '')}</span>
+                                        </label>
+                                        <label className="aw-row" style={{ cursor: 'pointer', alignItems: 'center' }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                                <input type="checkbox" checked={rules.tenPercentOfLoan} onChange={() => toggleRule('tenPercentOfLoan')} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
+                                                <span className="aw-row-label" style={{ color: 'var(--aw-text)' }}>10 % Of Loan</span>
+                                            </span>
+                                            <span className="aw-row-value" style={{ color: 'var(--aw-danger)' }}>{applied10}</span>
+                                        </label>
+                                    </div>
+                                </section>
+
+                                <section className="aw-card">
+                                    <div className="aw-card-head">
+                                        <span className="aw-card-icon"><Scale size={14} /></span>
+                                        <h2 className="aw-card-title">Approval Parameters</h2>
+                                    </div>
+                                    <div className="aw-stack">
+                                        <div>
+                                            <label className="aw-label" htmlFor="ls-amt">Sanction Amount</label>
+                                            <div className="aw-input-wrap has-action">
+                                                <input id="ls-amt" className="aw-input" style={{ color: 'var(--aw-success)', fontWeight: 700 }} value={sanctionDetails.sanctionedAmount}
+                                                    onChange={(e) => updateSanctionField('sanctionedAmount', e.target.value)} />
+                                                <span className="aw-meta" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>INR</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="aw-two">
+                                            <div>
+                                                <label className="aw-label" htmlFor="ls-inst">Installments</label>
+                                                <input id="ls-inst" className="aw-input" value={sanctionDetails.noOfInstallments} onChange={(e) => updateSanctionField('noOfInstallments', e.target.value)} />
+                                            </div>
+                                            <div>
+                                                <label className="aw-label" htmlFor="ls-rate">Rate %</label>
+                                                <input id="ls-rate" className="aw-input" value={sanctionDetails.rate} onChange={(e) => updateSanctionField('rate', e.target.value)} />
+                                            </div>
+                                        </div>
+
+                                        <div className="aw-two">
+                                            <div>
+                                                <label className="aw-label" htmlFor="ls-date">Sanction Date</label>
+                                                <input id="ls-date" className="aw-input" value={sanctionDetails.sanctionDate} readOnly placeholder="DD-MM-YYYY" />
+                                            </div>
+                                            <div>
+                                                <label className="aw-label" htmlFor="ls-pen">Penalty %</label>
+                                                <input id="ls-pen" className="aw-input" style={{ color: 'var(--aw-danger)' }} value={sanctionDetails.penalRate} onChange={(e) => updateSanctionField('penalRate', e.target.value)} />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ paddingTop: 'var(--aw-gap)', borderTop: '1px solid var(--aw-border)' }} className="aw-stack">
+                                            <div>
+                                                <label className="aw-label" htmlFor="ls-emi">Installment Amt</label>
+                                                <input id="ls-emi" className="aw-input" value={sanctionDetails.installmentAmount} onChange={(e) => updateSanctionField('installmentAmount', e.target.value)} />
+                                            </div>
+                                            <div>
+                                                <label className="aw-label" htmlFor="ls-int">Total Interest</label>
+                                                <input id="ls-int" className="aw-input" style={{ color: 'var(--aw-success)' }} value={sanctionDetails.interestAmount} onChange={(e) => updateSanctionField('interestAmount', e.target.value)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="aw-footer">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> Credit Approval Dept · Auth Level: EXECUTIVE</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> Secure Transaction</span>
+            </div>
+        </div>
     );
 };
 

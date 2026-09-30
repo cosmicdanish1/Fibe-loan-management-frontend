@@ -51,8 +51,7 @@ const VotersWithdrawalList: React.FC = () => {
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   // Load initial data and filters on mount
   useEffect(() => {

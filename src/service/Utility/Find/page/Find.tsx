@@ -2,10 +2,8 @@ import React, { useState, useCallback } from 'react';
 import {
   Search,
   FileText,
-  RefreshCw,
-  X
+  RefreshCw
 } from 'lucide-react';
-import { ConfigProvider, Spin } from 'antd';
 import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
 
 interface SearchResult {
@@ -22,7 +20,6 @@ interface SearchResult {
   details: string;
 }
 
-const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
 
 const SEARCH_TYPE_LABELS: Record<string, string> = {
   memberNo: 'Member No',
@@ -164,161 +161,135 @@ const Find: React.FC = () => {
   const SEARCH_TYPES = Object.entries(SEARCH_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="find-app h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+    <div className="app-window">
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
-              <Search size={13} className="text-white" />
-            </div>
-            <div>
-              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Find</h1>
-              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Global Member &amp; Account Search</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button onClick={clearSearch}
-              className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
-              <RefreshCw size={11} /> Clear
-            </button>
-          </div>
+      {/* Header */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Find</h1>
+          <p className="aw-desc">Global Member &amp; Account Search</p>
         </div>
-
-        {/* Body */}
-        <div className="flex-1 flex flex-col min-h-0 p-2 gap-1.5">
-          <Spin spinning={isLoading} tip="Searching...">
-
-            {/* Search Config Card */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
-              <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                <Search size={10} className="text-slate-400" />
-                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Search Parameters</span>
-              </div>
-              <div className="p-2.5 space-y-2">
-                <div>
-                  <label className={lbl}>Find What</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {SEARCH_TYPES.map(opt => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setSearchType(opt.value)}
-                        className={`h-6 px-3 rounded fz-tiny font-black uppercase tracking-wide transition-all border ${
-                          searchType === opt.value
-                            ? 'bg-indigo-600 text-white border-indigo-600'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="Enter search term..."
-                    className="flex-1 h-7 px-3 fz-caption font-semibold bg-white border border-slate-300 rounded focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100"
-                  />
-                  <button
-                    onClick={handleSearch}
-                    disabled={!searchQuery.trim()}
-                    className="h-7 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded fz-tiny font-black uppercase tracking-wide flex items-center gap-1.5 transition-all">
-                    <Search size={11} /> Find
-                  </button>
-                </div>
-                {error && (
-                  <div className="fz-tiny font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded px-2 py-1">
-                    {error}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Results Card */}
-            {results.length > 0 ? (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
-                <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <FileText size={10} className="text-slate-400" />
-                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Results</span>
-                  </div>
-                  <span className="fz-mini font-black text-indigo-600 uppercase">{results.length} record(s)</span>
-                </div>
-                <div className="flex-1 min-h-0 overflow-auto">
-                  <table className="w-full">
-                    <thead className="sticky top-0 bg-[#f8fafc]">
-                      <tr>
-                        {['MB No', 'Name', 'Wing', 'Division', 'A/C No', 'SR No'].map(h => (
-                          <th key={h} className="px-3 py-2 text-left fz-mini font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {results.map((result, index) => (
-                        <tr key={result.id + index} className="border-b border-slate-100 hover:bg-[#eef2ff] transition-colors cursor-pointer">
-                          <td className="px-3 py-1.5 fz-small font-black text-indigo-600">{result.memberNo || '—'}</td>
-                          <td className="px-3 py-1.5 fz-small font-semibold text-slate-700">{result.name || result.title}</td>
-                          <td className="px-3 py-1.5 fz-small text-slate-600">{result.wing || '—'}</td>
-                          <td className="px-3 py-1.5 fz-small text-slate-600">{result.division || '—'}</td>
-                          <td className="px-3 py-1.5 fz-small text-slate-600">{result.accountNo || '—'}</td>
-                          <td className="px-3 py-1.5 fz-small text-slate-600">{result.srNo || '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : !isLoading && (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex-1 flex flex-col items-center justify-center text-center p-8">
-                {searchQuery ? (
-                  <>
-                    <Search size={32} className="text-slate-200 mb-3" />
-                    <p className="fz-small font-black text-slate-500 uppercase tracking-wider">No Results Found</p>
-                    <p className="fz-tiny text-slate-400 mt-1">Try adjusting your search criteria</p>
-                  </>
-                ) : (
-                  <>
-                    <FileText size={32} className="text-slate-200 mb-3" />
-                    <p className="fz-small font-black text-slate-500 uppercase tracking-wider">Ready to Search</p>
-                    <p className="fz-tiny text-slate-400 mt-1">Select a search type and enter your query</p>
-                  </>
-                )}
-              </div>
-            )}
-
-          </Spin>
+        <div className="aw-actions">
+          {isLoading && (
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+              <RefreshCw size={12} className="aw-spin" /> Searching...
+            </span>
+          )}
+          <button type="button" onClick={clearSearch} className="aw-btn aw-btn-secondary">
+            <RefreshCw size={13} /> Clear
+          </button>
         </div>
-
-        <style>{`
-          /* ── Find — dark mode ── */
-          html.dark .find-app { background-color: #000000 !important; color: #f5f5f7 !important; }
-          html.dark .find-app .bg-white { background-color: #1c1c1e !important; }
-          html.dark .find-app .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .find-app .bg-\\[\\#f8fafc\\] { background-color: #1c1c1e !important; }
-          html.dark .find-app .hover\\:bg-\\[\\#eef2ff\\]:hover { background-color: rgba(99,102,241,0.1) !important; }
-          html.dark .find-app .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
-          html.dark .find-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
-          html.dark .find-app .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
-          html.dark .find-app input {
-            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-          }
-          html.dark .find-app label { color: #8e8e93 !important; }
-          html.dark .find-app .text-slate-700 { color: #f5f5f7 !important; }
-          html.dark .find-app .text-slate-600 { color: #8e8e93 !important; }
-          html.dark .find-app .text-slate-500 { color: #8e8e93 !important; }
-          html.dark .find-app .text-slate-400 { color: #71717a !important; }
-          html.dark .find-app .bg-slate-300 { background-color: rgba(255,255,255,.15) !important; }
-          html.dark .find-app .bg-rose-50 { background-color: rgba(255,69,58,0.08) !important; }
-          html.dark .find-app .text-rose-600 { color: #ff453a !important; }
-          html.dark .find-app .border-rose-200 { border-color: rgba(255,69,58,0.3) !important; }
-        `}</style>
       </div>
-    </ConfigProvider>
+
+      {/* Body */}
+      <div className="aw-fit">
+        <div className="aw-column">
+
+          {/* Search Config Card */}
+          <section className="aw-card" style={{ flex: 'none' }}>
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><Search size={14} /></span>
+              <h2 className="aw-card-title">Search Parameters</h2>
+            </div>
+            <div className="aw-stack">
+              <div>
+                <span className="aw-label" id="find-what-label">Find What</span>
+                <div className="aw-chips" role="radiogroup" aria-labelledby="find-what-label">
+                  {SEARCH_TYPES.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={searchType === opt.value}
+                      onClick={() => setSearchType(opt.value)}
+                      className="aw-chip"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="aw-inline">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Enter search term..."
+                  aria-label="Search term"
+                  className="aw-input"
+                />
+                <button
+                  type="button"
+                  onClick={handleSearch}
+                  disabled={!searchQuery.trim() || isLoading}
+                  className="aw-btn aw-btn-primary">
+                  <Search size={13} /> {isLoading ? 'Searching...' : 'Find'}
+                </button>
+              </div>
+              {error && (
+                <div className="aw-alert aw-alert-danger aw-fade-in" role="alert" style={{ marginBottom: 0 }}>
+                  {error}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Results Card */}
+          {results.length > 0 ? (
+            <section className="aw-card aw-main" style={{ flex: 1 }}>
+              <div className="aw-main-head">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span className="aw-card-icon"><FileText size={14} /></span>
+                  <h2 className="aw-card-title">Results</h2>
+                </div>
+                <span className="aw-pill">{results.length} record(s)</span>
+              </div>
+              <div className="aw-main-body" style={{ padding: 0 }}>
+                <table className="aw-table">
+                  <thead>
+                    <tr>
+                      {['MB No', 'Name', 'Wing', 'Division', 'A/C No', 'SR No'].map(h => (
+                        <th key={h}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((result, index) => (
+                      <tr key={result.id + index} className="is-clickable">
+                        <td className="is-accent">{result.memberNo || '—'}</td>
+                        <td>{result.name || result.title}</td>
+                        <td className="is-muted">{result.wing || '—'}</td>
+                        <td className="is-muted">{result.division || '—'}</td>
+                        <td className="is-muted">{result.accountNo || '—'}</td>
+                        <td className="is-muted">{result.srNo || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : !isLoading && (
+            <section className="aw-card" style={{ flex: 1, justifyContent: 'center' }}>
+              {searchQuery ? (
+                <div className="aw-empty">
+                  <Search size={34} />
+                  <strong className="aw-strong">No Results Found</strong>
+                  <span>Try adjusting your search criteria</span>
+                </div>
+              ) : (
+                <div className="aw-empty">
+                  <FileText size={34} />
+                  <strong className="aw-strong">Ready to Search</strong>
+                  <span>Select a search type and enter your query</span>
+                </div>
+              )}
+            </section>
+          )}
+
+        </div>
+      </div>
+    </div>
   );
 };
 

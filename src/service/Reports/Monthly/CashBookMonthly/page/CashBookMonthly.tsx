@@ -111,8 +111,7 @@ const CashBookMonthly: React.FC = () => {
   const [closingBalance, setClosingBalance] = useState<number>(0);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   useEffect(() => {
     fetchCashBookData();

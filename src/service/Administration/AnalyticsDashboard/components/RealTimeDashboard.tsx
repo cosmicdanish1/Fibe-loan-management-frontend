@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Badge, Alert, Button, Tabs, Timeline, Progress, Tag, Space, Tooltip } from 'antd';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
+import { Card, Row, Col, Statistic, Badge, Alert, Button, Tabs, Timeline, Progress, Tag, Tooltip } from 'antd';
 import { 
   UserOutlined, 
   EyeOutlined, 
@@ -22,7 +21,6 @@ const RealTimeDashboard: React.FC = () => {
     metrics,
     isConnected,
     currentJourney,
-    journeyHistory,
     insights,
     criticalInsights,
     alerts,
@@ -32,7 +30,6 @@ const RealTimeDashboard: React.FC = () => {
     dashboardState,
     refreshAll,
     trackAction,
-    trackConversion,
     markAlertsAsRead,
     dismissAlert,
   } = useRealTimeDashboard();

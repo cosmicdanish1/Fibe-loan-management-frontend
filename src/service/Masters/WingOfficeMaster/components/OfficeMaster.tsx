@@ -1,16 +1,10 @@
 // components/OfficeMaster.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Input, Select } from 'antd';
+import { Select } from 'antd';
 import { Hash, Building2, MapPin, Navigation, Search, Info } from 'lucide-react';
 import { OfficeMasterHookReturn } from '../interface/interface';
 import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
-
-const { Option } = Select;
-const { TextArea } = Input;
-
-const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
   data,
@@ -56,51 +50,49 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
   };
 
   return (
-    <div className="om-root max-w-2xl mx-auto space-y-2">
+    <div className="aw-stack">
 
       {/* Branch Identity */}
-      <div className="om-card bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="om-card-hdr px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-          <Building2 size={11} className="text-slate-400" />
-          <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Office Details</span>
+      <section className="aw-card aw-fade-in">
+        <div className="aw-card-head">
+          <span className="aw-card-icon"><Building2 size={14} /></span>
+          <h2 className="aw-card-title">Office Details</h2>
           {data.name && (
-            <span className="ml-auto fz-tiny font-black text-indigo-600">{data.name}</span>
+            <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-accent)' }}>{data.name}</span>
           )}
         </div>
-        <div className="p-3 space-y-2">
+        <div className="aw-stack">
           {/* Branch No + Name */}
-          <div className="grid grid-cols-3 gap-x-3">
+          <div className="aw-form-3">
             <div>
-              <label className={labelCls}>Branch No</label>
-              <div className="flex gap-1">
-                <div className="relative flex-1">
-                  <Hash size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    value={data.branchNo}
-                    onChange={(e) => updateBranchNo(e.target.value)}
-                    onPressEnter={handleBranchSearch}
-                    placeholder="New..."
-                    className={`${inputCls} pl-6 font-bold text-indigo-700`}
-                  />
-                </div>
-                <button
-                  onClick={handleBranchSearch}
-                  className="h-7 w-7 bg-slate-100 hover:bg-indigo-600 hover:text-white rounded text-slate-500 flex items-center justify-center transition-colors shrink-0"
-                >
-                  <Search size={12} />
+              <label className="aw-label" htmlFor="om-branch">Branch No</label>
+              <div className="aw-input-wrap has-icon has-action">
+                <Hash size={13} />
+                <input
+                  id="om-branch"
+                  value={data.branchNo}
+                  onChange={(e) => updateBranchNo(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleBranchSearch(); }}
+                  placeholder="New..."
+                  className="aw-input"
+                />
+                <button type="button" onClick={handleBranchSearch} className="aw-input-action" aria-label="Load this branch"
+                  data-tip="Load this branch" data-tip-pos="bottom-end">
+                  <Search size={13} />
                 </button>
               </div>
-              <p className="fz-micro text-slate-400 mt-0.5 font-bold uppercase">Leave blank for new</p>
+              <p className="aw-meta" style={{ marginTop: 4, textTransform: 'uppercase' }}>Leave blank for new</p>
             </div>
-            <div className="col-span-2">
-              <label className={labelCls}>Office Name</label>
-              <div className="relative">
-                <Building2 size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                <Input
+            <div className="aw-span-2">
+              <label className="aw-label" htmlFor="om-name">Office Name</label>
+              <div className="aw-input-wrap has-icon">
+                <Building2 size={13} />
+                <input
+                  id="om-name"
                   value={data.name}
                   onChange={(e) => updateName(e.target.value)}
                   placeholder="Enter office name..."
-                  className={`${inputCls} pl-6`}
+                  className="aw-input"
                 />
               </div>
             </div>
@@ -108,92 +100,60 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
 
           {/* Division/RO */}
           <div>
-            <label className={labelCls}>Division / RO</label>
+            <label className="aw-label" htmlFor="om-division">Division / RO</label>
             <Select
-              value={data.divisionRO || undefined}
+              id="om-division"
+              value={data.divisionRO || null}
               onChange={(value) => updateDivisionRO(value)}
               placeholder="Select division..."
-              className="w-full"
-              style={{ height: 28 }}
+              className="aw-select"
+              popupClassName="aw-select-popup"
               showSearch
-              filterOption={(input, option) =>
-                String(option?.children || '').toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {divisions.map((div) => (
-                <Option key={div.divno} value={String(div.divno)}>
-                  {div.name}
-                </Option>
-              ))}
-            </Select>
+              optionFilterProp="label"
+              options={divisions.map((div) => ({ value: String(div.divno), label: div.name }))}
+            />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Address */}
-      <div className="om-card bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="om-card-hdr px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-          <MapPin size={11} className="text-slate-400" />
-          <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Location</span>
+      <section className="aw-card aw-fade-in">
+        <div className="aw-card-head">
+          <span className="aw-card-icon"><MapPin size={14} /></span>
+          <h2 className="aw-card-title">Location</h2>
         </div>
-        <div className="p-3 grid grid-cols-3 gap-x-3 gap-y-2">
-          <div className="col-span-2">
-            <label className={labelCls}>Address</label>
-            <TextArea
+        <div className="aw-form-3">
+          <div className="aw-span-2">
+            <label className="aw-label" htmlFor="om-address">Address</label>
+            <textarea
+              id="om-address"
               value={data.address}
               onChange={(e) => updateAddress(e.target.value)}
               placeholder="Enter address..."
               rows={3}
-              className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none"
+              className="aw-input"
             />
           </div>
           <div>
-            <label className={labelCls}>City</label>
-            <div className="relative">
-              <Navigation size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input
+            <label className="aw-label" htmlFor="om-city">City</label>
+            <div className="aw-input-wrap has-icon">
+              <Navigation size={13} />
+              <input
+                id="om-city"
                 value={data.city}
                 onChange={(e) => updateCity(e.target.value)}
                 placeholder="City..."
-                className={`${inputCls} pl-6`}
+                className="aw-input"
               />
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="flex items-center gap-1 px-1">
-        <Info size={9} className="text-slate-400" />
-        <span className="fz-mini font-bold text-slate-400 uppercase tracking-wide">
-          Enter Branch No and press Enter to load existing office — or fill in details for new
-        </span>
-      </div>
-
-      <style>{`
-        /* ── Office Master — dark mode ── */
-        html.dark .om-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .om-card-hdr { border-color: rgba(255,255,255,.07) !important; }
-        html.dark .om-card-hdr span.text-slate-500 { color: #8e8e93 !important; }
-        html.dark .om-card-hdr svg.text-slate-400 { color: #71717a !important; }
-        html.dark .om-root label.text-slate-500 { color: #8e8e93 !important; }
-        html.dark .om-root .text-slate-400 { color: #71717a !important; }
-        html.dark .om-root input,
-        html.dark .om-root textarea,
-        html.dark .om-root .ant-select-selector {
-          background-color: rgba(255,255,255,.05) !important;
-          color: #f5f5f7 !important;
-          border-color: rgba(255,255,255,.08) !important;
-        }
-        html.dark .om-root .ant-select-selection-item,
-        html.dark .om-root .ant-select-selection-placeholder { color: #f5f5f7 !important; }
-        html.dark .om-root .ant-select-arrow { color: #8e8e93 !important; }
-        html.dark .om-root .bg-slate-50 { background-color: rgba(255,255,255,.03) !important; }
-        html.dark .om-root .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
-        html.dark .om-root .border-slate-200,
-        html.dark .om-root .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .om-root button.bg-slate-100 { background-color: rgba(255,255,255,.05) !important; color: #8e8e93 !important; }
-        html.dark .om-root button.bg-slate-100:hover { background-color: #3b82f6 !important; color: #fff !important; }
-      `}</style>
+      <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 4px' }}>
+        <Info size={12} />
+        Enter Branch No and press Enter to load existing office — or fill in details for new
+      </p>
 
     </div>
   );

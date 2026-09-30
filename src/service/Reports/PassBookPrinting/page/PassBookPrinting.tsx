@@ -239,8 +239,7 @@ const PassBookPrinting: React.FC = () => {
   const printRef = useRef<HTMLDivElement>(null);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   // Theme variables
   const bg      = isDark ? 'bg-[#0f172a]'                           : 'bg-slate-50';

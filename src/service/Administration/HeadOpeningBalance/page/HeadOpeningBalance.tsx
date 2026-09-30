@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Loader2, Save, RefreshCw, GitBranch, CheckCircle2 } from 'lucide-react';
-import { message, Popconfirm } from 'antd';
+import { Loader2, Save, RefreshCw, GitBranch, CheckCircle2, Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { message, Select } from 'antd';
+import AwDialog from '@/components/shared/kit/AwDialog';
 import apiService from '../../../../services/api';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
@@ -14,12 +15,6 @@ interface HeadEntry {
   openingBal: number; hasYearData: boolean; edited?: boolean;
 }
 
-const CODE_COLORS: Record<string, string> = {
-  L: '#7c3aed', A: '#059669', I: '#d97706', E: '#dc2626',
-};
-const SECTION_BG: Record<string, string> = {
-  L1000: '#f5f3ff', A1000: '#ecfdf5', I1000: '#fffbeb', E1000: '#fef2f2',
-};
 const SECTION_LABELS: Record<string, string> = {
   L1000: 'Liabilities', A1000: 'Assets', I1000: 'Income', E1000: 'Expenditure',
 };
@@ -224,254 +219,213 @@ const HeadOpeningBalance: React.FC = () => {
     saveEnabled: !(saving || !selectedYear),
   });
 
+  const toneFor = (prefix: string) =>
+    prefix === 'L' ? 'var(--aw-info)' :
+    prefix === 'A' ? 'var(--aw-success)' :
+    prefix === 'I' ? 'var(--aw-warning)' :
+    prefix === 'E' ? 'var(--aw-danger)' : 'var(--aw-muted)';
+
+  const [confirm, setConfirm] = useState<'apply' | 'build' | null>(null);
+  const runConfirm = async () => {
+    const kind = confirm;
+    setConfirm(null);
+    if (kind === 'apply') await handleApply();
+    else if (kind === 'build') await handleBuildTree();
+  };
+
+  const yearStart = activeYear?.startDate ?? '—';
+  const yearEnd = activeYear?.endDate ?? '—';
+  const yearCode = activeYear?.yearcode ?? '—';
+
   return (
-    <div className="hob-page min-h-screen flex flex-col bg-white text-slate-800 font-sans text-sm">
-      <style>{`
-        .hob-row:hover td { background: #f5f3ff !important; }
-        .hob-input {
-          background: transparent; border: none; outline: none;
-          text-align: right; width: 100%; color: inherit; font-family: monospace;
-          font-size: 0.8rem;
-        }
-        .hob-input:focus { background: rgba(99,102,241,0.1); border-radius: 3px; }
-        /* ── Dark mode ── */
-        html.dark .hob-page { background: #000000 !important; color: #f5f5f7 !important; }
-        html.dark .hob-header { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .hob-header .hob-title { color: #fff !important; }
-        html.dark .hob-header .hob-addr { color: #8e8e93 !important; }
-        html.dark .hob-toolbar { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .hob-toolbar input, html.dark .hob-toolbar select { background: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .hob-toolbar .hob-tool-label { color: #8e8e93 !important; }
-        html.dark .hob-thead { background: #1c1c1e !important; }
-        html.dark .hob-thead th { color: #8e8e93 !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .hob-section-row { background: #1c1c1e !important; }
-        html.dark .hob-section-row td { color: #f5f5f7 !important; }
-        html.dark .hob-row { border-color: #1c1c1e !important; }
-        html.dark .hob-row:hover td { background: #1e1b4b !important; color: #e0e7ff !important; }
-        html.dark .hob-row td { color: #f5f5f7 !important; }
-        html.dark .hob-row .hob-input { color: #6ee7b7 !important; }
-        html.dark .hob-row .hob-input:focus { background: rgba(99,102,241,0.2) !important; }
-        html.dark .hob-tfoot { background: #000000 !important; border-color: #7c3aed !important; }
-        html.dark .hob-tfoot td { color: #f5f5f7 !important; }
-      `}</style>
-
-      {/* ── Company Header ── */}
-      <div className="hob-header bg-slate-100 border-b-2 border-slate-300 text-center py-2 px-4 select-none">
-        <div className="hob-title text-base font-extrabold text-purple-900 leading-tight">{SOCIETY_NAME}</div>
-        <div className="hob-addr text-xs text-slate-600 mt-0.5">{SOCIETY_ADDRESS}</div>
-        <div className="mt-1 inline-block text-sm font-black tracking-widest uppercase px-4 py-0.5 rounded text-amber-700" style={{ letterSpacing: '0.2em' }}>
-          HEAD OPENING BALANCE
+    <div className="app-window">
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Head Opening Balance</h1>
+          <p className="aw-desc">{activeYear ? `${activeYear.label}` : 'Opening balances by financial year'}</p>
+        </div>
+        <div className="aw-actions">
+          {editedCount > 0 && <span className="aw-pill tone-warning aw-fade-in">{editedCount} unsaved</span>}
+          <button
+            type="button"
+            onClick={() => selectedYear && loadData(selectedYear)}
+            disabled={loadingData}
+            className="aw-icon-btn"
+            aria-label="Refresh"
+            data-tip="Refresh"
+            data-tip-pos="bottom-end"
+          >
+            <RefreshCw size={14} className={loadingData ? 'aw-spin' : ''} />
+          </button>
+          <button type="button" onClick={() => setConfirm('apply')} disabled={applying || !selectedYear} className="aw-btn aw-btn-secondary">
+            {applying ? <Loader2 size={13} className="aw-spin" /> : <CheckCircle2 size={13} />} Apply
+          </button>
+          <button type="button" onClick={() => setConfirm('build')} disabled={applying || !selectedYear} className="aw-btn aw-btn-secondary">
+            <GitBranch size={13} /> Build Tree
+          </button>
+          <button type="button" onClick={handleSave} disabled={saving || !selectedYear} className="aw-btn aw-btn-primary">
+            {saving ? <Loader2 size={13} className="aw-spin" /> : <Save size={13} />} Save
+          </button>
         </div>
       </div>
 
-      {/* ── Toolbar ── */}
-      <div className="hob-toolbar bg-slate-50 border-b border-slate-300 px-3 py-1.5 flex flex-wrap items-center gap-3">
-        {/* Financial Year */}
-        <div className="flex items-center gap-2">
-          <span className="hob-tool-label text-xs text-slate-600 font-semibold whitespace-nowrap">Financial Year:</span>
-          {loadingYears ? (
-            <span className="flex items-center gap-1 text-xs text-slate-500">
-              <Loader2 size={12} className="animate-spin" /> Loading…
-            </span>
-          ) : (
-            <select
-              className="bg-white border border-slate-300 text-slate-800 text-xs rounded px-2 py-1
-                         focus:outline-none focus:border-purple-500 cursor-pointer min-w-[180px]"
-              value={selectedYear ?? ''}
-              onChange={e => handleYearChange(parseInt(e.target.value))}
-            >
-              {years.length === 0 && <option value="">— no years —</option>}
-              {years.map(y => (
-                <option key={y.yearcode} value={y.yearcode}>{y.label}</option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search code / name…"
-          className="bg-white border border-slate-300 text-slate-800 text-xs rounded px-2 py-1
-                     focus:outline-none focus:border-purple-500 w-44"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-
-        <div className="flex-1" />
-
-        {editedCount > 0 && (
-          <span className="text-xs text-amber-400 font-semibold">{editedCount} unsaved</span>
-        )}
-
-        <button
-          onClick={() => selectedYear && loadData(selectedYear)}
-          disabled={loadingData}
-          className="flex items-center gap-1 px-2.5 py-1 bg-slate-700 hover:bg-slate-600
-                     text-white text-xs rounded font-semibold transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={11} className={loadingData ? 'animate-spin' : ''} />
-          Refresh
-        </button>
-
-        <button
-          onClick={handleSave}
-          disabled={saving || !selectedYear}
-          className="flex items-center gap-1 px-2.5 py-1 bg-emerald-700 hover:bg-emerald-600
-                     text-white text-xs rounded font-semibold transition-colors disabled:opacity-50"
-        >
-          {saving ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
-          Save
-        </button>
-
-        <Popconfirm
-          title="Apply this year's opening balances to headmaster?"
-          description="This overwrites headmaster.op_bal for all matching accounts."
-          onConfirm={handleApply}
-          okText="Apply" cancelText="Cancel"
-        >
-          <button
-            disabled={applying || !selectedYear}
-            className="flex items-center gap-1 px-2.5 py-1 bg-violet-700 hover:bg-violet-600
-                       text-white text-xs rounded font-semibold transition-colors disabled:opacity-50"
-          >
-            {applying ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
-            Apply
-          </button>
-        </Popconfirm>
-
-        <Popconfirm
-          title="Build Tree for this financial year?"
-          description="Applies this year's balances to headmaster and rebuilds the balance sheet."
-          onConfirm={handleBuildTree}
-          okText="Build" cancelText="Cancel"
-        >
-          <button
-            disabled={applying || !selectedYear}
-            className="flex items-center gap-1 px-2.5 py-1 bg-amber-700 hover:bg-amber-600
-                       text-white text-xs rounded font-semibold transition-colors disabled:opacity-50"
-          >
-            <GitBranch size={11} />
-            Build Tree
-          </button>
-        </Popconfirm>
-      </div>
-
-      {/* ── Table ── */}
-      <div className="flex-1 overflow-auto">
-        {loadingData ? (
-          <div className="flex items-center justify-center h-48 gap-2 text-slate-400">
-            <Loader2 size={22} className="animate-spin" />
-            <span className="text-sm">Loading balances…</span>
+      <div className="aw-content">
+        <section className="aw-card">
+          <div style={{ textAlign: 'center' }}>
+            <p className="aw-strong" style={{ color: 'var(--aw-accent)' }}>{SOCIETY_NAME}</p>
+            <p className="aw-meta">{SOCIETY_ADDRESS}</p>
           </div>
-        ) : (
-          <table className="w-full border-collapse" style={{ fontSize: '0.78rem' }}>
-            <thead className="hob-thead sticky top-0 z-10 bg-purple-900">
-              <tr className="border-b-2 border-purple-700">
-                <th className="text-center px-2 py-1.5 font-bold text-white w-10">#</th>
-                <th className="text-left px-3 py-1.5 font-bold text-white">Code — Head Name</th>
-                <th className="text-right px-3 py-1.5 font-bold text-white w-40">Opening</th>
-                <th className="text-center px-3 py-1.5 font-bold text-white w-32">Start Year</th>
-                <th className="text-center px-3 py-1.5 font-bold text-white w-32">End Year</th>
-                <th className="text-center px-3 py-1.5 font-bold text-white w-16">Year</th>
-              </tr>
-            </thead>
 
-            <tbody>
-              {displayRows.map(row => {
-                if (row.type === 'section') {
-                  const isOpen = expandedSections.has(row.rootCode);
-                  return (
-                    <tr
-                      key={row.entry.code}
-                      className="hob-section-row cursor-pointer select-none border-b border-slate-200"
-                      style={{ background: SECTION_BG[row.rootCode] }}
-                      onClick={() => toggleSection(row.rootCode)}
-                    >
-                      <td className="px-2 py-1.5 text-center text-slate-500 font-bold">
-                        {isOpen ? '▼' : '▶'}
-                      </td>
-                      <td className="px-3 py-1.5 font-black text-slate-800">
-                        {SECTION_LABELS[row.rootCode]}
-                        <span className="ml-2 fz-caption" style={{ color: CODE_COLORS[row.rootCode.charAt(0)] }}>
-                          {row.entry.code}
-                        </span>
-                      </td>
-                      <td className="px-3 py-1.5 text-right font-mono font-black text-amber-700">
-                        {!isOpen ? fmt(sectionTotals[row.rootCode]) : ''}
-                      </td>
-                      <td className="px-3 py-1.5 text-center text-slate-500 fz-caption">
-                        {activeYear?.startDate ?? '—'}
-                      </td>
-                      <td className="px-3 py-1.5 text-center text-slate-500 fz-caption">
-                        {activeYear?.endDate ?? '—'}
-                      </td>
-                      <td className="px-3 py-1.5 text-center text-slate-500 fz-caption">
-                        {activeYear?.yearcode ?? '—'}
+          <div className="aw-inline" style={{ flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 220 }}>
+              <label className="aw-label" htmlFor="hob-year">Financial Year</label>
+              {loadingYears ? (
+                <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Loader2 size={12} className="aw-spin" /> Loading…
+                </span>
+              ) : (
+                <Select
+                  id="hob-year"
+                  className="aw-select"
+                  popupClassName="aw-select-popup"
+                  value={selectedYear ?? undefined}
+                  onChange={(v) => handleYearChange(v as number)}
+                  placeholder="— no years —"
+                  options={years.map(y => ({ value: y.yearcode, label: y.label }))}
+                />
+              )}
+            </div>
+            <div style={{ minWidth: 240, flex: 1, maxWidth: 320 }}>
+              <label className="aw-label" htmlFor="hob-search">Search</label>
+              <div className="aw-input-wrap has-icon">
+                <Search size={13} />
+                <input
+                  id="hob-search"
+                  type="text"
+                  placeholder="Search code / name…"
+                  className="aw-input"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {loadingData ? (
+            <div className="aw-empty" style={{ padding: 40 }}>
+              <Loader2 size={28} className="aw-spin" />
+              <strong className="aw-strong">Loading balances…</strong>
+            </div>
+          ) : (
+            <div className="aw-table-wrap" style={{ maxHeight: '62vh' }}>
+              <table className="aw-table" style={{ minWidth: 720 }}>
+                <thead>
+                  <tr>
+                    <th className="is-center" style={{ width: 44 }}>#</th>
+                    <th>Code — Head Name</th>
+                    <th className="is-right" style={{ width: 170 }}>Opening</th>
+                    <th className="is-center" style={{ width: 120 }}>Start Year</th>
+                    <th className="is-center" style={{ width: 120 }}>End Year</th>
+                    <th className="is-center" style={{ width: 70 }}>Year</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {displayRows.length === 0 && (
+                    <tr>
+                      <td colSpan={6}>
+                        <div className="aw-empty" style={{ padding: 32 }}>
+                          <GitBranch size={26} />
+                          <strong className="aw-strong">No heads to show</strong>
+                        </div>
                       </td>
                     </tr>
-                  );
-                }
+                  )}
+                  {displayRows.map(row => {
+                    const tone = toneFor(row.rootCode.charAt(0));
+                    if (row.type === 'section') {
+                      const isOpen = expandedSections.has(row.rootCode);
+                      const cell: React.CSSProperties = { background: `color-mix(in srgb, ${tone} 12%, var(--aw-surface))`, color: tone, fontWeight: 700 };
+                      return (
+                        <tr key={row.entry.code} className="is-clickable" onClick={() => toggleSection(row.rootCode)}>
+                          <td className="is-center" style={cell}>{isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</td>
+                          <td style={cell}>
+                            {SECTION_LABELS[row.rootCode]} <span style={{ marginLeft: 6, opacity: .75 }}>{row.entry.code}</span>
+                          </td>
+                          <td className="is-right" style={cell}>{!isOpen ? fmt(sectionTotals[row.rootCode] ?? 0) : ''}</td>
+                          <td className="is-center" style={cell}>{yearStart}</td>
+                          <td className="is-center" style={cell}>{yearEnd}</td>
+                          <td className="is-center" style={cell}>{yearCode}</td>
+                        </tr>
+                      );
+                    }
 
-                // Leaf row
-                leafCounter += 1;
-                const e = row.entry;
-                const cColor = CODE_COLORS[e.code.charAt(0)] ?? '#94a3b8';
-                return (
-                  <tr key={e.code} className="hob-row border-b border-slate-100">
-                    <td className="px-2 py-1 text-center text-slate-400">{leafCounter}</td>
-                    <td className="px-3 py-1">
-                      <span className="font-bold mr-2" style={{ color: cColor }}>{e.code}</span>
-                      <span className={e.edited ? 'text-amber-600' : 'text-slate-700'}>{e.headName}</span>
-                      {e.edited && <span className="ml-1 text-amber-500 fz-small">*</span>}
-                    </td>
-                    <td className="px-2 py-1 text-right font-mono">
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="hob-input"
-                        style={{ color: e.edited ? '#d97706' : '#059669' }}
-                        value={e.openingBal}
-                        onChange={ev => handleBalChange(e.code, ev.target.value)}
-                      />
-                    </td>
-                    <td className="px-3 py-1 text-center text-slate-500 fz-caption">
-                      {activeYear?.startDate ?? '—'}
-                    </td>
-                    <td className="px-3 py-1 text-center text-slate-500 fz-caption">
-                      {activeYear?.endDate ?? '—'}
-                    </td>
-                    <td className="px-3 py-1 text-center text-slate-500 fz-caption">
-                      {activeYear?.yearcode ?? '—'}
-                    </td>
+                    leafCounter += 1;
+                    const e = row.entry;
+                    return (
+                      <tr key={e.code}>
+                        <td className="is-muted is-center">{leafCounter}</td>
+                        <td>
+                          <span style={{ color: tone, fontWeight: 700, marginRight: 8 }}>{e.code}</span>
+                          <span style={e.edited ? { color: 'var(--aw-warning)' } : undefined}>{e.headName}</span>
+                          {e.edited && <span style={{ color: 'var(--aw-warning)', marginLeft: 4 }}>*</span>}
+                        </td>
+                        <td className="has-input">
+                          <input
+                            type="number"
+                            step="0.01"
+                            aria-label={`Opening balance ${e.code}`}
+                            className="aw-input is-right"
+                            style={e.edited ? { color: 'var(--aw-warning)', fontWeight: 700 } : { fontWeight: 600 }}
+                            value={e.openingBal}
+                            onChange={ev => handleBalChange(e.code, ev.target.value)}
+                          />
+                        </td>
+                        <td className="is-center is-muted">{yearStart}</td>
+                        <td className="is-center is-muted">{yearEnd}</td>
+                        <td className="is-center is-muted">{yearCode}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+
+                <tfoot>
+                  <tr>
+                    <td />
+                    <td>Grand Total — {leafEntries.length} accounts</td>
+                    <td className="is-right is-warning">{fmt(grandTotal)}</td>
+                    <td className="is-center is-muted">{yearStart}</td>
+                    <td className="is-center is-muted">{yearEnd}</td>
+                    <td className="is-center is-muted">{yearCode}</td>
                   </tr>
-                );
-              })}
-            </tbody>
-
-            <tfoot className="hob-tfoot sticky bottom-0 border-t-2 border-purple-600 bg-purple-900">
-              <tr>
-                <td className="px-2 py-1.5"></td>
-                <td className="px-3 py-1.5 font-black text-white uppercase tracking-wide text-xs">
-                  Grand Total &mdash; {leafEntries.length} accounts
-                </td>
-                <td className="px-3 py-1.5 text-right font-mono font-black text-base text-amber-300">
-                  {fmt(grandTotal)}
-                </td>
-                <td className="px-3 py-1.5 text-center text-purple-300 fz-caption">
-                  {activeYear?.startDate ?? '—'}
-                </td>
-                <td className="px-3 py-1.5 text-center text-purple-300 fz-caption">
-                  {activeYear?.endDate ?? '—'}
-                </td>
-                <td className="px-3 py-1.5 text-center text-purple-300 fz-caption">
-                  {activeYear?.yearcode ?? '—'}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        )}
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
+
+      <AwDialog
+        open={confirm !== null}
+        title={confirm === 'build' ? 'Build Tree for this financial year?' : "Apply this year's opening balances?"}
+        icon={confirm === 'build' ? <GitBranch size={14} /> : <CheckCircle2 size={14} />}
+        onClose={() => setConfirm(null)}
+        maxWidth="26rem"
+        compact
+      >
+        <div className="aw-stack">
+          <p className="aw-meta" style={{ lineHeight: 1.5 }}>
+            {confirm === 'build'
+              ? "Applies this year's balances to headmaster and rebuilds the balance sheet."
+              : 'This overwrites headmaster.op_bal for all matching accounts.'}
+          </p>
+          <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => setConfirm(null)} className="aw-btn aw-btn-secondary">Cancel</button>
+            <button type="button" onClick={runConfirm} className="aw-btn aw-btn-primary">{confirm === 'build' ? 'Build' : 'Apply'}</button>
+          </div>
+        </div>
+      </AwDialog>
     </div>
   );
 };

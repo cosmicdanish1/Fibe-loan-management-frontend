@@ -1,5 +1,6 @@
 import React from 'react';
-import { Calculator, CheckCircle2, Camera } from 'lucide-react';
+import { Select } from 'antd';
+import { Calculator, CheckCircle2, Camera, AlertCircle, RefreshCw } from 'lucide-react';
 import { useDividendCalculation } from '../hooks/useDividendCalculation';
 
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -18,139 +19,174 @@ const DividendCalculation: React.FC = () => {
     const incompleteCount = preview ? preview.members.filter((m) => m.monthsFound < m.monthsExpected).length : 0;
 
     return (
-        <div className="flex flex-col h-full overflow-hidden" style={{ background: '#f4f5f7', color: '#1a1d29', fontSize: 13 }}>
-            <div className="flex items-center justify-between px-5 py-2.5 shrink-0" style={{ background: '#161822', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-baseline gap-2.5">
-                    <h1 className="m-0 font-semibold text-white" style={{ fontSize: 15 }}>Dividend Calculation</h1>
-                    <span style={{ fontSize: 11.5, color: '#9296a8' }}>
-                        Total Product × Approved Rate ÷ 1200 — writes dividend_master only, never touches Share Value
-                    </span>
+        <div className="app-window">
+            {/* ── Header ── */}
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">Dividend Calculation</h1>
+                    <p className="aw-desc">Total Product × Approved Rate ÷ 1200 — writes dividend_master only, never touches Share Value</p>
                 </div>
-            </div>
-
-            {/* Monthly snapshot capture */}
-            <div className="flex items-center gap-3 px-5 py-2.5 shrink-0" style={{ background: '#fffbeb', borderBottom: '1px solid #fde68a' }}>
-                <Camera size={14} style={{ color: '#92400e', flexShrink: 0 }} />
-                <span style={{ fontSize: 11.5, color: '#92400e' }}>Capture this month's Share Capital snapshot (run once per month):</span>
-                <select
-                    value={snapMonth}
-                    onChange={(e) => setSnapMonth(Number(e.target.value))}
-                    style={{ fontSize: 12, padding: '4px 6px', border: '1px solid #fde68a', borderRadius: 5 }}
-                >
-                    {MONTH_NAMES.slice(1).map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
-                </select>
-                <input
-                    type="number" value={snapYear} onChange={(e) => setSnapYear(Number(e.target.value))}
-                    style={{ fontSize: 12, padding: '4px 6px', border: '1px solid #fde68a', borderRadius: 5, width: 80 }}
-                />
-                <button
-                    onClick={captureSnapshot}
-                    disabled={snapshotting}
-                    style={{ fontSize: 11.5, fontWeight: 600, padding: '5px 12px', border: 'none', borderRadius: 5, background: '#b45309', color: '#fff', cursor: snapshotting ? 'not-allowed' : 'pointer', opacity: snapshotting ? 0.6 : 1 }}
-                >
-                    {snapshotting ? 'Capturing…' : 'Capture Snapshot'}
-                </button>
-                {snapshotMessage && <span style={{ fontSize: 11.5, color: '#92400e' }}>{snapshotMessage}</span>}
-            </div>
-
-            {/* Calculation controls */}
-            <div className="flex items-center gap-3 px-5 py-2.5 shrink-0" style={{ background: '#fff', borderBottom: '1px solid #e4e6eb' }}>
-                <label style={{ fontSize: 12, color: '#4b5160' }}>Year Code</label>
-                <input
-                    type="number" value={yearcode} onChange={(e) => setYearcode(Number(e.target.value))}
-                    style={{ fontSize: 12, padding: '5px 8px', border: '1px solid #d7dae0', borderRadius: 5, width: 70 }}
-                />
-                <label style={{ fontSize: 12, color: '#4b5160' }}>Dividend Rate (%)</label>
-                <input
-                    type="number" value={dividendRate} onChange={(e) => setDividendRate(Number(e.target.value))}
-                    style={{ fontSize: 12, padding: '5px 8px', border: '1px solid #d7dae0', borderRadius: 5, width: 70 }}
-                />
-                <button
-                    onClick={loadPreview}
-                    disabled={loading}
-                    style={{ fontSize: 12, fontWeight: 600, padding: '6px 14px', border: 'none', borderRadius: 6, background: '#161822', color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
-                >
-                    {loading ? 'Calculating…' : 'Preview'}
-                </button>
-                {preview && preview.members.length > 0 && (
-                    <button
-                        onClick={commit}
-                        disabled={committing}
-                        style={{ fontSize: 12, fontWeight: 600, padding: '6px 14px', border: 'none', borderRadius: 6, background: '#5b21b6', color: '#fff', cursor: committing ? 'not-allowed' : 'pointer', opacity: committing ? 0.6 : 1, marginLeft: 'auto' }}
-                    >
-                        {committing ? 'Committing…' : `Commit for ${preview.members.length} member(s)`}
+                <div className="aw-actions">
+                    <button type="button" onClick={loadPreview} disabled={loading} className="aw-btn aw-btn-secondary">
+                        {loading ? <RefreshCw size={13} className="aw-spin" /> : <Calculator size={13} />}
+                        {loading ? 'Calculating…' : 'Preview'}
                     </button>
-                )}
+                    {preview && preview.members.length > 0 && (
+                        <button type="button" onClick={commit} disabled={committing} className="aw-btn aw-btn-primary aw-fade-in">
+                            {committing ? <RefreshCw size={13} className="aw-spin" /> : <CheckCircle2 size={13} />}
+                            {committing ? 'Committing…' : `Commit for ${preview.members.length} member(s)`}
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {error && (
-                <div className="px-5 py-2 shrink-0" style={{ background: '#fef2f2', color: '#b91c1c', fontSize: 12, borderBottom: '1px solid #fecaca' }}>
-                    {error}
-                </div>
-            )}
-
-            {commitResult && (
-                <div className="flex items-center gap-2 px-5 py-2 shrink-0" style={{ background: '#f0fdf4', color: '#15803d', fontSize: 12, borderBottom: '1px solid #bbf7d0' }}>
-                    <CheckCircle2 size={14} />
-                    Committed dividend calculation for FY {commitResult.calculationYear} — {commitResult.membersCommitted} member(s). Not yet credited to Share Value (that happens at the following year's close).
-                </div>
-            )}
-
-            <div className="flex-1 overflow-auto px-5 py-3">
-                {!preview ? (
-                    <div className="flex items-center justify-center" style={{ height: 200, color: '#8b90a0' }}>
-                        Set a year code and rate, then click Preview.
-                    </div>
-                ) : preview.members.length === 0 ? (
-                    <div className="flex items-center justify-center" style={{ height: 200, color: '#8b90a0' }}>
-                        No Share Capital snapshots found for FY {preview.calculationYear}-{String(preview.calculationYear + 1).slice(2)}. Capture at least one month above first.
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex items-center gap-4 mb-2.5" style={{ fontSize: 12 }}>
-                            <span>Calculation Year: <b>{preview.calculationYear}</b></span>
-                            <span>Members: <b>{preview.members.length}</b></span>
-                            <span>Total Dividend: <b>₹{fmt(totalDividend)}</b></span>
-                            {incompleteCount > 0 && (
-                                <span style={{ color: '#b45309' }}>
-                                    {incompleteCount} member(s) missing month(s) — Total Product may be understated
-                                </span>
-                            )}
+            <div className="aw-content">
+                <div className="aw-stack">
+                    {/* ── Monthly snapshot capture ── */}
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon" style={{ color: 'var(--aw-warning)' }}><Camera size={14} /></span>
+                            <div>
+                                <h2 className="aw-card-title">Monthly Snapshot</h2>
+                                <p className="aw-meta">Capture this month's Share Capital snapshot (run once per month)</p>
+                            </div>
                         </div>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8 }}>
-                            <thead>
-                                <tr>
-                                    {['Member', 'Total Product', 'Months', 'Rate', 'Dividend Amount'].map((h) => (
-                                        <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '8px 10px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {preview.members.map((m) => {
-                                    const incomplete = m.monthsFound < m.monthsExpected;
-                                    return (
-                                        <tr key={m.mbno}>
-                                            <td style={{ fontSize: 12, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>
-                                                <div style={{ fontWeight: 600 }}>{m.mbno}</div>
-                                                {m.memberName && <div style={{ fontSize: 11, color: '#8b90a0' }}>{m.memberName}</div>}
-                                            </td>
-                                            <td style={{ fontSize: 12, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(m.totalProduct)}</td>
-                                            <td style={{ fontSize: 12, padding: '8px 10px', borderBottom: '1px solid #f2f3f5', color: incomplete ? '#b45309' : '#1a1d29' }}>
-                                                {m.monthsFound} / {m.monthsExpected}
-                                            </td>
-                                            <td style={{ fontSize: 12, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>{m.dividendRate}%</td>
-                                            <td style={{ fontSize: 12, fontWeight: 600, padding: '8px 10px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(m.dividendAmount)}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </>
-                )}
+                        <div className="aw-inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12 }}>
+                            <div style={{ width: 120 }}>
+                                <label className="aw-label" htmlFor="dc-month">Month</label>
+                                <Select
+                                    id="dc-month"
+                                    className="aw-select"
+                                    popupClassName="aw-select-popup"
+                                    value={snapMonth}
+                                    onChange={(v) => setSnapMonth(Number(v))}
+                                    options={MONTH_NAMES.slice(1).map((m, i) => ({ value: i + 1, label: m }))}
+                                />
+                            </div>
+                            <div style={{ width: 110 }}>
+                                <label className="aw-label" htmlFor="dc-year">Year</label>
+                                <input id="dc-year" type="number" value={snapYear} onChange={(e) => setSnapYear(Number(e.target.value))} className="aw-input" />
+                            </div>
+                            <button type="button" onClick={captureSnapshot} disabled={snapshotting} className="aw-btn aw-btn-secondary">
+                                {snapshotting ? <RefreshCw size={13} className="aw-spin" /> : <Camera size={13} />}
+                                {snapshotting ? 'Capturing…' : 'Capture Snapshot'}
+                            </button>
+                            {snapshotMessage && <span className="aw-meta aw-fade-in" style={{ color: 'var(--aw-warning)', fontWeight: 700 }}>{snapshotMessage}</span>}
+                        </div>
+                    </section>
+
+                    {/* ── Calculation controls ── */}
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><Calculator size={14} /></span>
+                            <h2 className="aw-card-title">Calculation</h2>
+                        </div>
+                        <div className="aw-inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12 }}>
+                            <div style={{ width: 140 }}>
+                                <label className="aw-label" htmlFor="dc-yearcode">Year Code</label>
+                                <input id="dc-yearcode" type="number" value={yearcode} onChange={(e) => setYearcode(Number(e.target.value))} className="aw-input" />
+                            </div>
+                            <div style={{ width: 160 }}>
+                                <label className="aw-label" htmlFor="dc-rate">Dividend Rate (%)</label>
+                                <input id="dc-rate" type="number" value={dividendRate} onChange={(e) => setDividendRate(Number(e.target.value))} className="aw-input" />
+                            </div>
+                        </div>
+                    </section>
+
+                    {error && (
+                        <div className="aw-alert aw-alert-danger aw-fade-in" style={{ marginBottom: 0 }} role="alert">
+                            <AlertCircle size={15} /><span>{error}</span>
+                        </div>
+                    )}
+
+                    {commitResult && (
+                        <div className="aw-alert aw-alert-success aw-fade-in" style={{ marginBottom: 0 }} role="status">
+                            <CheckCircle2 size={15} />
+                            <span>Committed dividend calculation for FY {commitResult.calculationYear} — {commitResult.membersCommitted} member(s). Not yet credited to Share Value (that happens at the following year's close).</span>
+                        </div>
+                    )}
+
+                    {/* ── Results ── */}
+                    {!preview ? (
+                        <section className="aw-card">
+                            <div className="aw-empty" style={{ padding: 40 }}>
+                                <Calculator size={28} />
+                                <strong className="aw-strong">Set a year code and rate, then click Preview.</strong>
+                            </div>
+                        </section>
+                    ) : preview.members.length === 0 ? (
+                        <section className="aw-card">
+                            <div className="aw-empty" style={{ padding: 40 }}>
+                                <Camera size={28} />
+                                <strong className="aw-strong">No Share Capital snapshots found for FY {preview.calculationYear}-{String(preview.calculationYear + 1).slice(2)}.</strong>
+                                <span className="aw-meta">Capture at least one month above first.</span>
+                            </div>
+                        </section>
+                    ) : (
+                        <>
+                            <div className="aw-stats aw-stats-3 aw-fade-in">
+                                <div className="aw-stat aw-stat-left">
+                                    <div className="aw-stat-label">Calculation Year</div>
+                                    <div className="aw-stat-value">{preview.calculationYear}</div>
+                                </div>
+                                <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}>
+                                    <div className="aw-stat-label">Members</div>
+                                    <div className="aw-stat-value">{preview.members.length}</div>
+                                </div>
+                                <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-success)' }}>
+                                    <div className="aw-stat-label">Total Dividend</div>
+                                    <div className="aw-stat-value">₹{fmt(totalDividend)}</div>
+                                </div>
+                            </div>
+
+                            {incompleteCount > 0 && (
+                                <div className="aw-alert aw-alert-warning aw-fade-in" style={{ marginBottom: 0 }}>
+                                    <AlertCircle size={15} />
+                                    <span>{incompleteCount} member(s) missing month(s) — Total Product may be understated</span>
+                                </div>
+                            )}
+
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-table-wrap" style={{ maxHeight: '50vh' }}>
+                                    <table className="aw-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Member</th>
+                                                <th className="is-right">Total Product</th>
+                                                <th className="is-right">Months</th>
+                                                <th className="is-right">Rate</th>
+                                                <th className="is-right">Dividend Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {preview.members.map((m) => {
+                                                const incomplete = m.monthsFound < m.monthsExpected;
+                                                return (
+                                                    <tr key={m.mbno}>
+                                                        <td>
+                                                            <span className="is-accent" style={{ color: 'var(--aw-accent)', fontWeight: 700 }}>{m.mbno}</span>
+                                                            {m.memberName && <span className="aw-meta">{m.memberName}</span>}
+                                                        </td>
+                                                        <td className="is-right">₹{fmt(m.totalProduct)}</td>
+                                                        <td className={`is-right ${incomplete ? 'is-warning' : ''}`}>{m.monthsFound} / {m.monthsExpected}</td>
+                                                        <td className="is-right is-muted">{m.dividendRate}%</td>
+                                                        <td className="is-right is-success">₹{fmt(m.dividendAmount)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </>
+                    )}
+                </div>
             </div>
 
-            <div className="flex items-center gap-1.5 px-5 py-2 shrink-0" style={{ background: '#fff', borderTop: '1px solid #e4e6eb', fontSize: 11, color: '#8b90a0' }}>
-                <Calculator size={11} /> Committing here only records the calculation — crediting it into member Share Value is a separate step (Dividend Credit), run at the following year's close.
+            <div className="aw-footer">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Calculator size={12} /> Committing here only records the calculation — crediting it into member Share Value is a separate step (Dividend Credit), run at the following year's close.
+                </span>
             </div>
         </div>
     );

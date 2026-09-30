@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, User, ChevronDown } from 'lucide-react';
+import { Search, User, ChevronDown, RefreshCw } from 'lucide-react';
 import { apiService } from '../../../services/api';
 
 export interface MemberLookupData {
@@ -18,6 +18,9 @@ interface MemberLookupInputProps {
   className?: string;
   showLookupButton?: boolean;
   autoSearch?: boolean;
+  /** 'kit' renders with the shared .app-window styling; the default keeps the original look for older windows. */
+  variant?: 'legacy' | 'kit';
+  ariaLabel?: string;
 }
 
 const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
@@ -27,7 +30,9 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
   disabled = false,
   className = "",
   showLookupButton = true,
-  autoSearch = true
+  autoSearch = true,
+  variant = 'legacy',
+  ariaLabel = 'Member number'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<MemberLookupData[]>([]);
@@ -157,6 +162,70 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
       searchMembers('');
     }
   };
+
+  if (variant === 'kit') {
+    return (
+      <div className={`aw-suggest-root ${className}`} ref={dropdownRef}>
+        <div className={`aw-input-wrap ${showLookupButton ? 'has-action' : ''}`}>
+          <input
+            ref={inputRef}
+            type="text"
+            value={searchTerm}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled}
+            aria-label={ariaLabel}
+            className="aw-input"
+          />
+          {showLookupButton && (
+            <button
+              type="button"
+              onClick={handleLookupClick}
+              disabled={disabled || isLoading}
+              className="aw-input-action"
+              aria-label="Search members"
+              data-tip="Search members (or press PageUp)"
+              data-tip-pos="bottom-end"
+            >
+              {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <Search size={13} />}
+            </button>
+          )}
+        </div>
+
+        {isOpen && searchResults.length > 0 && (
+          <div className="aw-suggest" role="listbox">
+            <div className="aw-suggest-head">
+              <span>{searchResults.length} member(s) found</span>
+              <span>Enter to select</span>
+            </div>
+            {searchResults.map((member, index) => (
+              <button
+                type="button"
+                role="option"
+                aria-selected={false}
+                key={`${member.memberNo}-${index}`}
+                onClick={() => handleMemberSelect(member)}
+                className="aw-suggest-item"
+              >
+                <span className="aw-strong font-mono">{member.memberNo}</span>
+                <span className="aw-strong" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{member.memberName}</span>
+                <span className="aw-meta" style={{ whiteSpace: 'nowrap' }}>{member.officeName}{member.officeNo ? ` · Office ${member.officeNo}` : ''}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isOpen && searchResults.length === 0 && !isLoading && searchTerm && (
+          <div className="aw-suggest">
+            <div className="aw-empty" style={{ padding: '14px 10px' }}>
+              <span>No members found for "{searchTerm}"</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>

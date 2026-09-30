@@ -14,8 +14,7 @@ const STORAGE_KEY = 'fibe-chat-pos';
 
 const FloatingChatBot: React.FC = () => {
   const { interfaceMode, showChatbot } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([

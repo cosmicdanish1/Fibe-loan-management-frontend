@@ -1,5 +1,5 @@
 // useAccountEntries.ts
-import { useState, useCallback, useReducer } from 'react';
+import { useCallback, useReducer } from 'react';
 import type { AccountEntry, AccountState, AccountActions } from '../type/types';
 
 // Action types for reducer

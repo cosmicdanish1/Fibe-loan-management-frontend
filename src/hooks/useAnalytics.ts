@@ -34,7 +34,6 @@ export const useAnalytics = () => {
 
     // Cleanup function to track page exit
     return () => {
-      const duration = Date.now() - pageStartTime.current;
       // Page exit tracking is handled by the analytics service
     };
   }, [location]);
@@ -216,7 +215,7 @@ function extractFileName(stackTrace?: string): string | undefined {
   if (!stackTrace) return undefined;
   
   const match = stackTrace.match(/at .* \((.+):(\d+):(\d+)\)/);
-  if (match) {
+  if (match && match[1]) {
     const fullPath = match[1];
     return fullPath.split('/').pop() || fullPath;
   }

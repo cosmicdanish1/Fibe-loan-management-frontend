@@ -154,8 +154,7 @@ const NewLoanDisbursed: React.FC = () => {
   const [memberName, setMemberName] = useState<string>('');
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   useEffect(() => {
     fetchLoanTypes();

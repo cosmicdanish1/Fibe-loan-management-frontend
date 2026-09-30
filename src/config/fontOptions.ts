@@ -47,10 +47,6 @@ export const FONT_OPTIONS: FontOption[] = [
   },
 ];
 
-/** localStorage key, mirrored across windows on the channel below. */
-export const FONT_STORAGE_KEY = 'lms-font-family';
-export const FONT_SYNC_CHANNEL = 'lms_font_family';
-
 /** Applies the chosen stack to the current window. */
 export function applyAppFont(fontFamily: string): void {
   document.documentElement.style.setProperty('--app-font', fontFamily);

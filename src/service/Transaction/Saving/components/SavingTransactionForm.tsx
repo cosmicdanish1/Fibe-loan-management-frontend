@@ -1,20 +1,11 @@
 // components/SavingTransactionForm.tsx
 
 import React from 'react';
-import { ConfigProvider, Input, Select, Table, DatePicker, Spin, AutoComplete } from 'antd';
-import {
-    PiggyBank, RotateCcw, Save, X, ShieldCheck, Building2,
-    Calendar, Banknote, Hash, FileText, IndianRupee,
-} from 'lucide-react';
+import { Select, DatePicker, AutoComplete } from 'antd';
+import { RotateCcw, Save, X, Building2, Banknote, Hash, FileText, IndianRupee } from 'lucide-react';
 import { SavingTransactionHookReturn, TransactionHistoryRow } from '../interface/SavingTransactionInterfaces';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
-
-const { Option } = Select;
-const { TextArea } = Input;
-
-const labelCls = "block fz-tiny font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inputCls = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
     formData,
@@ -38,435 +29,252 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
         }
     };
 
-    const historyColumns = [
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Trans Date</span>,
-            dataIndex: 'transDate', key: 'transDate', width: '20%',
-            render: (t: string) => <span className="fz-small font-mono text-slate-700">{t}</span>,
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Voucher No</span>,
-            dataIndex: 'voucherNo', key: 'voucherNo', width: '20%',
-            render: (t: string) => <span className="fz-small font-mono font-bold text-slate-700">{t}</span>,
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Acc Type</span>,
-            dataIndex: 'accType', key: 'accType', width: '15%',
-            render: (t: string) => <span className="fz-small font-mono text-slate-600">{t}</span>,
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Trans Type</span>,
-            dataIndex: 'transType', key: 'transType', width: '15%',
-            render: (t: string) => (
-                <span className={`fz-small font-black ${t === 'CR' ? 'text-emerald-600' : 'text-rose-600'}`}>{t}</span>
-            ),
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Amount</span>,
-            dataIndex: 'amount', key: 'amount', width: '30%', align: 'right' as const,
-            render: (v: number) => <span className="fz-small font-black text-slate-700">₹{v.toFixed(2)}</span>,
-        },
-    ];
-
     usePageToolbarActions({
         onSave: handleSave,
         saveLabel: isLoading ? 'Saving…' : 'Save',
         saveEnabled: !isLoading,
     });
 
+    const fmt = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    const isDeposit = formData.transactionType === 'deposit';
+
     return (
-        <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="sv-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
-
-                {/* Header */}
-                <div className="sv-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
-                            <PiggyBank size={13} className="text-white" />
-                        </div>
-                        <div>
-                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Saving Voucher</h1>
-                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
-                                <ShieldCheck size={7} className="text-indigo-400" /> Deposit / Withdrawal
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <button onClick={handleReset} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
-                            <RotateCcw size={11} /> Reset
-                        </button>
-                        <button onClick={handleSave} disabled={isLoading}
-                            className={`h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                            {isLoading ? <RotateCcw size={11} className="animate-spin" /> : <Save size={11} />}
-                            {isLoading ? 'Saving…' : 'Save'}
-                        </button>
-                        <div className="h-4 w-px bg-white/20" />
-                        <button onClick={onExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
-                            <X size={11} /> Exit
-                        </button>
-                    </div>
+        <div className="app-window">
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">Saving Voucher</h1>
+                    <p className="aw-desc">Deposit / Withdrawal{formData.accountNo ? ` · A/C ${formData.accountNo}` : ''}</p>
                 </div>
-
-                {/* Body */}
-                <div className="flex-1 overflow-auto">
-                    <div className="max-w-4xl mx-auto p-3 pb-4 space-y-2">
-
-                        {/* Last saved banner */}
-                        {lastSaved && (
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <Save size={12} className="text-emerald-600" />
-                                    <div className="flex items-center gap-4">
-                                        <div>
-                                            <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">{lastSaved.type === 'deposit' ? 'Deposit' : 'Withdrawal'}</span>
-                                            <p className="fz-small font-black text-emerald-800">{lastSaved.voucherNo}</p>
-                                        </div>
-                                        <div>
-                                            <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">A/C No</span>
-                                            <p className="fz-small font-bold text-emerald-800">{lastSaved.accountNo}</p>
-                                        </div>
-                                        <div>
-                                            <span className="fz-mini font-black text-emerald-500 uppercase tracking-wide">Amount</span>
-                                            <p className="fz-small font-black text-emerald-800">₹{lastSaved.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button onClick={handleReset} className="fz-mini font-black text-emerald-600 hover:text-emerald-800 uppercase tracking-wide flex items-center gap-1">
-                                    <RotateCcw size={9} /> New
-                                </button>
-                            </div>
-                        )}
-
-                        {/* ── A/C No + Trans Date ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                                <Hash size={11} className="text-slate-400" />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Account</span>
-                            </div>
-                            <div className="p-3 grid grid-cols-4 gap-x-4">
-                                <div className="col-span-3">
-                                    <label className={labelCls}>A/C No <span className="text-rose-500">*</span></label>
-                                    <div className="relative">
-                                        <Hash size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        {/* BUG FIX 21: was a plain text box — you had to already know the exact
-                                            account number by heart, no way to browse or search. Now an
-                                            AutoComplete: type to filter by account no or member no, pick from
-                                            the list, or still just type the full number directly like before. */}
-                                        <AutoComplete
-                                            value={formData.accountNo}
-                                            options={sbAccounts.map(a => ({
-                                                value: a.accountNo,
-                                                label: `${a.accountNo} — Member ${a.memberNo} — ₹${a.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
-                                            }))}
-                                            filterOption={(input, option) =>
-                                                (option?.value as string ?? '').toLowerCase().includes(input.toLowerCase()) ||
-                                                (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
-                                            }
-                                            onChange={value => {
-                                                updateField('accountNo', value);
-                                                if (value.length >= 3) handleAccountNoChange(value);
-                                            }}
-                                            onSelect={value => handleAccountNoChange(String(value))}
-                                            placeholder="Enter or pick an account number..."
-                                            className="w-full"
-                                            popupMatchSelectWidth={360}
-                                        >
-                                            <Input className={`${inputCls} pl-6 font-mono font-bold text-indigo-700`} />
-                                        </AutoComplete>
-                                        {isLoadingAccount && (
-                                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                                <Spin size="small" />
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={labelCls}>Trans Date</label>
-                                    <DatePicker
-                                        value={formData.transDate ? dayjs(formData.transDate) : null}
-                                        onChange={d => updateField('transDate', d)}
-                                        className="w-full h-7 fz-caption sv-dp"
-                                        format="DD-MMM-YY"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ── Balance Info ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                                <IndianRupee size={11} className="text-slate-400" />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Account Balances</span>
-                            </div>
-                            <div className="p-3 grid grid-cols-6 gap-x-4 gap-y-1">
-                                {[
-                                    { label: 'Current Balance', val: formData.currentBalance, cls: 'text-slate-700' },
-                                    { label: 'Minimum Balance', val: formData.minimumBalance, cls: 'text-slate-700' },
-                                    { label: 'Unpass Cr.', val: formData.unpassCr, cls: 'text-emerald-600' },
-                                    { label: 'Unpass Dr.', val: formData.unpassDr, cls: 'text-rose-600' },
-                                    { label: 'Available Bal', val: formData.availableBalance, cls: 'text-indigo-700' },
-                                    { label: 'Withdrawable', val: formData.withdrawableBalance, cls: 'text-violet-700' },
-                                ].map(item => (
-                                    <div key={item.label} className="text-center bg-slate-50 rounded-lg p-2 border border-slate-100">
-                                        <p className="fz-mini font-black text-slate-500 uppercase tracking-wide leading-tight mb-1">{item.label}</p>
-                                        <p className={`fz-caption font-black ${item.cls}`}>₹{item.val.toFixed(2)}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* ── Transaction Type + Amount ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                                <FileText size={11} className="text-slate-400" />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Transaction</span>
-                            </div>
-                            <div className="p-3 grid grid-cols-2 gap-x-4">
-                                <div>
-                                    <label className={labelCls}>Transaction Type</label>
-                                    <Select value={formData.transactionType} onChange={v => updateField('transactionType', v)}
-                                        className="w-full sv-sel" style={{ height: 28 }}>
-                                        <Option value="deposit">Deposit (Receipt)</Option>
-                                        <Option value="withdrawal">Withdrawal (Payment)</Option>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <label className={labelCls}>Amount (₹) <span className="text-rose-500">*</span></label>
-                                    <div className="relative">
-                                        <IndianRupee size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <Input
-                                            type="number"
-                                            value={formData.amount}
-                                            onChange={e => updateField('amount', e.target.value)}
-                                            placeholder="0.00"
-                                            className={`${inputCls} pl-6 text-right font-bold ${formData.transactionType === 'deposit' ? 'text-emerald-700 bg-emerald-50/50 border-emerald-200' : 'text-rose-700 bg-rose-50/50 border-rose-200'}`}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ── Mode of Payment ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
-                                <div className="flex items-center gap-1.5">
-                                    <Banknote size={11} className="text-slate-400" />
-                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Mode of Payment</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                                        <span className="fz-mini font-black text-slate-500 uppercase">Actual Amt</span>
-                                        <span className="fz-tiny font-black text-slate-700">₹{formData.actualAmount.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                                        <span className="fz-mini font-black text-slate-500 uppercase">{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'}</span>
-                                        <span className={`fz-tiny font-black ${formData.bankBal < 0 ? 'text-rose-600' : 'text-slate-700'}`}>₹{formData.bankBal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-3">
-                                <div className="flex gap-2">
-                                    {['cash', 'bank'].map(mode => (
-                                        <button key={mode} onClick={() => updateField('paymentMode', mode)}
-                                            className={`h-7 px-4 rounded-lg fz-tiny font-black uppercase tracking-wide transition-all border ${
-                                                formData.paymentMode === mode
-                                                    ? mode === 'cash' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-blue-600 text-white border-blue-500'
-                                                    : 'bg-white text-slate-500 border-slate-300 hover:border-slate-400'
-                                            }`}>
-                                            {mode.toUpperCase()}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {formData.paymentMode === 'bank' && (
-                                    <div className="mt-3 pt-3 border-t border-slate-100">
-                                        <p className="fz-mini font-black text-slate-500 uppercase tracking-widest mb-2">Cheque Details</p>
-                                        <div className="grid grid-cols-4 gap-x-4">
-                                            <div>
-                                                <label className={labelCls}>Bank A/C</label>
-                                                <Select value={formData.bankCode || undefined} onChange={v => updateField('bankCode', v)}
-                                                    className="w-full sv-sel" style={{ height: 28 }} placeholder="Select bank..."
-                                                    showSearch optionFilterProp="children">
-                                                    {bankAccounts.map(b => <Option key={b.code} value={b.code}>{b.code} — {b.name}</Option>)}
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className={labelCls}>Cheque Date</label>
-                                                <DatePicker
-                                                    value={formData.chequeDate ? dayjs(formData.chequeDate) : null}
-                                                    onChange={d => updateField('chequeDate', d)}
-                                                    className="w-full h-7 fz-caption sv-dp" format="DD-MMM-YY" />
-                                            </div>
-                                            <div>
-                                                <label className={labelCls}>Cheque No</label>
-                                                <Input value={formData.chequeNo} onChange={e => updateField('chequeNo', e.target.value)}
-                                                    placeholder="Cheque No..." className={inputCls} />
-                                            </div>
-                                            <div>
-                                                <label className={labelCls}>Drawee Bank</label>
-                                                <Input value={formData.bankName} onChange={e => updateField('bankName', e.target.value)}
-                                                    placeholder="Bank name..." className={inputCls} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* ── Transaction History ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                                <FileText size={11} className="text-slate-400" />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Transaction History</span>
-                            </div>
-                            <Table
-                                columns={historyColumns}
-                                dataSource={transactionHistory}
-                                pagination={false}
-                                size="small"
-                                className="sv-table"
-                                rowKey={(r, i) => `${r.voucherNo}-${i}`}
-                                scroll={{ y: 150 }}
-                                loading={isLoadingAccount}
-                                locale={{ emptyText: <span className="fz-tiny text-slate-400 py-4 block text-center font-bold uppercase">Enter A/C No to view history</span> }}
-                            />
-                        </div>
-
-                        {/* ── Mode of Operation + Operators (conditional) ── */}
-                        {(formData.modeOfOperation || formData.operators) && (
-                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                                <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                                    <Building2 size={11} className="text-slate-400" />
-                                    <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Account Operations</span>
-                                </div>
-                                <div className="p-3 grid grid-cols-2 gap-x-4">
-                                    <div>
-                                        <label className={labelCls}>Mode of Operation</label>
-                                        <div className="h-7 flex items-center px-2 bg-slate-50 border border-slate-200 rounded fz-caption font-semibold text-slate-700">
-                                            {formData.modeOfOperation || '—'}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className={labelCls}>Operators</label>
-                                        <div className="h-7 flex items-center px-2 bg-slate-50 border border-slate-200 rounded fz-caption font-semibold text-slate-700">
-                                            {formData.operators || '—'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* ── Narration ── */}
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5">
-                                <FileText size={11} className="text-slate-400" />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Narration <span className="text-rose-500">*</span></span>
-                            </div>
-                            <div className="p-3">
-                                <TextArea value={formData.narration} onChange={e => updateField('narration', e.target.value)}
-                                    placeholder="Enter narration…" rows={2}
-                                    className="fz-small font-medium bg-slate-50 border-slate-200 rounded resize-none" />
-                            </div>
-                        </div>
-
-                    </div>
+                <div className="aw-actions">
+                    <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Reset</button>
+                    <button type="button" onClick={handleSave} disabled={isLoading} className="aw-btn aw-btn-primary">
+                        {isLoading ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />}
+                        {isLoading ? 'Saving…' : 'Save'}
+                    </button>
+                    <button type="button" onClick={onExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
                 </div>
-
-                {/* Footer */}
-                <div className="sv-footer px-3 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-1.5">
-                        <Building2 size={9} className="text-slate-400" />
-                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Saving Voucher</span>
-                        {formData.accountNo && (
-                            <>
-                                <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="fz-mini font-black text-indigo-500">A/C: {formData.accountNo}</span>
-                            </>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1 text-indigo-500">
-                        <Calendar size={9} />
-                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
-                    </div>
-                </div>
-
             </div>
 
-            <style>{`
-                .sv-table .ant-table-thead > tr > th { background: #f8fafc !important; padding: 5px 10px !important; border-bottom: 1px solid #e2e8f0 !important; }
-                .sv-table .ant-table-tbody > tr > td { padding: 3px 8px !important; border-bottom: 1px solid #f1f5f9 !important; }
-                .sv-sel .ant-select-selector { height: 28px !important; min-height: 28px !important; font-size: 11px !important; font-weight: 600 !important; }
-                .sv-sel .ant-select-selection-item { line-height: 26px !important; font-size: 11px !important; }
-                .sv-dp .ant-picker-input > input { font-size: 11px !important; font-weight: 600 !important; }
-                .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
-                input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-                input[type=number] { -moz-appearance: textfield; }
+            <div className="aw-content">
+                <div className="aw-stack">
+                    {lastSaved && (
+                        <div className="aw-alert aw-alert-success aw-fade-in" style={{ alignItems: 'center' }} role="status">
+                            <span style={{ flex: 1 }}>
+                                Saved — {lastSaved.type === 'deposit' ? 'Deposit' : 'Withdrawal'} <strong>{lastSaved.voucherNo}</strong> &nbsp;|&nbsp;
+                                A/C No <strong>{lastSaved.accountNo}</strong> &nbsp;|&nbsp;
+                                Amount <strong>₹{fmt(lastSaved.amount)}</strong>
+                            </span>
+                            <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary aw-btn-sm"><RotateCcw size={11} /> New</button>
+                        </div>
+                    )}
 
-                /* ── Dark mode ── */
-                html.dark .sv-root { background-color: #000000 !important; color: #f5f5f7 !important; }
-                html.dark .sv-header { background-image: none !important; background-color: #0c0c0e !important; border-bottom: 1px solid rgba(255,255,255,.08) !important; }
-                html.dark .sv-root .bg-white { background-color: #1c1c1e !important; }
-                html.dark .sv-root .bg-slate-50,
-                html.dark .sv-root .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
-                html.dark .sv-root .border-slate-200,
-                html.dark .sv-root .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
-                html.dark .sv-root .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
-                html.dark .sv-root .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
-                html.dark .sv-root .text-slate-900,
-                html.dark .sv-root .text-slate-800,
-                html.dark .sv-root .text-slate-700 { color: #f5f5f7 !important; }
-                html.dark .sv-root .text-slate-600,
-                html.dark .sv-root .text-slate-500 { color: #8e8e93 !important; }
-                html.dark .sv-root .text-slate-400 { color: #71717a !important; }
-                html.dark .sv-root label { color: #8e8e93 !important; }
-                html.dark .sv-root .text-emerald-600,
-                html.dark .sv-root .text-emerald-800,
-                html.dark .sv-root .text-emerald-500,
-                html.dark .sv-root .text-emerald-700 { color: #34d399 !important; }
-                html.dark .sv-root .text-rose-500,
-                html.dark .sv-root .text-rose-600,
-                html.dark .sv-root .text-rose-700 { color: #ff453a !important; }
-                html.dark .sv-root .bg-emerald-50,
-                html.dark .sv-root .bg-emerald-50\\/50 { background-color: rgba(52,211,153,.12) !important; }
-                html.dark .sv-root .border-emerald-200 { border-color: rgba(52,211,153,.3) !important; }
-                html.dark .sv-root .bg-rose-50\\/50 { background-color: rgba(255,69,58,.12) !important; }
-                html.dark .sv-root .border-rose-200 { border-color: rgba(255,69,58,.3) !important; }
-                html.dark .sv-root .text-indigo-700,
-                html.dark .sv-root .text-indigo-500 { color: #60a5fa !important; }
-                html.dark .sv-root .text-violet-700 { color: #c4b5fd !important; }
-                /* inactive white buttons */
-                html.dark .sv-root button.bg-white { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-                /* footer strip */
-                html.dark .sv-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-                /* antd inputs / selects / pickers */
-                html.dark .sv-root .ant-input,
-                html.dark .sv-root input.ant-input,
-                html.dark .sv-root textarea.ant-input,
-                html.dark .sv-root .ant-picker,
-                html.dark .sv-root .ant-select-selector {
-                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-                }
-                html.dark .sv-root .ant-select-selection-item,
-                html.dark .sv-root .ant-select-selection-search-input,
-                html.dark .sv-root .ant-picker input { color: #f5f5f7 !important; }
-                html.dark .sv-root .ant-select-selection-placeholder,
-                html.dark .sv-root .ant-input::placeholder,
-                html.dark .sv-root .ant-picker input::placeholder { color: #71717a !important; }
-                html.dark .sv-root .ant-select-arrow,
-                html.dark .sv-root .ant-picker-suffix { color: #8e8e93 !important; }
-                /* table */
-                html.dark .sv-table .ant-table,
-                html.dark .sv-table .ant-table-container { background-color: #1c1c1e !important; color: #f5f5f7 !important; }
-                html.dark .sv-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-bottom-color: rgba(255,255,255,.07) !important; }
-                html.dark .sv-table .ant-table-tbody > tr > td { background-color: #1c1c1e !important; color: #f5f5f7 !important; border-bottom-color: rgba(255,255,255,.07) !important; }
-                html.dark .sv-table .ant-table-tbody > tr:hover > td { background: rgba(255,255,255,.05) !important; }
-                html.dark .sv-table .ant-table-placeholder .ant-table-cell,
-                html.dark .sv-table .ant-empty-description { background-color: #1c1c1e !important; color: #71717a !important; }
-                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
-                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
-                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
-            `}</style>
-        </ConfigProvider>
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><Hash size={14} /></span>
+                            <h2 className="aw-card-title">Account</h2>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 3fr) minmax(170px, 1fr)', gap: 'var(--aw-gap)', alignItems: 'start' }}>
+                            <div>
+                                <label className="aw-label" htmlFor="sv-acc">A/C No <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
+                                {/* BUG FIX 21: was a plain text box — you had to already know the exact
+                                    account number by heart, no way to browse or search. Now an
+                                    AutoComplete: type to filter by account no or member no, pick from
+                                    the list, or still just type the full number directly like before. */}
+                                <div className="aw-input-wrap has-action">
+                                    <AutoComplete
+                                        value={formData.accountNo}
+                                        options={sbAccounts.map(a => ({
+                                            value: a.accountNo,
+                                            label: `${a.accountNo} — Member ${a.memberNo} — ₹${a.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+                                        }))}
+                                        filterOption={(input, option) =>
+                                            (option?.value as string ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                                            (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+                                        }
+                                        onChange={value => {
+                                            updateField('accountNo', value);
+                                            if (value.length >= 3) handleAccountNoChange(value);
+                                        }}
+                                        onSelect={value => handleAccountNoChange(String(value))}
+                                        className="aw-select"
+                                        popupClassName="aw-select-popup"
+                                        popupMatchSelectWidth={360}
+                                    >
+                                        <input id="sv-acc" placeholder="Enter or pick an account number..." style={{ fontFamily: 'monospace', fontWeight: 700 }} />
+                                    </AutoComplete>
+                                    {isLoadingAccount && <span className="aw-input-action" aria-hidden><span className="aw-spin" /></span>}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="aw-label" htmlFor="sv-date">Trans Date</label>
+                                <DatePicker id="sv-date" value={formData.transDate ? dayjs(formData.transDate) : null}
+                                    onChange={d => updateField('transDate', d)}
+                                    className="aw-picker" popupClassName="aw-select-popup" format="DD-MMM-YY" />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><IndianRupee size={14} /></span>
+                            <h2 className="aw-card-title">Account Balances</h2>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--aw-gap)' }}>
+                            {[
+                                { label: 'Current Balance', val: formData.currentBalance, tone: '' },
+                                { label: 'Minimum Balance', val: formData.minimumBalance, tone: '' },
+                                { label: 'Unpass Cr.', val: formData.unpassCr, tone: 'var(--aw-success)' },
+                                { label: 'Unpass Dr.', val: formData.unpassDr, tone: 'var(--aw-danger)' },
+                                { label: 'Available Bal', val: formData.availableBalance, tone: 'var(--aw-accent)' },
+                                { label: 'Withdrawable', val: formData.withdrawableBalance, tone: 'var(--aw-accent)' },
+                            ].map(item => (
+                                <div key={item.label} className="aw-panel" style={{ textAlign: 'center', padding: '10px 8px' }}>
+                                    <span className="aw-label" style={{ marginBottom: 4 }}>{item.label}</span>
+                                    <p className="aw-strong" style={item.tone ? { color: item.tone } : undefined}>₹{item.val.toFixed(2)}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><FileText size={14} /></span>
+                            <h2 className="aw-card-title">Transaction</h2>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--aw-gap)' }}>
+                            <div>
+                                <label className="aw-label" htmlFor="sv-type">Transaction Type</label>
+                                <Select id="sv-type" value={formData.transactionType} onChange={v => updateField('transactionType', v)}
+                                    className="aw-select" popupClassName="aw-select-popup"
+                                    options={[
+                                        { value: 'deposit', label: 'Deposit (Receipt)' },
+                                        { value: 'withdrawal', label: 'Withdrawal (Payment)' },
+                                    ]} />
+                            </div>
+                            <div>
+                                <label className="aw-label" htmlFor="sv-amt">Amount (₹) <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
+                                <input id="sv-amt" type="number" value={formData.amount} onChange={e => updateField('amount', e.target.value)}
+                                    placeholder="0.00" className="aw-input is-right"
+                                    style={{ fontWeight: 700, color: isDeposit ? 'var(--aw-success)' : 'var(--aw-danger)' }} />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><Banknote size={14} /></span>
+                            <h2 className="aw-card-title">Mode of Payment</h2>
+                            <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
+                                <span className="aw-pill">Actual Amt ₹{formData.actualAmount.toFixed(2)}</span>
+                                <span className={`aw-pill ${formData.bankBal < 0 ? 'tone-danger' : ''}`}>{formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'} ₹{fmt(formData.bankBal)}</span>
+                            </span>
+                        </div>
+                        <div className="aw-seg" role="tablist" style={{ maxWidth: 240, ['--seg-index' as any]: formData.paymentMode === 'bank' ? 1 : 0, ['--seg-count' as any]: 2 }}>
+                            {['cash', 'bank'].map(mode => (
+                                <button key={mode} type="button" role="tab" aria-selected={formData.paymentMode === mode} onClick={() => updateField('paymentMode', mode)}>
+                                    {mode.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+
+                        {formData.paymentMode === 'bank' && (
+                            <div className="aw-panel aw-fade-in">
+                                <span className="aw-label">Cheque Details</span>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 'var(--aw-gap)' }}>
+                                    <div>
+                                        <label className="aw-label" htmlFor="sv-bank">Bank A/C</label>
+                                        <Select id="sv-bank" value={(formData.bankCode || undefined) as string} onChange={v => updateField('bankCode', v)}
+                                            className="aw-select" popupClassName="aw-select-popup" placeholder="Select bank..."
+                                            showSearch optionFilterProp="label"
+                                            options={bankAccounts.map(b => ({ value: b.code, label: `${b.code} — ${b.name}` }))} />
+                                    </div>
+                                    <div>
+                                        <label className="aw-label" htmlFor="sv-cdate">Cheque Date</label>
+                                        <DatePicker id="sv-cdate" value={formData.chequeDate ? dayjs(formData.chequeDate) : null}
+                                            onChange={d => updateField('chequeDate', d)}
+                                            className="aw-picker" popupClassName="aw-select-popup" format="DD-MMM-YY" />
+                                    </div>
+                                    <div>
+                                        <label className="aw-label" htmlFor="sv-cno">Cheque No</label>
+                                        <input id="sv-cno" value={formData.chequeNo} onChange={e => updateField('chequeNo', e.target.value)} placeholder="Cheque No..." className="aw-input" />
+                                    </div>
+                                    <div>
+                                        <label className="aw-label" htmlFor="sv-dbank">Drawee Bank</label>
+                                        <input id="sv-dbank" value={formData.bankName} onChange={e => updateField('bankName', e.target.value)} placeholder="Bank name..." className="aw-input" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><FileText size={14} /></span>
+                            <h2 className="aw-card-title">Transaction History</h2>
+                        </div>
+                        <div className="aw-table-wrap" style={{ maxHeight: '30vh' }}>
+                            <table className="aw-table">
+                                <thead>
+                                    <tr>
+                                        <th>Trans Date</th>
+                                        <th>Voucher No</th>
+                                        <th>Acc Type</th>
+                                        <th>Trans Type</th>
+                                        <th className="is-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {isLoadingAccount && transactionHistory.length === 0 ? (
+                                        <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-spin" /></div></td></tr>
+                                    ) : transactionHistory.length === 0 ? (
+                                        <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">Enter A/C No to view history</span></div></td></tr>
+                                    ) : transactionHistory.map((r: TransactionHistoryRow, i: number) => (
+                                        <tr key={`${r.voucherNo}-${i}`}>
+                                            <td style={{ fontFamily: 'monospace' }}>{r.transDate}</td>
+                                            <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{r.voucherNo}</td>
+                                            <td className="is-muted" style={{ fontFamily: 'monospace' }}>{r.accType}</td>
+                                            <td className={r.transType === 'CR' ? 'is-success' : 'is-danger'} style={{ fontWeight: 700 }}>{r.transType}</td>
+                                            <td className="is-right">₹{r.amount.toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    {(formData.modeOfOperation || formData.operators) && (
+                        <section className="aw-card">
+                            <div className="aw-card-head">
+                                <span className="aw-card-icon"><Building2 size={14} /></span>
+                                <h2 className="aw-card-title">Account Operations</h2>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--aw-gap)' }}>
+                                <div>
+                                    <span className="aw-label">Mode of Operation</span>
+                                    <p className="aw-strong">{formData.modeOfOperation || '—'}</p>
+                                </div>
+                                <div>
+                                    <span className="aw-label">Operators</span>
+                                    <p className="aw-strong">{formData.operators || '—'}</p>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    <section className="aw-card">
+                        <label className="aw-label" htmlFor="sv-narr">Narration <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
+                        <textarea id="sv-narr" value={formData.narration} onChange={e => updateField('narration', e.target.value)}
+                            placeholder="Enter narration…" rows={2}
+                            className="aw-input" style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
+                    </section>
+                </div>
+            </div>
+
+            <div className="aw-footer">
+                <span>Saving Voucher{formData.accountNo && <> · <strong style={{ color: 'var(--aw-accent)' }}>A/C: {formData.accountNo}</strong></>}</span>
+                <span>{dayjs().format('DD-MMM-YY')}</span>
+            </div>
+        </div>
     );
 };
 

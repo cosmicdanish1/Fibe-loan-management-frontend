@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { message, Spin } from 'antd';
-import { Printer, User, Calendar, IndianRupee, RotateCcw, Hash, Share2, ArrowRightLeft, Building } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { message } from 'antd';
+import { Printer, User, Calendar, IndianRupee, RotateCcw, Hash, Share2, ArrowRightLeft, Building, RefreshCw } from 'lucide-react';
 import dayjs from 'dayjs';
 import apiService from '../../../../../services/api';
 
@@ -23,14 +22,11 @@ const BLANK: ShareCertificateForm = {
   certificateNo: '', distFromNo: '', distUptoNo: '',
 };
 
-const inputCls = (hasIcon = false) =>
-  `w-full h-10 bg-slate-700 border border-slate-600 text-white rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition-colors ${hasIcon ? 'pl-9 pr-3' : 'px-3'}`;
-
-const Field: React.FC<{ label: string; icon?: React.ReactNode; children: React.ReactNode }> = ({ label, icon, children }) => (
-  <div className="space-y-1.5">
-    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</label>
-    <div className="relative">
-      {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 z-10">{icon}</div>}
+const Field: React.FC<{ label: string; icon?: React.ReactNode; htmlFor?: string; children: React.ReactNode }> = ({ label, icon, htmlFor, children }) => (
+  <div>
+    <label className="aw-label" htmlFor={htmlFor}>{label}</label>
+    <div className={`aw-input-wrap ${icon ? 'has-icon' : ''}`}>
+      {icon}
       {children}
     </div>
   </div>
@@ -72,187 +68,151 @@ const ShareCertificatePrinting: React.FC = () => {
   const handleClear = () => { setForm(BLANK); setMemberName(''); };
 
   return (
-      <div className="scp-app h-screen flex flex-col overflow-hidden font-sans print:bg-white" style={{ background: 'var(--scp-page-bg)', color: 'var(--scp-text)' }}>
-
-        {/* Header */}
-        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="scp-header print:hidden px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700 bg-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="bg-emerald-600 p-2 rounded-xl shadow-lg shadow-emerald-500/30"><Share2 size={18} className="text-white" /></div>
-            <div>
-              <h1 className="text-sm font-black text-white uppercase">Share Certificate Printing</h1>
-              <p className="fz-small text-slate-400 mt-0.5">Enter share details and print the share certificate</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={handleClear}
-              className="h-9 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 active:scale-95">
-              <RotateCcw size={13} /> Clear
-            </button>
-            <button onClick={handlePrint}
-              className="h-9 px-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 active:scale-95">
-              <Printer size={13} /> Print Certificate
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Workspace */}
-        <div className="flex-1 overflow-hidden flex flex-col md:flex-row p-4 gap-4 print:p-0">
-
-          {/* Form Panel */}
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-            className="print:hidden md:w-[42%] overflow-auto space-y-4 pr-1">
-            <div className="scp-card rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-slate-700 flex items-center gap-2.5">
-                <Share2 size={15} className="text-emerald-400" />
-                <h2 className="text-xs font-black text-white uppercase tracking-wider">Share Details</h2>
-              </div>
-              <div className="p-5 space-y-4">
-
-                {/* Member No */}
-                <Field label="Member Number" icon={<User size={14} />}>
-                  <input value={form.memberNo} onChange={e => set('memberNo', e.target.value)}
-                    onBlur={fetchMemberData}
-                    suffix={fetching ? <Spin size="small" /> : undefined}
-                    placeholder="e.g. 1234" className={inputCls(true)} />
-                  {fetching && <div className="absolute right-3 top-1/2 -translate-y-1/2"><Spin size="small" /></div>}
-                  {memberName && <p className="text-xs font-bold text-emerald-400 mt-1.5">{memberName}</p>}
-                </Field>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Transaction Date" icon={<Calendar size={14} />}>
-                    <input type="date" value={form.transactionDate} onChange={e => set('transactionDate', e.target.value)}
-                      className={inputCls(true)} />
-                  </Field>
-                  <Field label="Certificate Date" icon={<Calendar size={14} />}>
-                    <input type="date" value={form.certificateDate} onChange={e => set('certificateDate', e.target.value)}
-                      className={inputCls(true)} />
-                  </Field>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Share Amount (₹)" icon={<IndianRupee size={14} />}>
-                    <input type="number" value={form.shareAmount} onChange={e => set('shareAmount', parseFloat(e.target.value) || 0)}
-                      className={inputCls(true)} />
-                  </Field>
-                  <Field label="Face Value / Share (₹)" icon={<IndianRupee size={14} />}>
-                    <input type="number" value={form.shareValue} onChange={e => set('shareValue', parseFloat(e.target.value) || 0)}
-                      className={`${inputCls(true)} text-center`} />
-                  </Field>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="No. of Shares">
-                    <input type="number" value={form.noOfShares} onChange={e => set('noOfShares', parseFloat(e.target.value) || 0)}
-                      className={`${inputCls()} text-center`} />
-                  </Field>
-                  <Field label="Certificate No." icon={<Hash size={14} />}>
-                    <input value={form.certificateNo} onChange={e => set('certificateNo', e.target.value)}
-                      className={`${inputCls(true)} font-mono text-emerald-300`} />
-                  </Field>
-                </div>
-
-                <div className="pt-3 border-t border-slate-700 border-dashed">
-                  <p className="text-xs text-slate-500 mb-3 font-semibold">Share Sequence Range</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="From No.">
-                      <input value={form.distFromNo} onChange={e => set('distFromNo', e.target.value)}
-                        className={inputCls()} placeholder="001" />
-                    </Field>
-                    <Field label="Upto No.">
-                      <input value={form.distUptoNo} onChange={e => set('distUptoNo', e.target.value)}
-                        className={inputCls()} placeholder="100" />
-                    </Field>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Certificate Preview */}
-          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-            className="scp-preview-wrap print:hidden md:w-[58%] flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/40">
-            <p className="fz-small text-slate-500 uppercase tracking-widest mb-4 font-bold">Certificate Preview</p>
-            <div className="w-full max-w-md bg-white shadow-2xl rounded-sm overflow-hidden p-10 border-8 border-double border-slate-800 relative">
-              <div className="absolute inset-2 border border-slate-100 pointer-events-none opacity-40" />
-              <div className="relative z-10 text-slate-900">
-                <div className="text-center mb-7 pb-7 border-b border-slate-100">
-                  <div className="bg-slate-900 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-xl">
-                    <Building size={22} className="text-white" />
-                  </div>
-                  <h1 className="text-lg font-black tracking-widest uppercase">Share Certificate</h1>
-                  <p className="fz-tiny font-black text-slate-400 uppercase tracking-widest">Co-operative Credit Society</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-y-6 gap-x-8 fz-caption">
-                  <div className="col-span-2 flex justify-between items-end border-b border-slate-100 pb-3">
-                    <div>
-                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Serial Number</span>
-                      <p className="font-mono text-lg font-black text-slate-900">{form.certificateNo || 'SH-REF-000'}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Member</span>
-                      <p className="font-black text-indigo-600 italic">{form.memberNo || '—'}</p>
-                      {memberName && <p className="fz-small font-bold text-slate-600">{memberName}</p>}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Total Capital</span>
-                      <p className="text-2xl font-black text-slate-900">₹ {form.shareAmount.toLocaleString('en-IN')}</p>
-                    </div>
-                    <div className="flex gap-5">
-                      <div>
-                        <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Units</span>
-                        <p className="font-black text-slate-900 text-base">{form.noOfShares || '—'}</p>
-                      </div>
-                      <div>
-                        <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Face Value</span>
-                        <p className="font-black text-slate-900 text-base">₹ {form.shareValue}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 pl-6 border-l border-slate-100">
-                    <div>
-                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Share Range</span>
-                      <div className="flex items-center gap-2 font-black text-indigo-600">
-                        {form.distFromNo || '000'} <ArrowRightLeft size={12} /> {form.distUptoNo || '000'}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest block">Certified On</span>
-                      <p className="font-black text-slate-900 fz-small uppercase">
-                        {form.certificateDate ? dayjs(form.certificateDate).format('DD MMM YYYY') : 'PENDING'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-14 flex justify-between px-3">
-                  <div className="text-center"><div className="w-28 h-px bg-slate-200 mb-1.5" /><span className="fz-mini font-black text-slate-400 uppercase">Official Seal</span></div>
-                  <div className="text-center"><div className="w-28 h-px bg-slate-900 mb-1.5" /><span className="fz-mini font-black text-slate-900 uppercase">Managing Director</span></div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+    <div className="app-window">
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient aw-noprint">
+        <div className="min-w-0">
+          <h1 className="aw-title">Share Certificate Printing</h1>
+          <p className="aw-desc">Enter share details and print the share certificate</p>
         </div>
-
-        <style>{`
-          .scp-app { --scp-page-bg: #f8fafc; --scp-surface: #ffffff; --scp-surface-alt: #f1f5f9; --scp-border: #dbe4ee; --scp-text: #172033; --scp-muted: #526278; }
-          .scp-header, .scp-card { background: var(--scp-surface) !important; border-color: var(--scp-border) !important; }
-          .scp-header > div:first-child .text-white, .scp-card .text-white { color: var(--scp-text) !important; }
-          .scp-header .text-slate-400, .scp-card .text-slate-400, .scp-card .text-slate-500, .scp-preview-wrap > p.text-slate-500 { color: var(--scp-muted) !important; }
-          .scp-header button.bg-slate-700 { background: var(--scp-surface-alt) !important; color: var(--scp-text) !important; border: 1px solid var(--scp-border) !important; }
-          .scp-card input { background: var(--scp-surface) !important; color: var(--scp-text) !important; border-color: var(--scp-border) !important; }
-          .scp-card input.text-emerald-300 { color: #047857 !important; }
-          .scp-card label { color: var(--scp-muted) !important; }
-          .scp-preview-wrap { background: var(--scp-surface-alt) !important; border-color: var(--scp-border) !important; }
-          html.dark .scp-app { --scp-page-bg: #0e1116; --scp-surface: #151a21; --scp-surface-alt: #1c2530; --scp-border: #232b36; --scp-text: #e6e9ef; --scp-muted: #8b95a5; }
-          html.dark .scp-app .text-emerald-400 { color: #34d399 !important; }
-        `}</style>
+        <div className="aw-actions">
+          <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary">
+            <RotateCcw size={13} /> Clear
+          </button>
+          <button type="button" onClick={handlePrint} className="aw-btn aw-btn-primary">
+            <Printer size={13} /> Print Certificate
+          </button>
+        </div>
       </div>
+
+      <div className="aw-content">
+        <div className="aw-split aw-split-form" style={{ gridTemplateColumns: 'minmax(300px, 5fr) minmax(0, 7fr)' }}>
+
+          {/* ── Form panel ── */}
+          <div className="aw-side aw-noprint">
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Share2 size={14} /></span>
+                <h2 className="aw-card-title">Share Details</h2>
+              </div>
+              <div className="aw-stack">
+                <div>
+                  <Field label="Member Number" icon={<User size={13} />} htmlFor="scp-member">
+                    <input id="scp-member" value={form.memberNo} onChange={e => set('memberNo', e.target.value)}
+                      onBlur={fetchMemberData} placeholder="e.g. 1234" className="aw-input" />
+                  </Field>
+                  {fetching && (
+                    <p className="aw-meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}><RefreshCw size={11} className="aw-spin" /> Looking up…</p>
+                  )}
+                  {memberName && <p className="aw-strong aw-fade-in" style={{ marginTop: 6, color: 'var(--aw-accent)' }}>{memberName}</p>}
+                </div>
+
+                <div className="aw-two">
+                  <Field label="Transaction Date" icon={<Calendar size={13} />} htmlFor="scp-tdate">
+                    <input id="scp-tdate" type="date" value={form.transactionDate} onChange={e => set('transactionDate', e.target.value)} className="aw-input" />
+                  </Field>
+                  <Field label="Certificate Date" icon={<Calendar size={13} />} htmlFor="scp-cdate">
+                    <input id="scp-cdate" type="date" value={form.certificateDate} onChange={e => set('certificateDate', e.target.value)} className="aw-input" />
+                  </Field>
+                </div>
+
+                <div className="aw-two">
+                  <Field label="Share Amount (₹)" icon={<IndianRupee size={13} />} htmlFor="scp-amt">
+                    <input id="scp-amt" type="number" value={form.shareAmount} onChange={e => set('shareAmount', parseFloat(e.target.value) || 0)} className="aw-input" />
+                  </Field>
+                  <Field label="Face Value / Share (₹)" icon={<IndianRupee size={13} />} htmlFor="scp-face">
+                    <input id="scp-face" type="number" value={form.shareValue} onChange={e => set('shareValue', parseFloat(e.target.value) || 0)} className="aw-input" style={{ textAlign: 'center' }} />
+                  </Field>
+                </div>
+
+                <div className="aw-two">
+                  <Field label="No. of Shares" htmlFor="scp-no">
+                    <input id="scp-no" type="number" value={form.noOfShares} onChange={e => set('noOfShares', parseFloat(e.target.value) || 0)} className="aw-input" style={{ textAlign: 'center' }} />
+                  </Field>
+                  <Field label="Certificate No." icon={<Hash size={13} />} htmlFor="scp-cert">
+                    <input id="scp-cert" value={form.certificateNo} onChange={e => set('certificateNo', e.target.value)} className="aw-input" style={{ fontFamily: 'monospace', color: 'var(--aw-success)' }} />
+                  </Field>
+                </div>
+
+                <div style={{ paddingTop: 'var(--aw-gap)', borderTop: '1px dashed var(--aw-border-strong)' }}>
+                  <p className="aw-label">Share Sequence Range</p>
+                  <div className="aw-two">
+                    <Field label="From No." htmlFor="scp-from">
+                      <input id="scp-from" value={form.distFromNo} onChange={e => set('distFromNo', e.target.value)} className="aw-input" placeholder="001" />
+                    </Field>
+                    <Field label="Upto No." htmlFor="scp-upto">
+                      <input id="scp-upto" value={form.distUptoNo} onChange={e => set('distUptoNo', e.target.value)} className="aw-input" placeholder="100" />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* ── Certificate preview (the paper itself stays white and dark-inked in both themes) ── */}
+          <div className="aw-card aw-noprint" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', minWidth: 0 }}>
+            <p className="aw-label">Certificate Preview</p>
+            <div style={{ width: '100%', maxWidth: 440, background: '#ffffff', color: '#0f172a', boxShadow: '0 12px 40px rgba(0,0,0,.18)', borderRadius: 2, padding: 36, border: '8px double #1e293b', position: 'relative' }}>
+              <div style={{ position: 'absolute', inset: 8, border: '1px solid #e2e8f0', pointerEvents: 'none', opacity: .5 }} />
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div style={{ textAlign: 'center', marginBottom: 26, paddingBottom: 26, borderBottom: '1px solid #e2e8f0' }}>
+                  <div style={{ background: '#0f172a', width: 48, height: 48, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <Building size={22} color="#fff" />
+                  </div>
+                  <h1 style={{ fontSize: 18, fontWeight: 900, letterSpacing: '.18em', textTransform: 'uppercase', margin: 0 }}>Share Certificate</h1>
+                  <p style={{ fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '.16em', textTransform: 'uppercase', margin: 0 }}>Co-operative Credit Society</p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 22, columnGap: 28, fontSize: 12 }}>
+                  <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
+                    <div>
+                      <span style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '.14em', textTransform: 'uppercase' }}>Serial Number</span>
+                      <p style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 900, margin: 0 }}>{form.certificateNo || 'SH-REF-000'}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '.14em', textTransform: 'uppercase' }}>Member</span>
+                      <p style={{ fontWeight: 900, color: '#4f46e5', fontStyle: 'italic', margin: 0 }}>{form.memberNo || '—'}</p>
+                      {memberName && <p style={{ fontSize: 11, fontWeight: 700, color: '#475569', margin: 0 }}>{memberName}</p>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <span style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '.14em', textTransform: 'uppercase' }}>Total Capital</span>
+                    <p style={{ fontSize: 24, fontWeight: 900, margin: '0 0 14px' }}>₹ {form.shareAmount.toLocaleString('en-IN')}</p>
+                    <div style={{ display: 'flex', gap: 20 }}>
+                      <div>
+                        <span style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '.14em', textTransform: 'uppercase' }}>Units</span>
+                        <p style={{ fontWeight: 900, fontSize: 15, margin: 0 }}>{form.noOfShares || '—'}</p>
+                      </div>
+                      <div>
+                        <span style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '.14em', textTransform: 'uppercase' }}>Face Value</span>
+                        <p style={{ fontWeight: 900, fontSize: 15, margin: 0 }}>₹ {form.shareValue}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ paddingLeft: 22, borderLeft: '1px solid #e2e8f0' }}>
+                    <span style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '.14em', textTransform: 'uppercase' }}>Share Range</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 900, color: '#4f46e5', marginBottom: 14 }}>
+                      {form.distFromNo || '000'} <ArrowRightLeft size={12} /> {form.distUptoNo || '000'}
+                    </div>
+                    <span style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '.14em', textTransform: 'uppercase' }}>Certified On</span>
+                    <p style={{ fontWeight: 900, fontSize: 11, textTransform: 'uppercase', margin: 0 }}>
+                      {form.certificateDate ? dayjs(form.certificateDate).format('DD MMM YYYY') : 'PENDING'}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 52, display: 'flex', justifyContent: 'space-between', padding: '0 12px' }}>
+                  <div style={{ textAlign: 'center' }}><div style={{ width: 110, height: 1, background: '#e2e8f0', marginBottom: 6 }} /><span style={{ fontSize: 9, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase' }}>Official Seal</span></div>
+                  <div style={{ textAlign: 'center' }}><div style={{ width: 110, height: 1, background: '#0f172a', marginBottom: 6 }} /><span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase' }}>Managing Director</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

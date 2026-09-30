@@ -55,8 +55,7 @@ const MemberLoanDetail: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(20);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   useEffect(() => {
     apiService.getLoanTypes().then((res: any) => {

@@ -16,7 +16,7 @@ const LicenseExpired: React.FC = () => {
           Your software license has expired and the grace period has ended.
         </p>
         <p className="text-slate-400 text-sm mb-10">
-          Access to the Loan Management System has been locked.
+          Access to Fibe Loan Management has been locked.
           Please contact your administrator to renew your license.
         </p>
 
@@ -40,7 +40,7 @@ const LicenseExpired: React.FC = () => {
         </div>
 
         <p className="text-slate-600 text-xs mt-8">
-          Paper White Technology - Loan Management System
+          Paper White Technology - LMS
         </p>
       </div>
     </div>

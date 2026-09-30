@@ -174,7 +174,7 @@ const SplashScreen: React.FC<Props> = ({ onDone }) => {
         fontFamily: 'system-ui, sans-serif',
         margin: 0,
       }}>
-        Fibe Loan Management System
+        Fibe Loan Management
       </p>
     </div>
   );

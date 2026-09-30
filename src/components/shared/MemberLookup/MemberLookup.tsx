@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Input, Table, Badge, Button, Empty, message, Typography } from 'antd';
-import { SearchOutlined, UserOutlined, LoadingOutlined } from '@ant-design/icons';
-import { API_ROUTES, API_BASE_URL, getApiBaseUrl } from '../../../services/apiVersionConfig';
-
-const { Text } = Typography;
+import { message } from 'antd';
+import { Search, Users, RotateCcw } from 'lucide-react';
+import { API_ROUTES, getApiBaseUrl } from '../../../services/apiVersionConfig';
 
 interface Member {
     memberNo: string;
@@ -27,7 +25,7 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
     const [members, setMembers] = useState<Member[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const inputRef = useRef<any>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     // Tracks the in-flight request so a slower, stale response (e.g. from a
     // search term the user already changed) can never overwrite a newer one.
     const abortRef = useRef<AbortController | null>(null);
@@ -115,168 +113,101 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
         }
     };
 
-    const columns = React.useMemo(() => [
-        {
-            title: 'MB NO',
-            dataIndex: 'memberNo',
-            key: 'memberNo',
-            width: 120,
-            render: (text: string) => <Text className="font-bold text-indigo-600 tracking-tight">{text}</Text>,
-        },
-        {
-            title: 'MEMBER NAME',
-            dataIndex: 'memberName',
-            key: 'memberName',
-            width: 250,
-            render: (text: string) => <Text className="font-semibold text-slate-800 uppercase fz-caption truncate block">{text}</Text>,
-        },
-        {
-            title: 'ACCOUNT NO',
-            key: 'accountNo',
-            width: 120,
-            render: (_: any, record: Member) => (
-                <Text className="text-slate-500 font-mono fz-caption">{record.memberNo}</Text>
-            ),
-        },
-        {
-            title: 'OFFICE / UNIT',
-            dataIndex: 'officeName',
-            key: 'officeName',
-            width: 200,
-            render: (text: string, record: Member) => (
-                <div className="flex flex-col">
-                    <Text className="fz-caption text-slate-700 font-bold uppercase truncate">{text || 'GENERAL OFFICE'}</Text>
-                    <Text className="fz-tiny text-slate-400 font-medium tracking-tighter">OFFICE CODE: {record.officeNo}</Text>
-                </div>
-            ),
-        },
-    ], []);
+    const body = (
+        <>
+            <div className="aw-input-wrap has-icon" style={{ flex: 'none' }}>
+                <Search size={13} />
+                <input
+                    ref={inputRef}
+                    aria-label="Search members"
+                    placeholder="Search by Member No, Name or Office..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="aw-input"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                            isModal ? onClose?.() : window.close();
+                        }
+                        if (e.key === 'Enter' && members.length > 0 && members[0]) {
+                            handleSelect(members[0]);
+                        }
+                    }}
+                />
+            </div>
 
-    return (
-        <div className={`flex flex-col bg-white overflow-hidden ${isModal ? 'h-[70vh]' : 'h-screen'}`}>
-            {/* Header - Modern Light Theme */}
-            {!isModal && (
-                <div className="bg-white border-b border-slate-200 px-5 py-3.5 flex items-center justify-between shadow-sm">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
-                            <UserOutlined className="text-indigo-600 text-xl" />
-                        </div>
-                        <div>
-                            <h1 className="text-base font-black text-slate-800 tracking-tight m-0 leading-none">MEMBER DIRECTORY</h1>
-                            <div className="flex items-center gap-2 mt-1">
-                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                                <span className="fz-small text-slate-400 font-bold uppercase tracking-widest">Live Lookup System</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Badge
-                            count={`${members.length} Members`}
-                            style={{ backgroundColor: '#EEF2FF', color: '#4F46E5', fontWeight: 800, fontSize: '10px' }}
-                        />
-                    </div>
+            {error ? (
+                <div className="aw-empty" style={{ padding: 32 }}>
+                    <p className="aw-strong" style={{ color: 'var(--aw-danger)' }}>{error}</p>
+                    <button type="button" className="aw-btn aw-btn-primary aw-btn-sm" onClick={() => fetchMembers(searchTerm)}>
+                        <RotateCcw size={12} /> Retry Connection
+                    </button>
+                </div>
+            ) : (
+                <div className="aw-table-wrap" style={{ flex: 1, minHeight: 0 }}>
+                    <table className="aw-table" style={{ minWidth: 640 }}>
+                        <thead>
+                            <tr>
+                                <th style={{ width: 130 }}>MB NO</th>
+                                <th>Member Name</th>
+                                <th style={{ width: 130 }}>Account No</th>
+                                <th style={{ width: 220 }}>Office / Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoading && members.length === 0 ? (
+                                <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-spin" /></div></td></tr>
+                            ) : members.length === 0 ? (
+                                <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-meta">No members matching your search</span></div></td></tr>
+                            ) : members.map(record => (
+                                <tr key={record.memberNo} className="is-clickable" onClick={() => handleSelect(record)}>
+                                    <td className="is-accent" style={{ fontWeight: 700 }}>{record.memberNo}</td>
+                                    <td style={{ fontWeight: 600, textTransform: 'uppercase' }}>{record.memberName}</td>
+                                    <td className="is-muted" style={{ fontFamily: 'monospace' }}>{record.memberNo}</td>
+                                    <td>
+                                        <div style={{ fontWeight: 700, textTransform: 'uppercase' }}>{record.officeName || 'GENERAL OFFICE'}</div>
+                                        <div className="aw-meta">OFFICE CODE: {record.officeNo}</div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
 
-            {/* Search Bar Area */}
-            <div className="p-3 bg-slate-50 border-b border-slate-200">
-                <div className="relative group">
-                    <Input
-                        ref={inputRef}
-                        placeholder="Search by Member No, Name or Office..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        prefix={<SearchOutlined className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />}
-                        suffix={isLoading ? <LoadingOutlined className="text-blue-600" /> : null}
-                        className="h-10 rounded-xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                        onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                                isModal ? onClose?.() : window.close();
-                            }
-                            if (e.key === 'Enter' && members.length > 0 && members[0]) {
-                                handleSelect(members[0]);
-                            }
-                        }}
-                    />
+            <div className="aw-inline" style={{ flex: 'none', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="aw-meta">
+                    <strong>{members.length}</strong> Records Found
+                    {searchTerm && <> · Searching: {searchTerm}</>}
+                </span>
+                <span className="aw-meta" style={{ fontStyle: 'italic' }}>Tip: Double-click row to select • ESC to exit</span>
+            </div>
+        </>
+    );
+
+    if (isModal) {
+        return (
+            <div className="app-window" style={{ height: '70vh' }}>
+                <div className="aw-content" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--aw-gap)', overflow: 'hidden' }}>
+                    {body}
                 </div>
             </div>
+        );
+    }
 
-            {/* Table Area - Container should not scroll, only the table internally */}
-            <div className="flex-1 overflow-hidden bg-white">
-                {error ? (
-                    <div className="h-full flex items-center justify-center p-6">
-                        <Empty
-                            image={Empty.PRESENTED_IMAGE_SIMPLE}
-                            description={
-                                <div className="text-center">
-                                    <Text type="danger" className="font-medium">{error}</Text>
-                                    <br />
-                                    <Button type="primary" size="small" className="mt-4" onClick={() => fetchMembers(searchTerm)}>
-                                        Retry Connection
-                                    </Button>
-                                </div>
-                            }
-                        />
-                    </div>
-                ) : (
-                    <Table
-                        virtual
-                        dataSource={members}
-                        columns={columns}
-                        rowKey={(record) => record.memberNo}
-                        pagination={false}
-                        size="small"
-                        loading={isLoading && members.length === 0}
-                        onRow={(record) => ({
-                            onClick: () => handleSelect(record),
-                            className: 'cursor-pointer hover:bg-blue-50/50 transition-colors group',
-                        })}
-                        scroll={{ y: isModal ? '40vh' : 'calc(100vh - 180px)', x: 690 }}
-                        className="member-lookup-table compact-table"
-                        locale={{
-                            emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No members matching your search" />
-                        }}
-                    />
-                )}
-            </div>
-
-            {/* Footer Info Bar */}
-            <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Text className="fz-caption text-slate-500">
-                        <span className="font-bold text-slate-700">{members.length}</span> Records Found
-                    </Text>
-                    {searchTerm && (
-                        <Badge
-                            count={`Searching: ${searchTerm}`}
-                            style={{ backgroundColor: '#e2e8f0', color: '#475569', fontSize: '10px' }}
-                        />
-                    )}
+    return (
+        <div className="app-window">
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">Member Directory</h1>
+                    <p className="aw-desc">Live Lookup System</p>
                 </div>
-                <Text className="fz-small text-slate-400 font-medium italic">
-                    Tip: Double-click row to select • ESC to exit
-                </Text>
+                <div className="aw-actions">
+                    <span className="aw-pill tone-info"><Users size={12} /> {members.length} Members</span>
+                </div>
             </div>
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-        .member-lookup-table .ant-table-thead > tr > th {
-          background: #f8fafc !important;
-          font-size: 11px !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.025em !important;
-          padding: 10px 16px !important;
-          color: #64748b !important;
-          font-weight: 700 !important;
-          border-bottom: 2px solid #e2e8f0 !important;
-        }
-        .member-lookup-table .ant-table-tbody > tr > td {
-          padding: 8px 16px !important;
-          border-bottom: 1px solid #f1f5f9 !important;
-        }
-        .compact-table .ant-spin-nested-loading { height: 100%; }
-        .compact-table .ant-table { height: 100%; }
-      `}} />
+            <div className="aw-content" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--aw-gap)', overflow: 'hidden' }}>
+                {body}
+            </div>
         </div>
     );
 };

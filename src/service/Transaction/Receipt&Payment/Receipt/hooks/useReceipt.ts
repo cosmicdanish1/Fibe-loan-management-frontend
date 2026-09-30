@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { ReceiptData, ReceiptHookReturn, ReceiptRow } from '../interfaces/interface';
 
@@ -44,20 +44,6 @@ export const useReceipt = (initialData?: Partial<ReceiptData>): ReceiptHookRetur
       amount: String(item.amount || '0')
     })) || []
   }));
-
-  // Memoize the total amount calculation
-  const totalAmount = useMemo(() => 
-    calculateTotalAmount(receiptData.items),
-    [receiptData.items]
-  );
-
-  // Update total amount whenever items change
-  const updateTotalAmount = useCallback((items: ReceiptRow[]) => {
-    setReceiptData(prev => ({
-      ...prev,
-      totalAmount: calculateTotalAmount(items)
-    }));
-  }, []);
 
   const handleAddRow = useCallback(() => {
     setReceiptData(prev => {

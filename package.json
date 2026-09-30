@@ -1,6 +1,6 @@
 {
   "name": "electron-react-ts",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "main": "dist/main/main.js",
   "scripts": {
     "predev": "node scripts/ensure-dist.js",
@@ -36,13 +36,13 @@
     "typescript",
     "vite"
   ],
-  "author": "Paperwhite Technology",
+  "author": "Paper White Technology",
   "license": "ISC",
-  "description": "Fibe Loan Management System",
+  "description": "Fibe Loan Management",
   "build": {
     "appId": "com.paperwhite.fibeloan",
     "productName": "Fibe Loan Management",
-    "copyright": "Copyright © 2026 Paperwhite Technology",
+    "copyright": "Copyright © 2026 Paper White Technology",
     "directories": {
       "output": "release",
       "buildResources": "buildResources"

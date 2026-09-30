@@ -1,17 +1,9 @@
 import React from 'react';
-import { ConfigProvider, Input, Select, Spin, Table } from 'antd';
-import {
-    Landmark, LayoutGrid, RotateCcw, Save, ShieldCheck,
-    X, ArrowRightLeft, IndianRupee, FileText, Building2, Calendar,
-} from 'lucide-react';
+import { Select } from 'antd';
+import { LayoutGrid, RotateCcw, Save, X, ArrowRightLeft, IndianRupee, FileText } from 'lucide-react';
 import { CompulsoryDepositHookReturn } from '../interface/CompulsoryDepositInterfaces';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
-
-const { Option } = Select;
-
-const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inp = "h-6 fz-small font-semibold bg-white border-slate-300 rounded";
 
 const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
     formData,
@@ -30,53 +22,6 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
         (sum, m) => sum + (parseFloat(String(m.postAmount || 0)) || 0), 0
     );
 
-    const columns = [
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">MBNO</span>,
-            dataIndex: 'memberNo',
-            key: 'memberNo',
-            width: '10%',
-            render: (val: number) => (
-                <span className="fz-small font-mono font-black text-indigo-700">{val}</span>
-            ),
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Name</span>,
-            dataIndex: 'memberName',
-            key: 'memberName',
-            width: '42%',
-            render: (val: string) => (
-                <span className="fz-small font-semibold text-slate-700 truncate block" title={val}>{val}</span>
-            ),
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Current CD Balance</span>,
-            dataIndex: 'currentBalance',
-            key: 'currentBalance',
-            width: '26%',
-            align: 'right' as const,
-            render: (val: number) => (
-                <span className="fz-small font-black text-emerald-600">
-                    ₹{Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </span>
-            ),
-        },
-        {
-            title: <span className="fz-mini font-black text-slate-600 uppercase tracking-wide">Post Amount</span>,
-            key: 'postAmount',
-            width: '22%',
-            align: 'right' as const,
-            render: (_: any, record: any) => (
-                <Input
-                    value={record.postAmount}
-                    onChange={e => updateMemberAmount(record.memberNo, e.target.value)}
-                    placeholder="0.00"
-                    className="cdt2-amt-input"
-                />
-            ),
-        },
-    ];
-
     usePageToolbarActions({
         onSave: handleSave,
         saveLabel: 'Save',
@@ -84,200 +29,111 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
     });
 
     return (
-        <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-            <div className="cdt-root h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
-
-                {/* ── Header ── */}
-                <div className="cdt-header bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg border border-amber-400/50 bg-amber-600">
-                            <Landmark size={13} className="text-white" />
-                        </div>
-                        <div>
-                            <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">Compulsory Deposit Transaction</h1>
-                            <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5 flex items-center gap-1">
-                                <ShieldCheck size={7} className="text-indigo-400" /> Bulk CD Posting
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <button onClick={distributeEqually} disabled={isLoading || isPosting}
-                            className="h-7 px-3 bg-violet-600/80 hover:bg-violet-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-violet-400/50 uppercase tracking-wide disabled:opacity-50">
-                            <ArrowRightLeft size={11} /> Distribute
-                        </button>
-                        <button onClick={handleReset} disabled={isPosting}
-                            className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide disabled:opacity-50">
-                            <RotateCcw size={11} /> Clear
-                        </button>
-                        <button onClick={handleSave} disabled={isPosting || isLoading}
-                            className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isPosting ? <Spin size="small" /> : <Save size={11} />}
-                            {isPosting ? 'Posting…' : 'Post'}
-                        </button>
-                        <div className="h-4 w-px bg-white/20" />
-                        <button onClick={handleExit}
-                            className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
-                            <X size={11} /> Exit
-                        </button>
-                    </div>
+        <div className="app-window">
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">Compulsory Deposit Transaction</h1>
+                    <p className="aw-desc">Bulk CD Posting</p>
                 </div>
+                <div className="aw-actions">
+                    <button type="button" onClick={distributeEqually} disabled={isLoading || isPosting} className="aw-btn aw-btn-secondary">
+                        <ArrowRightLeft size={13} /> Distribute
+                    </button>
+                    <button type="button" onClick={handleReset} disabled={isPosting} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Clear</button>
+                    <button type="button" onClick={handleSave} disabled={isPosting || isLoading} className="aw-btn aw-btn-primary">
+                        {isPosting ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />}
+                        {isPosting ? 'Posting…' : 'Post'}
+                    </button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
+                </div>
+            </div>
 
-                {/* ── Body (no scroll) ── */}
-                <div className="flex-1 flex flex-col min-h-0 p-2 gap-1.5">
-
-                    {/* 1. Config row — shrink-0 */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0">
-                        <div className="px-2 py-1 border-b border-slate-100 flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                                <FileText size={10} className="text-slate-400" />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Deposit Configuration</span>
-                            </div>
-                            <span className="fz-micro font-black text-slate-400 uppercase">{members.length} member(s)</span>
+            <div className="aw-content">
+                <div className="aw-stack">
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><FileText size={14} /></span>
+                            <h2 className="aw-card-title">Deposit Configuration</h2>
+                            <span className="aw-meta" style={{ marginLeft: 'auto' }}>{members.length} member(s)</span>
                         </div>
-                        <div className="px-2 py-1.5 grid grid-cols-[140px_1fr_1fr] gap-3 items-end">
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 0.6fr) minmax(220px, 1fr) minmax(220px, 1fr)', gap: 'var(--aw-gap)', alignItems: 'end' }}>
                             <div>
-                                <label className={lbl}>Amount (₹) <span className="text-rose-500">*</span></label>
-                                <div className="relative">
-                                    <IndianRupee size={9} className="absolute left-1.5 top-1/2 -translate-y-1/2 text-indigo-400" />
-                                    <Input
-                                        value={formData.amount}
-                                        onChange={e => updateField('amount', e.target.value)}
-                                        placeholder="0.00"
-                                        className="h-6 fz-small font-black bg-indigo-50 border-indigo-200 rounded pl-5 text-indigo-700 text-right"
-                                    />
+                                <label className="aw-label" htmlFor="cd-amount">Amount (₹) <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
+                                <div className="aw-input-wrap has-icon">
+                                    <IndianRupee size={13} />
+                                    <input id="cd-amount" value={formData.amount} onChange={e => updateField('amount', e.target.value)}
+                                        placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
                                 </div>
                             </div>
                             <div>
-                                <label className={lbl}>Income Head <span className="text-rose-500">*</span></label>
+                                <label className="aw-label" htmlFor="cd-head">Income Head <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
                                 <Select
-                                    value={formData.incomeHead || undefined}
+                                    id="cd-head"
+                                    value={(formData.incomeHead || undefined) as string}
                                     onChange={val => updateField('incomeHead', val)}
-                                    className="w-full cdt2-sel"
-                                    style={{ height: 24 }}
+                                    className="aw-select" popupClassName="aw-select-popup"
                                     placeholder="Select GL Head..."
                                     loading={isLoading}
                                     showSearch
-                                    optionFilterProp="children"
-                                >
-                                    {incomeHeads.map(head => (
-                                        <Option key={head.code} value={head.code}>
-                                            {head.code} – {head.name}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </div>
-                            <div>
-                                <label className={lbl}>Narration</label>
-                                <Input
-                                    value={formData.narration}
-                                    onChange={e => updateField('narration', e.target.value)}
-                                    placeholder="Enter narration..."
-                                    className={inp}
+                                    optionFilterProp="label"
+                                    options={incomeHeads.map(head => ({ value: head.code, label: `${head.code} – ${head.name}` }))}
                                 />
                             </div>
-                        </div>
-                    </div>
-
-                    {/* 2. Member Distribution Table — flex-1 */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
-                        <div className="px-2 py-1 border-b border-slate-100 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-1.5">
-                                <LayoutGrid size={10} className="text-slate-400" />
-                                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member Distribution Matrix</span>
-                            </div>
-                            <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
-                                <span className="fz-micro font-black text-indigo-400 uppercase">Distributed</span>
-                                <span className="fz-small font-black text-indigo-700 font-mono">
-                                    ₹{distributedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
+                            <div>
+                                <label className="aw-label" htmlFor="cd-narr">Narration</label>
+                                <input id="cd-narr" value={formData.narration} onChange={e => updateField('narration', e.target.value)}
+                                    placeholder="Enter narration..." className="aw-input" />
                             </div>
                         </div>
-                        <div className="flex-1 min-h-0">
-                            <Table
-                                columns={columns}
-                                dataSource={members.map(m => ({ ...m, key: m.memberNo }))}
-                                pagination={false}
-                                rowKey="key"
-                                size="small"
-                                loading={isLoading}
-                                className="cdt2-table"
-                                scroll={{ y: 'calc(100vh - 210px)' }}
-                                locale={{
-                                    emptyText: (
-                                        <span className="fz-tiny font-black text-slate-400 uppercase py-4 block text-center">
-                                            No active members found
-                                        </span>
-                                    ),
-                                }}
-                            />
+                    </section>
+
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><LayoutGrid size={14} /></span>
+                            <h2 className="aw-card-title">Member Distribution Matrix</h2>
+                            <span className="aw-pill" style={{ marginLeft: 'auto' }}>
+                                Distributed ₹{distributedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
                         </div>
-                    </div>
-
+                        <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 380px)', minHeight: 180 }}>
+                            <table className="aw-table" style={{ minWidth: 640 }}>
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: 120 }}>MBNO</th>
+                                        <th>Name</th>
+                                        <th className="is-right" style={{ width: 200 }}>Current CD Balance</th>
+                                        <th className="is-right" style={{ width: 170 }}>Post Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {isLoading && members.length === 0 ? (
+                                        <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-spin" /></div></td></tr>
+                                    ) : members.length === 0 ? (
+                                        <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">No active members found</span></div></td></tr>
+                                    ) : members.map(m => (
+                                        <tr key={m.memberNo}>
+                                            <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{m.memberNo}</td>
+                                            <td title={m.memberName}>{m.memberName}</td>
+                                            <td className="is-right is-success">₹{Number(m.currentBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                            <td className="has-input">
+                                                <input aria-label={`Post amount for member ${m.memberNo}`} value={m.postAmount}
+                                                    onChange={e => updateMemberAmount(m.memberNo, e.target.value)}
+                                                    placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
-
-                {/* ── Footer ── */}
-                <div className="cdt-footer px-3 py-1 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-1.5">
-                        <Building2 size={9} className="text-slate-400" />
-                        <span className="fz-mini font-black text-slate-500 uppercase tracking-wide">Compulsory Deposit Transaction</span>
-                        {formData.amount && (
-                            <>
-                                <div className="w-px h-2.5 bg-slate-300" />
-                                <span className="fz-mini font-black text-indigo-500">Amount: ₹{formData.amount}</span>
-                            </>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1 text-indigo-400">
-                        <Calendar size={9} />
-                        <span className="fz-mini font-black uppercase tracking-wide">{dayjs().format('DD-MMM-YY')}</span>
-                    </div>
-                </div>
-
             </div>
 
-            <style>{`
-                .cdt2-sel .ant-select-selector { height: 24px !important; min-height: 24px !important; font-size: 10px !important; font-weight: 600 !important; }
-                .cdt2-sel .ant-select-selection-item { line-height: 22px !important; font-size: 10px !important; }
-                .cdt2-table .ant-table-thead > tr > th { background: #f8fafc !important; padding: 5px 8px !important; border-bottom: 1px solid #e2e8f0 !important; }
-                .cdt2-table .ant-table-tbody > tr > td { padding: 3px 7px !important; border-bottom: 1px solid #f1f5f9 !important; }
-                .cdt2-table .ant-table-tbody > tr:hover > td { background: #eef2ff !important; }
-                .cdt2-amt-input { height: 24px !important; min-height: 24px !important; border-radius: 5px !important; border-color: #c7d2fe !important; background: #eef2ff !important; font-size: 10px !important; font-weight: 900 !important; color: #4338ca !important; text-align: right; padding: 2px 6px !important; width: 100%; }
-                .cdt2-amt-input:focus { border-color: #818cf8 !important; background: #fff !important; box-shadow: 0 0 0 2px rgba(99,102,241,0.1) !important; }
-                .ant-input::placeholder { font-size: 9px !important; color: #94a3b8 !important; }
-                input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-                input[type=number] { -moz-appearance: textfield; }
-
-                /* ── Dark mode ── */
-                html.dark .cdt-root { background-color: #000000 !important; color: #f5f5f7 !important; }
-                html.dark .cdt-header { background: #0c0c0e !important; }
-                html.dark .cdt-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .cdt-root .bg-white { background-color: #1c1c1e !important; }
-                html.dark .cdt-root .border-slate-200,
-                html.dark .cdt-root .border-slate-100 { border-color: rgba(255,255,255,.08) !important; }
-                html.dark .cdt-root .text-slate-900,
-                html.dark .cdt-root .text-slate-700 { color: #f5f5f7 !important; }
-                html.dark .cdt-root .text-slate-500,
-                html.dark .cdt-root .text-slate-600 { color: #8e8e93 !important; }
-                html.dark .cdt-root .text-slate-400 { color: #71717a !important; }
-                html.dark .cdt-root .bg-slate-300 { background-color: rgba(255,255,255,.08) !important; }
-                html.dark .cdt-root .ant-input,
-                html.dark .cdt-root input.ant-input {
-                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-                }
-                html.dark .cdt-root .bg-indigo-50 { background-color: rgba(99,102,241,.12) !important; }
-                html.dark .cdt-root .border-indigo-200,
-                html.dark .cdt-root .border-indigo-100 { border-color: rgba(99,102,241,.3) !important; }
-                html.dark .cdt2-table .ant-table-thead > tr > th { background: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
-                html.dark .cdt2-table .ant-table-tbody > tr > td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; background-color: #1c1c1e !important; }
-                html.dark .cdt2-table .ant-table-tbody > tr:hover > td { background-color: rgba(99,102,241,.12) !important; }
-                html.dark .cdt2-amt-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-                html.dark .cdt2-amt-input:focus { background: rgba(255,255,255,.08) !important; }
-                html.dark .cdt2-sel .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-                html.dark .ant-select-dropdown { background-color: #1c1c1e !important; }
-                html.dark .ant-select-dropdown .ant-select-item { color: #f5f5f7 !important; }
-                html.dark .ant-select-dropdown .ant-select-item-option-active { background-color: rgba(255,255,255,.08) !important; }
-            `}</style>
-        </ConfigProvider>
+            <div className="aw-footer">
+                <span>Compulsory Deposit Transaction{formData.amount && <> · <strong style={{ color: 'var(--aw-accent)' }}>Amount: ₹{formData.amount}</strong></>}</span>
+                <span>{dayjs().format('DD-MMM-YY')}</span>
+            </div>
+        </div>
     );
 };
 

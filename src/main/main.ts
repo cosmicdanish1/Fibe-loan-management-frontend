@@ -774,7 +774,8 @@ const WINDOW_CONFIGS: Record<string, {
   // Daily Reports
   '/reports/daily/cash-book': { title: 'Cash-Book', frameless: false, width: 1300, height: 900 },
   '/reports/daily/day-book': { title: 'Day-Book', frameless: false, width: 1300, height: 900 },
-  '/reports/daily/day-book-sb': { title: 'Day-Book [SB]', frameless: false, width: 1300, height: 900 },
+  '/reports/daily/day-book-cd': { title: 'Day-Book [CD]', frameless: false, width: 1300, height: 900 },
+  '/reports/daily/day-book-sb': { title: 'Day-Book [CD]', frameless: false, width: 1300, height: 900 },
   '/reports/daily/consolidation': { title: 'Consolidation Of Daily A/c', frameless: false, width: 1300, height: 900 },
 
   // General Reports

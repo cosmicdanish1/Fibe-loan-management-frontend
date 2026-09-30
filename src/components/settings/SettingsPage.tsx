@@ -4,7 +4,8 @@ import {
   theme as antdTheme,
   message,
 } from 'antd';
-import { FONT_OPTIONS, FONT_STORAGE_KEY, FONT_SYNC_CHANNEL, applyAppFont } from '../../config/fontOptions';
+import { FONT_OPTIONS } from '../../config/fontOptions';
+import { DEFAULT_TYPOGRAPHY_OFFSETS, normalizeTypographyOffsets, readTypographyOffsets, saveTypographyOffsets, TYPOGRAPHY_SYNC_CHANNEL, type TypographyOffsets } from '../../config/typographyPreferences';
 import {
   Settings,
   Save,
@@ -40,7 +41,7 @@ import {
   BookMarked, Building2, FilePen, Scale, Tag as TagIcon, Briefcase,
   FileText, ArrowLeftRight, Wallet, ArrowRightLeft, CreditCard,
   CheckSquare, Receipt, ReceiptText, DollarSign, Landmark,
-  PenLine, Moon, Calculator, TrendingUp, Star, Settings2, ListOrdered,
+  PenLine, Moon, Sun, Calculator, TrendingUp, Star, Settings2, ListOrdered,
   Hash, Banknote, MessageSquare, Award, Medal, type LucideIcon,
 } from 'lucide-react';
 import {
@@ -53,12 +54,15 @@ import { RootState } from '../../store';
 import { setTheme } from '../../store/slices/themeSlice';
 import { apiService } from '../../services/api';
 import { useLicense } from '../license/LicenseContext';
+import { DEFAULT_WIDGET_CONFIG, clearLayout, type WidgetConfig } from '../../pages/dashboard/dashboardLayout';
+import { runThemeTransition } from '../../utils/themeTransition';
+import { flushSync } from 'react-dom';
 
 // --- Types & Defaults ---
 
 interface AppSettings {
   // Appearance
-  themeMode: 'light' | 'dark' | 'system';
+  themeMode: 'light' | 'dark';
   accentColor: string;
   density: 'compact' | 'comfortable';
   borderRadius: number;
@@ -83,14 +87,6 @@ interface AppSettings {
   notifications: boolean;
   soundEffects: boolean;
   showChatbot: boolean;
-
-  // Dashboard Widgets
-  dashboardWidgets: {
-    showFundInterestRate: boolean;
-    showDividendPayout: boolean;
-    showGroupInsurance: boolean;
-    showDepositInterestSlabs: boolean;
-  };
 
   // Dashboard Background
   dashboardBg: string;
@@ -118,40 +114,44 @@ const defaultSettings: AppSettings = {
   soundEffects: true,
   showChatbot: true,
 
-  dashboardWidgets: {
-    showFundInterestRate: true,
-    showDividendPayout: true,
-    showGroupInsurance: true,
-    showDepositInterestSlabs: true,
-  },
-
   dashboardBg: '#f5f6fa',
 };
 
-/* ============================================================================
-   Dark "settings window" chrome.
-
-   This window is deliberately dark regardless of the app's own Light/Dark
-   setting — it is a system panel, like the OS settings app, and the controls
-   inside it preview Light-mode colours (canvas presets, dashboard background)
-   that would be unreadable on a matching light surface.
-   ========================================================================== */
+/* Settings colors resolve through the shell so shared panels and dialogs
+   follow Light, Dark, and the operating system's color preference. */
 const C = {
-  bg: '#000000',
-  bgHeader: '#0c0c0e',
-  panel: '#1c1c1e',
-  sidebar: 'rgba(20,20,22,.92)',
-  border: 'rgba(255,255,255,.08)',
-  divider: 'rgba(255,255,255,.07)',
-  fill: 'rgba(255,255,255,.05)',
-  fillSoft: 'rgba(255,255,255,.03)',
-  text: '#f5f5f7',
-  textStrong: '#ffffff',
-  dim: '#8e8e93',
-  dimmer: '#71717a',
-  green: '#34d399',
-  red: '#ff453a',
-  amber: '#fbbf24',
+  bg: 'var(--settings-bg)',
+  bgHeader: 'var(--settings-bg-header)',
+  panel: 'var(--settings-panel)',
+  sidebar: 'var(--settings-sidebar)',
+  border: 'var(--settings-border)',
+  divider: 'var(--settings-divider)',
+  fill: 'var(--settings-fill)',
+  fillSoft: 'var(--settings-fill-soft)',
+  text: 'var(--settings-text)',
+  textStrong: 'var(--settings-text-strong)',
+  dim: 'var(--settings-dim)',
+  dimmer: 'var(--settings-dimmer)',
+  green: 'var(--settings-green)',
+  red: 'var(--settings-red)',
+  amber: 'var(--settings-amber)',
+} as const;
+
+const SETTINGS_PALETTES = {
+  dark: {
+    bg: '#090a0d', bgHeader: '#0c0c0e', panel: '#1c1c1e', sidebar: '#141416',
+    border: 'rgba(255,255,255,.08)', divider: 'rgba(255,255,255,.07)',
+    fill: 'rgba(255,255,255,.05)', fillSoft: 'rgba(255,255,255,.03)',
+    text: '#f5f5f7', textStrong: '#f8f8fa', dim: '#a0a0a8', dimmer: '#858590',
+    green: '#34d399', red: '#ff6961', amber: '#fbbf24',
+  },
+  light: {
+    bg: '#f5f6f9', bgHeader: '#fbfbfd', panel: '#fcfcfe', sidebar: '#eef0f5',
+    border: 'rgba(31,42,64,.14)', divider: 'rgba(31,42,64,.10)',
+    fill: 'rgba(31,42,64,.06)', fillSoft: 'rgba(31,42,64,.035)',
+    text: '#263247', textStrong: '#172033', dim: '#55637a', dimmer: '#63718a',
+    green: '#047857', red: '#b42330', amber: '#946200',
+  },
 } as const;
 
 const hexToRgb = (hex: string): [number, number, number] => {
@@ -185,25 +185,12 @@ const BG_PRESETS = [
   '#fafafa', // Zinc
 ];
 
-// Header gradient presets (start/end kept dark-slate; middle is the accent band)
-const DEFAULT_HEADER_GRADIENT = 'linear-gradient(to right, #0f172a, #312e81, #0f172a)';
-const HEADER_GRADIENT_PRESETS: { label: string; value: string }[] = [
-  { label: 'Indigo',  value: 'linear-gradient(to right, #0f172a, #312e81, #0f172a)' },
-  { label: 'Purple',  value: 'linear-gradient(to right, #0f172a, #4c1d95, #0f172a)' },
-  { label: 'Emerald', value: 'linear-gradient(to right, #0f172a, #064e3b, #0f172a)' },
-  { label: 'Ocean',   value: 'linear-gradient(to right, #0f172a, #1e3a8a, #0f172a)' },
-  { label: 'Crimson', value: 'linear-gradient(to right, #0f172a, #7f1d1d, #0f172a)' },
-  { label: 'Amber',   value: 'linear-gradient(to right, #0f172a, #78350f, #0f172a)' },
-  { label: 'Slate',   value: 'linear-gradient(to right, #0f172a, #1e293b, #0f172a)' },
-  { label: 'Teal',    value: 'linear-gradient(to right, #0f172a, #134e4a, #0f172a)' },
-];
-
 const DEVELOPER_PIN = '0786';
 const MAX_ATTEMPTS = 3;
 
 // Sidebar / content header copy, keyed by tab.
 const TAB_META: Record<string, { title: string; subtitle: string; keywords: string }> = {
-  appearance: { title: 'Appearance', subtitle: 'Colors, typography and canvas',      keywords: 'theme dark light accent colour color gradient font text size bold density corner radius background image' },
+  appearance: { title: 'Appearance', subtitle: 'Colors, typography and canvas',      keywords: 'theme dark light accent colour color gradient font text size bold shadow shadows density corner radius background image' },
   dashboard:  { title: 'Dashboard',  subtitle: 'Widgets, quick actions and layout',  keywords: 'widgets quick actions shortcuts fy banner opacity transparency background notice board' },
   system:     { title: 'System & Window', subtitle: 'Notifications and global behavior', keywords: 'notifications toasts sound effects audio chatbot ai assistant' },
   developer:  { title: 'Developer',  subtitle: 'Root-level diagnostics',             keywords: 'analytics realtime monitor window geometry reset layouts console' },
@@ -248,10 +235,10 @@ const Panel: React.FC<{
   const [r, g, b] = hexToRgb(tint);
   return (
     <div
-      className={`rounded-2xl p-6 ${className}`}
+      className={`settings-panel rounded-2xl ${className}`}
       style={{ background: C.panel, border: `1px solid ${C.border}`, ...style }}
     >
-      <div className="flex items-center gap-3 pb-4 mb-5" style={{ borderBottom: `1px solid ${C.divider}` }}>
+      <div className="settings-panel-heading flex items-center gap-3" style={{ borderBottom: `1px solid ${C.divider}` }}>
         <div
           className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
           style={{ background: `rgba(${r},${g},${b},.18)`, color: tint }}
@@ -259,9 +246,9 @@ const Panel: React.FC<{
           {icon}
         </div>
         <div className="min-w-0">
-          <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>{title}</h3>
+          <h3 className="settings-panel-title font-bold tracking-tight" style={{ color: C.textStrong }}>{title}</h3>
           {subtitle && (
-            <p className="fz-small font-medium uppercase tracking-widest" style={{ color: C.dim }}>{subtitle}</p>
+            <p className="fz-small font-medium" style={{ color: C.dim }}>{subtitle}</p>
           )}
         </div>
         {right && <div className="ml-auto flex items-center gap-2">{right}</div>}
@@ -273,11 +260,10 @@ const Panel: React.FC<{
 
 /** Pill badge used for the "6 / 8 on" style counters. */
 const Counter: React.FC<{ children: React.ReactNode; color?: string }> = ({ children, color = C.green }) => {
-  const [r, g, b] = hexToRgb(color);
   return (
     <span
       className="px-2.5 py-1 fz-tiny font-black rounded-full uppercase tracking-widest"
-      style={{ background: `rgba(${r},${g},${b},.15)`, color }}
+      style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
     >
       {children}
     </span>
@@ -295,11 +281,11 @@ const Toggle: React.FC<{ on: boolean; onChange: (v: boolean) => void; accent: st
     aria-label={label}
     onClick={() => onChange(!on)}
     className="relative shrink-0 border-0 cursor-pointer"
-    style={{ width: 42, height: 24, borderRadius: 12, background: on ? accent : 'rgba(255,255,255,.14)' }}
+    style={{ width: 42, height: 24, borderRadius: 12, background: on ? accent : C.border }}
   >
     <span
       className="absolute block rounded-full settings-knob"
-      style={{ width: 20, height: 20, top: 2, left: on ? 20 : 2, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.4)' }}
+      style={{ width: 20, height: 20, top: 2, left: 2, transform: `translateX(${on ? 18 : 0}px)`, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.4)' }}
     />
   </button>
 );
@@ -308,19 +294,45 @@ const Toggle: React.FC<{ on: boolean; onChange: (v: boolean) => void; accent: st
 const Range: React.FC<{
   min: number; max: number; step?: number; value: number;
   onChange: (v: number) => void; accent: string; ariaLabel: string;
-}> = ({ min, max, step = 1, value, onChange, accent, ariaLabel }) => (
-  <input
-    type="range"
-    aria-label={ariaLabel}
-    min={min}
-    max={max}
-    step={step}
-    value={value}
-    onChange={e => onChange(parseInt(e.target.value, 10))}
-    className="w-full settings-range"
-    style={{ accentColor: accent, background: 'rgba(255,255,255,.12)' }}
-  />
-);
+  id?: string; format?: (v: number) => string;
+}> = ({ min, max, step = 1, value, onChange, accent, ariaLabel, id, format }) => {
+  // A small value bubble follows the thumb while the slider is hovered,
+  // dragged or keyboard-focused, so the exact value is readable mid-drag.
+  const [hover, setHover] = useState(false);
+  const [drag, setDrag] = useState(false);
+  const [focus, setFocus] = useState(false);
+  const pct = max === min ? 0 : (value - min) / (max - min);
+  const startDrag = () => {
+    setDrag(true);
+    const end = () => { setDrag(false); window.removeEventListener('pointerup', end); window.removeEventListener('pointercancel', end); };
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  };
+  return (
+    <div className="settings-range-wrap" data-show={hover || drag || focus ? 'true' : 'false'}>
+      <span className="settings-range-tip" aria-hidden="true" style={{ left: `calc(${pct * 100}% + ${(0.5 - pct) * 18}px)` }}>
+        {format ? format(value) : value}
+      </span>
+      <input
+        id={id}
+        type="range"
+        aria-label={id ? undefined : ariaLabel}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={e => onChange(parseInt(e.target.value, 10))}
+        onPointerDown={startDrag}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        onFocus={e => setFocus(e.currentTarget.matches(':focus-visible'))}
+        onBlur={() => setFocus(false)}
+        className="w-full settings-range"
+        style={{ accentColor: accent, background: C.fill }}
+      />
+    </div>
+  );
+};
 
 /** Native colour well, styled by the .settings-color rules in input.css. */
 const ColorWell: React.FC<{ value: string; onChange: (hex: string) => void; ariaLabel: string; size?: number }> = ({
@@ -436,7 +448,7 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
         </div>
 
         {licenseMsg && (
-          <p className="mt-4 fz-small rounded-lg px-3 py-2" style={{ color: C.dim, background: 'rgba(0,0,0,.35)' }}>{licenseMsg}</p>
+          <p className="mt-4 fz-small rounded-lg px-3 py-2" style={{ color: C.dim, background: C.fill }}>{licenseMsg}</p>
         )}
       </div>
 
@@ -456,7 +468,7 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
           className="w-full box-border px-3.5 rounded-[10px] outline-none font-mono"
           style={{
             height: 44, letterSpacing: '0.1em', fontSize: 14,
-            border: `1px solid rgba(255,255,255,.1)`, background: C.fill, color: C.text,
+            border: `1px solid ${C.border}`, background: C.fill, color: C.text,
           }}
         />
         {activateError && <p className="fz-small font-bold mt-2" style={{ color: C.red }}>{activateError}</p>}
@@ -483,25 +495,57 @@ const SettingsPage: React.FC = () => {
   const theme = useSelector((state: RootState) => state.theme);
 
   // State
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    return {
-      ...defaultSettings,
-      themeMode: theme.interfaceMode,
-      accentColor: theme.accentColor,
-      borderRadius: theme.cornerRadius,
-      fontSize: theme.fontScale <= 0.9 ? 'small' : theme.fontScale >= 1.2 ? 'large' : 'medium',
-      density: theme.density <= 0.9 ? 'compact' : 'comfortable',
-      boldText: localStorage.getItem('lms-bold-text') === '1',
-      dashboardBg: localStorage.getItem('lms-dashboard-bg') || '#f5f6fa',
-      // localStorage is the source of truth here (same as text size / bold
-      // text). Falls back to the first option so the picker always shows a
-      // selection, including for older profiles that stored plain "Inter".
-      fontFamily: localStorage.getItem(FONT_STORAGE_KEY) || FONT_OPTIONS[0]!.value,
-    };
+  // The shared theme state (Redux) is the single source of truth for every
+  // look-and-feel setting here. Local state only mirrors it, so what the
+  // controls show is always what the app is using.
+  const themeToSettings = (t: RootState['theme']): Partial<AppSettings> => ({
+    themeMode: t.interfaceMode === 'dark' ? 'dark' : 'light',
+    accentColor: t.accentColor,
+    borderRadius: t.cornerRadius,
+    fontSize: t.fontScale <= 0.9 ? 'small' : t.fontScale >= 1.2 ? 'large' : 'medium',
+    density: t.density <= 0.9 ? 'compact' : 'comfortable',
+    // Older profiles stored plain "Inter"; fall back to the first option so the picker always shows a selection.
+    fontFamily: FONT_OPTIONS.some(f => f.value === t.fontFamily) ? t.fontFamily! : FONT_OPTIONS[0]!.value,
+    backgroundType: t.backgroundType ?? 'solid',
+    backgroundColor1: t.backgroundColor1 || '#ffffff',
+    backgroundColor2: t.backgroundColor2 || '#000000',
+    backgroundImage: t.backgroundImage || null,
+    notifications: t.notifications !== false,
+    soundEffects: t.soundEffects === true,
+    showChatbot: t.showChatbot !== false,
   });
+
+  const [settings, setSettings] = useState<AppSettings>(() => ({
+    ...defaultSettings,
+    ...themeToSettings(theme),
+    boldText: localStorage.getItem('lms-bold-text') === '1',
+    dashboardBg: localStorage.getItem('lms-dashboard-bg') || '#f5f6fa',
+  }));
+  // Read straight from the shared state (not the mirrored form) so the palette
+  // flips in the same render as the theme change.
+  const isDark = theme.interfaceMode === 'dark';
+  const palette = SETTINGS_PALETTES[isDark ? 'dark' : 'light'];
+  const [typographyOffsets, setTypographyOffsets] = useState<TypographyOffsets>(readTypographyOffsets);
+
+  const updateTypographyOffset = (role: keyof TypographyOffsets, value: number) => {
+    const next = saveTypographyOffsets({ ...typographyOffsets, [role]: value });
+    setTypographyOffsets(next);
+  };
+
+  useEffect(() => {
+    const channel = new BroadcastChannel(TYPOGRAPHY_SYNC_CHANNEL);
+    channel.onmessage = event => setTypographyOffsets(normalizeTypographyOffsets(event.data));
+    return () => channel.close();
+  }, []);
 
   const [activeTab, setActiveTab] = useState('appearance');
   const [isSaving, setIsSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  useEffect(() => {
+    if (!justSaved) return;
+    const t = setTimeout(() => setJustSaved(false), 1800);
+    return () => clearTimeout(t);
+  }, [justSaved]);
   const [navQuery, setNavQuery] = useState('');
 
   // Developer Mode State
@@ -522,14 +566,8 @@ const SettingsPage: React.FC = () => {
   );
 
   // Dashboard customisation state
-  const [widgetConfig, setWidgetConfig] = useState<{
-    fyBanner: boolean; quickActions: boolean; noticeBoard: boolean; shortcuts: boolean;
-    activeMembers: boolean; sanctionedLoans: boolean; monthEndOutstanding: boolean; balanceDistribution: boolean;
-  }>(() => {
-    const defaults = {
-      fyBanner: true, quickActions: true, noticeBoard: true, shortcuts: true,
-      activeMembers: true, sanctionedLoans: true, monthEndOutstanding: true, balanceDistribution: true,
-    };
+  const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>(() => {
+    const defaults = DEFAULT_WIDGET_CONFIG;
     try {
       return { ...defaults, ...JSON.parse(localStorage.getItem('lms-dashboard-widgets') || '{}') };
     } catch { return defaults; }
@@ -560,6 +598,15 @@ const SettingsPage: React.FC = () => {
     try { const bc = new BroadcastChannel('lms_dashboard_config'); bc.postMessage(payload); bc.close(); } catch { }
   }, []);
 
+  // Puts every dashboard card back where it started; the open dashboard hears the broadcast and redraws.
+  const [layoutReset, setLayoutReset] = useState(false);
+  const resetDashboardLayout = useCallback(() => {
+    clearLayout();
+    broadcastDashboardConfig({ resetLayout: true });
+    setLayoutReset(true);
+    setTimeout(() => setLayoutReset(false), 1800);
+  }, [broadcastDashboardConfig]);
+
   const toggleWidget = useCallback((key: keyof typeof widgetConfig) => {
     setWidgetConfig(prev => {
       const next = { ...prev, [key]: !prev[key] };
@@ -574,18 +621,6 @@ const SettingsPage: React.FC = () => {
     localStorage.setItem('lms-fy-banner-opacity', String(v));
     broadcastDashboardConfig({ bannerOpacity: v });
   }, [broadcastDashboardConfig]);
-
-  // Header gradient (localStorage + BroadcastChannel; applied live via CSS var)
-  const [headerGradient, setHeaderGradient] = useState<string>(
-    () => localStorage.getItem('lms-header-gradient') || DEFAULT_HEADER_GRADIENT
-  );
-
-  const applyHeaderGradient = useCallback((value: string) => {
-    setHeaderGradient(value);
-    localStorage.setItem('lms-header-gradient', value);
-    document.documentElement.style.setProperty('--header-gradient', value);
-    try { const bc = new BroadcastChannel('lms_header_gradient'); bc.postMessage({ headerGradient: value }); bc.close(); } catch { }
-  }, []);
 
   // --- Effects ---
 
@@ -603,29 +638,11 @@ const SettingsPage: React.FC = () => {
         const prefRes = await apiService.getUserPreferences();
 
         if (prefRes.success && prefRes.data) {
-          const remotePrefs = prefRes.data;
-          setSettings(prev => ({
-            ...prev,
-            themeMode: remotePrefs.interfaceMode || prev.themeMode,
-            accentColor: remotePrefs.accentColor || prev.accentColor,
-            fontScale: remotePrefs.fontScale !== undefined ? (remotePrefs.fontScale <= 0.9 ? 'small' : remotePrefs.fontScale >= 1.2 ? 'large' : 'medium') : prev.fontSize,
-            density: remotePrefs.density !== undefined ? (remotePrefs.density <= 0.9 ? 'compact' : 'comfortable') : prev.density,
-            borderRadius: remotePrefs.cornerRadius !== undefined ? remotePrefs.cornerRadius : prev.borderRadius,
-
-            // Map New Fields
-            fontFamily: remotePrefs.fontFamily || prev.fontFamily,
-            backgroundType: remotePrefs.backgroundType || prev.backgroundType,
-            backgroundColor1: remotePrefs.backgroundColor1 || prev.backgroundColor1,
-            backgroundColor2: remotePrefs.backgroundColor2 || prev.backgroundColor2,
-            backgroundImage: remotePrefs.backgroundImage || prev.backgroundImage,
-            textColor: remotePrefs.textColor || prev.textColor,
-            notifications: remotePrefs.notifications !== undefined ? remotePrefs.notifications : prev.notifications,
-            soundEffects: remotePrefs.soundEffects !== undefined ? remotePrefs.soundEffects : prev.soundEffects,
-            showChatbot: remotePrefs.showChatbot !== undefined ? remotePrefs.showChatbot : prev.showChatbot,
-            dashboardWidgets: remotePrefs.dashboardWidgets !== undefined ? remotePrefs.dashboardWidgets : prev.dashboardWidgets,
-          }));
-
-          // Also sync global Redux state as a side effect
+          // Only the shared theme state is updated; the effect below mirrors it
+          // into this form. Null columns are skipped so they can't wipe a value.
+          const remotePrefs = Object.fromEntries(
+            Object.entries(prefRes.data).filter(([, v]) => v !== null && v !== undefined)
+          );
           dispatch(setTheme(remotePrefs));
         }
 
@@ -638,16 +655,18 @@ const SettingsPage: React.FC = () => {
   }, []); // Run ONCE on mount
 
   useEffect(() => {
-    // 2. Also listen for Redux updates (e.g., from other windows via BroadcastChannel/IPC)
-    setSettings(prev => ({
-      ...prev,
-      themeMode: theme.interfaceMode,
-      accentColor: theme.accentColor,
-      borderRadius: theme.cornerRadius,
-      fontSize: theme.fontScale <= 0.9 ? 'small' : theme.fontScale >= 1.2 ? 'large' : 'medium',
-      density: theme.density <= 0.9 ? 'compact' : 'comfortable'
-    }));
+    // 2. Mirror the shared theme state (server load, other windows, or this form) into the controls
+    setSettings(prev => ({ ...prev, ...themeToSettings(theme) }));
   }, [theme]);
+
+  // Every appearance/behaviour control goes through here: it updates the shared
+  // theme state (which applies it instantly in this window) and tells the other
+  // open windows. Save Changes then only has to persist the result to the server.
+  const applyTheme = useCallback((patch: Partial<RootState['theme']>) => {
+    dispatch(setTheme(patch));
+    try { window.electronAPI?.send?.('update-settings', patch); } catch { }
+    try { const bc = new BroadcastChannel('theme_sync'); bc.postMessage(patch); bc.close(); } catch { }
+  }, [dispatch]);
 
   // The PIN field is inside a plain overlay now (not an antd Modal), so it has
   // to claim focus itself when the dialog opens.
@@ -725,27 +744,13 @@ const SettingsPage: React.FC = () => {
       notifications: settings.notifications,
       soundEffects: settings.soundEffects,
       showChatbot: settings.showChatbot,
-      dashboardWidgets: settings.dashboardWidgets,
     };
 
     try {
       const prefRes = await apiService.updateUserPreferences(userPreferences);
 
       if (prefRes.success) {
-        const fullThemeState = { ...userPreferences };
-        dispatch(setTheme(fullThemeState));
-        if (window.electronAPI?.send) {
-          window.electronAPI.send('update-settings', fullThemeState);
-        }
-
-        try {
-          const bc = new BroadcastChannel('theme_sync');
-          bc.postMessage(fullThemeState);
-          bc.close();
-        } catch (e) {
-          // Silent fail
-        }
-
+        setJustSaved(true);
         const CheckCircle2 = ({ className }: { className?: string }) => (
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>
         );
@@ -758,7 +763,7 @@ const SettingsPage: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [settings, dispatch]);
+  }, [settings]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -766,15 +771,11 @@ const SettingsPage: React.FC = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageUrl = event.target?.result as string;
-        setSettings(prev => ({
-          ...prev,
-          backgroundImage: imageUrl,
-          backgroundType: 'image'
-        }));
+        applyTheme({ backgroundImage: imageUrl, backgroundType: 'image' });
       };
       reader.readAsDataURL(file);
     }
-  }, []);
+  }, [applyTheme]);
 
   const openWindow = useCallback((url: string, title: string, width: number = 1200, height: number = 850) => {
     if (window.electronAPI?.openNewWindow) {
@@ -830,7 +831,7 @@ const SettingsPage: React.FC = () => {
     gap: 11,
     cursor: 'pointer',
     background: activeTab === key ? accentRgba(0.16) : 'transparent',
-    color: activeTab === key ? C.textStrong : '#c7c7cc',
+    color: activeTab === key ? C.textStrong : C.dim,
   });
 
   // --- Render Sections ---
@@ -844,28 +845,35 @@ const SettingsPage: React.FC = () => {
           {/* Theme Mode */}
           <div className="space-y-2">
             <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Interface Mode</label>
-            <div className="flex p-[3px] rounded-[9px]" style={{ background: 'rgba(255,255,255,.06)' }}>
-              {(['light', 'dark', 'system'] as const).map(mode => {
-                const active = settings.themeMode === mode;
+            <div className="relative flex p-[3px] rounded-[9px]" style={{ background: C.fill }}>
+              {/* Sliding pill: glides between Light and Dark instead of swapping backgrounds. */}
+              <span
+                aria-hidden="true"
+                className="settings-seg-thumb absolute rounded-[7px]"
+                style={{
+                  top: 3, bottom: 3, left: 3, width: 'calc(50% - 3px)',
+                  background: C.panel, boxShadow: `0 1px 3px ${C.border}`,
+                  transform: `translateX(${isDark ? '100%' : '0'})`,
+                }}
+              />
+              {(['light', 'dark'] as const).map(mode => {
+                const active = theme.interfaceMode === mode;
+                const ModeIcon = mode === 'light' ? Sun : Moon;
                 return (
                   <button
                     key={mode}
-                    onClick={() => {
-                      setSettings(prev => ({ ...prev, themeMode: mode }));
-                      dispatch(setTheme({ interfaceMode: mode }));
-                      // Immediately propagate to main window — don't wait for Save
-                      const payload = { interfaceMode: mode };
-                      if ((window as any).electronAPI?.send) {
-                        (window as any).electronAPI.send('update-settings', payload);
-                      }
-                      try { const bc = new BroadcastChannel('theme_sync'); bc.postMessage(payload); bc.close(); } catch { }
+                    onClick={(e) => {
+                      if (theme.interfaceMode === mode) return;
+                      const r = e.currentTarget.getBoundingClientRect();
+                      runThemeTransition({ x: r.left + r.width / 2, y: r.top + r.height / 2 }, () => {
+                        flushSync(() => applyTheme({ interfaceMode: mode }));
+                        document.documentElement.classList.toggle('dark', mode === 'dark');
+                      });
                     }}
-                    className="flex-1 py-1.5 rounded-[7px] border-0 fz-small font-bold uppercase tracking-widest cursor-pointer"
-                    style={{
-                      background: active ? (mode === 'light' ? '#fff' : accent) : 'transparent',
-                      color: active ? (mode === 'light' ? '#000' : '#fff') : C.dim,
-                    }}
+                    className="relative z-[1] flex-1 py-1.5 rounded-[7px] border-0 bg-transparent fz-small font-bold uppercase tracking-widest cursor-pointer flex items-center justify-center gap-1.5"
+                    style={{ color: active ? C.textStrong : C.dim }}
                   >
+                    <ModeIcon size={13} />
                     {mode}
                   </button>
                 );
@@ -883,7 +891,7 @@ const SettingsPage: React.FC = () => {
                   <button
                     key={color}
                     aria-label={`Accent ${color}`}
-                    onClick={() => { setSettings(prev => ({ ...prev, accentColor: color })); dispatch(setTheme({ accentColor: color })); }}
+                    onClick={() => applyTheme({ accentColor: color })}
                     className="w-7 h-7 rounded-full border-0 cursor-pointer flex items-center justify-center"
                     style={{ background: color, boxShadow: selected ? `0 0 0 2px ${C.panel}, 0 0 0 4px ${color}` : 'none' }}
                   >
@@ -891,45 +899,16 @@ const SettingsPage: React.FC = () => {
                   </button>
                 );
               })}
-              <div className="w-px h-6 mx-0.5" style={{ background: 'rgba(255,255,255,.12)' }} />
+              <div className="w-px h-6 mx-0.5" style={{ background: C.divider }} />
               <ColorWell
                 value={accent}
                 ariaLabel="Custom accent colour"
                 size={28}
-                onChange={(hex) => { setSettings(prev => ({ ...prev, accentColor: hex })); dispatch(setTheme({ accentColor: hex })); }}
+                onChange={(hex) => applyTheme({ accentColor: hex })}
               />
             </div>
           </div>
 
-          {/* Header Gradient */}
-          <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Header Gradient</label>
-            {/* Live preview */}
-            <div className="h-[26px] w-full rounded-lg" style={{ backgroundImage: headerGradient, border: `1px solid rgba(255,255,255,.1)` }} />
-            <div className="flex flex-wrap gap-2 items-center">
-              {HEADER_GRADIENT_PRESETS.map(preset => (
-                <button
-                  key={preset.label}
-                  title={preset.label}
-                  aria-label={preset.label}
-                  onClick={() => applyHeaderGradient(preset.value)}
-                  className="border-0 cursor-pointer"
-                  style={{
-                    width: 34, height: 26, borderRadius: 6, backgroundImage: preset.value,
-                    boxShadow: headerGradient === preset.value ? `0 0 0 2px ${C.panel}, 0 0 0 4px ${accent}` : 'none',
-                  }}
-                />
-              ))}
-              <div className="w-px h-[22px] mx-0.5" style={{ background: 'rgba(255,255,255,.12)' }} />
-              {/* Custom middle colour (dark slate ends preserved) */}
-              <ColorWell
-                value={(headerGradient.match(/#[0-9a-fA-F]{6}/g) || [])[1] || '#312e81'}
-                ariaLabel="Custom header gradient colour"
-                size={28}
-                onChange={(hex) => applyHeaderGradient(`linear-gradient(to right, #0f172a, ${hex}, #0f172a)`)}
-              />
-            </div>
-          </div>
         </div>
       </Panel>
 
@@ -949,27 +928,65 @@ const SettingsPage: React.FC = () => {
             </div>
             <Range
               ariaLabel="Text size"
+              format={v => ['Small', 'Medium', 'Large'][v] ?? ''}
               min={0}
               max={2}
               value={settings.fontSize === 'small' ? 0 : settings.fontSize === 'medium' ? 1 : 2}
               accent={accent}
               onChange={(v) => {
-                const sizes: AppSettings['fontSize'][] = ['small', 'medium', 'large'];
-                const chosen = sizes[v] as AppSettings['fontSize'];
-                const pxMap: Record<AppSettings['fontSize'], string> = { small: '12px', medium: '13px', large: '15px' };
-                const px = pxMap[chosen];
-                // Apply to this window
-                document.documentElement.style.setProperty('--fz-base', px);
-                localStorage.setItem('lms-font-size', px);
-                // Broadcast to every other open window
-                try { const bc = new BroadcastChannel('lms_font_size'); bc.postMessage({ fontBase: px }); bc.close(); } catch { }
-                setSettings(prev => ({ ...prev, fontSize: chosen }));
+                applyTheme({ fontScale: [0.9, 1.0, 1.2][v] ?? 1.0 });
               }}
             />
             <div className="flex justify-between fz-tiny font-black" style={{ color: C.dim }}>
               <span>A</span><span>AA</span><span>AAA</span>
             </div>
           </div>
+
+          <details className="settings-type-advanced rounded-[10px]" style={{ border: `1px solid ${C.border}`, background: C.fillSoft }}>
+            <summary className="cursor-pointer px-3 py-2.5 font-bold" style={{ color: C.textStrong }}>
+              Advanced text sizes
+            </summary>
+            <div className="px-3 pb-3 space-y-4" style={{ borderTop: `1px solid ${C.divider}` }}>
+              <p className="fz-small pt-3" style={{ color: C.dim }}>Fine-tune Settings text. Other windows can adopt these same roles after you approve the result.</p>
+              {([
+                { role: 'heading', title: 'Headings', hint: 'Page, section and panel titles' },
+                { role: 'label', title: 'Labels & fields', hint: 'Control labels, input text and placeholders' },
+                { role: 'body', title: 'Supporting text', hint: 'Descriptions and helper text' },
+              ] as const).map(({ role, title, hint }) => (
+                <div key={role} className="space-y-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <label htmlFor={`settings-type-${role}`} className="font-semibold" style={{ color: C.textStrong }}>{title}</label>
+                    <span className="fz-small tabular-nums" style={{ color: C.dim }}>{typographyOffsets[role] > 0 ? '+' : ''}{typographyOffsets[role]} px</span>
+                  </div>
+                  <p className="fz-small" style={{ color: C.dim }}>{hint}</p>
+                  <Range
+                    id={`settings-type-${role}`}
+                    ariaLabel={title}
+                    min={-2}
+                    max={4}
+                    value={typographyOffsets[role]}
+                    onChange={v => updateTypographyOffset(role, v)}
+                    accent={accent}
+                    format={v => `${v > 0 ? '+' : ''}${v} px`}
+                  />
+                </div>
+              ))}
+              <div className="settings-type-preview rounded-lg px-3 py-2.5" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
+                <div className="settings-panel-title font-bold" style={{ color: C.textStrong }}>Preview heading</div>
+                <label className="block mt-2" style={{ color: C.dim }}>Sample field</label>
+                <input readOnly placeholder="Sample placeholder" aria-label="Typography preview" className="w-full rounded-md px-2 py-1 mt-1" style={{ background: C.fillSoft, border: `1px solid ${C.border}`, color: C.textStrong }} />
+                <p className="fz-body mt-2" style={{ color: C.dim }}>Supporting information stays easy to read.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTypographyOffsets(saveTypographyOffsets(DEFAULT_TYPOGRAPHY_OFFSETS))}
+                className="rounded-lg px-3 py-1.5 font-semibold cursor-pointer"
+                style={{ color: C.textStrong, background: C.fill, border: `1px solid ${C.border}` }}
+              >
+                Reset advanced sizes
+              </button>
+            </div>
+          </details>
 
           {/* Font Style */}
           <div className="space-y-2">
@@ -980,19 +997,8 @@ const SettingsPage: React.FC = () => {
                 return (
                   <div
                     key={font.label}
-                    onClick={() => {
-                      // Apply here, remember it, and mirror to every open window —
-                      // same pattern as Text Size and Bold Text above.
-                      applyAppFont(font.value);
-                      localStorage.setItem(FONT_STORAGE_KEY, font.value);
-                      try {
-                        const bc = new BroadcastChannel(FONT_SYNC_CHANNEL);
-                        bc.postMessage({ fontFamily: font.value });
-                        bc.close();
-                      } catch { }
-                      setSettings(prev => ({ ...prev, fontFamily: font.value }));
-                    }}
-                    className="cursor-pointer rounded-[10px] px-3 py-2.5"
+                    onClick={() => applyTheme({ fontFamily: font.value })}
+                    className="settings-select cursor-pointer rounded-[10px] px-3 py-2.5"
                     style={{
                       border: `1px solid ${selected ? accent : C.border}`,
                       background: selected ? accentRgba(0.1) : C.fillSoft,
@@ -1040,6 +1046,77 @@ const SettingsPage: React.FC = () => {
             />
           </div>
 
+          {/* Soft Shadows */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Soft Shadows</label>
+              <p className="fz-small mt-0.5" style={{ color: C.dim }}>Subtle depth on cards, buttons and pop-ups. Turn off for maximum speed on older PCs.</p>
+            </div>
+            <Toggle
+              on={theme.shadows !== false}
+              accent={accent}
+              label="Soft shadows"
+              onChange={(v) => applyTheme({ shadows: v })}
+            />
+          </div>
+
+          {/* Header Style */}
+          <div className="space-y-2">
+            <div>
+              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Header Style</label>
+              <p className="fz-small mt-0.5" style={{ color: C.dim }}>A soft decorative background behind each window's title bar.</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {([
+                { id: 'none', label: 'None' },
+                { id: 'waves', label: 'Soft waves' },
+                { id: 'blobs', label: 'Blob shapes' },
+                { id: 'mesh', label: 'Mesh gradient' },
+              ] as const).map(opt => {
+                const selected = (theme.headerStyle ?? 'waves') === opt.id;
+                const fill = accent;
+                return (
+                  <div
+                    key={opt.id}
+                    role="radio"
+                    aria-checked={selected}
+                    tabIndex={0}
+                    onClick={() => applyTheme({ headerStyle: opt.id })}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); applyTheme({ headerStyle: opt.id }); } }}
+                    className="settings-select cursor-pointer rounded-[10px] p-3 flex flex-col items-center gap-2"
+                    style={{
+                      border: `1px solid ${selected ? accent : C.border}`,
+                      background: selected ? accentRgba(0.1) : C.fillSoft,
+                    }}
+                  >
+                    <div className="w-full rounded-md overflow-hidden relative" style={{ background: C.fill, height: 38 }}>
+                      {opt.id === 'waves' && (
+                        <svg viewBox="0 0 120 38" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
+                          <path d="M0 28 C20 12 42 12 64 26 S100 38 120 22 L120 38 L0 38Z" fill={fill} opacity="0.28" />
+                          <path d="M0 35 C25 32 50 8 78 11 S110 22 120 15 L120 38 L0 38Z" fill={fill} opacity="0.2" />
+                        </svg>
+                      )}
+                      {opt.id === 'blobs' && (
+                        <svg viewBox="0 0 120 38" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
+                          <path d="M18 38 C26 35 38 12 52 5 C64 -1 76 9 86 25 C91 33 99 37 106 38Z" fill={fill} opacity="0.3" />
+                        </svg>
+                      )}
+                      {opt.id === 'mesh' && (
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background: `radial-gradient(70% 140% at 12% 110%, ${fill}55 0%, transparent 70%), radial-gradient(55% 130% at 80% -20%, ${fill}38 0%, transparent 70%)`,
+                          }}
+                        />
+                      )}
+                    </div>
+                    <span className="fz-small font-bold uppercase tracking-wider" style={{ color: C.text }}>{opt.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Density Toggle */}
           <div className="space-y-2">
             <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Layout Density</label>
@@ -1049,8 +1126,8 @@ const SettingsPage: React.FC = () => {
                 return (
                   <div
                     key={d}
-                    onClick={() => setSettings(prev => ({ ...prev, density: d }))}
-                    className="cursor-pointer rounded-[10px] p-3 flex flex-col items-center gap-2"
+                    onClick={() => applyTheme({ density: d === 'compact' ? 0.8 : 1.0 })}
+                    className="settings-select cursor-pointer rounded-[10px] p-3 flex flex-col items-center gap-2"
                     style={{
                       border: `1px solid ${selected ? accent : C.border}`,
                       background: selected ? accentRgba(0.1) : C.fillSoft,
@@ -1060,8 +1137,8 @@ const SettingsPage: React.FC = () => {
                       className="w-full rounded-md"
                       style={{ background: C.fill, padding: d === 'compact' ? 5 : 9 }}
                     >
-                      <div className="h-[5px] w-2/3 rounded-full mb-1.5" style={{ background: 'rgba(255,255,255,.3)' }} />
-                      <div className="h-[5px] w-full rounded-full" style={{ background: 'rgba(255,255,255,.15)' }} />
+                      <div className="h-[5px] w-2/3 rounded-full mb-1.5" style={{ background: C.dim }} />
+                      <div className="h-[5px] w-full rounded-full" style={{ background: C.divider }} />
                     </div>
                     <span className="fz-small font-bold uppercase tracking-wider" style={{ color: C.text }}>{d}</span>
                   </div>
@@ -1077,11 +1154,12 @@ const SettingsPage: React.FC = () => {
             </label>
             <Range
               ariaLabel="Corner radius"
+              format={v => `${v}px`}
               min={0}
               max={16}
               value={settings.borderRadius}
               accent={accent}
-              onChange={(v) => setSettings(prev => ({ ...prev, borderRadius: v }))}
+              onChange={(v) => applyTheme({ cornerRadius: v })}
             />
           </div>
         </div>
@@ -1111,7 +1189,7 @@ const SettingsPage: React.FC = () => {
               return (
                 <button
                   key={mode}
-                  onClick={() => setSettings(prev => ({ ...prev, backgroundType: mode }))}
+                  onClick={() => applyTheme({ backgroundType: mode })}
                   className="flex-1 py-2 rounded-lg fz-small font-bold uppercase tracking-widest cursor-pointer"
                   style={
                     selected
@@ -1136,11 +1214,11 @@ const SettingsPage: React.FC = () => {
                   <button
                     key={color}
                     aria-label={`Background ${color}`}
-                    onClick={() => setSettings(prev => ({ ...prev, backgroundColor1: color }))}
+                    onClick={() => applyTheme({ backgroundColor1: color })}
                     className="border-0 cursor-pointer"
                     style={{
                       width: 24, height: 24, borderRadius: 6, background: color,
-                      boxShadow: settings.backgroundColor1 === color ? `0 0 0 2px ${C.green}` : '0 0 0 1px rgba(255,255,255,.15)',
+                      boxShadow: settings.backgroundColor1 === color ? `0 0 0 2px ${C.green}` : `0 0 0 1px ${C.border}`,
                     }}
                   />
                 ))}
@@ -1149,7 +1227,7 @@ const SettingsPage: React.FC = () => {
                 <ColorWell
                   value={settings.backgroundColor1}
                   ariaLabel="Background colour"
-                  onChange={(hex) => setSettings(prev => ({ ...prev, backgroundColor1: hex }))}
+                  onChange={(hex) => applyTheme({ backgroundColor1: hex })}
                 />
                 {settings.backgroundType === 'gradient' && (
                   <>
@@ -1157,7 +1235,7 @@ const SettingsPage: React.FC = () => {
                     <ColorWell
                       value={settings.backgroundColor2}
                       ariaLabel="Second background colour"
-                      onChange={(hex) => setSettings(prev => ({ ...prev, backgroundColor2: hex }))}
+                      onChange={(hex) => applyTheme({ backgroundColor2: hex })}
                     />
                   </>
                 )}
@@ -1173,7 +1251,7 @@ const SettingsPage: React.FC = () => {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="rounded-[9px] fz-small font-bold flex items-center gap-2 px-4 cursor-pointer"
-                  style={{ height: 34, border: `1px solid rgba(255,255,255,.14)`, background: 'rgba(255,255,255,.06)', color: C.text }}
+                  style={{ height: 34, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
                 >
                   <UploadCloud size={13} /> Upload Image
                 </button>
@@ -1186,7 +1264,7 @@ const SettingsPage: React.FC = () => {
                       width: 120, height: 64,
                       backgroundImage: `url(${settings.backgroundImage})`,
                       backgroundSize: 'cover', backgroundPosition: 'center',
-                      border: '1px solid rgba(255,255,255,.15)',
+                      border: `1px solid ${C.border}`,
                     }}
                   />
                 )}
@@ -1224,7 +1302,17 @@ const SettingsPage: React.FC = () => {
       { key: 'activeMembers'        as const, label: 'Active Members',        desc: 'Current active member count',        Icon: Users },
       { key: 'sanctionedLoans'      as const, label: 'Sanctioned Loans',      desc: 'Pending disbursal, by loan type',    Icon: Landmark },
       { key: 'monthEndOutstanding'  as const, label: 'Loan Outstanding',      desc: 'This month’s regular vs emergency split', Icon: TrendingUp },
-      { key: 'balanceDistribution' as const, label: 'Balance Distribution', desc: 'Members grouped by net balance',     Icon: PiggyBank },
+      { key: 'balanceDistribution' as const, label: 'Balance Distribution', desc: 'Members grouped by net balance (ring chart)', Icon: PiggyBank },
+      { key: 'pendingVouchers'     as const, label: 'Pending Vouchers',     desc: 'Vouchers waiting to be passed',      Icon: CheckSquare },
+      { key: 'cashPosition'        as const, label: 'Cash Position',        desc: 'Today’s cash book with a 7-day trend', Icon: Wallet },
+      { key: 'dayEndStatus'        as const, label: 'Day-End Status',       desc: 'Last open day and whether it is closed', Icon: Clock },
+      { key: 'demandRecovery'      as const, label: 'Demand vs Recovery',   desc: 'This month’s demand posted to the ledger (gauge)', Icon: Scale },
+      { key: 'depositsSummary'     as const, label: 'Deposits Summary',     desc: 'Fixed & recurring, savings and compulsory (ring chart)', Icon: Banknote },
+      { key: 'upcomingMaturities'  as const, label: 'Upcoming Maturities',  desc: 'Deposits maturing this month (timeline)', Icon: Calendar },
+      { key: 'loanApplications'    as const, label: 'Loan Applications',    desc: 'Pending → sanctioned → disbursed steps', Icon: FileText },
+      { key: 'overdueLoans'        as const, label: 'Overdue Loans',        desc: 'Defaulters by time since last payment (ring chart)', Icon: AlertTriangle },
+      { key: 'retiringMembers'     as const, label: 'Retiring Members',     desc: 'Members retiring in 6 months, with loan balance', Icon: Users },
+      { key: 'newMembers'          as const, label: 'New Members',          desc: 'Joined this month vs last month',    Icon: Star },
     ];
 
     const bannerBgAlpha = (bannerOpacity / 100).toFixed(2);
@@ -1255,16 +1343,16 @@ const SettingsPage: React.FC = () => {
                 <div
                   key={key}
                   onClick={() => toggleWidget(key)}
-                  className="cursor-pointer rounded-xl p-3 flex items-center gap-3"
+                  className="settings-select cursor-pointer rounded-xl p-3 flex items-center gap-3"
                   style={
                     isOn
                       ? { border: `1px solid ${color}66`, background: `${color}1a` }
-                      : { border: `1px solid rgba(255,255,255,.07)`, background: 'rgba(255,255,255,.02)', opacity: 0.55 }
+                      : { border: `1px solid ${C.border}`, background: C.fillSoft, opacity: 0.7 }
                   }
                 >
                   <div
                     className="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center shrink-0"
-                    style={{ background: isOn ? `${color}33` : 'rgba(255,255,255,.06)', color: isOn ? color : C.dimmer }}
+                    style={{ background: isOn ? `${color}33` : C.fill, color: isOn ? color : C.dimmer }}
                   >
                     <Icon size={17} />
                   </div>
@@ -1273,17 +1361,41 @@ const SettingsPage: React.FC = () => {
                     <p className="fz-tiny mt-1 truncate" style={{ color: C.dimmer }}>{desc}</p>
                   </div>
                   <div
-                    className="relative shrink-0"
-                    style={{ width: 34, height: 19, borderRadius: 10, background: isOn ? color : 'rgba(255,255,255,.14)' }}
+                    className="settings-track relative shrink-0"
+                    style={{ width: 34, height: 19, borderRadius: 10, background: isOn ? color : C.border }}
                   >
                     <span
                       className="absolute block rounded-full settings-knob"
-                      style={{ width: 15, height: 15, top: 2, left: isOn ? 17 : 2, background: '#fff' }}
+                      style={{ width: 15, height: 15, top: 2, left: 2, transform: `translateX(${isOn ? 15 : 0}px)`, background: '#fff' }}
                     />
                   </div>
                 </div>
               );
             })}
+          </div>
+        </Panel>
+
+        {/* ── Dashboard Layout ──────────────────────────────────────── */}
+        <Panel
+          icon={<LayoutGrid size={16} />}
+          tint="#60a5fa"
+          title="Dashboard Layout"
+          subtitle="Arrange the cards on the dashboard itself; reset them here"
+        >
+          <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
+            <div className="min-w-0">
+              <span className="fz-body font-bold block" style={{ color: C.text }}>Reset Card Layout</span>
+              <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
+                On the dashboard, drag the bar at the top of a card to move it, drag the edge between cards to resize, and double-click an edge to reset it. This puts every card back in its original place and size.
+              </span>
+            </div>
+            <button
+              onClick={resetDashboardLayout}
+              className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer shrink-0"
+              style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
+            >
+              {layoutReset ? <><Check size={12} strokeWidth={3} /> Layout reset</> : <><RotateCcw size={12} /> Reset Layout</>}
+            </button>
           </div>
         </Panel>
 
@@ -1332,16 +1444,16 @@ const SettingsPage: React.FC = () => {
                         <div
                           key={item.id}
                           onClick={() => toggleQaItem(item.id)}
-                          className="cursor-pointer rounded-[10px] px-1.5 py-2.5 flex flex-col items-center gap-1.5"
+                          className="settings-select cursor-pointer rounded-[10px] px-1.5 py-2.5 flex flex-col items-center gap-1.5"
                           style={
                             isOn
                               ? { border: `1px solid ${color}66`, background: `${color}1a` }
-                              : { border: `1px solid rgba(255,255,255,.07)`, background: 'rgba(255,255,255,.02)', opacity: 0.45 }
+                              : { border: `1px solid ${C.border}`, background: C.fillSoft, opacity: 0.7 }
                           }
                         >
                           <div
                             className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center"
-                            style={{ background: isOn ? `${color}33` : 'rgba(255,255,255,.06)', color: isOn ? color : C.dimmer }}
+                            style={{ background: isOn ? `${color}33` : C.fill, color: isOn ? color : C.dimmer }}
                           >
                             <IconComp size={13} />
                           </div>
@@ -1411,7 +1523,7 @@ const SettingsPage: React.FC = () => {
                   100% — Solid <Eye size={10} />
                 </span>
               </div>
-              <Range ariaLabel="FY banner opacity" min={0} max={100} value={bannerOpacity} accent={accent} onChange={applyBannerOpacity} />
+              <Range ariaLabel="FY banner opacity" format={v => `${v}%`} min={0} max={100} value={bannerOpacity} accent={accent} onChange={applyBannerOpacity} />
               <p className="text-center fz-tiny font-black uppercase tracking-widest mt-1" style={{ color: accent }}>{bannerOpacity}%</p>
             </div>
 
@@ -1435,7 +1547,7 @@ const SettingsPage: React.FC = () => {
                       <p className="font-black text-sm leading-none" style={{ color: '#fcd34d' }}>292</p>
                     </div>
                     <div className="w-16">
-                      <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,.1)' }}>
+                      <div className="h-1 rounded-full overflow-hidden" style={{ background: C.fill }}>
                         <div className="h-full rounded-full" style={{ width: '20%', background: '#10b981' }} />
                       </div>
                       <p className="fz-nano uppercase mt-0.5 text-right" style={{ color: '#94a3b8' }}>20%</p>
@@ -1472,8 +1584,8 @@ const SettingsPage: React.FC = () => {
                     background: selected ? accentRgba(0.1) : 'transparent',
                   }}
                 >
-                  <div className="w-full h-9 rounded-[7px]" style={{ backgroundColor: opt.preview, border: '1px solid rgba(255,255,255,.1)' }} />
-                  <span className="fz-tiny font-black uppercase tracking-wider" style={{ color: '#c7c7cc' }}>{opt.label}</span>
+                  <div className="w-full h-9 rounded-[7px]" style={{ backgroundColor: opt.preview, border: `1px solid ${C.border}` }} />
+                  <span className="fz-tiny font-black uppercase tracking-wider" style={{ color: C.text }}>{opt.label}</span>
                 </button>
               );
             })}
@@ -1495,26 +1607,21 @@ const SettingsPage: React.FC = () => {
         title: 'Notifications',
         desc: 'Show success and info toasts — errors and warnings always appear',
         value: settings.notifications,
-        onChange: (c: boolean) => setSettings(prev => ({ ...prev, notifications: c })),
+        onChange: (c: boolean) => applyTheme({ notifications: c }),
       },
       {
         key: 'soundEffects',
         title: 'Sound Effects',
         desc: 'Play audio cues for interactions',
         value: settings.soundEffects,
-        onChange: (c: boolean) => setSettings(prev => ({ ...prev, soundEffects: c })),
+        onChange: (c: boolean) => applyTheme({ soundEffects: c }),
       },
       {
         key: 'showChatbot',
         title: 'AI Assistant (Chatbot)',
         desc: 'Show FIBE AI assistant bubble for app help',
         value: settings.showChatbot,
-        onChange: (c: boolean) => {
-          setSettings(prev => ({ ...prev, showChatbot: c }));
-          dispatch(setTheme({ showChatbot: c }));
-          if ((window as any).electronAPI?.send) { (window as any).electronAPI.send('update-settings', { showChatbot: c }); }
-          try { const bc = new BroadcastChannel('theme_sync'); bc.postMessage({ showChatbot: c }); bc.close(); } catch { }
-        },
+        onChange: (c: boolean) => applyTheme({ showChatbot: c }),
       },
     ];
 
@@ -1525,7 +1632,7 @@ const SettingsPage: React.FC = () => {
             <div
               key={row.key}
               className="flex items-center justify-between px-4 py-3.5 rounded-xl"
-              style={{ background: 'rgba(255,255,255,.04)' }}
+              style={{ background: C.fill }}
             >
               <div>
                 <span className="fz-body font-bold block" style={{ color: C.text }}>{row.title}</span>
@@ -1543,7 +1650,7 @@ const SettingsPage: React.FC = () => {
     <div className="space-y-5">
       <div
         className="rounded-2xl p-6 relative overflow-hidden"
-        style={{ background: 'linear-gradient(180deg,#141416,#0c0c0e)', border: '1px solid rgba(255,255,255,.09)' }}
+        style={{ background: C.panel, border: `1px solid ${C.border}` }}
       >
         <div className="absolute top-0 right-0 p-8 opacity-[0.07] pointer-events-none">
           <Code size={120} className="text-indigo-400" />
@@ -1566,7 +1673,7 @@ const SettingsPage: React.FC = () => {
           <button
             onClick={() => openWindow('/analytics-dashboard', 'Analytics Dashboard')}
             className="text-left rounded-xl p-4 cursor-pointer"
-            style={{ background: 'rgba(255,255,255,.04)', border: `1px solid ${C.border}`, color: C.text }}
+            style={{ background: C.fill, border: `1px solid ${C.border}`, color: C.text }}
           >
             <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center mb-2.5" style={{ background: 'rgba(99,102,241,.2)', color: '#818cf8' }}>
               <BarChart2 size={15} />
@@ -1578,7 +1685,7 @@ const SettingsPage: React.FC = () => {
           <button
             onClick={() => openWindow('/analytics-realtime', 'Real-time Monitor', 1600, 1000)}
             className="text-left rounded-xl p-4 cursor-pointer"
-            style={{ background: 'rgba(255,255,255,.04)', border: `1px solid ${C.border}`, color: C.text }}
+            style={{ background: C.fill, border: `1px solid ${C.border}`, color: C.text }}
           >
             <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center mb-2.5" style={{ background: 'rgba(16,185,129,.2)', color: C.green }}>
               <Activity size={15} />
@@ -1590,7 +1697,7 @@ const SettingsPage: React.FC = () => {
       </div>
 
       <Panel icon={<Monitor size={16} />} tint="#a78bfa" title="Environment State" subtitle="Window geometry & layout">
-        <div className="flex items-center justify-between px-4 py-3.5 rounded-xl" style={{ background: 'rgba(255,255,255,.04)' }}>
+        <div className="flex items-center justify-between px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
           <div>
             <span className="fz-body font-bold block" style={{ color: C.text }}>Reset Window Layouts</span>
             <span className="fz-small block mt-0.5" style={{ color: C.dim }}>Restore all windows to default dimensions</span>
@@ -1598,7 +1705,7 @@ const SettingsPage: React.FC = () => {
           <button
             onClick={resetWindowStates}
             className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
-            style={{ height: 32, border: '1px solid rgba(255,255,255,.14)', background: C.fill, color: C.text }}
+            style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
           >
             <RotateCcw size={12} /> Reset Geometry
           </button>
@@ -1610,11 +1717,29 @@ const SettingsPage: React.FC = () => {
   const renderLicense = () => <LicenseSection accent={accent} />;
 
   const tabMeta = TAB_META[activeTab] ?? TAB_META.appearance!;
+  const settingsCssVars = {
+    '--settings-bg': palette.bg,
+    '--settings-bg-header': palette.bgHeader,
+    '--settings-panel': palette.panel,
+    '--settings-sidebar': palette.sidebar,
+    '--settings-border': palette.border,
+    '--settings-divider': palette.divider,
+    '--settings-fill': palette.fill,
+    '--settings-fill-soft': palette.fillSoft,
+    '--settings-text': palette.text,
+    '--settings-text-strong': palette.textStrong,
+    '--settings-dim': palette.dim,
+    '--settings-dimmer': palette.dimmer,
+    '--settings-green': palette.green,
+    '--settings-red': palette.red,
+    '--settings-amber': palette.amber,
+    '--settings-accent': accent,
+  } as React.CSSProperties;
 
   return (
     <ConfigProvider
       theme={{
-        algorithm: antdTheme.darkAlgorithm,
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         token: {
           colorPrimary: accent,
           borderRadius: settings.borderRadius,
@@ -1624,23 +1749,23 @@ const SettingsPage: React.FC = () => {
     >
       <div
         className="settings-shell h-screen flex flex-col overflow-hidden"
-        style={{ background: C.bg, color: C.text }}
+        style={{ ...settingsCssVars, background: C.bg, color: C.text }}
       >
 
         {/* Header */}
         <div
-          className="px-6 py-4 flex items-center justify-between shrink-0 z-20"
-          style={{ background: C.bgHeader, borderBottom: `1px solid rgba(255,255,255,.07)` }}
+          className="settings-header flex items-center justify-between shrink-0 z-20"
+          style={{ background: C.bgHeader, borderBottom: `1px solid ${C.divider}` }}
         >
           <div className="flex items-center gap-3.5">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
-              style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, boxShadow: '0 2px 10px rgba(0,0,0,.4)' }}
+              style={{ background: accent, boxShadow: '0 2px 10px rgba(0,0,0,.4)' }}
             >
               <Settings size={20} />
             </div>
             <div>
-              <h1 className="text-base font-black uppercase tracking-tight leading-none" style={{ color: C.textStrong }}>System Configuration</h1>
+              <h1 className="settings-title font-bold tracking-tight leading-none" style={{ color: C.textStrong }}>System Configuration</h1>
               <div className="flex items-center gap-1.5 mt-1.5 fz-tiny font-bold uppercase tracking-widest leading-none" style={{ color: C.dim }}>
                 <ShieldCheck size={11} style={{ color: C.green }} /> Administrative Panel
               </div>
@@ -1662,7 +1787,7 @@ const SettingsPage: React.FC = () => {
               {isDeveloperMode ? 'Dev Active' : 'Dev Locked'}
             </button>
 
-            <div className="w-px h-5" style={{ background: 'rgba(255,255,255,.12)' }} />
+            <div className="w-px h-5" style={{ background: C.divider }} />
 
             <button
               onClick={handleSaveWithAnimation}
@@ -1670,8 +1795,10 @@ const SettingsPage: React.FC = () => {
               className="rounded-[9px] border-0 text-white fz-small font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
               style={{ height: 34, paddingLeft: 18, paddingRight: 18, background: accent, boxShadow: '0 3px 12px rgba(0,0,0,.35)' }}
             >
-              {isSaving ? <RotateCcw className="settings-spin" size={14} /> : <Save size={14} />}
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              <span key={isSaving ? 'saving' : justSaved ? 'saved' : 'idle'} className="settings-swap inline-flex items-center gap-2">
+                {isSaving ? <RotateCcw className="settings-spin" size={14} /> : justSaved ? <Check size={14} strokeWidth={3} /> : <Save size={14} />}
+                {isSaving ? 'Saving...' : justSaved ? 'Saved' : 'Save Changes'}
+              </span>
             </button>
 
             <button
@@ -1685,11 +1812,11 @@ const SettingsPage: React.FC = () => {
         </div>
 
         {/* Main Layout */}
-        <div className="flex-1 overflow-hidden flex relative">
+        <div className="settings-layout flex-1 overflow-hidden flex relative">
           {/* Sidebar */}
           <div
-            className="w-[250px] shrink-0 flex flex-col px-3 py-4"
-            style={{ background: C.sidebar, backdropFilter: 'blur(20px)', borderRight: `1px solid rgba(255,255,255,.07)` }}
+            className="settings-sidebar shrink-0 flex flex-col"
+            style={{ background: C.sidebar, borderRight: `1px solid ${C.divider}` }}
           >
             <div className="relative mb-4">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: C.dim }} />
@@ -1699,11 +1826,11 @@ const SettingsPage: React.FC = () => {
                 placeholder="Search settings"
                 aria-label="Search settings"
                 className="w-full box-border rounded-[9px] outline-none pl-8 pr-3 fz-body"
-                style={{ height: 34, border: `1px solid ${C.border}`, background: 'rgba(255,255,255,.06)', color: C.text }}
+                style={{ height: 34, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
               />
             </div>
 
-            <nav className="flex flex-col gap-0.5">
+            <nav className="settings-nav flex flex-col gap-0.5" aria-label="Settings sections">
               {visibleNav.map((item, idx) => {
                 const { key, label, Icon, gradient } = item;
                 // Keep the divider the design puts above License, but only when
@@ -1711,8 +1838,8 @@ const SettingsPage: React.FC = () => {
                 const showDivider = item.afterDivider && idx > 0;
                 return (
                   <React.Fragment key={key}>
-                    {showDivider && <div className="h-px mx-1.5 my-2.5" style={{ background: 'rgba(255,255,255,.08)' }} />}
-                    <button onClick={() => setActiveTab(key)} style={navButtonStyle(key)}>
+                    {showDivider && <div className="h-px mx-1.5 my-2.5" style={{ background: C.divider }} />}
+                    <button className="settings-nav-button" onClick={() => setActiveTab(key)} style={navButtonStyle(key)} aria-current={activeTab === key ? 'page' : undefined}>
                       <div
                         className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: gradient }}
@@ -1731,16 +1858,16 @@ const SettingsPage: React.FC = () => {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto relative">
+          <div className="settings-main flex-1 overflow-y-auto relative">
             <div
-              className="sticky top-0 z-[8] px-10 pt-7 pb-3.5"
-              style={{ background: 'linear-gradient(#000 70%, rgba(0,0,0,0))' }}
+              className="settings-main-header sticky top-0 z-[8]"
+              style={{ background: C.bg }}
             >
-              <h2 className="m-0 text-[28px] font-black tracking-tight" style={{ color: C.textStrong }}>{tabMeta.title}</h2>
+              <h2 className="m-0 settings-section-title font-bold tracking-tight" style={{ color: C.textStrong }}>{tabMeta.title}</h2>
               <p className="mt-1 fz-body" style={{ color: C.dim }}>{tabMeta.subtitle}</p>
             </div>
 
-            <div className="px-10 pb-12 settings-enter" style={{ maxWidth: 1080 }}>
+            <div className="settings-main-body" style={{ maxWidth: 1080 }}>
               {activeTab === 'appearance' && renderAppearance()}
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'system' && renderSystem()}
@@ -1764,7 +1891,7 @@ const SettingsPage: React.FC = () => {
               aria-label="Security access"
               onClick={e => e.stopPropagation()}
               className="rounded-[18px] p-6 settings-pop"
-              style={{ width: 320, background: C.panel, border: '1px solid rgba(255,255,255,.1)' }}
+              style={{ width: 320, background: C.panel, border: `1px solid ${C.border}` }}
             >
               <div className="flex items-center gap-2 mb-4" style={{ color: accent }}>
                 <Lock size={16} />
@@ -1785,10 +1912,10 @@ const SettingsPage: React.FC = () => {
                 className="w-full box-border text-center rounded-xl outline-none"
                 style={{
                   height: 52, fontSize: 22, fontWeight: 800, letterSpacing: '0.5em',
-                  border: '1px solid rgba(255,255,255,.12)', background: C.fill, color: '#fff',
+                  border: `1px solid ${C.border}`, background: C.fill, color: C.textStrong,
                 }}
               />
-              {pinError && <p className="text-center fz-small font-bold mt-2.5" style={{ color: '#ff6961' }}>{pinError}</p>}
+              {pinError && <p className="text-center fz-small font-bold mt-2.5" style={{ color: C.red }}>{pinError}</p>}
               <button
                 onClick={handlePinSubmit}
                 className="w-full mt-3 rounded-[10px] border-0 fz-small font-black uppercase tracking-widest text-white cursor-pointer"

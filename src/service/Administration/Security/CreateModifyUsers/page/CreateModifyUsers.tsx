@@ -10,9 +10,6 @@ import {
   RotateCcw,
   ShieldCheck,
   User,
-  Lock,
-  Shield,
-  Key,
   ShieldAlert,
   Fingerprint,
   UserCheck,
@@ -31,7 +28,8 @@ import {
 import { useUserManagement } from '../hook/useUserManagement';
 import type { UserLevel } from '../interface/types';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
-import { ConfigProvider, Tooltip, Modal } from 'antd';
+import { Select } from 'antd';
+import AwDialog from '@/components/shared/kit/AwDialog';
 import UserLookup from '@/components/shared/UserLookup/UserLookup';
 
 interface CreateModifyUsersProps {
@@ -61,13 +59,6 @@ const STATUS_ICONS = {
   warning: <AlertTriangle size={12} className="shrink-0" />,
   error:   <AlertCircle   size={12} className="shrink-0" />,
 };
-const STATUS_COLORS = {
-  success: 'bg-emerald-50 border-emerald-300 text-emerald-800',
-  info:    'bg-blue-50 border-blue-300 text-blue-800',
-  warning: 'bg-amber-50 border-amber-300 text-amber-800',
-  error:   'bg-red-50 border-red-300 text-red-800',
-};
-
 // ── Animated Permission List ──────────────────────────────────────────────────
 interface PermListProps {
   items: string[];
@@ -86,35 +77,32 @@ const PermList: React.FC<PermListProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="flex flex-col gap-1 min-h-0 h-full">
-      <div className="flex items-center justify-between px-1 shrink-0">
-        <label className="cmu-label fz-caption font-black text-slate-600 uppercase tracking-wider">{label}</label>
-        <span className={`cmu-badge fz-caption font-black px-1.5 py-0.5 rounded-full ${side === 'right' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>{count}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span className="aw-label" style={{ marginBottom: 0 }}>{label}</span>
+        <span className={`aw-pill ${side === 'right' ? '' : 'tone-muted'}`}>{count}</span>
       </div>
-      <div
-        ref={scrollRef}
-        className={`cmu-rights-list relative w-full flex-1 min-h-[9.5rem] border-2 rounded-lg overflow-y-auto overflow-x-hidden perm-scroll ${side === 'right' ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}
-      >
+      <div ref={scrollRef} className={`aw-perm-list ${side === 'right' ? 'is-accent' : ''}`}>
         {items.length === 0 && (
-          <div className={`flex flex-col items-center justify-center h-full select-none ${side === 'right' ? 'text-indigo-300' : 'opacity-30'}`}>
-            <ShieldCheck size={28} strokeWidth={1} />
-            <span className="fz-caption font-black uppercase mt-1">{side === 'right' ? 'No Privileges Yet' : 'Empty'}</span>
+          <div className="aw-empty" style={{ height: '100%', justifyContent: 'center' }}>
+            <ShieldCheck size={26} />
+            <span className="aw-meta">{side === 'right' ? 'No privileges yet' : 'Empty'}</span>
           </div>
         )}
         {items.map((item) => {
-          const isSelected   = selected.includes(item);
-          const isExiting    = flyingOut.includes(item);
-          const isEntering   = justArrived.includes(item);
+          const isSelected = selected.includes(item);
+          const isExiting  = flyingOut.includes(item);
+          const isEntering = justArrived.includes(item);
 
           return (
             <div
               key={item}
               onMouseDown={(e) => { e.preventDefault(); onToggle(item, e.ctrlKey || e.metaKey); }}
               className={[
-                'perm-item fz-caption font-bold px-2.5 py-1 mx-1 my-0.5 rounded cursor-pointer select-none',
-                isSelected  ? 'perm-selected' : 'perm-normal',
-                isExiting   ? (side === 'left' ? 'perm-fly-right' : 'perm-fly-left') : '',
-                isEntering  ? (side === 'right' ? 'perm-arrive-right' : 'perm-arrive-left') : '',
+                'aw-perm-item',
+                isSelected ? 'is-selected' : '',
+                isExiting   ? (side === 'left' ? 'is-fly-right' : 'is-fly-left') : '',
+                isEntering  ? (side === 'right' ? 'is-arrive-right' : 'is-arrive-left') : '',
               ].filter(Boolean).join(' ')}
             >
               {item}
@@ -241,385 +229,249 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
     saveEnabled: !isSaving,
   });
 
+  const statusTone = { success: 'aw-alert-success', info: 'aw-alert-info', warning: 'aw-alert-warning', error: 'aw-alert-danger' } as const;
+  const openAvatarPicker = () => document.getElementById('user-avatar-upload')?.click();
+
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#4f46e5', borderRadius: 8 } }}>
-      <style>{`
-        /* ── Scrollbar ── */
-        .cmu-page .perm-scroll::-webkit-scrollbar { width: 5px; }
-        .cmu-page .perm-scroll::-webkit-scrollbar-track { background: transparent; }
-        .cmu-page .perm-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
-
-        /* ── Permission item base ── */
-        .cmu-page .perm-item {
-          transition: background 0.12s, color 0.12s, transform 0.12s;
-          transform-origin: center left;
-        }
-        .cmu-page .perm-normal  { background: transparent; color: #1e293b; }
-        .cmu-page .perm-normal:hover { background: #e2e8f0; }
-        .cmu-page .perm-selected {
-          background: linear-gradient(90deg, #4f46e5, #6366f1);
-          color: white;
-          box-shadow: 0 1px 6px rgba(99,102,241,0.35);
-        }
-        .cmu-page .perm-selected:hover { background: linear-gradient(90deg, #4338ca, #4f46e5); }
-
-        /* ── Fly-out animations ── */
-        @keyframes perm-fly-to-right {
-          0%   { transform: translateX(0)    scaleX(1)    opacity(1); opacity: 1; }
-          40%  { transform: translateX(18px) scaleX(0.95);            opacity: 0.7; }
-          100% { transform: translateX(60px) scaleX(0.6);             opacity: 0; }
-        }
-        .cmu-page .perm-fly-right {
-          animation: perm-fly-to-right 0.3s cubic-bezier(.4,0,.6,1) forwards;
-          pointer-events: none;
-        }
-        @keyframes perm-fly-to-left {
-          0%   { transform: translateX(0)     scaleX(1)    opacity(1); opacity: 1; }
-          40%  { transform: translateX(-18px) scaleX(0.95);            opacity: 0.7; }
-          100% { transform: translateX(-60px) scaleX(0.6);             opacity: 0; }
-        }
-        .cmu-page .perm-fly-left {
-          animation: perm-fly-to-left 0.3s cubic-bezier(.4,0,.6,1) forwards;
-          pointer-events: none;
-        }
-
-        /* ── Arrival animations ── */
-        @keyframes perm-arrive-from-left {
-          0%   { transform: translateX(-30px) scale(0.85); opacity: 0; }
-          55%  { transform: translateX(4px)   scale(1.04); opacity: 1; }
-          100% { transform: translateX(0)     scale(1);    opacity: 1; }
-        }
-        .cmu-page .perm-arrive-right {
-          animation: perm-arrive-from-left 0.4s cubic-bezier(.22,1,.36,1) forwards;
-        }
-        @keyframes perm-arrive-from-right {
-          0%   { transform: translateX(30px) scale(0.85); opacity: 0; }
-          55%  { transform: translateX(-4px) scale(1.04); opacity: 1; }
-          100% { transform: translateX(0)    scale(1);    opacity: 1; }
-        }
-        .cmu-page .perm-arrive-left {
-          animation: perm-arrive-from-right 0.4s cubic-bezier(.22,1,.36,1) forwards;
-        }
-
-        /* ── Dark mode ── */
-        html.dark .cmu-page { background: #0d0d0d !important; }
-        html.dark .cmu-page .cmu-card       { background: #151515 !important; border-color: #222 !important; }
-        html.dark .cmu-page .cmu-card-icon  { background: #1a1a1a !important; color: #8e8e93 !important; }
-        html.dark .cmu-page .cmu-label      { color: #71717a !important; }
-        html.dark .cmu-page .cmu-label-icon { color: #4b5563 !important; }
-        html.dark .cmu-page .cmu-input      { background: #1a1a1a !important; border-color: #222 !important; color: #f5f5f7 !important; }
-        html.dark .cmu-page .cmu-input::placeholder { color: #374151 !important; }
-        html.dark .cmu-page .cmu-input:focus { border-color: #4f46e5 !important; background: #1e1e35 !important; }
-        html.dark .cmu-page .cmu-select     { background: #1a1a1a !important; border-color: #222 !important; color: #f5f5f7 !important; }
-        html.dark .cmu-page .cmu-select option { background: #1a1a1a; color: #f5f5f7; }
-        html.dark .cmu-page .cmu-auth-toggle { background: #1a1a1a !important; border-color: #222 !important; }
-        html.dark .cmu-page .cmu-auth-label { color: #8e8e93 !important; }
-        html.dark .cmu-page .cmu-rights-list { background: #111 !important; border-color: #222 !important; }
-        html.dark .cmu-page .perm-normal  { color: #f5f5f7; }
-        html.dark .cmu-page .perm-normal:hover  { background: #1f1f1f; }
-        html.dark .cmu-page .cmu-transfer-panel { background: #1a1a1a !important; border-color: #222 !important; }
-        html.dark .cmu-page .cmu-transfer-btn   { background: #222 !important; border-color: #2a2a2a !important; color: #8e8e93 !important; }
-        html.dark .cmu-page .cmu-transfer-btn:hover:not(:disabled)  { background: #4f46e5 !important; color: white !important; border-color: #4f46e5 !important; }
-        html.dark .cmu-page .cmu-transfer-btn:disabled { opacity: 0.2 !important; }
-        html.dark .cmu-page .cmu-transfer-divider { background: #222 !important; }
-        html.dark .cmu-page .cmu-badge     { background: #1a1a1a !important; color: #8e8e93 !important; }
-        html.dark .cmu-page .cmu-search-btn { background: #222 !important; border-color: #222 !important; color: #f5f5f7 !important; }
-        html.dark .cmu-page .cmu-info-icon  { background: #1a1a1a !important; color: #71717a !important; }
-        html.dark .cmu-page .cmu-info-title { color: #71717a !important; }
-        html.dark .cmu-page .cmu-info-body  { color: #4b5563 !important; }
-        html.dark .cmu-page .cmu-hdr-btn   { color: #8e8e93 !important; }
-        html.dark .cmu-page .cmu-hdr-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .cmu-page .cmu-section-title { color: #f5f5f7 !important; }
-        html.dark .cmu-page .cmu-section-sub   { color: #4b5563 !important; }
-        html.dark .cmu-page .cmu-pw-hint        { color: #374151 !important; }
-      `}</style>
-
-      <div className={`cmu-page h-screen overflow-hidden flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-50 font-sans ${className}`}>
-
-        {/* ── Header ─────────────────────────────────────────────────────────── */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-indigo-500/30 px-2 py-1 flex items-center justify-between gap-1.5 sticky top-0 z-10 shadow-lg">
-          <div className="flex items-center gap-2">
-            <div className="bg-white/10 p-1 rounded-lg text-white backdrop-blur-sm">
-              <ShieldCheck size={14} />
-            </div>
-            <div>
-              <h1 className="fz-caption font-black text-white tracking-tight leading-none uppercase">
-                {isUpdating ? 'MODIFY USER' : 'CREATE USER'}
-              </h1>
-              <div className="flex items-center gap-1 mt-0.5 fz-caption font-bold text-slate-300 uppercase tracking-wider">
-                <Fingerprint size={8} className="text-indigo-300" /> User Access Management
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button onClick={() => setIsLookupVisible(true)}
-              className="px-2 py-0.5 h-6 bg-white/10 text-white hover:bg-white/20 rounded fz-caption font-black transition-all flex items-center gap-1">
-              <Search size={10} /> SEARCH
-            </button>
-            <button onClick={resetForm}
-              className="cmu-hdr-btn px-2 py-0.5 h-6 text-slate-300 hover:text-white hover:bg-white/10 rounded fz-caption font-bold transition-all flex items-center gap-1">
-              <RotateCcw size={10} /> Reset
-            </button>
-            <button onClick={handleSave} disabled={isSaving}
-              className="px-2 py-0.5 h-6 bg-pink-600 hover:bg-pink-500 text-white rounded fz-caption font-black shadow-md transition-all flex items-center gap-1 active:scale-95 disabled:opacity-60">
-              {isSaving ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
-              {isUpdating ? 'UPDATE' : 'SAVE'}
-            </button>
-            <button onClick={handleClose}
-              className="cmu-hdr-btn h-6 w-6 flex items-center justify-center rounded text-slate-300 hover:text-white hover:bg-white/10 transition-all" title="Close">
-              <X size={13} />
-            </button>
-          </div>
+    <div className={`app-window ${className}`}>
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">{isUpdating ? 'Modify User' : 'Create User'}</h1>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Fingerprint size={12} /> User Access Management
+          </p>
         </div>
-
-        {/* ── Status banner ──────────────────────────────────────────────────── */}
-        {statusMessage && (
-          <div className={`shrink-0 px-3 py-1 border-b flex items-center gap-2 fz-caption font-bold ${STATUS_COLORS[statusMessage.type]}`}>
-            {STATUS_ICONS[statusMessage.type]}
-            <span className="flex-1">{statusMessage.text}</span>
-            <button onClick={clearStatus} className="opacity-60 hover:opacity-100 transition-opacity"><X size={11} /></button>
-          </div>
-        )}
-
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2">
-          <div className="max-w-6xl mx-auto min-h-full flex flex-col gap-2">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 items-stretch flex-1 min-h-0">
-
-              {/* ── Left: Identity + Level ── */}
-              <div className="lg:col-span-5 flex flex-col gap-2 min-h-0">
-
-                <div className="cmu-card bg-white border border-slate-200 rounded-xl p-2 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-2 opacity-[0.04] pointer-events-none"><User size={60} strokeWidth={1} /></div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <div className="cmu-card-icon bg-indigo-50 p-1 rounded-md text-indigo-600"><UserCheck size={12} /></div>
-                    <h3 className="cmu-section-title fz-caption font-black text-slate-900 tracking-tight uppercase">Identity Profile</h3>
-                  </div>
-                  <div className="space-y-2">
-                    {/* Avatar / Profile Photo */}
-                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                      <div className="relative group">
-                        <input id="user-avatar-upload" type="file" accept="image/jpeg,image/png" className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = () => updateFormData('avatar', reader.result as string);
-                              reader.readAsDataURL(file);
-                            }
-                            e.target.value = '';
-                          }} />
-                        {formData.avatar ? (
-                          <img src={formData.avatar} alt="Avatar"
-                            onClick={() => document.getElementById('user-avatar-upload')?.click()}
-                            className="w-12 h-12 rounded-full object-cover border-2 border-indigo-400 shadow-md cursor-pointer transition-transform group-hover:scale-105" />
-                        ) : (
-                          <div
-                            onClick={() => document.getElementById('user-avatar-upload')?.click()}
-                            className="w-12 h-12 rounded-full border-2 border-slate-300 shadow-md cursor-pointer bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-slate-500 font-black text-lg uppercase transition-transform group-hover:scale-105 group-hover:border-indigo-400">
-                            {formData.username?.[0] || <User size={20} />}
-                          </div>
-                        )}
-                        <div className="absolute -bottom-0.5 -right-0.5 bg-indigo-600 rounded-full p-0.5 text-white shadow cursor-pointer group-hover:bg-indigo-500"
-                          onClick={() => document.getElementById('user-avatar-upload')?.click()}>
-                          <Camera size={8} />
-                        </div>
-                      </div>
-                      <div>
-                        <p className="fz-caption font-black text-slate-700 uppercase">{formData.username || 'New User'}</p>
-                        <p className="fz-mini text-slate-400 cursor-pointer hover:text-indigo-500"
-                          onClick={() => document.getElementById('user-avatar-upload')?.click()}>
-                          Click photo to change
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-0.5">
-                      <label className="cmu-label fz-caption font-black text-slate-600 uppercase tracking-wider flex items-center gap-1 ml-0.5">
-                        <Key size={10} className="cmu-label-icon text-slate-600" /> User Name
-                      </label>
-                      <div className="flex gap-1">
-                        <div className="relative flex-1">
-                          <User size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input type="text" value={formData.username}
-                            onChange={(e) => updateFormData('username', e.target.value)}
-                            className="cmu-input w-full h-6 bg-slate-50 border-2 border-slate-200 rounded-lg pl-7 pr-2 fz-caption font-black text-slate-900 outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all"
-                            placeholder="e.g. admin_pro_01" />
-                        </div>
-                        <button onClick={() => formData.username ? fetchUser() : setIsLookupVisible(true)}
-                          className="cmu-search-btn h-6 px-2 bg-slate-800 border-2 border-slate-800 text-white rounded-lg hover:bg-slate-700 transition-all flex items-center justify-center active:scale-95">
-                          <Search size={12} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-0.5">
-                      <label className="cmu-label fz-caption font-black text-slate-600 uppercase tracking-wider flex items-center gap-1 ml-0.5">
-                        <Mail size={10} className="cmu-label-icon text-slate-600" /> Email <span className="fz-mini font-bold normal-case text-slate-400">(optional)</span>
-                      </label>
-                      <div className="relative">
-                        <Mail size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="email" value={formData.email}
-                          onChange={(e) => updateFormData('email', e.target.value)}
-                          className="cmu-input w-full h-6 bg-slate-50 border-2 border-slate-200 rounded-lg pl-7 pr-2 fz-caption font-black text-slate-900 outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all"
-                          placeholder="leave blank to auto-generate" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-0.5">
-                        <label className="cmu-label fz-caption font-black text-slate-600 uppercase tracking-wider flex items-center gap-1 ml-0.5">
-                          <Lock size={10} className="cmu-label-icon" /> Password
-                        </label>
-                        <div className="relative">
-                          <LockKeyhole size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input type="password" value={formData.password}
-                            onChange={(e) => updateFormData('password', e.target.value)}
-                            className="cmu-input w-full h-6 bg-slate-50 border-2 border-slate-200 rounded-lg pl-7 pr-2 fz-caption font-black text-slate-900 outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all font-mono"
-                            placeholder={isUpdating ? '(blank = keep)' : '••••••••'} />
-                        </div>
-                        {!isUpdating && (
-                          <p className="cmu-pw-hint fz-caption text-slate-400 font-bold ml-0.5">Min 6 characters</p>
-                        )}
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="cmu-label fz-caption font-black text-slate-600 uppercase tracking-wider flex items-center gap-1 ml-0.5">
-                          <Shield size={10} className="cmu-label-icon" /> Confirm
-                        </label>
-                        <input type="password" value={formData.confirmPassword}
-                          onChange={(e) => updateFormData('confirmPassword', e.target.value)}
-                          className="cmu-input w-full h-6 bg-slate-50 border-2 border-slate-200 rounded-lg px-2 fz-caption font-black text-slate-900 outline-none focus:ring-2 focus:ring-slate-400 focus:bg-white transition-all font-mono"
-                          placeholder="••••••••" />
-                        {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                          <p className="fz-caption text-red-500 font-black ml-0.5">Passwords don't match</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="cmu-card bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
-                  <div className="grid grid-cols-2 gap-2 items-center">
-                    <div className="space-y-0.5">
-                      <label className="cmu-label fz-caption font-black text-slate-600 uppercase tracking-wider flex items-center gap-1 ml-0.5">
-                        <ShieldAlert size={10} className="cmu-label-icon" /> User Level
-                      </label>
-                      <select value={formData.userLevel} onChange={(e) => updateFormData('userLevel', e.target.value)}
-                        className="cmu-select w-full h-6 bg-slate-50 border-2 border-slate-200 rounded-lg px-2 fz-caption font-black text-slate-900 outline-none focus:ring-2 focus:ring-slate-400 transition-all cursor-pointer">
-                        {USER_LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-                      </select>
-                    </div>
-                    <label className="cmu-auth-toggle relative flex flex-col items-center justify-center p-1.5 bg-slate-50 rounded-lg border-2 border-slate-200 cursor-pointer active:scale-95 transition-all select-none">
-                      <input type="checkbox" checked={formData.allowPassTransactions}
-                        onChange={(e) => updateFormData('allowPassTransactions', e.target.checked)}
-                        className="peer sr-only" />
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-sm transition-all mb-0.5 ${
-                        formData.allowPassTransactions ? 'bg-indigo-600 text-white ring-2 ring-indigo-300' : 'bg-white text-slate-400 ring-1 ring-slate-200'}`}>
-                        <Fingerprint size={14} />
-                      </div>
-                      <span className={`cmu-auth-label fz-caption font-black uppercase tracking-tight ${
-                        formData.allowPassTransactions ? 'text-indigo-700' : 'text-slate-600'}`}>
-                        Transaction Auth
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* ── Right: Access Privilege Matrix ── */}
-              <div className="lg:col-span-7 cmu-card bg-white border border-slate-200 rounded-xl p-2 shadow-sm relative overflow-hidden flex flex-col min-h-0">
-                <div className="absolute top-0 right-0 m-4 opacity-[0.03] pointer-events-none">
-                  <ShieldCheck size={120} strokeWidth={1} />
-                </div>
-
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className="cmu-card-icon bg-indigo-50 p-1 rounded-md text-indigo-600"><Settings2 size={12} /></div>
-                  <div>
-                    <h3 className="cmu-section-title fz-caption font-black text-slate-900 tracking-tight uppercase">Access Privilege Matrix</h3>
-                    <p className="cmu-section-sub fz-caption text-slate-600 font-bold uppercase tracking-wider">
-                      Click to select · Ctrl+Click multi-select · Arrow buttons to transfer
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-12 gap-2 items-stretch flex-1 min-h-0">
-
-                  {/* Available pool */}
-                  <div className="col-span-5">
-                    <PermList
-                      items={formData.availablePermissions}
-                      selected={selectedDefaultRights}
-                      flyingOut={flyingToRight}
-                      justArrived={arrivedLeft}
-                      onToggle={toggleAvailable}
-                      label="Available Rights"
-                      count={`${formData.availablePermissions.length} POOL`}
-                      side="left"
-                    />
-                  </div>
-
-                  {/* Transfer buttons */}
-                  <div className="col-span-2 flex flex-col items-center justify-center gap-1">
-                    <div className="cmu-transfer-panel bg-slate-50 p-1 rounded-lg border-2 border-slate-200 flex flex-col gap-1 shadow-sm">
-                      <Tooltip title="Grant selected →" placement="right">
-                        <button onClick={handleMoveSelectedRight}
-                          disabled={selectedDefaultRights.length === 0 || isAnimating}
-                          className="cmu-transfer-btn w-7 h-7 bg-white text-slate-600 border border-slate-200 rounded-md shadow-sm transition-all flex items-center justify-center active:scale-90 disabled:opacity-30">
-                          <ChevronRight size={14} />
-                        </button>
-                      </Tooltip>
-                      <Tooltip title="Grant all →" placement="right">
-                        <button onClick={handleMoveAllRight}
-                          disabled={formData.availablePermissions.length === 0 || isAnimating}
-                          className="cmu-transfer-btn w-7 h-7 bg-white text-slate-600 border border-slate-200 rounded-md shadow-sm transition-all flex items-center justify-center active:scale-90 disabled:opacity-30">
-                          <ChevronsRight size={14} />
-                        </button>
-                      </Tooltip>
-                      <div className="cmu-transfer-divider h-px w-full bg-slate-300 my-0.5" />
-                      <Tooltip title="← Revoke selected" placement="left">
-                        <button onClick={handleMoveSelectedLeft}
-                          disabled={selectedRightsAllot.length === 0 || isAnimating}
-                          className="cmu-transfer-btn w-7 h-7 bg-white text-slate-600 border border-slate-200 rounded-md shadow-sm transition-all flex items-center justify-center active:scale-90 disabled:opacity-30">
-                          <ChevronLeft size={14} />
-                        </button>
-                      </Tooltip>
-                      <Tooltip title="← Revoke all" placement="left">
-                        <button onClick={handleMoveAllLeft}
-                          disabled={formData.assignedPermissions.length === 0 || isAnimating}
-                          className="cmu-transfer-btn w-7 h-7 bg-white text-slate-600 border border-slate-200 rounded-md shadow-sm transition-all flex items-center justify-center active:scale-90 disabled:opacity-30">
-                          <ChevronsLeft size={14} />
-                        </button>
-                      </Tooltip>
-                    </div>
-                  </div>
-
-                  {/* Active privileges */}
-                  <div className="col-span-5">
-                    <PermList
-                      items={formData.assignedPermissions}
-                      selected={selectedRightsAllot}
-                      flyingOut={flyingToLeft}
-                      justArrived={arrivedRight}
-                      onToggle={toggleAssigned}
-                      label="Active Privileges"
-                      count={`${formData.assignedPermissions.length} GRANTED`}
-                      side="right"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="aw-actions">
+          <button type="button" onClick={() => setIsLookupVisible(true)} className="aw-btn aw-btn-secondary">
+            <Search size={13} /> Search
+          </button>
+          <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary">
+            <RotateCcw size={13} /> Reset
+          </button>
+          <button type="button" onClick={handleSave} disabled={isSaving} className="aw-btn aw-btn-primary">
+            {isSaving ? <Loader2 size={13} className="aw-spin" /> : <Save size={13} />}
+            {isUpdating ? 'Update' : 'Save'}
+          </button>
+          <button type="button" onClick={handleClose} className="aw-btn aw-btn-ghost">
+            <X size={13} /> Close
+          </button>
         </div>
-
-        {/* ── Lookup Modal ── */}
-        <Modal open={isLookupVisible} onCancel={() => setIsLookupVisible(false)}
-          footer={null} width={900} centered styles={{ body: { padding: 0 } }} destroyOnClose>
-          <UserLookup isModal={true}
-            onSelect={(user) => { loadUser(user); setIsLookupVisible(false); }}
-            onClose={() => setIsLookupVisible(false)} />
-        </Modal>
-
       </div>
-    </ConfigProvider>
+
+      <div className="aw-content">
+        <div className="aw-stack">
+          {statusMessage && (
+            <div className={`aw-alert aw-fade-in ${statusTone[statusMessage.type]}`} style={{ marginBottom: 0, alignItems: 'center' }} role="status">
+              {STATUS_ICONS[statusMessage.type]}
+              <span style={{ flex: 1 }}>{statusMessage.text}</span>
+              <button type="button" onClick={clearStatus} className="aw-icon-btn is-sm" aria-label="Dismiss" style={{ color: 'inherit' }}>
+                <X size={13} />
+              </button>
+            </div>
+          )}
+
+          <div className="aw-split aw-split-wide" style={{ height: 'auto', gridTemplateColumns: 'minmax(280px, 5fr) minmax(0, 7fr)' }}>
+
+            {/* ── Left: identity + level ── */}
+            <div className="aw-side" style={{ overflow: 'visible' }}>
+              <section className="aw-card">
+                <div className="aw-card-head">
+                  <span className="aw-card-icon"><UserCheck size={14} /></span>
+                  <h2 className="aw-card-title">Identity Profile</h2>
+                </div>
+                <div className="aw-stack">
+                  {/* Avatar */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 'var(--aw-gap)', borderBottom: '1px solid var(--aw-border)' }}>
+                    <input id="user-avatar-upload" type="file" accept="image/jpeg,image/png" className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => updateFormData('avatar', reader.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                        e.target.value = '';
+                      }} />
+                    <button type="button" onClick={openAvatarPicker} className="aw-avatar" aria-label="Change photo" data-tip="Change photo" data-tip-pos="bottom">
+                      {formData.avatar ? (
+                        <img src={formData.avatar} alt="Avatar" />
+                      ) : (
+                        <span>{formData.username?.[0] || <User size={20} />}</span>
+                      )}
+                      <i className="aw-avatar-badge"><Camera size={10} /></i>
+                    </button>
+                    <div>
+                      <p className="aw-strong" style={{ textTransform: 'uppercase' }}>{formData.username || 'New User'}</p>
+                      <p className="aw-meta">Click photo to change</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="aw-label" htmlFor="cmu-username">User Name</label>
+                    <div className="aw-input-wrap has-icon has-action">
+                      <User size={13} />
+                      <input id="cmu-username" type="text" value={formData.username}
+                        onChange={(e) => updateFormData('username', e.target.value)}
+                        className="aw-input" placeholder="e.g. admin_pro_01" />
+                      <button
+                        type="button"
+                        className="aw-input-action"
+                        onClick={() => formData.username ? fetchUser() : setIsLookupVisible(true)}
+                        aria-label="Find user"
+                        data-tip="Find user"
+                        data-tip-pos="top-end"
+                      >
+                        <Search size={13} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="aw-label" htmlFor="cmu-email">
+                      Email <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>(optional)</span>
+                    </label>
+                    <div className="aw-input-wrap has-icon">
+                      <Mail size={13} />
+                      <input id="cmu-email" type="email" value={formData.email}
+                        onChange={(e) => updateFormData('email', e.target.value)}
+                        className="aw-input" placeholder="leave blank to auto-generate" />
+                    </div>
+                  </div>
+
+                  <div className="aw-two">
+                    <div>
+                      <label className="aw-label" htmlFor="cmu-pw">Password</label>
+                      <div className="aw-input-wrap has-icon">
+                        <LockKeyhole size={13} />
+                        <input id="cmu-pw" type="password" value={formData.password}
+                          onChange={(e) => updateFormData('password', e.target.value)}
+                          className="aw-input" placeholder={isUpdating ? '(blank = keep)' : '••••••••'} />
+                      </div>
+                      {!isUpdating && <p className="aw-meta" style={{ marginTop: 4 }}>Min 6 characters</p>}
+                    </div>
+                    <div>
+                      <label className="aw-label" htmlFor="cmu-pw2">Confirm</label>
+                      <input id="cmu-pw2" type="password" value={formData.confirmPassword}
+                        onChange={(e) => updateFormData('confirmPassword', e.target.value)}
+                        className={`aw-input ${formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword ? 'is-invalid' : ''}`}
+                        placeholder="••••••••" />
+                      {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                        <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 700 }}>Passwords don't match</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="aw-card">
+                <div className="aw-card-head">
+                  <span className="aw-card-icon"><ShieldAlert size={14} /></span>
+                  <h2 className="aw-card-title">Level &amp; Authority</h2>
+                </div>
+                <div className="aw-stack">
+                  <div>
+                    <label className="aw-label" htmlFor="cmu-level">User Level</label>
+                    <Select
+                      id="cmu-level"
+                      className="aw-select"
+                      popupClassName="aw-select-popup"
+                      value={formData.userLevel || undefined}
+                      onChange={(v) => updateFormData('userLevel', v ?? '')}
+                      placeholder="Select Level"
+                      options={USER_LEVELS.filter(l => l.value !== '').map(l => ({ value: l.value, label: l.label }))}
+                    />
+                  </div>
+                  <div className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <Fingerprint size={16} style={{ color: formData.allowPassTransactions ? 'var(--aw-accent)' : 'var(--aw-muted)' }} />
+                      <span>
+                        <span className="aw-strong" style={{ display: 'block' }}>Transaction Auth</span>
+                        <span className="aw-meta">Allow this user to pass transactions</span>
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={formData.allowPassTransactions}
+                      aria-label="Transaction Auth"
+                      onClick={() => updateFormData('allowPassTransactions', !formData.allowPassTransactions)}
+                      className={`aw-switch ${formData.allowPassTransactions ? 'is-on' : ''}`}
+                    />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            {/* ── Right: access privilege matrix ── */}
+            <section className="aw-card" style={{ minWidth: 0 }}>
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Settings2 size={14} /></span>
+                <div>
+                  <h2 className="aw-card-title">Access Privilege Matrix</h2>
+                  <p className="aw-meta">Click to select · Ctrl+Click multi-select · Arrow buttons to transfer</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) auto minmax(0, 5fr)', gap: 'var(--aw-gap)', alignItems: 'stretch' }}>
+                <PermList
+                  items={formData.availablePermissions}
+                  selected={selectedDefaultRights}
+                  flyingOut={flyingToRight}
+                  justArrived={arrivedLeft}
+                  onToggle={toggleAvailable}
+                  label="Available Rights"
+                  count={`${formData.availablePermissions.length} pool`}
+                  side="left"
+                />
+
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+                  <button type="button" onClick={handleMoveSelectedRight}
+                    disabled={selectedDefaultRights.length === 0 || isAnimating}
+                    className="aw-icon-btn" aria-label="Grant selected" data-tip="Grant selected" data-tip-pos="top-start">
+                    <ChevronRight size={15} />
+                  </button>
+                  <button type="button" onClick={handleMoveAllRight}
+                    disabled={formData.availablePermissions.length === 0 || isAnimating}
+                    className="aw-icon-btn" aria-label="Grant all" data-tip="Grant all" data-tip-pos="top-start">
+                    <ChevronsRight size={15} />
+                  </button>
+                  <div style={{ height: 1, background: 'var(--aw-border)' }} />
+                  <button type="button" onClick={handleMoveSelectedLeft}
+                    disabled={selectedRightsAllot.length === 0 || isAnimating}
+                    className="aw-icon-btn" aria-label="Revoke selected" data-tip="Revoke selected" data-tip-pos="top-start">
+                    <ChevronLeft size={15} />
+                  </button>
+                  <button type="button" onClick={handleMoveAllLeft}
+                    disabled={formData.assignedPermissions.length === 0 || isAnimating}
+                    className="aw-icon-btn" aria-label="Revoke all" data-tip="Revoke all" data-tip-pos="top-start">
+                    <ChevronsLeft size={15} />
+                  </button>
+                </div>
+
+                <PermList
+                  items={formData.assignedPermissions}
+                  selected={selectedRightsAllot}
+                  flyingOut={flyingToLeft}
+                  justArrived={arrivedRight}
+                  onToggle={toggleAssigned}
+                  label="Active Privileges"
+                  count={`${formData.assignedPermissions.length} granted`}
+                  side="right"
+                />
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Lookup dialog ── */}
+      <AwDialog open={isLookupVisible} title="User Lookup" icon={<Search size={14} />} onClose={() => setIsLookupVisible(false)} maxWidth="56rem" flush>
+        <UserLookup isModal={true}
+          onSelect={(user) => { loadUser(user); setIsLookupVisible(false); }}
+          onClose={() => setIsLookupVisible(false)} />
+      </AwDialog>
+    </div>
   );
 };
 

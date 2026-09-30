@@ -45,8 +45,7 @@ const DefineProfitLoss: React.FC = () => {
   const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const [tableData, setTableData] = useState<PLItem[]>(() => {
     return Array.from({ length: 20 }, (_, index) => ({

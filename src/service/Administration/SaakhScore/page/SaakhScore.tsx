@@ -1,16 +1,16 @@
 // page/SaakhScore.tsx
 
-import React, { useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  Search, User, TrendingUp, TrendingDown, Minus,
+  User, TrendingUp, TrendingDown, Minus,
   ShieldCheck, ShieldAlert, ShieldX,
-  IndianRupee, Calendar, Award, AlertTriangle,
+  IndianRupee, Calendar, Award,
   XCircle, Info, Lightbulb,
   CreditCard, Building2, RotateCcw, ChevronRight,
-  Star, Zap, Target, Sparkles, X,
+  Star, Zap, Sparkles, X, RefreshCw,
 } from 'lucide-react';
-import { ConfigProvider } from 'antd';
+import MemberField from '@/components/shared/kit/MemberField';
 import { useSaakhScore, type FactorScore } from '../hook/useSaakhScore';
 
 const closeWindow = () => {
@@ -19,14 +19,14 @@ const closeWindow = () => {
   else window.close();
 };
 
-// ── Tier config ──────────────────────────────────────────────────────────────
+// ── Tier config (colours come from the theme tokens) ─────────────────────────
 const TIER_CONFIG = {
-  Platinum: { color: '#818cf8', glow: 'rgba(129,140,248,0.45)', bg: 'rgba(129,140,248,0.12)', label: 'Platinum', emoji: '💎' },
-  Gold:     { color: '#fbbf24', glow: 'rgba(251,191,36,0.45)',  bg: 'rgba(251,191,36,0.12)',  label: 'Gold',     emoji: '🥇' },
-  Silver:   { color: '#94a3b8', glow: 'rgba(148,163,184,0.45)', bg: 'rgba(148,163,184,0.12)', label: 'Silver',   emoji: '🥈' },
-  Bronze:   { color: '#fb923c', glow: 'rgba(251,146,60,0.45)',  bg: 'rgba(251,146,60,0.12)',  label: 'Bronze',   emoji: '🥉' },
-  Critical: { color: '#f87171', glow: 'rgba(248,113,113,0.45)', bg: 'rgba(248,113,113,0.12)', label: 'Critical', emoji: '⚠️' },
-};
+  Platinum: { color: 'var(--aw-info)', label: 'Platinum', emoji: '💎', tone: 'info' },
+  Gold: { color: 'var(--aw-warning)', label: 'Gold', emoji: '🥇', tone: 'warning' },
+  Silver: { color: 'var(--aw-muted)', label: 'Silver', emoji: '🥈', tone: 'muted' },
+  Bronze: { color: 'var(--aw-warning)', label: 'Bronze', emoji: '🥉', tone: 'warning' },
+  Critical: { color: 'var(--aw-danger)', label: 'Critical', emoji: '⚠️', tone: 'danger' },
+} as const;
 
 // ── Animated count-up number ─────────────────────────────────────────────────
 const CountUp: React.FC<{ value: number; decimals?: number; duration?: number; prefix?: string; format?: boolean }> = ({
@@ -51,7 +51,7 @@ const CountUp: React.FC<{ value: number; decimals?: number; duration?: number; p
   return <>{prefix}{text}</>;
 };
 
-// ── Score gauge (SVG arc with glow) ──────────────────────────────────────────
+// ── Score gauge (SVG arc) ────────────────────────────────────────────────────
 const ScoreGauge: React.FC<{ score: number; tier: keyof typeof TIER_CONFIG }> = ({ score, tier }) => {
   const tc = TIER_CONFIG[tier];
   const r = 62;
@@ -59,137 +59,90 @@ const ScoreGauge: React.FC<{ score: number; tier: keyof typeof TIER_CONFIG }> = 
   const dash = circ * (score / 10);
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative" style={{ width: 170, height: 170 }}>
-        <div className="absolute inset-4 rounded-full blur-2xl animate-pulse" style={{ background: tc.glow, opacity: 0.5 }} />
-        <svg width="170" height="170" viewBox="0 0 170 170" className="relative">
-          <defs>
-            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={tc.color} />
-              <stop offset="100%" stopColor={tc.color} stopOpacity="0.55" />
-            </linearGradient>
-          </defs>
-          <circle cx="85" cy="85" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="13" />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{ position: 'relative', width: 170, height: 170 }}>
+        <svg width="170" height="170" viewBox="0 0 170 170" role="img" aria-label={`Score ${score.toFixed(1)} out of 10`}>
+          <circle cx="85" cy="85" r={r} fill="none" stroke="var(--aw-border)" strokeWidth="13" />
           {Array.from({ length: 10 }).map((_, i) => {
             const a = ((i + 1) / 10) * 2 * Math.PI - Math.PI / 2;
-            const x1 = 85 + (r - 11) * Math.cos(a);
-            const y1 = 85 + (r - 11) * Math.sin(a);
-            const x2 = 85 + (r - 16) * Math.cos(a);
-            const y2 = 85 + (r - 16) * Math.sin(a);
-            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />;
+            return (
+              <line
+                key={i}
+                x1={85 + (r - 11) * Math.cos(a)} y1={85 + (r - 11) * Math.sin(a)}
+                x2={85 + (r - 16) * Math.cos(a)} y2={85 + (r - 16) * Math.sin(a)}
+                stroke="var(--aw-border-strong)" strokeWidth="1.5"
+              />
+            );
           })}
           <motion.circle
             cx="85" cy="85" r={r}
             fill="none"
-            stroke="url(#gaugeGrad)"
+            stroke={tc.color}
             strokeWidth="13"
             strokeLinecap="round"
             strokeDasharray={circ}
             transform="rotate(-90 85 85)"
             initial={{ strokeDashoffset: circ }}
             animate={{ strokeDashoffset: circ - dash }}
-            transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
-            style={{ filter: `drop-shadow(0 0 8px ${tc.glow})` }}
+            transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-black tracking-tight" style={{ color: tc.color, lineHeight: 1, textShadow: `0 0 24px ${tc.glow}` }}>
-            <CountUp value={score} duration={1600} />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 38, fontWeight: 800, lineHeight: 1, color: tc.color, fontVariantNumeric: 'tabular-nums' }}>
+            <CountUp value={score} duration={1500} />
           </span>
-          <span className="fz-tiny font-black text-white/40 uppercase tracking-[0.25em] mt-1">out of 10</span>
+          <span className="aw-meta" style={{ textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 4 }}>out of 10</span>
         </div>
       </div>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.6, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ delay: 1.2, type: 'spring', stiffness: 300, damping: 18 }}
-        className="mt-2 px-4 py-1.5 rounded-full fz-caption font-black uppercase tracking-[0.2em] flex items-center gap-1.5 border"
-        style={{ background: tc.bg, color: tc.color, borderColor: tc.glow, boxShadow: `0 0 20px ${tc.glow}` }}
-      >
-        <span>{tc.emoji}</span> {tc.label}
-      </motion.div>
+      <span className={`aw-pill tone-${tc.tone}`} style={{ padding: '4px 14px', fontSize: 'var(--type-body-size)', letterSpacing: '.12em', textTransform: 'uppercase' }}>
+        {tc.emoji} {tc.label}
+      </span>
     </div>
   );
 };
 
 // ── Factor card ───────────────────────────────────────────────────────────────
-const FactorCard: React.FC<{ f: FactorScore; index: number }> = ({ f, index }) => {
+const FactorCard: React.FC<{ f: FactorScore }> = ({ f }) => {
   const pct = (f.score / f.maxScore) * 100;
-  const c = f.status === 'good' ? '#10b981' : f.status === 'average' ? '#f59e0b' : '#ef4444';
-  const cBg = f.status === 'good' ? 'rgba(16,185,129,0.1)' : f.status === 'average' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)';
-
+  const tone = f.status === 'good' ? 'var(--aw-success)' : f.status === 'average' ? 'var(--aw-warning)' : 'var(--aw-danger)';
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.35 + index * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -4, boxShadow: '0 12px 32px -8px rgba(99,102,241,0.25)', transition: { duration: 0.2 } }}
-      className="ss-factor-card bg-white/70 backdrop-blur border border-slate-200/80 rounded-2xl p-3.5 flex flex-col gap-2.5 cursor-default"
-      style={{ boxShadow: '0 2px 12px -4px rgba(15,23,42,0.06)' }}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="ss-fc-name fz-small font-black text-slate-700 uppercase tracking-wide">{f.name}</span>
-        <span className="fz-small font-black px-2 py-0.5 rounded-full shrink-0" style={{ background: cBg, color: c }}>
+    <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: tone, textAlign: 'left' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <span className="aw-stat-label" style={{ color: 'var(--aw-text)' }}>{f.name}</span>
+        <span className="aw-pill" style={{ color: tone, background: `color-mix(in srgb, ${tone} 12%, var(--aw-surface))` }}>
           {f.score.toFixed(1)} / {f.maxScore}
         </span>
       </div>
-      <div className="ss-fc-track h-2 bg-slate-100 rounded-full overflow-hidden">
-        <motion.div
-          className="h-full rounded-full"
-          style={{ background: `linear-gradient(90deg, ${c}, ${c}cc)`, boxShadow: `0 0 8px ${c}66` }}
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ delay: 0.6 + index * 0.08, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        />
-      </div>
-      <p className="ss-fc-desc fz-tiny text-slate-500 font-medium leading-snug">{f.description}</p>
-    </motion.div>
+      <span className="aw-bar-track" style={{ width: '100%', margin: '8px 0' }}>
+        <span style={{ width: `${pct}%`, background: tone }} />
+      </span>
+      <p className="aw-meta" style={{ lineHeight: 1.4 }}>{f.description}</p>
+    </div>
   );
 };
 
 // ── Eligibility badge ─────────────────────────────────────────────────────────
 const EligibilityBadge: React.FC<{ eligible: 'YES' | 'CONDITIONAL' | 'NO' }> = ({ eligible }) => {
   const cfg = eligible === 'YES'
-    ? { icon: <ShieldCheck size={20} />, text: 'Eligible for New Loan', grad: 'from-emerald-500 to-teal-600', glow: 'rgba(16,185,129,0.4)' }
+    ? { icon: <ShieldCheck size={20} />, text: 'Eligible for New Loan', tone: 'success' }
     : eligible === 'CONDITIONAL'
-    ? { icon: <ShieldAlert size={20} />, text: 'Conditional Eligibility', grad: 'from-amber-400 to-orange-500', glow: 'rgba(245,158,11,0.4)' }
-    : { icon: <ShieldX size={20} />, text: 'Not Eligible', grad: 'from-rose-500 to-red-600', glow: 'rgba(244,63,94,0.4)' };
-
+      ? { icon: <ShieldAlert size={20} />, text: 'Conditional Eligibility', tone: 'warning' }
+      : { icon: <ShieldX size={20} />, text: 'Not Eligible', tone: 'danger' };
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.9, type: 'spring', stiffness: 260, damping: 20 }}
-      className={`flex items-center gap-2.5 bg-gradient-to-r ${cfg.grad} text-white px-5 py-3 rounded-2xl`}
-      style={{ boxShadow: `0 8px 28px -6px ${cfg.glow}` }}
-    >
+    <div className={`aw-alert aw-alert-${cfg.tone === 'danger' ? 'danger' : cfg.tone}`} style={{ marginBottom: 0, alignItems: 'center', padding: '12px 16px' }}>
       {cfg.icon}
-      <span className="text-sm font-black uppercase tracking-wider">{cfg.text}</span>
-    </motion.div>
+      <span style={{ textTransform: 'uppercase', letterSpacing: '.06em' }}>{cfg.text}</span>
+    </div>
   );
 };
-
-// ── Stagger helpers ───────────────────────────────────────────────────────────
-const sectionAnim = (delay: number) => ({
-  initial: { opacity: 0, y: 28 },
-  animate: { opacity: 1, y: 0 },
-  transition: { delay, duration: 0.55, ease: [0.22, 1, 0.36, 1] as any },
-});
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 const SaakhScore: React.FC = () => {
   const { data, loading, error, memberNo, setMemberNo, fetchScore, clear } = useSaakhScore();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [lastSpaceTime, setLastSpaceTime] = useState(0);
   const [memberName, setMemberName] = useState('');
 
-  const openMemberLookup = () => {
-    if ((window as any).electronAPI?.openNewWindow) {
-      (window as any).electronAPI.openNewWindow('/common/member-lookup');
-    }
-  };
-
-  // Listen for member selection from the lookup window
+  // Keep listening for member selection from the separate lookup window, in case
+  // another window still opens it.
   useEffect(() => {
     const api = (window as any).electronAPI;
     if (!api?.ipcRenderer) return;
@@ -209,577 +162,262 @@ const SaakhScore: React.FC = () => {
 
   const handleSearch = () => fetchScore(memberNo);
 
-  const handleMemberNoChange = (value: string) => {
-    setMemberNo(value.replace(/[^0-9]/g, ''));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') { handleSearch(); return; }
-    if (e.key === 'F2') { e.preventDefault(); openMemberLookup(); return; }
-    // Double-space within 500 ms opens member lookup
-    if (e.key === ' ') {
-      const now = Date.now();
-      if (now - lastSpaceTime < 500) {
-        e.preventDefault();
-        openMemberLookup();
-        setLastSpaceTime(0);
-      } else {
-        setLastSpaceTime(now);
-      }
-    }
-  };
-
   const handleClear = () => {
     setMemberName('');
     clear();
   };
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 12 } }}>
-      <style>{`
-        html.dark .ss-page { background: linear-gradient(160deg, #000000 0%, #1a1040 50%, #12071a 100%) !important; }
-
-        /* Search bar */
-        html.dark .ss-page .ss-searchbar { background: rgba(15,23,42,0.95) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .ss-page .ss-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .ss-page .ss-input::placeholder { color: rgba(255,255,255,.08) !important; }
-        html.dark .ss-page .ss-input:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 4px rgba(99,102,241,0.12) !important; }
-        html.dark .ss-page .ss-lookup-btn { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
-        html.dark .ss-page .ss-lookup-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-
-        /* Factor cards */
-        html.dark .ss-page .ss-factor-card { background: rgba(30,41,59,0.9) !important; border-color: rgba(255,255,255,.08) !important; box-shadow: 0 2px 12px -4px rgba(0,0,0,0.4) !important; }
-        html.dark .ss-page .ss-fc-name { color: #f5f5f7 !important; }
-        html.dark .ss-page .ss-fc-track { background: #1c1c1e !important; }
-        html.dark .ss-page .ss-fc-desc { color: #71717a !important; }
-
-        /* Panels */
-        html.dark .ss-page .ss-panel { background: rgba(30,41,59,0.9) !important; border-color: rgba(255,255,255,.08) !important; box-shadow: 0 2px 12px -4px rgba(0,0,0,0.4) !important; }
-        html.dark .ss-page .ss-panel-label { color: rgba(255,255,255,.08) !important; }
-        html.dark .ss-page .ss-eligibility-reason { color: #8e8e93 !important; }
-        html.dark .ss-page .ss-rec-panel { background: linear-gradient(135deg, rgba(55,48,163,0.25), rgba(109,40,217,0.2)) !important; border-color: rgba(99,102,241,0.35) !important; }
-        html.dark .ss-page .ss-rec-label { color: #818cf8 !important; }
-        html.dark .ss-page .ss-rec-val { color: #c7d2fe !important; }
-
-        /* Financial snapshot rows */
-        html.dark .ss-page .ss-fin-row { background: rgba(15,23,42,0.7) !important; }
-        html.dark .ss-page .ss-fin-row:hover { background: rgba(30,41,59,0.9) !important; }
-        html.dark .ss-page .ss-fin-label { color: #71717a !important; }
-        html.dark .ss-page .ss-fin-val { color: #f5f5f7 !important; }
-        html.dark .ss-page .ss-fin-row-hl { background: rgba(127,29,29,0.35) !important; }
-        html.dark .ss-page .ss-fin-row-hl:hover { background: rgba(127,29,29,0.5) !important; }
-        html.dark .ss-page .ss-fin-val-hl { color: #fca5a5 !important; }
-        html.dark .ss-page .ss-guarantor-good { background: rgba(6,78,59,0.35) !important; }
-        html.dark .ss-page .ss-guarantor-bad { background: rgba(120,53,15,0.35) !important; }
-
-        /* Active loans panel */
-        html.dark .ss-page .ss-loans-panel { background: rgba(30,41,59,0.9) !important; border-color: rgba(255,255,255,.08) !important; box-shadow: 0 2px 12px -4px rgba(0,0,0,0.4) !important; }
-        html.dark .ss-page .ss-loans-header { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .ss-page .ss-loan-type { color: #f5f5f7 !important; }
-        html.dark .ss-page .ss-loan-detail { color: #71717a !important; }
-        html.dark .ss-page .ss-loan-track { background: #1c1c1e !important; }
-        html.dark .ss-page .ss-loan-icon { background: linear-gradient(135deg, rgba(55,48,163,0.3), rgba(109,40,217,0.25)) !important; }
-
-        /* Improvement tips */
-        html.dark .ss-page .ss-tips { background: linear-gradient(120deg, rgba(55,48,163,0.22), rgba(109,40,217,0.18), rgba(157,23,77,0.12)) !important; border-color: rgba(99,102,241,0.3) !important; }
-        html.dark .ss-page .ss-tip-text { color: #8e8e93 !important; }
-
-        /* Section labels */
-        html.dark .ss-page .ss-section-label { color: rgba(255,255,255,.08) !important; }
-
-        /* Error state */
-        html.dark .ss-page .ss-error { background: rgba(68,14,14,0.55) !important; border-color: #7f1d1d !important; }
-        html.dark .ss-page .ss-error-text { color: #fca5a5 !important; }
-
-        /* Empty state */
-        html.dark .ss-page .ss-empty-title { color: #8e8e93 !important; }
-        html.dark .ss-page .ss-empty-desc { color: rgba(255,255,255,.08) !important; }
-
-        /* Footer */
-        html.dark .ss-page .ss-footer { background: rgba(15,23,42,0.95) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .ss-page .ss-footer-left { color: rgba(255,255,255,.08) !important; }
-        html.dark .ss-page .ss-footer-right { color: #6366f1 !important; }
-      `}</style>
-
-      <div className="ss-page h-screen flex flex-col font-sans overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #f8fafc 0%, #eef2ff 50%, #faf5ff 100%)' }}>
-
-        {/* ── Header ── */}
-        <motion.div
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative px-4 py-2.5 flex items-center justify-between shrink-0 overflow-hidden"
-          style={{ background: 'linear-gradient(110deg, #0f172a 0%, #1e1b4b 45%, #312e81 75%, #1e1b4b 100%)' }}
-        >
-          <div className="absolute -top-10 left-1/3 w-48 h-24 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(99,102,241,0.35)' }} />
-          <div className="absolute -bottom-8 right-1/4 w-40 h-20 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(168,85,247,0.25)' }} />
-
-          <div className="flex items-center gap-2.5 relative">
-            <motion.div
-              animate={{ rotate: [0, 8, -8, 0] }}
-              transition={{ repeat: Infinity, duration: 5, ease: 'easeInOut' }}
-              className="p-2 rounded-xl border border-indigo-400/40"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 18px rgba(99,102,241,0.5)' }}
-            >
-              <Star size={14} className="text-white" />
-            </motion.div>
-            <div>
-              <h1 className="fz-label font-black text-white uppercase tracking-[0.2em] leading-none">Saakh Score</h1>
-              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-[0.3em] mt-1">Member Financial Health Index · 0–10</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 relative">
-            <AnimatePresence>
-              {data && (
-                <motion.button
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 16 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleClear}
-                  className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-mini font-black uppercase tracking-widest flex items-center gap-1.5 border border-white/20 transition-colors"
-                >
-                  <RotateCcw size={10} /> Clear
-                </motion.button>
-              )}
-            </AnimatePresence>
-            <button onClick={closeWindow}
-              className="w-7 h-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-red-500/80 rounded-lg transition-all">
-              <X size={13} />
+    <div className="app-window">
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Saakh Score</h1>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Star size={12} /> Member Financial Health Index · 0–10
+          </p>
+        </div>
+        <div className="aw-actions">
+          {data && (
+            <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary aw-fade-in">
+              <RotateCcw size={13} /> Clear
             </button>
-          </div>
-        </motion.div>
+          )}
+          <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
+            <X size={13} /> Close
+          </button>
+        </div>
+      </div>
 
-        {/* ── Search bar ── */}
-        <motion.div
-          initial={{ y: -16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.15, duration: 0.45 }}
-          className="ss-searchbar bg-white/80 backdrop-blur border-b border-slate-200/70 px-4 py-2.5 shrink-0"
-        >
-          <div className="flex items-center gap-2 max-w-2xl">
-            <div className="relative flex-1 group">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors pointer-events-none" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={memberNo}
-                onChange={e => handleMemberNoChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Enter MBNo — F2 or double-space for Lookup"
-                className="ss-input w-full h-9 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-xl fz-label font-bold text-slate-700 focus:outline-none focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all"
-                autoFocus
-              />
+      <div className="aw-content">
+        <div className="aw-stack">
+          {/* ── Member search ── */}
+          <section className="aw-card">
+            <div className="aw-inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12 }}>
+              <div style={{ flex: 1, minWidth: 260, maxWidth: 480 }}>
+                <label className="aw-label" htmlFor="ss-member">Member No.</label>
+                <MemberField
+                  id="ss-member"
+                  value={memberNo}
+                  onChange={setMemberNo}
+                  onSelect={(m: any) => {
+                    const no = String(m?.memberNo || m?.mbno || '');
+                    if (!no) return;
+                    setMemberNo(no);
+                    setMemberName(m?.memberName || m?.name || '');
+                    fetchScore(no);
+                  }}
+                  onSubmit={handleSearch}
+                  placeholder="Enter MBNo — F2 or double-space for Lookup"
+                  digitsOnly
+                  shortcuts
+                />
+              </div>
+              <button type="button" onClick={handleSearch} disabled={loading || !memberNo.trim()} className="aw-btn aw-btn-primary">
+                {loading ? <RefreshCw size={13} className="aw-spin" /> : <Zap size={13} />}
+                {loading ? 'Scoring…' : 'Calculate'}
+              </button>
+              {memberName && !data && <span className="aw-strong aw-fade-in" style={{ color: 'var(--aw-accent)' }}>{memberName}</span>}
             </div>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={openMemberLookup}
-              title="Open Member Lookup (F2)"
-              className="ss-lookup-btn h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-600 rounded-xl fz-small font-black uppercase tracking-wide flex items-center gap-1.5 border border-slate-200 shadow-sm transition-colors"
-            >
-              <User size={12} /> Lookup
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={handleSearch}
-              disabled={loading || !memberNo.trim()}
-              className="h-9 px-5 text-white rounded-xl fz-small font-black uppercase tracking-wide flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 16px -4px rgba(99,102,241,0.5)' }}
-            >
-              <Zap size={12} /> {loading ? 'Scoring…' : 'Calculate'}
-            </motion.button>
-            <AnimatePresence>
-              {memberName && !data && (
-                <motion.span
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="fz-small font-black text-indigo-600 truncate max-w-[120px]"
-                >
-                  {memberName}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
+          </section>
 
-        {/* ── Body ── */}
-        <div className="flex-1 overflow-auto p-4">
-          <AnimatePresence mode="wait">
+          {/* Empty state */}
+          {!data && !loading && !error && (
+            <section className="aw-card">
+              <div className="aw-empty" style={{ padding: 48 }}>
+                <Sparkles size={32} />
+                <strong className="aw-strong">Search a member to begin</strong>
+                <span className="aw-meta" style={{ maxWidth: 380 }}>
+                  Saakh Score evaluates repayment punctuality, penalties, loan load, savings, tenure &amp; guarantor record
+                </span>
+              </div>
+            </section>
+          )}
 
-            {/* Empty state */}
-            {!data && !loading && !error && (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                className="flex flex-col items-center justify-center h-full gap-4 text-center"
-              >
-                <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                  className="w-20 h-20 rounded-3xl flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12))', boxShadow: '0 8px 32px -8px rgba(99,102,241,0.25)' }}
-                >
-                  <Target size={36} className="text-indigo-400" />
-                </motion.div>
-                <div>
-                  <p className="ss-empty-title fz-label font-black text-slate-600 uppercase tracking-wider">Search a member to begin</p>
-                  <p className="ss-empty-desc fz-small text-slate-400 mt-1.5 max-w-xs">
-                    Saakh Score evaluates repayment punctuality, penalties, loan load, savings, tenure &amp; guarantor record
-                  </p>
-                </div>
-              </motion.div>
-            )}
+          {/* Error */}
+          {error && !loading && (
+            <div className="aw-alert aw-alert-danger aw-fade-in" style={{ marginBottom: 0 }} role="alert">
+              <XCircle size={16} /><span>{error}</span>
+            </div>
+          )}
 
-            {/* Error state */}
-            {error && !loading && (
-              <motion.div
-                key="error"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="ss-error flex items-center gap-2.5 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3.5 max-w-md"
-              >
-                <XCircle size={16} className="text-rose-500 shrink-0" />
-                <p className="ss-error-text fz-small font-bold text-rose-700">{error}</p>
-              </motion.div>
-            )}
+          {/* Loading */}
+          {loading && (
+            <section className="aw-card">
+              <div className="aw-empty" style={{ padding: 48 }}>
+                <RefreshCw size={30} className="aw-spin" style={{ color: 'var(--aw-accent)' }} />
+                <strong className="aw-strong">Analysing member profile…</strong>
+              </div>
+            </section>
+          )}
 
-            {/* Loading — animated radar pulse */}
-            {loading && (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center h-full gap-5"
-              >
-                <div className="relative w-20 h-20 flex items-center justify-center">
-                  {[0, 1, 2].map(i => (
-                    <motion.div
-                      key={i}
-                      className="absolute inset-0 rounded-full border-2 border-indigo-400"
-                      initial={{ scale: 0.4, opacity: 0.8 }}
-                      animate={{ scale: 1.5, opacity: 0 }}
-                      transition={{ repeat: Infinity, duration: 1.8, delay: i * 0.55, ease: 'easeOut' }}
-                    />
-                  ))}
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 24px rgba(99,102,241,0.5)' }}>
-                    <Sparkles size={20} className="text-white" />
-                  </div>
-                </div>
-                <p className="fz-small font-black text-indigo-500 uppercase tracking-[0.25em]">Analysing member profile…</p>
-              </motion.div>
-            )}
+          {/* ── Result ── */}
+          {data && !loading && (
+            <div key={`result-${data.mbno}`} className="aw-stack aw-fade-in">
 
-            {/* ── Result ── */}
-            {data && !loading && (
-              <motion.div
-                key={`result-${data.mbno}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, y: -16 }}
-                className="max-w-5xl mx-auto space-y-4 pb-4"
-              >
-
-                {/* Hero — dark glass panel with member + gauge (already dark, no override needed) */}
-                <motion.div
-                  {...sectionAnim(0.05)}
-                  className="relative rounded-3xl overflow-hidden"
-                  style={{ background: 'linear-gradient(120deg, #0f172a 0%, #1e1b4b 55%, #312e81 100%)', boxShadow: '0 20px 50px -16px rgba(30,27,75,0.55)' }}
-                >
-                  <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(99,102,241,0.22)' }} />
-                  <div className="absolute -bottom-20 left-1/4 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(168,85,247,0.16)' }} />
-                  <div className="absolute inset-0 pointer-events-none opacity-[0.06]"
-                    style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-
-                  <div className="relative grid grid-cols-[1fr_auto] gap-6 p-6 items-center">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-3">
-                        <motion.div
-                          initial={{ scale: 0, rotate: -30 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          transition={{ delay: 0.2, type: 'spring', stiffness: 260, damping: 16 }}
-                          className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border border-white/15"
-                          style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.4), rgba(139,92,246,0.4))' }}
-                        >
-                          <User size={22} className="text-white" />
-                        </motion.div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h2 className="text-xl font-black text-white leading-none tracking-tight">{data.memberName || '—'}</h2>
-                            <span className={`fz-mini font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${data.isActive ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30' : 'bg-white/10 text-white/50 border border-white/15'}`}>
-                              {data.isActive ? '● Active' : 'Inactive'}
-                            </span>
-                          </div>
-                          <p className="fz-caption font-black text-indigo-300 mt-1 tracking-wide">Member #{data.mbno}</p>
+              {/* Hero */}
+              <section className="aw-card aw-ambient">
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 24, alignItems: 'center' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span className="aw-card-icon" style={{ width: 44, height: 44, borderRadius: 12 }}><User size={22} /></span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <h2 className="aw-title" style={{ fontSize: 'calc(var(--type-page-title) + 2px)' }}>{data.memberName || '—'}</h2>
+                          <span className={`aw-pill tone-${data.isActive ? 'success' : 'muted'}`}>{data.isActive ? '● Active' : 'Inactive'}</span>
                         </div>
+                        <p className="aw-meta" style={{ marginTop: 2 }}>Member #{data.mbno}</p>
                       </div>
-
-                      <div className="grid grid-cols-3 gap-2.5 mt-5">
-                        {[
-                          { icon: <Calendar size={13} />, label: 'Member Since', value: data.membershipDate || '—' },
-                          { icon: <Award size={13} />, label: 'Tenure', value: `${data.tenureYears} yr${data.tenureYears !== 1 ? 's' : ''}` },
-                          { icon: <CreditCard size={13} />, label: 'Active Loans', value: String(data.totalActiveLoans) },
-                        ].map((s, i) => (
-                          <motion.div
-                            key={s.label}
-                            initial={{ opacity: 0, y: 14 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.35 + i * 0.1 }}
-                            className="rounded-2xl px-3 py-2.5 border border-white/10 backdrop-blur"
-                            style={{ background: 'rgba(255,255,255,0.05)' }}
-                          >
-                            <div className="flex items-center gap-1.5 text-indigo-300">
-                              {s.icon}
-                              <span className="fz-mini font-black uppercase tracking-widest">{s.label}</span>
-                            </div>
-                            <p className="fz-body font-black text-white mt-1">{s.value}</p>
-                          </motion.div>
-                        ))}
-                      </div>
-
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.8 }}
-                        className="flex items-center gap-1.5 mt-4"
-                      >
-                        {data.totalScore >= 7 ? <TrendingUp size={13} className="text-emerald-400" /> :
-                         data.totalScore >= 5 ? <Minus size={13} className="text-amber-400" /> :
-                         <TrendingDown size={13} className="text-rose-400" />}
-                        <span className={`fz-small font-black uppercase tracking-[0.2em] ${data.totalScore >= 7 ? 'text-emerald-400' : data.totalScore >= 5 ? 'text-amber-400' : 'text-rose-400'}`}>
-                          {data.totalScore >= 7 ? 'Strong Profile' : data.totalScore >= 5 ? 'Moderate Risk' : 'High Risk'}
-                        </span>
-                      </motion.div>
                     </div>
 
-                    <ScoreGauge score={data.totalScore} tier={data.tier} />
-                  </div>
-                </motion.div>
+                    <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 16 }}>
+                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={11} /> Member Since</dt><dd>{data.membershipDate || '—'}</dd></div>
+                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Award size={11} /> Tenure</dt><dd>{`${data.tenureYears} yr${data.tenureYears !== 1 ? 's' : ''}`}</dd></div>
+                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><CreditCard size={11} /> Active Loans</dt><dd>{data.totalActiveLoans}</dd></div>
+                    </dl>
 
-                {/* Score breakdown — 6 factor cards */}
-                <div>
-                  <motion.p {...sectionAnim(0.25)} className="ss-section-label fz-tiny font-black text-slate-400 uppercase tracking-[0.3em] mb-2.5 flex items-center gap-1.5">
-                    <Sparkles size={10} className="text-indigo-400" /> Score Breakdown
-                  </motion.p>
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {data.factors.map((f, i) => <FactorCard key={f.name} f={f} index={i} />)}
+                    <p style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', color: data.totalScore >= 7 ? 'var(--aw-success)' : data.totalScore >= 5 ? 'var(--aw-warning)' : 'var(--aw-danger)' }}>
+                      {data.totalScore >= 7 ? <TrendingUp size={14} /> : data.totalScore >= 5 ? <Minus size={14} /> : <TrendingDown size={14} />}
+                      {data.totalScore >= 7 ? 'Strong Profile' : data.totalScore >= 5 ? 'Moderate Risk' : 'High Risk'}
+                    </p>
                   </div>
+
+                  <ScoreGauge score={data.totalScore} tier={data.tier} />
                 </div>
+              </section>
 
-                {/* Eligibility + Financial snapshot */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Eligibility */}
-                  <motion.div
-                    {...sectionAnim(0.55)}
-                    className="ss-panel bg-white/70 backdrop-blur border border-slate-200/80 rounded-2xl p-4 space-y-3"
-                    style={{ boxShadow: '0 2px 12px -4px rgba(15,23,42,0.06)' }}
-                  >
-                    <p className="ss-panel-label fz-tiny font-black text-slate-400 uppercase tracking-[0.3em]">Loan Eligibility Decision</p>
+              {/* Score breakdown */}
+              <section className="aw-card">
+                <div className="aw-card-head">
+                  <span className="aw-card-icon"><Sparkles size={14} /></span>
+                  <h2 className="aw-card-title">Score Breakdown</h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--aw-gap)' }}>
+                  {data.factors.map((f) => <FactorCard key={f.name} f={f} />)}
+                </div>
+              </section>
+
+              {/* Eligibility + snapshot */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--aw-gap)' }}>
+                <section className="aw-card">
+                  <div className="aw-card-head">
+                    <span className="aw-card-icon"><ShieldCheck size={14} /></span>
+                    <h2 className="aw-card-title">Loan Eligibility Decision</h2>
+                  </div>
+                  <div className="aw-stack">
                     <EligibilityBadge eligible={data.eligibility.eligible} />
-                    <p className="ss-eligibility-reason fz-small text-slate-600 font-medium leading-relaxed">{data.eligibility.reason}</p>
+                    <p className="aw-meta" style={{ lineHeight: 1.5 }}>{data.eligibility.reason}</p>
                     {data.eligibility.eligible !== 'NO' && data.eligibility.recommendedAmount > 0 && (
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1.05 }}
-                          className="ss-rec-panel rounded-2xl p-3 text-center border border-indigo-100"
-                          style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.07), rgba(139,92,246,0.07))' }}
-                        >
-                          <IndianRupee size={13} className="text-indigo-500 mx-auto mb-1" />
-                          <p className="ss-rec-label fz-mini font-black text-indigo-400 uppercase tracking-widest">Recommended Amt</p>
-                          <p className="ss-rec-val fz-heading font-black text-indigo-800 mt-0.5">
-                            ₹<CountUp value={data.eligibility.recommendedAmount} format duration={1400} />
-                          </p>
-                        </motion.div>
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1.15 }}
-                          className="ss-rec-panel rounded-2xl p-3 text-center border border-indigo-100"
-                          style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.07), rgba(139,92,246,0.07))' }}
-                        >
-                          <Calendar size={13} className="text-indigo-500 mx-auto mb-1" />
-                          <p className="ss-rec-label fz-mini font-black text-indigo-400 uppercase tracking-widest">Tenure</p>
-                          <p className="ss-rec-val fz-heading font-black text-indigo-800 mt-0.5">{data.eligibility.recommendedTenure} months</p>
-                        </motion.div>
+                      <div className="aw-two">
+                        <div className="aw-stat">
+                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><IndianRupee size={11} /> Recommended Amt</div>
+                          <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 5px)' }}>₹<CountUp value={data.eligibility.recommendedAmount} format duration={1300} /></div>
+                        </div>
+                        <div className="aw-stat">
+                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><Calendar size={11} /> Tenure</div>
+                          <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 5px)' }}>{data.eligibility.recommendedTenure} months</div>
+                        </div>
                       </div>
                     )}
-                  </motion.div>
+                  </div>
+                </section>
 
-                  {/* Financial snapshot */}
-                  <motion.div
-                    {...sectionAnim(0.65)}
-                    className="ss-panel bg-white/70 backdrop-blur border border-slate-200/80 rounded-2xl p-4 space-y-2"
-                    style={{ boxShadow: '0 2px 12px -4px rgba(15,23,42,0.06)' }}
-                  >
-                    <p className="ss-panel-label fz-tiny font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Financial Snapshot</p>
+                <section className="aw-card">
+                  <div className="aw-card-head">
+                    <span className="aw-card-icon"><IndianRupee size={14} /></span>
+                    <h2 className="aw-card-title">Financial Snapshot</h2>
+                  </div>
+                  <div className="aw-rows">
                     {[
-                      { label: 'Share Capital', val: data.shareCapital, icon: <Star size={10} className="text-amber-500" />, highlight: false },
-                      { label: 'CD Balance', val: data.cdBalance, icon: <IndianRupee size={10} className="text-emerald-600" />, highlight: false },
-                      { label: 'MD Balance', val: data.mdBalance, icon: <IndianRupee size={10} className="text-blue-600" />, highlight: false },
-                      { label: 'Total Outstanding', val: data.totalOutstanding, icon: <CreditCard size={10} className="text-rose-500" />, highlight: data.totalOutstanding > 0 },
-                      { label: 'Suspense Balance', val: data.suspBal, icon: <AlertTriangle size={10} className="text-orange-500" />, highlight: data.suspBal > 0 },
-                    ].map((row, i) => (
-                      <motion.div
-                        key={row.label}
-                        initial={{ opacity: 0, x: 18 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.75 + i * 0.07 }}
-                        className={`flex items-center justify-between px-3 py-2 rounded-xl transition-colors ${
-                          row.highlight
-                            ? 'ss-fin-row-hl bg-rose-50/80 hover:bg-rose-50'
-                            : 'ss-fin-row bg-slate-50/80 hover:bg-slate-100/80'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {row.icon}
-                          <span className="ss-fin-label fz-small font-bold text-slate-600">{row.label}</span>
-                        </div>
-                        <span className={`fz-caption font-black ${row.highlight ? 'ss-fin-val-hl text-rose-700' : 'ss-fin-val text-slate-800'}`}>
-                          ₹{row.val.toLocaleString('en-IN')}
-                        </span>
-                      </motion.div>
+                      { label: 'Share Capital', val: data.shareCapital, tone: '' },
+                      { label: 'CD Balance', val: data.cdBalance, tone: '' },
+                      { label: 'MD Balance', val: data.mdBalance, tone: '' },
+                      { label: 'Total Outstanding', val: data.totalOutstanding, tone: data.totalOutstanding > 0 ? 'var(--aw-danger)' : '' },
+                      { label: 'Suspense Balance', val: data.suspBal, tone: data.suspBal > 0 ? 'var(--aw-warning)' : '' },
+                    ].map((row) => (
+                      <div key={row.label} className="aw-row">
+                        <span className="aw-row-label">{row.label}</span>
+                        <span className="aw-row-value" style={row.tone ? { color: row.tone } : undefined}>₹{row.val.toLocaleString('en-IN')}</span>
+                      </div>
                     ))}
                     {data.guarantorInfo.isGuarantorForCount > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.1 }}
-                        className={`flex items-center justify-between px-3 py-2 rounded-xl ${
-                          data.guarantorInfo.guarantorLoansHealthy
-                            ? 'ss-guarantor-good bg-emerald-50/80'
-                            : 'ss-guarantor-bad bg-amber-50/80'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <ShieldCheck size={10} className={data.guarantorInfo.guarantorLoansHealthy ? 'text-emerald-600' : 'text-amber-600'} />
-                          <span className="ss-fin-label fz-small font-bold text-slate-600">Guarantor for</span>
-                        </div>
-                        <span className={`fz-caption font-black ${data.guarantorInfo.guarantorLoansHealthy ? 'text-emerald-700' : 'text-amber-700'}`}>
+                      <div className="aw-row">
+                        <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> Guarantor for</span>
+                        <span className="aw-row-value" style={{ color: data.guarantorInfo.guarantorLoansHealthy ? 'var(--aw-success)' : 'var(--aw-warning)' }}>
                           {data.guarantorInfo.isGuarantorForCount} member{data.guarantorInfo.isGuarantorForCount !== 1 ? 's' : ''}
                         </span>
-                      </motion.div>
+                      </div>
                     )}
-                  </motion.div>
-                </div>
+                  </div>
+                </section>
+              </div>
 
-                {/* Active loans list */}
-                {data.activeLoans.length > 0 && (
-                  <motion.div
-                    {...sectionAnim(0.8)}
-                    className="ss-loans-panel bg-white/70 backdrop-blur border border-slate-200/80 rounded-2xl overflow-hidden"
-                    style={{ boxShadow: '0 2px 12px -4px rgba(15,23,42,0.06)' }}
-                  >
-                    <div className="ss-loans-header px-4 py-3 border-b border-slate-100 flex items-center justify-between"
-                      style={{ background: 'linear-gradient(90deg, rgba(99,102,241,0.05), transparent)' }}>
-                      <p className="ss-section-label fz-tiny font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
-                        <CreditCard size={10} className="text-indigo-400" /> Active Loans ({data.activeLoans.length})
-                      </p>
-                      <span className="fz-small font-black text-rose-600">₹{data.totalOutstanding.toLocaleString('en-IN')} outstanding</span>
-                    </div>
-                    <div className="divide-y divide-slate-50">
-                      {data.activeLoans.map((loan, i) => (
-                        <motion.div
-                          key={loan.loancaseno}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.95 + i * 0.06 }}
-                          whileHover={{ backgroundColor: 'rgba(238,242,255,0.6)' }}
-                          className="px-4 py-3 flex items-center gap-4"
-                        >
-                          <div className="ss-loan-icon w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                            style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1))' }}>
-                            <CreditCard size={15} className="text-indigo-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="ss-loan-type fz-caption font-black text-slate-700 uppercase tracking-wide">{loan.loantype}</span>
-                              {loan.penalrate > 0 && (
-                                <span className="fz-micro font-black bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                  Penalty {loan.penalrate}%
-                                </span>
-                              )}
-                            </div>
-                            <p className="ss-loan-detail fz-tiny text-slate-500 mt-0.5">
+              {/* Active loans */}
+              {data.activeLoans.length > 0 && (
+                <section className="aw-card">
+                  <div className="aw-card-head">
+                    <span className="aw-card-icon"><CreditCard size={14} /></span>
+                    <h2 className="aw-card-title">Active Loans ({data.activeLoans.length})</h2>
+                    <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-danger)' }}>₹{data.totalOutstanding.toLocaleString('en-IN')} outstanding</span>
+                  </div>
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                    <table className="aw-table">
+                      <thead>
+                        <tr>
+                          <th>Loan</th>
+                          <th>Details</th>
+                          <th className="is-right">Balance</th>
+                          <th style={{ width: 150 }}>Repaid</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.activeLoans.map((loan) => (
+                          <tr key={loan.loancaseno}>
+                            <td>
+                              <span className="is-accent" style={{ color: 'var(--aw-accent)', fontWeight: 700, textTransform: 'uppercase' }}>{loan.loantype}</span>
+                              {loan.penalrate > 0 && <span className="aw-pill tone-danger" style={{ marginLeft: 6 }}>Penalty {loan.penalrate}%</span>}
+                            </td>
+                            <td className="is-muted" style={{ fontWeight: 500 }}>
                               Case #{loan.loancaseno} · {loan.noOfInstal} instals @ ₹{loan.instalAmt.toLocaleString('en-IN')}/mo · {loan.rate}% p.a.
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="fz-label font-black text-rose-700">₹{loan.balance.toLocaleString('en-IN')}</p>
-                            <p className="fz-mini text-slate-400 font-bold">{loan.repaidPct}% repaid</p>
-                          </div>
-                          <div className="w-16 shrink-0">
-                            <div className="ss-loan-track h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <motion.div
-                                className="h-full rounded-full"
-                                style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${loan.repaidPct}%` }}
-                                transition={{ delay: 1.1 + i * 0.06, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                              />
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Improvement tips */}
-                <motion.div
-                  {...sectionAnim(1.0)}
-                  className="ss-tips rounded-2xl p-4 border border-indigo-100/80"
-                  style={{ background: 'linear-gradient(120deg, rgba(99,102,241,0.06), rgba(168,85,247,0.06), rgba(236,72,153,0.04))' }}
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <motion.div
-                      animate={{ rotate: [0, -12, 12, 0] }}
-                      transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-                    >
-                      <Lightbulb size={15} className="text-indigo-500" />
-                    </motion.div>
-                    <p className="fz-tiny font-black text-indigo-600 uppercase tracking-[0.3em]">Score Improvement Tips</p>
+                            </td>
+                            <td className="is-right is-danger">₹{loan.balance.toLocaleString('en-IN')}</td>
+                            <td>
+                              <span className="aw-bar-track" style={{ width: '100%' }}><span style={{ width: `${loan.repaidPct}%` }} /></span>
+                              <span className="aw-meta">{loan.repaidPct}% repaid</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <div className="space-y-2">
-                    {data.improvementTips.map((tip, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -14 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 1.15 + i * 0.1 }}
-                        className="flex items-start gap-2"
-                      >
-                        <ChevronRight size={12} className="text-indigo-400 mt-0.5 shrink-0" />
-                        <p className="ss-tip-text fz-small text-slate-700 font-medium leading-relaxed">{tip}</p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
+                </section>
+              )}
 
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {/* Improvement tips */}
+              <section className="aw-card">
+                <div className="aw-card-head">
+                  <span className="aw-card-icon"><Lightbulb size={14} /></span>
+                  <h2 className="aw-card-title">Score Improvement Tips</h2>
+                </div>
+                <div className="aw-stack" style={{ gap: 8 }}>
+                  {data.improvementTips.map((tip, i) => (
+                    <p key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontWeight: 500, lineHeight: 1.5 }}>
+                      <ChevronRight size={14} style={{ marginTop: 3, flex: 'none', color: 'var(--aw-accent)' }} />
+                      <span>{tip}</span>
+                    </p>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
         </div>
-
-        {/* ── Footer ── */}
-        <div className="ss-footer px-4 py-1.5 bg-white/80 backdrop-blur border-t border-slate-200/70 flex items-center justify-between shrink-0">
-          <div className="ss-footer-left flex items-center gap-1.5">
-            <Building2 size={9} className="text-slate-400" />
-            <span className="fz-micro font-black text-slate-500 uppercase tracking-[0.2em]">Saakh Score Engine v1.0</span>
-          </div>
-          <div className="ss-footer-right flex items-center gap-1 text-indigo-500">
-            <Info size={9} />
-            <span className="fz-micro font-black uppercase tracking-[0.2em]">Score is indicative — committee decision is final</span>
-          </div>
-        </div>
-
       </div>
-    </ConfigProvider>
+
+      <div className="aw-footer">
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> Saakh Score Engine v1.0</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Info size={12} /> Score is indicative — committee decision is final</span>
+      </div>
+    </div>
   );
 };
 

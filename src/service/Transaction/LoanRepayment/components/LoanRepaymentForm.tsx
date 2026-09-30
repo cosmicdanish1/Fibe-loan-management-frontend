@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Modal } from 'antd';
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, Users, CreditCard, IndianRupee, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
 import type { useLoanRepayment, UnpaidInstallment } from '../hooks/useLoanRepayment';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
-import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '@/components/shared/kit/MemberField';
 
 type Props = ReturnType<typeof useLoanRepayment>;
 
@@ -82,7 +81,6 @@ const LoanRepaymentForm: React.FC<Props> = ({
     form, activeLoans, dueStatus, dueStatusLoading, repaymentHistory, loading, historyLoading,
     message, updateForm, handleMemberLookup, handleLoanSelect, handleSubmit, handleReset,
 }) => {
-    const [showLookup, setShowLookup] = useState(false);
     const [loanSearch, setLoanSearch] = useState('');
     const [paymentMode, setPaymentMode] = useState<'due' | 'advance' | 'custom'>('due');
     const [advanceCount, setAdvanceCount] = useState(1);
@@ -130,7 +128,6 @@ const LoanRepaymentForm: React.FC<Props> = ({
         const memberNo = String(member.memberNo || '');
         const memberName = member.memberName || member.name || '';
         handleMemberLookup(memberNo, memberName);
-        setShowLookup(false);
         setLoanSearch('');
     };
 
@@ -141,631 +138,433 @@ const LoanRepaymentForm: React.FC<Props> = ({
     });
 
     return (
-        <div className="lr-root flex flex-col h-full overflow-hidden" style={{ background: '#f4f5f7', color: '#1a1d29', fontSize: 13 }}>
-
+        <div className="app-window">
             {/* ── Header ── */}
-            <div className="lr-header flex items-center justify-between px-5 py-2.5 shrink-0" style={{ background: '#161822', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-baseline gap-2.5">
-                    <h1 className="m-0 font-semibold text-white" style={{ fontSize: 15 }}>Loan Repayment</h1>
-                    <span style={{ fontSize: 11.5, color: '#9296a8' }}>
-                        Record monthly installment payments against active loans
-                    </span>
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">Loan Repayment</h1>
+                    <p className="aw-desc">Record monthly installment payments against active loans</p>
                 </div>
-                <button
-                    onClick={handleReset}
-                    className="lr-ghost-btn flex items-center gap-1.5"
-                    style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 6, background: 'transparent', color: '#d7d9e3', cursor: 'pointer' }}
-                >
-                    <RefreshCw size={12} /> Reset
-                </button>
+                <div className="aw-actions">
+                    <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary">
+                        <RefreshCw size={13} /> Reset
+                    </button>
+                </div>
             </div>
 
-            {/* ── Body ── */}
-            <div className="flex gap-3.5 p-3.5 flex-1 overflow-auto items-start">
+            <div className="aw-content">
+                <div className="aw-split aw-split-form" style={{ height: 'auto', gridTemplateColumns: 'minmax(320px, 4fr) minmax(0, 8fr)', alignItems: 'start' }}>
 
-                {/* Left column */}
-                <div className="flex flex-col gap-3" style={{ width: 340, flexShrink: 0 }}>
+                    {/* ── Left column ── */}
+                    <div className="aw-stack" style={{ minWidth: 0 }}>
 
-                    {/* ① Member search */}
-                    <div className="lr-card" style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                        <div className="lr-section-label">Member</div>
-                        <div className="flex gap-1.5">
-                            <input
-                                type="text"
-                                placeholder="Member No."
-                                value={form.mbno}
-                                onChange={e => updateForm('mbno', e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleMemberLookup(form.mbno, '')}
-                                className="lr-input"
-                                style={{ width: 80 }}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Member name"
-                                value={form.memberName}
-                                readOnly
-                                className="lr-input lr-input-readonly"
-                                style={{ flex: 1, minWidth: 0 }}
-                            />
-                            <button
-                                onClick={() => handleMemberLookup(form.mbno, '')}
-                                disabled={loading || !form.mbno}
-                                className="lr-btn-primary"
-                                style={{ whiteSpace: 'nowrap' }}
-                            >
-                                Search
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShowLookup(true)}
-                                title="Member Lookup"
-                                className="lr-btn-icon"
-                                style={{ width: 30, flexShrink: 0 }}
-                            >
-                                <Search size={13} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* ② Loan list */}
-                    {activeLoans.length > 0 && (
-                        <div className="lr-card" style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="lr-section-label" style={{ marginBottom: 0 }}>Select Loan</div>
-                                <span style={{ fontSize: 11, color: '#8b90a0' }}>
-                                    {filteredLoans.length} loan{filteredLoans.length !== 1 ? 's' : ''}
-                                </span>
+                        {/* ① Member */}
+                        <section className="aw-card">
+                            <div className="aw-card-head">
+                                <span className="aw-card-icon"><Users size={14} /></span>
+                                <h2 className="aw-card-title">Member</h2>
                             </div>
-
-                            <div className="relative mb-2">
-                                <Search size={12} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#8b90a0' }} />
-                                <input
-                                    type="text"
-                                    value={loanSearch}
-                                    onChange={e => setLoanSearch(e.target.value)}
-                                    placeholder="Search by case no."
-                                    className="lr-input"
-                                    style={{ width: '100%', paddingLeft: 26 }}
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5" style={{ maxHeight: 200, overflowY: 'auto', overflowX: 'hidden', paddingRight: 2 }}>
-                                {filteredLoans.map(loan => {
-                                    const selected = form.selectedLoanCase === loan.loancaseno;
-                                    return (
-                                        <label
-                                            key={loan.loancaseno}
-                                            onClick={() => handleLoanSelect(loan.loancaseno)}
-                                            style={{
-                                                display: 'flex', gap: 9, alignItems: 'flex-start',
-                                                padding: '9px 10px', borderRadius: 6, cursor: 'pointer',
-                                                border: `1px solid ${selected ? '#a8c6f5' : '#eceef1'}`,
-                                                background: selected ? '#eef4fd' : '#fff',
-                                                transition: 'border-color 0.15s, background 0.15s',
-                                            }}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="loanCase"
-                                                value={loan.loancaseno}
-                                                checked={selected}
-                                                onChange={() => handleLoanSelect(loan.loancaseno)}
-                                                style={{ marginTop: 2, accentColor: '#2563eb' }}
-                                            />
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div className="flex justify-between gap-2 mb-0.5">
-                                                    <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1d29', whiteSpace: 'nowrap' }}>
-                                                        {LOAN_TYPE_LABEL[loan.loantype] || loan.loantype}
-                                                    </span>
-                                                    <span style={{ fontSize: 11.5, color: '#8b90a0', whiteSpace: 'nowrap' }}>
-                                                        #{loan.loancaseno}
-                                                    </span>
-                                                </div>
-                                                <div className="flex gap-3" style={{ fontSize: 11.5, color: '#8b90a0', whiteSpace: 'nowrap' }}>
-                                                    <span>Balance: <span style={{ color: '#dc2626', fontWeight: 600 }}>₹{fmt(loan.balance)}</span></span>
-                                                    <span>EMI: <span style={{ color: '#1a1d29', fontWeight: 500 }}>₹{fmt(loan.instal_amt)}</span></span>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    );
-                                })}
-                                {filteredLoans.length === 0 && loanSearch && (
-                                    <div style={{ fontSize: 12, color: '#8b90a0', padding: '10px 4px', textAlign: 'center' }}>
-                                        No loans match "{loanSearch}"
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ③ Payment details */}
-                    {form.selectedLoanCase && (
-                        <div className="lr-card" style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                            <div className="lr-section-label">Payment Details</div>
-
-                            {selectedLoan && (
-                                <div className="flex flex-wrap" style={{ gap: '2px 16px', fontSize: 11.5, color: '#8b90a0', marginBottom: 10 }}>
-                                    <span>Original: <b style={{ color: '#1a1d29', fontWeight: 600 }}>₹{fmt(selectedLoan.loan_amt)}</b></span>
-                                    {dueStatus && (
-                                        <span>Paid: <b style={{ color: '#1a1d29', fontWeight: 600 }}>{dueStatus.paidInstallments} of {dueStatus.totalInstallments}</b></span>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* EMI card — click to expand the full "how this EMI was
-                                built" trace. remainingCount uses totalInstallments minus
-                                paidInstallments, same as the "Paid" figure above — an
-                                estimate, since some remaining installments may already be
-                                partly covered by advance prepayments not yet counted as
-                                officially due. */}
-                            {selectedLoan && dueStatus && (
-                                <div
-                                    onClick={() => setShowEmiDetail(v => !v)}
-                                    style={{ marginBottom: 10, background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 7, padding: '10px 12px', cursor: 'pointer' }}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <div style={{ fontSize: 11, color: '#8b90a0' }}>EMI</div>
-                                            <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1d29' }}>₹{fmt(selectedLoan.instal_amt)}</div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: 11, color: '#8b90a0' }}>
-                                                Remaining: {dueStatus.totalInstallments - dueStatus.paidInstallments} of {dueStatus.totalInstallments}
-                                            </div>
-                                            <div style={{ fontSize: 12.5, fontWeight: 600, color: '#5b6072' }}>
-                                                ≈ ₹{fmt((dueStatus.totalInstallments - dueStatus.paidInstallments) * dueStatus.emiBreakdown.instalAmt)} estimated
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div style={{ fontSize: 10.5, color: '#2563eb', marginTop: 4, fontWeight: 600 }}>
-                                        {showEmiDetail ? '▲ Hide calculation' : '▼ Why is the EMI this amount?'}
-                                    </div>
-
-                                    {showEmiDetail && (
-                                        <div
-                                            onClick={e => e.stopPropagation()}
-                                            style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #e4e6eb', cursor: 'default' }}
-                                        >
-                                            <div style={{ fontFamily: "'IBM Plex Mono', 'Courier New', monospace", fontSize: 10.5, color: '#5b6072', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                <div>
-                                                    Monthly Principal = Loan Amount (₹{fmt(dueStatus.emiBreakdown.loanAmt)}) ÷ Installments ({dueStatus.emiBreakdown.noOfInstal})
-                                                    {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(dueStatus.emiBreakdown.monthlyPrincipal)}</b>
-                                                </div>
-                                                {dueStatus.emiBreakdown.hasRbSchedule ? (
-                                                    <>
-                                                        <div>
-                                                            Compulsory Slot Interest = Total EMI Interest (₹{fmt(dueStatus.emiBreakdown.totalInterestForEMI)}) − True Reducing-Balance Interest for the full schedule (₹{fmt(dueStatus.emiBreakdown.totalRBInterestFullSchedule)})
-                                                            {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(dueStatus.emiBreakdown.compulsorySlotInterest)}</b>
-                                                        </div>
-                                                        <div>
-                                                            Monthly Interest = (RB Interest ₹{fmt(dueStatus.emiBreakdown.totalRBInterestFullSchedule)} + Slot Interest ₹{fmt(dueStatus.emiBreakdown.compulsorySlotInterest)}) ÷ Installments ({dueStatus.emiBreakdown.noOfInstal})
-                                                            {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)}</b>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <div>
-                                                        This loan predates the reducing-balance schedule feature — Monthly Interest is a simple flat split
-                                                        {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)}</b>
-                                                    </div>
-                                                )}
-                                                <div style={{ paddingTop: 4, borderTop: '1px solid #e4e6eb' }}>
-                                                    EMI = Monthly Principal (₹{fmt(dueStatus.emiBreakdown.monthlyPrincipal)}) + Monthly Interest (₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)})
-                                                    {' '}= <b style={{ color: '#1e40af' }}>₹{fmt(dueStatus.emiBreakdown.instalAmt)}</b>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {dueStatusLoading ? (
-                                <div style={{ fontSize: 11.5, color: '#8b90a0', marginBottom: 10 }}>Checking outstanding dues…</div>
-                            ) : dueStatus && dueStatus.unpaidInstallments.length > 0 ? (
-                                <div className="flex items-center justify-between" style={{ marginBottom: 10, border: '1px solid #f3dca8', background: '#fef3e0', borderRadius: 6, padding: '7px 10px' }}>
-                                    <span style={{ fontSize: 11.5, fontWeight: 600, color: '#a15c00' }}>
-                                        {dueStatus.unpaidInstallments.length} overdue — oldest recovered first
-                                    </span>
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: '#a15c00' }}>₹{fmt(dueStatus.totalDue)}</span>
-                                </div>
-                            ) : dueStatus ? (
-                                <div style={{ marginBottom: 10, fontSize: 11.5, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '7px 10px' }}>
-                                    Fully paid up — nothing currently due. Switch to "Pay in Advance" to prepay a future installment.
-                                </div>
-                            ) : null}
-
-                            {/* Payment mode */}
-                            <div style={{ marginBottom: 10 }}>
-                                <label className="lr-field-label">Payment Mode</label>
-                                <div className="flex gap-1.5">
-                                    {([
-                                        { key: 'due', label: "Pay What's Due" },
-                                        { key: 'advance', label: 'Pay in Advance' },
-                                        { key: 'custom', label: 'Custom' },
-                                    ] as const).map(m => (
-                                        <button
-                                            key={m.key}
-                                            type="button"
-                                            onClick={() => setPaymentMode(m.key)}
-                                            style={{
-                                                fontSize: 11.5, fontWeight: 600, padding: '6px 9px', borderRadius: 6,
-                                                border: `1px solid ${paymentMode === m.key ? '#2563eb' : '#d7dae0'}`,
-                                                background: paymentMode === m.key ? '#2563eb' : '#fff',
-                                                color: paymentMode === m.key ? '#fff' : '#5b6072',
-                                                cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s',
-                                            }}
-                                        >
-                                            {m.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                {paymentMode === 'advance' && (
-                                    <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
-                                        <label style={{ fontSize: 11.5, color: '#8b90a0' }}>Installments ahead:</label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            value={advanceCount}
-                                            onChange={e => setAdvanceCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                                            className="lr-input"
-                                            style={{ width: 56, textAlign: 'center' }}
+                            <div className="aw-stack">
+                                <div className="aw-inline" style={{ alignItems: 'flex-end', gap: 8 }}>
+                                    <div style={{ width: 150 }}>
+                                        <label className="aw-label" htmlFor="lr-mb">Member No.</label>
+                                        <MemberField
+                                            id="lr-mb"
+                                            value={form.mbno}
+                                            onChange={v => updateForm('mbno', v)}
+                                            onSelect={onMemberSelected}
+                                            onSubmit={(v) => handleMemberLookup(v, '')}
+                                            placeholder="Member No."
                                         />
-                                        <span style={{ fontSize: 11, color: '#a3a8b3' }}>
-                                            × ₹{fmt(selectedLoan?.instal_amt || 0)} EMI, on top of what's due
-                                        </span>
                                     </div>
-                                )}
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleMemberLookup(form.mbno, '')}
+                                        disabled={loading || !form.mbno}
+                                        className="aw-btn aw-btn-primary"
+                                    >
+                                        Search
+                                    </button>
+                                </div>
                                 <div>
-                                    <label className="lr-field-label">Amount (₹)</label>
-                                    <input
-                                        type="number"
-                                        value={form.paymentAmount || ''}
-                                        onChange={e => updateForm('paymentAmount', Number(e.target.value))}
-                                        readOnly={paymentMode !== 'custom'}
-                                        className={`lr-input ${paymentMode !== 'custom' ? 'lr-input-readonly' : ''}`}
-                                        style={{ width: '100%' }}
-                                        placeholder={selectedLoan ? `EMI: ${fmt(selectedLoan.instal_amt)}` : ''}
-                                    />
-                                    {paymentMode !== 'custom' && (
-                                        <p style={{ fontSize: 10.5, color: '#a3a8b3', marginTop: 3 }}>
-                                            Auto-filled by the selected mode — switch to "Custom" to edit directly.
+                                    <label className="aw-label" htmlFor="lr-name">Member name</label>
+                                    <input id="lr-name" type="text" placeholder="Member name" value={form.memberName} readOnly className="aw-input" />
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* ② Loan list */}
+                        {activeLoans.length > 0 && (
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon"><CreditCard size={14} /></span>
+                                    <h2 className="aw-card-title">Select Loan</h2>
+                                    <span className="aw-meta" style={{ marginLeft: 'auto' }}>{filteredLoans.length} loan{filteredLoans.length !== 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="aw-input-wrap has-icon">
+                                    <Search size={13} />
+                                    <input type="text" value={loanSearch} onChange={e => setLoanSearch(e.target.value)} placeholder="Search by case no." aria-label="Search by case number" className="aw-input" />
+                                </div>
+                                <div className="aw-stack" style={{ gap: 6, maxHeight: 220, overflowY: 'auto' }} role="radiogroup" aria-label="Active loans">
+                                    {filteredLoans.map(loan => {
+                                        const selected = form.selectedLoanCase === loan.loancaseno;
+                                        return (
+                                            <button
+                                                key={loan.loancaseno}
+                                                type="button"
+                                                role="radio"
+                                                aria-checked={selected}
+                                                onClick={() => handleLoanSelect(loan.loancaseno)}
+                                                className="aw-right-cell"
+                                                style={{ flexDirection: 'column', alignItems: 'stretch', gap: 2, padding: '9px 10px', border: `1px solid ${selected ? 'var(--aw-accent)' : 'var(--aw-border)'}` }}
+                                            >
+                                                <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                                                    <span className="aw-strong">{LOAN_TYPE_LABEL[loan.loantype] || loan.loantype}</span>
+                                                    <span className="aw-meta">#{loan.loancaseno}</span>
+                                                </span>
+                                                <span style={{ display: 'flex', gap: 12 }} className="aw-meta">
+                                                    <span>Balance: <strong style={{ color: 'var(--aw-danger)' }}>₹{fmt(loan.balance)}</strong></span>
+                                                    <span>EMI: <strong style={{ color: 'var(--aw-text)' }}>₹{fmt(loan.instal_amt)}</strong></span>
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                    {filteredLoans.length === 0 && loanSearch && (
+                                        <p className="aw-meta" style={{ textAlign: 'center', padding: '10px 4px' }}>No loans match "{loanSearch}"</p>
+                                    )}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* ③ Payment details */}
+                        {form.selectedLoanCase && (
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon"><IndianRupee size={14} /></span>
+                                    <h2 className="aw-card-title">Payment Details</h2>
+                                </div>
+
+                                <div className="aw-stack">
+                                    {selectedLoan && (
+                                        <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 16px' }}>
+                                            <span>Original: <strong style={{ color: 'var(--aw-text)' }}>₹{fmt(selectedLoan.loan_amt)}</strong></span>
+                                            {dueStatus && <span>Paid: <strong style={{ color: 'var(--aw-text)' }}>{dueStatus.paidInstallments} of {dueStatus.totalInstallments}</strong></span>}
                                         </p>
                                     )}
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="lr-field-label">Receipt No.</label>
-                                        <input
-                                            type="text"
-                                            value={form.receiptNo}
-                                            onChange={e => updateForm('receiptNo', e.target.value)}
-                                            className="lr-input"
-                                            style={{ width: '100%' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="lr-field-label">Narration</label>
-                                        <input
-                                            type="text"
-                                            value={form.narration}
-                                            onChange={e => updateForm('narration', e.target.value)}
-                                            className="lr-input"
-                                            style={{ width: '100%' }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
 
-                            {selectedLoan && (
-                                <div style={{ marginTop: 10, padding: '10px 12px', background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 7 }}>
-                                    <div className="flex justify-between" style={{ fontSize: 11.5, color: '#8b90a0' }}>
-                                        <span>Outstanding Balance</span>
-                                        <span style={{ fontWeight: 600, color: '#dc2626' }}>₹{fmt(selectedLoan.balance)}</span>
-                                    </div>
-                                    <div className="flex justify-between" style={{ fontSize: 11.5, color: '#8b90a0', marginTop: 4 }}>
-                                        <span>Balance After Payment</span>
-                                        <span style={{ fontWeight: 600, color: '#15803d' }}>
-                                            ₹{fmt(Math.max(0, parseFloat(selectedLoan.balance as any) - (waterfall?.totalPrincipalApplied || 0)))}
-                                        </span>
-                                    </div>
-                                    {waterfall && waterfall.leftoverPrepayment > 0 && (
-                                        <div style={{ fontSize: 10.5, color: '#8b90a0', marginTop: 6, paddingTop: 6, borderTop: '1px solid #e4e6eb' }}>
-                                            ₹{fmt(waterfall.leftoverPrepayment)} beyond what's currently due will be applied as an advance against principal.
+                                    {/* EMI card — click to expand the full "how this EMI was built" trace.
+                                        remainingCount uses totalInstallments minus paidInstallments, same as
+                                        the "Paid" figure above — an estimate, since some remaining installments
+                                        may already be partly covered by advance prepayments not yet counted as
+                                        officially due. */}
+                                    {selectedLoan && dueStatus && (
+                                        <div className="aw-panel">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowEmiDetail(v => !v)}
+                                                aria-expanded={showEmiDetail}
+                                                style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%' }}
+                                            >
+                                                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                                    <span>
+                                                        <span className="aw-label" style={{ marginBottom: 0 }}>EMI</span>
+                                                        <span className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 3px)' }}>₹{fmt(selectedLoan.instal_amt)}</span>
+                                                    </span>
+                                                    <span style={{ textAlign: 'right' }}>
+                                                        <span className="aw-meta" style={{ display: 'block' }}>Remaining: {dueStatus.totalInstallments - dueStatus.paidInstallments} of {dueStatus.totalInstallments}</span>
+                                                        <span className="aw-strong" style={{ fontWeight: 600 }}>≈ ₹{fmt((dueStatus.totalInstallments - dueStatus.paidInstallments) * dueStatus.emiBreakdown.instalAmt)} estimated</span>
+                                                    </span>
+                                                </span>
+                                                <span className="aw-meta" style={{ display: 'block', marginTop: 4, color: 'var(--aw-accent)', fontWeight: 700 }}>
+                                                    {showEmiDetail ? '▲ Hide calculation' : '▼ Why is the EMI this amount?'}
+                                                </span>
+                                            </button>
+
+                                            {showEmiDetail && (
+                                                <div className="aw-fade-in" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--aw-border)' }}>
+                                                    <div className="aw-meta" style={{ fontFamily: "'IBM Plex Mono', 'Courier New', monospace", lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                        <div>
+                                                            Monthly Principal = Loan Amount (₹{fmt(dueStatus.emiBreakdown.loanAmt)}) ÷ Installments ({dueStatus.emiBreakdown.noOfInstal})
+                                                            {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.monthlyPrincipal)}</b>
+                                                        </div>
+                                                        {dueStatus.emiBreakdown.hasRbSchedule ? (
+                                                            <>
+                                                                <div>
+                                                                    Compulsory Slot Interest = Total EMI Interest (₹{fmt(dueStatus.emiBreakdown.totalInterestForEMI)}) − True Reducing-Balance Interest for the full schedule (₹{fmt(dueStatus.emiBreakdown.totalRBInterestFullSchedule)})
+                                                                    {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.compulsorySlotInterest)}</b>
+                                                                </div>
+                                                                <div>
+                                                                    Monthly Interest = (RB Interest ₹{fmt(dueStatus.emiBreakdown.totalRBInterestFullSchedule)} + Slot Interest ₹{fmt(dueStatus.emiBreakdown.compulsorySlotInterest)}) ÷ Installments ({dueStatus.emiBreakdown.noOfInstal})
+                                                                    {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)}</b>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <div>
+                                                                This loan predates the reducing-balance schedule feature — Monthly Interest is a simple flat split
+                                                                {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)}</b>
+                                                            </div>
+                                                        )}
+                                                        <div style={{ paddingTop: 4, borderTop: '1px solid var(--aw-border)' }}>
+                                                            EMI = Monthly Principal (₹{fmt(dueStatus.emiBreakdown.monthlyPrincipal)}) + Monthly Interest (₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)})
+                                                            {' '}= <b style={{ color: 'var(--aw-accent)' }}>₹{fmt(dueStatus.emiBreakdown.instalAmt)}</b>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
-                                    {waterfall && waterfall.unusedAmount > 0.01 && (
-                                        <div style={{ fontSize: 10.5, color: '#a15c00', marginTop: 6, paddingTop: 6, borderTop: '1px solid #e4e6eb' }}>
-                                            ₹{fmt(waterfall.unusedAmount)} exceeds the outstanding balance — it will not be applied (would overpay the loan).
+
+                                    {dueStatusLoading ? (
+                                        <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><RefreshCw size={12} className="aw-spin" /> Checking outstanding dues…</p>
+                                    ) : dueStatus && dueStatus.unpaidInstallments.length > 0 ? (
+                                        <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0, justifyContent: 'space-between' }}>
+                                            <span>{dueStatus.unpaidInstallments.length} overdue — oldest recovered first</span>
+                                            <span>₹{fmt(dueStatus.totalDue)}</span>
+                                        </div>
+                                    ) : dueStatus ? (
+                                        <div className="aw-alert aw-alert-success" style={{ marginBottom: 0 }}>
+                                            <CheckCircle2 size={15} />
+                                            <span>Fully paid up — nothing currently due. Switch to "Pay in Advance" to prepay a future installment.</span>
+                                        </div>
+                                    ) : null}
+
+                                    {/* Payment mode */}
+                                    <div>
+                                        <span className="aw-label">Payment Mode</span>
+                                        <div className="aw-seg" role="tablist" style={{ ['--seg-index' as any]: paymentMode === 'due' ? 0 : paymentMode === 'advance' ? 1 : 2, ['--seg-count' as any]: 3 }}>
+                                            {([
+                                                { key: 'due', label: "Pay What's Due" },
+                                                { key: 'advance', label: 'Pay in Advance' },
+                                                { key: 'custom', label: 'Custom' },
+                                            ] as const).map(m => (
+                                                <button key={m.key} type="button" role="tab" aria-selected={paymentMode === m.key} onClick={() => setPaymentMode(m.key)}>
+                                                    {m.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {paymentMode === 'advance' && (
+                                            <div className="aw-inline aw-fade-in" style={{ marginTop: 8, gap: 8, flexWrap: 'wrap' }}>
+                                                <label className="aw-meta" htmlFor="lr-adv">Installments ahead:</label>
+                                                <input
+                                                    id="lr-adv"
+                                                    type="number"
+                                                    min={1}
+                                                    value={advanceCount}
+                                                    onChange={e => setAdvanceCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                                                    className="aw-input"
+                                                    style={{ width: 80, textAlign: 'center' }}
+                                                />
+                                                <span className="aw-meta">× ₹{fmt(selectedLoan?.instal_amt || 0)} EMI, on top of what's due</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="aw-label" htmlFor="lr-amt">Amount (₹)</label>
+                                        <input
+                                            id="lr-amt"
+                                            type="number"
+                                            value={form.paymentAmount || ''}
+                                            onChange={e => updateForm('paymentAmount', Number(e.target.value))}
+                                            readOnly={paymentMode !== 'custom'}
+                                            className="aw-input"
+                                            placeholder={selectedLoan ? `EMI: ${fmt(selectedLoan.instal_amt)}` : ''}
+                                        />
+                                        {paymentMode !== 'custom' && (
+                                            <p className="aw-meta" style={{ marginTop: 4 }}>Auto-filled by the selected mode — switch to "Custom" to edit directly.</p>
+                                        )}
+                                    </div>
+                                    <div className="aw-two">
+                                        <div>
+                                            <label className="aw-label" htmlFor="lr-rcpt">Receipt No.</label>
+                                            <input id="lr-rcpt" type="text" value={form.receiptNo} onChange={e => updateForm('receiptNo', e.target.value)} className="aw-input" />
+                                        </div>
+                                        <div>
+                                            <label className="aw-label" htmlFor="lr-narr">Narration</label>
+                                            <input id="lr-narr" type="text" value={form.narration} onChange={e => updateForm('narration', e.target.value)} className="aw-input" />
+                                        </div>
+                                    </div>
+
+                                    {selectedLoan && (
+                                        <div className="aw-panel">
+                                            <div className="aw-rows">
+                                                <div className="aw-row"><span className="aw-row-label">Outstanding Balance</span><span className="aw-row-value" style={{ color: 'var(--aw-danger)' }}>₹{fmt(selectedLoan.balance)}</span></div>
+                                                <div className="aw-row"><span className="aw-row-label">Balance After Payment</span>
+                                                    <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>
+                                                        ₹{fmt(Math.max(0, parseFloat(selectedLoan.balance as any) - (waterfall?.totalPrincipalApplied || 0)))}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {waterfall && waterfall.leftoverPrepayment > 0 && (
+                                                <p className="aw-meta" style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--aw-border)' }}>
+                                                    ₹{fmt(waterfall.leftoverPrepayment)} beyond what's currently due will be applied as an advance against principal.
+                                                </p>
+                                            )}
+                                            {waterfall && waterfall.unusedAmount > 0.01 && (
+                                                <p className="aw-meta" style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--aw-border)', color: 'var(--aw-warning)', fontWeight: 700 }}>
+                                                    ₹{fmt(waterfall.unusedAmount)} exceeds the outstanding balance — it will not be applied (would overpay the loan).
+                                                </p>
+                                            )}
                                         </div>
                                     )}
+
+                                    {message && (
+                                        <div className={`aw-alert aw-fade-in ${message.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0 }} role="status">
+                                            <span>{message.text}</span>
+                                        </div>
+                                    )}
+
+                                    <button type="button" onClick={handleSubmit} disabled={loading || form.paymentAmount <= 0} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
+                                        {loading ? <RefreshCw size={13} className="aw-spin" /> : null}
+                                        {loading ? 'Recording…' : 'Record Repayment'}
+                                    </button>
                                 </div>
-                            )}
+                            </section>
+                        )}
 
-                            {message && (
-                                <div style={{
-                                    marginTop: 10, padding: '9px 11px', borderRadius: 6, fontSize: 12,
-                                    background: message.type === 'success' ? '#f0fdf4' : '#fef2f2',
-                                    color: message.type === 'success' ? '#15803d' : '#b91c1c',
-                                    border: `1px solid ${message.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-                                }}>
-                                    {message.text}
-                                </div>
-                            )}
-
-                            <button
-                                onClick={handleSubmit}
-                                disabled={loading || form.paymentAmount <= 0}
-                                style={{
-                                    width: '100%', marginTop: 12, padding: 10, background: '#16a34a', color: '#fff',
-                                    border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600,
-                                    cursor: loading || form.paymentAmount <= 0 ? 'not-allowed' : 'pointer',
-                                    opacity: loading || form.paymentAmount <= 0 ? 0.5 : 1,
-                                    transition: 'background 0.15s',
-                                }}
-                                onMouseEnter={e => { if (!loading && form.paymentAmount > 0) (e.currentTarget as HTMLButtonElement).style.background = '#15803d'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#16a34a'; }}
-                            >
-                                {loading ? 'Recording…' : 'Record Repayment'}
-                            </button>
-                        </div>
-                    )}
-
-                    {message && !form.selectedLoanCase && (
-                        <div style={{
-                            padding: '10px 12px', borderRadius: 7, fontSize: 12.5,
-                            background: message.type === 'success' ? '#f0fdf4' : '#fef2f2',
-                            color: message.type === 'success' ? '#15803d' : '#b91c1c',
-                            border: `1px solid ${message.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-                        }}>
-                            {message.text}
-                        </div>
-                    )}
-                </div>
-
-                {/* Right column */}
-                <div className="flex-1 flex flex-col gap-3" style={{ minWidth: 0 }}>
-
-                    {/* This Payment Will Cover */}
-                    {form.selectedLoanCase && waterfall && waterfall.perInstallment.length > 0 && (
-                        <div style={{ background: '#fff', border: '1px solid #a8c6f5', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-                            <div style={{ padding: '10px 14px', borderBottom: '1px solid #dbeafe', background: '#eef4fd' }}>
-                                <h2 style={{ fontSize: 12.5, fontWeight: 600, color: '#1e40af', margin: 0 }}>This Payment Will Cover</h2>
+                        {message && !form.selectedLoanCase && (
+                            <div className={`aw-alert aw-fade-in ${message.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0 }} role="status">
+                                <span>{message.text}</span>
                             </div>
-                            <div className="flex flex-col gap-1.5" style={{ padding: 11 }}>
-                                {waterfall.perInstallment.map(w => (
-                                    <div key={w.installmentNo} className="flex items-center justify-between" style={{ fontSize: 11.5, background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 6, padding: '7px 10px' }}>
-                                        <span style={{ color: '#1a1d29' }}>
-                                            Installment #{w.installmentNo}{' '}
-                                            <span style={{ fontWeight: 600, color: w.fullyCovered ? '#15803d' : '#a15c00' }}>
-                                                {w.fullyCovered ? '(fully settled)' : '(partially covered)'}
+                        )}
+                    </div>
+
+                    {/* ── Right column ── */}
+                    <div className="aw-stack" style={{ minWidth: 0 }}>
+
+                        {/* This payment will cover */}
+                        {form.selectedLoanCase && waterfall && waterfall.perInstallment.length > 0 && (
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon"><CheckCircle2 size={14} /></span>
+                                    <h2 className="aw-card-title">This Payment Will Cover</h2>
+                                </div>
+                                <div className="aw-stack" style={{ gap: 6 }}>
+                                    {waterfall.perInstallment.map(w => (
+                                        <div key={w.installmentNo} className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                            <span>
+                                                Installment #{w.installmentNo}{' '}
+                                                <span className={`aw-pill tone-${w.fullyCovered ? 'success' : 'warning'}`}>{w.fullyCovered ? 'fully settled' : 'partially covered'}</span>
                                             </span>
-                                        </span>
-                                        <span style={{ color: '#5b6072' }}>
-                                            {w.penalApplied > 0 && `₹${fmt(w.penalApplied)} penal + `}
-                                            {w.interestApplied > 0 && `₹${fmt(w.interestApplied)} interest + `}
-                                            ₹{fmt(w.principalApplied)} principal
-                                        </span>
-                                    </div>
-                                ))}
-                                {waterfall.leftoverPrepayment > 0 && (
-                                    <div className="flex items-center justify-between" style={{ fontSize: 11.5, background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 6, padding: '7px 10px' }}>
-                                        <span style={{ color: '#1a1d29' }}>Advance principal prepayment</span>
-                                        <span style={{ color: '#5b6072' }}>₹{fmt(waterfall.leftoverPrepayment)}</span>
-                                    </div>
+                                            <span className="aw-meta">
+                                                {w.penalApplied > 0 && `₹${fmt(w.penalApplied)} penal + `}
+                                                {w.interestApplied > 0 && `₹${fmt(w.interestApplied)} interest + `}
+                                                ₹{fmt(w.principalApplied)} principal
+                                            </span>
+                                        </div>
+                                    ))}
+                                    {waterfall.leftoverPrepayment > 0 && (
+                                        <div className="aw-panel" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>Advance principal prepayment</span>
+                                            <span className="aw-meta">₹{fmt(waterfall.leftoverPrepayment)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Overdue installments */}
+                        {form.selectedLoanCase && dueStatus && dueStatus.unpaidInstallments.length > 0 && (
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon" style={{ color: 'var(--aw-warning)' }}><AlertCircle size={14} /></span>
+                                    <h2 className="aw-card-title">{dueStatus.unpaidInstallments.length} Installment(s) Overdue — Oldest Recovered First</h2>
+                                    <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-warning)' }}>₹{fmt(dueStatus.totalDue)}</span>
+                                </div>
+                                <div className="aw-table-wrap" style={{ maxHeight: 300 }}>
+                                    <table className="aw-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th><th>Month</th><th>Overdue</th>
+                                                <th className="is-right">Principal</th><th className="is-right">Interest</th><th className="is-right">Penal</th>
+                                                <th>Tier</th><th className="is-right">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {dueStatus.unpaidInstallments.map(inst => (
+                                                <tr key={inst.installmentNo}>
+                                                    <td>{inst.installmentNo}</td>
+                                                    <td className="is-muted">{MONTHS[new Date(inst.dueDate).getMonth()]?.label?.slice(0, 3)} {new Date(inst.dueDate).getFullYear()}</td>
+                                                    <td className="is-danger">{inst.monthsOverdue > 0 ? `${inst.monthsOverdue}mo` : 'current'}</td>
+                                                    <td className="is-right">₹{fmt(inst.principalDue)}</td>
+                                                    <td className="is-right">₹{fmt(inst.interestDue)}</td>
+                                                    <td className="is-right is-danger">{inst.penalDue > 0 ? `₹${fmt(inst.penalDue)}` : '—'}</td>
+                                                    <td className="is-muted">{TIER_LABEL[inst.tier]}</td>
+                                                    <td className="is-right">₹{fmt(inst.principalDue + inst.interestDue + inst.penalDue)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Repayment history — filtered to the selected loan by default, since
+                            /repayment-history returns every loan the member has and it's otherwise
+                            easy to lose the payment you just made in someone else's history. */}
+                        <section className="aw-card">
+                            <div className="aw-card-head">
+                                <span className="aw-card-icon"><FileText size={14} /></span>
+                                <div>
+                                    <h2 className="aw-card-title">
+                                        Repayment History
+                                        {form.selectedLoanCase && !showAllHistory && <span style={{ color: 'var(--aw-muted)', fontWeight: 500 }}> — Loan #{form.selectedLoanCase}</span>}
+                                    </h2>
+                                    {form.memberName && <p className="aw-meta">{form.memberName} — #{form.mbno}</p>}
+                                </div>
+                                {form.selectedLoanCase && (
+                                    <button type="button" onClick={() => setShowAllHistory(v => !v)} className="aw-btn aw-btn-ghost aw-btn-sm" style={{ marginLeft: 'auto' }}>
+                                        {showAllHistory ? 'Show this loan only' : "Show all this member's loans"}
+                                    </button>
                                 )}
                             </div>
-                        </div>
-                    )}
-
-                    {/* Overdue installments */}
-                    {form.selectedLoanCase && dueStatus && dueStatus.unpaidInstallments.length > 0 && (
-                        <div style={{ background: '#fff', border: '1px solid #f3dca8', borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column', flexShrink: 0, maxHeight: 300 }}>
-                            <div className="flex items-center justify-between" style={{ padding: '10px 14px', borderBottom: '1px solid #f3dca8', background: '#fef3e0' }}>
-                                <h2 style={{ fontSize: 12.5, fontWeight: 600, color: '#a15c00', margin: 0 }}>
-                                    {dueStatus.unpaidInstallments.length} Installment(s) Overdue — Oldest Recovered First
-                                </h2>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: '#a15c00' }}>₹{fmt(dueStatus.totalDue)}</span>
-                            </div>
-                            <div style={{ overflow: 'auto' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead>
-                                        <tr>
-                                            {['#', 'Month', 'Overdue', 'Principal', 'Interest', 'Penal', 'Tier', 'Total'].map(h => (
-                                                <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '6px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {dueStatus.unpaidInstallments.map(inst => (
-                                            <tr key={inst.installmentNo}>
-                                                <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{inst.installmentNo}</td>
-                                                <td style={{ fontSize: 12, color: '#5b6072', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>
-                                                    {MONTHS[new Date(inst.dueDate).getMonth()]?.label?.slice(0, 3)} {new Date(inst.dueDate).getFullYear()}
-                                                </td>
-                                                <td style={{ fontSize: 12, color: '#dc2626', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{inst.monthsOverdue > 0 ? `${inst.monthsOverdue}mo` : 'current'}</td>
-                                                <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(inst.principalDue)}</td>
-                                                <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(inst.interestDue)}</td>
-                                                <td style={{ fontSize: 12, color: '#dc2626', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{inst.penalDue > 0 ? `₹${fmt(inst.penalDue)}` : '—'}</td>
-                                                <td style={{ fontSize: 12, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{TIER_LABEL[inst.tier]}</td>
-                                                <td style={{ fontSize: 12, fontWeight: 500, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(inst.principalDue + inst.interestDue + inst.penalDue)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Repayment history — filtered to the selected loan by default,
-                        since /repayment-history returns every loan the member has and
-                        it's otherwise easy to lose the payment you just made in someone
-                        else's history. Toggle to see everything when that's what's needed. */}
-                    <div style={{ flex: 1, minHeight: 0, background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                        <div className="flex items-center justify-between" style={{ padding: '10px 14px', borderBottom: '1px solid #eceef1' }}>
-                            <div>
-                                <h2 style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1d29', margin: 0 }}>
-                                    Repayment History
-                                    {form.selectedLoanCase && !showAllHistory && <span style={{ color: '#8b90a0', fontWeight: 500 }}> — Loan #{form.selectedLoanCase}</span>}
-                                </h2>
-                                {form.memberName && <p style={{ fontSize: 11.5, color: '#8b90a0', margin: '1px 0 0' }}>{form.memberName} — #{form.mbno}</p>}
-                            </div>
-                            {form.selectedLoanCase && (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAllHistory(v => !v)}
-                                    style={{ fontSize: 11, fontWeight: 600, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                                >
-                                    {showAllHistory ? 'Show this loan only' : "Show all this member's loans"}
-                                </button>
-                            )}
-                        </div>
-                        <div style={{ overflow: 'auto', flex: 1 }}>
                             {historyLoading ? (
-                                <div className="flex items-center justify-center" style={{ height: 128, color: '#8b90a0', fontSize: 13 }}>Loading…</div>
+                                <div className="aw-empty" style={{ padding: 28 }}><RefreshCw size={22} className="aw-spin" /><span className="aw-meta">Loading…</span></div>
                             ) : filteredHistory.length === 0 ? (
-                                <div className="flex items-center justify-center" style={{ height: 128, color: '#8b90a0', fontSize: 13 }}>
-                                    {!form.mbno
-                                        ? 'Search for a member to view history.'
-                                        : form.selectedLoanCase && !showAllHistory
-                                            ? 'No repayment records found for this loan yet.'
-                                            : 'No repayment records found.'}
+                                <div className="aw-empty" style={{ padding: 28 }}>
+                                    <span className="aw-meta">
+                                        {!form.mbno
+                                            ? 'Search for a member to view history.'
+                                            : form.selectedLoanCase && !showAllHistory
+                                                ? 'No repayment records found for this loan yet.'
+                                                : 'No repayment records found.'}
+                                    </span>
                                 </div>
                             ) : (
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead>
-                                        <tr>
-                                            {['Loan Case', 'Type', 'Month/Year', 'Amount', 'Receipt', 'Remaining', 'Date', 'Narration'].map(h => (
-                                                <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredHistory.map((row, i) => (
-                                            <tr key={i}>
-                                                <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{row.loancaseno}</td>
-                                                <td style={{ fontSize: 12, color: '#5b6072', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{LOAN_TYPE_LABEL[row.loantype] || row.loantype}</td>
-                                                <td style={{ fontSize: 12, color: '#5b6072', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{MONTHS.find(m => m.value === row.payment_month)?.label?.slice(0, 3)} {row.payment_year}</td>
-                                                <td style={{ fontSize: 12, fontWeight: 500, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.payment_amount)}</td>
-                                                <td style={{ fontSize: 12, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{row.receipt_no || '—'}</td>
-                                                <td style={{ fontSize: 12, color: '#dc2626', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.remaining_balance)}</td>
-                                                <td style={{ fontSize: 12, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{row.payment_date ? new Date(row.payment_date).toLocaleDateString('en-IN') : '—'}</td>
-                                                {/* Surfaces rows like "Consolidated into loan case #X (principal
-                                                    ₹... + closure interest ₹...)" written by passTransaction()'s
-                                                    consolidation branch — previously fetched from the backend but
-                                                    never rendered, so a case that hit ₹0 balance via consolidation
-                                                    looked identical to an unexplained data gap. */}
-                                                <td style={{ fontSize: 11.5, color: row.narration?.startsWith('Consolidated into') ? '#92400e' : '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5', maxWidth: 260 }}>{row.narration || '—'}</td>
+                                <div className="aw-table-wrap" style={{ maxHeight: '44vh' }}>
+                                    <table className="aw-table" style={{ minWidth: 820 }}>
+                                        <thead>
+                                            <tr>
+                                                <th>Loan Case</th><th>Type</th><th>Month/Year</th>
+                                                <th className="is-right">Amount</th><th>Receipt</th><th className="is-right">Remaining</th>
+                                                <th>Date</th><th>Narration</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {filteredHistory.map((row, i) => (
+                                                <tr key={i}>
+                                                    <td>{row.loancaseno}</td>
+                                                    <td className="is-muted">{LOAN_TYPE_LABEL[row.loantype] || row.loantype}</td>
+                                                    <td className="is-muted">{MONTHS.find(m => m.value === row.payment_month)?.label?.slice(0, 3)} {row.payment_year}</td>
+                                                    <td className="is-right">₹{fmt(row.payment_amount)}</td>
+                                                    <td className="is-muted">{row.receipt_no || '—'}</td>
+                                                    <td className="is-right is-danger">₹{fmt(row.remaining_balance)}</td>
+                                                    <td className="is-muted">{row.payment_date ? new Date(row.payment_date).toLocaleDateString('en-IN') : '—'}</td>
+                                                    {/* Surfaces rows like "Consolidated into loan case #X (principal
+                                                        ₹... + closure interest ₹...)" written by passTransaction()'s
+                                                        consolidation branch — so a case that hit ₹0 balance via
+                                                        consolidation doesn't look like an unexplained data gap. */}
+                                                    <td className={row.narration?.startsWith('Consolidated into') ? 'is-warning' : 'is-muted'} style={{ maxWidth: 260 }}>{row.narration || '—'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             )}
-                        </div>
+                        </section>
                     </div>
                 </div>
             </div>
-
-            {/* Member Lookup Modal */}
-            <Modal
-                open={showLookup}
-                onCancel={() => setShowLookup(false)}
-                footer={null}
-                width={800}
-                styles={{ body: { padding: 0 } }}
-                destroyOnClose
-            >
-                <MemberLookup isModal onSelect={onMemberSelected} onClose={() => setShowLookup(false)} />
-            </Modal>
-
-            <style>{`
-                .lr-section-label {
-                    font-size: 11px; font-weight: 600; text-transform: uppercase;
-                    letter-spacing: 0.4px; color: #6b7280; margin-bottom: 8px;
-                }
-                .lr-field-label {
-                    display: block; font-size: 11px; color: #8b90a0; margin-bottom: 4px;
-                }
-                .lr-input {
-                    font-size: 12.5px; padding: 6px 8px;
-                    border: 1px solid #d7dae0; border-radius: 6px; outline: none;
-                    color: #1a1d29; background: #fff; transition: border-color 0.15s;
-                }
-                .lr-input:focus { border-color: #2563eb; }
-                .lr-input-readonly { background: #f7f8fa !important; color: #4b5160 !important; border-color: #eceef1 !important; }
-                .lr-btn-primary {
-                    font-size: 12px; font-weight: 600; padding: 6px 12px;
-                    border: none; border-radius: 6px; background: #2563eb; color: #fff;
-                    cursor: pointer; transition: background 0.15s;
-                }
-                .lr-btn-primary:hover:not(:disabled) { background: #1d4ed8; }
-                .lr-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-                .lr-btn-icon {
-                    display: flex; align-items: center; justify-content: center;
-                    border: none; border-radius: 6px; background: #f0f1f4; color: #5b6072;
-                    cursor: pointer; transition: background 0.15s, color 0.15s;
-                }
-                .lr-btn-icon:hover { background: #2563eb; color: #fff; }
-                .lr-ghost-btn { transition: background 0.15s; }
-                .lr-ghost-btn:hover { background: rgba(255,255,255,0.08) !important; }
-
-                /* ── Dark mode ── */
-                html.dark .lr-root { background: #000 !important; color: #f5f5f7 !important; }
-                html.dark .lr-header { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .lr-card,
-                html.dark .lr-root [style*="background: #fff"],
-                html.dark .lr-root [style*="background:#fff"],
-                html.dark .lr-root [style*="background: rgb(255, 255, 255)"] { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .lr-section-label,
-                html.dark .lr-field-label { color: #8e8e93 !important; }
-                html.dark .lr-input {
-                    background: rgba(255,255,255,.05) !important; color: #f5f5f7 !important;
-                    border-color: rgba(255,255,255,.08) !important;
-                }
-                html.dark .lr-input-readonly { background: rgba(255,255,255,.03) !important; color: #8e8e93 !important; }
-                html.dark .lr-input::placeholder { color: #71717a !important; }
-                html.dark .lr-btn-icon { background: #2c2c2e !important; color: #f5f5f7 !important; }
-                html.dark .lr-root [style*="background: #f7f8fa"],
-                html.dark .lr-root [style*="background:#f7f8fa"] { background: rgba(255,255,255,.04) !important; }
-                html.dark .lr-root [style*="background: #eef4fd"],
-                html.dark .lr-root [style*="background:#eef4fd"] { background: rgba(37,99,235,.14) !important; }
-                html.dark .lr-root [style*="background: #fef3e0"],
-                html.dark .lr-root [style*="background:#fef3e0"] { background: rgba(251,191,36,.12) !important; }
-                html.dark .lr-root [style*="background: #f0fdf4"],
-                html.dark .lr-root [style*="background:#f0fdf4"] { background: rgba(52,211,153,.12) !important; }
-                html.dark .lr-root [style*="background: #fef2f2"],
-                html.dark .lr-root [style*="background:#fef2f2"] { background: rgba(255,69,58,.12) !important; }
-                html.dark .lr-root [style*="color: #1a1d29"],
-                html.dark .lr-root [style*="color:#1a1d29"] { color: #f5f5f7 !important; }
-                html.dark .lr-root [style*="color: #5b6072"],
-                html.dark .lr-root [style*="color:#5b6072"],
-                html.dark .lr-root [style*="color: #6b7280"],
-                html.dark .lr-root [style*="color:#6b7280"],
-                html.dark .lr-root [style*="color: #8b90a0"],
-                html.dark .lr-root [style*="color:#8b90a0"],
-                html.dark .lr-root [style*="color: #a3a8b3"],
-                html.dark .lr-root [style*="color:#a3a8b3"] { color: #8e8e93 !important; }
-                html.dark .lr-root [style*="color: #dc2626"],
-                html.dark .lr-root [style*="color:#dc2626"] { color: #ff453a !important; }
-                html.dark .lr-root [style*="color: #15803d"],
-                html.dark .lr-root [style*="color:#15803d"] { color: #34d399 !important; }
-                html.dark .lr-root [style*="color: #1e40af"],
-                html.dark .lr-root [style*="color:#1e40af"] { color: #93c5fd !important; }
-                html.dark .lr-root [style*="color: #a15c00"],
-                html.dark .lr-root [style*="color:#a15c00"] { color: #fbbf24 !important; }
-                html.dark .lr-root [style*="border-bottom: 1px solid #eceef1"],
-                html.dark .lr-root [style*="border-top: 1px solid #e4e6eb"] { border-color: rgba(255,255,255,.07) !important; }
-                html.dark .lr-root table th { color: #8e8e93 !important; background: #1c1c1e !important; border-color: rgba(255,255,255,.07) !important; }
-                html.dark .lr-root table td { border-color: rgba(255,255,255,.07) !important; }
-                html.dark .lr-root label[style*="background: #eef4fd"],
-                html.dark .lr-root label[style*="background:#eef4fd"] { background: rgba(37,99,235,.15) !important; border-color: rgba(37,99,235,.4) !important; }
-                html.dark .lr-root label[style*="background: #fff"],
-                html.dark .lr-root label[style*="background:#fff"] { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .ant-modal-content, html.dark .ant-modal-header {
-                    background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-                }
-            `}</style>
         </div>
     );
 };

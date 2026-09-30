@@ -100,8 +100,7 @@ const printCertificate = (text: string) => {
 
 const ShareCertificate: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const [memberNo, setMemberNo]     = useState('');
   const [memberName, setMemberName] = useState('');

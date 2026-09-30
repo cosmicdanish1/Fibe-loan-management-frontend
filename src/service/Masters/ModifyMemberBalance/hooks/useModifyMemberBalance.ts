@@ -115,7 +115,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     }
   }, []);
 
-  const handleMemberSelect = useCallback((no: string, memberData?: any) => {
+  const handleMemberSelect = useCallback((_no: string, memberData?: any) => {
     // MemberLookupInput fires onChange on every keystroke while the user is still
     // typing/searching (memberData is undefined then), not just on an actual pick
     // from the dropdown. Treating raw partial text as a committed member number

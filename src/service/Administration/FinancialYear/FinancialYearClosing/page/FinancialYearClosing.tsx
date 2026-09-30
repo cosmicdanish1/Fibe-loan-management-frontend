@@ -3,9 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calendar, Building2, ShieldCheck, CalendarRange,
-  Clock, ArrowDown, Lock, X, AlertTriangle, CheckCircle2, Plus,
+  Clock, Lock, X, AlertTriangle, CheckCircle2, Plus, RefreshCw,
 } from 'lucide-react';
-import { ConfigProvider } from 'antd';
 import { apiService } from '../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
@@ -167,230 +166,133 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
   });
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#f59e0b', borderRadius: 8 } }}>
-      <style>{`
-        html.dark .fyc-page { background: #000000 !important; }
-        html.dark .fyc-page .fyc-header { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .fyc-page .fyc-header-icon { background: #451a03 !important; color: #fbbf24 !important; }
-        html.dark .fyc-page .fyc-title { color: #f5f5f7 !important; }
-        html.dark .fyc-page .fyc-sub { color: #fbbf24 !important; }
-        html.dark .fyc-page .fyc-card { background: #1c1c1e !important; border-color: #78350f !important; }
-        html.dark .fyc-page .fyc-date-row { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .fyc-page .fyc-date-icon { background: #1c1c1e !important; }
-        html.dark .fyc-page .fyc-date-label { color: #8e8e93 !important; }
-        html.dark .fyc-page .fyc-date-value { background: #1c1c1e !important; color: #fbbf24 !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08) !important; }
-        html.dark .fyc-page .fyc-card-footer { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .fyc-page .fyc-status-dot { background: #fbbf24 !important; }
-        html.dark .fyc-page .fyc-status-text { color: #fbbf24 !important; }
-        html.dark .fyc-page .fyc-audit-text { color: #92400e !important; }
-        html.dark .fyc-page .fyc-warning { background: #2d0a0a !important; border-color: #7f1d1d !important; }
-        html.dark .fyc-page .fyc-warning-text { color: #fca5a5 !important; }
-        html.dark .fyc-page .fyc-cancel-btn { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
-        html.dark .fyc-page .fyc-cancel-btn:hover { background: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .fyc-page .fyc-footer { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .fyc-page .fyc-footer-text { color: #71717a !important; }
-        html.dark .fyc-page .fyc-error-box { background: #2d1515 !important; border-color: #7f1d1d !important; }
-        html.dark .fyc-page .fyc-error-text { color: #fca5a5 !important; }
-        html.dark .fyc-page .fyc-closed-badge { background: #064e3b !important; border-color: #065f46 !important; }
-        html.dark .fyc-page .fyc-closed-text { color: #6ee7b7 !important; }
-      `}</style>
-
-      <div className={`fyc-page h-screen flex flex-col bg-gradient-to-br from-amber-50 via-white to-amber-50 font-sans overflow-hidden ${className}`}>
-
-        {/* ── Header ── */}
-        <div className="fyc-header bg-white border-b-2 border-amber-100 px-3 py-2 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="fyc-header-icon bg-amber-100 p-1.5 rounded-lg">
-              <CalendarRange size={13} className="text-amber-600" />
-            </div>
-            <div>
-              <h1 className="fyc-title fz-caption font-black text-slate-800 uppercase tracking-tight leading-none">Financial Year Closing</h1>
-              <p className="fyc-sub fz-caption text-amber-500 font-bold leading-none mt-0.5">Fiscal Period Finalization</p>
-            </div>
-          </div>
-          <button onClick={closeWindow} title="Close"
-            className="w-6 h-6 text-slate-400 hover:text-white hover:bg-red-500 rounded transition-all flex items-center justify-center">
-            <X size={12} />
+    <div className={`app-window ${className}`}>
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Financial Year Closing</h1>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <CalendarRange size={12} /> Fiscal Period Finalization
+          </p>
+        </div>
+        <div className="aw-actions">
+          <button
+            type="button"
+            onClick={handleCloseYear}
+            disabled={isLoading || fy.isAlreadyClosed || isClosing || !fy.yearCode}
+            className="aw-btn aw-btn-danger"
+          >
+            {isClosing ? <RefreshCw size={13} className="aw-spin" /> : <Lock size={13} />}
+            {isClosing ? 'Closing...' : fy.isAlreadyClosed ? 'Year Already Closed' : 'Close Financial Year'}
+          </button>
+          <button type="button" onClick={closeWindow} disabled={isClosing} className="aw-btn aw-btn-ghost">
+            <X size={13} /> Close
           </button>
         </div>
+      </div>
 
-        {/* ── Body ── */}
-        <div className="flex-1 flex flex-col p-3 justify-center overflow-auto">
-          <div className="max-w-md w-full mx-auto space-y-2">
+      <div className="aw-content">
+        <div className="aw-stack aw-narrow" style={{ maxWidth: 520 }}>
 
-            {/* Loading skeleton */}
-            {isLoading && (
-              <div className="fyc-card bg-white border-2 border-amber-200 rounded-xl shadow-md overflow-hidden">
-                <div className="bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-2">
-                  <div className="h-3 w-40 bg-amber-300/50 rounded animate-pulse" />
-                </div>
-                <div className="p-3 space-y-2">
-                  <div className="h-9 bg-amber-50 rounded-lg border-2 border-amber-100 animate-pulse" />
-                  <div className="h-9 bg-amber-50 rounded-lg border-2 border-amber-100 animate-pulse" />
-                </div>
+          {/* Loading skeleton */}
+          {isLoading && (
+            <section className="aw-card">
+              <span className="aw-skeleton" style={{ display: 'block', height: 16, width: 160 }} />
+              <span className="aw-skeleton" style={{ display: 'block', height: 40 }} />
+              <span className="aw-skeleton" style={{ display: 'block', height: 40 }} />
+            </section>
+          )}
+
+          {/* Load error */}
+          {!isLoading && loadError && !noYearFound && (
+            <div className="aw-alert aw-alert-danger aw-fade-in" style={{ marginBottom: 0, alignItems: 'center' }} role="alert">
+              <AlertTriangle size={16} />
+              <span style={{ flex: 1 }}>{loadError}</span>
+              <button type="button" onClick={fetchCurrentYear} className="aw-btn aw-btn-secondary aw-btn-sm">Retry</button>
+            </div>
+          )}
+
+          {/* No financial year exists yet — genesis create form */}
+          {!isLoading && noYearFound && (
+            <section className="aw-card aw-fade-in">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Plus size={14} /></span>
+                <h2 className="aw-card-title">No Financial Year Set Up Yet</h2>
               </div>
-            )}
-
-            {/* Load error */}
-            {!isLoading && loadError && !noYearFound && (
-              <div className="fyc-error-box bg-red-50 border-2 border-red-100 rounded-xl p-4 flex flex-col items-center gap-2 text-center">
-                <AlertTriangle size={20} className="text-red-400" />
-                <p className="fyc-error-text fz-caption font-bold text-red-700">{loadError}</p>
-                <button onClick={fetchCurrentYear}
-                  className="mt-1 px-3 h-6 bg-red-100 hover:bg-red-200 text-red-700 rounded fz-caption font-black transition-all">
-                  Retry
+              <div className="aw-stack">
+                <p className="aw-meta" style={{ lineHeight: 1.5 }}>
+                  No financial year exists yet. Create the first one to begin using Transfer Entries and Financial Year Closing.
+                </p>
+                <div className="aw-two">
+                  <div>
+                    <label className="aw-label" htmlFor="fyc-start">Start Date</label>
+                    <input id="fyc-start" type="date" value={newStart} onChange={e => setNewStart(e.target.value)} disabled={isCreating} className="aw-input" />
+                  </div>
+                  <div>
+                    <label className="aw-label" htmlFor="fyc-end">End Date</label>
+                    <input id="fyc-end" type="date" value={newEnd} onChange={e => setNewEnd(e.target.value)} disabled={isCreating} className="aw-input" />
+                  </div>
+                </div>
+                <button type="button" onClick={handleCreateYear} disabled={isCreating || !newStart || !newEnd} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
+                  {isCreating ? <RefreshCw size={13} className="aw-spin" /> : <Plus size={13} />}
+                  {isCreating ? 'Creating...' : 'Create Financial Year'}
                 </button>
               </div>
-            )}
+            </section>
+          )}
 
-            {/* No financial year exists yet — genesis create form */}
-            {!isLoading && noYearFound && (
-              <div className="fyc-card bg-white border-2 border-amber-200 rounded-xl shadow-md overflow-hidden">
-                <div className="bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-2">
-                  <h2 className="fz-caption font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                    <Plus size={10} className="text-amber-100" />
-                    No Financial Year Set Up Yet
-                  </h2>
+          {/* Main card */}
+          {!isLoading && !loadError && (
+            <>
+              {fy.isAlreadyClosed && (
+                <div className="aw-alert aw-alert-success aw-fade-in" style={{ marginBottom: 0 }} role="status">
+                  <CheckCircle2 size={16} />
+                  <span>Financial Year {fy.yearCode} is already closed</span>
                 </div>
-                <div className="p-3 space-y-2">
-                  <p className="fz-caption text-slate-500 font-semibold leading-snug">
-                    No financial year exists yet. Create the first one to begin using Transfer Entries and Financial Year Closing.
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-0.5">
-                      <label className="fyc-date-label fz-caption font-black text-slate-600 uppercase tracking-tight">Start Date</label>
-                      <input type="date" value={newStart} onChange={e => setNewStart(e.target.value)}
-                        disabled={isCreating}
-                        className="w-full h-8 bg-amber-50 border-2 border-amber-200 rounded-lg px-2 fz-caption font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-60" />
-                    </div>
-                    <div className="space-y-0.5">
-                      <label className="fyc-date-label fz-caption font-black text-slate-600 uppercase tracking-tight">End Date</label>
-                      <input type="date" value={newEnd} onChange={e => setNewEnd(e.target.value)}
-                        disabled={isCreating}
-                        className="w-full h-8 bg-amber-50 border-2 border-amber-200 rounded-lg px-2 fz-caption font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-60" />
-                    </div>
-                  </div>
-                  <button onClick={handleCreateYear} disabled={isCreating || !newStart || !newEnd}
-                    className="w-full h-8 bg-amber-500 hover:bg-amber-400 disabled:bg-slate-300 disabled:text-slate-400 text-white font-black rounded-lg fz-caption shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:cursor-not-allowed">
-                    {isCreating
-                      ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /><span className="uppercase tracking-wider">Creating...</span></>
-                      : <><Plus size={12} /><span className="uppercase tracking-wider">Create Financial Year</span></>}
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Main card */}
-            {!isLoading && !loadError && (
-              <>
-                {/* Already closed banner */}
-                {fy.isAlreadyClosed && (
-                  <div className="fyc-closed-badge bg-emerald-50 border-2 border-emerald-200 rounded-lg px-3 py-2 flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                    <p className="fyc-closed-text fz-caption font-black text-emerald-700 uppercase tracking-tight">
-                      Financial Year {fy.yearCode} is already closed
-                    </p>
-                  </div>
-                )}
-
-                <div className="fyc-card bg-white border-2 border-amber-200 rounded-xl shadow-md overflow-hidden">
-                  <div className="bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-2">
-                    <h2 className="fz-caption font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                      <CalendarRange size={10} className="text-amber-100" />
-                      Current Financial Year
-                    </h2>
-                  </div>
-
-                  <div className="p-2 space-y-1.5">
-                    {/* Start Date */}
-                    <div className="fyc-date-row flex items-center justify-between p-1.5 bg-amber-50 rounded-lg border-2 border-amber-100 transition-all">
-                      <div className="flex items-center gap-1.5">
-                        <div className="fyc-date-icon bg-white p-1 rounded-md shadow-sm text-amber-500">
-                          <Clock size={10} />
-                        </div>
-                        <label className="fyc-date-label fz-caption font-black text-slate-600 uppercase tracking-tight">Start Date</label>
-                      </div>
-                      <span className="fyc-date-value fz-caption font-black text-slate-900 font-mono tracking-tight bg-white px-1.5 py-0.5 rounded-md shadow-inner ring-1 ring-amber-200">
-                        {fy.startDate || '—'}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-center opacity-30">
-                      <ArrowDown size={10} className="text-amber-400" />
-                    </div>
-
-                    {/* End Date */}
-                    <div className="fyc-date-row flex items-center justify-between p-1.5 bg-amber-50 rounded-lg border-2 border-amber-100 transition-all">
-                      <div className="flex items-center gap-1.5">
-                        <div className="fyc-date-icon bg-white p-1 rounded-md shadow-sm text-amber-500">
-                          <Calendar size={10} />
-                        </div>
-                        <label className="fyc-date-label fz-caption font-black text-slate-600 uppercase tracking-tight">End Date</label>
-                      </div>
-                      <span className="fyc-date-value fz-caption font-black text-slate-900 font-mono tracking-tight bg-white px-1.5 py-0.5 rounded-md shadow-inner ring-1 ring-amber-200">
-                        {fy.endDate || '—'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="fyc-card-footer px-2 py-1 bg-amber-50 border-t border-amber-100 flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <div className={`fyc-status-dot w-1.5 h-1.5 rounded-full ${fy.isAlreadyClosed ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-                      <span className="fyc-status-text fz-caption font-black text-amber-700 uppercase tracking-tight">
-                        {fy.isAlreadyClosed ? 'Year Closed' : 'Active Year'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-0.5">
-                      <ShieldCheck size={9} className="text-amber-600" />
-                      <span className="fyc-audit-text fz-caption font-bold text-amber-600 uppercase">Audit Verified</span>
-                    </div>
-                  </div>
+              <section className="aw-card aw-fade-in">
+                <div className="aw-card-head">
+                  <span className="aw-card-icon"><CalendarRange size={14} /></span>
+                  <h2 className="aw-card-title">Current Financial Year</h2>
+                  <span className={`aw-pill tone-${fy.isAlreadyClosed ? 'success' : 'warning'}`} style={{ marginLeft: 'auto' }}>
+                    <i className="aw-status-dot" style={{ marginRight: 5, background: fy.isAlreadyClosed ? 'var(--aw-success)' : 'var(--aw-warning)' }} />
+                    {fy.isAlreadyClosed ? 'Year Closed' : 'Active Year'}
+                  </span>
                 </div>
 
-                {/* Irreversible warning */}
-                {!fy.isAlreadyClosed && (
-                  <div className="fyc-warning bg-red-50 border-2 border-red-100 rounded-lg p-2 flex items-start gap-1.5">
-                    <AlertTriangle size={11} className="text-red-500 mt-0.5 shrink-0" />
-                    <p className="fyc-warning-text fz-caption text-red-700 font-bold leading-tight">
-                      Closing the financial year is <strong>irreversible</strong>. All transactions for this year will be permanently locked.
-                    </p>
+                <dl className="aw-facts">
+                  <div>
+                    <dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={11} /> Start Date</dt>
+                    <dd>{fy.startDate || '—'}</dd>
                   </div>
-                )}
+                  <div>
+                    <dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={11} /> End Date</dt>
+                    <dd>{fy.endDate || '—'}</dd>
+                  </div>
+                </dl>
 
-                {/* Action buttons */}
-                <div className="flex gap-2">
-                  <button onClick={closeWindow} disabled={isClosing}
-                    className="fyc-cancel-btn flex-1 h-8 bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-black rounded-lg fz-caption transition-all disabled:opacity-50">
-                    Cancel
-                  </button>
-                  <button onClick={handleCloseYear}
-                    disabled={isLoading || fy.isAlreadyClosed || isClosing || !fy.yearCode}
-                    className="flex-[2] h-8 bg-red-600 hover:bg-red-500 disabled:bg-slate-300 disabled:text-slate-400 text-white font-black rounded-lg fz-caption shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:cursor-not-allowed">
-                    {isClosing
-                      ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /><span className="uppercase tracking-wider">Closing...</span></>
-                      : <><Lock size={10} /><span className="uppercase tracking-wider">{fy.isAlreadyClosed ? 'Year Already Closed' : 'Close Financial Year'}</span></>}
-                  </button>
+                <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--aw-border)' }}>
+                  <ShieldCheck size={12} /> Audit Verified
+                </p>
+              </section>
+
+              {!fy.isAlreadyClosed && (
+                <div className="aw-alert aw-alert-danger aw-fade-in" style={{ marginBottom: 0 }}>
+                  <AlertTriangle size={15} />
+                  <span>Closing the financial year is <strong>irreversible</strong>. All transactions for this year will be permanently locked.</span>
                 </div>
-              </>
-            )}
-
-          </div>
+              )}
+            </>
+          )}
         </div>
-
-        {/* ── Footer ── */}
-        <div className="fyc-footer bg-white border-t border-slate-100 px-3 py-1 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-1">
-            <Building2 size={9} className="text-slate-400" />
-            <span className="fyc-footer-text fz-caption font-bold text-slate-400 uppercase tracking-tight" style={{ fontSize: '9px' }}>Financial Year Management</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <ShieldCheck size={9} className="text-slate-400" />
-            <span className="fyc-footer-text fz-caption font-bold text-slate-400 uppercase tracking-tight" style={{ fontSize: '9px' }}>Verified Protocol</span>
-          </div>
-        </div>
-
       </div>
-    </ConfigProvider>
+
+      <div className="aw-footer">
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> Financial Year Management</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> Verified Protocol</span>
+      </div>
+    </div>
   );
 };
 

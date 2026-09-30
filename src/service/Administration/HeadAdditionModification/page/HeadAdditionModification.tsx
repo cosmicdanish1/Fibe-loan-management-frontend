@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  TreePine, Search, RotateCcw, Plus, Pencil, Trash2, Loader2,
+  TreePine, Search, RotateCcw, Plus, Pencil, Trash2,
   ChevronDown, ChevronRight,
 } from 'lucide-react';
-import { ConfigProvider, message, Modal, Popconfirm } from 'antd';
+import { message, Select } from 'antd';
+import AwDialog from '@/components/shared/kit/AwDialog';
 import apiService from '../../../../services/api';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
@@ -335,455 +336,391 @@ const HeadAdditionModification: React.FC = () => {
     saveEnabled: formOpen && !saving,
   });
 
+  // Section colour: Liabilities info, Assets success, Income warning, Expenditure danger
+  const toneFor = (prefix: string) =>
+    prefix === 'L' ? 'var(--aw-info)' :
+    prefix === 'A' ? 'var(--aw-success)' :
+    prefix === 'I' ? 'var(--aw-warning)' :
+    prefix === 'E' ? 'var(--aw-danger)' : 'var(--aw-muted)';
+
+  const leafCount = flatData.filter(e => !SECTION_ROOTS.includes(e.code) && e.code !== 'M1000').length;
+
+  const [confirmCodes, setConfirmCodes] = useState<string[] | null>(null);
+  const runConfirmedDelete = async () => {
+    const codes = confirmCodes;
+    setConfirmCodes(null);
+    if (!codes) return;
+    if (codes.length === 1 && codes[0]) {
+      await handleDelete(codes[0]);
+    } else {
+      await handleDeleteSelected();
+    }
+  };
+
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#7c3aed' } }}>
-      <style>{`
-        .hm-row { cursor: pointer; }
-        .hm-row:hover { background: #f5f3ff !important; }
-        .hm-row:hover td,
-        .hm-row:hover td span,
-        .hm-row:hover td .hm-code,
-        .hm-row:hover td .hm-name { color: #4c1d95 !important; }
-        .hm-scrollbar::-webkit-scrollbar { width: 6px; }
-        .hm-scrollbar::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 3px; }
-        html.dark .hm-row:hover { background: #2e1065 !important; }
-        html.dark .hm-row:hover td,
-        html.dark .hm-row:hover td span,
-        html.dark .hm-row:hover td .hm-code,
-        html.dark .hm-row:hover td .hm-name { color: #e9d5ff !important; }
-      `}</style>
-
-      <div className="flex flex-col h-full bg-white">
-
-        {/* ── Toolbar ── */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 border-b border-slate-300 flex-shrink-0">
-          <button
-            onClick={handleBuildTree}
-            disabled={rebuilding || loading}
-            className="h-8 px-4 bg-purple-700 hover:bg-purple-600 text-white rounded text-xs font-black flex items-center gap-2 disabled:opacity-50 transition-all uppercase tracking-wide shadow"
-          >
-            <TreePine size={13} className={rebuilding ? 'animate-pulse' : ''} />
+    <div className="app-window">
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Head Addition / Modification</h1>
+          <p className="aw-desc">Chart of accounts{flatData.length > 0 ? ` · ${flatData.length} heads` : ''}</p>
+        </div>
+        <div className="aw-actions">
+          {selected.size > 0 && (
+            <button type="button" onClick={() => setConfirmCodes([...selected])} className="aw-btn aw-btn-danger aw-fade-in">
+              <Trash2 size={13} /> Delete ({selected.size})
+            </button>
+          )}
+          <button type="button" onClick={handleBuildTree} disabled={rebuilding || loading} className="aw-btn aw-btn-secondary">
+            <TreePine size={13} className={rebuilding ? 'aw-spin' : ''} />
             {rebuilding ? 'Building…' : 'Build Tree'}
           </button>
-
-          <div className="w-px h-6 bg-slate-300" />
-
-          <button
-            onClick={() => openAdd()}
-            disabled={loading}
-            className="h-8 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-black flex items-center gap-2 transition-all uppercase tracking-wide shadow"
-          >
+          <button type="button" onClick={() => openAdd()} disabled={loading} className="aw-btn aw-btn-primary">
             <Plus size={13} /> Add Head
           </button>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="aw-icon-btn"
+            aria-label="Refresh"
+            data-tip="Refresh"
+            data-tip-pos="bottom-end"
+          >
+            <RotateCcw size={14} className={loading ? 'aw-spin' : ''} />
+          </button>
+        </div>
+      </div>
 
-          {selected.size > 0 && (
-            <Popconfirm
-              title={<span className="text-sm">Delete {selected.size} selected account{selected.size > 1 ? 's' : ''}?</span>}
-              description={<span className="text-xs text-slate-500">Parent accounts (with children) will be blocked.</span>}
-              onConfirm={handleDeleteSelected}
-              okText="Delete All"
-              cancelText="Cancel"
-              okButtonProps={{ danger: true }}
-              cancelButtonProps={{}}
-            >
-              <button className="h-8 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-black flex items-center gap-2 transition-all uppercase tracking-wide shadow">
-                <Trash2 size={13} /> Delete ({selected.size})
-              </button>
-            </Popconfirm>
-          )}
+      <div className="aw-content">
+        <section className="aw-card">
+          <div style={{ textAlign: 'center' }}>
+            <p className="aw-strong" style={{ color: 'var(--aw-accent)' }}>{SOCIETY_NAME}</p>
+            <p className="aw-meta">{SOCIETY_ADDRESS}</p>
+          </div>
 
-          <div className="flex-1" />
-
-          {/* Search */}
-          <div className="relative">
-            <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <div className="aw-input-wrap has-icon" style={{ maxWidth: 320 }}>
+            <Search size={13} />
             <input
               type="text"
               placeholder="Search code / name…"
+              aria-label="Search heads"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="h-8 bg-white border border-slate-300 rounded pl-7 pr-6 text-xs font-mono outline-none focus:border-purple-400 w-44"
+              className="aw-input"
             />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-black text-sm leading-none"
-              >×</button>
-            )}
           </div>
 
-          <button
-            onClick={load}
-            disabled={loading}
-            title="Refresh"
-            className="h-8 w-8 flex items-center justify-center hover:bg-slate-200 rounded text-slate-500 transition-all disabled:opacity-50"
-          >
-            <RotateCcw size={13} className={loading ? 'animate-spin' : ''} />
-          </button>
-        </div>
-
-        {/* ── Society Header ── */}
-        <div className="text-center py-2.5 px-4 border-b border-slate-200 bg-white flex-shrink-0">
-          <p className="text-sm font-black text-purple-800 leading-tight">
-            {SOCIETY_NAME}
-          </p>
-          <p className="text-xs text-slate-600 mt-0.5">
-            {SOCIETY_ADDRESS}
-          </p>
-        </div>
-
-        {/* ── Table ── */}
-        <div className="flex-1 overflow-auto hm-scrollbar">
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-48 gap-3">
-              <Loader2 size={32} className="text-purple-400 animate-spin" />
-              <p className="text-xs text-slate-300 font-black uppercase tracking-wider">Loading…</p>
+            <div className="aw-empty" style={{ padding: 40 }}>
+              <RotateCcw size={28} className="aw-spin" />
+              <strong className="aw-strong">Loading…</strong>
             </div>
           ) : (
-            <table className="w-full border-collapse min-w-[580px]">
-              <thead className="sticky top-0 z-10">
-                <tr className="hm-thead bg-purple-900 border-b-2 border-purple-700">
-                  <th className="px-2 py-2 w-8">
-                    <input
-                      type="checkbox"
-                      checked={allChecked}
-                      onChange={toggleAll}
-                      className="cursor-pointer accent-purple-400 w-3.5 h-3.5"
-                    />
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-black text-white uppercase tracking-wider">
-                    Code — Head Name
-                    {flatData.length > 0 && (
-                      <span className="ml-2 text-purple-300 font-black normal-case fz-small">
-                        {flatData.length} heads
-                      </span>
-                    )}
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-black text-white uppercase tracking-wider w-32 border-l border-purple-700">Opening</th>
-                  <th className="px-3 py-2 text-right text-xs font-black text-rose-200 uppercase tracking-wider w-32 border-l border-purple-700">Debit</th>
-                  <th className="px-3 py-2 text-right text-xs font-black text-emerald-200 uppercase tracking-wider w-32 border-l border-purple-700">Credit</th>
-                  <th className="px-3 py-2 text-right text-xs font-black text-amber-200 uppercase tracking-wider w-32 border-l border-purple-700">Balance</th>
-                  <th className="px-2 py-2 w-16 border-l border-purple-700" />
-                </tr>
-              </thead>
-
-              <tbody>
-                {displayRows.length === 0 && (
+            <div className="aw-table-wrap" style={{ maxHeight: '64vh' }}>
+              <table className="aw-table" style={{ minWidth: 700 }}>
+                <thead>
                   <tr>
-                    <td colSpan={7} className="text-center py-16 text-sm text-slate-400 font-black uppercase tracking-wider">
-                      {search ? 'No matching accounts' : 'No data — click Build Tree to calculate balances'}
-                    </td>
+                    <th style={{ width: 36 }}>
+                      <input
+                        type="checkbox"
+                        checked={allChecked}
+                        onChange={toggleAll}
+                        aria-label="Select all"
+                        style={{ width: 15, height: 15, accentColor: 'var(--aw-accent)' }}
+                      />
+                    </th>
+                    <th>Code — Head Name</th>
+                    <th className="is-right" style={{ width: 130 }}>Opening</th>
+                    <th className="is-right" style={{ width: 130 }}>Debit</th>
+                    <th className="is-right" style={{ width: 130 }}>Credit</th>
+                    <th className="is-right" style={{ width: 130 }}>Balance</th>
+                    <th style={{ width: 84 }} />
                   </tr>
-                )}
+                </thead>
 
-                {displayRows.map(({ entry: e, isSection }) => {
-                  const isDeleting = deleting === e.code;
-                  const isSel      = selected.has(e.code);
-                  const prefix     = e.code.charAt(0);
-
-                  // Per-section accent colors
-                  const sectionAccent =
-                    prefix === 'L' ? { bg: '#4c1d95', text: '#e9d5ff', border: '#7c3aed' } :
-                    prefix === 'A' ? { bg: '#064e3b', text: '#a7f3d0', border: '#059669' } :
-                    prefix === 'I' ? { bg: '#78350f', text: '#fde68a', border: '#d97706' } :
-                    prefix === 'E' ? { bg: '#7f1d1d', text: '#fecaca', border: '#dc2626' } :
-                                     { bg: '#1e293b', text: '#e2e8f0', border: '#475569' };
-
-                  const codeColor =
-                    prefix === 'L' ? '#7c3aed' :
-                    prefix === 'A' ? '#059669' :
-                    prefix === 'I' ? '#d97706' :
-                    prefix === 'E' ? '#dc2626' : '#64748b';
-
-                  if (isSection) {
-                    return (
-                      <tr
-                        key={e.code}
-                        className="border-t border-b"
-                        style={{
-                          backgroundColor: sectionAccent.bg,
-                          borderColor: sectionAccent.border,
-                        }}
-                      >
-                        <td className="px-2 py-1.5 text-center">
-                          <button
-                            onClick={() => toggleSection(e.code)}
-                            className="p-0.5 rounded transition-colors"
-                            style={{ color: sectionAccent.text }}
-                            title={expandedSections.has(e.code) ? 'Collapse' : 'Expand'}
-                          >
-                            {expandedSections.has(e.code)
-                              ? <ChevronDown size={14} />
-                              : <ChevronRight size={14} />}
-                          </button>
-                        </td>
-                        <td
-                          className="px-3 py-1.5 cursor-pointer select-none"
-                          onClick={() => toggleSection(e.code)}
-                        >
-                          <span className="text-sm font-black uppercase tracking-wide" style={{ color: sectionAccent.text }}>
-                            {e.code} — {e.headName.toUpperCase()}
-                          </span>
-                        </td>
-                        {(() => {
-                          const st = sectionTotals[e.code] ?? { opening: 0, debit: 0, credit: 0, balance: 0 };
-                          return (
-                            <>
-                              <td className="px-3 py-1.5 text-right text-xs font-black font-mono border-l" style={{ color: sectionAccent.text, borderColor: sectionAccent.border }}>
-                                {st.opening !== 0 ? fmt(st.opening) : ''}
-                              </td>
-                              <td className="px-3 py-1.5 text-right text-xs font-black font-mono border-l" style={{ color: sectionAccent.text, borderColor: sectionAccent.border }}>
-                                {st.debit !== 0 ? fmt(st.debit) : ''}
-                              </td>
-                              <td className="px-3 py-1.5 text-right text-xs font-black font-mono border-l" style={{ color: sectionAccent.text, borderColor: sectionAccent.border }}>
-                                {st.credit !== 0 ? fmt(st.credit) : ''}
-                              </td>
-                              <td className="px-3 py-1.5 text-right text-xs font-black font-mono border-l" style={{ color: sectionAccent.text, borderColor: sectionAccent.border }}>
-                                {st.balance !== 0 ? fmt(Math.abs(st.balance)) : ''}
-                              </td>
-                            </>
-                          );
-                        })()}
-                        <td className="px-2 py-1.5 text-center border-l" style={{ borderColor: sectionAccent.border }}>
-                          <button
-                            title="Add child head"
-                            onClick={() => openAdd(e.code)}
-                            className="p-1 rounded transition-colors"
-                            style={{ color: sectionAccent.text }}
-                          >
-                            <Plus size={12} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  }
-
-                  return (
-                    <tr
-                      key={e.code}
-                      className="hm-row border-b border-slate-200"
-                      style={{ backgroundColor: isSel ? '#f3e8ff' : undefined }}
-                      onDoubleClick={() => openEdit(e)}
-                    >
-                      <td className="px-2 py-1 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isSel}
-                          onChange={() => toggleOne(e.code)}
-                          className="cursor-pointer accent-purple-400 w-3.5 h-3.5"
-                          onClick={ev => ev.stopPropagation()}
-                        />
-                      </td>
-                      <td className="px-3 py-1 pl-8">
-                        <span className="hm-code text-xs font-black font-mono mr-2" style={{ color: codeColor }}>
-                          {e.code}
-                        </span>
-                        <span className="text-slate-400 mr-2 text-xs">—</span>
-                        <span className="hm-name text-xs font-semibold text-slate-700">
-                          {e.headName}
-                        </span>
-                      </td>
-                      <td className="px-3 py-1 text-right text-xs font-mono text-slate-600 border-l border-slate-200">
-                        {fmt(e.opening)}
-                      </td>
-                      <td className="px-3 py-1 text-right text-xs font-mono text-rose-600 border-l border-slate-200">
-                        {fmt(e.debit)}
-                      </td>
-                      <td className="px-3 py-1 text-right text-xs font-mono text-emerald-600 border-l border-slate-200">
-                        {fmt(e.credit)}
-                      </td>
-                      <td className="px-3 py-1 text-right text-xs font-mono text-amber-600 border-l border-slate-200">
-                        {fmt(e.balance)}
-                      </td>
-                      <td className="px-2 py-1 border-l border-slate-200">
-                        <div className="flex items-center gap-1 justify-center">
-                          <button
-                            title="Edit"
-                            onClick={() => openEdit(e)}
-                            className="p-1 rounded hover:bg-indigo-100 text-indigo-500 hover:text-indigo-700 transition-colors"
-                          >
-                            <Pencil size={11} />
-                          </button>
-                          <Popconfirm
-                            title={<span className="text-sm">Delete <strong>{e.code}</strong>?</span>}
-                            description={<span className="text-xs text-slate-500">Blocked if it has child accounts.</span>}
-                            onConfirm={() => handleDelete(e.code)}
-                            okText="Delete"
-                            cancelText="Cancel"
-                            okButtonProps={{ danger: true }}
-                          >
-                            <button
-                              title="Delete"
-                              disabled={isDeleting}
-                              className="p-1 rounded hover:bg-rose-100 text-rose-500 hover:text-rose-700 transition-colors disabled:opacity-40"
-                            >
-                              {isDeleting
-                                ? <Loader2 size={11} className="animate-spin" />
-                                : <Trash2 size={11} />}
-                            </button>
-                          </Popconfirm>
+                <tbody>
+                  {displayRows.length === 0 && (
+                    <tr>
+                      <td colSpan={7}>
+                        <div className="aw-empty" style={{ padding: 32 }}>
+                          <TreePine size={26} />
+                          <strong className="aw-strong">{search ? 'No matching accounts' : 'No data'}</strong>
+                          {!search && <span className="aw-meta">Click Build Tree to calculate balances</span>}
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
+                  )}
 
-              <tfoot className="sticky bottom-0 z-10">
-                <tr className="hm-tfoot" style={{ backgroundColor: '#581c87', borderTop: '2px solid #7c3aed' }}>
-                  <th className="px-2 py-2" />
-                  <th className="px-3 py-2 text-left text-xs font-black text-white uppercase tracking-widest">
-                    Grand Total
-                    <span className="ml-2 fz-small text-purple-300 font-normal normal-case">
-                      {flatData.filter(e => !SECTION_ROOTS.includes(e.code) && e.code !== 'M1000').length} accounts
-                    </span>
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-black font-mono text-white border-l border-purple-700">
-                    {grandTotals.opening !== 0 ? fmt(grandTotals.opening) : '—'}
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-black font-mono text-rose-200 border-l border-purple-700">
-                    {grandTotals.debit !== 0 ? fmt(grandTotals.debit) : '—'}
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-black font-mono text-emerald-200 border-l border-purple-700">
-                    {grandTotals.credit !== 0 ? fmt(grandTotals.credit) : '—'}
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-black font-mono border-l border-purple-700"
-                      style={{ color: grandTotals.balance < 0 ? '#fecaca' : '#fde68a' }}>
-                    {grandTotals.balance !== 0 ? fmt(Math.abs(grandTotals.balance)) : '—'}
-                  </th>
-                  <th className="px-2 py-2 border-l border-purple-700" />
-                </tr>
-              </tfoot>
-            </table>
+                  {displayRows.map(({ entry: e, isSection }) => {
+                    const isDeleting = deleting === e.code;
+                    const isSel = selected.has(e.code);
+                    const tone = toneFor(e.code.charAt(0));
+
+                    if (isSection) {
+                      const st = sectionTotals[e.code] ?? { opening: 0, debit: 0, credit: 0, balance: 0 };
+                      const open = expandedSections.has(e.code);
+                      const cellStyle: React.CSSProperties = { background: `color-mix(in srgb, ${tone} 12%, var(--aw-surface))`, color: tone, fontWeight: 700 };
+                      return (
+                        <tr key={e.code}>
+                          <td className="is-center" style={cellStyle}>
+                            <button
+                              type="button"
+                              onClick={() => toggleSection(e.code)}
+                              className="aw-icon-btn is-sm"
+                              aria-label={open ? 'Collapse' : 'Expand'}
+                              aria-expanded={open}
+                              style={{ color: 'inherit' }}
+                            >
+                              {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            </button>
+                          </td>
+                          <td style={{ ...cellStyle, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.03em' }} onClick={() => toggleSection(e.code)}>
+                            {e.code} — {e.headName}
+                          </td>
+                          <td className="is-right" style={cellStyle}>{st.opening !== 0 ? fmt(st.opening) : ''}</td>
+                          <td className="is-right" style={cellStyle}>{st.debit !== 0 ? fmt(st.debit) : ''}</td>
+                          <td className="is-right" style={cellStyle}>{st.credit !== 0 ? fmt(st.credit) : ''}</td>
+                          <td className="is-right" style={cellStyle}>{st.balance !== 0 ? fmt(Math.abs(st.balance)) : ''}</td>
+                          <td className="is-center" style={cellStyle}>
+                            <button
+                              type="button"
+                              onClick={() => openAdd(e.code)}
+                              className="aw-icon-btn is-sm"
+                              aria-label={`Add child head under ${e.code}`}
+                              data-tip="Add child head"
+                              data-tip-pos="left"
+                              style={{ color: 'inherit' }}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    const rowBg: React.CSSProperties | undefined = isSel ? { background: 'var(--aw-accent-soft)' } : undefined;
+                    return (
+                      <tr key={e.code} className="is-clickable" onDoubleClick={() => openEdit(e)}>
+                        <td className="is-center" style={rowBg}>
+                          <input
+                            type="checkbox"
+                            checked={isSel}
+                            onChange={() => toggleOne(e.code)}
+                            onClick={ev => ev.stopPropagation()}
+                            aria-label={`Select ${e.code}`}
+                            style={{ width: 15, height: 15, accentColor: 'var(--aw-accent)' }}
+                          />
+                        </td>
+                        <td style={{ ...rowBg, paddingLeft: 28 }}>
+                          <span style={{ color: tone, fontWeight: 700, marginRight: 8 }}>{e.code}</span>
+                          <span className="aw-meta" style={{ marginRight: 8, display: 'inline' }}>—</span>
+                          {e.headName}
+                        </td>
+                        <td className="is-right is-muted" style={rowBg}>{fmt(e.opening)}</td>
+                        <td className="is-right is-danger" style={rowBg}>{fmt(e.debit)}</td>
+                        <td className="is-right is-success" style={rowBg}>{fmt(e.credit)}</td>
+                        <td className="is-right is-warning" style={rowBg}>{fmt(e.balance)}</td>
+                        <td className="is-center" style={rowBg}>
+                          <span style={{ display: 'inline-flex', gap: 2 }}>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(e)}
+                              className="aw-icon-btn is-sm"
+                              aria-label={`Edit ${e.code}`}
+                              data-tip="Edit"
+                              data-tip-pos="left"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmCodes([e.code])}
+                              disabled={isDeleting}
+                              className="aw-icon-btn is-sm is-danger"
+                              aria-label={`Delete ${e.code}`}
+                              data-tip="Delete"
+                              data-tip-pos="left"
+                            >
+                              {isDeleting ? <RotateCcw size={14} className="aw-spin" /> : <Trash2 size={14} />}
+                            </button>
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+
+                <tfoot>
+                  <tr>
+                    <td />
+                    <td>
+                      Grand Total <span className="aw-meta" style={{ marginLeft: 6 }}>{leafCount} accounts</span>
+                    </td>
+                    <td className="is-right">{grandTotals.opening !== 0 ? fmt(grandTotals.opening) : '—'}</td>
+                    <td className="is-right is-danger">{grandTotals.debit !== 0 ? fmt(grandTotals.debit) : '—'}</td>
+                    <td className="is-right is-success">{grandTotals.credit !== 0 ? fmt(grandTotals.credit) : '—'}</td>
+                    <td className={`is-right ${grandTotals.balance < 0 ? 'is-danger' : 'is-warning'}`}>
+                      {grandTotals.balance !== 0 ? fmt(Math.abs(grandTotals.balance)) : '—'}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           )}
-        </div>
-
+        </section>
       </div>
 
-      {/* ── Add / Edit Modal ── */}
-      <Modal
-        open={formOpen}
-        onCancel={() => setFormOpen(false)}
-        onOk={handleSave}
-        okText={saving ? 'Saving…' : formMode === 'add' ? 'Add Head' : 'Save Changes'}
-        okButtonProps={{ disabled: saving, style: { background: '#7c3aed', borderColor: '#7c3aed' } }}
-        cancelButtonProps={{ disabled: saving }}
-        title={
-          <div className="flex items-center gap-2 fz-caption font-black text-slate-800 uppercase tracking-wider">
-            {formMode === 'add' ? <Plus size={12} className="text-emerald-600" /> : <Pencil size={12} className="text-indigo-600" />}
-            {formMode === 'add' ? 'Add New Account Head' : `Edit — ${formData.code}`}
-          </div>
-        }
-        width={420}
-        destroyOnClose
+      {/* ── Delete confirmation ── */}
+      <AwDialog
+        open={confirmCodes !== null}
+        title={confirmCodes && confirmCodes.length > 1 ? `Delete ${confirmCodes.length} accounts?` : `Delete ${confirmCodes?.[0] ?? ''}?`}
+        icon={<Trash2 size={14} />}
+        onClose={() => setConfirmCodes(null)}
+        maxWidth="26rem"
+        compact
       >
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2 pt-2">
+        <div className="aw-stack">
+          <p className="aw-meta" style={{ lineHeight: 1.5 }}>
+            {confirmCodes && confirmCodes.length > 1
+              ? 'Parent accounts (with children) will be blocked.'
+              : 'Blocked if it has child accounts.'}
+          </p>
+          <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => setConfirmCodes(null)} className="aw-btn aw-btn-secondary">Cancel</button>
+            <button type="button" onClick={runConfirmedDelete} className="aw-btn aw-btn-danger">
+              {confirmCodes && confirmCodes.length > 1 ? 'Delete All' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      </AwDialog>
 
-          <div className="flex flex-col gap-0.5">
-            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Code *</label>
-            <input
-              value={formData.code}
-              onChange={e => setField('code', e.target.value)}
-              readOnly={formMode === 'edit'}
-              placeholder="e.g. L1005"
-              className={`h-7 px-2 fz-small font-mono border rounded outline-none transition-colors
-                ${formMode === 'edit'
-                  ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed'
-                  : 'border-slate-300 focus:border-purple-400 bg-white'}`}
-            />
+      {/* ── Add / Edit dialog ── */}
+      <AwDialog
+        open={formOpen}
+        onClose={() => { if (!saving) setFormOpen(false); }}
+        title={formMode === 'add' ? 'Add New Account Head' : `Edit — ${formData.code}`}
+        icon={formMode === 'add' ? <Plus size={14} /> : <Pencil size={14} />}
+        maxWidth="30rem"
+        compact
+      >
+        <div className="aw-stack">
+          <div className="aw-two">
+            <div>
+              <label className="aw-label" htmlFor="hm-code">Code *</label>
+              <input
+                id="hm-code"
+                value={formData.code}
+                onChange={e => setField('code', e.target.value)}
+                readOnly={formMode === 'edit'}
+                placeholder="e.g. L1005"
+                className="aw-input"
+              />
+            </div>
+            <div>
+              <label className="aw-label" htmlFor="hm-parent">Parent Code *</label>
+              <Select
+                id="hm-parent"
+                className="aw-select"
+                popupClassName="aw-select-popup"
+                showSearch
+                optionFilterProp="label"
+                value={formData.parentCode || undefined}
+                onChange={(v) => setField('parentCode', v ?? '')}
+                placeholder="— select —"
+                options={[...flatData]
+                  .filter(f => f.code !== formData.code)
+                  .sort((a, b) => a.code.localeCompare(b.code))
+                  .map(f => ({ value: f.code, label: `${f.code} — ${f.headName}` }))}
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-0.5">
-            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Parent Code *</label>
-            <select
-              value={formData.parentCode}
-              onChange={e => setField('parentCode', e.target.value)}
-              className="h-7 px-2 fz-small font-mono border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
-            >
-              <option value="">— select —</option>
-              {[...flatData]
-                .filter(f => f.code !== formData.code)
-                .sort((a, b) => a.code.localeCompare(b.code))
-                .map(f => (
-                  <option key={f.code} value={f.code}>
-                    {f.code} — {f.headName}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div className="col-span-2 flex flex-col gap-0.5">
-            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Head Name *</label>
+          <div>
+            <label className="aw-label" htmlFor="hm-name">Head Name *</label>
             <input
+              id="hm-name"
               value={formData.headName}
               onChange={e => setField('headName', e.target.value)}
               placeholder="e.g. Share Capital"
-              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
+              className="aw-input"
             />
           </div>
 
-          <div className="flex flex-col gap-0.5">
-            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Position (Sort)</label>
-            <input
-              type="number"
-              value={formData.hposition}
-              onChange={e => setField('hposition', e.target.value)}
-              placeholder="e.g. 1000"
-              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
-            />
+          <div className="aw-two">
+            <div>
+              <label className="aw-label" htmlFor="hm-pos">Position (Sort)</label>
+              <input
+                id="hm-pos"
+                type="number"
+                value={formData.hposition}
+                onChange={e => setField('hposition', e.target.value)}
+                placeholder="e.g. 1000"
+                className="aw-input"
+              />
+            </div>
+            <div>
+              <label className="aw-label" htmlFor="hm-op">Opening Balance</label>
+              <input
+                id="hm-op"
+                type="number"
+                step="0.01"
+                value={formData.opBal}
+                onChange={e => setField('opBal', e.target.value)}
+                className="aw-input is-right"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-0.5">
-            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Opening Balance</label>
-            <input
-              type="number"
-              step="0.01"
-              value={formData.opBal}
-              onChange={e => setField('opBal', e.target.value)}
-              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
-            />
+          <div className="aw-two">
+            <div>
+              <label className="aw-label" htmlFor="hm-int">Interest</label>
+              <Select
+                id="hm-int"
+                className="aw-select"
+                popupClassName="aw-select-popup"
+                value={formData.interest}
+                onChange={(v) => setField('interest', v)}
+                options={[{ value: 'N', label: 'N — None' }, { value: 'Y', label: 'Y — Yes' }]}
+              />
+            </div>
+            <div>
+              <label className="aw-label" htmlFor="hm-pflag">P Flag</label>
+              <Select
+                id="hm-pflag"
+                className="aw-select"
+                popupClassName="aw-select-popup"
+                value={formData.pflag || undefined}
+                onChange={(v) => setField('pflag', v ?? '')}
+                placeholder="— select —"
+                options={[
+                  { value: 'A', label: 'A — Asset' },
+                  { value: 'L', label: 'L — Liability' },
+                  { value: 'I', label: 'I — Income' },
+                  { value: 'E', label: 'E — Expenditure' },
+                  { value: 'R', label: 'R — Root (section headers only)' },
+                ]}
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-0.5">
-            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">Interest</label>
-            <select
-              value={formData.interest}
-              onChange={e => setField('interest', e.target.value)}
-              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
-            >
-              <option value="N">N — None</option>
-              <option value="Y">Y — Yes</option>
-            </select>
-          </div>
+          {formMode === 'add' && (
+            <p className="aw-meta" style={{ lineHeight: 1.5 }}>
+              Code prefix must match the parent section: <strong>L</strong>iabilities · <strong>A</strong>ssets · <strong>E</strong>xpenditure · <strong>I</strong>ncome.
+              After adding, click <strong>Build Tree</strong> to recalculate balances.
+            </p>
+          )}
 
-          <div className="flex flex-col gap-0.5">
-            <label className="fz-tiny font-black text-slate-500 uppercase tracking-wider">P Flag</label>
-            <select
-              value={formData.pflag}
-              onChange={e => setField('pflag', e.target.value)}
-              className="h-7 px-2 fz-small border border-slate-300 rounded outline-none focus:border-purple-400 bg-white"
-            >
-              <option value="">— select —</option>
-              <option value="A">A — Asset</option>
-              <option value="L">L — Liability</option>
-              <option value="I">I — Income</option>
-              <option value="E">E — Expenditure</option>
-              <option value="R">R — Root (section headers only)</option>
-            </select>
+          <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => setFormOpen(false)} disabled={saving} className="aw-btn aw-btn-secondary">Cancel</button>
+            <button type="button" onClick={handleSave} disabled={saving} className="aw-btn aw-btn-primary">
+              {saving ? 'Saving…' : formMode === 'add' ? 'Add Head' : 'Save Changes'}
+            </button>
           </div>
-
         </div>
-
-        {formMode === 'add' && (
-          <p className="mt-3 fz-mini text-slate-400 leading-relaxed">
-            Code prefix must match the parent section:&nbsp;
-            <strong>L</strong>iabilities · <strong>A</strong>ssets · <strong>E</strong>xpenditure · <strong>I</strong>ncome.
-            After adding, click <strong>Build Tree</strong> to recalculate balances.
-          </p>
-        )}
-      </Modal>
-
-    </ConfigProvider>
+      </AwDialog>
+    </div>
   );
 };
 

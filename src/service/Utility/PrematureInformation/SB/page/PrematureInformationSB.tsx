@@ -6,7 +6,7 @@ import {
   CheckCircle,
   RefreshCw
 } from 'lucide-react';
-import { ConfigProvider, Select } from 'antd';
+import { Select } from 'antd';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
 
@@ -50,9 +50,6 @@ const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detai
     await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: msg, detail, buttons: ['OK'], defaultId: 0 });
   } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
 };
-
-const lbl = "block fz-mini font-black text-slate-500 uppercase tracking-wider mb-0.5";
-const inp = "h-7 fz-caption font-semibold bg-white border-slate-300 rounded";
 
 const PrematureInformationSB: React.FC = () => {
   const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
@@ -153,244 +150,197 @@ const PrematureInformationSB: React.FC = () => {
   , []);
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="psb-app h-screen flex flex-col bg-[#f5f6fa] font-sans overflow-hidden text-slate-900">
+    <div className="app-window">
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-2 flex items-center justify-between shrink-0 shadow-lg">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg border border-indigo-400/50 bg-indigo-600">
-              <Calculator size={13} className="text-white" />
-            </div>
-            <div>
-              <h1 className="fz-caption font-black text-white tracking-wider uppercase leading-none">SB Premature Information</h1>
-              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Saving Bank Early Closure Calculation</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button onClick={resetForm}
-              className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black transition-all flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
-              <RefreshCw size={11} /> Reset
-            </button>
-          </div>
+      {/* Header */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">SB Premature Information</h1>
+          <p className="aw-desc">Saving Bank Early Closure Calculation</p>
         </div>
+        <div className="aw-actions">
+          <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary">
+            <RefreshCw size={13} /> Reset
+          </button>
+        </div>
+      </div>
 
-        {/* Body */}
-        <div className="flex-1 flex flex-col min-h-0 p-2 gap-1.5 overflow-auto">
+      {/* Body */}
+      <div className="aw-content">
 
-          {error && (
-            <div className="shrink-0 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 flex items-center gap-2 fz-tiny font-semibold text-rose-700">
-              <AlertCircle size={12} className="text-rose-500 shrink-0" />
-              {error}
+        {error && (
+          <div className="aw-alert aw-alert-danger aw-fade-in" role="alert">
+            <AlertCircle size={14} />
+            {error}
+          </div>
+        )}
+
+        <div className="aw-grid">
+
+          {/* Card 1: Member Selection */}
+          <section className="aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><User size={14} /></span>
+              <h2 className="aw-card-title">Member Selection</h2>
             </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-1.5 flex-1 min-h-0">
-
-            {/* Card 1: Member Selection */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-              <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5 shrink-0">
-                <User size={10} className="text-slate-400" />
-                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member Selection</span>
+            <div className="aw-stack">
+              <div>
+                <label className="aw-label" htmlFor="psb-holder">SB Account Holder</label>
+                <Select
+                  id="psb-holder"
+                  showSearch
+                  value={selectedMember?.memberNo || undefined}
+                  onChange={handleMemberSelect}
+                  loading={holdersLoading}
+                  placeholder={holdersLoading ? 'Loading account holders...' : 'Search member no. or name...'}
+                  className="aw-select"
+                  popupClassName="aw-select-popup"
+                  filterOption={(input, option) =>
+                    (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  notFoundContent={holdersLoading ? 'Loading...' : 'No members with an SB account'}
+                  options={sbHolders.map(h => ({
+                    value: h.memberNo,
+                    label: `${h.memberNo} — ${h.memberName} (₹${parseFloat(h.balance).toLocaleString('en-IN')})`,
+                  }))}
+                />
               </div>
-              <div className="p-2.5 space-y-2 flex-1">
+              {selectedMember && (
+                <div className="aw-panel aw-panel-accent aw-fade-in">
+                  <p className="aw-strong" style={{ textTransform: 'uppercase' }}>{selectedMember.name}</p>
+                  <div className="aw-meta" style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                    <span>No: {selectedMember.memberNo}</span>
+                    <span>Pay: ₹{selectedMember.basicPay.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              )}
+              {loading && (
+                <div className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <RefreshCw size={12} className="aw-spin" /> Loading...
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Card 2: SB Account Information */}
+          <section className="aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><Calculator size={14} /></span>
+              <h2 className="aw-card-title">SB Account Information</h2>
+            </div>
+            {selectedMember && sbAccounts.length > 0 ? (
+              <div className="aw-stack">
                 <div>
-                  <label className={lbl}>SB Account Holder</label>
+                  <label className="aw-label" htmlFor="psb-account">Select Account</label>
                   <Select
-                    showSearch
-                    value={selectedMember?.memberNo || undefined}
-                    onChange={handleMemberSelect}
-                    loading={holdersLoading}
-                    placeholder={holdersLoading ? 'Loading account holders...' : 'Search member no. or name...'}
-                    className="w-full"
-                    style={{ height: 28 }}
-                    filterOption={(input, option) =>
-                      (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
-                    }
-                    notFoundContent={holdersLoading ? 'Loading...' : 'No members with an SB account'}
-                    options={sbHolders.map(h => ({
-                      value: h.memberNo,
-                      label: `${h.memberNo} — ${h.memberName} (₹${parseFloat(h.balance).toLocaleString('en-IN')})`,
+                    id="psb-account"
+                    value={selectedAccount?.accountNumber ?? null}
+                    onChange={handleAccountSelect}
+                    placeholder="— Select Account —"
+                    className="aw-select"
+                    popupClassName="aw-select-popup"
+                    options={sbAccounts.map((account) => ({
+                      value: account.accountNumber,
+                      label: `${account.accountNumber} — ₹${account.currentBalance.toLocaleString()}`,
                     }))}
                   />
                 </div>
-                {selectedMember && (
-                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-2 space-y-1">
-                    <p className="fz-small font-black text-indigo-800 uppercase">{selectedMember.name}</p>
-                    <div className="flex gap-3 fz-tiny font-semibold text-indigo-600">
-                      <span>No: {selectedMember.memberNo}</span>
-                      <span>Pay: ₹{selectedMember.basicPay.toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                )}
-                {loading && (
-                  <div className="flex items-center gap-2 fz-tiny text-slate-400">
-                    <RefreshCw size={10} className="animate-spin" /> Loading...
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Card 2: SB Account Information */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-              <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5 shrink-0">
-                <Calculator size={10} className="text-slate-400" />
-                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">SB Account Information</span>
-              </div>
-              <div className="p-2.5 space-y-2 flex-1">
-                {selectedMember && sbAccounts.length > 0 ? (
-                  <>
+                {selectedAccount && (
+                  <dl className="aw-panel aw-facts aw-fade-in">
                     <div>
-                      <label className={lbl}>Select Account</label>
-                      <select
-                        value={selectedAccount?.accountNumber || ''}
-                        onChange={(e) => handleAccountSelect(e.target.value)}
-                        className={`${inp} w-full px-2 border focus:outline-none focus:border-indigo-400`}
-                      >
-                        <option value="">— Select Account —</option>
-                        {sbAccounts.map((account) => (
-                          <option key={account.accountNumber} value={account.accountNumber}>
-                            {account.accountNumber} — ₹{account.currentBalance.toLocaleString()}
-                          </option>
-                        ))}
-                      </select>
+                      <dt>Opening Date</dt>
+                      <dd>{dayjs(selectedAccount.openingDate).format('DD/MM/YY')}</dd>
                     </div>
-                    {selectedAccount && (
-                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
-                        <div>
-                          <label className="block fz-micro font-black text-emerald-600 uppercase tracking-wider">Opening Date</label>
-                          <p className="fz-small font-black text-emerald-900">{dayjs(selectedAccount.openingDate).format('DD/MM/YY')}</p>
-                        </div>
-                        <div>
-                          <label className="block fz-micro font-black text-emerald-600 uppercase tracking-wider">Interest Rate</label>
-                          <p className="fz-small font-black text-emerald-900">{selectedAccount.interestRate}%</p>
-                        </div>
-                        <div>
-                          <label className="block fz-micro font-black text-emerald-600 uppercase tracking-wider">Balance</label>
-                          <p className="fz-small font-black text-emerald-900">₹{selectedAccount.currentBalance.toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <label className="block fz-micro font-black text-emerald-600 uppercase tracking-wider">Min Balance</label>
-                          <p className="fz-small font-black text-emerald-900">₹{selectedAccount.minimumBalance || 1000}</p>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center py-8 text-slate-400">
-                    <Calculator size={24} className="mb-2 opacity-30" />
-                    <p className="fz-tiny font-semibold italic">
-                      {selectedMember ? 'No SB accounts found' : 'Select member first'}
-                    </p>
-                  </div>
+                    <div>
+                      <dt>Interest Rate</dt>
+                      <dd>{selectedAccount.interestRate}%</dd>
+                    </div>
+                    <div>
+                      <dt>Balance</dt>
+                      <dd>₹{selectedAccount.currentBalance.toLocaleString()}</dd>
+                    </div>
+                    <div>
+                      <dt>Min Balance</dt>
+                      <dd>₹{selectedAccount.minimumBalance || 1000}</dd>
+                    </div>
+                  </dl>
                 )}
               </div>
-            </div>
-
-            {/* Card 3: Actions & Results */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-              <div className="px-3 py-1.5 border-b border-slate-100 flex items-center gap-1.5 shrink-0">
-                <CheckCircle size={10} className="text-slate-400" />
-                <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Actions &amp; Results</span>
+            ) : (
+              <div className="aw-empty">
+                <Calculator size={26} />
+                <span>{selectedMember ? 'No SB accounts found' : 'Select a member first'}</span>
               </div>
-              <div className="p-2.5 space-y-2 flex-1 overflow-auto">
-                <div className="flex gap-1.5">
-                  <button
-                    onClick={calculatePremature}
-                    disabled={!selectedAccount || loading}
-                    className="flex-1 h-7 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white rounded fz-tiny font-black uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all">
-                    {loading ? <RefreshCw size={11} className="animate-spin" /> : <Calculator size={11} />}
-                    Calculate
-                  </button>
-                  <button onClick={resetForm}
-                    className="h-7 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded fz-tiny font-black uppercase tracking-wide flex items-center gap-1.5 transition-all">
-                    <RefreshCw size={11} /> Reset
-                  </button>
+            )}
+          </section>
+
+          {/* Card 3: Actions & Results */}
+          <section className="aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><CheckCircle size={14} /></span>
+              <h2 className="aw-card-title">Actions &amp; Results</h2>
+            </div>
+            <div className="aw-stack">
+              <button
+                type="button"
+                onClick={calculatePremature}
+                disabled={!selectedAccount || loading}
+                className="aw-btn aw-btn-primary"
+                style={{ width: '100%' }}>
+                {loading ? <RefreshCw size={13} className="aw-spin" /> : <Calculator size={13} />}
+                Calculate
+              </button>
+
+              {calculationResult ? (
+                <div className="aw-stack aw-fade-in">
+                  <div className="aw-stats">
+                    <div className="aw-stat tone-info">
+                      <div className="aw-stat-label">Duration</div>
+                      <div className="aw-stat-value">{calculationResult.duration}<small>days</small></div>
+                    </div>
+                    <div className="aw-stat tone-danger">
+                      <div className="aw-stat-label">Penalty</div>
+                      <div className="aw-stat-value">{calculationResult.penalty.toFixed(1)}<small>%</small></div>
+                    </div>
+                  </div>
+                  <div className="aw-panel aw-rows">
+                    <div className="aw-row">
+                      <span className="aw-row-label">Account Balance</span>
+                      <span className="aw-row-value">{formatCurrency(calculationResult.balance)}</span>
+                    </div>
+                    <div className="aw-row">
+                      <span className="aw-row-label">Applied Rate</span>
+                      <span className="aw-row-value">{calculationResult.applicableInterestRate.toFixed(2)}%</span>
+                    </div>
+                    <div className="aw-row">
+                      <span className="aw-row-label">Interest Earned</span>
+                      <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>{formatCurrency(calculationResult.interest)}</span>
+                    </div>
+                    <div className="aw-row aw-row-total">
+                      <span className="aw-row-label">Net Payable</span>
+                      <span className="aw-row-value">{formatCurrency(calculationResult.total)}</span>
+                    </div>
+                  </div>
+                  <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0 }}>
+                    <AlertCircle size={14} />
+                    <span>
+                      <strong>Note: </strong>
+                      Rate reduced by {calculationResult.penalty}% for early closure.
+                    </span>
+                  </div>
                 </div>
-
-                {calculationResult && (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 text-center">
-                        <p className="fz-micro font-black text-blue-600 uppercase tracking-wider">Duration</p>
-                        <p className="fz-heading font-black text-blue-900 leading-none mt-0.5">{calculationResult.duration}<span className="fz-tiny ml-0.5">days</span></p>
-                      </div>
-                      <div className="bg-rose-50 border border-rose-100 rounded-lg p-2 text-center">
-                        <p className="fz-micro font-black text-rose-600 uppercase tracking-wider">Penalty</p>
-                        <p className="fz-heading font-black text-rose-900 leading-none mt-0.5">{calculationResult.penalty.toFixed(1)}<span className="fz-tiny ml-0.5">%</span></p>
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 space-y-1.5 fz-tiny">
-                      <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                        <span className="text-slate-500 font-semibold">Account Balance</span>
-                        <span className="font-black text-slate-700">{formatCurrency(calculationResult.balance)}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                        <span className="text-slate-500 font-semibold">Applied Rate</span>
-                        <span className="font-black text-orange-600">{calculationResult.applicableInterestRate.toFixed(2)}%</span>
-                      </div>
-                      <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                        <span className="text-slate-500 font-semibold">Interest Earned</span>
-                        <span className="font-black text-emerald-600">{formatCurrency(calculationResult.interest)}</span>
-                      </div>
-                      <div className="flex justify-between pt-1">
-                        <span className="font-black text-slate-800 uppercase fz-mini">Net Payable</span>
-                        <span className="fz-heading font-black text-indigo-600 leading-none">{formatCurrency(calculationResult.total)}</span>
-                      </div>
-                    </div>
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 flex items-start gap-1.5">
-                      <AlertCircle size={11} className="text-amber-500 shrink-0 mt-0.5" />
-                      <p className="fz-mini text-amber-800 leading-snug">
-                        <span className="font-black uppercase">Note: </span>
-                        Rate reduced by {calculationResult.penalty}% for early closure.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              ) : (
+                <div className="aw-empty">
+                  <CheckCircle size={26} />
+                  <span>{selectedAccount ? 'Press Calculate to see the result' : 'Select an account to calculate'}</span>
+                </div>
+              )}
             </div>
+          </section>
 
-          </div>
         </div>
-
-        <style>{`
-          /* ── Premature Information (SB) — dark mode ── */
-          html.dark .psb-app { background-color: #000000 !important; color: #f5f5f7 !important; }
-          html.dark .psb-app .bg-white { background-color: #1c1c1e !important; }
-          html.dark .psb-app .bg-slate-50 { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .psb-app .bg-slate-100 { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .psb-app .bg-slate-200 { background-color: rgba(255,255,255,.1) !important; }
-          html.dark .psb-app .bg-slate-300 { background-color: rgba(255,255,255,.15) !important; }
-          html.dark .psb-app .border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
-          html.dark .psb-app .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
-          html.dark .psb-app .border-slate-300 { border-color: rgba(255,255,255,.08) !important; }
-          html.dark .psb-app select,
-          html.dark .psb-app .ant-select-selector {
-            background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-          }
-          html.dark .psb-app label { color: #8e8e93 !important; }
-          html.dark .psb-app .text-slate-800 { color: #f5f5f7 !important; }
-          html.dark .psb-app .text-slate-700 { color: #f5f5f7 !important; }
-          html.dark .psb-app .text-slate-600 { color: #8e8e93 !important; }
-          html.dark .psb-app .text-slate-500 { color: #8e8e93 !important; }
-          html.dark .psb-app .text-slate-400 { color: #71717a !important; }
-          html.dark .psb-app .hover\\:bg-slate-200:hover { background-color: rgba(255,255,255,.08) !important; }
-          html.dark .psb-app .bg-emerald-50 { background-color: rgba(52,211,153,0.08) !important; }
-          html.dark .psb-app .text-emerald-600 { color: #34d399 !important; }
-          html.dark .psb-app .text-emerald-900 { color: #34d399 !important; }
-          html.dark .psb-app .border-emerald-200 { border-color: rgba(52,211,153,0.3) !important; }
-          html.dark .psb-app .bg-rose-50 { background-color: rgba(255,69,58,0.08) !important; }
-          html.dark .psb-app .text-rose-600 { color: #ff453a !important; }
-          html.dark .psb-app .text-rose-700 { color: #ff453a !important; }
-          html.dark .psb-app .text-rose-900 { color: #ff453a !important; }
-          html.dark .psb-app .border-rose-100 { border-color: rgba(255,69,58,0.3) !important; }
-          html.dark .psb-app .border-rose-200 { border-color: rgba(255,69,58,0.3) !important; }
-          html.dark .psb-app .bg-amber-50 { background-color: rgba(251,191,36,0.08) !important; }
-          html.dark .psb-app .text-amber-800 { color: #fbbf24 !important; }
-          html.dark .psb-app .border-amber-200 { border-color: rgba(251,191,36,0.3) !important; }
-        `}</style>
       </div>
-    </ConfigProvider>
+    </div>
   );
 };
 

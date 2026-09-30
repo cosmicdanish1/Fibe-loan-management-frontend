@@ -52,6 +52,17 @@
   --fz-body:    var(--fz-base);
   --fz-button:  var(--fz-base);
   --fz-heading: calc(var(--fz-base) + 1px);
+  /* Shared role tokens. Advanced offsets are applied by ThemeProvider. */
+  --type-heading-offset: 0px;
+  --type-label-offset: 0px;
+  --type-body-offset: 0px;
+  --type-page-title: calc(var(--fz-base) + 7px + var(--type-heading-offset));
+  --type-section-title: calc(var(--fz-base) + 10px + var(--type-heading-offset));
+  --type-panel-title: calc(var(--fz-base) + 1px + var(--type-heading-offset));
+  --type-label-size: calc(var(--fz-base) - 3px + var(--type-label-offset));
+  --type-field-size: calc(var(--fz-base) + var(--type-label-offset));
+  --type-body-size: calc(var(--fz-base) + var(--type-body-offset));
+  --type-supporting-size: calc(var(--fz-base) - 3px + var(--type-body-offset));
 }
 
 /* Semantic typography classes — use these instead of text-xs / text-sm */
@@ -100,8 +111,8 @@
 
 /* ============================================
    GLOBAL FONT
-   Driven by --app-font (set from Settings → Font Style, persisted in
-   localStorage as 'lms-font-family' and mirrored to every open window).
+   Driven by --app-font (set by ThemeProvider from the shared theme state's
+   fontFamily, chosen in Settings → Font Style).
 
    Only fonts that ship with Windows are offered — client PCs run on a LAN
    with no internet, so a web font would silently fall back and the setting
@@ -185,33 +196,63 @@
   }
 }
 
-/* ============================================
-   SETTINGS WINDOW (Apple Settings redesign)
-
-   The Settings window is deliberately dark regardless of the app's own
-   Light/Dark setting — it is a system panel, and the controls inside it
-   preview Light-mode colours that would be unreadable on a matching
-   light surface.
-
-   These rules are scoped to .settings-shell so nothing here leaks into the
-   rest of the app. That includes the small amount of motion re-enabled
-   below: the global "disable all animations" rule above stays in force
-   everywhere else, but a save spinner that never spins reads as a hung
-   save, so this window opts back in for four specific effects.
-   ============================================ */
-@keyframes settingsFadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes settingsModalPop    { from { opacity: 0; transform: scale(.92) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+/* Settings follows the selected color mode and responds to window width.
+   Motion is reserved for controls, the focused dialog, and saving feedback. */
+@keyframes settingsModalPop    { from { opacity: 0; transform: scale(.98) translateY(5px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes settingsSpin        { to { transform: rotate(360deg); } }
 
-.settings-shell .settings-enter {
-  animation: settingsFadeSlideIn .32s cubic-bezier(.22, 1, .36, 1) !important;
-  animation-duration: .32s !important;
-  animation-iteration-count: 1 !important;
+.settings-shell .settings-header { padding: 12px 20px; gap: 12px; }
+.settings-shell .settings-title { font-size: var(--type-page-title); }
+.settings-shell .settings-sidebar { width: 224px; padding: 14px 10px; }
+.settings-shell .settings-main-header { padding: 20px 24px 12px; }
+.settings-shell .settings-section-title { font-size: var(--type-section-title); line-height: 1.2; }
+.settings-shell .settings-panel-title { font-size: var(--type-panel-title); line-height: 1.25; }
+.settings-shell label { font-size: var(--type-label-size) !important; }
+.settings-shell p.fz-small { font-size: var(--type-supporting-size) !important; }
+.settings-shell p.fz-body { font-size: var(--type-body-size) !important; }
+.settings-shell input:not([type="range"]):not([type="color"]),
+.settings-shell textarea,
+.settings-shell select { font-size: var(--type-field-size) !important; }
+.settings-shell input::placeholder,
+.settings-shell textarea::placeholder { font-size: inherit; }
+.settings-shell .settings-type-advanced summary:focus-visible { outline: 2px solid var(--settings-accent, #818cf8); outline-offset: 2px; }
+.settings-shell .settings-main-body { padding: 0 24px 32px; }
+.settings-shell .settings-main-body > .grid { gap: 16px; }
+.settings-shell .settings-panel { padding: 18px; border-radius: 14px; }
+.settings-shell .settings-panel-heading { padding-bottom: 12px; margin-bottom: 14px; }
+.settings-shell .settings-panel .space-y-5 > :not([hidden]) ~ :not([hidden]) { margin-top: 16px; }
+
+.settings-shell button,
+.settings-shell input:not([type="range"]):not([type="color"]) {
+  transition: background-color .22s cubic-bezier(.32, .72, 0, 1), border-color .22s cubic-bezier(.32, .72, 0, 1), color .22s cubic-bezier(.32, .72, 0, 1), box-shadow .22s cubic-bezier(.32, .72, 0, 1), transform .16s cubic-bezier(.32, .72, 0, 1) !important;
+  transition-duration: .22s !important;
+}
+.settings-shell button:active:not(:disabled) { transform: scale(.98); }
+.settings-shell button:focus-visible,
+.settings-shell input:focus-visible { outline: 2px solid var(--settings-accent, #818cf8); outline-offset: 2px; }
+.settings-shell .settings-nav-button:hover:not([aria-current="page"]) { box-shadow: inset 0 0 0 1px var(--settings-border); }
+
+@media (max-width: 900px) {
+  .settings-shell .settings-header { padding: 10px 14px; }
+  .settings-shell .settings-sidebar { width: 190px; }
+  .settings-shell .settings-main-header { padding: 16px 18px 10px; }
+  .settings-shell .settings-main-body { padding: 0 18px 24px; }
+  .settings-shell .settings-panel { padding: 15px; }
+}
+@media (max-width: 680px) {
+  .settings-shell .settings-header { flex-wrap: wrap; }
+  .settings-shell .settings-layout { flex-direction: column; }
+  .settings-shell .settings-sidebar { width: 100%; flex-direction: row; align-items: center; gap: 10px; padding: 9px 12px; border-right: 0 !important; border-bottom: 1px solid var(--settings-border); }
+  .settings-shell .settings-sidebar > .relative { width: 150px; flex: none; margin-bottom: 0; }
+  .settings-shell .settings-nav { flex-direction: row; overflow-x: auto; min-width: 0; }
+  .settings-shell .settings-nav-button { width: auto !important; white-space: nowrap; }
+  .settings-shell .settings-main-header { padding: 14px 14px 9px; }
+  .settings-shell .settings-main-body { padding: 0 14px 20px; }
 }
 
 .settings-shell .settings-pop {
-  animation: settingsModalPop .25s cubic-bezier(.34, 1.56, .64, 1) !important;
-  animation-duration: .25s !important;
+  animation: settingsModalPop .28s cubic-bezier(.32, .72, 0, 1) !important;
+  animation-duration: .28s !important;
   animation-iteration-count: 1 !important;
 }
 
@@ -221,21 +262,74 @@
   animation-iteration-count: infinite !important;
 }
 
-/* Toggle knobs slide instead of teleporting. */
+/* Toggle knobs move on the compositor without spring overshoot. */
 .settings-shell .settings-knob {
-  transition: left .25s cubic-bezier(.34, 1.56, .64, 1) !important;
-  transition-duration: .25s !important;
+  transition: transform .26s cubic-bezier(.32, .72, 0, 1) !important;
+  transition-duration: .26s !important;
 }
 
-/* Range inputs: the native track/thumb are unstyled on Windows and render
-   as a light control on the dark panel. accentColor comes from the inline
-   style so the thumb follows the user's chosen accent. */
+/* Selectable cards (font, density, widgets, quick actions) and the small
+   widget switches ease between states instead of snapping. */
+.settings-shell .settings-select,
+.settings-shell .settings-track {
+  transition: background-color .22s cubic-bezier(.32, .72, 0, 1), border-color .22s cubic-bezier(.32, .72, 0, 1), box-shadow .22s cubic-bezier(.32, .72, 0, 1), opacity .22s cubic-bezier(.32, .72, 0, 1), transform .16s cubic-bezier(.32, .72, 0, 1) !important;
+}
+.settings-shell .settings-select:active { transform: scale(.985); }
+
+/* Slider value bubble: follows the thumb while hovering, dragging or keyboard focus. */
+.settings-shell .settings-range-wrap { position: relative; }
+.settings-shell .settings-range-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  transform: translate(-50%, 4px);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--settings-text-strong);
+  color: var(--settings-bg);
+  font-size: var(--fz-small);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .16s cubic-bezier(.32, .72, 0, 1), transform .16s cubic-bezier(.32, .72, 0, 1);
+  z-index: 5;
+}
+.settings-shell .settings-range-wrap[data-show="true"] .settings-range-tip { opacity: 1; transform: translate(-50%, 0); }
+
+/* Advanced text sizes: chevron turns and the content fades in on open. */
+.settings-shell .settings-type-advanced > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; }
+.settings-shell .settings-type-advanced > summary::-webkit-details-marker { display: none; }
+.settings-shell .settings-type-advanced > summary::after {
+  content: '';
+  width: 7px; height: 7px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform .26s cubic-bezier(.32, .72, 0, 1);
+}
+.settings-shell .settings-type-advanced[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+.settings-shell .settings-type-advanced[open] > div { animation: settingsReveal .26s cubic-bezier(.32, .72, 0, 1); }
+
+/* Save button label swaps (Save → Saving → Saved) with a quick fade. */
+.settings-shell .settings-swap { animation: settingsReveal .22s cubic-bezier(.32, .72, 0, 1); }
+@keyframes settingsReveal { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-shell *, .settings-shell *::before, .settings-shell *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+/* The range track and thumb retain contrast in both color modes. */
 .settings-shell input[type="range"].settings-range {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
   border-radius: 2px;
   outline: none;
+  background: var(--settings-fill);
 }
 .settings-shell input[type="range"].settings-range::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -243,8 +337,8 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+  background: var(--settings-accent);
+  box-shadow: 0 1px 4px var(--settings-border);
   cursor: pointer;
 }
 
@@ -259,13 +353,639 @@
 .settings-shell input[type="color"].settings-color::-webkit-color-swatch-wrapper { padding: 0; }
 .settings-shell input[type="color"].settings-color::-webkit-color-swatch {
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, .15);
+  border: 1px solid var(--settings-border);
 }
 
 /* Placeholder text in the search / PIN / licence fields. */
-.settings-shell input::placeholder { color: #71717a; }
+.settings-shell input::placeholder { color: var(--settings-dimmer); }
 
-/* Dark scrollbars for the content pane. */
-.settings-shell ::-webkit-scrollbar { width: 10px; height: 10px; }
-.settings-shell ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .15); border-radius: 6px; }
+/* Scrollbars follow the window surface. */
+.settings-shell ::-webkit-scrollbar { width: 6px; height: 6px; }
+.settings-shell ::-webkit-scrollbar-thumb { background: var(--settings-border); border-radius: 6px; }
 .settings-shell ::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Theme switch: circular reveal (View Transitions API) ─────────────────
+   The reveal itself is animated from JS (utils/themeTransition.ts); here we
+   only stop the browser's default cross-fade so the circle is the one effect. */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
+
+/* Sliding pill behind the Light / Dark buttons. */
+.settings-shell .settings-seg-thumb {
+  transition: transform .32s cubic-bezier(.32, .72, 0, 1), background-color .22s ease !important;
+}
+
+/* ── Buttons everywhere: soft state changes instead of hard snaps ─────────
+   :where() keeps specificity at zero, so any component that already sets its
+   own transition or transform still wins. */
+:where(button, [role="button"], .ant-btn) {
+  /* !important because the app-wide reset near the top of this file forces every
+     transition to ~0ms with !important. Same specificity, later in the file, wins. */
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform !important;
+  transition-duration: .22s !important;
+  transition-timing-function: cubic-bezier(.32, .72, 0, 1) !important;
+}
+:where(button:active:not(:disabled), [role="button"]:active) { transform: scale(.98); }
+@media (prefers-reduced-motion: reduce) {
+  :where(button, [role="button"], .ant-btn) { transition: none !important; }
+  :where(button:active:not(:disabled), [role="button"]:active) { transform: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: .001ms !important; }
+}
+
+/* ============================================================
+   APP WINDOW — shared window styling (design.md §46, §52a)
+   Wrap a redesigned window in `.app-window`. Every value below follows
+   Settings: accent (--accent-color), text size (--fz-base / --type-*),
+   density (--ui-density), corner radius (--corner-radius), font (inherited),
+   and Light/Dark. Windows use these classes instead of one-off CSS.
+   ============================================================ */
+.app-window, .aw-select-popup {
+  --aw-bg: #f5f7fb;
+  --aw-surface: #ffffff;
+  --aw-surface-muted: #f8fafc;
+  --aw-text: #172033;
+  --aw-muted: #667085;
+  --aw-border: #edf0f5;
+  --aw-border-strong: #e0e5ee;
+  --aw-accent: var(--accent-color, #6366f1);
+  --aw-accent-soft: color-mix(in srgb, var(--aw-accent) 12%, var(--aw-surface));
+  --aw-focus: color-mix(in srgb, var(--aw-accent) 24%, transparent);
+  --aw-success: #047857;
+  --aw-warning: #946200;
+  --aw-danger: #b42330;
+  --aw-info: #1d4ed8;
+  --aw-shadow: 0 1px 2px rgba(20, 31, 56, .04), 0 4px 14px rgba(20, 31, 56, .04);
+  --aw-shadow-pop: 0 2px 6px rgba(20, 31, 56, .06), 0 12px 32px rgba(20, 31, 56, .12);
+  --aw-shadow-btn: 0 1px 2px rgba(20, 31, 56, .14);
+  --aw-radius: calc(var(--corner-radius, 8px) * 1.25);
+  --aw-control-h: max(28px, calc(var(--fz-base) * 2.6 * var(--ui-density, 1)));
+  --aw-pad: calc(14px * var(--ui-density, 1));
+  --aw-gap: calc(12px * var(--ui-density, 1));
+}
+html.dark .app-window, html.dark .aw-select-popup {
+  --aw-bg: #0e1116;
+  --aw-surface: #151a21;
+  --aw-surface-muted: #1c2530;
+  --aw-text: #e6e9ef;
+  --aw-muted: #8b95a5;
+  --aw-border: rgba(255, 255, 255, .07);
+  --aw-border-strong: rgba(255, 255, 255, .11);
+  --aw-success: #34d399;
+  --aw-warning: #fbbf24;
+  --aw-danger: #ff6961;
+  --aw-info: #60a5fa;
+  --aw-shadow: 0 1px 2px rgba(0, 0, 0, .28), 0 4px 14px rgba(0, 0, 0, .18);
+  --aw-shadow-pop: 0 2px 6px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .34);
+  --aw-shadow-btn: 0 1px 2px rgba(0, 0, 0, .35);
+}
+
+.app-window { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--aw-bg); color: var(--aw-text); }
+.app-window .aw-header { display: flex; align-items: center; justify-content: space-between; gap: var(--aw-gap); flex: none; padding: var(--aw-pad) calc(var(--aw-pad) * 1.4); background: var(--aw-surface); border-bottom: 1px solid var(--aw-border); }
+.app-window .aw-title { margin: 0; color: var(--aw-text); font-size: var(--type-page-title); line-height: 1.2; font-weight: 700; letter-spacing: -.02em; }
+.app-window .aw-desc { margin: 3px 0 0; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); line-height: 1.35; }
+.app-window .aw-actions { display: flex; align-items: center; gap: 8px; }
+.app-window .aw-content { flex: 1; min-height: 0; overflow: auto; padding: var(--aw-pad) calc(var(--aw-pad) * 1.4); }
+.app-window .aw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--aw-gap); align-items: start; }
+
+.app-window .aw-card { display: flex; flex-direction: column; background: var(--aw-surface); border: 1px solid var(--aw-border); border-radius: calc(var(--aw-radius) * 1.8); box-shadow: var(--aw-shadow); padding: var(--aw-pad); min-width: 0; }
+.app-window .aw-card-head { display: flex; align-items: center; gap: 9px; padding-bottom: calc(var(--aw-pad) * .7); margin-bottom: var(--aw-pad); border-bottom: 1px solid var(--aw-border); }
+.app-window .aw-card-icon { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; flex: none; border-radius: calc(var(--aw-radius) * .9); color: var(--aw-accent); background: var(--aw-accent-soft); }
+.app-window .aw-card-title { margin: 0; color: var(--aw-text); font-size: var(--type-panel-title); line-height: 1.25; font-weight: 700; letter-spacing: -.01em; }
+.app-window .aw-stack { display: flex; flex-direction: column; gap: var(--aw-gap); }
+
+.app-window .aw-label { display: block; margin-bottom: 4px; color: var(--aw-muted); font-size: calc(var(--type-label-size) + 1px); line-height: 1.2; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.app-window .aw-input,
+.app-window .aw-select .ant-select-selector {
+  box-sizing: border-box; width: 100%; min-height: var(--aw-control-h); padding: 0 10px; color: var(--aw-text);
+  font-size: var(--type-field-size); font-weight: 600; background: var(--aw-surface-muted); border: 1px solid var(--aw-border-strong);
+  border-radius: var(--aw-radius); box-shadow: none; outline: none;
+  transition-property: border-color, box-shadow, background-color !important; transition-duration: .22s !important; transition-timing-function: cubic-bezier(.32, .72, 0, 1) !important;
+}
+.app-window .aw-input:hover, .app-window .aw-select:hover .ant-select-selector { border-color: color-mix(in srgb, var(--aw-accent) 45%, var(--aw-border-strong)); }
+.app-window .aw-input:focus, .app-window .aw-select.ant-select-focused .ant-select-selector { border-color: var(--aw-accent) !important; background: var(--aw-surface) !important; box-shadow: 0 0 0 3px var(--aw-focus) !important; }
+.app-window .aw-input:disabled { background: var(--aw-surface-muted); color: var(--aw-muted); opacity: .85; cursor: not-allowed; }
+.app-window .aw-input::placeholder, .app-window .aw-select .ant-select-selection-placeholder { color: var(--aw-muted); opacity: .8; }
+.app-window .aw-select { display: block; width: 100%; }
+.app-window .aw-select .ant-select-selection-item, .app-window .aw-select .ant-select-selection-placeholder { line-height: calc(var(--aw-control-h) - 4px) !important; }
+.app-window .aw-select .ant-select-selection-search-input { background: transparent !important; box-shadow: none !important; }
+.app-window .aw-select .ant-select-arrow { color: var(--aw-muted); }
+.app-window .aw-select.ant-select-open .ant-select-arrow { color: var(--aw-accent); transform: rotate(180deg); transition: transform .26s cubic-bezier(.32, .72, 0, 1) !important; transition-duration: .26s !important; }
+
+.aw-select-popup.ant-select-dropdown { padding: 6px; border-radius: calc(var(--aw-radius) * 1.5); border: 1px solid var(--aw-border); background: var(--aw-surface); box-shadow: var(--aw-shadow-pop); }
+/* Dropdown motion. Enter and leave are separate animations so Ant Design sees the
+   leave animation finish and can remove the popup. Never pin one animation to the
+   popup itself, or it stays open after closing. */
+.aw-select-popup.ant-slide-up-enter, .aw-select-popup.ant-slide-up-appear,
+.aw-select-popup.ant-slide-down-enter, .aw-select-popup.ant-slide-down-appear { animation: awDropdownIn .28s cubic-bezier(.32, .72, 0, 1) both !important; animation-duration: .28s !important; }
+.aw-select-popup.ant-slide-up-leave, .aw-select-popup.ant-slide-down-leave { animation: awDropdownOut .2s cubic-bezier(.4, 0, 1, 1) both !important; animation-duration: .2s !important; pointer-events: none; }
+@keyframes awDropdownOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-4px) scale(.99); } }
+/* Ant Design's global dark rules force a flat fill and border on selects; keep the kit's softer look. */
+html.dark .app-window .aw-select .ant-select-selector { background-color: var(--aw-surface-muted) !important; border-color: var(--aw-border-strong) !important; }
+html.dark .app-window .aw-select.ant-select-focused .ant-select-selector { background-color: var(--aw-surface) !important; border-color: var(--aw-accent) !important; }
+html.dark .aw-select-popup.ant-select-dropdown { background-color: var(--aw-surface) !important; border-color: var(--aw-border-strong) !important; }
+.aw-select-popup .ant-select-item { min-height: 32px; border-radius: var(--aw-radius); color: var(--aw-text); font-size: var(--type-field-size); }
+.aw-select-popup .ant-select-item-option-active:not(.ant-select-item-option-disabled) { background: var(--aw-surface-muted); }
+.aw-select-popup .ant-select-item-option-selected:not(.ant-select-item-option-disabled) { background: var(--aw-accent-soft); color: var(--aw-accent); font-weight: 700; }
+.aw-select-popup .ant-select-item-empty, .aw-select-popup .ant-empty-description { color: var(--aw-muted); }
+@keyframes awDropdownIn { from { opacity: 0; transform: translateY(-4px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.app-window .aw-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: calc(var(--aw-control-h) - 2px); padding: 0 14px; border-radius: var(--aw-radius); border: 1px solid transparent; font-size: var(--type-field-size); font-weight: 700; line-height: 1; cursor: pointer; white-space: nowrap; }
+.app-window .aw-btn:disabled { opacity: .5; cursor: not-allowed; }
+.app-window .aw-btn:active:not(:disabled) { transform: scale(.98); }
+.app-window .aw-btn:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+.app-window .aw-btn-primary { color: #fff; background: var(--aw-accent); box-shadow: var(--aw-shadow-btn); }
+.app-window .aw-btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--aw-accent) 88%, #000); }
+.app-window .aw-btn-secondary { color: var(--aw-text); background: var(--aw-surface-muted); border-color: var(--aw-border-strong); }
+.app-window .aw-btn-secondary:hover:not(:disabled) { background: var(--aw-accent-soft); border-color: var(--aw-accent); }
+.app-window .aw-btn-ghost { color: var(--aw-muted); background: transparent; }
+.app-window .aw-btn-ghost:hover:not(:disabled) { color: var(--aw-text); background: var(--aw-surface-muted); }
+
+.app-window .aw-alert { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; margin-bottom: var(--aw-gap); border-radius: var(--aw-radius); border: 1px solid color-mix(in srgb, var(--aw-tone) 20%, transparent); background: color-mix(in srgb, var(--aw-tone) 10%, var(--aw-surface)); color: var(--aw-tone); font-size: var(--type-body-size); font-weight: 600; line-height: 1.4; }
+.app-window .aw-alert > svg { flex: none; margin-top: 2px; }
+.app-window .aw-alert-danger { --aw-tone: var(--aw-danger); }
+.app-window .aw-alert-warning { --aw-tone: var(--aw-warning); }
+.app-window .aw-alert-success { --aw-tone: var(--aw-success); }
+.app-window .aw-alert-info { --aw-tone: var(--aw-info); }
+
+.app-window .aw-panel { padding: 10px 12px; border-radius: var(--aw-radius); border: 1px solid var(--aw-border); background: var(--aw-surface-muted); }
+.app-window .aw-panel-accent { background: var(--aw-accent-soft); border-color: color-mix(in srgb, var(--aw-accent) 18%, transparent); }
+.app-window .aw-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; margin: 0; }
+.app-window .aw-facts dt { margin: 0; color: var(--aw-muted); font-size: calc(var(--type-label-size) + 1px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.app-window .aw-facts dd { margin: 2px 0 0; color: var(--aw-text); font-size: var(--type-body-size); font-weight: 700; font-variant-numeric: tabular-nums; }
+.app-window .aw-strong { color: var(--aw-text); font-size: var(--type-body-size); font-weight: 700; }
+.app-window .aw-muted { color: var(--aw-muted); font-size: var(--type-body-size); }
+.app-window .aw-meta { color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); font-weight: 600; }
+
+.app-window .aw-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.app-window .aw-stat { padding: 9px 10px; text-align: center; border-radius: var(--aw-radius); border: 1px solid color-mix(in srgb, var(--aw-tone, var(--aw-accent)) 16%, transparent); background: color-mix(in srgb, var(--aw-tone, var(--aw-accent)) 8%, var(--aw-surface)); }
+.app-window .aw-stat-label { color: var(--aw-muted); font-size: calc(var(--type-label-size) + 1px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.app-window .aw-stat-value { margin-top: 3px; color: var(--aw-tone, var(--aw-accent)); font-size: calc(var(--type-body-size) + 6px); font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.app-window .aw-stat-value small { margin-left: 2px; font-size: calc(var(--type-body-size) - 2px); font-weight: 600; }
+.app-window .aw-rows { display: flex; flex-direction: column; }
+.app-window .aw-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--aw-border); font-size: var(--type-body-size); }
+.app-window .aw-row:last-child { border-bottom: 0; }
+.app-window .aw-row-label { color: var(--aw-muted); font-weight: 600; }
+.app-window .aw-row-value { color: var(--aw-text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.app-window .aw-row-total .aw-row-label { color: var(--aw-text); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.app-window .aw-row-total .aw-row-value { color: var(--aw-accent); font-size: calc(var(--type-body-size) + 3px); }
+.app-window .tone-success { --aw-tone: var(--aw-success); }
+.app-window .tone-danger { --aw-tone: var(--aw-danger); }
+.app-window .tone-warning { --aw-tone: var(--aw-warning); }
+.app-window .tone-info { --aw-tone: var(--aw-info); }
+
+.app-window .aw-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: calc(var(--aw-pad) * 2) var(--aw-pad); color: var(--aw-muted); text-align: center; font-size: var(--type-body-size); }
+.app-window .aw-empty svg { opacity: .45; }
+.app-window .aw-spin { animation: awSpin .8s linear infinite !important; animation-duration: .8s !important; animation-iteration-count: infinite !important; }
+@keyframes awSpin { to { transform: rotate(360deg); } }
+.app-window .aw-fade-in { animation: awFadeIn .26s cubic-bezier(.32, .72, 0, 1) both !important; animation-duration: .26s !important; }
+@keyframes awFadeIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Narrower windows keep the same look; layout reflows only when fields would get too tight. */
+@media (max-width: 900px) { .app-window .aw-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .app-window .aw-grid { grid-template-columns: minmax(0, 1fr); } .app-window .aw-header { flex-wrap: wrap; } }
+@media (prefers-reduced-motion: reduce) {
+  .app-window *, .aw-select-popup, .aw-select-popup * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+/* ── App Window: two-pane layout, tabs, tables, modal, inputs with icons ── */
+.app-window .aw-split { display: grid; grid-template-columns: minmax(250px, 3fr) 9fr; gap: var(--aw-gap); height: 100%; min-height: 0; }
+.app-window .aw-side { display: flex; flex-direction: column; gap: var(--aw-gap); min-height: 0; overflow-y: auto; padding-right: 2px; }
+.app-window .aw-main { display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; padding: 0; }
+.app-window .aw-main-body { flex: 1; min-height: 0; overflow: auto; padding: var(--aw-pad); }
+.app-window .aw-main-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--aw-gap); flex: none; padding: 8px var(--aw-pad); border-top: 1px solid var(--aw-border); color: var(--aw-muted); font-size: calc(var(--type-body-size) - 2px); font-weight: 600; }
+.app-window .aw-fit { flex: 1; min-height: 0; padding: var(--aw-pad) calc(var(--aw-pad) * 1.4); }
+
+.app-window .aw-tabs { display: flex; gap: 2px; flex: none; padding: 0 calc(var(--aw-pad) * 1.4); background: var(--aw-surface); border-bottom: 1px solid var(--aw-border); }
+.app-window .aw-tab { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 10px 12px; border: 0; background: transparent; color: var(--aw-muted); font-size: var(--type-field-size); font-weight: 700; cursor: pointer; white-space: nowrap; }
+.app-window .aw-tab:hover { color: var(--aw-text); }
+.app-window .aw-tab::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--aw-accent); transform: scaleX(0); transition: transform .26s cubic-bezier(.32, .72, 0, 1) !important; transition-duration: .26s !important; }
+.app-window .aw-tab[aria-selected="true"] { color: var(--aw-accent); }
+.app-window .aw-tab[aria-selected="true"]::after { transform: scaleX(1); }
+.app-window .aw-tab:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: -3px; }
+
+.app-window .aw-input-wrap { position: relative; }
+.app-window .aw-input-wrap > svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--aw-muted); pointer-events: none; }
+.app-window .aw-input-wrap.has-icon .aw-input { padding-left: 30px; }
+.app-window .aw-input-wrap.has-action .aw-input { padding-right: 38px; }
+.app-window .aw-input-action { position: absolute; right: 3px; top: 3px; bottom: 3px; width: calc(var(--aw-control-h) - 6px); display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: calc(var(--aw-radius) - 2px); background: var(--aw-accent); color: #fff; cursor: pointer; }
+.app-window .aw-input-action:hover { background: color-mix(in srgb, var(--aw-accent) 88%, #000); }
+.app-window .aw-input-action:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+.app-window input[type="number"].aw-input { -moz-appearance: textfield; }
+.app-window input[type="number"].aw-input::-webkit-inner-spin-button, .app-window input[type="number"].aw-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.app-window .aw-stats-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.app-window .aw-stat-left { text-align: left; }
+.app-window .aw-stat-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.app-window .aw-stat-head svg { color: var(--aw-tone, var(--aw-accent)); }
+.app-window .aw-bar { display: flex; height: 10px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--aw-accent) 22%, var(--aw-surface)); }
+.app-window .aw-bar > span { display: block; height: 100%; background: var(--aw-accent); }
+.app-window .aw-legend { display: flex; align-items: center; gap: 14px; margin-top: 8px; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); font-weight: 600; }
+.app-window .aw-dot { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: var(--aw-accent); }
+.app-window .aw-dot-soft { background: color-mix(in srgb, var(--aw-accent) 30%, var(--aw-surface)); }
+.app-window .aw-pill { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; color: var(--aw-accent); background: var(--aw-accent-soft); font-size: calc(var(--type-body-size) - 2px); font-weight: 700; }
+.app-window .aw-facts-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.app-window .aw-narrow { max-width: 760px; margin: 0 auto; }
+
+.app-window .aw-table-wrap { max-height: 62vh; overflow: auto; border: 1px solid var(--aw-border); border-radius: calc(var(--aw-radius) * 1.5); }
+.app-window .aw-table { width: 100%; border-collapse: collapse; font-size: var(--type-body-size); }
+.app-window .aw-table th { position: sticky; top: 0; padding: 8px 14px; text-align: left; color: var(--aw-muted); background: var(--aw-surface-muted); border-bottom: 1px solid var(--aw-border); font-size: calc(var(--type-label-size) + 1px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.app-window .aw-table td { padding: 7px 14px; border-bottom: 1px solid var(--aw-border); color: var(--aw-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.app-window .aw-table tbody tr:hover td { background: var(--aw-surface-muted); }
+.app-window .aw-table tbody tr:last-child td { border-bottom: 0; }
+.app-window .aw-table td.is-accent { color: var(--aw-accent); font-weight: 700; }
+.app-window .aw-table td.is-muted { color: var(--aw-muted); }
+
+.app-window .aw-compare-card { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--aw-border); border-radius: calc(var(--aw-radius) * 1.5); background: var(--aw-surface); }
+.app-window .aw-compare-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: var(--aw-surface-muted); border-bottom: 1px solid var(--aw-border); }
+.app-window .aw-compare-body { display: flex; flex-direction: column; gap: 8px; padding: 12px; flex: 1; }
+.app-window .aw-compare-total { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; color: var(--aw-accent); background: var(--aw-accent-soft); font-weight: 700; }
+.app-window .aw-compare-total span:first-child { font-size: calc(var(--type-label-size) + 1px); letter-spacing: .04em; text-transform: uppercase; }
+.app-window .aw-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--aw-gap); }
+
+.app-window .aw-modal-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 12, 20, .55); }
+.app-window .aw-modal { display: flex; flex-direction: column; width: 100%; max-width: 64rem; height: 80%; overflow: hidden; background: var(--aw-surface); border: 1px solid var(--aw-border); border-radius: calc(var(--aw-radius) * 2); box-shadow: var(--aw-shadow-pop); animation: awDropdownIn .28s cubic-bezier(.32, .72, 0, 1) both !important; animation-duration: .28s !important; }
+.app-window .aw-modal-head { display: flex; align-items: center; justify-content: space-between; flex: none; padding: 12px var(--aw-pad); border-bottom: 1px solid var(--aw-border); }
+.app-window .aw-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: var(--aw-radius); background: transparent; color: var(--aw-muted); cursor: pointer; }
+.app-window .aw-icon-btn:hover { color: var(--aw-text); background: var(--aw-surface-muted); }
+.app-window .aw-icon-btn:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+
+@media (max-width: 720px) {
+  .app-window .aw-split { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .app-window .aw-side { overflow: visible; }
+  .app-window .aw-stats-3, .app-window .aw-facts-4, .app-window .aw-two { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Native scrollbars and select menus follow the mode. */
+.app-window { color-scheme: light; }
+html.dark .app-window { color-scheme: dark; }
+
+/* ── App Window: chips (segmented choice), inline rows, results card ── */
+.app-window .aw-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.app-window .aw-chip { display: inline-flex; align-items: center; min-height: calc(var(--aw-control-h) - 6px); padding: 0 14px; border-radius: 999px; border: 1px solid var(--aw-border-strong); background: var(--aw-surface-muted); color: var(--aw-muted); font-size: var(--type-field-size); font-weight: 700; cursor: pointer; white-space: nowrap; }
+.app-window .aw-chip:hover { color: var(--aw-text); border-color: color-mix(in srgb, var(--aw-accent) 45%, var(--aw-border-strong)); }
+.app-window .aw-chip[aria-checked="true"] { color: #fff; background: var(--aw-accent); border-color: var(--aw-accent); }
+.app-window .aw-chip:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+.app-window .aw-inline { display: flex; align-items: stretch; gap: 8px; }
+.app-window .aw-inline > .aw-input { flex: 1; min-width: 0; }
+.app-window .aw-main-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: none; padding: 12px var(--aw-pad); border-bottom: 1px solid var(--aw-border); }
+.app-window .aw-column { display: flex; flex-direction: column; gap: var(--aw-gap); height: 100%; min-height: 0; }
+.app-window .aw-table tbody tr.is-clickable { cursor: pointer; }
+
+/* ── Thin, quiet scrollbars app-wide ──────────────────────────────────────
+   Six pixels, rounded, transparent track, and a thumb that only strengthens
+   when hovered. Windows that define their own scrollbar keep it until they
+   are redesigned onto the shared kit. */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, .32); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, .55); }
+::-webkit-scrollbar-corner { background: transparent; }
+html.dark ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .16); }
+html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .3); }
+
+/* ── App Window: status pills, code chips, table alignment, totals, print ── */
+.app-window .aw-pill.tone-success, .app-window .aw-pill.tone-danger, .app-window .aw-pill.tone-warning, .app-window .aw-pill.tone-info { color: var(--aw-tone); background: color-mix(in srgb, var(--aw-tone) 12%, var(--aw-surface)); }
+.app-window .aw-code { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 4px 8px; border-radius: var(--aw-radius); color: var(--aw-accent); background: var(--aw-accent-soft); font-size: calc(var(--type-body-size) - 1px); font-weight: 700; }
+.app-window .aw-avatar { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex: none; border-radius: 50%; color: var(--aw-accent); background: var(--aw-surface); }
+.app-window .aw-table th.is-right, .app-window .aw-table td.is-right { text-align: right; }
+.app-window .aw-table th.is-center, .app-window .aw-table td.is-center { text-align: center; }
+.app-window .aw-table td.is-success { color: var(--aw-success); font-weight: 700; }
+.app-window .aw-table td.is-danger { color: var(--aw-danger); font-weight: 700; }
+.app-window .aw-table td .aw-meta { display: block; margin-top: 1px; }
+.app-window .aw-totals { display: flex; align-items: flex-end; justify-content: flex-end; gap: 24px; margin-top: var(--aw-pad); padding-top: var(--aw-gap); border-top: 1px solid var(--aw-border); }
+.app-window .aw-totals > div { text-align: right; }
+.app-window .aw-total-value { display: inline-flex; align-items: baseline; gap: 6px; color: var(--aw-accent); font-size: calc(var(--type-body-size) + 8px); font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.app-window .aw-total-value small { color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); font-weight: 700; }
+.app-window .aw-total-value.tone-danger { color: var(--aw-danger); }
+.app-window .aw-status-dot { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--aw-success); }
+
+@media print {
+  .app-window { height: auto !important; overflow: visible !important; background: #fff !important; color: #000 !important; }
+  .app-window .aw-fit, .app-window .aw-split, .app-window .aw-main, .app-window .aw-main-body, .app-window .aw-side, .app-window .aw-content { height: auto !important; overflow: visible !important; }
+  .app-window .aw-noprint, .app-window .aw-actions, .app-window button { display: none !important; }
+}
+
+/* ── App Window: selectable list items, neutral pill, footer, dashed panel ── */
+.app-window .aw-choice { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface); box-shadow: var(--aw-shadow); color: var(--aw-text); cursor: pointer; }
+.app-window .aw-choice:hover { border-color: color-mix(in srgb, var(--aw-accent) 40%, var(--aw-border-strong)); }
+.app-window .aw-choice[aria-pressed="true"] { border-color: var(--aw-accent); background: var(--aw-accent-soft); box-shadow: 0 0 0 3px var(--aw-focus); }
+.app-window .aw-choice:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+.app-window .aw-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 2px; }
+.app-window .aw-section-title { margin: 0; color: var(--aw-muted); font-size: calc(var(--type-label-size) + 1px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.app-window .aw-pill.tone-muted { color: var(--aw-muted); background: var(--aw-surface-muted); }
+.app-window .aw-panel-dashed { border-style: dashed; text-align: center; color: var(--aw-muted); background: transparent; }
+.app-window .aw-table td.is-warning { color: var(--aw-warning); font-weight: 700; }
+.app-window .aw-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--aw-gap); flex: none; padding: 6px calc(var(--aw-pad) * 1.4); border-top: 1px solid var(--aw-border); background: var(--aw-surface); color: var(--aw-muted); font-size: calc(var(--type-body-size) - 2px); font-weight: 600; }
+.app-window .aw-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: 100%; max-width: 34rem; margin-top: 18px; }
+.app-window .aw-tiles > div { padding: 12px 8px; text-align: center; border-radius: calc(var(--aw-radius) * 1.4); background: var(--aw-surface-muted); color: var(--aw-muted); font-size: calc(var(--type-body-size) - 2px); font-weight: 600; }
+.app-window .aw-tiles svg { display: block; margin: 0 auto 6px; color: var(--aw-accent); opacity: .8; }
+@media (max-width: 720px) { .app-window .aw-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media print { .app-window .aw-split.aw-print-full { display: block !important; } }
+
+/* ── App Window: switch, destructive button, 4-up stats, wide split ── */
+.app-window .aw-switch { position: relative; width: 38px; height: 22px; flex: none; padding: 0; border: 0; border-radius: 999px; background: var(--aw-border-strong); cursor: pointer; transition: background-color .26s cubic-bezier(.32, .72, 0, 1) !important; transition-duration: .26s !important; }
+.app-window .aw-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .26s cubic-bezier(.32, .72, 0, 1) !important; transition-duration: .26s !important; }
+.app-window .aw-switch[aria-checked="true"] { background: var(--aw-accent); }
+.app-window .aw-switch[aria-checked="true"]::after { transform: translateX(16px); }
+.app-window .aw-switch:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+.app-window .aw-switch-row { display: flex; align-items: center; gap: 10px; color: var(--aw-text); font-size: var(--type-body-size); font-weight: 600; }
+.app-window .aw-btn-danger { color: var(--aw-danger); background: color-mix(in srgb, var(--aw-danger) 8%, var(--aw-surface)); border-color: color-mix(in srgb, var(--aw-danger) 22%, transparent); }
+.app-window .aw-btn-danger:hover:not(:disabled) { color: #fff; background: var(--aw-danger); }
+.app-window .aw-stats-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.app-window .aw-split.aw-split-wide { grid-template-columns: minmax(260px, 4fr) 8fr; height: auto; align-items: start; }
+.app-window .aw-btn-row { display: flex; gap: 8px; }
+.app-window .aw-btn-row > .aw-btn { flex: 1; }
+.app-window .aw-search { width: 200px; }
+@media (max-width: 900px) { .app-window .aw-stats-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .app-window .aw-split.aw-split-wide { grid-template-columns: minmax(0, 1fr); } .app-window .aw-stats-4 { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── App Window: Apple-style motion, tooltips, shadow switch ───────────────
+   Easing is a gentle, iOS-like curve: quick to start, long soft settle. */
+:root { --aw-ease: cubic-bezier(.32, .72, 0, 1); }
+
+/* Tooltips: add data-tip="Label" to any control (data-tip-pos="bottom" or "bottom-end" near the top edge).
+   They wait about half a second, then fade and settle in. */
+.app-window { --aw-tip-bg: rgba(28, 32, 42, .94); --aw-tip-text: #f5f7fb; }
+html.dark .app-window { --aw-tip-bg: rgba(230, 233, 239, .96); --aw-tip-text: #151a21; }
+:where(.app-window [data-tip]) { position: relative; } /* zero specificity: never overrides a control that is already positioned (e.g. the lookup button) */
+.app-window [data-tip]::after {
+  content: attr(data-tip); position: absolute; z-index: 80; left: 50%; bottom: calc(100% + 8px);
+  padding: 5px 10px; border-radius: 8px; background: var(--aw-tip-bg); color: var(--aw-tip-text);
+  font-size: calc(var(--type-body-size) - 1px); font-weight: 600; line-height: 1.3; letter-spacing: 0; text-transform: none; white-space: nowrap;
+  box-shadow: var(--aw-shadow-pop); pointer-events: none; opacity: 0;
+  transform: translateX(-50%) translateY(4px) scale(.96); transform-origin: bottom center;
+  transition: opacity .18s var(--aw-ease), transform .26s var(--aw-ease) !important;
+}
+.app-window [data-tip]:hover::after, .app-window [data-tip]:focus-visible::after {
+  opacity: 1; transform: translateX(-50%) translateY(0) scale(1);
+  transition: opacity .22s var(--aw-ease) .45s, transform .3s var(--aw-ease) .45s !important;
+}
+.app-window [data-tip][data-tip-pos="bottom"]::after, .app-window [data-tip][data-tip-pos="bottom-end"]::after { bottom: auto; top: calc(100% + 8px); transform-origin: top center; transform: translateX(-50%) translateY(-4px) scale(.96); }
+.app-window [data-tip][data-tip-pos="bottom"]:hover::after, .app-window [data-tip][data-tip-pos="bottom"]:focus-visible::after { transform: translateX(-50%) translateY(0) scale(1); }
+.app-window [data-tip][data-tip-pos="bottom-end"]::after { left: auto; right: 0; transform: translateY(-4px) scale(.96); transform-origin: top right; }
+.app-window [data-tip][data-tip-pos="bottom-end"]:hover::after, .app-window [data-tip][data-tip-pos="bottom-end"]:focus-visible::after { transform: translateY(0) scale(1); }
+
+/* Toggle knob stretches slightly while pressed, like a native switch. */
+.app-window .aw-switch::after { transition: transform .3s var(--aw-ease), width .3s var(--aw-ease) !important; }
+.app-window .aw-switch:active::after { width: 22px; }
+.app-window .aw-switch[aria-checked="true"]:active::after { transform: translateX(12px); }
+
+/* Press feedback for chips, list items, and small icon controls. */
+.app-window .aw-chip:active { transform: scale(.96); }
+.app-window .aw-choice:active { transform: scale(.99); }
+.app-window .aw-icon-btn:active, .app-window .aw-input-action:active { transform: scale(.92); }
+
+/* Dialogs: the backdrop fades and the panel rises gently into place. */
+.app-window .aw-modal-backdrop { animation: awBackdropIn .3s var(--aw-ease) both !important; animation-duration: .3s !important; }
+.app-window .aw-modal { animation: awModalIn .34s var(--aw-ease) both !important; animation-duration: .34s !important; }
+@keyframes awBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes awModalIn { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* Shadows off (Settings → Appearance → Soft shadows). Faster on older PCs; borders take over the separation. */
+html.no-shadows .app-window, html.no-shadows .aw-select-popup { --aw-shadow: none; --aw-shadow-pop: none; --aw-shadow-btn: none; --aw-border: #e3e7ef; --aw-border-strong: #d3d9e4; }
+html.dark.no-shadows .app-window, html.dark.no-shadows .aw-select-popup { --aw-border: rgba(255, 255, 255, .11); --aw-border-strong: rgba(255, 255, 255, .16); }
+html.no-shadows .app-window .aw-switch::after { box-shadow: none; }
+html.no-shadows .shadow, html.no-shadows .shadow-sm, html.no-shadows .shadow-md, html.no-shadows .shadow-lg, html.no-shadows .shadow-xl, html.no-shadows .shadow-2xl,
+html.no-shadows .ant-select-dropdown, html.no-shadows .ant-modal-content, html.no-shadows .ant-dropdown-menu, html.no-shadows .ant-popover-inner { box-shadow: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-window *::after, .app-window *::before { animation-duration: .001ms !important; transition-duration: .001ms !important; transition-delay: 0ms !important; }
+}
+
+/* Tooltip placement: above and right-aligned, for controls near a right edge. */
+.app-window [data-tip][data-tip-pos="top-end"]::after { left: auto; right: 0; transform: translateY(4px) scale(.96); transform-origin: bottom right; }
+.app-window [data-tip][data-tip-pos="top-end"]:hover::after, .app-window [data-tip][data-tip-pos="top-end"]:focus-visible::after { transform: translateY(0) scale(1); }
+
+/* ── App Window: date picker and multi-line input ── */
+.app-window textarea.aw-input { padding: 8px 10px; min-height: 64px; line-height: 1.4; resize: none; }
+.app-window .aw-picker.ant-picker { display: flex; width: 100%; min-height: var(--aw-control-h); padding: 0 10px; background: var(--aw-surface-muted); border: 1px solid var(--aw-border-strong); border-radius: var(--aw-radius); box-shadow: none; transition-property: border-color, box-shadow, background-color !important; transition-duration: .22s !important; transition-timing-function: cubic-bezier(.32, .72, 0, 1) !important; }
+.app-window .aw-picker.ant-picker:hover { border-color: color-mix(in srgb, var(--aw-accent) 45%, var(--aw-border-strong)); }
+.app-window .aw-picker.ant-picker-focused { border-color: var(--aw-accent) !important; background: var(--aw-surface) !important; box-shadow: 0 0 0 3px var(--aw-focus) !important; }
+.app-window .aw-picker input { color: var(--aw-text) !important; font-size: var(--type-field-size); font-weight: 600; background: transparent !important; }
+.app-window .aw-picker .ant-picker-suffix { color: var(--aw-muted); }
+html.dark .app-window .aw-picker.ant-picker { background-color: var(--aw-surface-muted) !important; border-color: var(--aw-border-strong) !important; }
+html.dark .app-window .aw-picker.ant-picker-focused { background-color: var(--aw-surface) !important; border-color: var(--aw-accent) !important; }
+.aw-select-popup.ant-picker-dropdown .ant-picker-panel-container { overflow: hidden; border: 1px solid var(--aw-border); border-radius: calc(var(--aw-radius) * 1.5); background: var(--aw-surface); box-shadow: var(--aw-shadow-pop); }
+.aw-select-popup.ant-picker-dropdown .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner { background: var(--aw-accent); }
+.aw-select-popup.ant-picker-dropdown .ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before { border-color: var(--aw-accent); }
+html.dark .aw-select-popup.ant-picker-dropdown .ant-picker-panel-container { background-color: var(--aw-surface) !important; border-color: var(--aw-border-strong) !important; }
+
+/* Form-first two-pane layout: a comfortable fixed-width form column beside a flexible workspace. */
+.app-window .aw-split.aw-split-form { grid-template-columns: minmax(300px, 340px) minmax(0, 1fr); }
+@media (max-width: 720px) { .app-window .aw-split.aw-split-form { grid-template-columns: minmax(0, 1fr); } }
+
+/* Tooltip v2: not rendered at all until hovered, so it can never widen a scroll area.
+   It appears with an animation (after the hover delay) instead of a transition. */
+.app-window [data-tip] { --tip-x: -50%; --tip-from: 4px; }
+.app-window [data-tip][data-tip-pos="bottom"] { --tip-from: -4px; }
+.app-window [data-tip][data-tip-pos="bottom-end"] { --tip-x: 0; --tip-from: -4px; }
+.app-window [data-tip][data-tip-pos="top-end"], .app-window [data-tip][data-tip-pos="top-start"] { --tip-x: 0; }
+.app-window [data-tip]::after { display: none; opacity: 1; transition: none !important; }
+.app-window [data-tip][data-tip-pos="top-start"]::after { left: 0; right: auto; transform-origin: bottom left; }
+.app-window [data-tip]:hover::after, .app-window [data-tip]:focus-visible::after {
+  display: block; animation: awTipIn .24s var(--aw-ease) .45s both !important; animation-duration: .24s !important; animation-delay: .45s !important;
+}
+@keyframes awTipIn {
+  from { opacity: 0; transform: translateX(var(--tip-x)) translateY(var(--tip-from)) scale(.96); }
+  to   { opacity: 1; transform: translateX(var(--tip-x)) translateY(0) scale(1); }
+}
+.app-window .aw-side, .app-window .aw-content { overflow-x: hidden; }
+
+/* Table footer (grand totals) and info-toned cells. */
+.app-window .aw-table tfoot td { position: sticky; bottom: 0; padding: 9px 14px; color: var(--aw-text); background: var(--aw-accent-soft); border-top: 1px solid var(--aw-border-strong); font-weight: 700; font-variant-numeric: tabular-nums; }
+.app-window .aw-table td.is-info { color: var(--aw-info); font-weight: 700; }
+
+/* ── App Window: segmented control, message list, icon tile, small button, toolbar ── */
+.app-window .aw-seg { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: calc(var(--aw-radius) * 1.2); background: var(--aw-surface-muted); border: 1px solid var(--aw-border); }
+.app-window .aw-seg::before { content: ''; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--seg-count, 2)); border-radius: var(--aw-radius); background: var(--aw-surface); box-shadow: var(--aw-shadow-btn); transform: translateX(calc(var(--seg-index, 0) * 100%)); transition: transform .3s var(--aw-ease) !important; }
+.app-window .aw-seg > button { position: relative; z-index: 1; padding: 8px 10px; border: 0; background: transparent; color: var(--aw-muted); font-size: var(--type-field-size); font-weight: 700; cursor: pointer; white-space: nowrap; }
+.app-window .aw-seg > button[aria-selected="true"] { color: var(--aw-text); }
+.app-window .aw-seg > button:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: -2px; border-radius: var(--aw-radius); }
+
+.app-window .aw-list-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px var(--aw-pad); border-bottom: 1px solid var(--aw-border); transition: background-color .22s var(--aw-ease) !important; }
+.app-window .aw-list-row:last-child { border-bottom: 0; }
+.app-window .aw-list-row:hover { background: var(--aw-surface-muted); }
+.app-window .aw-list-row.is-selected { background: var(--aw-accent-soft); }
+.app-window .aw-list-body { flex: 1; min-width: 0; }
+.app-window .aw-list-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.app-window .aw-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.app-window .aw-icon-tile { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex: none; border-radius: var(--aw-radius); color: var(--aw-tone, var(--aw-accent)); background: color-mix(in srgb, var(--aw-tone, var(--aw-accent)) 12%, var(--aw-surface)); }
+.app-window .aw-check { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex: none; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--aw-muted); cursor: pointer; }
+.app-window .aw-check:hover { color: var(--aw-accent); }
+.app-window .aw-check[aria-checked="true"] { color: var(--aw-accent); }
+.app-window .aw-check:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 1px; }
+.app-window .aw-btn-sm { min-height: 28px; padding: 0 10px; font-size: calc(var(--type-field-size) - 1px); gap: 5px; }
+.app-window .aw-btn-warning { color: var(--aw-warning); background: color-mix(in srgb, var(--aw-warning) 10%, var(--aw-surface)); border-color: color-mix(in srgb, var(--aw-warning) 25%, transparent); }
+.app-window .aw-btn-warning:hover:not(:disabled) { background: color-mix(in srgb, var(--aw-warning) 18%, var(--aw-surface)); }
+.app-window .aw-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.app-window .aw-main-head { flex-wrap: wrap; }
+.app-window .aw-status-strip { display: flex; align-items: center; gap: 14px; padding: 6px 12px; border-radius: 999px; background: var(--aw-surface-muted); border: 1px solid var(--aw-border); }
+.app-window .aw-status-strip span { display: inline-flex; align-items: center; gap: 5px; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); font-weight: 700; text-transform: uppercase; }
+.app-window .aw-status-strip span.is-on { color: var(--aw-success); }
+
+/* Tooltip placed to the left of the control: for icon buttons inside scrolling tables, where above/below would be clipped. */
+.app-window [data-tip][data-tip-pos="left"] { --tip-x: 0; --tip-y: -50%; --tip-from: 0px; }
+.app-window [data-tip][data-tip-pos="left"]::after { left: auto; right: calc(100% + 8px); top: 50%; bottom: auto; transform-origin: right center; }
+@keyframes awTipIn {
+  from { opacity: 0; transform: translateX(var(--tip-x)) translateY(calc(var(--tip-y, 0px) + var(--tip-from))) scale(.96); }
+  to   { opacity: 1; transform: translateX(var(--tip-x)) translateY(var(--tip-y, 0px)) scale(1); }
+}
+/* Destructive icon button. */
+.app-window .aw-icon-btn.is-danger:hover { color: var(--aw-danger); background: color-mix(in srgb, var(--aw-danger) 10%, var(--aw-surface)); }
+.app-window .aw-icon-btn.is-sm { width: 28px; height: 28px; }
+
+/* Toned selectable choice (for example In State / Out State) and a 3-column form grid. */
+.app-window .aw-choice[class*="tone-"][aria-pressed="true"] { border-color: var(--aw-tone); background: color-mix(in srgb, var(--aw-tone) 10%, var(--aw-surface)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--aw-tone) 22%, transparent); color: var(--aw-tone); }
+.app-window .aw-form-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.app-window .aw-span-2 { grid-column: span 2; }
+@media (max-width: 640px) { .app-window .aw-form-3 { grid-template-columns: minmax(0, 1fr); } .app-window .aw-span-2 { grid-column: auto; } }
+
+/* Read-only / invalid inputs, compact cards, and a month-tile grid. */
+.app-window .aw-input[readonly] { background: var(--aw-surface-muted); color: var(--aw-muted); border-color: var(--aw-border); cursor: default; }
+.app-window .aw-input[readonly]:focus { box-shadow: none !important; border-color: var(--aw-border) !important; background: var(--aw-surface-muted) !important; }
+.app-window .aw-input.is-invalid { border-color: var(--aw-danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--aw-danger) 18%, transparent); }
+.app-window .aw-month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.app-window .aw-mini-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface); box-shadow: var(--aw-shadow); }
+.app-window .aw-bar-strip { padding: 10px calc(var(--aw-pad) * 1.4); background: var(--aw-surface); border-bottom: 1px solid var(--aw-border); flex: none; }
+
+/* Type-ahead member results (MemberLookupInput variant="kit"). */
+.app-window .aw-suggest-root { position: relative; }
+.app-window .aw-suggest { position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 6px); max-height: 280px; overflow-y: auto; padding: 4px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface); box-shadow: var(--aw-shadow-pop); animation: awDropdownIn .28s var(--aw-ease) both !important; animation-duration: .28s !important; }
+.app-window .aw-suggest-head { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 2px); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.app-window .aw-suggest-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--aw-radius); background: transparent; color: var(--aw-text); text-align: left; cursor: pointer; }
+.app-window .aw-suggest-item:hover, .app-window .aw-suggest-item:focus-visible { background: var(--aw-accent-soft); outline: none; }
+
+/* Joined icon buttons (for example first/previous), right-aligned and accent-outlined inputs, balance-sheet style grid. */
+.app-window .aw-btn-group { display: inline-flex; flex: none; }
+.app-window .aw-btn-group > .aw-btn { min-height: var(--aw-control-h); padding: 0 10px; border-radius: 0; }
+.app-window .aw-btn-group > .aw-btn:first-child { border-radius: var(--aw-radius) 0 0 var(--aw-radius); }
+.app-window .aw-btn-group > .aw-btn:last-child { border-radius: 0 var(--aw-radius) var(--aw-radius) 0; }
+.app-window .aw-btn-group > .aw-btn + .aw-btn { margin-left: -1px; }
+.app-window .aw-input.is-right { text-align: right; }
+.app-window .aw-input.is-accent { border-color: color-mix(in srgb, var(--aw-accent) 45%, var(--aw-border-strong)); }
+.app-window .aw-bal-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 170px) minmax(120px, 170px); gap: 10px 16px; align-items: center; }
+.app-window .aw-bal-label { display: flex; align-items: center; gap: 8px; color: var(--aw-text); font-size: var(--type-body-size); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.app-window .aw-bal-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--aw-accent); }
+.app-window input[type="number"].aw-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* 12-column form grid, and compact controls for cells inside a table. */
+.app-window .aw-form-12 { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+.app-window .aw-c-4 { grid-column: span 4; }
+.app-window .aw-c-12 { grid-column: span 12; }
+@media (max-width: 900px) { .app-window .aw-c-4 { grid-column: span 6; } }
+@media (max-width: 640px) { .app-window .aw-c-4 { grid-column: span 12; } }
+.app-window .aw-table .aw-input, .app-window .aw-table .aw-picker.ant-picker { min-height: 30px; padding: 0 8px; }
+.app-window .aw-table .aw-select .ant-select-selector { min-height: 30px; }
+.app-window .aw-table td.has-input { padding-top: 5px; padding-bottom: 5px; }
+
+/* Signature pad frame (the canvas itself stays white: you sign in dark ink) and a file drop zone. */
+.app-window .aw-canvas-wrap { position: relative; overflow: hidden; border: 1px solid var(--aw-border-strong); border-radius: calc(var(--aw-radius) * 1.4); background: #ffffff; }
+.app-window .aw-dropzone { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 34px 16px; border: 1.5px dashed var(--aw-border-strong); border-radius: calc(var(--aw-radius) * 1.6); color: var(--aw-muted); text-align: center; cursor: pointer; transition: border-color .26s var(--aw-ease) !important, background-color .26s var(--aw-ease) !important; }
+.app-window .aw-dropzone:hover:not(.is-disabled) { border-color: var(--aw-accent); background: var(--aw-accent-soft); }
+.app-window .aw-dropzone.is-disabled { opacity: .55; cursor: not-allowed; }
+.app-window .ant-upload-wrapper, .app-window .ant-upload { display: block; width: 100%; }
+
+/* Editable grid cell (click-to-edit tables) */
+.app-window .aw-cell { display: flex; align-items: center; width: 100%; padding: 0 8px; border-radius: calc(var(--aw-radius) - 2px); color: var(--aw-text); cursor: text; font-weight: 600; }
+.app-window .aw-cell:hover { background: var(--aw-surface-muted); }
+.app-window .aw-cell:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: -2px; }
+.app-window .aw-panel-danger { background: color-mix(in srgb, var(--aw-danger) 8%, var(--aw-surface)); border-color: color-mix(in srgb, var(--aw-danger) 22%, transparent); }
+.app-window .aw-table tbody tr[aria-selected="true"] td { background: var(--aw-accent-soft); }
+.app-window .aw-select.is-invalid .ant-select-selector { border-color: var(--aw-danger) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--aw-danger) 18%, transparent) !important; }
+
+.app-window .aw-table tbody tr.is-dirty td { background: color-mix(in srgb, var(--aw-warning) 8%, var(--aw-surface)); }
+
+.app-window .aw-table td.is-warning { color: var(--aw-warning); font-weight: 700; }
+
+/* Permission transfer list (Create / Modify Users) */
+.app-window .aw-perm-list { height: 260px; overflow-y: auto; overflow-x: hidden; padding: 4px; border-radius: var(--aw-radius); border: 1px solid var(--aw-border); background: var(--aw-surface-muted); }
+.app-window .aw-perm-list.is-accent { background: var(--aw-accent-soft); border-color: color-mix(in srgb, var(--aw-accent) 18%, transparent); }
+.app-window .aw-perm-item { padding: 5px 10px; margin: 2px 0; border-radius: calc(var(--aw-radius) - 2px); color: var(--aw-text); font-size: var(--type-body-size); font-weight: 600; cursor: pointer; user-select: none; transition: background .16s var(--aw-ease), color .16s var(--aw-ease) !important; transition-duration: .16s !important; }
+.app-window .aw-perm-item:hover { background: color-mix(in srgb, var(--aw-accent) 10%, transparent); }
+.app-window .aw-perm-item.is-selected { background: var(--aw-accent); color: #fff; }
+@keyframes awPermOutRight { to { transform: translateX(40px); opacity: 0; } }
+@keyframes awPermOutLeft { to { transform: translateX(-40px); opacity: 0; } }
+@keyframes awPermInFromLeft { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes awPermInFromRight { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.app-window .aw-perm-item.is-fly-right { animation: awPermOutRight .3s var(--aw-ease) forwards !important; animation-duration: .3s !important; pointer-events: none; }
+.app-window .aw-perm-item.is-fly-left { animation: awPermOutLeft .3s var(--aw-ease) forwards !important; animation-duration: .3s !important; pointer-events: none; }
+.app-window .aw-perm-item.is-arrive-right { animation: awPermInFromLeft .4s var(--aw-ease) both !important; animation-duration: .4s !important; }
+.app-window .aw-perm-item.is-arrive-left { animation: awPermInFromRight .4s var(--aw-ease) both !important; animation-duration: .4s !important; }
+/* Round photo button */
+.app-window .aw-avatar { position: relative; width: 52px; height: 52px; padding: 0; border: 2px solid var(--aw-border-strong); border-radius: 50%; background: var(--aw-surface-muted); color: var(--aw-muted); font-size: 20px; font-weight: 700; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.app-window .aw-avatar:hover { border-color: var(--aw-accent); }
+.app-window .aw-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.app-window .aw-avatar-badge { position: absolute; right: -3px; bottom: -3px; width: 20px; height: 20px; border-radius: 50%; background: var(--aw-accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+
+/* Rights matrix (Role Governance) */
+.app-window .aw-right-head { display: flex; align-items: center; gap: 10px; padding: 10px var(--aw-pad); cursor: pointer; background: var(--aw-surface-muted); border-bottom: 1px solid var(--aw-border); color: var(--aw-muted); }
+.app-window .aw-right-head:hover { background: color-mix(in srgb, var(--aw-accent) 6%, var(--aw-surface-muted)); }
+.app-window .aw-right-head:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: -3px; }
+.app-window .aw-bar-track { display: inline-block; width: 90px; height: 5px; border-radius: 999px; background: var(--aw-border); overflow: hidden; flex: none; }
+.app-window .aw-bar-track > span { display: block; height: 100%; background: var(--aw-accent); border-radius: 999px; transition: width .3s var(--aw-ease) !important; transition-duration: .3s !important; }
+.app-window .aw-right-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 2px; padding: 8px; }
+.app-window .aw-right-cell { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 0; border-radius: calc(var(--aw-radius) - 2px); background: transparent; color: var(--aw-muted); font-size: var(--type-body-size); font-weight: 600; text-align: left; cursor: pointer; }
+.app-window .aw-right-cell:hover { background: var(--aw-surface-muted); color: var(--aw-text); }
+.app-window .aw-right-cell[aria-checked="true"] { background: var(--aw-accent-soft); color: var(--aw-text); }
+.app-window .aw-right-cell:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: -2px; }
+.app-window .aw-right-box { flex: none; width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--aw-border-strong); display: inline-flex; align-items: center; justify-content: center; color: #fff; transition: background-color .2s var(--aw-ease), border-color .2s var(--aw-ease) !important; transition-duration: .2s !important; }
+.app-window .aw-right-cell[aria-checked="true"] .aw-right-box { background: var(--aw-accent); border-color: var(--aw-accent); }
+.app-window .aw-right-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Ambient header background (decorative, static). Style comes from Settings → Appearance via
+   html[data-header-style]: none | waves | blobs | mesh. Only the shape layers differ. */
+.app-window { --aw-amb-1: 12%; --aw-amb-2: 8%; --aw-amb-3: 6%; }
+html.dark .app-window { --aw-amb-1: 20%; --aw-amb-2: 13%; --aw-amb-3: 10%; }
+.app-window .aw-ambient { position: relative; isolation: isolate; }
+.app-window .aw-ambient::before,
+.app-window .aw-ambient::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; display: none; }
+html[data-header-style="waves"] .app-window .aw-ambient::before,
+html[data-header-style="waves"] .app-window .aw-ambient::after,
+html[data-header-style="blobs"] .app-window .aw-ambient::before,
+html[data-header-style="blobs"] .app-window .aw-ambient::after,
+html[data-header-style="mesh"] .app-window .aw-ambient::before,
+html[data-header-style="mesh"] .app-window .aw-ambient::after,
+html:not([data-header-style]) .app-window .aw-ambient::before,
+html:not([data-header-style]) .app-window .aw-ambient::after { display: block; }
+
+/* Soft layered waves: two overlapping curved layers */
+html[data-header-style="waves"] .app-window .aw-ambient::before,
+html:not([data-header-style]) .app-window .aw-ambient::before {
+  background: color-mix(in srgb, var(--aw-accent) var(--aw-amb-1), transparent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0 92 C200 38 420 40 640 82 S1000 122 1200 68 L1200 120 L0 120Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0 92 C200 38 420 40 640 82 S1000 122 1200 68 L1200 120 L0 120Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+html[data-header-style="waves"] .app-window .aw-ambient::after,
+html:not([data-header-style]) .app-window .aw-ambient::after {
+  background: color-mix(in srgb, var(--aw-info) var(--aw-amb-2), transparent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0 112 C250 104 500 18 780 30 S1100 72 1200 46 L1200 120 L0 120Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0 112 C250 104 500 18 780 30 S1100 72 1200 46 L1200 120 L0 120Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+
+/* Subtle blob shapes: one rounded hill plus a soft corner blob */
+html[data-header-style="blobs"] .app-window .aw-ambient::before {
+  background: color-mix(in srgb, var(--aw-accent) var(--aw-amb-1), transparent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M180 120 C260 110 380 40 520 16 C640 -4 760 30 860 80 C910 104 990 116 1060 120Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M180 120 C260 110 380 40 520 16 C640 -4 760 30 860 80 C910 104 990 116 1060 120Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+html[data-header-style="blobs"] .app-window .aw-ambient::after {
+  background: radial-gradient(38% 160% at 96% 120%, color-mix(in srgb, var(--aw-accent) var(--aw-amb-3), transparent) 0%, transparent 70%);
+}
+
+/* Mesh-gradient style: diffuse overlapping colour fields */
+html[data-header-style="mesh"] .app-window .aw-ambient::before {
+  background:
+    radial-gradient(70% 220% at 4% 135%, color-mix(in srgb, var(--aw-accent) var(--aw-amb-1), transparent) 0%, transparent 68%),
+    radial-gradient(55% 200% at 46% -70%, color-mix(in srgb, var(--aw-accent) var(--aw-amb-2), transparent) 0%, transparent 70%);
+}
+html[data-header-style="mesh"] .app-window .aw-ambient::after {
+  background:
+    radial-gradient(50% 190% at 98% 125%, color-mix(in srgb, var(--aw-accent) var(--aw-amb-3), transparent) 0%, transparent 72%),
+    radial-gradient(34% 150% at 78% -55%, color-mix(in srgb, var(--aw-info) calc(var(--aw-amb-3) * .8), transparent) 0%, transparent 70%);
+}
+
+/* Loading placeholder bar */
+.app-window .aw-skeleton { border-radius: 6px; background: var(--aw-border); animation: awPulse 1.4s ease-in-out infinite !important; animation-duration: 1.4s !important; }
+@keyframes awPulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }

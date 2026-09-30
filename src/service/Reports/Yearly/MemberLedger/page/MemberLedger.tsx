@@ -23,8 +23,8 @@ interface ColumnarLedger {
 }
 
 // ---- Monospace report layout ----
-const DATEW = 26;            // date column width
-const CW = 8;                // each sub-cell (Dr / Cr / Bal) width
+const DATEW = 18;            // date column width
+const CW = 12;               // each sub-cell (Dr / Cr / Bal) width
 const GW = CW * 3 + 2;       // account-group inner width  ("Dr|Cr|Bal")
 const REPORT_W = DATEW + 4 * GW + 5;
 
@@ -42,8 +42,23 @@ const center = (s: string, w: number) => {
 };
 const padE = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s + ' '.repeat(w - s.length));
 const padS = (s: string, w: number) => (s.length > w ? s.slice(0, w) : ' '.repeat(w - s.length) + s);
-const intStr = (n: number | null | undefined) => (n === null || n === undefined ? '' : String(Math.round(n)));
-const cellNum = (v: number) => (v && Math.round(v) !== 0 ? String(Math.round(v)) : '');
+const intStr = (n: number | null | undefined) => (n === null || n === undefined ? '' : String(n));
+const cellNum = (v: number) => (v ? String(v) : '');
+const csvCell = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  let text = String(value ?? '');
+  if (/^[\t\r ]*[=+@-]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+};
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => {
+  switch (char) {
+    case '&': return '&amp;';
+    case '<': return '&lt;';
+    case '>': return '&gt;';
+    case '"': return '&quot;';
+    default: return '&#39;';
+  }
+});
 
 const group = (a: string, b: string, c: string) => `${padS(a, CW)}|${padS(b, CW)}|${padS(c, CW)}`;
 const groupH = (a: string, b: string, c: string) => `${center(a, CW)}|${center(b, CW)}|${center(c, CW)}`;
@@ -111,20 +126,19 @@ const MemberLedger: React.FC = () => {
   }, []);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const fmtMoney = useCallback((n: number) =>
-    new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Math.round(n || 0)), []);
+    new Intl.NumberFormat('en-IN', { maximumFractionDigits: 4 }).format(n || 0), []);
 
   // ---- Print via hidden iframe (window.print is blocked in Electron) ----
   const printWithData = useCallback((text: string) => {
     const html = `<!DOCTYPE html><html><head><title>Member Detail Ledger</title>
 <style>
-  body { font-family: 'Courier New', monospace; font-size: 10px; margin: 8mm; color: #000; }
+  body { font-family: 'Courier New', monospace; font-size: 9px; margin: 8mm; color: #000; }
   pre { white-space: pre; }
   @page { size: landscape; margin: 8mm; }
-</style></head><body><pre>${text}</pre></body></html>`;
+</style></head><body><pre>${escapeHtml(text)}</pre></body></html>`;
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
     document.body.appendChild(iframe);
@@ -143,6 +157,12 @@ const MemberLedger: React.FC = () => {
       message.warning('Please select a member');
       return;
     }
+    if (fromDate.isAfter(toDate, 'day')) {
+      setReport(null);
+      message.error('From date must be on or before the To date.');
+      return;
+    }
+    setReport(null);
     setLoading(true);
     try {
       const res = await apiService.getMemberColumnarLedger({
@@ -190,23 +210,41 @@ const MemberLedger: React.FC = () => {
 
   const handleExportCSV = useCallback(() => {
     if (!report) { message.warning('No data to export'); return; }
-    const head = ['Date',
-      'Share Dr', 'Share Cr', 'Share Bal',
-      'LTL Dr', 'LTL Cr', 'LTL Bal',
-      'Emergency Dr', 'Emergency Cr', 'Emergency Bal',
-      'CD Dr', 'CD Cr', 'CD Bal'];
-    const cell = (c: LedgerCell) => [c.dr || 0, c.cr || 0, c.bal ?? ''];
-    const lines = [head.join(',')];
-    lines.push(['Opening', '', '', report.opening.share, '', '', report.opening.ltl, '', '', report.opening.emer, '', '', report.opening.cd].join(','));
-    report.rows.forEach(r => {
-      lines.push([dayjs(r.date).format('DD-MM-YYYY'), ...cell(r.share), ...cell(r.ltl), ...cell(r.emer), ...cell(r.cd)].join(','));
-    });
-    lines.push(['Closing', '', '', report.closing.share, '', '', report.closing.ltl, '', '', report.closing.emer, '', '', report.closing.cd].join(','));
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const rows: unknown[][] = [[
+      'Report', 'Member Number', 'Member Name', 'Period From', 'Period To', 'Row Type', 'Date',
+      'Share Debit', 'Share Credit', 'Share Balance',
+      'Long-term Loan Debit', 'Long-term Loan Credit', 'Long-term Loan Balance',
+      'Emergency Loan Debit', 'Emergency Loan Credit', 'Emergency Loan Balance',
+      'CD Debit', 'CD Credit', 'CD Balance',
+    ]];
+    const context = ['Member Ledger', report.memberNumber, report.memberName, report.fromDate, report.toDate];
+    const append = (type: string, date: string, share: LedgerCell, ltl: LedgerCell, emer: LedgerCell, cd: LedgerCell) => {
+      rows.push([
+        ...context, type, date,
+        share.dr, share.cr, share.bal ?? '',
+        ltl.dr, ltl.cr, ltl.bal ?? '',
+        emer.dr, emer.cr, emer.bal ?? '',
+        cd.dr, cd.cr, cd.bal ?? '',
+      ]);
+    };
+    const appendBoundary = (type: string, balances: Balances) => rows.push([
+      ...context, type, '',
+      '', '', balances.share,
+      '', '', balances.ltl,
+      '', '', balances.emer,
+      '', '', balances.cd,
+    ]);
+    appendBoundary('Opening Balance', report.opening);
+    report.rows.forEach(row => append('Daily Activity', dayjs(row.date).format('YYYY-MM-DD'), row.share, row.ltl, row.emer, row.cd));
+    appendBoundary('Closing Balance', report.closing);
+    const csv = `\uFEFF${rows.map(row => row.map(csvCell).join(',')).join('\r\n')}`;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `MemberLedger_${report.memberNumber}_${dayjs().format('YYYYMMDD')}.csv`;
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = `MemberLedger_${report.memberNumber}_${report.fromDate}_${report.toDate}.csv`;
     link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     message.success('CSV exported');
   }, [report]);
 

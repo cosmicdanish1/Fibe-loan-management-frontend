@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Modal } from 'antd';
-import { Search, AlertTriangle, CheckCircle2, RefreshCw, ChevronDown, ChevronRight, GitMerge, History, Table2 } from 'lucide-react';
+import { Search, AlertTriangle, CheckCircle2, RefreshCw, ChevronDown, ChevronRight, GitMerge, History, Table2, Users, CreditCard, IndianRupee, FileText } from 'lucide-react';
 import type { useLoanEarlyClosure } from '../hooks/useLoanEarlyClosure';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
-import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '@/components/shared/kit/MemberField';
+import AwDialog from '@/components/shared/kit/AwDialog';
 
 type Props = ReturnType<typeof useLoanEarlyClosure>;
 
@@ -21,7 +21,6 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
     updateForm, handleMemberLookup, handleLoanSelect, recalculate, toggleApplyRdShare,
     applySuggestedAdjustment, handleExecuteClosure, handleReset,
 }) => {
-    const [showLookup, setShowLookup] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [loanSearch, setLoanSearch] = useState('');
     const [confirmTypedCase, setConfirmTypedCase] = useState('');
@@ -44,7 +43,6 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
         const memberNo = String(member.memberNo || '');
         const memberName = member.memberName || member.name || '';
         handleMemberLookup(memberNo, memberName);
-        setShowLookup(false);
         setLoanSearch('');
     };
 
@@ -54,339 +52,242 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
         saveEnabled: !(loading || closed || !quote || selectedLoanIsClosed),
     });
 
-    return (
-        <div className="lec-root flex flex-col h-full overflow-hidden" style={{ background: '#f4f5f7', color: '#1a1d29', fontSize: 13 }}>
+    const amountCell = (label: React.ReactNode, value: React.ReactNode, opts?: { span?: boolean; tone?: string; note?: React.ReactNode }) => (
+        <div className="aw-panel" style={opts?.span ? { gridColumn: '1 / -1' } : undefined}>
+            <span className="aw-label">{label}</span>
+            <div className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 2px)', color: opts?.tone }}>{value}</div>
+            {opts?.note && <p className="aw-meta" style={{ marginTop: 3 }}>{opts.note}</p>}
+        </div>
+    );
 
-            {/* ── Header ── */}
-            <div className="lec-header flex items-center justify-between px-5 py-2.5 shrink-0" style={{ background: '#161822', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-baseline gap-2.5">
-                    <h1 className="m-0 font-semibold text-white" style={{ fontSize: 15 }}>Loan Early Closure</h1>
-                    <span style={{ fontSize: 11.5, color: '#9296a8' }}>
-                        Foreclose a loan — outstanding principal + reducing-balance interest + prior dues
+    const loanRow = (loan: typeof activeLoans[number], closedRow: boolean) => {
+        const selected = form.selectedLoanCase === loan.loancaseno;
+        return (
+            <button
+                key={loan.loancaseno}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => handleLoanSelect(loan.loancaseno)}
+                className="aw-right-cell"
+                style={{ flexDirection: 'column', alignItems: 'stretch', gap: 2, padding: '9px 10px', border: `1px solid ${selected ? 'var(--aw-accent)' : 'var(--aw-border)'}`, opacity: closedRow ? 0.85 : 1 }}
+            >
+                <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                    <span className="aw-strong" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        {closedRow && <GitMerge size={13} />}
+                        {LOAN_TYPE_LABEL[loan.loantype] || loan.loantype}
                     </span>
+                    <span className="aw-meta">#{loan.loancaseno}</span>
+                </span>
+                <span className="aw-meta">
+                    {closedRow
+                        ? (loan.consolidatedIntoLoancaseno ? <>Closed — folded into #{loan.consolidatedIntoLoancaseno}</> : <>Closed</>)
+                        : <>Balance: <strong style={{ color: 'var(--aw-danger)' }}>₹{fmt(loan.balance)}</strong></>}
+                </span>
+            </button>
+        );
+    };
+
+    const toggleRow = (open: boolean, onClick: () => void, icon: React.ReactNode, label: string) => (
+        <button type="button" onClick={onClick} aria-expanded={open} className="aw-btn aw-btn-ghost aw-btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }}>
+            {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />} {icon} {label}
+        </button>
+    );
+
+    return (
+        <div className="app-window">
+            {/* ── Header ── */}
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">Loan Early Closure</h1>
+                    <p className="aw-desc">Foreclose a loan — outstanding principal + reducing-balance interest + prior dues</p>
                 </div>
-                <button
-                    onClick={handleReset}
-                    className="lec-ghost-btn flex items-center gap-1.5"
-                    style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 6, background: 'transparent', color: '#d7d9e3', cursor: 'pointer' }}
-                >
-                    <RefreshCw size={12} /> Reset
-                </button>
+                <div className="aw-actions">
+                    {quote && !closed && !selectedLoanIsClosed && (
+                        <span className="aw-pill tone-warning aw-fade-in"><AlertTriangle size={11} style={{ marginRight: 5 }} />Irreversible action</span>
+                    )}
+                    <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary">
+                        <RefreshCw size={13} /> Reset
+                    </button>
+                </div>
             </div>
 
-            {/* ── Body ── */}
-            <div className="flex gap-3.5 p-3.5 flex-1 overflow-auto items-start">
+            <div className="aw-content">
+                <div className="aw-split aw-split-form" style={{ height: 'auto', gridTemplateColumns: 'minmax(300px, 4fr) minmax(0, 8fr)', alignItems: 'start' }}>
 
-                {/* Left column */}
-                <div className="flex flex-col gap-3" style={{ width: 320, flexShrink: 0 }}>
+                    {/* ── Left column ── */}
+                    <div className="aw-stack" style={{ minWidth: 0 }}>
 
-                    {/* ① Member search */}
-                    <div className="lec-card" style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                        <div className="lec-section-label">Member</div>
-                        <div className="flex gap-1.5">
-                            <input
-                                type="text"
-                                placeholder="Member No."
-                                value={form.mbno}
-                                onChange={e => updateForm('mbno', e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleMemberLookup(form.mbno, '')}
-                                className="lec-input"
-                                style={{ width: 80 }}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Member name"
-                                value={form.memberName}
-                                readOnly
-                                className="lec-input lec-input-readonly"
-                                style={{ flex: 1, minWidth: 0 }}
-                            />
-                            <button
-                                onClick={() => handleMemberLookup(form.mbno, '')}
-                                disabled={loading || !form.mbno}
-                                className="lec-btn-primary"
-                                style={{ whiteSpace: 'nowrap' }}
-                            >
-                                Search
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShowLookup(true)}
-                                title="Member Lookup"
-                                className="lec-btn-icon"
-                                style={{ width: 30, flexShrink: 0 }}
-                            >
-                                <Search size={13} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* ② Loan list */}
-                    {activeLoans.length > 0 && (
-                        <div className="lec-card" style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="lec-section-label" style={{ marginBottom: 0 }}>Select Loan to Close</div>
-                                <span style={{ fontSize: 11, color: '#8b90a0' }}>
-                                    {filteredLoans.length} loan{filteredLoans.length !== 1 ? 's' : ''}
-                                </span>
+                        {/* ① Member */}
+                        <section className="aw-card">
+                            <div className="aw-card-head">
+                                <span className="aw-card-icon"><Users size={14} /></span>
+                                <h2 className="aw-card-title">Member</h2>
                             </div>
-
-                            {/* Search within loan list */}
-                            <div className="relative mb-2">
-                                <Search size={12} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#8b90a0' }} />
-                                <input
-                                    type="text"
-                                    value={loanSearch}
-                                    onChange={e => setLoanSearch(e.target.value)}
-                                    placeholder="Search by case no."
-                                    className="lec-input"
-                                    style={{ width: '100%', paddingLeft: 26 }}
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5" style={{ maxHeight: 220, overflowY: 'auto', overflowX: 'hidden', paddingRight: 2 }}>
-                                {filteredLoans.map(loan => {
-                                    const selected = form.selectedLoanCase === loan.loancaseno;
-                                    return (
-                                        <label
-                                            key={loan.loancaseno}
-                                            onClick={() => handleLoanSelect(loan.loancaseno)}
-                                            style={{
-                                                display: 'flex', gap: 9, alignItems: 'flex-start',
-                                                padding: '9px 10px', borderRadius: 6, cursor: 'pointer',
-                                                border: `1px solid ${selected ? '#c9b6f0' : '#eceef1'}`,
-                                                background: selected ? '#f2edfb' : '#fff',
-                                                transition: 'border-color 0.15s, background 0.15s',
-                                            }}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="loanCase"
-                                                value={loan.loancaseno}
-                                                checked={selected}
-                                                onChange={() => handleLoanSelect(loan.loancaseno)}
-                                                style={{ marginTop: 2, accentColor: '#5b21b6' }}
-                                            />
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div className="flex justify-between gap-2 mb-0.5">
-                                                    <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1d29', whiteSpace: 'nowrap' }}>
-                                                        {LOAN_TYPE_LABEL[loan.loantype] || loan.loantype}
-                                                    </span>
-                                                    <span style={{ fontSize: 11.5, color: '#8b90a0', whiteSpace: 'nowrap' }}>
-                                                        #{loan.loancaseno}
-                                                    </span>
-                                                </div>
-                                                <div style={{ fontSize: 11.5, color: '#8b90a0', whiteSpace: 'nowrap' }}>
-                                                    Balance: <span style={{ color: '#dc2626', fontWeight: 600 }}>₹{fmt(loan.balance)}</span>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    );
-                                })}
-                                {filteredLoans.length === 0 && loanSearch && (
-                                    <div style={{ fontSize: 12, color: '#8b90a0', padding: '10px 4px', textAlign: 'center' }}>
-                                        No loans match "{loanSearch}"
+                            <div className="aw-stack">
+                                <div className="aw-inline" style={{ alignItems: 'flex-end', gap: 8 }}>
+                                    <div style={{ width: 150 }}>
+                                        <label className="aw-label" htmlFor="lec-mb">Member No.</label>
+                                        <MemberField
+                                            id="lec-mb"
+                                            value={form.mbno}
+                                            onChange={v => updateForm('mbno', v)}
+                                            onSelect={onMemberSelected}
+                                            onSubmit={(v) => handleMemberLookup(v, '')}
+                                            placeholder="Member No."
+                                        />
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Closed / consolidated cases — full history, view-only */}
-                            {closedLoans.length > 0 && (
-                                <div style={{ marginTop: 10, borderTop: '1px solid #eceef1', paddingTop: 8 }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowClosedLoans(v => !v)}
-                                        className="lec-toggle-row"
-                                    >
-                                        {showClosedLoans ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                                        Closed / Consolidated ({closedLoans.length})
+                                    <button type="button" onClick={() => handleMemberLookup(form.mbno, '')} disabled={loading || !form.mbno} className="aw-btn aw-btn-primary">
+                                        Search
                                     </button>
-                                    {showClosedLoans && (
-                                        <div className="flex flex-col gap-1.5" style={{ maxHeight: 200, overflowY: 'auto', paddingRight: 2, marginTop: 6 }}>
-                                            {filteredClosedLoans.map(loan => {
-                                                const selected = form.selectedLoanCase === loan.loancaseno;
-                                                return (
-                                                    <label
-                                                        key={loan.loancaseno}
-                                                        onClick={() => handleLoanSelect(loan.loancaseno)}
-                                                        style={{
-                                                            display: 'flex', gap: 9, alignItems: 'flex-start',
-                                                            padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
-                                                            border: `1px solid ${selected ? '#c9b6f0' : '#eceef1'}`,
-                                                            background: selected ? '#f2edfb' : '#f7f8fa',
-                                                            opacity: 0.85,
-                                                        }}
-                                                    >
-                                                        <GitMerge size={13} style={{ marginTop: 2, color: '#8b90a0', flexShrink: 0 }} />
-                                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                                            <div className="flex justify-between gap-2 mb-0.5">
-                                                                <span style={{ fontSize: 12, fontWeight: 600, color: '#5b6072' }}>
-                                                                    {LOAN_TYPE_LABEL[loan.loantype] || loan.loantype}
-                                                                </span>
-                                                                <span style={{ fontSize: 11, color: '#8b90a0' }}>#{loan.loancaseno}</span>
-                                                            </div>
-                                                            <div style={{ fontSize: 11, color: '#8b90a0' }}>
-                                                                {loan.consolidatedIntoLoancaseno
-                                                                    ? <>Closed — folded into #{loan.consolidatedIntoLoancaseno}</>
-                                                                    : <>Closed</>}
-                                                            </div>
-                                                        </div>
-                                                    </label>
-                                                );
-                                            })}
-                                        </div>
+                                </div>
+                                <div>
+                                    <label className="aw-label" htmlFor="lec-name">Member name</label>
+                                    <input id="lec-name" type="text" placeholder="Member name" value={form.memberName} readOnly className="aw-input" />
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* ② Loan list */}
+                        {activeLoans.length > 0 && (
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon"><CreditCard size={14} /></span>
+                                    <h2 className="aw-card-title">Select Loan to Close</h2>
+                                    <span className="aw-meta" style={{ marginLeft: 'auto' }}>{filteredLoans.length} loan{filteredLoans.length !== 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="aw-input-wrap has-icon">
+                                    <Search size={13} />
+                                    <input type="text" value={loanSearch} onChange={e => setLoanSearch(e.target.value)} placeholder="Search by case no." aria-label="Search by case number" className="aw-input" />
+                                </div>
+                                <div className="aw-stack" style={{ gap: 6, maxHeight: 240, overflowY: 'auto' }} role="radiogroup" aria-label="Open loans">
+                                    {filteredLoans.map(loan => loanRow(loan, false))}
+                                    {filteredLoans.length === 0 && loanSearch && (
+                                        <p className="aw-meta" style={{ textAlign: 'center', padding: '10px 4px' }}>No loans match "{loanSearch}"</p>
                                     )}
                                 </div>
-                            )}
-                        </div>
-                    )}
 
-                    {/* ③ Closure parameters — only for a loan that's still open */}
-                    {form.selectedLoanCase && !selectedLoanIsClosed && (
-                        <div className="lec-card" style={{ background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, padding: 12 }}>
-                            <div className="lec-section-label">Closure Date, Adjustment &amp; Receipt</div>
-                            <div className="flex flex-col gap-2.5">
-                                <div>
-                                    <label className="lec-field-label">Closure Date</label>
-                                    <div className="flex gap-1.5">
-                                        <input
-                                            type="date"
-                                            value={form.closureDate}
-                                            onChange={e => updateForm('closureDate', e.target.value)}
-                                            className="lec-input"
-                                            style={{ flex: 1, minWidth: 0 }}
-                                        />
-                                        <button
-                                            onClick={recalculate}
-                                            disabled={quoteLoading}
-                                            className="lec-btn-secondary"
-                                        >
-                                            {quoteLoading ? 'Calculating…' : 'Recalc'}
-                                        </button>
+                                {/* Closed / consolidated cases — full history, view-only */}
+                                {closedLoans.length > 0 && (
+                                    <div style={{ borderTop: '1px solid var(--aw-border)', paddingTop: 8 }}>
+                                        {toggleRow(showClosedLoans, () => setShowClosedLoans(v => !v), null, `Closed / Consolidated (${closedLoans.length})`)}
+                                        {showClosedLoans && (
+                                            <div className="aw-stack aw-fade-in" style={{ gap: 6, maxHeight: 220, overflowY: 'auto', marginTop: 6 }} role="radiogroup" aria-label="Closed loans">
+                                                {filteredClosedLoans.map(loan => loanRow(loan, true))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </section>
+                        )}
+
+                        {/* ③ Closure parameters — only for a loan that's still open */}
+                        {form.selectedLoanCase && !selectedLoanIsClosed && (
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon"><IndianRupee size={14} /></span>
+                                    <h2 className="aw-card-title">Closure Date, Adjustment &amp; Receipt</h2>
+                                </div>
+                                <div className="aw-stack">
+                                    <div>
+                                        <label className="aw-label" htmlFor="lec-date">Closure Date</label>
+                                        <div className="aw-inline" style={{ gap: 8 }}>
+                                            <input id="lec-date" type="date" value={form.closureDate} onChange={e => updateForm('closureDate', e.target.value)} className="aw-input" style={{ flex: 1, minWidth: 0 }} />
+                                            <button type="button" onClick={recalculate} disabled={quoteLoading} className="aw-btn aw-btn-secondary">
+                                                {quoteLoading ? 'Calculating…' : 'Recalc'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="aw-label" htmlFor="lec-adj">Adjustment (₹, ± optional)</label>
+                                        <input id="lec-adj" type="number" value={form.adjustment || ''} onChange={e => updateForm('adjustment', Number(e.target.value))} placeholder="0" className="aw-input" />
+                                    </div>
+                                    <div>
+                                        <label className="aw-label" htmlFor="lec-rcpt">Receipt No.</label>
+                                        <input id="lec-rcpt" type="text" value={form.receiptNo} onChange={e => updateForm('receiptNo', e.target.value)} className="aw-input" />
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="lec-field-label">Adjustment (₹, ± optional)</label>
-                                    <input
-                                        type="number"
-                                        value={form.adjustment || ''}
-                                        onChange={e => updateForm('adjustment', Number(e.target.value))}
-                                        placeholder="0"
-                                        className="lec-input"
-                                        style={{ width: '100%' }}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="lec-field-label">Receipt No.</label>
-                                    <input
-                                        type="text"
-                                        value={form.receiptNo}
-                                        onChange={e => updateForm('receiptNo', e.target.value)}
-                                        className="lec-input"
-                                        style={{ width: '100%' }}
-                                    />
-                                </div>
+                            </section>
+                        )}
+
+                        {message && (
+                            <div className={`aw-alert aw-fade-in ${message.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0 }} role="status">
+                                <span>{message.text}</span>
                             </div>
-                        </div>
-                    )}
-
-                    {/* Message */}
-                    {message && (
-                        <div style={{
-                            padding: '10px 12px', borderRadius: 7, fontSize: 12.5,
-                            background: message.type === 'success' ? '#f0fdf4' : '#fef2f2',
-                            color: message.type === 'success' ? '#15803d' : '#b91c1c',
-                            border: `1px solid ${message.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-                        }}>
-                            {message.text}
-                        </div>
-                    )}
-                </div>
-
-                {/* ── Right column — Closure Quote ── */}
-                <div style={{ flex: 1, minWidth: 0, background: '#fff', border: '1px solid #e4e6eb', borderRadius: 8, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-                    {/* Quote header */}
-                    <div className="flex items-center justify-between" style={{ padding: '11px 16px', borderBottom: '1px solid #eceef1' }}>
-                        <div>
-                            <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1d29' }}>
-                                {selectedLoanIsClosed ? 'Loan History' : 'Closure Quote'}
-                            </div>
-                            {form.memberName && (
-                                <div style={{ fontSize: 11.5, color: '#8b90a0', marginTop: 1 }}>
-                                    {form.memberName}
-                                    {form.mbno && ` — #${form.mbno}`}
-                                    {quote && !selectedLoanIsClosed && ` — as of ${new Date(quote.closureDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}
-                                </div>
-                            )}
-                        </div>
-                        {quote && !closed && !selectedLoanIsClosed && (
-                            <span className="lec-badge-warn flex items-center gap-1.5">
-                                <AlertTriangle size={11} /> Irreversible action
-                            </span>
                         )}
                     </div>
 
-                    {/* Quote body */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+                    {/* ── Right column — Closure Quote ── */}
+                    <section className="aw-card" style={{ minWidth: 0 }}>
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><FileText size={14} /></span>
+                            <div>
+                                <h2 className="aw-card-title">{selectedLoanIsClosed ? 'Loan History' : 'Closure Quote'}</h2>
+                                {form.memberName && (
+                                    <p className="aw-meta">
+                                        {form.memberName}
+                                        {form.mbno && ` — #${form.mbno}`}
+                                        {quote && !selectedLoanIsClosed && ` — as of ${new Date(quote.closureDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
                         {closed ? (
-                            <div className="flex flex-col items-center justify-center h-full text-center" style={{ gap: 12 }}>
-                                <CheckCircle2 size={48} style={{ color: '#22c55e' }} />
-                                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1d29' }}>Loan Closed</div>
-                                <div style={{ fontSize: 12.5, color: '#6b7280', maxWidth: 340 }}>{message?.text}</div>
+                            <div className="aw-empty" style={{ padding: 40 }}>
+                                <CheckCircle2 size={44} style={{ color: 'var(--aw-success)' }} />
+                                <strong className="aw-strong">Loan Closed</strong>
+                                <span className="aw-meta" style={{ maxWidth: 340 }}>{message?.text}</span>
                             </div>
                         ) : quoteLoading ? (
-                            <div className="flex items-center justify-center" style={{ height: 120, color: '#8b90a0', fontSize: 13 }}>
-                                Calculating closure amount…
+                            <div className="aw-empty" style={{ padding: 40 }}>
+                                <RefreshCw size={26} className="aw-spin" style={{ color: 'var(--aw-accent)' }} />
+                                <strong className="aw-strong">Calculating closure amount…</strong>
                             </div>
                         ) : !quote ? (
-                            <div className="flex items-center justify-center" style={{ height: 120, color: '#8b90a0', fontSize: 13 }}>
-                                {form.mbno ? 'Select a loan case to see its closure quote.' : 'Search for a member to begin.'}
+                            <div className="aw-empty" style={{ padding: 40 }}>
+                                <span className="aw-meta">{form.mbno ? 'Select a loan case to see its closure quote.' : 'Search for a member to begin.'}</span>
                             </div>
                         ) : (
-                            <div className="flex flex-col" style={{ gap: 12 }}>
+                            <div className="aw-stack aw-fade-in">
 
                                 {/* Loan summary bar */}
                                 {selectedLoan && (
-                                    <div className="flex flex-wrap" style={{ gap: '4px 22px', fontSize: 12, color: '#8b90a0', borderBottom: '1px solid #eceef1', paddingBottom: 11 }}>
-                                        <span>Active Loan Amount: <b style={{ color: '#1a1d29', fontWeight: 600 }}>₹{fmt(quote.loanAmt)}</b></span>
-                                        <span>EMI: <b style={{ color: '#1a1d29', fontWeight: 600 }}>₹{fmt(selectedLoan.instal_amt)}</b></span>
+                                    <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 22px', borderBottom: '1px solid var(--aw-border)', paddingBottom: 10 }}>
+                                        <span>Active Loan Amount: <strong style={{ color: 'var(--aw-text)' }}>₹{fmt(quote.loanAmt)}</strong></span>
+                                        <span>EMI: <strong style={{ color: 'var(--aw-text)' }}>₹{fmt(selectedLoan.instal_amt)}</strong></span>
                                         {!selectedLoanIsClosed && (
-                                            <span>Installments Paid: <b style={{ color: '#1a1d29', fontWeight: 600 }}>{quote.paidInstallments} of {quote.totalInstallments}</b></span>
+                                            <span>Installments Paid: <strong style={{ color: 'var(--aw-text)' }}>{quote.paidInstallments} of {quote.totalInstallments}</strong></span>
                                         )}
                                         {selectedLoanIsClosed && (
-                                            <span style={{ color: '#7c3aed', fontWeight: 600 }}>Closed{selectedLoan.consolidatedIntoLoancaseno ? ` — folded into #${selectedLoan.consolidatedIntoLoancaseno}` : ''}</span>
+                                            <span style={{ color: 'var(--aw-accent)', fontWeight: 700 }}>Closed{selectedLoan.consolidatedIntoLoancaseno ? ` — folded into #${selectedLoan.consolidatedIntoLoancaseno}` : ''}</span>
                                         )}
-                                    </div>
+                                    </p>
                                 )}
 
-                                {/* Consolidation History — absorbed cases and/or the case this rolled into.
-                                    Shown for both open and closed loans: an open loan can still have
-                                    absorbed older cases; a closed loan shows what it became. */}
+                                {/* Consolidation History — absorbed cases and/or the case this rolled into. */}
                                 {(quote.consolidationHistory.absorbedCases.length > 0 || quote.consolidationHistory.consolidatedIntoLoancaseno) && (
-                                    <div style={{ background: '#eef5fc', border: '1px solid #bcd7ef', borderRadius: 8, padding: '11px 13px' }}>
-                                        <div className="flex items-center gap-1.5" style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#2563a8', marginBottom: 8 }}>
-                                            <GitMerge size={12} /> Consolidation History
-                                        </div>
+                                    <div className="aw-alert aw-alert-info" style={{ marginBottom: 0, flexDirection: 'column', gap: 6 }}>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                                            <GitMerge size={13} /> Consolidation History
+                                        </span>
                                         {quote.consolidationHistory.absorbedCases.length > 0 && (
-                                            <div style={{ marginBottom: quote.consolidationHistory.consolidatedIntoLoancaseno ? 8 : 0 }}>
-                                                <div style={{ fontSize: 11.5, color: '#2563a8', marginBottom: 5 }}>
+                                            <div style={{ width: '100%' }}>
+                                                <div style={{ fontWeight: 500, marginBottom: 5 }}>
                                                     This loan absorbed {quote.consolidationHistory.absorbedCases.length} earlier case{quote.consolidationHistory.absorbedCases.length === 1 ? '' : 's'}:
                                                 </div>
-                                                <div className="flex flex-col" style={{ gap: 5 }}>
+                                                <div className="aw-stack" style={{ gap: 5 }}>
                                                     {quote.consolidationHistory.absorbedCases.map(c => (
-                                                        <div key={c.loancaseno} className="flex items-center justify-between" style={{ fontSize: 11.5, color: '#1a1d29', background: '#fff', borderRadius: 6, padding: '6px 10px' }}>
-                                                            <span>
-                                                                <b>#{c.loancaseno}</b> ({LOAN_TYPE_LABEL[c.loantype] || c.loantype}) — original ₹{fmt(c.originalLoanAmt)}
-                                                            </span>
-                                                            <span style={{ color: '#8b90a0' }}>{c.closureDate ? `closed ${c.closureDate}` : ''}</span>
+                                                        <div key={c.loancaseno} className="aw-panel" style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: 'var(--aw-text)', fontWeight: 500 }}>
+                                                            <span><b>#{c.loancaseno}</b> ({LOAN_TYPE_LABEL[c.loantype] || c.loantype}) — original ₹{fmt(c.originalLoanAmt)}</span>
+                                                            <span className="aw-meta">{c.closureDate ? `closed ${c.closureDate}` : ''}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
                                         {quote.consolidationHistory.consolidatedIntoLoancaseno && (
-                                            <div style={{ fontSize: 11.5, color: '#2563a8' }}>
+                                            <div style={{ fontWeight: 500 }}>
                                                 This loan was closed and folded into <b>#{quote.consolidationHistory.consolidatedIntoLoancaseno}</b>.
                                             </div>
                                         )}
@@ -394,316 +295,246 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 )}
 
                                 {selectedLoanIsClosed && (
-                                    <div style={{ fontSize: 11.5, color: '#6b7280', background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 6, padding: '8px 11px' }}>
-                                        This loan is already closed — nothing to collect. Showing its history only.
-                                    </div>
+                                    <div className="aw-panel"><span className="aw-meta">This loan is already closed — nothing to collect. Showing its history only.</span></div>
                                 )}
 
                                 {!selectedLoanIsClosed && <>
-                                {/* Future installments note */}
-                                {quote.totalInstallments - quote.paidInstallments - quote.unpaidInstallments.length > 0 && (
-                                    <div style={{ fontSize: 11.5, color: '#6b7280', background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 6, padding: '8px 11px' }}>
-                                        This closure also settles the remaining principal of{' '}
-                                        <b>{quote.totalInstallments - quote.paidInstallments - quote.unpaidInstallments.length} installment(s) not yet due</b>{' '}
-                                        — already included in Outstanding Principal above.
-                                    </div>
-                                )}
+                                    {/* Future installments note */}
+                                    {quote.totalInstallments - quote.paidInstallments - quote.unpaidInstallments.length > 0 && (
+                                        <div className="aw-panel">
+                                            <span className="aw-meta">
+                                                This closure also settles the remaining principal of{' '}
+                                                <b>{quote.totalInstallments - quote.paidInstallments - quote.unpaidInstallments.length} installment(s) not yet due</b>{' '}
+                                                — already included in Outstanding Principal above.
+                                            </span>
+                                        </div>
+                                    )}
 
-                                {/* Amount grid */}
-                                {quote.payrollAdjustments?.length > 0 && (
-                                    <div style={{ marginBottom: 10, background: '#eef5fc', border: '1px solid #bcd7ef', borderRadius: 7, padding: '11px 13px' }}>
-                                        <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#2563a8', marginBottom: 7 }}>
-                                            Previous-Loan Payroll Adjustment
-                                        </div>
-                                        <div style={{ fontSize: 11.5, color: '#315575', marginBottom: 8 }}>
-                                            These BSP deductions belong to predecessor-loan payroll. Principal collected after this loan&apos;s consolidation is credited once against closure principal, but never counts as or advances a current-loan installment. The predecessor interest is shown for audit and is not charged again here.
-                                        </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                                            {quote.payrollAdjustments.map((item, index) => (
-                                                <React.Fragment key={`${item.date}-${item.receiptNo || index}`}>
-                                                    <div>
-                                                        <div className="lec-amount-label">Previous loan case</div>
-                                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#1e3a5f' }}>{item.predecessorLoanCaseNo || 'Previous loan'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="lec-amount-label">Source payment</div>
-                                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#1e3a5f' }}>{item.date}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="lec-amount-label">Voucher</div>
-                                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#1e3a5f' }}>{item.receiptNo || 'Not recorded'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="lec-amount-label">Previous-loan principal</div>
-                                                        <div className="lec-amount-value" style={{ color: '#15803d' }}>₹{fmt(item.principal)}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="lec-amount-label">Previous-loan interest</div>
-                                                        <div className="lec-amount-value" style={{ color: '#15803d' }}>₹{fmt(item.interest)}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="lec-amount-label">Total adjustment</div>
-                                                        <div className="lec-amount-value" style={{ color: '#15803d' }}>₹{fmt(item.total)}</div>
-                                                    </div>
-                                                    <div style={{ gridColumn: '1 / -1', fontSize: 10.5, color: item.affectsOutstandingBalance ? '#166534' : '#64748b' }}>
-                                                        {item.affectsOutstandingBalance
-                                                            ? 'This principal is included as a one-time reduction in the closure principal below; installment count unchanged.'
-                                                            : 'This payment predates the current schedule and is already reflected in its opening principal.'}
-                                                    </div>
-                                                </React.Fragment>
-                                            ))}
-                                        </div>
-                                        <div style={{ marginTop: 8, fontSize: 11, color: '#315575' }}>
-                                            Applied post-consolidation principal offset: <b>−₹{fmt(quote.payrollLagPrincipalOffset || 0)}</b>. Pre-consolidation payroll principal is already included in the effective opening principal. No predecessor interest is added again.
-                                        </div>
-                                    </div>
-                                )}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                                    <div className="lec-amount-cell">
-                                        <div className="lec-amount-label">Outstanding Principal</div>
-                                        <div className="lec-amount-value">₹{fmt(quote.outstandingPrincipal)}</div>
-                                    </div>
-                                    <div className="lec-amount-cell">
-                                        <div className="lec-amount-label">NR Interest (already-due installments)</div>
-                                        <div className="lec-amount-value">₹{fmt(quote.nrInterest)}</div>
-                                    </div>
-                                    {quote.futureInstallmentCount > 0 && (
-                                        <div className="lec-amount-cell" style={{ gridColumn: '1 / -1' }}>
-                                            <div className="lec-amount-label">
-                                                AP Closure Interest ({quote.futureInstallmentCount} future installment{quote.futureInstallmentCount === 1 ? '' : 's'})
+                                    {quote.payrollAdjustments?.length > 0 && (
+                                        <div className="aw-alert aw-alert-info" style={{ marginBottom: 0, flexDirection: 'column', gap: 8 }}>
+                                            <span style={{ textTransform: 'uppercase', letterSpacing: '.04em' }}>Previous-Loan Payroll Adjustment</span>
+                                            <span style={{ fontWeight: 500 }}>
+                                                These BSP deductions belong to predecessor-loan payroll. Principal collected after this loan&apos;s consolidation is credited once against closure principal, but never counts as or advances a current-loan installment. The predecessor interest is shown for audit and is not charged again here.
+                                            </span>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, width: '100%' }}>
+                                                {quote.payrollAdjustments.map((item, index) => (
+                                                    <React.Fragment key={`${item.date}-${item.receiptNo || index}`}>
+                                                        <div><span className="aw-label">Previous loan case</span><div className="aw-strong">{item.predecessorLoanCaseNo || 'Previous loan'}</div></div>
+                                                        <div><span className="aw-label">Source payment</span><div className="aw-strong">{item.date}</div></div>
+                                                        <div><span className="aw-label">Voucher</span><div className="aw-strong">{item.receiptNo || 'Not recorded'}</div></div>
+                                                        <div><span className="aw-label">Previous-loan principal</span><div className="aw-strong" style={{ color: 'var(--aw-success)' }}>₹{fmt(item.principal)}</div></div>
+                                                        <div><span className="aw-label">Previous-loan interest</span><div className="aw-strong" style={{ color: 'var(--aw-success)' }}>₹{fmt(item.interest)}</div></div>
+                                                        <div><span className="aw-label">Total adjustment</span><div className="aw-strong" style={{ color: 'var(--aw-success)' }}>₹{fmt(item.total)}</div></div>
+                                                        <div className="aw-meta" style={{ gridColumn: '1 / -1' }}>
+                                                            {item.affectsOutstandingBalance
+                                                                ? 'This principal is included as a one-time reduction in the closure principal below; installment count unchanged.'
+                                                                : 'This payment predates the current schedule and is already reflected in its opening principal.'}
+                                                        </div>
+                                                    </React.Fragment>
+                                                ))}
                                             </div>
-                                            <div className="lec-amount-value">₹{fmt(quote.apInterest)}</div>
-                                            <div style={{ fontSize: 11, color: '#a3a8b3', marginTop: 3 }}>
-                                                Average remaining principal ₹{fmt(quote.averageRemainingPrincipal)} × monthly rate = ₹{fmt(quote.averageRbInterest)} average RB interest/month
-                                            </div>
+                                            <span style={{ fontWeight: 500 }}>
+                                                Applied post-consolidation principal offset: <b>−₹{fmt(quote.payrollLagPrincipalOffset || 0)}</b>. Pre-consolidation payroll principal is already included in the effective opening principal. No predecessor interest is added again.
+                                            </span>
                                         </div>
                                     )}
-                                    <div className="lec-amount-cell">
-                                        <div className="lec-amount-label">Closure Interest (NR + AP)</div>
-                                        <div className="lec-amount-value">₹{fmt(quote.closureInterest)}</div>
-                                    </div>
-                                    <div className="lec-amount-cell">
-                                        <div className="lec-amount-label">Penal Interest</div>
-                                        <div className="lec-amount-value" style={{ color: '#dc2626' }}>₹{fmt(quote.penalInterest)}</div>
-                                        <div style={{ fontSize: 10.5, color: '#7b8190', marginTop: 3 }}>
-                                            {quote.penaltyPolicy?.enabled
+
+                                    {/* Amount grid */}
+                                    <div className="aw-two">
+                                        {amountCell('Outstanding Principal', `₹${fmt(quote.outstandingPrincipal)}`)}
+                                        {amountCell('NR Interest (already-due installments)', `₹${fmt(quote.nrInterest)}`)}
+                                        {quote.futureInstallmentCount > 0 && amountCell(
+                                            `AP Closure Interest (${quote.futureInstallmentCount} future installment${quote.futureInstallmentCount === 1 ? '' : 's'})`,
+                                            `₹${fmt(quote.apInterest)}`,
+                                            { span: true, note: `Average remaining principal ₹${fmt(quote.averageRemainingPrincipal)} × monthly rate = ₹${fmt(quote.averageRbInterest)} average RB interest/month` },
+                                        )}
+                                        {amountCell('Closure Interest (NR + AP)', `₹${fmt(quote.closureInterest)}`)}
+                                        {amountCell('Penal Interest', `₹${fmt(quote.penalInterest)}`, {
+                                            tone: 'var(--aw-danger)',
+                                            note: quote.penaltyPolicy?.enabled
                                                 ? `Global rate ${fmt(quote.penaltyPolicy.annualRate)}% p.a.; active from ${quote.penaltyPolicy.activationDate || 'configured activation date'}.`
-                                                : 'Tiered loan penalty policy is disabled.'}
-                                        </div>
+                                                : 'Tiered loan penalty policy is disabled.',
+                                        })}
+                                        {quote.adjustment !== 0 && amountCell('Applicable Adjustment', `₹${fmt(quote.adjustment)}`, { span: true })}
                                     </div>
-                                    {quote.adjustment !== 0 && (
-                                        <div className="lec-amount-cell" style={{ gridColumn: '1 / -1' }}>
-                                            <div className="lec-amount-label">Applicable Adjustment</div>
-                                            <div className="lec-amount-value">₹{fmt(quote.adjustment)}</div>
-                                        </div>
-                                    )}
+
                                     {quote.suggestedAdjustment !== 0 && (
-                                        <div className="lec-amount-cell" style={{ gridColumn: '1 / -1', background: '#eef5fc', borderColor: '#bcd7ef' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                                        <div className="aw-alert aw-alert-info" style={{ marginBottom: 0, flexDirection: 'column', gap: 6 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%' }}>
                                                 <div>
-                                                    <div className="lec-amount-label" style={{ color: '#2563a8' }}>
-                                                        Detected: Payroll-Lag Credit — not applied yet
-                                                    </div>
-                                                    <div className="lec-amount-value" style={{ color: '#15803d' }}>₹{fmt(quote.suggestedAdjustment)}</div>
+                                                    <span className="aw-label" style={{ color: 'inherit' }}>Detected: Payroll-Lag Credit — not applied yet</span>
+                                                    <div className="aw-strong" style={{ color: 'var(--aw-success)', fontSize: 'calc(var(--type-body-size) + 2px)' }}>₹{fmt(quote.suggestedAdjustment)}</div>
                                                 </div>
-                                                <button
-                                                    onClick={applySuggestedAdjustment}
-                                                    disabled={quoteLoading}
-                                                    className="lec-btn-secondary"
-                                                    style={{ background: '#2563a8', color: '#fff', border: 'none', whiteSpace: 'nowrap' }}
-                                                >
+                                                <button type="button" onClick={applySuggestedAdjustment} disabled={quoteLoading} className="aw-btn aw-btn-primary aw-btn-sm">
                                                     Apply &amp; Recalc
                                                 </button>
                                             </div>
-                                            <div style={{ fontSize: 11, color: '#5b7a99', marginTop: 6 }}>
+                                            <span style={{ fontWeight: 500 }}>
                                                 One more EMI at the predecessor loan's old rate was still deducted through BSP's payroll
                                                 pipeline before it could switch to this loan. This is a suggested credit only — it is
                                                 <b> not</b> included in the Final Closure Amount below. Review it, then click Apply &amp;
                                                 Recalc to add it to the Adjustment field and see the updated total, or leave it and close
                                                 without applying it.
-                                            </div>
+                                            </span>
                                         </div>
                                     )}
-                                </div>
 
-                                {/* Calculation trace */}
-                                <div style={{ background: '#f7f8fa', border: '1px solid #eceef1', borderRadius: 7, padding: '11px 13px' }}>
-                                    <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#6b7280', marginBottom: 7 }}>
-                                        How This Was Calculated (AP / Average-Principal Method)
-                                    </div>
-                                    <div style={{ fontFamily: "'IBM Plex Mono', 'Courier New', monospace", fontSize: 11, color: '#5b6072', lineHeight: 1.55, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                                        {quote.effectiveSchedule && (
-                                            <div style={{ color: '#4b5563' }}>
-                                                Current schedule v{quote.effectiveSchedule.versionNo} ({quote.effectiveSchedule.source}):
-                                                effective {quote.effectiveSchedule.effectiveDate}, first due month {quote.effectiveSchedule.firstDueMonth};
-                                                opening principal ₹{fmt(quote.effectiveSchedule.openingPrincipal)},
-                                                fixed principal ₹{fmt(quote.effectiveSchedule.monthlyPrincipal)} × {quote.effectiveSchedule.installmentCount} installments,
-                                                slot delay {quote.effectiveSchedule.delayMonths} month(s).
-                                            </div>
-                                        )}
-                                        <div>
-                                            Outstanding Principal = {quote.effectiveSchedule ? 'Current Schedule Opening Principal' : 'Loan Amount'} (₹{fmt(quote.loanAmt)}) − Current-loan Principal Paid (₹{fmt(quote.totalPrincipalPaid)}) − Eligible Post-consolidation Payroll Principal Offset (₹{fmt(quote.payrollLagPrincipalOffset || 0)})
-                                            {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.outstandingPrincipal)}</b>
-                                        </div>
-                                        <div>
-                                            NR Interest = flat interest still due on installments already past their due month (see table below)
-                                            {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.nrInterest)}</b>
-                                        </div>
-                                        {quote.futureInstallmentCount > 0 ? (
-                                            <>
+                                    {/* Calculation trace */}
+                                    <div className="aw-panel">
+                                        <span className="aw-label">How This Was Calculated (AP / Average-Principal Method)</span>
+                                        <div className="aw-meta" style={{ fontFamily: "'IBM Plex Mono', 'Courier New', monospace", lineHeight: 1.55, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                                            {quote.effectiveSchedule && (
                                                 <div>
-                                                Average Remaining Principal = (Future Principal Opening + Standard Monthly Principal) / 2
-                                                    {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.averageRemainingPrincipal)}</b>
+                                                    Current schedule v{quote.effectiveSchedule.versionNo} ({quote.effectiveSchedule.source}):
+                                                    effective {quote.effectiveSchedule.effectiveDate}, first due month {quote.effectiveSchedule.firstDueMonth};
+                                                    opening principal ₹{fmt(quote.effectiveSchedule.openingPrincipal)},
+                                                    fixed principal ₹{fmt(quote.effectiveSchedule.monthlyPrincipal)} × {quote.effectiveSchedule.installmentCount} installments,
+                                                    slot delay {quote.effectiveSchedule.delayMonths} month(s).
                                                 </div>
-                                                <div>
-                                                    AP Closure Interest = (Monthly Interest on EMI − Average Remaining Principal × Monthly Rate) × Future Installments ({quote.futureInstallmentCount})
-                                                    {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.apInterest)}</b>
-                                                </div>
-                                            </>
-                                        ) : (
+                                            )}
                                             <div>
-                                                No installments remain beyond those already due, so AP Closure Interest = <b style={{ color: '#1a1d29' }}>₹0</b>.
+                                                Outstanding Principal = {quote.effectiveSchedule ? 'Current Schedule Opening Principal' : 'Loan Amount'} (₹{fmt(quote.loanAmt)}) − Current-loan Principal Paid (₹{fmt(quote.totalPrincipalPaid)}) − Eligible Post-consolidation Payroll Principal Offset (₹{fmt(quote.payrollLagPrincipalOffset || 0)})
+                                                {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(quote.outstandingPrincipal)}</b>
                                             </div>
-                                        )}
-                                        <div>
-                                            Closure Interest = NR Interest (₹{fmt(quote.nrInterest)}) + AP Closure Interest (₹{fmt(quote.apInterest)})
-                                            {' '}= <b style={{ color: '#1a1d29' }}>₹{fmt(quote.closureInterest)}</b>
-                                        </div>
-                                        <div>
-                                            Penal Interest = sum of each unpaid installment's tiered penalty (see table below)
-                                            {' '}= <b style={{ color: '#dc2626' }}>₹{fmt(quote.penalInterest)}</b>
-                                        </div>
-                                        <div style={{ paddingTop: 5, borderTop: '1px solid #e4e6eb', marginTop: 2 }}>
-                                            Final Closure Amount = Outstanding Principal (₹{fmt(quote.outstandingPrincipal)}) + Closure Interest (₹{fmt(quote.closureInterest)}) + Penal Interest (₹{fmt(quote.penalInterest)})
-                                            {quote.adjustment !== 0 && ` + Adjustment (₹${fmt(quote.adjustment)})`}
-                                            {' '}= <b style={{ color: '#5b21b6' }}>₹{fmt(quote.finalClosureAmount)}</b>
-                                            {quote.suggestedAdjustment !== 0 && (
-                                                <span style={{ color: '#2563a8' }}>
-                                                    {' '}(a ₹{fmt(Math.abs(quote.suggestedAdjustment))} payroll-lag credit is available but not yet applied — see above)
-                                                </span>
+                                            <div>
+                                                NR Interest = flat interest still due on installments already past their due month (see table below)
+                                                {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(quote.nrInterest)}</b>
+                                            </div>
+                                            {quote.futureInstallmentCount > 0 ? (
+                                                <>
+                                                    <div>
+                                                        Average Remaining Principal = (Future Principal Opening + Standard Monthly Principal) / 2
+                                                        {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(quote.averageRemainingPrincipal)}</b>
+                                                    </div>
+                                                    <div>
+                                                        AP Closure Interest = (Monthly Interest on EMI − Average Remaining Principal × Monthly Rate) × Future Installments ({quote.futureInstallmentCount})
+                                                        {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(quote.apInterest)}</b>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div>
+                                                    No installments remain beyond those already due, so AP Closure Interest = <b style={{ color: 'var(--aw-text)' }}>₹0</b>.
+                                                </div>
                                             )}
+                                            <div>
+                                                Closure Interest = NR Interest (₹{fmt(quote.nrInterest)}) + AP Closure Interest (₹{fmt(quote.apInterest)})
+                                                {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(quote.closureInterest)}</b>
+                                            </div>
+                                            <div>
+                                                Penal Interest = sum of each unpaid installment's tiered penalty (see table below)
+                                                {' '}= <b style={{ color: 'var(--aw-danger)' }}>₹{fmt(quote.penalInterest)}</b>
+                                            </div>
+                                            <div style={{ paddingTop: 5, borderTop: '1px solid var(--aw-border)', marginTop: 2 }}>
+                                                Final Closure Amount = Outstanding Principal (₹{fmt(quote.outstandingPrincipal)}) + Closure Interest (₹{fmt(quote.closureInterest)}) + Penal Interest (₹{fmt(quote.penalInterest)})
+                                                {quote.adjustment !== 0 && ` + Adjustment (₹${fmt(quote.adjustment)})`}
+                                                {' '}= <b style={{ color: 'var(--aw-accent)' }}>₹{fmt(quote.finalClosureAmount)}</b>
+                                                {quote.suggestedAdjustment !== 0 && (
+                                                    <span style={{ color: 'var(--aw-info)' }}>
+                                                        {' '}(a ₹{fmt(Math.abs(quote.suggestedAdjustment))} payroll-lag credit is available but not yet applied — see above)
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Final amount highlight */}
-                                <div className="flex items-center justify-between" style={{ background: '#f2edfb', border: '1.5px solid #d3c3f5', borderRadius: 8, padding: '12px 15px' }}>
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: '#4c1d95' }}>Final Closure Amount</span>
-                                    <span style={{ fontSize: 19, fontWeight: 700, color: '#4c1d95' }}>₹{fmt(quote.finalClosureAmount)}</span>
-                                </div>
+                                    {/* Final amount highlight */}
+                                    <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <span className="aw-strong">Final Closure Amount</span>
+                                        <span className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 7px)', color: 'var(--aw-accent)' }}>₹{fmt(quote.finalClosureAmount)}</span>
+                                    </div>
 
-                                {/* RD / Share Value adjustment */}
-                                <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '11px 13px' }}>
-                                    <label className="flex items-center gap-2" style={{ cursor: 'pointer', marginBottom: form.applyRdShare ? 10 : 0 }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={form.applyRdShare}
-                                            onChange={e => toggleApplyRdShare(e.target.checked)}
-                                            style={{ accentColor: '#b45309' }}
-                                        />
-                                        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#92400e' }}>
-                                            Adjust RD / Share Value toward closure
-                                        </span>
-                                    </label>
+                                    {/* RD / Share Value adjustment */}
+                                    <div className="aw-panel">
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: form.applyRdShare ? 10 : 0 }}>
+                                            <input type="checkbox" checked={form.applyRdShare} onChange={e => toggleApplyRdShare(e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
+                                            <span className="aw-strong">Adjust RD / Share Value toward closure</span>
+                                        </label>
 
-                                    {form.applyRdShare && quote.rdShareAdjustment && (
-                                        <div className="flex flex-col" style={{ gap: 8 }}>
-                                            {quote.rdShareAdjustment.rdYearClosed && (
-                                                <div style={{ fontSize: 11, color: '#92400e' }}>
-                                                    This member's RD financial year is already closed — RD is excluded from this adjustment; only Share Value (if any) applies.
+                                        {form.applyRdShare && quote.rdShareAdjustment && (
+                                            <div className="aw-stack aw-fade-in" style={{ gap: 8 }}>
+                                                {quote.rdShareAdjustment.rdYearClosed && (
+                                                    <p className="aw-meta" style={{ color: 'var(--aw-warning)' }}>
+                                                        This member's RD financial year is already closed — RD is excluded from this adjustment; only Share Value (if any) applies.
+                                                    </p>
+                                                )}
+                                                <div className="aw-two">
+                                                    <div>
+                                                        <span className="aw-label">RD Balance</span>
+                                                        <div className="aw-strong">₹{fmt(quote.rdShareAdjustment.currentRd)}</div>
+                                                        <span className="aw-meta">₹{fmt(quote.rdShareAdjustment.rdAvailable)} available above ₹{fmt(quote.rdShareAdjustment.rdMinBalance)} min</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="aw-label">Share Value</span>
+                                                        <div className="aw-strong">₹{fmt(quote.rdShareAdjustment.currentShare)}</div>
+                                                        <span className="aw-meta">₹{fmt(quote.rdShareAdjustment.shareAvailable)} available above ₹{fmt(quote.rdShareAdjustment.shareMinBalance)} min</span>
+                                                    </div>
                                                 </div>
-                                            )}
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                                                <div>
-                                                    <div style={{ fontSize: 10.5, color: '#92400e' }}>RD Balance</div>
-                                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1d29' }}>₹{fmt(quote.rdShareAdjustment.currentRd)}</div>
-                                                    <div style={{ fontSize: 10.5, color: '#a3752f' }}>₹{fmt(quote.rdShareAdjustment.rdAvailable)} available above ₹{fmt(quote.rdShareAdjustment.rdMinBalance)} min</div>
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontSize: 10.5, color: '#92400e' }}>Share Value</div>
-                                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1d29' }}>₹{fmt(quote.rdShareAdjustment.currentShare)}</div>
-                                                    <div style={{ fontSize: 10.5, color: '#a3752f' }}>₹{fmt(quote.rdShareAdjustment.shareAvailable)} available above ₹{fmt(quote.rdShareAdjustment.shareMinBalance)} min</div>
+                                                <div className="aw-row aw-row-total" style={{ borderTop: '1px solid var(--aw-border)', paddingTop: 8 }}>
+                                                    <span className="aw-row-label">Applied from RD + Share</span>
+                                                    <span className="aw-row-value">₹{fmt(quote.rdShareAdjustment.appliedFromRdShare)}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between" style={{ paddingTop: 8, borderTop: '1px solid #fde68a' }}>
-                                                <span style={{ fontSize: 12, color: '#92400e' }}>Applied from RD + Share</span>
-                                                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1d29' }}>₹{fmt(quote.rdShareAdjustment.appliedFromRdShare)}</span>
+                                        )}
+                                    </div>
+
+                                    {/* Payable by member — the real collection figure */}
+                                    <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderColor: 'var(--aw-accent)' }}>
+                                        <span className="aw-strong">Payable by Member</span>
+                                        <span className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 9px)', color: 'var(--aw-accent)' }}>₹{fmt(quote.payableByMember)}</span>
+                                    </div>
+
+                                    {/* Unpaid installments table */}
+                                    {quote.unpaidInstallments.length > 0 && (
+                                        <div>
+                                            <span className="aw-label">{quote.unpaidInstallments.length} Installment(s) Contributing to Overdue Interest / Penal</span>
+                                            <div className="aw-table-wrap" style={{ maxHeight: 280 }}>
+                                                <table className="aw-table">
+                                                    <thead>
+                                                        <tr><th>#</th><th>Due Date</th><th className="is-right">Principal Due</th><th className="is-right">Interest Due</th><th className="is-right">Penal Due</th><th>Tier</th><th>Overdue</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {quote.unpaidInstallments.map(inst => (
+                                                            <tr key={inst.installmentNo}>
+                                                                <td>{inst.installmentNo}</td>
+                                                                <td className="is-muted">{inst.dueDate}</td>
+                                                                <td className="is-right">₹{fmt(inst.principalDue)}</td>
+                                                                <td className="is-right">₹{fmt(inst.interestDue)}</td>
+                                                                <td className="is-right is-danger">₹{fmt(inst.penalDue)}</td>
+                                                                <td className="is-muted">{TIER_LABEL[inst.tier]}</td>
+                                                                <td className="is-muted">{inst.monthsOverdue > 0 ? `${inst.monthsOverdue}mo` : 'current'}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     )}
-                                </div>
-
-                                {/* Payable by member — the real collection figure */}
-                                <div className="flex items-center justify-between" style={{ background: '#f2edfb', border: '1.5px solid #4c1d95', borderRadius: 8, padding: '12px 15px' }}>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#4c1d95' }}>Payable by Member</span>
-                                    <span style={{ fontSize: 21, fontWeight: 700, color: '#4c1d95' }}>₹{fmt(quote.payableByMember)}</span>
-                                </div>
-
-                                {/* Unpaid installments table */}
-                                {quote.unpaidInstallments.length > 0 && (
-                                    <div>
-                                        <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px', color: '#6b7280', marginBottom: 7 }}>
-                                            {quote.unpaidInstallments.length} Installment(s) Contributing to Overdue Interest / Penal
-                                        </div>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                            <thead>
-                                                <tr>
-                                                    {['#', 'Due Date', 'Principal Due', 'Interest Due', 'Penal Due', 'Tier', 'Overdue'].map(h => (
-                                                        <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '6px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {quote.unpaidInstallments.map(inst => (
-                                                    <tr key={inst.installmentNo}>
-                                                        <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{inst.installmentNo}</td>
-                                                        <td style={{ fontSize: 12, color: '#5b6072', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{inst.dueDate}</td>
-                                                        <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(inst.principalDue)}</td>
-                                                        <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(inst.interestDue)}</td>
-                                                        <td style={{ fontSize: 12, color: '#dc2626', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(inst.penalDue)}</td>
-                                                        <td style={{ fontSize: 12, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{TIER_LABEL[inst.tier]}</td>
-                                                        <td style={{ fontSize: 12, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{inst.monthsOverdue > 0 ? `${inst.monthsOverdue}mo` : 'current'}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
                                 </>}
 
                                 {/* Repayment History — collapsible, every real payment on this case */}
                                 {quote.repaymentHistory.length > 0 && (
                                     <div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowRepaymentHistory(v => !v)}
-                                            className="lec-toggle-row"
-                                        >
-                                            {showRepaymentHistory ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                                            <History size={12} /> Repayment History ({quote.repaymentHistory.length})
-                                        </button>
+                                        {toggleRow(showRepaymentHistory, () => setShowRepaymentHistory(v => !v), <History size={12} />, `Repayment History (${quote.repaymentHistory.length})`)}
                                         {showRepaymentHistory && (
-                                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
-                                                <thead>
-                                                    <tr>
-                                                        {['Date', 'Amount', 'Principal', 'Interest', 'Penal', 'Receipt No.'].map(h => (
-                                                            <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '6px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
+                                            <div className="aw-table-wrap aw-fade-in" style={{ maxHeight: 280, marginTop: 6 }}>
+                                                <table className="aw-table">
+                                                    <thead>
+                                                        <tr><th>Date</th><th className="is-right">Amount</th><th className="is-right">Principal</th><th className="is-right">Interest</th><th className="is-right">Penal</th><th>Receipt No.</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {quote.repaymentHistory.map((r, i) => (
+                                                            <tr key={i}>
+                                                                <td className="is-muted">{r.date}</td>
+                                                                <td className="is-right">₹{fmt(r.amount)}</td>
+                                                                <td className="is-right">₹{fmt(r.principal)}</td>
+                                                                <td className="is-right">₹{fmt(r.interest)}</td>
+                                                                <td className={`is-right ${r.penal > 0 ? 'is-danger' : ''}`}>₹{fmt(r.penal)}</td>
+                                                                <td className="is-muted">{r.receiptNo || '—'}</td>
+                                                            </tr>
                                                         ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {quote.repaymentHistory.map((r, i) => (
-                                                        <tr key={i}>
-                                                            <td style={{ fontSize: 12, color: '#5b6072', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{r.date}</td>
-                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5', fontWeight: 600 }}>₹{fmt(r.amount)}</td>
-                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(r.principal)}</td>
-                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(r.interest)}</td>
-                                                            <td style={{ fontSize: 12, color: r.penal > 0 ? '#dc2626' : '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(r.penal)}</td>
-                                                            <td style={{ fontSize: 11.5, color: '#8b90a0', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{r.receiptNo || '—'}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         )}
                                     </div>
                                 )}
@@ -711,230 +542,87 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 {/* RB Schedule — collapsible, the full amortization plan */}
                                 {quote.rbSchedule.length > 0 && (
                                     <div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowRbSchedule(v => !v)}
-                                            className="lec-toggle-row"
-                                        >
-                                            {showRbSchedule ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                                            <Table2 size={12} /> Reducing-Balance Schedule ({quote.rbSchedule.length} installments)
-                                        </button>
+                                        {toggleRow(showRbSchedule, () => setShowRbSchedule(v => !v), <Table2 size={12} />, `Reducing-Balance Schedule (${quote.rbSchedule.length} installments)`)}
                                         {showRbSchedule && (
-                                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
-                                                <thead>
-                                                    <tr>
-                                                        {['#', 'Opening Balance', 'RB Interest', 'Principal', 'Closing Balance'].map(h => (
-                                                            <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 600, color: '#8b90a0', padding: '6px 8px', borderBottom: '1px solid #eceef1', background: '#f7f8fa' }}>{h}</th>
+                                            <div className="aw-table-wrap aw-fade-in" style={{ maxHeight: 320, marginTop: 6 }}>
+                                                <table className="aw-table">
+                                                    <thead>
+                                                        <tr><th>#</th><th className="is-right">Opening Balance</th><th className="is-right">RB Interest</th><th className="is-right">Principal</th><th className="is-right">Closing Balance</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {quote.rbSchedule.map(row => (
+                                                            <tr key={row.installmentNo}>
+                                                                <td>{row.installmentNo}</td>
+                                                                <td className="is-right">₹{fmt(row.openingBalance)}</td>
+                                                                <td className="is-right">₹{fmt(row.rbInterest)}</td>
+                                                                <td className="is-right">₹{fmt(row.principal)}</td>
+                                                                <td className="is-right">₹{fmt(row.closingBalance)}</td>
+                                                            </tr>
                                                         ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {quote.rbSchedule.map(row => (
-                                                        <tr key={row.installmentNo}>
-                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>{row.installmentNo}</td>
-                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.openingBalance)}</td>
-                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.rbInterest)}</td>
-                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.principal)}</td>
-                                                            <td style={{ fontSize: 12, color: '#1a1d29', padding: '7px 8px', borderBottom: '1px solid #f2f3f5' }}>₹{fmt(row.closingBalance)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         )}
                                     </div>
                                 )}
+
+                                {/* CTA */}
+                                {!closed && !selectedLoanIsClosed && (
+                                    <button type="button" onClick={() => setShowConfirm(true)} disabled={loading} className="aw-btn aw-btn-danger" style={{ width: '100%', padding: '11px 0' }}>
+                                        {loading ? 'Closing…' : `Close Loan — Collect ₹${fmt(quote.payableByMember)}`}
+                                    </button>
+                                )}
                             </div>
                         )}
-                    </div>
-
-                    {/* Sticky footer CTA */}
-                    {quote && !closed && !selectedLoanIsClosed && (
-                        <div style={{ padding: '12px 16px', borderTop: '1px solid #eceef1' }}>
-                            <button
-                                onClick={() => setShowConfirm(true)}
-                                disabled={loading}
-                                style={{
-                                    width: '100%', padding: 11, background: '#5b21b6', color: '#fff',
-                                    border: 'none', borderRadius: 7, fontSize: 13.5, fontWeight: 600,
-                                    cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1,
-                                    transition: 'background 0.15s',
-                                }}
-                                onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#4c1d95'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#5b21b6'; }}
-                            >
-                                {loading ? 'Closing…' : `Close Loan — Collect ₹${fmt(quote.payableByMember)}`}
-                            </button>
-                        </div>
-                    )}
+                    </section>
                 </div>
             </div>
 
-            {/* Member Lookup Modal */}
-            <Modal
-                open={showLookup}
-                onCancel={() => setShowLookup(false)}
-                footer={null}
-                width={800}
-                styles={{ body: { padding: 0 } }}
-                destroyOnClose
-            >
-                <MemberLookup isModal onSelect={onMemberSelected} onClose={() => setShowLookup(false)} />
-            </Modal>
-
             {/* Confirm irreversible closure */}
-            <Modal
+            <AwDialog
                 open={showConfirm}
-                onCancel={() => { setShowConfirm(false); setConfirmTypedCase(''); }}
-                onOk={() => { setShowConfirm(false); setConfirmTypedCase(''); handleExecuteClosure(); }}
-                okText="Yes, Close Loan"
-                okButtonProps={{
-                    danger: true,
-                    disabled: requireTypeConfirm && confirmTypedCase.trim() !== form.selectedLoanCase,
-                }}
-                cancelText="Cancel"
                 title="Confirm early closure"
+                icon={<AlertTriangle size={14} />}
+                onClose={() => { setShowConfirm(false); setConfirmTypedCase(''); }}
+                maxWidth="32rem"
+                compact
             >
-                <p style={{ fontSize: 13, color: '#4b5160', lineHeight: 1.6, margin: 0 }}>
-                    This settles every remaining installment on loan #{form.selectedLoanCase} — including ones not yet due — and reduces its balance to zero.
-                    This cannot be undone from this screen. Confirm ₹{quote ? fmt(quote.payableByMember) : '—'} has actually been collected from the member before proceeding
-                    {quote?.rdShareAdjustment && quote.rdShareAdjustment.appliedFromRdShare > 0 &&
-                        ` (₹${fmt(quote.rdShareAdjustment.appliedFromRdShare)} will also be applied from their RD/Share Value)`}.
-                </p>
-                {requireTypeConfirm && (
-                    <div style={{ marginTop: 14 }}>
-                        <label style={{ display: 'block', fontSize: 11.5, color: '#8b90a0', marginBottom: 4 }}>
-                            Type loan case number <b style={{ color: '#1a1d29' }}>{form.selectedLoanCase}</b> to confirm
-                        </label>
-                        <input
-                            type="text"
-                            value={confirmTypedCase}
-                            onChange={e => setConfirmTypedCase(e.target.value)}
-                            placeholder={form.selectedLoanCase}
-                            autoFocus
-                            className="lec-input"
-                            style={{ width: '100%' }}
-                        />
+                <div className="aw-stack">
+                    <p className="aw-meta" style={{ lineHeight: 1.6 }}>
+                        This settles every remaining installment on loan #{form.selectedLoanCase} — including ones not yet due — and reduces its balance to zero.
+                        This cannot be undone from this screen. Confirm ₹{quote ? fmt(quote.payableByMember) : '—'} has actually been collected from the member before proceeding
+                        {quote?.rdShareAdjustment && quote.rdShareAdjustment.appliedFromRdShare > 0 &&
+                            ` (₹${fmt(quote.rdShareAdjustment.appliedFromRdShare)} will also be applied from their RD/Share Value)`}.
+                    </p>
+                    {requireTypeConfirm && (
+                        <div>
+                            <label className="aw-label" htmlFor="lec-typed">
+                                Type loan case number <b style={{ color: 'var(--aw-text)' }}>{form.selectedLoanCase}</b> to confirm
+                            </label>
+                            <input
+                                id="lec-typed"
+                                type="text"
+                                value={confirmTypedCase}
+                                onChange={e => setConfirmTypedCase(e.target.value)}
+                                placeholder={form.selectedLoanCase}
+                                autoFocus
+                                className="aw-input"
+                            />
+                        </div>
+                    )}
+                    <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
+                        <button type="button" onClick={() => { setShowConfirm(false); setConfirmTypedCase(''); }} className="aw-btn aw-btn-secondary">Cancel</button>
+                        <button
+                            type="button"
+                            onClick={() => { setShowConfirm(false); setConfirmTypedCase(''); handleExecuteClosure(); }}
+                            disabled={requireTypeConfirm && confirmTypedCase.trim() !== form.selectedLoanCase}
+                            className="aw-btn aw-btn-danger"
+                        >
+                            Yes, Close Loan
+                        </button>
                     </div>
-                )}
-            </Modal>
-
-            <style>{`
-                .lec-section-label {
-                    font-size: 11px; font-weight: 600; text-transform: uppercase;
-                    letter-spacing: 0.4px; color: #6b7280; margin-bottom: 8px;
-                }
-                .lec-field-label {
-                    display: block; font-size: 11px; color: #8b90a0; margin-bottom: 4px;
-                }
-                .lec-input {
-                    font-size: 12.5px; padding: 6px 8px;
-                    border: 1px solid #d7dae0; border-radius: 6px; outline: none;
-                    color: #1a1d29; background: #fff; transition: border-color 0.15s;
-                }
-                .lec-input:focus { border-color: #7c3aed; }
-                .lec-input-readonly { background: #f7f8fa !important; color: #4b5160 !important; border-color: #eceef1 !important; }
-                .lec-btn-primary {
-                    font-size: 12px; font-weight: 600; padding: 6px 12px;
-                    border: none; border-radius: 6px; background: #5b21b6; color: #fff;
-                    cursor: pointer; transition: background 0.15s;
-                }
-                .lec-btn-primary:hover:not(:disabled) { background: #4c1d95; }
-                .lec-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-                .lec-btn-secondary {
-                    font-size: 12px; font-weight: 500; padding: 6px 10px;
-                    border: none; border-radius: 6px; background: #eef0f3; color: #3a3f4b;
-                    cursor: pointer; white-space: nowrap; transition: background 0.15s;
-                }
-                .lec-btn-secondary:hover:not(:disabled) { background: #e1e3e8; }
-                .lec-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
-                .lec-btn-icon {
-                    display: flex; align-items: center; justify-content: center;
-                    border: none; border-radius: 6px; background: #f0f1f4; color: #5b6072;
-                    cursor: pointer; transition: background 0.15s, color 0.15s;
-                }
-                .lec-btn-icon:hover { background: #5b21b6; color: #fff; }
-                .lec-ghost-btn { transition: background 0.15s; }
-                .lec-ghost-btn:hover { background: rgba(255,255,255,0.08) !important; }
-                .lec-badge-warn {
-                    font-size: 11px; font-weight: 500;
-                    color: #a15c00; background: #fef3e0; border: 1px solid #f3dca8;
-                    border-radius: 20px; padding: 4px 10px;
-                }
-                .lec-amount-cell {
-                    background: #f7f8fa; border: 1px solid #eceef1;
-                    border-radius: 7px; padding: 10px 12px;
-                }
-                .lec-amount-label { font-size: 11px; color: #8b90a0; margin-bottom: 3px; }
-                .lec-amount-value { font-size: 14px; font-weight: 600; color: #1a1d29; }
-                .lec-toggle-row {
-                    display: flex; align-items: center; gap: 6px;
-                    font-size: 11.5px; font-weight: 600; color: #5b21b6;
-                    background: transparent; border: none; padding: 4px 0;
-                    cursor: pointer; width: 100%; text-align: left;
-                }
-                .lec-toggle-row:hover { color: #4c1d95; }
-
-                /* ── Dark mode ── */
-                html.dark .lec-root { background: #000 !important; color: #f5f5f7 !important; }
-                html.dark .lec-header { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .lec-card,
-                html.dark .lec-root > div > div[style*="background:#fff"],
-                html.dark .lec-root [style*="background: #fff"],
-                html.dark .lec-root [style*="background: rgb(255, 255, 255)"] { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .lec-amount-cell { background: rgba(255,255,255,.04) !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .lec-amount-value { color: #f5f5f7 !important; }
-                html.dark .lec-amount-label,
-                html.dark .lec-section-label,
-                html.dark .lec-field-label { color: #8e8e93 !important; }
-                html.dark .lec-input {
-                    background: rgba(255,255,255,.05) !important; color: #f5f5f7 !important;
-                    border-color: rgba(255,255,255,.08) !important;
-                }
-                html.dark .lec-input-readonly { background: rgba(255,255,255,.03) !important; color: #8e8e93 !important; }
-                html.dark .lec-input::placeholder { color: #71717a !important; }
-                html.dark .lec-btn-secondary { background: #2c2c2e !important; color: #f5f5f7 !important; }
-                html.dark .lec-btn-secondary:hover { background: rgba(255,255,255,.1) !important; }
-                html.dark .lec-btn-icon { background: #2c2c2e !important; color: #f5f5f7 !important; }
-                html.dark .lec-badge-warn { background: rgba(251,191,36,.12) !important; border-color: rgba(251,191,36,.3) !important; color: #fbbf24 !important; }
-                html.dark .lec-root [style*="background: #f7f8fa"],
-                html.dark .lec-root [style*="background:#f7f8fa"] { background: rgba(255,255,255,.04) !important; }
-                html.dark .lec-root [style*="background: #f2edfb"],
-                html.dark .lec-root [style*="background:#f2edfb"] { background: rgba(167,139,250,.14) !important; }
-                html.dark .lec-root [style*="border: 1.5px solid #d3c3f5"],
-                html.dark .lec-root [style*="border:1.5px solid #d3c3f5"] { border-color: rgba(167,139,250,.35) !important; }
-                html.dark .lec-root [style*="color: #4c1d95"],
-                html.dark .lec-root [style*="color:#4c1d95"] { color: #c4b5fd !important; }
-                html.dark .lec-root [style*="color: #1a1d29"],
-                html.dark .lec-root [style*="color:#1a1d29"] { color: #f5f5f7 !important; }
-                html.dark .lec-root [style*="color: #5b6072"],
-                html.dark .lec-root [style*="color:#5b6072"],
-                html.dark .lec-root [style*="color: #6b7280"],
-                html.dark .lec-root [style*="color:#6b7280"],
-                html.dark .lec-root [style*="color: #8b90a0"],
-                html.dark .lec-root [style*="color:#8b90a0"] { color: #8e8e93 !important; }
-                html.dark .lec-root [style*="color: #dc2626"],
-                html.dark .lec-root [style*="color:#dc2626"] { color: #ff453a !important; }
-                html.dark .lec-root [style*="color: #5b21b6"],
-                html.dark .lec-root [style*="color:#5b21b6"] { color: #c4b5fd !important; }
-                html.dark .lec-root [style*="borderBottom: '1px solid #eceef1'"],
-                html.dark .lec-root [style*="border-bottom: 1px solid #eceef1"],
-                html.dark .lec-root [style*="borderTop: '1px solid #eceef1'"],
-                html.dark .lec-root [style*="border-top: 1px solid #eceef1"] { border-color: rgba(255,255,255,.07) !important; }
-                html.dark .lec-root table th { color: #8e8e93 !important; background: #1c1c1e !important; border-color: rgba(255,255,255,.07) !important; }
-                html.dark .lec-root table td { border-color: rgba(255,255,255,.07) !important; }
-                html.dark .lec-root [style*="color: #15803d"] { color: #34d399 !important; }
-                html.dark .lec-root label[style*="background: #f2edfb"],
-                html.dark .lec-root label[style*="background:#f2edfb"] { background: rgba(167,139,250,.15) !important; border-color: rgba(167,139,250,.4) !important; }
-                html.dark .lec-root label[style*="background: #fff"],
-                html.dark .lec-root label[style*="background:#fff"] { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .lec-toggle-row { color: #c4b5fd !important; }
-                html.dark .lec-root [style*="background: #eef5fc"],
-                html.dark .lec-root [style*="background:#eef5fc"] { background: rgba(37,99,168,.14) !important; }
-                html.dark .lec-root [style*="border: 1px solid #bcd7ef"],
-                html.dark .lec-root [style*="border:1px solid #bcd7ef"] { border-color: rgba(37,99,168,.35) !important; }
-                html.dark .lec-root [style*="color: #2563a8"],
-                html.dark .lec-root [style*="color:#2563a8"] { color: #7fb3e8 !important; }
-            `}</style>
+                </div>
+            </AwDialog>
         </div>
     );
 };

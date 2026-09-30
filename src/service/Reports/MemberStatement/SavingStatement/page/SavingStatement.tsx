@@ -142,8 +142,7 @@ const printReportText = (text: string) => {
 const SavingStatement: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark =
-    interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    interfaceMode === 'dark';
 
   const [memberNo,   setMemberNo]   = useState('');
   const [memberName, setMemberName] = useState('');

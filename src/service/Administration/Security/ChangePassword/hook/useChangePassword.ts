@@ -6,7 +6,7 @@ import type {
     UseChangePasswordReturn,
     PasswordRequirements
 } from '../interface/types';
-import { API_BASE_URL, getApiBaseUrl } from '../../../../../services/apiVersionConfig';
+import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 
 const defaultPasswordRequirements: PasswordRequirements = {
   minLength: 8,

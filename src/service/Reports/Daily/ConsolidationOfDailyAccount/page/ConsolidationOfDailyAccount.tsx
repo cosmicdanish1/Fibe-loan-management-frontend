@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, RefreshCw, Printer, FileDown, Search, Layers, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { Settings, RefreshCw, Printer, FileDown, Search, Layers, ShieldCheck } from 'lucide-react';
 import { ConfigProvider, Button, DatePicker, Spin, Tooltip, theme as antdTheme } from 'antd';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSelector, useDispatch } from 'react-redux';
+import { motion } from 'framer-motion';
+import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
-import { setInterfaceMode } from '../../../../../store/slices/themeSlice';
 import { apiService } from '../../../../../services/api';
 import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import dayjs from 'dayjs';
@@ -24,20 +23,100 @@ interface HeadGroup {
 
 interface ConsolidationData {
   date: string;
-  openingBalance: number;
+  openingBalance: number | null;
   totalReceipts: number;
   totalPayments: number;
-  totalCash: number;
-  closingBalance: number;
+  totalCash: number | null;
+  closingBalance: number | null;
+  netBalance: number;
   receiptGroups: HeadGroup[];
   paymentGroups: HeadGroup[];
   totalHeads: number;
 }
 
+const asAmount = (value: unknown): number => {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : 0;
+};
+
+const normalizeGroups = (value: unknown): HeadGroup[] => {
+  if (!Array.isArray(value)) return [];
+  return value.map((group: any) => {
+    const subEntries = Array.isArray(group?.subEntries) ? group.subEntries.map((entry: any) => ({
+      mbNo: String(entry?.mbNo ?? entry?.mbno ?? ''),
+      memberName: String(entry?.memberName ?? 'Unknown'),
+      amount: asAmount(entry?.amount),
+    })) : [];
+    return {
+      headCode: String(group?.headCode ?? group?.head_code ?? ''),
+      headName: String(group?.headName ?? group?.head_name ?? 'Unknown'),
+      subEntries,
+      total: group?.total == null
+        ? subEntries.reduce((sum, entry) => sum + entry.amount, 0)
+        : asAmount(group.total),
+    };
+  });
+};
+
+/** Accept both the current flat API response and the older grouped UI shape. */
+function normalizeConsolidationData(payload: any, selectedDate: string): ConsolidationData {
+  const source = payload?.data?.data ?? payload?.data ?? payload ?? {};
+  let receiptGroups = normalizeGroups(source.receiptGroups);
+  let paymentGroups = normalizeGroups(source.paymentGroups);
+  const entries = Array.isArray(source.entries) ? source.entries : [];
+
+  if (!receiptGroups.length && !paymentGroups.length && entries.length) {
+    receiptGroups = entries
+      .filter((entry: any) => asAmount(entry?.receipts) > 0)
+      .map((entry: any) => ({
+        headCode: String(entry?.headCode ?? entry?.head_code ?? ''),
+        headName: String(entry?.headName ?? entry?.head_name ?? 'Unknown'),
+        total: asAmount(entry?.receipts),
+        subEntries: [],
+      }));
+    paymentGroups = entries
+      .filter((entry: any) => asAmount(entry?.payments) > 0)
+      .map((entry: any) => ({
+        headCode: String(entry?.headCode ?? entry?.head_code ?? ''),
+        headName: String(entry?.headName ?? entry?.head_name ?? 'Unknown'),
+        total: asAmount(entry?.payments),
+        subEntries: [],
+      }));
+  }
+
+  const totalReceiptsFromGroups = receiptGroups.reduce((sum, group) => sum + group.total, 0);
+  const totalPaymentsFromGroups = paymentGroups.reduce((sum, group) => sum + group.total, 0);
+  const totalReceipts = source.totalReceipts == null ? totalReceiptsFromGroups : asAmount(source.totalReceipts);
+  const totalPayments = source.totalPayments == null ? totalPaymentsFromGroups : asAmount(source.totalPayments);
+
+  return {
+    date: String(source.date ?? selectedDate),
+    openingBalance: source.openingBalance == null ? null : asAmount(source.openingBalance),
+    totalReceipts,
+    totalPayments,
+    totalCash: source.totalCash == null ? null : asAmount(source.totalCash),
+    closingBalance: source.closingBalance == null ? null : asAmount(source.closingBalance),
+    netBalance: source.netBalance == null ? totalReceipts - totalPayments : asAmount(source.netBalance),
+    receiptGroups,
+    paymentGroups,
+    totalHeads: source.totalHeads == null ? entries.length : asAmount(source.totalHeads),
+  };
+}
+
+const csvCell = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+
+  let text = String(value ?? '');
+  // Keep exported text safe to open in spreadsheet applications.
+  if (/^[\t\r ]*[=+@-]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+};
+
 const fmt = (n: number) =>
   Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fmtSigned = (n: number) => (n < 0 ? '-' : '') + fmt(n);
+const fmtOptional = (value: number | null) => value == null ? 'Not provided' : fmtSigned(value);
 
 // Print-only layout matching the legacy report exactly (letterhead, Date/Page
 // Number line, Code/Name/Amount columns, RECEIPT/PAYMENT sections with
@@ -73,11 +152,15 @@ function buildConsolidationLines(data: ConsolidationData, dateLabel: string): st
     lines.push(title);
     lines.push(CON_DASH);
     groups.forEach(g => {
-      lines.push(`${padR(g.headCode, CON_COL_CODE)}${g.headName}`);
-      g.subEntries.forEach(e => {
-        lines.push(`${padR(e.mbNo, CON_COL_CODE)}${padR(e.memberName, CON_COL_NAME)}${padL(fmt(e.amount), CON_COL_AMT)}`);
-      });
-      lines.push(`${' '.repeat(CON_COL_CODE + CON_COL_NAME)}${padL(fmt(g.total), CON_COL_AMT)}`);
+      if (g.subEntries.length === 0) {
+        lines.push(`${padR(g.headCode, CON_COL_CODE)}${padR(g.headName, CON_COL_NAME)}${padL(fmt(g.total), CON_COL_AMT)}`);
+      } else {
+        lines.push(`${padR(g.headCode, CON_COL_CODE)}${g.headName}`);
+        g.subEntries.forEach(e => {
+          lines.push(`${padR(e.mbNo, CON_COL_CODE)}${padR(e.memberName, CON_COL_NAME)}${padL(fmt(e.amount), CON_COL_AMT)}`);
+        });
+        lines.push(`${' '.repeat(CON_COL_CODE + CON_COL_NAME)}${padL(fmt(g.total), CON_COL_AMT)}`);
+      }
       lines.push(CON_DASH);
     });
     lines.push('');
@@ -90,11 +173,11 @@ function buildConsolidationLines(data: ConsolidationData, dateLabel: string): st
   const LBL_W = 20;
   const VAL_W = 18;
   ([
-    ['Opening Balance', fmtSigned(data.openingBalance)],
+    ['Opening Balance', fmtOptional(data.openingBalance)],
     ['Total Reciept', fmt(data.totalReceipts)],
-    ['Total Cash', fmtSigned(data.totalCash)],
+    ['Total Cash', fmtOptional(data.totalCash)],
     ['Total Payment', fmt(data.totalPayments)],
-    ['Closing Balance', fmtSigned(data.closingBalance)],
+    ['Closing Balance', fmtOptional(data.closingBalance)],
   ] as [string, string][]).forEach(([label, value]) => {
     lines.push(`${IND}${label.padEnd(LBL_W)}:${padL(value, VAL_W)}`);
   });
@@ -105,31 +188,32 @@ function buildConsolidationLines(data: ConsolidationData, dateLabel: string): st
 }
 
 const ConsolidationOfDailyAccount: React.FC = () => {
-  const dispatch = useDispatch();
   const { interfaceMode, accentColor, cornerRadius } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs().subtract(1, 'day'));
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ConsolidationData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, [selectedDate]);
 
   const loadData = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const response = await apiService.getConsolidationReport(selectedDate.format('YYYY-MM-DD'), 'screen');
       if (response.success && response.data) {
-        const d = response.data?.data ?? response.data;
-        setData(d);
+        setData(normalizeConsolidationData(response.data, selectedDate.format('YYYY-MM-DD')));
+      } else {
+        setData(null);
+        setLoadError(response.message || response.error || 'The report could not be loaded. Please try again.');
       }
-    } catch { /* silent */ }
+    } catch (error) {
+      setData(null);
+      setLoadError(error instanceof Error ? error.message : 'The report could not be loaded. Please try again.');
+    }
     finally { setLoading(false); }
-  };
-
-  const toggleTheme = () => {
-    dispatch(setInterfaceMode(isDark ? 'light' : 'dark'));
   };
 
   const handlePrint = () => {
@@ -169,20 +253,42 @@ const ConsolidationOfDailyAccount: React.FC = () => {
 
   const handleExportCSV = () => {
     if (!data) return;
-    let csv = 'Section,Head Code,Head Name,MB No,Member Name,Amount\n';
-    data.receiptGroups.forEach(g => g.subEntries.forEach(e =>
-      csv += `Receipt,${g.headCode},"${g.headName}",${e.mbNo},"${e.memberName}",${e.amount}\n`
-    ));
-    data.paymentGroups.forEach(g => g.subEntries.forEach(e =>
-      csv += `Payment,${g.headCode},"${g.headName}",${e.mbNo},"${e.memberName}",${e.amount}\n`
-    ));
+    const rows: unknown[][] = [[
+      'Report',
+      'Report Date',
+      'Entry Type',
+      'Account Head Code',
+      'Account Head Name',
+      'Amount',
+      'Total Receipts',
+      'Total Payments',
+      'Net Movement',
+      'Account Head Count',
+    ]];
+    const appendGroups = (entryType: 'Receipt' | 'Payment', groups: HeadGroup[]) => {
+      groups.forEach(group => rows.push([
+        'Consolidation Of Daily A/c',
+        data.date,
+        entryType,
+        group.headCode,
+        group.headName,
+        group.total,
+        data.totalReceipts,
+        data.totalPayments,
+        data.netBalance,
+        data.totalHeads,
+      ]));
+    };
+    appendGroups('Receipt', data.receiptGroups);
+    appendGroups('Payment', data.paymentGroups);
+    const csv = `\uFEFF${rows.map(row => row.map(csvCell).join(',')).join('\r\n')}`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     a.download = `Consolidation_${selectedDate.format('YYYY-MM-DD')}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
-  const hasData = data && (data.receiptGroups.length > 0 || data.paymentGroups.length > 0);
+  const hasData = !!data && (data.receiptGroups.length > 0 || data.paymentGroups.length > 0);
 
   // Tailwind classes driven by isDark — adapts to theme toggle
   const bg = isDark ? 'bg-[#0f172a]' : 'bg-slate-50';
@@ -199,7 +305,6 @@ const ConsolidationOfDailyAccount: React.FC = () => {
     ? 'bg-violet-900/30 border-violet-700/40 text-violet-300'
     : 'bg-rose-50 border-rose-200 text-rose-700';
   const totalRowBg = isDark ? 'bg-slate-900/60' : 'bg-slate-50';
-  const summaryBg = isDark ? 'bg-slate-800/80' : 'bg-slate-50';
 
   const Section = ({ groups, label }: { groups: HeadGroup[]; label: 'RECEIPT' | 'PAYMENT' }) => (
     <tbody>
@@ -210,32 +315,44 @@ const ConsolidationOfDailyAccount: React.FC = () => {
       </tr>
       {groups.map(g => (
         <React.Fragment key={g.headCode}>
-          {/* Head row */}
-          <tr className={`border-b ${border} ${headRowBg}`}>
-            <td className={`px-3 py-1 font-black text-xs font-mono ${isDark ? 'text-indigo-300' : 'text-slate-700'}`}>{g.headCode}</td>
-            <td className={`px-3 py-1 font-bold text-xs uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{g.headName}</td>
-            <td />
-          </tr>
-          {/* Sub-entries */}
-          {g.subEntries.map((e, i) => (
-            <tr key={i} className={`border-b ${border} ${rowHover} ${i % 2 === 0 ? rowAlt : rowAlt2} transition-colors`}>
-              <td className={`px-3 py-0.5 text-right fz-caption font-mono ${muted}`}>{e.mbNo}</td>
-              <td className={`px-3 py-0.5 fz-caption ${isDark ? 'text-violet-300' : 'text-violet-600'} font-semibold`}>{e.memberName}</td>
-              <td className={`px-3 py-0.5 text-right fz-caption font-semibold font-mono
+          {g.subEntries.length === 0 ? (
+            <tr className={`border-b ${border} ${rowHover} ${rowAlt}`}>
+              <td className={`px-3 py-2 font-bold text-xs font-mono ${isDark ? 'text-indigo-300' : 'text-slate-700'}`}>{g.headCode}</td>
+              <td className={`px-3 py-2 text-xs ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{g.headName}</td>
+              <td className={`px-3 py-2 text-right text-xs font-semibold font-mono
                 ${label === 'RECEIPT'
                   ? (isDark ? 'text-emerald-300' : 'text-emerald-600')
                   : (isDark ? 'text-rose-300' : 'text-rose-600')}`}>
-                {e.amount > 0 && <CrDrIndicator type={label === 'RECEIPT' ? 'credit' : 'debit'} className="mr-1" />}{fmt(e.amount)}
+                {g.total > 0 && <CrDrIndicator type={label === 'RECEIPT' ? 'credit' : 'debit'} className="mr-1" />}{fmt(g.total)}
               </td>
             </tr>
-          ))}
-          {/* Sub-total */}
-          <tr className={`border-b-2 ${isDark ? 'border-slate-500' : 'border-slate-300'} ${totalRowBg}`}>
-            <td colSpan={2} className={`px-3 py-1 ${muted}`} />
-            <td className={`px-3 py-1 text-right fz-caption font-black font-mono border-t ${isDark ? 'border-slate-500 text-slate-200' : 'border-slate-300 text-slate-700'}`}>
-              {g.total > 0 && <CrDrIndicator type={label === 'RECEIPT' ? 'credit' : 'debit'} className="mr-1" />}{fmt(g.total)}
-            </td>
-          </tr>
+          ) : (
+            <>
+              <tr className={`border-b ${border} ${headRowBg}`}>
+                <td className={`px-3 py-1 font-black text-xs font-mono ${isDark ? 'text-indigo-300' : 'text-slate-700'}`}>{g.headCode}</td>
+                <td className={`px-3 py-1 font-bold text-xs uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{g.headName}</td>
+                <td />
+              </tr>
+              {g.subEntries.map((e, i) => (
+                <tr key={i} className={`border-b ${border} ${rowHover} ${i % 2 === 0 ? rowAlt : rowAlt2} transition-colors`}>
+                  <td className={`px-3 py-0.5 text-right fz-caption font-mono ${muted}`}>{e.mbNo}</td>
+                  <td className={`px-3 py-0.5 fz-caption ${isDark ? 'text-violet-300' : 'text-violet-600'} font-semibold`}>{e.memberName}</td>
+                  <td className={`px-3 py-0.5 text-right fz-caption font-semibold font-mono
+                    ${label === 'RECEIPT'
+                      ? (isDark ? 'text-emerald-300' : 'text-emerald-600')
+                      : (isDark ? 'text-rose-300' : 'text-rose-600')}`}>
+                    {e.amount > 0 && <CrDrIndicator type={label === 'RECEIPT' ? 'credit' : 'debit'} className="mr-1" />}{fmt(e.amount)}
+                  </td>
+                </tr>
+              ))}
+              <tr className={`border-b-2 ${isDark ? 'border-slate-500' : 'border-slate-300'} ${totalRowBg}`}>
+                <td colSpan={2} className={`px-3 py-1 ${muted}`} />
+                <td className={`px-3 py-1 text-right fz-caption font-black font-mono border-t ${isDark ? 'border-slate-500 text-slate-200' : 'border-slate-300 text-slate-700'}`}>
+                  {g.total > 0 && <CrDrIndicator type={label === 'RECEIPT' ? 'credit' : 'debit'} className="mr-1" />}{fmt(g.total)}
+                </td>
+              </tr>
+            </>
+          )}
         </React.Fragment>
       ))}
     </tbody>
@@ -267,15 +384,6 @@ const ConsolidationOfDailyAccount: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Theme toggle */}
-            <Tooltip title={isDark ? 'Switch to Light' : 'Switch to Dark'}>
-              <Button
-                type="text" size="small"
-                icon={isDark ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} className="text-slate-500" />}
-                onClick={toggleTheme}
-                className="h-8 w-8 rounded-lg"
-              />
-            </Tooltip>
             <Button icon={<Printer size={13} />} size="small"
               className="h-8 px-3 rounded-lg text-xs font-bold uppercase tracking-wide"
               onClick={handlePrint} disabled={!hasData}>Print</Button>
@@ -314,44 +422,6 @@ const ConsolidationOfDailyAccount: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* Stats */}
-            <AnimatePresence>
-              {data && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col gap-2">
-                  <div className={`cda-panel border rounded-lg p-3 ${panel}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening</div>
-                    <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.openingBalance)}</div>
-                  </div>
-                  <div className={`rounded-lg p-3 ${isDark ? 'bg-emerald-600/20 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200'}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Receipts</div>
-                    <div className={`text-sm font-black font-mono ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceipts)}</div>
-                  </div>
-                  <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-700/50 border border-slate-600' : 'bg-slate-100 border border-slate-200'}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${muted}`}>Cash Total</div>
-                    <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.totalCash)}</div>
-                  </div>
-                  <div className={`rounded-lg p-3 ${isDark ? 'bg-rose-600/20 border border-rose-500/30' : 'bg-rose-50 border border-rose-200'}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Payments</div>
-                    <div className={`text-sm font-black font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPayments)}</div>
-                  </div>
-                  <div className={`rounded-lg p-3 border ${data.closingBalance >= 0
-                    ? (isDark ? 'bg-violet-600/20 border-violet-500/30' : 'bg-violet-50 border-violet-200')
-                    : (isDark ? 'bg-rose-900/30 border-rose-700/40' : 'bg-rose-50 border-rose-200')}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>Closing</div>
-                    <div className={`text-sm font-black font-mono ${data.closingBalance >= 0
-                      ? (isDark ? 'text-violet-300' : 'text-violet-700')
-                      : (isDark ? 'text-rose-300' : 'text-rose-700')}`}>
-                      {fmtSigned(data.closingBalance)}
-                    </div>
-                  </div>
-                  <div className={`cda-panel border rounded-lg p-3 ${panel}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Heads</div>
-                    <div className={`text-lg font-black font-mono ${text}`}>{data.totalHeads}</div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
 
           {/* Report panel */}
@@ -360,14 +430,17 @@ const ConsolidationOfDailyAccount: React.FC = () => {
               <span className={`text-xs font-extrabold uppercase tracking-wide ${text}`}>
                 Consolidation — {selectedDate.format('DD-MMM-YYYY')}
               </span>
-              {data && (
-                <span className={`fz-small font-mono ${muted}`}>{data.totalHeads} heads</span>
-              )}
             </div>
 
             <div className={`cda-preview-body flex-1 overflow-auto p-4 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
               <Spin spinning={loading} tip="Loading...">
-                {hasData ? (
+                {loadError ? (
+                  <div role="alert" className="flex h-64 flex-col items-center justify-center gap-3 text-center">
+                    <p className="text-sm font-bold text-red-600">Unable to load the consolidation report</p>
+                    <p className={`max-w-xl text-xs ${muted}`}>{loadError}</p>
+                    <Button type="primary" size="small" onClick={loadData}>Try Again</Button>
+                  </div>
+                ) : hasData ? (
                   <div id="consol-print-area">
                     {/* Company header */}
                     <div className={`text-center mb-4 pb-3 border-b border-dashed ${border}`}>
@@ -376,7 +449,26 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                       <div className={`fz-small mt-0.5 ${muted}`}>Consolidation Of Daily Accounts for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
                     </div>
 
-                    {/* Col headers */}
+                    <dl className={`mb-3 grid grid-cols-2 xl:grid-cols-4 divide-x border rounded-lg ${border} ${panelHead}`} aria-label="Report totals">
+                      <div className="px-3 py-2">
+                        <dt className={`fz-small font-bold uppercase ${muted}`}>Receipts</dt>
+                        <dd className={`mt-1 text-sm font-bold font-mono ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceipts)}</dd>
+                      </div>
+                      <div className="px-3 py-2">
+                        <dt className={`fz-small font-bold uppercase ${muted}`}>Payments</dt>
+                        <dd className={`mt-1 text-sm font-bold font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPayments)}</dd>
+                      </div>
+                      <div className="px-3 py-2">
+                        <dt className={`fz-small font-bold uppercase ${muted}`}>Net movement</dt>
+                        <dd className={`mt-1 text-sm font-bold font-mono ${text}`}>{fmtSigned(data.netBalance)}</dd>
+                      </div>
+                      <div className="px-3 py-2">
+                        <dt className={`fz-small font-bold uppercase ${muted}`}>Account heads</dt>
+                        <dd className={`mt-1 text-sm font-bold font-mono ${text}`}>{data.totalHeads}</dd>
+                      </div>
+                    </dl>
+
+                    {/* Account-head totals */}
                     <table className={`w-full fz-caption font-mono border-collapse border ${border} mb-0`}>
                       <thead>
                         <tr className={headRowBg}>
@@ -393,33 +485,15 @@ const ConsolidationOfDailyAccount: React.FC = () => {
                         <Section groups={data.paymentGroups} label="PAYMENT" />
                       )}
 
-                      {/* Summary */}
-                      <tbody>
-                        {[
-                          { label: 'Opening Balance :', value: fmtSigned(data.openingBalance), cls: text, crdr: null },
-                          { label: 'Total Receipt :', value: fmt(data.totalReceipts), cls: isDark ? 'text-emerald-300' : 'text-emerald-600', crdr: 'credit' as const },
-                          { label: 'Total Cash :', value: fmtSigned(data.totalCash), cls: text, crdr: null },
-                          { label: 'Total Payment :', value: fmt(data.totalPayments), cls: isDark ? 'text-rose-300' : 'text-rose-600', crdr: 'debit' as const },
-                          { label: 'Closing Balance :', value: fmtSigned(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-violet-300' : 'text-violet-700') : (isDark ? 'text-rose-300' : 'text-rose-600'), crdr: null },
-                        ].map(({ label, value, cls, crdr }, i) => (
-                          <tr key={i} className={`border-b ${border} ${summaryBg}`}>
-                            <td colSpan={2} className={`px-3 py-1.5 text-right text-xs font-bold ${muted}`}>{label}</td>
-                            <td className={`px-3 py-1.5 text-right text-xs font-black font-mono ${cls}`}>{crdr && <CrDrIndicator type={crdr} className="mr-1" />}{value}</td>
-                          </tr>
-                        ))}
-                      </tbody>
                     </table>
 
-                    <div className={`mt-3 fz-small italic ${muted}`}>* Report As Per Data Available ..</div>
+                    <div className={`mt-3 fz-small ${muted}`}>Amounts are consolidated by account head for the selected date.</div>
                   </div>
                 ) : !loading ? (
                   <div className="flex flex-col items-center justify-center h-64 gap-3">
                     <Layers size={48} className={isDark ? 'text-slate-700' : 'text-slate-300'} />
                     <p className={`text-sm font-bold uppercase tracking-wide ${muted}`}>
                       No transactions on {selectedDate.format('DD-MMM-YYYY')}
-                    </p>
-                    <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                      Try <span className={`font-mono ${isDark ? 'text-violet-400' : 'text-violet-500'}`}>07-Feb-2024</span>
                     </p>
                   </div>
                 ) : null}

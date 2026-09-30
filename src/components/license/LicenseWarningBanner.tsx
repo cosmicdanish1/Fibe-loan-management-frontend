@@ -3,7 +3,7 @@ import { AlertTriangle, Clock } from 'lucide-react';
 import { useLicense } from './LicenseContext';
 
 const LicenseWarningBanner: React.FC = () => {
-  const { status, daysRemaining, graceDaysRemaining, message, isInitializing } = useLicense();
+  const { status, daysRemaining, graceDaysRemaining, isInitializing } = useLicense();
 
   // Don't flash while the first real API check is still in flight
   if (isInitializing) return null;

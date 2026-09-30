@@ -130,8 +130,7 @@ const MemberLoanLedger: React.FC = () => {
   const [showLookupModal, setShowLookupModal] = useState<boolean>(false);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   useEffect(() => {
     if (memberNo) {

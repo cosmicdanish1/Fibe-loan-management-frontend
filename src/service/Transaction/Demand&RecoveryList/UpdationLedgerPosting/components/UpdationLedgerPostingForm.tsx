@@ -2,14 +2,13 @@
 
 import React from 'react';
 import { Select } from 'antd';
-import { BookOpenCheck, RotateCcw, X, Loader2, Send } from 'lucide-react';
+import { BookOpenCheck, RotateCcw, X, Send } from 'lucide-react';
 import { UpdationLedgerPostingHookReturn } from '../interface/UpdationLedgerPostingInterfaces';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
-const { Option } = Select;
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const YEARS = Array.from({ length: 30 }, (_, i) => (2020 + i).toString());
-const lbl = "fz-tiny font-bold text-slate-600 uppercase tracking-wide";
+const MODES = ['CASH', 'BANK', 'OTHER'] as const;
 
 const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
     formData, memberGroups, branches, isLoading, isPosting,
@@ -17,6 +16,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
     updateField, handleLoad, handlePosting, handleReset, handleExit,
 }) => {
     const totalsMatch = grandTotalSend > 0 && grandTotalSend === grandTotalReceived;
+    const rowHead: React.CSSProperties = { fontWeight: 700 };
 
     usePageToolbarActions({
         onSave: handlePosting,
@@ -25,196 +25,158 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
     });
 
     return (
-        <div className="ulp-root h-screen flex flex-col bg-white font-sans text-slate-900 overflow-hidden">
-
-            {/* Header */}
-            <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 px-3 py-1.5 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                    <BookOpenCheck size={14} className="text-indigo-400" />
-                    <div>
-                        <h1 className="fz-caption font-black text-white uppercase tracking-wider leading-none">Updation / Ledger Posting</h1>
-                        <p className="fz-micro font-bold text-slate-400 uppercase tracking-widest mt-0.5">Passing (Ledger Posting)</p>
-                    </div>
+        <div className="app-window">
+            <div className="aw-header aw-ambient">
+                <div className="min-w-0">
+                    <h1 className="aw-title">Updation / Ledger Posting</h1>
+                    <p className="aw-desc">Passing (Ledger Posting)</p>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <button onClick={handlePosting} disabled={isPosting || !totalsMatch}
-                        className={`px-3 py-1 fz-tiny font-bold uppercase tracking-wide rounded flex items-center gap-1 transition-colors ${totalsMatch && !isPosting ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`}>
-                        <Send size={10} /> {isPosting ? 'Posting...' : 'Post'}
+                <div className="aw-actions">
+                    <button type="button" onClick={handlePosting} disabled={isPosting || !totalsMatch} className="aw-btn aw-btn-primary">
+                        {isPosting ? <RotateCcw size={13} className="aw-spin" /> : <Send size={13} />} {isPosting ? 'Posting...' : 'Post'}
                     </button>
-                    <button onClick={handleReset}
-                        className="px-3 py-1 fz-tiny font-bold uppercase tracking-wide rounded bg-slate-600 hover:bg-slate-500 text-slate-200 flex items-center gap-1">
-                        <RotateCcw size={10} /> Reset
-                    </button>
-                    <button onClick={handleExit}
-                        className="px-3 py-1 fz-tiny font-bold uppercase tracking-wide rounded bg-rose-700 hover:bg-rose-600 text-white flex items-center gap-1">
-                        <X size={10} /> Exit
-                    </button>
+                    <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Reset</button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
                 </div>
             </div>
 
-            {/* Config Bar */}
-            <div className="ulp-config bg-slate-50 border-b border-slate-200 px-4 py-2 shrink-0">
-                <div className="flex items-end gap-3 flex-wrap">
-                    <div>
-                        <div className={lbl}>Month</div>
-                        <Select value={formData.month} onChange={v => updateField('month', v)}
-                            className="w-20" style={{ height: 28 }} size="small">
-                            {MONTHS.map(m => <Option key={m} value={m}>{m}</Option>)}
-                        </Select>
-                    </div>
-                    <div>
-                        <div className={lbl}>Year</div>
-                        <Select value={formData.year} onChange={v => updateField('year', v)}
-                            className="w-24" style={{ height: 28 }} size="small">
-                            {YEARS.map(y => <Option key={y} value={y}>{y}</Option>)}
-                        </Select>
-                    </div>
-                    <div>
-                        <div className={lbl}>Branch</div>
-                        <Select value={formData.branch || undefined} onChange={v => updateField('branch', v)}
-                            placeholder="Select" className="w-48" style={{ height: 28 }} size="small" showSearch allowClear
-                            filterOption={(input, option) => String(option?.children).toLowerCase().includes(input.toLowerCase())}>
-                            {branches.map(b => (
-                                <Option key={b.officeno} value={String(b.officeno)}>
-                                    {b.officeno}-{b.office_name}
-                                </Option>
-                            ))}
-                        </Select>
-                    </div>
-                    <div>
-                        <div className={lbl}>From Member</div>
-                        <input type="text" value={formData.fromMember} onChange={e => updateField('fromMember', e.target.value)}
-                            className="w-28 h-7 px-2 border border-slate-300 rounded fz-caption font-mono" placeholder="" />
-                    </div>
-                    <div>
-                        <div className={lbl}>To Member</div>
-                        <input type="text" value={formData.toMember} onChange={e => updateField('toMember', e.target.value)}
-                            className="w-28 h-7 px-2 border border-slate-300 rounded fz-caption font-mono" placeholder="" />
-                    </div>
-                    <div>
-                        <div className={lbl}>Mode of Receipt</div>
-                        <div className="flex gap-1">
-                            {(['CASH', 'BANK', 'OTHER'] as const).map(m => (
-                                <button key={m} onClick={() => updateField('modeOfReceipt', m)}
-                                    className={`h-7 px-2 fz-tiny font-bold uppercase rounded border transition-colors ${formData.modeOfReceipt === m ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'}`}>
-                                    {m}
-                                </button>
-                            ))}
+            <div className="aw-content">
+                <div className="aw-stack">
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><BookOpenCheck size={14} /></span>
+                            <h2 className="aw-card-title">Posting Selection</h2>
                         </div>
-                    </div>
-                    <button onClick={handleLoad} disabled={isLoading}
-                        className={`h-7 px-4 fz-small font-bold uppercase tracking-wide rounded border flex items-center gap-1.5 transition-colors ${isLoading ? 'bg-slate-200 text-slate-500 cursor-wait border-slate-300' : 'bg-white hover:bg-indigo-50 text-indigo-700 border-indigo-300 hover:border-indigo-500'}`}>
-                        {isLoading ? <Loader2 size={11} className="animate-spin" /> : <BookOpenCheck size={11} />}
-                        {isLoading ? 'Loading...' : 'Load Data'}
-                    </button>
-                </div>
-
-                {/* Totals Bar */}
-                {memberGroups.length > 0 && (
-                    <div className="flex items-center gap-4 mt-2 pt-2 border-t border-slate-200 fz-tiny font-bold uppercase tracking-wide">
-                        <span className="text-slate-500">{memberGroups.length} Member(s)</span>
-                        <span className="text-indigo-600">Demand Send: ₹{grandTotalSend.toLocaleString('en-IN')}</span>
-                        <span className={grandTotalReceived === grandTotalSend ? 'text-emerald-600' : 'text-rose-600'}>
-                            Demand Received: ₹{grandTotalReceived.toLocaleString('en-IN')}
-                        </span>
-                        {grandTotalShort > 0 && <span className="text-rose-600">Short: ₹{grandTotalShort.toLocaleString('en-IN')}</span>}
-                        {totalsMatch && <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">✓ Totals Match — Ready to Post</span>}
-                        {grandTotalSend > 0 && !totalsMatch && <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">✗ Totals Do Not Match</span>}
-                    </div>
-                )}
-            </div>
-
-            {/* Data Grid */}
-            <div className="flex-1 overflow-auto">
-                {isLoading ? (
-                    <div className="h-full flex flex-col items-center justify-center">
-                        <div className="relative mb-4">
-                            <div className="w-16 h-16 border-4 border-indigo-200 rounded-full animate-spin border-t-indigo-600" />
-                            <BookOpenCheck size={20} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600" />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'end' }}>
+                            <div>
+                                <label className="aw-label" htmlFor="ulp-month">Month</label>
+                                <Select id="ulp-month" value={formData.month} onChange={v => updateField('month', v)}
+                                    className="aw-select" popupClassName="aw-select-popup" options={MONTHS.map(m => ({ value: m, label: m }))} />
+                            </div>
+                            <div>
+                                <label className="aw-label" htmlFor="ulp-year">Year</label>
+                                <Select id="ulp-year" value={formData.year} onChange={v => updateField('year', v)}
+                                    className="aw-select" popupClassName="aw-select-popup" options={YEARS.map(y => ({ value: y, label: y }))} />
+                            </div>
+                            <div style={{ gridColumn: 'span 2' }}>
+                                <label className="aw-label" htmlFor="ulp-branch">Branch</label>
+                                <Select id="ulp-branch" value={(formData.branch || undefined) as string} onChange={v => updateField('branch', v)}
+                                    placeholder="Select" className="aw-select" popupClassName="aw-select-popup" showSearch allowClear
+                                    optionFilterProp="label"
+                                    options={branches.map(b => ({ value: String(b.officeno), label: `${b.officeno}-${b.office_name}` }))} />
+                            </div>
+                            <div>
+                                <label className="aw-label" htmlFor="ulp-from">From Member</label>
+                                <input id="ulp-from" type="text" value={formData.fromMember} onChange={e => updateField('fromMember', e.target.value)}
+                                    className="aw-input" style={{ fontFamily: 'monospace' }} />
+                            </div>
+                            <div>
+                                <label className="aw-label" htmlFor="ulp-to">To Member</label>
+                                <input id="ulp-to" type="text" value={formData.toMember} onChange={e => updateField('toMember', e.target.value)}
+                                    className="aw-input" style={{ fontFamily: 'monospace' }} />
+                            </div>
                         </div>
-                        <p className="fz-label font-bold text-indigo-700 uppercase tracking-wide animate-pulse">Loading Demand Data...</p>
-                    </div>
-                ) : memberGroups.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                        <BookOpenCheck size={40} className="mb-2 text-slate-300" />
-                        <p className="fz-caption font-bold uppercase tracking-wide">No Data Loaded</p>
-                        <p className="fz-tiny mt-1">Select Month, Year, Branch and click "Load Data"</p>
-                    </div>
-                ) : (
-                    <table className="w-full fz-small border-collapse">
-                        <thead className="sticky top-0 z-10">
-                            <tr className="bg-slate-100 border-b border-slate-300">
-                                <th className="px-2 py-1.5 text-left fz-mini font-black text-slate-600 uppercase tracking-wide w-12">Code</th>
-                                <th className="px-2 py-1.5 text-left fz-mini font-black text-slate-600 uppercase tracking-wide">Head Name</th>
-                                <th className="px-2 py-1.5 text-right fz-mini font-black text-slate-600 uppercase tracking-wide w-24">Balance</th>
-                                <th className="px-2 py-1.5 text-right fz-mini font-black text-slate-600 uppercase tracking-wide w-28">Demand Send</th>
-                                <th className="px-2 py-1.5 text-right fz-mini font-black text-indigo-600 uppercase tracking-wide w-28">Demand Received</th>
-                                <th className="px-2 py-1.5 text-right fz-mini font-black text-rose-600 uppercase tracking-wide w-28">Short Recovery</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {memberGroups.map((group) => (
-                                <React.Fragment key={group.memberNo}>
-                                    {/* Member Header */}
-                                    <tr className="bg-slate-50 border-t-2 border-slate-300">
-                                        <td colSpan={6} className="px-2 py-1.5 font-black fz-small text-slate-800">
-                                            Member No : [{group.memberNo}] {group.memberName}
-                                        </td>
-                                    </tr>
-                                    {/* Head rows */}
-                                    {group.heads.map((head, idx) => (
-                                        <tr key={`${group.memberNo}-${head.code}-${idx}`} className="border-b border-slate-100 hover:bg-indigo-50/30">
-                                            <td className="px-2 py-0.5 font-bold text-slate-500">{head.code}</td>
-                                            <td className="px-2 py-0.5 text-slate-700">{head.headName}</td>
-                                            <td className="px-2 py-0.5 text-right font-mono text-slate-500">{head.balance.toFixed(2)}</td>
-                                            <td className="px-2 py-0.5 text-right font-mono font-bold text-slate-900">{head.demandSend.toFixed(2)}</td>
-                                            <td className="px-2 py-0.5 text-right font-mono font-bold text-indigo-700">{head.demandReceived.toFixed(2)}</td>
-                                            <td className="px-2 py-0.5 text-right font-mono font-bold text-rose-600">{head.shortRecovery.toFixed(2)}</td>
-                                        </tr>
+                        <div className="aw-inline" style={{ gap: 'var(--aw-gap)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                            <div>
+                                <span className="aw-label">Mode of Receipt</span>
+                                <div className="aw-seg" role="tablist" style={{ width: 280, ['--seg-index' as any]: Math.max(0, MODES.indexOf(formData.modeOfReceipt)), ['--seg-count' as any]: MODES.length }}>
+                                    {MODES.map(m => (
+                                        <button key={m} type="button" role="tab" aria-selected={formData.modeOfReceipt === m} onClick={() => updateField('modeOfReceipt', m)}>{m}</button>
                                     ))}
-                                    {/* Member total row */}
-                                    <tr className="border-b-2 border-slate-200 bg-slate-50/50">
-                                        <td colSpan={3} className="px-2 py-0.5 text-right font-black fz-tiny text-slate-500 uppercase">Total</td>
-                                        <td className="px-2 py-0.5 text-right font-mono font-black text-slate-900">{group.totalSend.toFixed(2)}</td>
-                                        <td className="px-2 py-0.5 text-right font-mono font-black text-indigo-700">{group.totalReceived.toFixed(2)}</td>
-                                        <td className="px-2 py-0.5 text-right font-mono font-black text-rose-600">{group.totalShort.toFixed(2)}</td>
-                                    </tr>
-                                </React.Fragment>
-                            ))}
-                            {/* Grand Total */}
-                            <tr className="bg-slate-200 border-t-2 border-slate-400 sticky bottom-0">
-                                <td colSpan={3} className="px-2 py-1.5 text-right font-black fz-small text-slate-700 uppercase">Grand Total</td>
-                                <td className="px-2 py-1.5 text-right font-mono font-black fz-caption text-slate-900">{grandTotalSend.toFixed(2)}</td>
-                                <td className="px-2 py-1.5 text-right font-mono font-black fz-caption text-indigo-700">{grandTotalReceived.toFixed(2)}</td>
-                                <td className="px-2 py-1.5 text-right font-mono font-black fz-caption text-rose-600">{grandTotalShort.toFixed(2)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                )}
+                                </div>
+                            </div>
+                            <button type="button" onClick={handleLoad} disabled={isLoading} className="aw-btn aw-btn-secondary">
+                                {isLoading ? <RotateCcw size={13} className="aw-spin" /> : <BookOpenCheck size={13} />} {isLoading ? 'Loading...' : 'Load Data'}
+                            </button>
+                        </div>
+
+                        {memberGroups.length > 0 && (
+                            <div className="aw-inline" style={{ gap: 8, flexWrap: 'wrap' }}>
+                                <span className="aw-pill">{memberGroups.length} Member(s)</span>
+                                <span className="aw-pill">Demand Send ₹{grandTotalSend.toLocaleString('en-IN')}</span>
+                                <span className={`aw-pill ${grandTotalReceived === grandTotalSend ? 'tone-success' : 'tone-danger'}`}>Demand Received ₹{grandTotalReceived.toLocaleString('en-IN')}</span>
+                                {grandTotalShort > 0 && <span className="aw-pill tone-danger">Short ₹{grandTotalShort.toLocaleString('en-IN')}</span>}
+                                {totalsMatch && <span className="aw-pill tone-success">✓ Totals Match — Ready to Post</span>}
+                                {grandTotalSend > 0 && !totalsMatch && <span className="aw-pill tone-danger">✗ Totals Do Not Match</span>}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="aw-card">
+                        <div className="aw-card-head">
+                            <span className="aw-card-icon"><BookOpenCheck size={14} /></span>
+                            <h2 className="aw-card-title">Demand Data</h2>
+                        </div>
+                        {isLoading ? (
+                            <div className="aw-empty" style={{ padding: 40 }}>
+                                <span className="aw-spin" />
+                                <p className="aw-strong">Loading Demand Data...</p>
+                            </div>
+                        ) : memberGroups.length === 0 ? (
+                            <div className="aw-empty" style={{ padding: 32 }}>
+                                <BookOpenCheck size={32} />
+                                <p className="aw-strong">No Data Loaded</p>
+                                <span className="aw-meta">Select Month, Year, Branch and click "Load Data"</span>
+                            </div>
+                        ) : (
+                            <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 470px)', minHeight: 200 }}>
+                                <table className="aw-table" style={{ minWidth: 760 }}>
+                                    <thead>
+                                        <tr>
+                                            <th style={{ width: 80 }}>Code</th>
+                                            <th>Head Name</th>
+                                            <th className="is-right" style={{ width: 120 }}>Balance</th>
+                                            <th className="is-right" style={{ width: 140 }}>Demand Send</th>
+                                            <th className="is-right is-accent" style={{ width: 150 }}>Demand Received</th>
+                                            <th className="is-right is-danger" style={{ width: 150 }}>Short Recovery</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {memberGroups.map((group) => (
+                                            <React.Fragment key={group.memberNo}>
+                                                <tr>
+                                                    <td colSpan={6} style={{ ...rowHead, background: 'var(--aw-surface-muted)' }}>
+                                                        Member No : [{group.memberNo}] {group.memberName}
+                                                    </td>
+                                                </tr>
+                                                {group.heads.map((head, idx) => (
+                                                    <tr key={`${group.memberNo}-${head.code}-${idx}`}>
+                                                        <td className="is-muted" style={rowHead}>{head.code}</td>
+                                                        <td>{head.headName}</td>
+                                                        <td className="is-right is-muted">{head.balance.toFixed(2)}</td>
+                                                        <td className="is-right" style={rowHead}>{head.demandSend.toFixed(2)}</td>
+                                                        <td className="is-right is-accent" style={rowHead}>{head.demandReceived.toFixed(2)}</td>
+                                                        <td className="is-right is-danger" style={rowHead}>{head.shortRecovery.toFixed(2)}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr>
+                                                    <td colSpan={3} className="is-right is-muted" style={rowHead}>Total</td>
+                                                    <td className="is-right" style={rowHead}>{group.totalSend.toFixed(2)}</td>
+                                                    <td className="is-right is-accent" style={rowHead}>{group.totalReceived.toFixed(2)}</td>
+                                                    <td className="is-right is-danger" style={rowHead}>{group.totalShort.toFixed(2)}</td>
+                                                </tr>
+                                            </React.Fragment>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colSpan={3} className="is-right">Grand Total</td>
+                                            <td className="is-right">{grandTotalSend.toFixed(2)}</td>
+                                            <td className="is-right is-accent">{grandTotalReceived.toFixed(2)}</td>
+                                            <td className="is-right is-danger">{grandTotalShort.toFixed(2)}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        )}
+                    </section>
+                </div>
             </div>
 
-            {/* Footer */}
-            <div className="ulp-footer bg-slate-50 border-t border-slate-200 px-4 py-1 flex items-center justify-between shrink-0">
-                <span className="fz-mini font-bold text-slate-500 uppercase tracking-widest">
-                    Demand Posting | {formData.modeOfReceipt}
-                </span>
-                <span className="fz-mini font-bold text-slate-400">
-                    {formData.month}-{formData.year}
-                </span>
+            <div className="aw-footer">
+                <span>Demand Posting | {formData.modeOfReceipt}</span>
+                <span>{formData.month}-{formData.year}</span>
             </div>
-
-            <style>{`
-                html.dark .ulp-root { background-color: #000000 !important; color: #f5f5f7 !important; }
-                html.dark .ulp-config { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .ulp-config input { background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .ulp-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark table thead tr { background-color: #1c1c1e !important; }
-                html.dark table th { color: #8e8e93 !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark table td { border-color: #1c1c1e !important; }
-                html.dark table tr:hover { background-color: rgba(59,130,246,0.08) !important; }
-                html.dark table tr.bg-slate-50 { background-color: #1c1c1e !important; }
-                html.dark table tr.bg-slate-200 { background-color: rgba(255,255,255,.08) !important; }
-            `}</style>
         </div>
     );
 };

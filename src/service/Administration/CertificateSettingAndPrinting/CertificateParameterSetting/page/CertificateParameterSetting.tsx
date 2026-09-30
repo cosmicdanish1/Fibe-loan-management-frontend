@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Select, Table, Checkbox, message, Modal, List, Tag } from 'antd';
-import { Settings, Search, Save, FileText, Layout } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Select, message } from 'antd';
+import { Search, Save, FileText, Layout } from 'lucide-react';
+import AwDialog from '@/components/shared/kit/AwDialog';
 import apiService from '../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
-
-const { Option } = Select;
 
 interface CertificateField {
   key: string;
@@ -117,60 +115,15 @@ const CertificateParameterSetting: React.FC = () => {
     finally { setLoading(false); }
   };
 
-  const columns = [
-    {
-      title: 'Display Name', dataIndex: 'name', key: 'name', width: '22%',
-      render: (text: string, rec: CertificateField) => (
-        <input value={text} onChange={e => updateRow(rec.key, 'name', e.target.value)}
-          className="w-full bg-slate-700 border border-slate-600 text-slate-100 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-500" />
-      ),
-    },
-    {
-      title: 'Data Key', dataIndex: 'field', key: 'field', width: '18%',
-      render: (text: string, rec: CertificateField) => (
-        <input value={text} onChange={e => updateRow(rec.key, 'field', e.target.value)}
-          className="w-full bg-slate-700 border border-slate-600 text-indigo-300 font-mono rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-500" />
-      ),
-    },
-    {
-      title: 'Row', dataIndex: 'row', key: 'row', align: 'center' as const, width: '8%',
-      render: (v: number, rec: CertificateField) => (
-        <input type="number" value={v} onChange={e => updateRow(rec.key, 'row', parseInt(e.target.value) || 0)}
-          className="w-full bg-slate-700 border border-slate-600 text-slate-100 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-indigo-500" />
-      ),
-    },
-    {
-      title: 'Col', dataIndex: 'col', key: 'col', align: 'center' as const, width: '8%',
-      render: (v: number, rec: CertificateField) => (
-        <input type="number" value={v} onChange={e => updateRow(rec.key, 'col', parseInt(e.target.value) || 0)}
-          className="w-full bg-slate-700 border border-slate-600 text-slate-100 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-indigo-500" />
-      ),
-    },
-    {
-      title: 'Visible', dataIndex: 'visible', key: 'visible', align: 'center' as const, width: '8%',
-      render: (v: boolean, rec: CertificateField) => (
-        <Checkbox checked={v} onChange={e => updateRow(rec.key, 'visible', e.target.checked)} />
-      ),
-    },
-    {
-      title: 'Length', dataIndex: 'length', key: 'length', align: 'center' as const, width: '8%',
-      render: (v: number, rec: CertificateField) => (
-        <input type="number" value={v} onChange={e => updateRow(rec.key, 'length', parseInt(e.target.value) || 0)}
-          className="w-full bg-slate-700 border border-slate-600 text-emerald-300 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-indigo-500" />
-      ),
-    },
-    {
-      title: 'Word Mode', dataIndex: 'inWo', key: 'inWo',
-      render: (text: string, rec: CertificateField) => (
-        <input value={text} placeholder="e.g. UPPER" onChange={e => updateRow(rec.key, 'inWo', e.target.value)}
-          className="w-full bg-slate-700 border border-slate-600 text-slate-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-500" />
-      ),
-    },
-  ];
-
   const TABS = [
     { id: 'format', label: 'Format Identity', icon: <FileText size={14} /> },
     { id: 'detail', label: 'Field Setup',      icon: <Layout size={14} /> },
+  ];
+
+  const ACCOUNT_OPTIONS = [
+    { value: 'FIXED_DEPOSIT', label: 'Fixed Deposit (FD)' },
+    { value: 'RECURRING_DEPOSIT', label: 'Recurring Deposit (RD)' },
+    { value: 'SHARE', label: 'Share Certificate' },
   ];
 
   usePageToolbarActions({
@@ -180,159 +133,146 @@ const CertificateParameterSetting: React.FC = () => {
   });
 
   return (
-      <div className="cps-app h-screen flex flex-col overflow-hidden" style={{ background: 'var(--cps-page-bg)', color: 'var(--cps-text)' }}>
-
-        {/* Header */}
-        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="cps-header px-4 py-3 flex items-center justify-between shrink-0 border-b"
-          style={{ background: 'var(--cps-surface)', borderColor: 'var(--cps-border)' }}>
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/30">
-              <Settings size={18} />
-            </div>
-            <div>
-              <h1 className="text-sm font-black tracking-tight uppercase" style={{ color: 'var(--cps-text)' }}>Certificate Parameter Setting</h1>
-              <p className="fz-small mt-0.5" style={{ color: 'var(--cps-muted)' }}>Configure certificate layout fields and format</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={handleFind} disabled={loading}
-              className="h-9 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50">
-              <Search size={14} /> Find
-            </button>
-            <button onClick={handleSave} disabled={loading}
-              className="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50">
-              <Save size={14} /> {loading ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Tabs */}
-        <div className="cps-tabs flex gap-1 px-4 shrink-0 border-b" style={{ background: 'var(--cps-surface)', borderColor: 'var(--cps-border)' }}>
-          {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-              className={`px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all relative flex items-center gap-2
-                ${activeTab === tab.id ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}>
-              {tab.icon} {tab.label}
-              {activeTab === tab.id && (
-                <motion.div layoutId="cert-tab-indicator"
-                  className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-t-full" />
-              )}
-            </button>
-          ))}
+    <div className="app-window">
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Certificate Parameter Setting</h1>
+          <p className="aw-desc">Configure certificate layout fields and format</p>
         </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-hidden">
-          <AnimatePresence mode="wait">
-            {activeTab === 'format' ? (
-              <motion.div key="format" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}
-                className="h-full p-6 overflow-auto">
-                <div className="cps-card max-w-2xl mx-auto rounded-2xl overflow-hidden border" style={{ background: 'var(--cps-surface)', borderColor: 'var(--cps-border)' }}>
-                  <div className="px-6 py-4 border-b flex items-center gap-3" style={{ borderColor: 'var(--cps-border)' }}>
-                    <div className="bg-indigo-500/20 p-2 rounded-lg text-indigo-400"><FileText size={16} /></div>
-                    <div>
-                      <h2 className="text-sm font-black" style={{ color: 'var(--cps-text)' }}>Format Identity</h2>
-                      <p className="text-xs" style={{ color: 'var(--cps-muted)' }}>Set the format name, account type and default flag</p>
-                    </div>
-                  </div>
-                  <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Format Name</label>
-                      <input value={data.formatName} onChange={e => updateField('formatName', e.target.value)}
-                        placeholder="e.g. STD_FD_V1"
-                        className="w-full h-10 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Type</label>
-                      <Select value={data.accountType} onChange={v => updateField('accountType', v)} className="w-full" style={{ height: 40 }}>
-                        <Option value="FIXED_DEPOSIT">Fixed Deposit (FD)</Option>
-                        <Option value="RECURRING_DEPOSIT">Recurring Deposit (RD)</Option>
-                        <Option value="SHARE">Share Certificate</Option>
-                      </Select>
-                    </div>
-                    <div className="sm:col-span-2 flex items-center gap-3 pt-2 border-t" style={{ borderColor: 'var(--cps-border)' }}>
-                      <Checkbox checked={data.isDefault} onChange={e => updateField('isDefault', e.target.checked)} />
-                      <span className="text-sm text-slate-300 font-semibold">Set as default for this account type</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div key="detail" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}
-                className="h-full p-4 flex flex-col">
-                <div className="rounded-t-2xl overflow-hidden border border-b-0 px-5 py-3 flex items-center gap-3"
-                  style={{ background: 'var(--accent-color)', borderColor: 'var(--accent-color)' }}>
-                  <Layout size={16} className="text-indigo-200" />
-                  <h2 className="text-xs font-black text-white uppercase tracking-wider">Field Positions</h2>
-                  <div className="flex-1" />
-                  <input value={data.detailFormatName} onChange={e => updateField('detailFormatName', e.target.value)}
-                    placeholder="Legacy map key…"
-                    className="h-7 w-40 bg-white/10 border border-white/20 text-xs font-bold text-white rounded px-3 focus:outline-none placeholder:text-white/40" />
-                </div>
-                <div className="cps-table-wrap flex-1 overflow-auto border rounded-b-2xl" style={{ borderColor: 'var(--cps-border)' }}>
-                  <Table columns={columns} dataSource={data.fields} pagination={false} size="small"
-                    className="cert-dark-table"
-                    rowClassName={(_, i) => i % 2 === 0 ? 'row-even' : 'row-odd'} />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="aw-actions">
+          <button type="button" onClick={handleFind} disabled={loading} className="aw-btn aw-btn-secondary">
+            <Search size={13} /> Find
+          </button>
+          <button type="button" onClick={handleSave} disabled={loading} className="aw-btn aw-btn-primary">
+            <Save size={13} /> {loading ? 'Saving…' : 'Save'}
+          </button>
         </div>
-
-        {/* Find Templates Modal */}
-        <Modal title="Select Certificate Template" open={showFindModal}
-          onCancel={() => setShowFindModal(false)} footer={null} width={480}>
-          <List dataSource={templates} renderItem={(t: any) => (
-            <List.Item onClick={() => { mapBackendToFrontend(t); setShowFindModal(false); }}
-              className="cursor-pointer rounded-xl mb-2 transition-all hover:bg-slate-700/50 px-4 py-3">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                  <div className="bg-indigo-500/20 p-2 rounded-lg text-indigo-400"><FileText size={14} /></div>
-                  <div>
-                    <div className="text-sm font-bold text-white">{t.templateName}</div>
-                    <div className="text-xs text-slate-400">{t.accountType}</div>
-                  </div>
-                </div>
-                {t.isDefault && <Tag color="geekblue" className="text-xs">Default</Tag>}
-              </div>
-            </List.Item>
-          )} />
-        </Modal>
-
-        <style>{`
-          .cps-app {
-            --cps-page-bg: #f8fafc;
-            --cps-surface: #ffffff;
-            --cps-surface-alt: #f1f5f9;
-            --cps-border: #dbe4ee;
-            --cps-text: #172033;
-            --cps-muted: #526278;
-            --cps-row-even: #f8fafc;
-            --cps-row-odd: #ffffff;
-            --cps-row-hover: #eef2ff;
-          }
-          .cps-header button.bg-slate-700 { background: var(--cps-surface-alt); color: var(--cps-text); border: 1px solid var(--cps-border); }
-          .cps-tabs button:not(.text-indigo-400) { color: var(--cps-muted); }
-          .cps-card .text-slate-300 { color: var(--cps-text); }
-          .cps-app label { color: var(--cps-muted); }
-          .cps-app input.bg-slate-700 { background: var(--cps-surface); color: var(--cps-text); border-color: var(--cps-border); }
-          .cps-app input.text-indigo-300 { color: var(--accent-color); }
-          .cps-app input.text-emerald-300 { color: #047857; }
-          .cert-dark-table .ant-table { background: var(--cps-surface) !important; }
-          .cert-dark-table .ant-table-thead > tr > th { background: var(--cps-surface-alt) !important; color: var(--cps-muted) !important; border-bottom: 1px solid var(--cps-border) !important; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
-          .cert-dark-table .ant-table-tbody > tr > td { border-bottom: 1px solid var(--cps-border) !important; padding: 6px 12px !important; background: transparent !important; }
-          .row-even td { background: var(--cps-row-even) !important; }
-          .row-odd td  { background: var(--cps-row-odd) !important; }
-          .cert-dark-table .ant-table-tbody > tr:hover > td { background: var(--cps-row-hover) !important; }
-          html.dark .cps-app { --cps-page-bg: #0e1116; --cps-surface: #151a21; --cps-surface-alt: #1c2530; --cps-border: #232b36; --cps-text: #e6e9ef; --cps-muted: #8b95a5; --cps-row-even: #151a21; --cps-row-odd: #0e1116; --cps-row-hover: #1c2530; }
-          html.dark .cps-header { border-color: var(--cps-border) !important; }
-          html.dark .cps-tabs { border-color: var(--cps-border) !important; }
-          html.dark .cps-tabs button:not(.text-indigo-400) { color: #8e8e93 !important; }
-        `}</style>
       </div>
+
+      {/* ── Tabs ── */}
+      <div className="aw-tabs" role="tablist">
+        {TABS.map(tab => (
+          <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id as any)} className="aw-tab">
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="aw-content">
+        <div key={activeTab} className="aw-fade-in">
+          {activeTab === 'format' ? (
+            <div className="aw-narrow" style={{ maxWidth: 720, margin: '0 auto' }}>
+              <section className="aw-card">
+                <div className="aw-card-head">
+                  <span className="aw-card-icon"><FileText size={14} /></span>
+                  <div>
+                    <h2 className="aw-card-title">Format Identity</h2>
+                    <p className="aw-meta">Set the format name, account type and default flag</p>
+                  </div>
+                </div>
+                <div className="aw-stack">
+                  <div className="aw-two">
+                    <div>
+                      <label className="aw-label" htmlFor="cps-name">Format Name</label>
+                      <input id="cps-name" value={data.formatName} onChange={e => updateField('formatName', e.target.value)} placeholder="e.g. STD_FD_V1" className="aw-input" />
+                    </div>
+                    <div>
+                      <label className="aw-label" htmlFor="cps-acc">Account Type</label>
+                      <Select id="cps-acc" className="aw-select" popupClassName="aw-select-popup" value={data.accountType} onChange={v => updateField('accountType', v)} options={ACCOUNT_OPTIONS} />
+                    </div>
+                  </div>
+                  <div className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <span className="aw-strong" style={{ fontWeight: 600 }}>Set as default for this account type</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={data.isDefault}
+                      aria-label="Set as default for this account type"
+                      onClick={() => updateField('isDefault', !data.isDefault)}
+                      className="aw-switch"
+                    />
+                  </div>
+                </div>
+              </section>
+            </div>
+          ) : (
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Layout size={14} /></span>
+                <h2 className="aw-card-title">Field Positions</h2>
+                <input
+                  value={data.detailFormatName}
+                  onChange={e => updateField('detailFormatName', e.target.value)}
+                  placeholder="Legacy map key…"
+                  aria-label="Legacy map key"
+                  className="aw-input"
+                  style={{ marginLeft: 'auto', width: 200 }}
+                />
+              </div>
+              <div className="aw-table-wrap" style={{ maxHeight: '62vh' }}>
+                <table className="aw-table" style={{ minWidth: 820 }}>
+                  <thead>
+                    <tr>
+                      <th>Display Name</th>
+                      <th>Data Key</th>
+                      <th className="is-center" style={{ width: 90 }}>Row</th>
+                      <th className="is-center" style={{ width: 90 }}>Col</th>
+                      <th className="is-center" style={{ width: 80 }}>Visible</th>
+                      <th className="is-center" style={{ width: 100 }}>Length</th>
+                      <th>Word Mode</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.fields.map(rec => (
+                      <tr key={rec.key}>
+                        <td className="has-input"><input aria-label={`Display name ${rec.field}`} value={rec.name} onChange={e => updateRow(rec.key, 'name', e.target.value)} className="aw-input" /></td>
+                        <td className="has-input"><input aria-label={`Data key ${rec.field}`} value={rec.field} onChange={e => updateRow(rec.key, 'field', e.target.value)} className="aw-input" style={{ color: 'var(--aw-accent)', fontFamily: 'monospace' }} /></td>
+                        <td className="has-input"><input type="number" aria-label={`Row ${rec.field}`} value={rec.row} onChange={e => updateRow(rec.key, 'row', parseInt(e.target.value) || 0)} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="has-input"><input type="number" aria-label={`Col ${rec.field}`} value={rec.col} onChange={e => updateRow(rec.key, 'col', parseInt(e.target.value) || 0)} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="is-center">
+                          <input type="checkbox" aria-label={`Visible ${rec.field}`} checked={rec.visible} onChange={e => updateRow(rec.key, 'visible', e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
+                        </td>
+                        <td className="has-input"><input type="number" aria-label={`Length ${rec.field}`} value={rec.length} onChange={e => updateRow(rec.key, 'length', parseInt(e.target.value) || 0)} className="aw-input" style={{ textAlign: 'center', color: 'var(--aw-success)' }} /></td>
+                        <td className="has-input"><input aria-label={`Word mode ${rec.field}`} value={rec.inWo} placeholder="e.g. UPPER" onChange={e => updateRow(rec.key, 'inWo', e.target.value)} className="aw-input" /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
+
+      {/* Find Templates dialog */}
+      <AwDialog open={showFindModal} title="Select Certificate Template" icon={<Search size={14} />} onClose={() => setShowFindModal(false)} maxWidth="30rem">
+        {templates.length === 0 ? (
+          <div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">No templates found</span></div>
+        ) : (
+          <div className="aw-stack" style={{ gap: 6 }}>
+            {templates.map((t: any, i: number) => (
+              <button
+                key={t.id ?? i}
+                type="button"
+                onClick={() => { mapBackendToFrontend(t); setShowFindModal(false); }}
+                className="aw-right-cell"
+                style={{ justifyContent: 'space-between', width: '100%', padding: '10px 12px' }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                  <span className="aw-card-icon"><FileText size={14} /></span>
+                  <span>
+                    <span className="aw-strong" style={{ display: 'block' }}>{t.templateName}</span>
+                    <span className="aw-meta">{t.accountType}</span>
+                  </span>
+                </span>
+                {t.isDefault && <span className="aw-pill">Default</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </AwDialog>
+    </div>
   );
 };
 

@@ -153,7 +153,7 @@ const navConfig: NavItem[] = [
           { title: '1.1 Cash-Book (Receiptwise Rough)', action: 'CASH_BOOK_RECEIPTWISE' },
           { title: '1.2 Cash-Book', action: 'CASH_BOOK' },
           { title: '1.3 Day-Book', action: 'DAY_BOOK' },
-          { title: '1.4 Day-Book [SB]', action: 'DAY_BOOK_SB' },
+          { title: '1.4 Day-Book [CD]', action: 'DAY_BOOK_CD' },
           { title: '1.5 Consolidation Of Daily A/c', action: 'CONSOLIDATION_DAILY_AC' },
         ]
       },
@@ -233,6 +233,12 @@ const navConfig: NavItem[] = [
         ]
       },
       { title: '13. Pass Book Printing', action: 'PASS_BOOK_PRINTING' },
+      {
+        title: 'Report Pro',
+        submenu: [
+          { title: 'Legacy Report Workspace', action: 'REPORT_PRO' },
+        ]
+      },
     ]
   },
   {
@@ -310,7 +316,7 @@ const ExitConfirmationModal: React.FC<ExitConfirmationModalProps> = ({ isOpen, o
 
           <h3 className="text-xl font-bold text-gray-800 mb-2">Exit Application</h3>
           <p className="text-gray-600 text-sm mb-8 max-w-[80%] leading-relaxed">
-            Are you sure you want to exit Paper White Technology LMS?
+            Are you sure you want to exit Paper White Technology - LMS?
           </p>
 
           <div className="flex gap-4 w-full justify-center">

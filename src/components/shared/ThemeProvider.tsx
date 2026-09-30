@@ -6,6 +6,8 @@ import { setTheme } from '../../store/slices/themeSlice';
 import { useAuth } from '../../auth/context/AuthContext';
 import { apiService } from '../../services/api';
 import { configureNotificationEffects } from '../../utils/notificationEffects';
+import { applyTypographyOffsets, fzBaseForScale, normalizeTypographyOffsets, readTypographyOffsets, TYPOGRAPHY_STORAGE_KEY, TYPOGRAPHY_SYNC_CHANNEL } from '../../config/typographyPreferences';
+import { FONT_OPTIONS, applyAppFont } from '../../config/fontOptions';
 
 interface ThemeProviderProps {
     children: React.ReactNode;
@@ -16,6 +18,22 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const theme = useSelector((state: RootState) => state.theme);
     const { isAuthenticated } = useAuth();
     const isFirstMount = React.useRef(true);
+    const isDark = theme.interfaceMode === 'dark';
+
+    // One-time carry-over: text size and font used to live only in localStorage.
+    // Fold an existing choice into the theme state so nobody loses it.
+    useEffect(() => {
+        try {
+            const legacySize = localStorage.getItem('lms-font-size');
+            const legacyFont = localStorage.getItem('lms-font-family');
+            const patch: Partial<typeof theme> = {};
+            if (legacySize) patch.fontScale = legacySize === '12px' ? 0.9 : legacySize === '15px' ? 1.2 : 1.0;
+            if (legacyFont && FONT_OPTIONS.some(f => f.value === legacyFont)) patch.fontFamily = legacyFont;
+            if (Object.keys(patch).length) dispatch(setTheme(patch));
+            localStorage.removeItem('lms-font-size');
+            localStorage.removeItem('lms-font-family');
+        } catch { /* storage unavailable */ }
+    }, [dispatch]);
 
     // 1. Fetch preferences on login (Only on first mount)
     useEffect(() => {
@@ -49,15 +67,23 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         console.log('[ThemeProvider] Theme state updated, applying CSS variables:', theme.accentColor, theme.cornerRadius);
 
         // Interface Mode (Dark/Light)
-        if (theme.interfaceMode === 'dark' || (theme.interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        if (isDark) {
             root.classList.add('dark');
         } else {
             root.classList.remove('dark');
         }
 
+        // Soft shadows (Settings → Appearance). Off removes them app-wide for speed.
+        root.classList.toggle('no-shadows', theme.shadows === false);
+
+        // Decorative header background style (Settings → Appearance).
+        root.dataset.headerStyle = theme.headerStyle ?? 'waves';
+
         // Custom Properties for Density, Scale, Accent, and Radius
         root.style.setProperty('--accent-color', theme.accentColor);
         root.style.setProperty('--font-scale', theme.fontScale.toString());
+        root.style.setProperty('--fz-base', `${fzBaseForScale(theme.fontScale)}px`);
+        if (theme.fontFamily && FONT_OPTIONS.some(f => f.value === theme.fontFamily)) applyAppFont(theme.fontFamily);
         root.style.setProperty('--ui-density', theme.density.toString());
         root.style.setProperty('--corner-radius', `${theme.cornerRadius}px`);
 
@@ -83,10 +109,7 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         body.style.backgroundPosition = '';
         body.style.backgroundRepeat = '';
 
-        const darkMode = theme.interfaceMode === 'dark'
-            || (theme.interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-        if (darkMode) {
+        if (isDark) {
             // A configured light canvas would leave the navbar and toolbars
             // sitting on a bright background, so dark mode keeps its own.
             // "Fiscal ledger" navy palette — see the html.dark block below.
@@ -105,7 +128,7 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             body.style.backgroundColor = theme.backgroundColor1 || '#ffffff';
         }
 
-    }, [theme]);
+    }, [theme, isDark]);
 
     // 2a. Toast + sound behaviour (Settings → Notifications / Sound Effects).
     //     Runs in every window, so a tool window honours the settings too.
@@ -116,23 +139,15 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         });
     }, [theme.notifications, theme.soundEffects]);
 
-    // 2b. Header gradient (localStorage-backed, per-machine UI pref — same
-    //     pattern as dashboard background / font size). Applied as a CSS var
-    //     that overrides the app's hardcoded header gradient, and kept in sync
-    //     across windows via BroadcastChannel.
+    // Advanced typography is local to the desktop installation and syncs
+    // across its windows. Only screens using the semantic tokens opt in.
     useEffect(() => {
-        const DEFAULT_HEADER_GRADIENT = 'linear-gradient(to right, #0f172a, #312e81, #0f172a)';
-        const apply = (value?: string) => {
-            document.documentElement.style.setProperty('--header-gradient', value || DEFAULT_HEADER_GRADIENT);
-        };
-        apply(localStorage.getItem('lms-header-gradient') || undefined);
-
-        const bc = new BroadcastChannel('lms_header_gradient');
+        applyTypographyOffsets(readTypographyOffsets());
+        const bc = new BroadcastChannel(TYPOGRAPHY_SYNC_CHANNEL);
         bc.onmessage = (event) => {
-            if (event.data?.headerGradient) {
-                localStorage.setItem('lms-header-gradient', event.data.headerGradient);
-                apply(event.data.headerGradient);
-            }
+            const offsets = normalizeTypographyOffsets(event.data);
+            localStorage.setItem(TYPOGRAPHY_STORAGE_KEY, JSON.stringify(offsets));
+            applyTypographyOffsets(offsets);
         };
         return () => bc.close();
     }, []);
@@ -168,19 +183,19 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     return (
         <ConfigProvider
             theme={{
-                algorithm: theme.interfaceMode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+                algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
                 token: {
                     // Dark mode is the "fiscal ledger" theme: navy surfaces with a
                     // fixed emerald accent, independent of Settings → Accent Color
                     // (which still drives light mode).
-                    colorPrimary: theme.interfaceMode === 'dark' ? '#10B981' : theme.accentColor,
+                    colorPrimary: isDark ? '#10B981' : theme.accentColor,
                     borderRadius: theme.cornerRadius,
                     fontSize: 14 * theme.fontScale,
                     fontFamily: theme.fontFamily || "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     motionDurationFast: '0ms',
                     motionDurationMid: '0ms',
                     motionDurationSlow: '0ms',
-                    ...(theme.interfaceMode === 'dark' ? {
+                    ...(isDark ? {
                         colorBgBase: '#0E1116',
                         colorBgContainer: '#151A21',
                         colorBgElevated: '#151A21',
@@ -201,9 +216,9 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                 className="theme-transition-wrapper h-full w-full"
                 style={{
                     fontSize: 'var(--base-font-size)',
-                    '--accent-color': theme.interfaceMode === 'dark' ? '#10B981' : theme.accentColor,
+                    '--accent-color': isDark ? '#10B981' : theme.accentColor,
                     '--corner-radius': `${theme.cornerRadius}px`,
-                    '--accent-bg': theme.interfaceMode === 'dark' ? '#10B98110' : `${theme.accentColor}10`,
+                    '--accent-bg': isDark ? '#10B98110' : `${theme.accentColor}10`,
                 } as React.CSSProperties}
             >
                 {children}
@@ -231,7 +246,6 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         }
         
         html {
-          font-size: calc(100% * ${theme.fontScale});
           font-family: var(--font-family);
         }
 
@@ -293,7 +307,7 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
            chosen accent so the Settings → Accent Color picker drives the whole
            UI. Solid shades use the accent directly; light tints/derived shades
            are mixed against white so they track the accent too. Dark slate
-           gradients in headers are intentionally left untouched. */
+           header styling is intentionally left untouched. */
         .bg-indigo-600, .bg-indigo-500,
         .hover\\:bg-indigo-500:hover, .hover\\:bg-indigo-600:hover {
           background-color: var(--accent-color) !important;
@@ -308,23 +322,6 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         .ring-indigo-100, .ring-indigo-200, .ring-indigo-500 {
           --tw-ring-color: var(--accent-color) !important;
         }
-        /* Themeable header gradient — the dark app header bar follows the
-           Settings → Header Gradient choice.
-
-           Matched on the dark starting colour rather than the full three-class
-           combo: most windows use "from-slate-900 via-indigo-900 to-slate-900",
-           but ~11 headers use other middle shades (amber, rose, emerald, blue,
-           slate) and were silently left out of the theme before.
-
-           Deliberately NOT matched: banners that start on a saturated colour
-           (from-red-600, from-rose-500, from-amber-600/50). Those are alert and
-           warning strips, not header bars — recolouring them would destroy the
-           status signal they carry. */
-        .bg-gradient-to-r.from-slate-900,
-        .bg-gradient-to-r.from-slate-800 {
-          background-image: var(--header-gradient, linear-gradient(to right, #0f172a, #312e81, #0f172a)) !important;
-        }
-
         /* ── Corner radius ────────────────────────────────────────────────
            Settings → Corner Radius reached only antd controls. Every card and
            panel uses Tailwind's rounded-* utilities, which are fixed values —

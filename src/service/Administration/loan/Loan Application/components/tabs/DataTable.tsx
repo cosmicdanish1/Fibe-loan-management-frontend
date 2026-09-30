@@ -1,77 +1,10 @@
 // DataTable.tsx
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Select } from 'antd';
 import { Plus } from 'lucide-react';
 import { useTableData } from '../../hooks/useTableData';
 import type { TableColumn } from '../../types/table';
-
-// Simple button component
-const Button = ({
-  children,
-  onClick,
-  className = '',
-  variant = 'default',
-  size = 'default',
-  ...props
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  className?: string;
-  variant?: 'default' | 'outline' | 'ghost' | 'link';
-  size?: 'default' | 'sm' | 'lg';
-} & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
-  const baseStyles = 'inline-flex items-center justify-center rounded-md fz-body font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
-  const variantStyles = {
-    default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-    outline: 'border border-input hover:bg-accent hover:text-accent-foreground',
-    ghost: 'hover:bg-accent hover:text-accent-foreground',
-    link: 'underline-offset-4 hover:underline text-primary',
-  };
-  const sizeStyles = {
-    default: 'h-10 py-2 px-4',
-    sm: 'h-8 px-3 rounded-md fz-body',
-    lg: 'h-11 px-8 rounded-md',
-  };
-
-  return (
-    <button
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
-      onClick={onClick}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
-
-// Simple input component
-const Input = ({
-  value,
-  onChange,
-  type = 'text',
-  className = '',
-  ...props
-}: {
-  value: any;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type?: string;
-  className?: string;
-} & React.InputHTMLAttributes<HTMLInputElement>) => {
-  return (
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 fz-body ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      {...props}
-    />
-  );
-};
-
-// Simple classNames utility
-function classNames(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
-}
 
 export interface DataTableProps<T> {
   data: T[];
@@ -88,7 +21,7 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
   className = '',
   showAddButton = true
 }: DataTableProps<T>) {
-  const { addRow, updateRow, deleteRow } = useTableData(data, onDataChange);
+  const { addRow, updateRow } = useTableData(data, onDataChange);
   const [editingCell, setEditingCell] = useState<{ id: number | null; field: keyof T | null }>({ id: null, field: null });
   const [editValue, setEditValue] = useState<any>('');
   // Set when Tab/Enter runs off the last cell of the last row — tells the
@@ -176,111 +109,89 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={(e) => handleGridKeyDown(e, rowIndex, colIndex, rowId, column.key, e.currentTarget.value)}
             autoFocus
-            className="w-full fz-body h-8 border border-blue-400 rounded px-1 focus:outline-none"
+            aria-label={column.header}
+            className="aw-input"
           />
         );
       }
       if (column.type === 'select' && column.options) {
         return (
-          <select
-            value={editValue}
-            onChange={(e) => { setEditValue(e.target.value); updateRow(rowId, column.key, e.target.value); }}
+          <Select
+            value={editValue || undefined}
+            onChange={(v) => { setEditValue(v ?? ''); updateRow(rowId, column.key, v ?? ''); }}
             onKeyDown={(e) => handleGridKeyDown(e, rowIndex, colIndex, rowId, column.key, editValue)}
             autoFocus
-            className="w-full fz-body h-8 border border-blue-400 rounded px-1 focus:outline-none"
-          >
-            <option value="">Select...</option>
-            {column.options.map((opt: any) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            defaultOpen
+            aria-label={column.header}
+            placeholder="Select..."
+            className="aw-select"
+            popupClassName="aw-select-popup"
+            options={column.options.map((opt: any) => ({ value: opt.value, label: opt.label }))}
+          />
         );
       }
       return (
-        <Input
+        <input
           type={column.type === 'number' ? 'number' : 'text'}
           value={editValue}
           onChange={(e) => setEditValue(column.type === 'number' ? Number(e.target.value) : e.target.value)}
           onKeyDown={(e) => handleGridKeyDown(e, rowIndex, colIndex, rowId, column.key, editValue)}
           autoFocus
-          className="w-full fz-body h-8"
+          aria-label={column.header}
+          className="aw-input"
         />
       );
     }
 
     // Handle different column types
-    switch (column.type) {
-      case 'checkbox':
-        return (
-          <input
-            type="checkbox"
-            checked={Boolean(value)}
-            onChange={(e) => updateRow(rowId, column.key, e.target.checked)}
-            className="w-4 h-4"
-          />
-        );
-
-      case 'date':
-        return (
-          <div
-            onClick={() => handleCellClick(rowId, column.key)}
-            className="min-h-[32px] p-2 hover:bg-blue-50 cursor-pointer w-full fz-body rounded transition-colors duration-150 text-slate-700"
-          >
-            {value ? String(value) : <span className="text-slate-300">—</span>}
-          </div>
-        );
-
-      default:
-        return (
-          <div
-            onClick={() => handleCellClick(rowId, column.key)}
-            className="min-h-[32px] p-2 hover:bg-blue-50 cursor-pointer w-full fz-body rounded transition-colors duration-150"
-          >
-            {value !== undefined && value !== null && value !== '' ? String(value) : <span className="text-slate-300">—</span>}
-          </div>
-        );
+    if (column.type === 'checkbox') {
+      return (
+        <input
+          type="checkbox"
+          checked={Boolean(value)}
+          onChange={(e) => updateRow(rowId, column.key, e.target.checked)}
+          aria-label={column.header}
+          style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }}
+        />
+      );
     }
+
+    const empty = value === undefined || value === null || value === '';
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => handleCellClick(rowId, column.key)}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCellClick(rowId, column.key); } }}
+        className="aw-cell"
+        style={{ minHeight: 'calc(var(--aw-control-h) - 8px)' }}
+      >
+        {empty ? <span className="aw-meta">—</span> : String(value)}
+      </div>
+    );
   };
 
   return (
-    <div className={`w-full h-full ${className}`}>
-      {/* Modern table with classic structure */}
-      <div className="border border-slate-200 bg-white h-full overflow-auto rounded-lg shadow-sm">
-        <table className="w-full fz-body">
+    <div className={className}>
+      <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+        <table className="aw-table">
           <thead>
-            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-              <th
-                className="px-4 py-3 text-left font-semibold text-slate-700 border-r border-slate-200"
-                style={{ width: '80px' }}
-              >
-                Sr. No.
-              </th>
-              {columns.map((column, index) => (
-                <th
-                  key={String(column.key)}
-                  className="px-4 py-3 text-left font-semibold text-slate-700 border-r border-slate-200"
-                  style={{ width: column.width }}
-                >
+            <tr>
+              <th className="is-center" style={{ width: 70 }}>Sr. No.</th>
+              {columns.map((column) => (
+                <th key={String(column.key)} style={{ width: column.width }}>
                   {column.header}
-                  {column.required && <span className="text-red-500 ml-1">*</span>}
+                  {column.required && <span style={{ color: 'var(--aw-danger)', marginLeft: 3 }}>*</span>}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {data.map((row, index) => (
-              <tr
-                key={row.id}
-                className={`border-b border-slate-100 transition-colors duration-150 ${index === 0
-                  ? 'bg-blue-50 border-blue-200'
-                  : 'hover:bg-slate-50'
-                  }`}
-              >
-                <td className="px-4 py-3 text-center border-r border-slate-100 font-medium text-slate-600">
-                  {index + 1}
-                </td>
+              <tr key={row.id}>
+                <td className="is-muted is-center">{index + 1}</td>
                 {columns.map((column) => (
-                  <td key={String(column.key)} className="px-4 py-3 border-r border-slate-100">
+                  <td key={String(column.key)} className="has-input">
                     {renderCell(row, column, index)}
                   </td>
                 ))}
@@ -288,13 +199,10 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
             ))}
             {/* Empty rows to fill the table */}
             {Array.from({ length: Math.max(0, 8 - data.length) }).map((_, index) => (
-              <tr key={`empty-${index}`} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="px-4 py-3 text-center border-r border-slate-100 h-12 text-slate-400">
-                  {data.length + index + 1}
-                </td>
+              <tr key={`empty-${index}`}>
+                <td className="is-muted is-center" style={{ height: 42 }}>{data.length + index + 1}</td>
                 {columns.map((column) => (
-                  <td key={String(column.key)} className="px-4 py-3 border-r border-slate-100 h-12">
-                  </td>
+                  <td key={String(column.key)} />
                 ))}
               </tr>
             ))}
@@ -302,14 +210,10 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
         </table>
       </div>
       {showAddButton && (
-        <div className="mt-4">
-          <Button
-            onClick={() => addRow({} as any)}
-            className="w-full border-dashed border-2 border-slate-300 bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Row
-          </Button>
+        <div style={{ marginTop: 12 }}>
+          <button type="button" onClick={() => addRow({} as any)} className="aw-btn aw-btn-secondary" style={{ width: '100%' }}>
+            <Plus size={14} /> Add New Row
+          </button>
         </div>
       )}
     </div>

@@ -100,6 +100,9 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'CASH_BOOK_RECEIPTWISE': { route: '/reports/daily/cash-book-receiptwise', electronMethod: 'openNewWindow' },
   'CASH_BOOK': { route: '/reports/daily/cash-book', electronMethod: 'openNewWindow' },
   'DAY_BOOK': { route: '/reports/daily/day-book', electronMethod: 'openNewWindow' },
+  'DAY_BOOK_CD': { route: '/reports/daily/day-book-cd', electronMethod: 'openNewWindow' },
+  // Keep old action identifiers working for users whose saved shortcuts or
+  // permissions still refer to the retired SB report.
   'DAY_BOOK_SB': { route: '/reports/daily/day-book-sb', electronMethod: 'openNewWindow' },
   'CONSOLIDATION_DAILY_AC': { route: '/reports/daily/consolidation', electronMethod: 'openNewWindow' },
 
@@ -154,6 +157,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'RECOVERY_DETAILS': { route: '/reports/account-reports/recovery-details', electronMethod: 'openNewWindow' },
   'LOAN_CONTRIBUTIONS_REGISTER': { route: '/reports/account-reports/loan-contributions-register', electronMethod: 'openNewWindow' },
   'LIEN_ACCOUNT_INFORMATION': { route: '/reports/account-reports/lien-account-information', electronMethod: 'openNewWindow' },
+  'REPORT_PRO': { route: '/reports/report-pro', electronMethod: 'openNewWindow' },
   'SETTINGS': { route: '/settings', electronMethod: 'openSettingsWindow' },
 };
 
@@ -177,5 +181,11 @@ export function isActionAllowed(allowedActions: string[] | null | undefined, act
   if (!action) return true;
   if (NEVER_GATED.has(action)) return true;
   if (!allowedActions) return true;
-  return allowedActions.includes(action);
+  if (allowedActions.includes(action)) return true;
+  // The 1.4 menu permission is the same legacy menu id. Accept the retired
+  // action code during rollout so existing sessions and saved shortcuts keep
+  // working after the report is relabelled from SB to CD.
+  if (action === 'DAY_BOOK_CD') return allowedActions.includes('DAY_BOOK_SB');
+  if (action === 'DAY_BOOK_SB') return allowedActions.includes('DAY_BOOK_CD');
+  return false;
 }

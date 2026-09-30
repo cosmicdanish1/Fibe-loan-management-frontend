@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiService } from '../../../../../../services/api';
 import { Select, Button, ConfigProvider, Tooltip, theme as antdTheme } from 'antd';
 import { Printer, Download, BookOpen, RefreshCw, Settings, Calculator, TrendingUp, TrendingDown } from 'lucide-react';
@@ -17,7 +17,7 @@ const { Option } = Select;
 
 interface VoucherEntry {
   trans_no: number;
-  member_code: string;
+  member_code: number | string;
   member_name: string;
   head_code: string;
   head_name: string;
@@ -31,6 +31,13 @@ interface JournalVoucherData {
   narration: string;
   entries: VoucherEntry[];
 }
+
+interface VoucherReference {
+  voucher_no: string;
+  voucher_date: string;
+}
+
+const voucherRefValue = (voucher: VoucherReference) => `${voucher.voucher_no}|${voucher.voucher_date}`;
 
 // Print-only layout matching the legacy report design standard used across
 // every report this session (letterhead, Date/Page Number line, plain
@@ -49,6 +56,33 @@ const jtvFmt = (n: number) =>
 const jtvPadL = (s: string, w: number) => s.padStart(w);
 const jtvPadR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
 const jtvCenter = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
+const jtvEscapeHtml = (text: string) => text.replace(/[&<>"']/g, char => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[char] || char));
+const jtvCsvCell = (value: unknown): string => {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  let text = String(value ?? '');
+  if (/^[\t\r ]*[=+@-]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+};
+const jtvWrap = (value: string, width: number): string[] => {
+  const words = String(value ?? '').replace(/[\r\n\t]+/g, ' ').split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    if (!line && word.length > width) {
+      for (let i = 0; i < word.length; i += width) {
+        const part = word.slice(i, i + width);
+        if (i + width < word.length) lines.push(part);
+        else line = part;
+      }
+    } else if (!line) line = word;
+    else if (`${line} ${word}`.length <= width) line += ` ${word}`;
+    else { lines.push(line); line = word; }
+  }
+  if (line || lines.length === 0) lines.push(line);
+  return lines;
+};
 
 function buildJournalVoucherLines(data: JournalVoucherData, totalDebit: number, totalCredit: number): string[] {
   const lines: string[] = [];
@@ -61,8 +95,7 @@ function buildJournalVoucherLines(data: JournalVoucherData, totalDebit: number, 
   lines.push(`Voucher No : ${data.voucher_no}`);
   lines.push(`Date : ${dayjs(data.trans_date).format('DD-MMM-YYYY')}`);
   const printedStr = `Printed : ${now}`;
-  const pageStr = 'Page Number :  1';
-  lines.push(`${printedStr}${jtvPadL(pageStr, JTV_LINE_W - printedStr.length)}`);
+  lines.push(printedStr);
   lines.push(JTV_DASH);
 
   lines.push(
@@ -72,11 +105,19 @@ function buildJournalVoucherLines(data: JournalVoucherData, totalDebit: number, 
   lines.push(JTV_DASH);
 
   data.entries.forEach(e => {
-    lines.push(
-      `${jtvPadR(e.member_code || '', JTV_COL_MB)}${jtvPadR(e.member_name || '', JTV_COL_NAME)}` +
-      `${jtvPadR(e.head_code, JTV_COL_CODE)}${jtvPadR(e.head_name, JTV_COL_HNAME)}` +
-      `${jtvPadL(e.debit > 0 ? jtvFmt(e.debit) : '', JTV_COL_AMT)}${jtvPadL(e.credit > 0 ? jtvFmt(e.credit) : '', JTV_COL_AMT)}`
-    );
+    const mbLines = jtvWrap(String(e.member_code ?? ''), JTV_COL_MB);
+    const nameLines = jtvWrap(e.member_name || '', JTV_COL_NAME);
+    const codeLines = jtvWrap(e.head_code || '', JTV_COL_CODE);
+    const headLines = jtvWrap(e.head_name || '', JTV_COL_HNAME);
+    const lineCount = Math.max(mbLines.length, nameLines.length, codeLines.length, headLines.length);
+    for (let i = 0; i < lineCount; i += 1) {
+      lines.push(
+        `${jtvPadR(mbLines[i] || '', JTV_COL_MB)}${jtvPadR(nameLines[i] || '', JTV_COL_NAME)}` +
+        `${jtvPadR(codeLines[i] || '', JTV_COL_CODE)}${jtvPadR(headLines[i] || '', JTV_COL_HNAME)}` +
+        `${jtvPadL(i === 0 && e.debit > 0 ? jtvFmt(e.debit) : '', JTV_COL_AMT)}` +
+        `${jtvPadL(i === 0 && e.credit > 0 ? jtvFmt(e.credit) : '', JTV_COL_AMT)}`
+      );
+    }
   });
 
   lines.push(JTV_DASH);
@@ -88,7 +129,7 @@ function buildJournalVoucherLines(data: JournalVoucherData, totalDebit: number, 
   const balanced = Math.abs(totalDebit - totalCredit) < 0.01;
   lines.push(`Status : ${balanced ? 'BALANCED' : 'UNBALANCED'}`);
   lines.push('');
-  lines.push(`Narration : ${data.narration || 'No narration provided'}`);
+  lines.push(...jtvWrap(`Narration : ${data.narration || 'No narration provided'}`, JTV_LINE_W));
   lines.push('');
   lines.push('* Report As Per Data Available ..');
 
@@ -97,12 +138,13 @@ function buildJournalVoucherLines(data: JournalVoucherData, totalDebit: number, 
 
 const JournalTransferVoucher: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' || (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const [selectVoucher, setSelectVoucher] = useState<string>('');
   const [voucherData, setVoucherData] = useState<JournalVoucherData | null>(null);
-  const [voucherList, setVoucherList] = useState<string[]>([]);
+  const [voucherList, setVoucherList] = useState<VoucherReference[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const voucherRequestId = useRef(0);
 
   useEffect(() => {
     fetchVoucherList();
@@ -110,7 +152,7 @@ const JournalTransferVoucher: React.FC = () => {
 
   const fetchVoucherList = async () => {
     try {
-      const response = await apiService.getAllJournalVoucherNos();
+      const response = await apiService.getAllJournalVoucherReferences();
       if (response.success && Array.isArray(response.data)) {
         setVoucherList(response.data);
       }
@@ -121,19 +163,36 @@ const JournalTransferVoucher: React.FC = () => {
 
   const handleVoucherSelect = async (value: string) => {
     setSelectVoucher(value);
+    const requestId = ++voucherRequestId.current;
+    setVoucherData(null);
+    if (!value) { setIsLoading(false); return; }
+    const separator = value.lastIndexOf('|');
+    const selectedVoucherNo = separator >= 0 ? value.slice(0, separator) : value;
+    const selectedVoucherDate = separator >= 0 ? value.slice(separator + 1) : '';
     setIsLoading(true);
 
     try {
-      const response = await apiService.getJournalVoucherByNo(value);
+      const response = selectedVoucherDate
+        ? await apiService.getJournalVoucherByNoAndDate(selectedVoucherNo, selectedVoucherDate)
+        : await apiService.getJournalVoucherByNo(selectedVoucherNo);
       if (response.success && response.data) {
-        setVoucherData(response.data);
+        if (requestId === voucherRequestId.current) {
+          const data = response.data as JournalVoucherData;
+          setVoucherData({
+            ...data,
+            trans_date: selectedVoucherDate || data.trans_date,
+            entries: Array.isArray(data.entries) ? data.entries : [],
+          });
+        }
       } else {
+        if (requestId !== voucherRequestId.current) return;
         await showDialog('warning', 'Not Found', 'Voucher not found');
       }
     } catch (error) {
+      if (requestId !== voucherRequestId.current) return;
       await showDialog('error', 'Error', 'Error loading voucher');
     } finally {
-      setIsLoading(false);
+      if (requestId === voucherRequestId.current) setIsLoading(false);
     }
   };
 
@@ -159,22 +218,17 @@ const JournalTransferVoucher: React.FC = () => {
       return;
     }
 
-    const headers = ['MBNO', 'Name', 'Code', 'Description', 'Debit', 'Credit'];
-    const rows = voucherData.entries.map((entry) => [
-      entry.member_code || '',
-      entry.member_name || '',
-      entry.head_code,
-      entry.head_name,
-      entry.debit > 0 ? formatCurrency(entry.debit) : '',
-      entry.credit > 0 ? formatCurrency(entry.credit) : ''
+    const headers = ['Record Type', 'Voucher Type', 'Voucher No', 'Voucher Date', 'Voucher Narration', 'Line No', 'Transaction No', 'Member No', 'Member Name', 'Head Code', 'Head Name', 'Debit', 'Credit', 'Total Debit', 'Total Credit', 'Balance Status'];
+    const status = Math.abs(totalDebit - totalCredit) < 0.01 ? 'BALANCED' : 'UNBALANCED';
+    const rows = voucherData.entries.map((entry, index) => [
+      'TRANSACTION', 'Journal / Transfer', voucherData.voucher_no, dayjs(voucherData.trans_date).format('YYYY-MM-DD'),
+      voucherData.narration, index + 1, entry.trans_no, entry.member_code, entry.member_name,
+      entry.head_code, entry.head_name, entry.debit || '', entry.credit || '', '', '', '',
     ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    rows.push(['TOTAL', 'Journal / Transfer', voucherData.voucher_no, dayjs(voucherData.trans_date).format('YYYY-MM-DD'), voucherData.narration,
+      '', '', '', '', '', '', '', '', totalDebit, totalCredit, status]);
+    const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.map(jtvCsvCell).join(',')).join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -182,7 +236,7 @@ const JournalTransferVoucher: React.FC = () => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     await showDialog('info', 'Exported', 'CSV exported successfully');
   };
 
@@ -205,12 +259,12 @@ const JournalTransferVoucher: React.FC = () => {
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (doc) {
       doc.open();
-      doc.write(`<!DOCTYPE html><html><head><title>Journal/Transfer Voucher - ${voucherData.voucher_no}</title>
+      doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Journal/Transfer Voucher - ${jtvEscapeHtml(voucherData.voucher_no)}</title>
 <style>
   @page { size: A4 portrait; margin: 12mm; }
   body { margin: 0; }
-  pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
-</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+  pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; line-height: 1.2; white-space: pre; width: fit-content; max-width: 100%; margin: 0 auto; }
+</style></head><body><pre>${jtvEscapeHtml(lines.join('\n'))}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -225,7 +279,6 @@ const JournalTransferVoucher: React.FC = () => {
   const panelHd = isDark ? 'bg-[#263148] border-[#334155]' : 'bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-amber-200/50';
   const text    = isDark ? 'text-slate-100'                : 'text-slate-900';
   const muted   = isDark ? 'text-slate-400'                : 'text-slate-600';
-  const border  = isDark ? 'border-[#334155]'              : 'border-amber-200/60';
   const infoBox = isDark ? 'bg-[#1a2744] border-amber-900/50' : 'bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-amber-400';
   const tblHd   = isDark ? 'bg-[#263148]'                 : 'bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200';
   const tblBdr  = isDark ? 'border-slate-600'              : 'border-gray-300';
@@ -314,9 +367,9 @@ const JournalTransferVoucher: React.FC = () => {
                     size="small"
                     style={{ fontWeight: 700 }}
                   >
-                    {voucherList.map(v => (
-                      <Option key={v} value={v}>
-                        <span className="font-bold fz-label">{v}</span>
+                  {voucherList.map(v => (
+                      <Option key={voucherRefValue(v)} value={voucherRefValue(v)}>
+                        <span className="font-bold fz-label">{v.voucher_no} · {dayjs(v.voucher_date).format('DD-MMM-YYYY')}</span>
                       </Option>
                     ))}
                   </Select>

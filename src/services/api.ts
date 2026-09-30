@@ -444,6 +444,11 @@ class ApiService {
     return this.request('/loans/sanctioned');
   }
 
+  // Figures for the dashboard widgets (deposits, maturities, applications, members, demand) in one call.
+  async getDashboardSummary(): Promise<ApiResponse> {
+    return this.request('/dashboard-summary');
+  }
+
   async getMonthEndLoanReport(month: number, year: number): Promise<ApiResponse> {
     return this.request(`/loans/month-end/report?month=${month}&year=${year}`);
   }
@@ -695,7 +700,7 @@ class ApiService {
   }
 
   // Cash Book methods
-  async getCashBookReport(date: string, outputType?: string): Promise<ApiResponse> {
+  async getCashBookReport(date: string, _outputType?: string): Promise<ApiResponse> {
     return this.request('/reports/cashbook/daily', {
       method: 'POST',
       body: JSON.stringify({ date }),
@@ -859,6 +864,11 @@ class ApiService {
   async validateMember(memberNumber: string): Promise<ApiResponse> {
     const params = new URLSearchParams({ memberNumber });
     return this.request(`/member-ledger/validate-member?${params.toString()}`);
+  }
+
+  async getMemberLedgerContext(memberNumber: string): Promise<ApiResponse> {
+    const params = new URLSearchParams({ memberNumber });
+    return this.request(`/member-ledger/member-context?${params.toString()}`);
   }
 
   // User Preferences
@@ -1629,19 +1639,35 @@ class ApiService {
 
   // Print Voucher methods
   async getVoucherByNo(voucherNo: string): Promise<ApiResponse> {
-    return this.request(`/print-voucher/${voucherNo}`);
+    return this.request(`/print-voucher/${encodeURIComponent(voucherNo)}`);
+  }
+
+  async getVoucherByNoAndDate(voucherNo: string, date: string): Promise<ApiResponse> {
+    return this.request(`/print-voucher/${encodeURIComponent(voucherNo)}?date=${encodeURIComponent(date)}`);
   }
 
   async getAllVoucherNos(): Promise<ApiResponse<string[]>> {
     return this.request('/print-voucher/list/all');
   }
 
+  async getAllVoucherReferences(): Promise<ApiResponse<Array<{ voucher_no: string; voucher_date: string }>>> {
+    return this.request('/print-voucher/list/by-date');
+  }
+
   async getAllJournalVoucherNos(): Promise<ApiResponse<string[]>> {
     return this.request('/print-voucher/journal/list/all');
   }
 
+  async getAllJournalVoucherReferences(): Promise<ApiResponse<Array<{ voucher_no: string; voucher_date: string }>>> {
+    return this.request('/print-voucher/journal/list/by-date');
+  }
+
   async getJournalVoucherByNo(voucherNo: string): Promise<ApiResponse> {
-    return this.request(`/print-voucher/journal/${voucherNo}`);
+    return this.request(`/print-voucher/journal/${encodeURIComponent(voucherNo)}`);
+  }
+
+  async getJournalVoucherByNoAndDate(voucherNo: string, date: string): Promise<ApiResponse> {
+    return this.request(`/print-voucher/journal/${encodeURIComponent(voucherNo)}?date=${encodeURIComponent(date)}`);
   }
 
   async getCashBookMonthly(month: string, year: number): Promise<ApiResponse> {

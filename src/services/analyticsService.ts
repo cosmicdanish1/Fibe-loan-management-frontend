@@ -172,7 +172,7 @@ class AnalyticsService {
     } else if (userAgent.includes('Mac OS X')) {
       osName = 'macOS';
       const match = userAgent.match(/Mac OS X ([0-9_]+)/);
-      osVersion = match ? match[1].replace(/_/g, '.') : 'Unknown';
+      osVersion = match && match[1] ? match[1].replace(/_/g, '.') : 'Unknown';
     } else if (userAgent.includes('Linux')) {
       osName = 'Linux';
     }

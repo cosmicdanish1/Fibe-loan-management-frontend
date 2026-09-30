@@ -119,8 +119,7 @@ const printReportText = (text: string) => {
 
 const AccountClosingRegister: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   const [month, setMonth]             = useState<number>(dayjs().month() + 1);
   const [year, setYear]               = useState<number>(dayjs().year());

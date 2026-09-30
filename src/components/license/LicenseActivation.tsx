@@ -72,7 +72,7 @@ const LicenseActivation: React.FC<Props> = ({ onActivated }) => {
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">Activate Software</h1>
           <p className="text-slate-400 mt-2 text-sm">
-          Enter your license key to activate the Loan Management System by Paper White Technology
+          Enter your license key to activate Fibe Loan Management by Paper White Technology
           </p>
         </div>
 

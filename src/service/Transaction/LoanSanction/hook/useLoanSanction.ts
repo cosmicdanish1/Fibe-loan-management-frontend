@@ -10,7 +10,7 @@ import {
     SanctionRules,
     LoanSanctionHookReturn
 } from '../interface/LoanSanctionInterfaces';
-import { API_ROUTES, API_BASE_URL, getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
 
 export const useLoanSanction = (): LoanSanctionHookReturn => {
     const [loanCases, setLoanCases] = useState<LoanCase[]>([]);

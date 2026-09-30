@@ -371,7 +371,7 @@ class RealTimeAnalyticsService {
     const journey = this.userJourneyCache.get(sessionId);
     if (journey && journey.pageSequence.length > 0) {
       const currentPage = journey.pageSequence[journey.pageSequence.length - 1];
-      currentPage.actions.push({
+      currentPage?.actions.push({
         action,
         timestamp: new Date().toISOString(),
         details,

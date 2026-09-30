@@ -9,7 +9,7 @@ import {
     LoanCase,
     PaymentEntry
 } from '../interface/LoanPaymentInterfaces';
-import { API_ROUTES, API_BASE_URL, getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
 
 // BUG FIX: removed 'message' and 'Modal' from antd — both silently fail in Electron renderer windows.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).

@@ -50,7 +50,7 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
                 const mapped = (Array.isArray(banks) ? banks : []).map((b: any) => ({ code: b.code, name: b.name || b.head_name || b.code }));
                 if (mapped.length > 0) {
                     setBankAccounts(mapped);
-                    setFormData(prev => prev.bankCode ? prev : { ...prev, bankCode: mapped[0].code });
+                    setFormData(prev => prev.bankCode ? prev : { ...prev, bankCode: mapped[0]?.code ?? prev.bankCode });
                 }
             })
             .catch(() => { /* leave empty */ });

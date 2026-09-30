@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Search, Printer, FileDown, User, RotateCcw, BookOpen,
-  Calendar, List, Sun, Moon, ShieldCheck
+  Calendar, List, ShieldCheck
 } from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Spin, Select, Input, Modal, theme as antdTheme } from 'antd';
-import { useSelector, useDispatch } from 'react-redux';
+import { ConfigProvider, Button, DatePicker, Spin, Select, Input, Modal, message, theme as antdTheme } from 'antd';
+import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
-import { setInterfaceMode } from '../../../../../store/slices/themeSlice';
 import { apiService } from '../../../../../services/api';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
@@ -21,6 +20,7 @@ interface LedgerEntry {
   credit: number;
   balance: number;
   transactionType: 'DR' | 'CR';
+  username?: string;
 }
 
 interface LedgerData {
@@ -38,13 +38,52 @@ interface LedgerData {
   totalTransactions: number;
 }
 
-interface HeadOption { code: string; headName: string; }
+interface HeadOption { code: string; headName: string; transactionCount?: number; hasData?: boolean; }
 
 const fmt = (n: number) =>
   Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const balLabel = (n: number) => `${fmt(n)} ${n >= 0 ? 'CR' : 'DR'}`;
-
+const csvCell = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  let text = String(value ?? '');
+  if (/^[\t\r ]*[=+@-]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+};
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => {
+  switch (char) {
+    case '&': return '&amp;';
+    case '<': return '&lt;';
+    case '>': return '&gt;';
+    case '"': return '&quot;';
+    default: return '&#39;';
+  }
+});
+const wrapText = (value: string, width: number) => {
+  const words = value.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    if (!line) {
+      for (let offset = 0; offset < word.length; offset += width) {
+        const part = word.slice(offset, offset + width);
+        if (offset + width < word.length) lines.push(part);
+        else line = part;
+      }
+    } else if (`${line} ${word}`.length <= width) {
+      line += ` ${word}`;
+    } else {
+      lines.push(line);
+      line = word;
+      while (line.length > width) {
+        lines.push(line.slice(0, width));
+        line = line.slice(width);
+      }
+    }
+  }
+  if (line || lines.length === 0) lines.push(line);
+  return lines;
+};
 // Print-only layout matching the legacy report exactly (letterhead, Head
 // Name/Member/Date-range/Opening block, Date/Page Number line, Date/
 // Particulars/Voucher No/Debit/Credit/Balance columns, Total Amount row,
@@ -89,13 +128,18 @@ function buildMemberLedgerLines(data: LedgerData): string[] {
   lines.push(MLR_DASH);
 
   data.entries.forEach(e => {
+    const particulars = wrapText(e.narration || '', MLR_COL_PART);
     lines.push(
       `${mlrPadR(dayjs(e.transactionDate).format('DD-MMM-YYYY'), MLR_COL_DATE)}` +
-      `${mlrPadR(e.narration, MLR_COL_PART)}${mlrPadR(e.voucherNo, MLR_COL_VCHR)}` +
+      `${mlrPadR(particulars[0] ?? '', MLR_COL_PART)}${mlrPadR(e.voucherNo, MLR_COL_VCHR)}` +
       `${mlrPadL(e.debit > 0 ? fmt(e.debit) : '0.00', amtW)}` +
       `${mlrPadL(e.credit > 0 ? fmt(e.credit) : '0.00', amtW)}` +
       `${mlrPadL(balLabel(e.balance), amtW)}`
     );
+    particulars.slice(1).forEach(part => lines.push(
+      `${' '.repeat(MLR_COL_DATE)}${mlrPadR(part, MLR_COL_PART)}` +
+      `${' '.repeat(MLR_COL_VCHR + 3 * amtW)}`
+    ));
   });
 
   lines.push(MLR_DASH);
@@ -113,16 +157,14 @@ function buildMemberLedgerLines(data: LedgerData): string[] {
 }
 
 const MemberLedgerReport: React.FC = () => {
-  const dispatch = useDispatch();
-  const { interfaceMode, accentColor, cornerRadius } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const { interfaceMode, cornerRadius } = useSelector((state: RootState) => state.theme);
+  const isDark = interfaceMode === 'dark';
 
   const [headCode, setHeadCode] = useState<string>('');
   const [memberNumber, setMemberNumber] = useState<string>('');
   const [memberName, setMemberName] = useState<string>('');
-  const [fromDate, setFromDate] = useState<Dayjs | null>(dayjs('2019-11-01'));
-  const [toDate, setToDate] = useState<Dayjs | null>(dayjs('2024-02-07'));
+  const [fromDate, setFromDate] = useState<Dayjs | null>(null);
+  const [toDate, setToDate] = useState<Dayjs | null>(null);
 
   const [headOptions, setHeadOptions] = useState<HeadOption[]>([]);
   const [data, setData] = useState<LedgerData | null>(null);
@@ -130,6 +172,8 @@ const MemberLedgerReport: React.FC = () => {
   const [loadingHeads, setLoadingHeads] = useState(false);
   const [validatingMember, setValidatingMember] = useState(false);
   const [showLookupModal, setShowLookupModal] = useState(false);
+  const loadedMemberNumber = useRef('');
+  const memberContextRequest = useRef(0);
 
   useEffect(() => { loadHeads(); }, []);
 
@@ -137,40 +181,87 @@ const MemberLedgerReport: React.FC = () => {
     setLoadingHeads(true);
     try {
       const res = await apiService.getHeadMasters();
-      if (res.success && Array.isArray(res.data)) {
+      if (!loadedMemberNumber.current && res.success && Array.isArray(res.data)) {
         setHeadOptions(res.data);
       }
     } catch { /* silent */ }
     finally { setLoadingHeads(false); }
   };
 
-  const validateMember = useCallback(async (mbno: string) => {
-    if (!mbno.trim()) { setMemberName(''); return; }
+  const loadMemberContext = useCallback(async (mbno: string) => {
+    const memberNo = mbno.trim();
+    if (!memberNo) {
+      loadedMemberNumber.current = '';
+      setMemberName('');
+      return;
+    }
+    if (loadedMemberNumber.current === memberNo) return;
+    const requestId = ++memberContextRequest.current;
     setValidatingMember(true);
     try {
-      const res = await apiService.validateMember(mbno.trim());
+      const res = await apiService.getMemberLedgerContext(memberNo);
+      if (requestId !== memberContextRequest.current) return;
       if (res.success && res.data?.exists) {
         setMemberName(res.data.memberName || '');
+        setHeadOptions(Array.isArray(res.data.heads) ? res.data.heads : []);
+        loadedMemberNumber.current = memberNo;
+        setFromDate(res.data.minDate ? dayjs(res.data.minDate) : null);
+        setToDate(res.data.maxDate ? dayjs(res.data.maxDate) : null);
+        setHeadCode('');
+        setData(null);
       } else {
         setMemberName('');
+        setHeadOptions(prev => prev.map(head => ({ ...head, hasData: undefined, transactionCount: undefined })));
+        loadedMemberNumber.current = '';
+        setFromDate(null);
+        setToDate(null);
+        setHeadCode('');
+        setData(null);
+        message.warning('Member number was not found.');
       }
-    } catch { setMemberName(''); }
-    finally { setValidatingMember(false); }
+    } catch {
+      if (requestId === memberContextRequest.current) {
+        setMemberName('');
+        message.error('Could not load this member’s account-head activity. Please try again.');
+      }
+    }
+    finally {
+      if (requestId === memberContextRequest.current) setValidatingMember(false);
+    }
   }, []);
 
-  const handleMemberBlur = () => validateMember(memberNumber);
+  const handleMemberNumberChange = (value: string) => {
+    memberContextRequest.current += 1;
+    loadedMemberNumber.current = '';
+    setMemberNumber(value);
+    setMemberName('');
+    setHeadCode('');
+    setFromDate(null);
+    setToDate(null);
+    setHeadOptions(prev => prev.map(head => ({ ...head, hasData: undefined, transactionCount: undefined })));
+    setData(null);
+  };
+
+  const handleMemberBlur = () => loadMemberContext(memberNumber);
   const handleMemberKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') validateMember(memberNumber);
+    if (e.key === 'Enter') loadMemberContext(memberNumber);
   };
 
   const handleMemberSelect = (member: { memberNo: string; memberName?: string; name?: string }) => {
-    setMemberNumber(member.memberNo);
-    setMemberName(member.memberName || member.name || '');
+    handleMemberNumberChange(member.memberNo);
+    if (member.memberName || member.name) setMemberName(member.memberName || member.name || '');
     setShowLookupModal(false);
+    loadMemberContext(member.memberNo);
   };
 
   const generateReport = async () => {
     if (!headCode || !memberNumber.trim() || !fromDate || !toDate) return;
+    if (fromDate.isAfter(toDate, 'day')) {
+      setData(null);
+      message.error('From date must be on or before the To date.');
+      return;
+    }
+    setData(null);
     setLoading(true);
     try {
       const res = await apiService.getMemberLedgerReport({
@@ -191,7 +282,10 @@ const MemberLedgerReport: React.FC = () => {
 
   const handleReset = () => {
     setHeadCode(''); setMemberNumber(''); setMemberName('');
-    setFromDate(dayjs('2019-11-01')); setToDate(dayjs('2024-02-07'));
+    loadedMemberNumber.current = '';
+    memberContextRequest.current += 1;
+    setFromDate(null); setToDate(null);
+    setHeadOptions(prev => prev.map(head => ({ ...head, hasData: undefined, transactionCount: undefined })));
     setData(null);
   };
 
@@ -221,7 +315,7 @@ const MemberLedgerReport: React.FC = () => {
   @page { size: A4 portrait; margin: 12mm; }
   body { margin: 0; }
   pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
-</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+</style></head><body><pre>${escapeHtml(lines.join('\n'))}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -233,27 +327,46 @@ const MemberLedgerReport: React.FC = () => {
 
   const handleExportCSV = () => {
     if (!data) return;
-    let csv = 'Date,Particulars,Voucher No,Payment,Receipt,Balance\n';
-    data.entries.forEach(e =>
-      csv += `${dayjs(e.transactionDate).format('DD-MMM-YYYY')},"${e.narration}",${e.voucherNo},${e.debit > 0 ? e.debit : ''},${e.credit > 0 ? e.credit : ''},${balLabel(e.balance)}\n`
-    );
-    csv += `Total Amount:-,,, ${data.totalDebits},${data.totalCredits},\n`;
+    const headers = [
+      'Report', 'Member Number', 'Member Name', 'Account Head Code', 'Account Head Name',
+      'From Date', 'To Date', 'Row Type', 'Transaction Date', 'Transaction No',
+      'Voucher No', 'Particulars', 'Transaction Type', 'Payment', 'Receipt',
+      'Running Balance', 'Balance Side', 'Opening Balance', 'Total Payments',
+      'Total Receipts', 'Closing Balance', 'Transaction Count', 'User',
+    ];
+    const rows: unknown[][] = [headers];
+    const context = [
+      'Member Ledger Report (Personal)', data.memberNumber, data.memberName,
+      data.headCode, data.headName, data.fromDate, data.toDate,
+    ];
+    const totals = [data.openingBalance, data.totalDebits, data.totalCredits, data.closingBalance, data.totalTransactions];
+    const appendRow = (entry?: LedgerEntry) => rows.push([
+      ...context,
+      entry ? 'Transaction' : 'Summary',
+      entry ? dayjs(entry.transactionDate).format('YYYY-MM-DD') : '',
+      entry?.transactionNo ?? '', entry?.voucherNo ?? '', entry?.narration ?? '', entry?.transactionType ?? '',
+      entry ? entry.debit : '', entry ? entry.credit : '', entry?.balance ?? '',
+      entry ? (entry.balance >= 0 ? 'CR' : 'DR') : '',
+      ...totals, entry?.username ?? '',
+    ]);
+    if (data.entries.length) data.entries.forEach(appendRow);
+    else appendRow();
+    const csv = `\uFEFF${rows.map(row => row.map(csvCell).join(',')).join('\r\n')}`;
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    a.download = `MemberLedger_${memberNumber}_${headCode}.csv`;
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    a.href = url;
+    a.download = `MemberLedger_${memberNumber}_${headCode}_${fromDate?.format('YYYY-MM-DD')}_${toDate?.format('YYYY-MM-DD')}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const toggleTheme = () => dispatch(setInterfaceMode(isDark ? 'light' : 'dark'));
 
   // Theme classes
   const bg = isDark ? 'bg-[#0f172a]' : 'bg-slate-50';
   const panel = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
-  const panelHead = isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-cyan-600';
   const text = isDark ? 'text-slate-100' : 'text-slate-800';
   const muted = isDark ? 'text-slate-400' : 'text-slate-500';
   const border = isDark ? 'border-slate-700' : 'border-slate-200';
-  const inputBg = isDark ? 'bg-slate-700 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-800';
 
   return (
     <ConfigProvider theme={{
@@ -281,8 +394,6 @@ const MemberLedgerReport: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <Button type="text" size="small" icon={isDark ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-slate-400" />}
-              onClick={toggleTheme} className="h-7 w-7 rounded-lg" />
             <Button icon={<RotateCcw size={11} />} size="small" onClick={handleReset}
               className="h-7 px-2 rounded-lg fz-small font-bold uppercase">Reset</Button>
             <Button icon={<Printer size={11} />} size="small" onClick={handlePrint}
@@ -311,7 +422,7 @@ const MemberLedgerReport: React.FC = () => {
                     <Input
                       size="small"
                       value={memberNumber}
-                      onChange={e => setMemberNumber(e.target.value)}
+                      onChange={e => handleMemberNumberChange(e.target.value)}
                       onBlur={handleMemberBlur}
                       onKeyDown={handleMemberKeyDown}
                       placeholder="e.g. 61002684"
@@ -347,14 +458,30 @@ const MemberLedgerReport: React.FC = () => {
                   className="w-full"
                   size="small"
                   placeholder="Select Head"
-                  value={headCode || undefined}
+                  {...(headCode ? { value: headCode } : {})}
                   onChange={setHeadCode}
                   loading={loadingHeads}
+                  optionRender={(option) => {
+                    const head = option.data as HeadOption;
+                    const isInactive = head.hasData === false;
+                    return (
+                      <div className={`flex items-center justify-between gap-2 ${isInactive ? 'opacity-45' : ''}`}>
+                        <span>{head.code} - {head.headName}</span>
+                        {head.hasData !== undefined && (
+                          <span className={`shrink-0 text-[10px] ${isInactive ? 'text-slate-400' : 'text-emerald-700'}`}>
+                            {isInactive ? 'No activity' : `${head.transactionCount} entries`}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }}
                   showSearch
                   filterOption={(input, option) =>
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
-                  options={headOptions.map(h => ({ value: h.code, label: `${h.code} - ${h.headName}` }))}
+                  options={[...headOptions]
+                    .sort((a, b) => Number(b.hasData === true) - Number(a.hasData === true) || a.code.localeCompare(b.code))
+                    .map(h => ({ ...h, value: h.code, label: `${h.code} - ${h.headName}` }))}
                 />
               </div>
             </div>
@@ -433,7 +560,7 @@ const MemberLedgerReport: React.FC = () => {
                       <div>Member Number : <span className={`font-bold ${text}`}>{data.memberNumber}</span></div>
                       <div>Name : <span className={`font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>Mr/Ms {data.memberName}</span></div>
                       <div>Report From Date <span className={`font-bold ${text}`}>{dayjs(data.fromDate).format('DD-MMM-YYYY')}</span> To Date <span className={`font-bold ${text}`}>{dayjs(data.toDate).format('DD-MMM-YYYY')}</span></div>
-                      <div>Opening Balance : <span className={`font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>{fmt(data.openingBalance)}  CR</span></div>
+                      <div>Opening Balance : <span className={`font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>{balLabel(data.openingBalance)}</span></div>
                     </div>
 
                     {/* Table */}

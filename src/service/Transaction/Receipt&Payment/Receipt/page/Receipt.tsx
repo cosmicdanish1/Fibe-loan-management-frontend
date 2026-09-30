@@ -7,14 +7,7 @@ import ReceiptForm from '../components/ReceiptForm';
 const Receipt: React.FC = () => {
   const receiptProps = useReceipt();
 
-  return (
-    <div className="receipt-page h-screen bg-slate-50 overflow-hidden">
-      <ReceiptForm {...receiptProps} />
-      <style>{`
-        html.dark .receipt-page { background-color: #000000 !important; }
-      `}</style>
-    </div>
-  );
+  return <ReceiptForm {...receiptProps} />;
 };
 
 export default Receipt;

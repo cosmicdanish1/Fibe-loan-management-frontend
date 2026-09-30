@@ -4,10 +4,9 @@ import React, { useState } from 'react';
 import {
   IndianRupee, Calculator, ShieldCheck, Settings,
   Database, TrendingUp, Percent, Users, Building2,
-  Save, Info, Trash2, Plus, ArrowRight, X, Clock,
+  Save, Info, Trash2, Plus, X, Clock, RefreshCw,
 } from 'lucide-react';
-import { ConfigProvider, Switch } from 'antd';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Select } from 'antd';
 import { useBusinessRules, BusinessRulesData, GeneralSettings, LoanType, RdSystemRules } from '../hook/useBusinessRules';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
@@ -33,10 +32,6 @@ const closeWindow = () => {
   else window.close();
 };
 
-// ── Input shared class ──
-const inputCls = 'mbr-input w-full h-6 px-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner';
-const inputIconCls = 'mbr-input w-full h-6 pl-5 pr-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner';
-
 /**
  * Human-readable day windows for the two loan slots, derived from Slot 1's
  * configured window alone. Slot 2 is always the complement, so its label is
@@ -57,6 +52,49 @@ const slotWindowLabels = (startDay: number, endDay: number): { slot1: string; sl
   const e2 = s <= 1 ? 31 : s - 1;
   return { slot1, slot2: `${s2}–${e2}` };
 };
+
+// ── Small presentational helpers (layout only) ──
+const Field: React.FC<{ label: React.ReactNode; hint?: string; title?: string; htmlFor?: string; children: React.ReactNode }> = ({ label, hint, title, htmlFor, children }) => (
+  <div>
+    <label className="aw-label" htmlFor={htmlFor} title={title}>{label}</label>
+    {children}
+    {hint && <p className="aw-meta" style={{ marginTop: 4 }}>{hint}</p>}
+  </div>
+);
+
+const IconInput: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
+  <div className="aw-input-wrap has-icon">{icon}{children}</div>
+);
+
+const ToggleRow: React.FC<{ label: string; checked: boolean; onChange: (v: boolean) => void }> = ({ label, checked, onChange }) => (
+  <div className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+    <span className="aw-strong" style={{ fontWeight: 600 }}>{label}</span>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className="aw-switch"
+    />
+  </div>
+);
+
+const Section: React.FC<{ icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode; action?: React.ReactNode }> = ({ icon, title, hint, children, action }) => (
+  <section className="aw-card">
+    <div className="aw-card-head">
+      <span className="aw-card-icon">{icon}</span>
+      <div>
+        <h2 className="aw-card-title">{title}</h2>
+        {hint && <p className="aw-meta">{hint}</p>}
+      </div>
+      {action && <span style={{ marginLeft: 'auto' }}>{action}</span>}
+    </div>
+    {children}
+  </section>
+);
+
+const gridAuto = (min: number): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 'var(--aw-gap)' });
 
 const ModifyBusinessRules: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('loanParameters');
@@ -87,6 +125,14 @@ const ModifyBusinessRules: React.FC = () => {
 
   const updateRdSystem = (field: keyof RdSystemRules, value: any) => {
     setBusinessRules(prev => ({ ...prev, rdSystem: { ...prev.rdSystem, [field]: value } }));
+  };
+
+  const updateEligibility = (patch: Partial<BusinessRulesData['regularLoanEligibility']>) => {
+    setBusinessRules(prev => ({ ...prev, regularLoanEligibility: { ...prev.regularLoanEligibility, ...patch } }));
+  };
+
+  const updateSlot = (patch: Partial<BusinessRulesData['loanSlotDelay']>) => {
+    setBusinessRules(prev => ({ ...prev, loanSlotDelay: { ...prev.loanSlotDelay, ...patch } }));
   };
 
   const handleChartChange = (index: number, field: 'monthlyContribution' | 'yearlyInterest', value: number) => {
@@ -126,951 +172,529 @@ const ModifyBusinessRules: React.FC = () => {
     saveEnabled: !(saving || loading),
   });
 
+  const num = (v: string) => parseFloat(v) || 0;
+  const int = (v: string) => parseInt(v) || 0;
+  const elig = businessRules.regularLoanEligibility;
+  const slot = businessRules.loanSlotDelay;
+  const slotLabels = slotWindowLabels(slot.slot1StartDay, slot.slot1EndDay);
+  const gs = businessRules.generalSettings;
+
   // ── Loan section renderer ──
   const renderLoanSection = (title: string, loanType: keyof BusinessRulesData, data: LoanType) => (
-    <div className="mbr-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden hover:border-slate-400 transition-all shadow-sm">
-      <div className="mbr-card-header bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-2 py-1 flex items-center">
-        <h3 className="mbr-card-title fz-mini font-black text-slate-700 tracking-widest uppercase flex items-center gap-1">
-          <Database size={9} className="text-slate-500" /> {title}
-        </h3>
-      </div>
-      <div className="p-2 grid grid-cols-2 gap-x-2 gap-y-1">
-        <div className="space-y-0.5">
-          <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Max.Amount</label>
-          <div className="relative">
-            <IndianRupee size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-            <input type="number" step="0.01" value={data.maxAmount}
-              onChange={e => updateLoanType(loanType, 'maxAmount', parseFloat(e.target.value) || 0)}
-              className={inputIconCls} />
-          </div>
-        </div>
-        <div className="space-y-0.5">
-          <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Rate (%)</label>
-          <div className="relative">
-            <Percent size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-            <input type="number" step="0.01" value={data.rate}
-              onChange={e => updateLoanType(loanType, 'rate', parseFloat(e.target.value) || 0)}
-              className={inputIconCls} />
-          </div>
-        </div>
-        <div className="space-y-0.5">
-          <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">No.Of Install</label>
-          <input type="number" value={data.numberOfInstallments}
-            onChange={e => updateLoanType(loanType, 'numberOfInstallments', parseInt(e.target.value) || 0)}
-            className={inputCls} />
-        </div>
-        <div className="space-y-0.5">
-          <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">No. Of Gr</label>
-          <div className="relative">
-            <Users size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-            <input type="number" value={data.numberOfGuarantors}
-              onChange={e => updateLoanType(loanType, 'numberOfGuarantors', parseInt(e.target.value) || 0)}
-              className={inputIconCls} />
-          </div>
-        </div>
+    <Section icon={<Database size={14} />} title={title}>
+      <div className="aw-two">
+        <Field label="Max.Amount">
+          <IconInput icon={<IndianRupee size={13} />}>
+            <input type="number" step="0.01" value={data.maxAmount} onChange={e => updateLoanType(loanType, 'maxAmount', num(e.target.value))} className="aw-input" />
+          </IconInput>
+        </Field>
+        <Field label="Rate (%)">
+          <IconInput icon={<Percent size={13} />}>
+            <input type="number" step="0.01" value={data.rate} onChange={e => updateLoanType(loanType, 'rate', num(e.target.value))} className="aw-input" />
+          </IconInput>
+        </Field>
+        <Field label="No.Of Install">
+          <input type="number" value={data.numberOfInstallments} onChange={e => updateLoanType(loanType, 'numberOfInstallments', int(e.target.value))} className="aw-input" />
+        </Field>
+        <Field label="No. Of Gr">
+          <IconInput icon={<Users size={13} />}>
+            <input type="number" value={data.numberOfGuarantors} onChange={e => updateLoanType(loanType, 'numberOfGuarantors', int(e.target.value))} className="aw-input" />
+          </IconInput>
+        </Field>
         {data.penalRate !== undefined && loanType === 'regularLoan' && (
-          <div className="space-y-0.5">
-            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5" title="One global annual Tier 2 rate used for every loan type.">Global Penal Rate (% p.a.)</label>
-            <div className="relative">
-              <Percent size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-              <input type="number" step="0.01" value={data.penalRate}
-                onChange={e => updateLoanType(loanType, 'penalRate', parseFloat(e.target.value) || 0)}
-                className={inputIconCls} />
-            </div>
-          </div>
+          <Field label="Global Penal Rate (% p.a.)" title="One global annual Tier 2 rate used for every loan type.">
+            <IconInput icon={<Percent size={13} />}>
+              <input type="number" step="0.01" value={data.penalRate} onChange={e => updateLoanType(loanType, 'penalRate', num(e.target.value))} className="aw-input" />
+            </IconInput>
+          </Field>
         )}
         {data.graceDays !== undefined && (
-          <div className="space-y-0.5">
-            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5" title="Grace runs from the 1st through this day of an installment's own due month — not a day-count from its due date.">
-              Grace Ends (Day of Month)
-            </label>
-            <div className="relative">
-              <Clock size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-              <input type="number" min={0} max={31} step="1" value={data.graceDays}
-                onChange={e => updateLoanType(loanType, 'graceDays', parseInt(e.target.value, 10) || 0)}
-                className={inputIconCls} />
-            </div>
-          </div>
+          <Field label="Grace Ends (Day of Month)" title="Grace runs from the 1st through this day of an installment's own due month — not a day-count from its due date.">
+            <IconInput icon={<Clock size={13} />}>
+              <input type="number" min={0} max={31} step="1" value={data.graceDays} onChange={e => updateLoanType(loanType, 'graceDays', parseInt(e.target.value, 10) || 0)} className="aw-input" />
+            </IconInput>
+          </Field>
         )}
         {data.sameMonthPenalPercent !== undefined && (
-          <div className="space-y-0.5">
-            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5" title="Flat fee charged once grace expires but still within the same due month: (this % × unpaid principal) ÷ the divisor beside it.">
-              Same-Month Late Fee (%)
-            </label>
-            <div className="relative">
-              <Percent size={8} className="mbr-icon absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-              <input type="number" min={0} step="0.01" value={data.sameMonthPenalPercent}
-                onChange={e => updateLoanType(loanType, 'sameMonthPenalPercent', parseFloat(e.target.value) || 0)}
-                className={inputIconCls} />
-            </div>
-          </div>
+          <Field label="Same-Month Late Fee (%)" title="Flat fee charged once grace expires but still within the same due month: (this % × unpaid principal) ÷ the divisor beside it.">
+            <IconInput icon={<Percent size={13} />}>
+              <input type="number" min={0} step="0.01" value={data.sameMonthPenalPercent} onChange={e => updateLoanType(loanType, 'sameMonthPenalPercent', num(e.target.value))} className="aw-input" />
+            </IconInput>
+          </Field>
         )}
         {data.sameMonthPenalDivisor !== undefined && (
-          <div className="space-y-0.5">
-            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5" title="Divisor in the same-month late fee formula: (percentage × unpaid principal) ÷ this number.">
-              Same-Month Fee Divisor
-            </label>
-            <input type="number" min={1} step="0.01" value={data.sameMonthPenalDivisor}
-              onChange={e => updateLoanType(loanType, 'sameMonthPenalDivisor', parseFloat(e.target.value) || 0)}
-              className={inputCls} />
-          </div>
+          <Field label="Same-Month Fee Divisor" title="Divisor in the same-month late fee formula: (percentage × unpaid principal) ÷ this number.">
+            <input type="number" min={1} step="0.01" value={data.sameMonthPenalDivisor} onChange={e => updateLoanType(loanType, 'sameMonthPenalDivisor', num(e.target.value))} className="aw-input" />
+          </Field>
         )}
       </div>
-    </div>
+    </Section>
   );
 
+  const tabs = [
+    { key: 'loanParameters' as const, icon: <IndianRupee size={13} />, label: '1. Loan Parameters' },
+    { key: 'generalSettings' as const, icon: <Settings size={13} />, label: '2. General Setting' },
+    { key: 'fundManagement' as const, icon: <TrendingUp size={13} />, label: '3. Fund Management' },
+    { key: 'rdSystem' as const, icon: <Percent size={13} />, label: '4. RD System' },
+  ];
+
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#4f46e5', borderRadius: 8 } }}>
-      <style>{`
-        html.dark .mbr-page { background: #000000 !important; }
-
-        /* Tab bar */
-        html.dark .mbr-page .mbr-tabbar { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-tab-btn { color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-tab-btn.active { color: #f5f5f7 !important; }
-        html.dark .mbr-page .mbr-tab-indicator { background: #818cf8 !important; }
-
-        /* Workspace background */
-        html.dark .mbr-page .mbr-workspace { background: #000000 !important; }
-
-        /* Loan + generic cards */
-        html.dark .mbr-page .mbr-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-card-header { background: linear-gradient(90deg,#1c1c1e,#000000) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-card-title { color: #8e8e93 !important; }
-
-        /* Labels, icons, inputs */
-        html.dark .mbr-page .mbr-label { color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-icon { color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .mbr-page .mbr-input:focus { background: rgba(255,255,255,.05) !important; border-color: #6366f1 !important; box-shadow: 0 0 0 2px rgba(99,102,241,0.15) !important; }
-        html.dark .mbr-page .mbr-input::placeholder { color: rgba(255,255,255,.08) !important; }
-
-        /* Others & Penal Sector */
-        html.dark .mbr-page .mbr-others-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-others-header { background: #000000 !important; }
-        html.dark .mbr-page .mbr-others-body { background: #1c1c1e !important; }
-
-        /* Policy notice */
-        html.dark .mbr-page .mbr-notice { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; border-left-color: #6366f1 !important; }
-        html.dark .mbr-page .mbr-notice-icon { background: #1c1c1e !important; color: #818cf8 !important; }
-        html.dark .mbr-page .mbr-notice-text { color: #71717a !important; }
-
-        /* General Settings toggle rows */
-        html.dark .mbr-page .mbr-toggle-row { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-toggle-row:hover { background: #000000 !important; }
-        html.dark .mbr-page .mbr-toggle-label { color: #8e8e93 !important; }
-        html.dark .mbr-page .mbr-gs-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-divider { background: rgba(255,255,255,.07) !important; }
-
-        /* Fund Management */
-        html.dark .mbr-page .mbr-fm-card { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-fm-card-header { background: linear-gradient(90deg,#1c1c1e,#000000) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-fm-section-title { color: #8e8e93 !important; }
-        html.dark .mbr-page .mbr-fm-hint { color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-chart-header { background: #000000 !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-chart-col-label { color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-chart-row:hover { background: rgba(30,41,59,0.6) !important; }
-        html.dark .mbr-page .mbr-chart-num { background: #000000 !important; color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-chart-input { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .mbr-page .mbr-chart-input:focus { border-color: #6366f1 !important; }
-        html.dark .mbr-page .mbr-chart-empty { color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-del-btn:hover { background: rgba(127,29,29,0.3) !important; border-color: #7f1d1d !important; }
-
-        /* Footer */
-        html.dark .mbr-page .mbr-footer { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .mbr-footer-text { color: rgba(255,255,255,.08) !important; }
-
-        /* antd Switch dark mode */
-        html.dark .mbr-page .ant-switch { background: rgba(255,255,255,.08) !important; }
-        html.dark .mbr-page .ant-switch.ant-switch-checked { background: #6366f1 !important; }
-      `}</style>
-
-      <div className="mbr-page h-screen flex flex-col bg-slate-50 font-sans overflow-hidden relative">
-
-        {/* Loading overlay */}
-        {(loading || saving) && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-2xl px-6 py-4 flex items-center gap-3">
-              <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-              <span className="fz-caption font-black text-slate-700 uppercase tracking-widest">
-                {saving ? 'Saving rules…' : 'Loading rules…'}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* ── Header ── */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 border-b border-slate-700 px-2 py-1 flex items-center justify-between z-10 shadow-lg shrink-0">
-          <div className="flex items-center gap-1.5">
-            <div className="bg-white/10 p-1 rounded-lg text-white backdrop-blur-sm">
-              <Settings size={12} />
-            </div>
-            <div>
-              <h1 className="fz-small font-black text-white tracking-tight leading-none uppercase">Modify Business Rules</h1>
-              <div className="flex items-center gap-1 mt-0.5 fz-micro font-bold text-slate-300 uppercase tracking-widest leading-none">
-                <Building2 size={7} className="text-indigo-300" /> Policy Configuration Ledger
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <div className="hidden sm:flex items-center gap-1 bg-slate-700/50 px-1.5 py-0.5 rounded-full border border-white/10">
-              <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="fz-micro font-black text-slate-300 uppercase">Live Ruleset</span>
-            </div>
-            <button onClick={handleSave} disabled={saving || loading}
-              className="h-5 px-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:opacity-60 text-white rounded-lg fz-micro font-black transition-all flex items-center gap-1 active:scale-95 uppercase tracking-widest">
-              <Save size={9} /> Save Rules
-            </button>
-            <button onClick={closeWindow}
-              className="w-5 h-5 flex items-center justify-center text-white/40 hover:text-white hover:bg-red-500/80 rounded transition-all">
-              <X size={11} />
-            </button>
-          </div>
+    <div className="app-window">
+      {/* ── Header ── */}
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Modify Business Rules</h1>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Building2 size={12} /> Policy Configuration Ledger
+            <span className="aw-pill tone-success" style={{ marginLeft: 4 }}><i className="aw-status-dot" style={{ marginRight: 5 }} />Live ruleset</span>
+          </p>
         </div>
-
-        {/* ── Tab bar ── */}
-        <div className="mbr-tabbar bg-white border-b border-slate-200 px-3 flex gap-1 shrink-0">
-          {([
-            { key: 'loanParameters',  icon: <IndianRupee size={11} />, label: '1. Loan Parameters' },
-            { key: 'generalSettings', icon: <Settings size={11} />,    label: '2. General Setting' },
-            { key: 'fundManagement',  icon: <TrendingUp size={11} />,  label: '3. Fund Management' },
-            { key: 'rdSystem',        icon: <Percent size={11} />,     label: '4. RD System' },
-          ] as const).map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className={`mbr-tab-btn px-3 py-2.5 fz-caption font-black uppercase tracking-widest transition-all relative ${
-                activeTab === tab.key ? 'text-slate-700 active' : 'text-slate-400 hover:text-slate-600'
-              }`}>
-              <div className="flex items-center gap-1.5">{tab.icon} {tab.label}</div>
-              {activeTab === tab.key && (
-                <motion.div layoutId="activeTab"
-                  className="mbr-tab-indicator absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600" />
-              )}
-            </button>
-          ))}
+        <div className="aw-actions">
+          <button type="button" onClick={handleSave} disabled={saving || loading} className="aw-btn aw-btn-primary">
+            {saving ? <RefreshCw size={13} className="aw-spin" /> : <Save size={13} />} Save Rules
+          </button>
+          <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
+            <X size={13} /> Close
+          </button>
         </div>
-
-        {/* ── Tab content ── */}
-        <div className="flex-1 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-
-            {/* ── 1. Loan Parameters ── */}
-            {activeTab === 'loanParameters' && (
-              <motion.div key="loanParameters"
-                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
-                className="mbr-workspace h-full overflow-auto p-2 bg-slate-50/50">
-                <div className="max-w-7xl mx-auto space-y-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {/* Titles follow the columns each card actually writes — see the
-                        mapping note in useBusinessRules.ts. The old "Loan Against R"
-                        and "Regular Loan" labels were swapped relative to the rln and
-                        aln columns the disbursement path reads, and a third
-                        "Additional Loan" card had no backing columns at all
-                        (always zeros, never saved). */}
-                    {/* Card titles fixed to match the aln/eln column authority
-                        (see useBusinessRules.ts's mapping note): additionalLoan's
-                        card writes the aln columns — the real ALN/Emergency Loan
-                        — and emergencyLoan's card writes the eln columns — the
-                        real ELN/Loan Against Recovery. Only the titles changed
-                        here; the prop names and RULE_LOAN_ADD_/RULE_LOAN_EMG_
-                        config keys are unchanged, so no stored value moves
-                        between columns. */}
-                    {renderLoanSection('Regular Loan',           'regularLoan',     businessRules.regularLoan)}
-                    {renderLoanSection('Emergency Loan',         'additionalLoan',  businessRules.additionalLoan)}
-                    {renderLoanSection('Grain Loan',             'mediumTermLoan',  businessRules.mediumTermLoan)}
-                    {renderLoanSection('Loan Against Recovery',  'emergencyLoan',   businessRules.emergencyLoan)}
-                    {renderLoanSection('Loan On Deposit',        'loanOnDeposit',   businessRules.loanOnDeposit)}
-
-                    {/* Loan Against Deposits — custom layout */}
-                    <div className="mbr-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                      <div className="mbr-card-header bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-2 py-1">
-                        <h3 className="mbr-card-title fz-mini font-black text-slate-700 tracking-widest uppercase flex items-center gap-1">
-                          <TrendingUp size={9} className="text-slate-500" /> Loan Against Deposits
-                        </h3>
-                      </div>
-                      <div className="p-2 grid grid-cols-2 gap-x-2 gap-y-1">
-                        {[
-                          { label: 'Share Value%', field: 'shareValue', step: '0.1' },
-                          { label: 'FD (%)',        field: 'fdPercentage', step: '0.01' },
-                          { label: 'Overall Limit', field: 'overallLimit', step: '1' },
-                          { label: 'Basic Pay',     field: 'basicPay', step: '0.01' },
-                        ].map(f => (
-                          <div key={f.field} className="space-y-0.5">
-                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">{f.label}</label>
-                            <input type="number" step={f.step}
-                              value={(businessRules.loanAgainstDeposits as any)[f.field]}
-                              onChange={e => setBusinessRules(prev => ({
-                                ...prev,
-                                loanAgainstDeposits: { ...prev.loanAgainstDeposits, [f.field]: parseFloat(e.target.value) || 0 }
-                              }))}
-                              className={inputCls} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Regular Loan Eligibility — RD / Share Value rules.
-                      These persist to system_configs (not busrules) because
-                      that is where the loan services read them at application
-                      and disbursement time. */}
-                  <div className="mbr-others-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="mbr-others-header bg-slate-900 px-2 py-1 flex items-center gap-1">
-                      <TrendingUp size={9} className="text-emerald-400" />
-                      <h3 className="fz-mini font-black text-white tracking-widest uppercase">
-                        Regular Loan Eligibility (RD / Share Value)
-                      </h3>
-                    </div>
-                    <div className="mbr-others-body p-2 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 bg-white">
-                      <div className="space-y-0.5 col-span-2">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Max. Regular Loan Limit</label>
-                        <input type="number" step="1"
-                          value={businessRules.regularLoanEligibility.maxLimit}
-                          onChange={e => setBusinessRules(prev => ({
-                            ...prev,
-                            regularLoanEligibility: { ...prev.regularLoanEligibility, maxLimit: parseFloat(e.target.value) || 0 }
-                          }))}
-                          className={inputCls} />
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">RD Req. (%)</label>
-                        <input type="number" step="0.01"
-                          value={businessRules.regularLoanEligibility.rdPercent}
-                          onChange={e => setBusinessRules(prev => ({
-                            ...prev,
-                            regularLoanEligibility: { ...prev.regularLoanEligibility, rdPercent: parseFloat(e.target.value) || 0 }
-                          }))}
-                          className={inputCls} />
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Share Req. (%)</label>
-                        <input type="number" step="0.01"
-                          value={businessRules.regularLoanEligibility.sharePercent}
-                          onChange={e => setBusinessRules(prev => ({
-                            ...prev,
-                            regularLoanEligibility: { ...prev.regularLoanEligibility, sharePercent: parseFloat(e.target.value) || 0 }
-                          }))}
-                          className={inputCls} />
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Shortfall Handling</label>
-                        <select
-                          value={businessRules.regularLoanEligibility.shortfallMode}
-                          onChange={e => setBusinessRules(prev => ({
-                            ...prev,
-                            regularLoanEligibility: { ...prev.regularLoanEligibility, shortfallMode: e.target.value as any }
-                          }))}
-                          className={inputCls}>
-                          <option value="DEDUCT">Deduct from disbursement</option>
-                          <option value="BLOCK">Block the loan</option>
-                          <option value="IGNORE">Ignore (no deduction)</option>
-                        </select>
-                      </div>
-                      <div className="space-y-0.5 col-span-2">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Limit Calculation</label>
-                        <select
-                          value={businessRules.regularLoanEligibility.limitCalc}
-                          onChange={e => setBusinessRules(prev => ({
-                            ...prev,
-                            regularLoanEligibility: { ...prev.regularLoanEligibility, limitCalc: e.target.value as any }
-                          }))}
-                          className={inputCls}>
-                          <option value="OUTSTANDING_PLUS_NEW">Existing Regular Outstanding + New Loan</option>
-                          <option value="NEW_ONLY">New Loan only</option>
-                        </select>
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">RD Head Code</label>
-                        <input type="text"
-                          value={businessRules.regularLoanEligibility.rdHeadCode}
-                          onChange={e => setBusinessRules(prev => ({
-                            ...prev,
-                            regularLoanEligibility: { ...prev.regularLoanEligibility, rdHeadCode: e.target.value }
-                          }))}
-                          className={inputCls} />
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Share Head Code</label>
-                        <input type="text"
-                          value={businessRules.regularLoanEligibility.shareHeadCode}
-                          onChange={e => setBusinessRules(prev => ({
-                            ...prev,
-                            regularLoanEligibility: { ...prev.regularLoanEligibility, shareHeadCode: e.target.value }
-                          }))}
-                          className={inputCls} />
-                      </div>
-                      <div className="col-span-full grid grid-cols-3 gap-2 pt-1">
-                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Regular Loan</span>
-                          <Switch size="small"
-                            checked={businessRules.regularLoanEligibility.applyToRegularLoan}
-                            onChange={val => setBusinessRules(prev => ({
-                              ...prev,
-                              regularLoanEligibility: { ...prev.regularLoanEligibility, applyToRegularLoan: val }
-                            }))} />
-                        </div>
-                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Emergency Loan</span>
-                          <Switch size="small"
-                            checked={businessRules.regularLoanEligibility.applyToAdditionalLoan}
-                            onChange={val => setBusinessRules(prev => ({
-                              ...prev,
-                              regularLoanEligibility: { ...prev.regularLoanEligibility, applyToAdditionalLoan: val }
-                            }))} />
-                        </div>
-                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Apply to Loan Against Recovery</span>
-                          <Switch size="small"
-                            checked={businessRules.regularLoanEligibility.applyToEmergencyLoan}
-                            onChange={val => setBusinessRules(prev => ({
-                              ...prev,
-                              regularLoanEligibility: { ...prev.regularLoanEligibility, applyToEmergencyLoan: val }
-                            }))} />
-                        </div>
-                      </div>
-                      <div className="col-span-full fz-mini text-slate-500 leading-tight pt-0.5">
-                        Independently switchable per loan type (all on by default). RD/Share requirements are
-                        calculated on total exposure (existing outstanding of that same loan type + new loan) and
-                        are never added to the loan amount — any shortfall is withheld from the disbursement.
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Others & Penal Sector */}
-                  <div className="mbr-others-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="mbr-others-header bg-slate-900 px-2 py-1 flex items-center gap-1">
-                      <Calculator size={9} className="text-indigo-400" />
-                      <h3 className="fz-mini font-black text-white tracking-widest uppercase">Others & Penal Sector</h3>
-                    </div>
-                    <div className="mbr-others-body p-2 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 bg-white">
-                      <div className="space-y-0.5 col-span-2">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">Min. Membership (Months)</label>
-                        <input type="number" value={businessRules.others.minMembership}
-                          onChange={e => updateOthers('minMembership', parseInt(e.target.value) || 0)}
-                          className={inputCls} />
-                      </div>
-                      {/* Min./Max. CD Amt removed — dead legacy fields, never
-                          enforced by any real validation. CD and RD are the
-                          same product here; the real, enforced minimum is
-                          the RD System tab's Minimum Monthly RD Amount. */}
-                      {[
-                        { label: 'Min. Share Amt', field: 'minShareAmt' },
-                        { label: 'Max. Share Amt', field: 'maxShareAmt' },
-                        { label: 'Security Dep',   field: 'securityDep' },
-                      ].map(item => (
-                        <div key={item.field} className="space-y-0.5">
-                          <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5 whitespace-nowrap">{item.label}</label>
-                          <input type="number" step="0.01"
-                            value={(businessRules.others as any)[item.field]}
-                            onChange={e => updateOthers(item.field, parseFloat(e.target.value) || 0)}
-                            className={inputCls} />
-                        </div>
-                      ))}
-                      {/* The "Loan Against R Penal Rate" box that used to sit here wrote
-                          rlnpenalrate — the REGULAR loan penal rate — from a tab that gave
-                          no hint of it. It now lives on the Regular Loan card in tab 1
-                          beside the rate it belongs to. Two inputs on one column would
-                          just race each other. */}
-                    </div>
-                  </div>
-
-                  {/* Policy notice */}
-                  <div className="mbr-notice bg-white border-2 border-slate-200 border-l-4 border-l-indigo-600 rounded-lg p-2 flex items-center gap-2 shadow-sm">
-                    <div className="mbr-notice-icon bg-slate-50 p-1 rounded-lg text-slate-600 shadow-sm shrink-0">
-                      <Info size={10} />
-                    </div>
-                    <p className="mbr-notice-text fz-mini text-slate-600 font-semibold leading-relaxed">
-                      <strong className="uppercase tracking-widest font-black mr-1">Policy Notice:</strong>
-                      These rules define the financial compliance and operational framework. Changes are applied in real-time to all session calculations. Ensure all parameters align with the latest board resolutions before synchronization.
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* ── 2. General Settings ── */}
-            {activeTab === 'generalSettings' && (
-              <motion.div key="generalSettings"
-                initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
-                className="mbr-workspace h-full overflow-auto p-2 bg-slate-50/50 flex flex-col items-center justify-center">
-                <div className="max-w-5xl w-full">
-                  <div className="mbr-gs-card bg-white border-2 border-slate-200 rounded-lg shadow-xl overflow-hidden">
-                    <div className="p-2 grid grid-cols-1 gap-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
-                        {[
-                          { label: 'DataEntry Mode',                              field: 'dataEntryMode' },
-                          { label: 'Print Demand Format Horizontal',              field: 'printDemandFormatHorizontal' },
-                          { label: 'Consider Intt. Before 10th',                 field: 'considerIntBefore10th' },
-                          { label: 'Calculate Interest Using Reducing Balance',   field: 'calculateInterestUsingReducingBalance' },
-                          { label: 'Show Consolidate Intt. Amount in Demand',    field: 'showConsolidateIntAmountInDemand' },
-                          { label: 'Get Working Charges (Rs.)',                  field: 'getWorkingCharges' },
-                          { label: 'Auto Day-End (Nightly Close, 11:30 PM)',      field: 'autoDayEndCloseEnabled' },
-                          { label: 'Enable tiered penalties for all loans',       field: 'tieredLoanPenaltiesEnabled' },
-                        ].map(item => (
-                          <div key={item.field}
-                            className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                            <span className="mbr-toggle-label fz-mini font-bold text-slate-600 max-w-[180px]">{item.label}</span>
-                            <Switch size="small"
-                              checked={(businessRules.generalSettings as any)[item.field]}
-                              onChange={val => updateGeneralSetting(item.field as keyof GeneralSettings, val)} />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="mbr-divider h-px bg-slate-100" />
-
-                      <div className="rounded-lg border-2 border-indigo-100 bg-indigo-50/50 p-2">
-                        <label className="mbr-label fz-label font-black text-indigo-700 uppercase tracking-widest ml-0.5">
-                          Loan Interest Method
-                        </label>
-                        <div className={`${inputCls} bg-white text-indigo-800 font-bold`}>
-                          Reducing Balance
-                        </div>
-                        <div className="mt-1 text-[10px] text-indigo-700">
-                          Fixed application rule. Principal and reducing-balance interest are posted separately.
-                        </div>
-                      </div>
-
-                      <div className="text-xs text-slate-500">
-                        Existing overdue loans start accruing penalties from the activation date, never retroactively. Re-enabling after a pause starts a new penalty period today. The global annual penal rate is configured on the Regular Loan card and applies to every loan type.
-                      </div>
-
-                      <div className="mbr-divider h-px bg-slate-100" />
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {[
-                          { label: 'Min. Balance For Saving A/c',      field: 'minBalanceForSavingAc',          type: 'float' },
-                          { label: 'Working Charges Amount',            field: 'workingChargesAmount',           type: 'int' },
-                          { label: 'Average Interest Calculation Slot', field: 'averageInterestCalculationSlot', type: 'int' },
-                        ].map(f => (
-                          <div key={f.field} className="space-y-0.5">
-                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">{f.label}</label>
-                            <input type="number" step={f.type === 'float' ? '0.01' : '1'}
-                              value={(businessRules.generalSettings as any)[f.field]}
-                              onChange={e => updateGeneralSetting(f.field as keyof GeneralSettings,
-                                f.type === 'float' ? parseFloat(e.target.value) || 0 : parseInt(e.target.value) || 0)}
-                              className={`mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner`} />
-                          </div>
-                        ))}
-                        {/* Working Charges Head — income head dropdown (required when Get Working Charges is enabled) */}
-                        <div className="space-y-0.5">
-                          <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
-                            Working Charges Head {businessRules.generalSettings.getWorkingCharges && <span className="text-rose-500">*</span>}
-                          </label>
-                          <select
-                            value={businessRules.generalSettings.workingChargesHead}
-                            onChange={e => updateGeneralSetting('workingChargesHead' as keyof GeneralSettings, e.target.value)}
-                            className={`mbr-input w-full h-6 px-2 bg-slate-50 border-2 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 transition-all shadow-inner ${
-                              businessRules.generalSettings.getWorkingCharges && !businessRules.generalSettings.workingChargesHead
-                                ? 'border-rose-400' : 'border-slate-200'
-                            }`}
-                          >
-                            <option value="">Select head...</option>
-                            <option value="I1001">ENTRY FEE</option>
-                            <option value="I1002">INTT FROM MEMBER</option>
-                            <option value="I1003">INTT FROM M BANK</option>
-                            <option value="I1004">INTT FROM STAFF CONSUMER LOAN</option>
-                            <option value="I1005">INTT FROM STAFF S.D. LOAN</option>
-                            <option value="I1007">INTT FORFIT A/C</option>
-                            <option value="I1008">MISC RECEIPTS</option>
-                            <option value="I1009">HOUSE RENT</option>
-                          </select>
-                        </div>
-                        <div className="space-y-0.5">
-                          <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Profit Head</label>
-                          <div className="relative">
-                            <input type="text" value={businessRules.generalSettings.profitHead}
-                              onChange={e => updateGeneralSetting('profitHead', e.target.value)}
-                              placeholder="System ledger head"
-                              className="mbr-input w-full h-6 px-2 pr-6 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
-                            <Database size={9} className="mbr-icon absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mbr-divider h-px bg-slate-100" />
-
-                      {/* Loan Early Closure protection — password re-entry and a
-                          minimum-role gate are deliberately deferred; only the
-                          type-to-confirm toggle exists so far. */}
-                      <div>
-                        <div className="fz-mini font-black text-slate-400 uppercase tracking-widest mb-1">Loan Early Closure Protection</div>
-                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600 max-w-[280px]">
-                            Require typing the loan case number to confirm before executing
-                          </span>
-                          <Switch size="small"
-                            checked={businessRules.earlyClosureProtection.requireTypeConfirm}
-                            onChange={val => setBusinessRules(prev => ({
-                              ...prev,
-                              earlyClosureProtection: { ...prev.earlyClosureProtection, requireTypeConfirm: val }
-                            }))} />
-                        </div>
-                      </div>
-
-                      <div className="mbr-divider h-px bg-slate-100" />
-
-                      {/* Loan Slot delay months — Slot 1/2 (loan-rb-schedule.util.ts)
-                          already charge 1/2 extra months of delay interest to cover
-                          the real processing gap before salary-deduction recovery
-                          starts; these two fields control how many months that gap
-                          is, and now also push the installment due-date schedule
-                          back by the same amount so the member is never billed for
-                          a delay their collection schedule doesn't reflect. */}
-                      <div>
-                        <div className="fz-mini font-black text-slate-400 uppercase tracking-widest mb-1">Loan Slots (Application Day Window &amp; Delay)</div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {/* Slot 1's window is the only thing stored — Slot 2 is its
-                              complement, shown read-only below so an operator can see
-                              exactly what the other slot became. The window may wrap the
-                              month boundary (the society's original 25–5 does). */}
-                          <div className="space-y-0.5">
-                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
-                              Slot 1 Window — From Day
-                            </label>
-                            <input type="number" min={1} max={31} step="1"
-                              value={businessRules.loanSlotDelay.slot1StartDay}
-                              onChange={e => setBusinessRules(prev => ({
-                                ...prev,
-                                loanSlotDelay: { ...prev.loanSlotDelay, slot1StartDay: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) }
-                              }))}
-                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
-                          </div>
-                          <div className="space-y-0.5">
-                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
-                              Slot 1 Window — To Day
-                            </label>
-                            <input type="number" min={1} max={31} step="1"
-                              value={businessRules.loanSlotDelay.slot1EndDay}
-                              onChange={e => setBusinessRules(prev => ({
-                                ...prev,
-                                loanSlotDelay: { ...prev.loanSlotDelay, slot1EndDay: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) }
-                              }))}
-                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
-                          </div>
-                          <div className="sm:col-span-2 fz-mini font-bold text-slate-500 bg-slate-50 border-2 border-slate-200 rounded-lg px-2 py-1">
-                            Slot 1 = application day {slotWindowLabels(businessRules.loanSlotDelay.slot1StartDay, businessRules.loanSlotDelay.slot1EndDay).slot1}
-                            {'  ·  '}
-                            Slot 2 = application day {slotWindowLabels(businessRules.loanSlotDelay.slot1StartDay, businessRules.loanSlotDelay.slot1EndDay).slot2}
-                          </div>
-                          <div className="space-y-0.5">
-                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
-                              Slot 1 (day {slotWindowLabels(businessRules.loanSlotDelay.slot1StartDay, businessRules.loanSlotDelay.slot1EndDay).slot1}) Delay
-                            </label>
-                            <input type="number" min={0} step="1"
-                              value={businessRules.loanSlotDelay.slot1DelayMonths}
-                              onChange={e => setBusinessRules(prev => ({
-                                ...prev,
-                                loanSlotDelay: { ...prev.loanSlotDelay, slot1DelayMonths: parseInt(e.target.value) || 0 }
-                              }))}
-                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
-                          </div>
-                          <div className="space-y-0.5">
-                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
-                              Slot 2 (day {slotWindowLabels(businessRules.loanSlotDelay.slot1StartDay, businessRules.loanSlotDelay.slot1EndDay).slot2}) Delay
-                            </label>
-                            <input type="number" min={0} step="1"
-                              value={businessRules.loanSlotDelay.slot2DelayMonths}
-                              onChange={e => setBusinessRules(prev => ({
-                                ...prev,
-                                loanSlotDelay: { ...prev.loanSlotDelay, slot2DelayMonths: parseInt(e.target.value) || 0 }
-                              }))}
-                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
-                          </div>
-                          {/* Governs both the EMI's constant monthly interest at
-                              disbursement (frozen into instal_amt, so it never reprices
-                              an existing loan) and every early-closure line item (applied
-                              live). NEAREST reproduces the society's manual whole-rupee
-                              worksheets. */}
-                          <div className="space-y-0.5">
-                            <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">
-                              Loan Rounding (EMI &amp; Closure)
-                            </label>
-                            <select
-                              value={businessRules.loanRounding.mode}
-                              onChange={e => setBusinessRules(prev => ({
-                                ...prev,
-                                loanRounding: { mode: e.target.value as typeof prev.loanRounding.mode }
-                              }))}
-                              className="mbr-input w-full h-6 px-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-body font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner">
-                              <option value="NEAREST">Nearest Rupee — .00-.49 down, .50-.99 up (manual)</option>
-                              <option value="UP">Always Round Up (whole rupee)</option>
-                              <option value="DOWN">Always Round Down (whole rupee)</option>
-                              <option value="NONE">No Rounding (paisa precision)</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* ── 3. Fund Management ── */}
-            {activeTab === 'fundManagement' && (
-              <motion.div key="fundManagement"
-                initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.03 }}
-                transition={{ duration: 0.2 }}
-                className="mbr-workspace h-full overflow-auto p-2 bg-slate-50/50">
-                <div className="max-w-6xl mx-auto space-y-2">
-
-                  {/* Global Fund Parameters */}
-                  <div className="mbr-fm-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="mbr-fm-card-header bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-2 py-1 flex items-center gap-1.5">
-                      <div className="bg-slate-100 p-1 rounded-lg text-slate-600"><Settings size={9} /></div>
-                      <h3 className="mbr-fm-section-title fz-mini font-black text-slate-700 uppercase tracking-widest">Global Fund Parameters</h3>
-                    </div>
-                    <div className="p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Annual Fund Interest Rate (%)</label>
-                        <div className="relative">
-                          <Percent size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                          <input type="number" step="0.01" value={businessRules.fundManagement.fundInterestRate}
-                            onChange={e => updateFundManagement('fundInterestRate', parseFloat(e.target.value) || 0)}
-                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner"
-                            placeholder="0.00" />
-                        </div>
-                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Applied on opening balance annually</p>
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Dividend Payout (%)</label>
-                        <div className="relative">
-                          <TrendingUp size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                          <input type="number" step="0.01" value={businessRules.fundManagement.dividendPercent}
-                            onChange={e => updateFundManagement('dividendPercent', parseFloat(e.target.value) || 0)}
-                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner"
-                            placeholder="0.00" />
-                        </div>
-                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Percentage of share capital</p>
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Group Insurance Deduction (₹)</label>
-                        <div className="relative">
-                          <ShieldCheck size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                          <input type="number" value={businessRules.fundManagement.groupInsuranceAmount}
-                            onChange={e => updateFundManagement('groupInsuranceAmount', parseFloat(e.target.value) || 0)}
-                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner"
-                            placeholder="0" />
-                        </div>
-                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Fixed yearly deduction amount</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Interest Chart */}
-                  <div className="mbr-fm-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm flex flex-col h-[400px]">
-                    <div className="mbr-chart-header bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-2 py-1 flex items-center justify-between shrink-0">
-                      <div className="flex items-center gap-1.5">
-                        <div className="bg-slate-100 p-1 rounded-lg text-slate-600"><Calculator size={9} /></div>
-                        <div>
-                          <h3 className="mbr-fm-section-title fz-mini font-black text-slate-700 uppercase tracking-widest">Monthly Contribution Interest Chart</h3>
-                          <p className="mbr-fm-hint fz-micro text-slate-400 font-bold mt-0.5">Define yearly interest for each contribution slab</p>
-                        </div>
-                      </div>
-                      <button onClick={addChartRow}
-                        className="px-1.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-micro font-black uppercase tracking-widest flex items-center gap-1 transition-all shadow-sm active:scale-95">
-                        <Plus size={9} /> Add Slab
-                      </button>
-                    </div>
-
-                    <div className="flex-1 overflow-auto p-0">
-                      {businessRules.fundManagement.interestChart.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
-                          <Database size={32} strokeWidth={1} className="mbr-chart-empty mb-2" />
-                          <p className="mbr-chart-empty fz-mini font-bold uppercase tracking-widest">No slabs configured</p>
-                          <p className="mbr-chart-empty fz-micro mt-0.5">Click "Add Slab" to start building the chart</p>
-                        </div>
-                      ) : (
-                        <div className="w-full">
-                          <div className="sticky top-0 mbr-chart-header bg-slate-50/90 backdrop-blur-sm border-b border-slate-100 grid grid-cols-12 px-2 py-1 z-10">
-                            <div className="col-span-1 text-center mbr-chart-col-label fz-micro font-black text-slate-400 uppercase tracking-widest">#</div>
-                            <div className="col-span-5 pl-2 mbr-chart-col-label fz-micro font-black text-slate-400 uppercase tracking-widest">Monthly Contribution (₹)</div>
-                            <div className="col-span-5 pl-2 mbr-chart-col-label fz-micro font-black text-slate-400 uppercase tracking-widest">Yearly Interest Credit (₹)</div>
-                            <div className="col-span-1 mbr-chart-col-label fz-micro font-black text-slate-400 uppercase tracking-widest text-center">Del</div>
-                          </div>
-                          <div className="divide-y divide-slate-50">
-                            {businessRules.fundManagement.interestChart.map((row, idx) => (
-                              <div key={idx}
-                                className="mbr-chart-row grid grid-cols-12 px-2 py-1.5 items-center hover:bg-slate-50/50 transition-colors group">
-                                <div className="col-span-1 text-center">
-                                  <span className="mbr-chart-num bg-slate-100 text-slate-500 w-5 h-5 rounded flex items-center justify-center fz-mini font-bold mx-auto">
-                                    {idx + 1}
-                                  </span>
-                                </div>
-                                <div className="col-span-10 grid grid-cols-2 gap-4">
-                                  <div className="relative flex items-center">
-                                    <div className="absolute left-2 text-slate-300 pointer-events-none fz-mini">₹</div>
-                                    <input type="number" value={row.monthlyContribution}
-                                      onChange={e => handleChartChange(idx, 'monthlyContribution', parseFloat(e.target.value) || 0)}
-                                      className="mbr-chart-input w-full h-6 pl-5 pr-2 bg-white border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200/40 transition-all"
-                                      placeholder="0" />
-                                    <ArrowRight size={9} className="absolute -right-3 text-slate-300/50" />
-                                  </div>
-                                  <div className="relative flex items-center">
-                                    <div className="absolute left-2 text-slate-300 pointer-events-none fz-micro">Get</div>
-                                    <input type="number" step="0.01" value={row.yearlyInterest}
-                                      onChange={e => handleChartChange(idx, 'yearlyInterest', parseFloat(e.target.value) || 0)}
-                                      className="mbr-chart-input w-full h-6 pl-7 pr-2 bg-white border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-600 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200/40 transition-all"
-                                      placeholder="0.00" />
-                                  </div>
-                                </div>
-                                <div className="col-span-1 flex justify-center">
-                                  <button onClick={() => removeChartRow(idx)}
-                                    className="mbr-del-btn w-5 h-5 flex items-center justify-center bg-white border-2 border-slate-100 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                    title="Remove Slab">
-                                    <Trash2 size={9} />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* ── 4. RD System ── */}
-            {activeTab === 'rdSystem' && (
-              <motion.div key="rdSystem"
-                initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.03 }}
-                transition={{ duration: 0.2 }}
-                className="mbr-workspace h-full overflow-auto p-2 bg-slate-50/50">
-                <div className="max-w-6xl mx-auto space-y-2">
-
-                  {/* Core settings */}
-                  <div className="mbr-fm-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="mbr-fm-card-header bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-2 py-1 flex items-center gap-1.5">
-                      <div className="bg-slate-100 p-1 rounded-lg text-slate-600"><IndianRupee size={9} /></div>
-                      <h3 className="mbr-fm-section-title fz-mini font-black text-slate-700 uppercase tracking-widest">Core RD Settings</h3>
-                    </div>
-                    <div className="p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Minimum Monthly RD Amount (₹)</label>
-                        <div className="relative">
-                          <IndianRupee size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                          <input type="number" step="1" value={businessRules.rdSystem.minMonthlyAmount}
-                            onChange={e => updateRdSystem('minMonthlyAmount', parseFloat(e.target.value) || 0)}
-                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
-                        </div>
-                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Floor a member may select for their monthly RD contribution</p>
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Opening-Balance Interest Rate (%)</label>
-                        <div className="relative">
-                          <Percent size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                          <input type="number" step="0.01" value={businessRules.rdSystem.openingBalanceRate}
-                            onChange={e => updateRdSystem('openingBalanceRate', parseFloat(e.target.value) || 0)}
-                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
-                        </div>
-                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">Annual rate on the opening balance timeline — frozen per financial year at closing</p>
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-widest ml-0.5">Min. Balance After Withdrawal (₹)</label>
-                        <div className="relative">
-                          <IndianRupee size={9} className="mbr-icon absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                          <input type="number" step="1" value={businessRules.rdSystem.minBalanceAfterWithdrawal}
-                            onChange={e => updateRdSystem('minBalanceAfterWithdrawal', parseFloat(e.target.value) || 0)}
-                            className="mbr-input w-full h-6 pl-7 pr-2 bg-slate-50 border-2 border-slate-200 rounded-lg fz-tiny font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-500 focus:ring-2 focus:ring-slate-400/30 transition-all shadow-inner" />
-                        </div>
-                        <p className="mbr-fm-hint fz-micro text-slate-400 font-medium ml-1">A withdrawal must never take the balance below this</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment-pattern eligibility thresholds */}
-                  <div className="mbr-others-card bg-white border-2 border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="mbr-others-header bg-slate-900 px-2 py-1 flex items-center gap-1">
-                      <TrendingUp size={9} className="text-emerald-400" />
-                      <h3 className="fz-mini font-black text-white tracking-widest uppercase">
-                        Full-Interest Eligibility Thresholds
-                      </h3>
-                    </div>
-                    <div className="mbr-others-body p-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 bg-white">
-                      {([
-                        { label: 'Min. Consecutive Installments', field: 'minConsecutiveInstallments' as const },
-                        { label: 'Max. Payment Gap (Months)',     field: 'maxPaymentGapMonths' as const },
-                        { label: 'Max. Missed Installments',      field: 'maxMissedInstallments' as const },
-                        { label: 'Min. Regular After Recovery',   field: 'minRegularAfterRecovery' as const },
-                        { label: 'Max. Arrears Clearance (Months)', field: 'maxArrearsClearanceMonths' as const },
-                      ]).map(item => (
-                        <div key={item.field} className="space-y-0.5">
-                          <label className="mbr-label fz-label font-black text-slate-400 uppercase tracking-tight ml-0.5">{item.label}</label>
-                          <input type="number" step="1"
-                            value={businessRules.rdSystem[item.field]}
-                            onChange={e => updateRdSystem(item.field, parseInt(e.target.value, 10) || 0)}
-                            className={inputCls} />
-                        </div>
-                      ))}
-                      <div className="col-span-full grid grid-cols-2 gap-2 pt-1">
-                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Allow Recovery From an Initial-Month Gap</span>
-                          <Switch size="small"
-                            checked={businessRules.rdSystem.allowInitialMissRecovery}
-                            onChange={val => updateRdSystem('allowInitialMissRecovery', val)} />
-                        </div>
-                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Allow Recovery From a Later Gap</span>
-                          <Switch size="small"
-                            checked={businessRules.rdSystem.allowLaterMissRecovery}
-                            onChange={val => updateRdSystem('allowLaterMissRecovery', val)} />
-                        </div>
-                        <div className="mbr-toggle-row flex items-center justify-between p-1.5 rounded-lg border-2 border-slate-100 hover:bg-slate-50 transition-colors">
-                          <span className="mbr-toggle-label fz-mini font-bold text-slate-600">Allow Multiple Separate Gaps in One Year</span>
-                          <Switch size="small"
-                            checked={businessRules.rdSystem.allowMultipleGaps}
-                            onChange={val => updateRdSystem('allowMultipleGaps', val)} />
-                        </div>
-                      </div>
-                      <div className="col-span-full fz-mini text-slate-500 leading-tight pt-0.5">
-                        These thresholds drive one automatic rule engine that evaluates each member's real 12-month
-                        payment history — not a fixed list of patterns. A member who doesn't automatically qualify
-                        still receives their normal RD interest in full; an authority can separately upgrade them to
-                        full annual interest as an exception, never a prerequisite.
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Policy notice */}
-                  <div className="mbr-notice bg-white border-2 border-slate-200 border-l-4 border-l-amber-500 rounded-lg p-2 flex items-center gap-2 shadow-sm">
-                    <div className="mbr-notice-icon bg-slate-50 p-1 rounded-lg text-amber-600 shadow-sm shrink-0">
-                      <Info size={10} />
-                    </div>
-                    <p className="mbr-notice-text fz-mini text-slate-600 font-semibold leading-relaxed">
-                      <strong className="uppercase tracking-widest font-black mr-1">Placeholder Values:</strong>
-                      The numbers shown above are working defaults, not finalized policy. Update them once the society
-                      confirms the real thresholds — nothing about the eligibility engine itself is hardcoded to these.
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* ── Footer ── */}
-        <div className="mbr-footer px-2 py-1 bg-white border-t border-slate-100 flex items-center justify-between shrink-0 opacity-60">
-          <div className="flex items-center gap-1">
-            <Building2 size={9} className="text-slate-400" />
-            <span className="mbr-footer-text fz-micro font-bold text-slate-500 uppercase tracking-tight">Trust Nagpur - Policy Governance</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-0.5 text-slate-600">
-              <ShieldCheck size={9} />
-              <span className="mbr-footer-text fz-micro font-black uppercase">Standard Compliant</span>
-            </div>
-            <div className="w-px h-2 bg-slate-200" />
-            <span className="mbr-footer-text fz-micro font-bold text-slate-300 uppercase tracking-widest">RULESET_V3.1.2</span>
-          </div>
-        </div>
-
       </div>
-    </ConfigProvider>
+
+      {/* ── Tabs ── */}
+      <div className="aw-tabs" role="tablist">
+        {tabs.map(tab => (
+          <button key={tab.key} type="button" role="tab" aria-selected={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} className="aw-tab">
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="aw-content">
+        <div key={activeTab} className="aw-stack aw-fade-in">
+
+          {/* ── 1. Loan Parameters ── */}
+          {activeTab === 'loanParameters' && (
+            <>
+              {/* Titles follow the columns each card actually writes — see the
+                  mapping note in useBusinessRules.ts. Only titles differ from the
+                  prop names; no stored value moves between columns. */}
+              <div style={gridAuto(300)}>
+                {renderLoanSection('Regular Loan', 'regularLoan', businessRules.regularLoan)}
+                {renderLoanSection('Emergency Loan', 'additionalLoan', businessRules.additionalLoan)}
+                {renderLoanSection('Grain Loan', 'mediumTermLoan', businessRules.mediumTermLoan)}
+                {renderLoanSection('Loan Against Recovery', 'emergencyLoan', businessRules.emergencyLoan)}
+                {renderLoanSection('Loan On Deposit', 'loanOnDeposit', businessRules.loanOnDeposit)}
+
+                {/* Loan Against Deposits — custom layout */}
+                <Section icon={<TrendingUp size={14} />} title="Loan Against Deposits">
+                  <div className="aw-two">
+                    {[
+                      { label: 'Share Value%', field: 'shareValue', step: '0.1' },
+                      { label: 'FD (%)', field: 'fdPercentage', step: '0.01' },
+                      { label: 'Overall Limit', field: 'overallLimit', step: '1' },
+                      { label: 'Basic Pay', field: 'basicPay', step: '0.01' },
+                    ].map(f => (
+                      <Field key={f.field} label={f.label}>
+                        <input type="number" step={f.step}
+                          value={(businessRules.loanAgainstDeposits as any)[f.field]}
+                          onChange={e => setBusinessRules(prev => ({
+                            ...prev,
+                            loanAgainstDeposits: { ...prev.loanAgainstDeposits, [f.field]: num(e.target.value) },
+                          }))}
+                          className="aw-input" />
+                      </Field>
+                    ))}
+                  </div>
+                </Section>
+              </div>
+
+              {/* Regular Loan Eligibility — RD / Share Value rules.
+                  These persist to system_configs (not busrules) because that is
+                  where the loan services read them at application and
+                  disbursement time. */}
+              <Section icon={<TrendingUp size={14} />} title="Regular Loan Eligibility (RD / Share Value)">
+                <div className="aw-stack">
+                  <div style={gridAuto(170)}>
+                    <Field label="Max. Regular Loan Limit">
+                      <input type="number" step="1" value={elig.maxLimit} onChange={e => updateEligibility({ maxLimit: num(e.target.value) })} className="aw-input" />
+                    </Field>
+                    <Field label="RD Req. (%)">
+                      <input type="number" step="0.01" value={elig.rdPercent} onChange={e => updateEligibility({ rdPercent: num(e.target.value) })} className="aw-input" />
+                    </Field>
+                    <Field label="Share Req. (%)">
+                      <input type="number" step="0.01" value={elig.sharePercent} onChange={e => updateEligibility({ sharePercent: num(e.target.value) })} className="aw-input" />
+                    </Field>
+                    <Field label="Shortfall Handling">
+                      <Select
+                        className="aw-select" popupClassName="aw-select-popup"
+                        value={elig.shortfallMode}
+                        onChange={(v) => updateEligibility({ shortfallMode: v as any })}
+                        options={[
+                          { value: 'DEDUCT', label: 'Deduct from disbursement' },
+                          { value: 'BLOCK', label: 'Block the loan' },
+                          { value: 'IGNORE', label: 'Ignore (no deduction)' },
+                        ]}
+                      />
+                    </Field>
+                    <Field label="Limit Calculation">
+                      <Select
+                        className="aw-select" popupClassName="aw-select-popup"
+                        value={elig.limitCalc}
+                        onChange={(v) => updateEligibility({ limitCalc: v as any })}
+                        options={[
+                          { value: 'OUTSTANDING_PLUS_NEW', label: 'Existing Regular Outstanding + New Loan' },
+                          { value: 'NEW_ONLY', label: 'New Loan only' },
+                        ]}
+                      />
+                    </Field>
+                    <Field label="RD Head Code">
+                      <input type="text" value={elig.rdHeadCode} onChange={e => updateEligibility({ rdHeadCode: e.target.value })} className="aw-input" />
+                    </Field>
+                    <Field label="Share Head Code">
+                      <input type="text" value={elig.shareHeadCode} onChange={e => updateEligibility({ shareHeadCode: e.target.value })} className="aw-input" />
+                    </Field>
+                  </div>
+                  <div style={gridAuto(240)}>
+                    <ToggleRow label="Apply to Regular Loan" checked={elig.applyToRegularLoan} onChange={v => updateEligibility({ applyToRegularLoan: v })} />
+                    <ToggleRow label="Apply to Emergency Loan" checked={elig.applyToAdditionalLoan} onChange={v => updateEligibility({ applyToAdditionalLoan: v })} />
+                    <ToggleRow label="Apply to Loan Against Recovery" checked={elig.applyToEmergencyLoan} onChange={v => updateEligibility({ applyToEmergencyLoan: v })} />
+                  </div>
+                  <p className="aw-meta" style={{ lineHeight: 1.5 }}>
+                    Independently switchable per loan type (all on by default). RD/Share requirements are
+                    calculated on total exposure (existing outstanding of that same loan type + new loan) and
+                    are never added to the loan amount — any shortfall is withheld from the disbursement.
+                  </p>
+                </div>
+              </Section>
+
+              {/* Others & Penal Sector */}
+              <Section icon={<Calculator size={14} />} title="Others & Penal Sector">
+                <div style={gridAuto(170)}>
+                  <Field label="Min. Membership (Months)">
+                    <input type="number" value={businessRules.others.minMembership} onChange={e => updateOthers('minMembership', int(e.target.value))} className="aw-input" />
+                  </Field>
+                  {/* Min./Max. CD Amt removed — dead legacy fields, never enforced by
+                      any real validation. The real, enforced minimum is the RD System
+                      tab's Minimum Monthly RD Amount. */}
+                  {[
+                    { label: 'Min. Share Amt', field: 'minShareAmt' },
+                    { label: 'Max. Share Amt', field: 'maxShareAmt' },
+                    { label: 'Security Dep', field: 'securityDep' },
+                  ].map(item => (
+                    <Field key={item.field} label={item.label}>
+                      <input type="number" step="0.01" value={(businessRules.others as any)[item.field]} onChange={e => updateOthers(item.field, num(e.target.value))} className="aw-input" />
+                    </Field>
+                  ))}
+                </div>
+              </Section>
+
+              <div className="aw-alert aw-alert-info" style={{ marginBottom: 0 }}>
+                <Info size={15} />
+                <span>
+                  <strong style={{ textTransform: 'uppercase', letterSpacing: '.04em' }}>Policy Notice: </strong>
+                  These rules define the financial compliance and operational framework. Changes are applied in real-time to all session calculations. Ensure all parameters align with the latest board resolutions before synchronization.
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* ── 2. General Settings ── */}
+          {activeTab === 'generalSettings' && (
+            <div className="aw-stack aw-narrow" style={{ maxWidth: 980 }}>
+              <Section icon={<Settings size={14} />} title="Behaviour">
+                <div style={gridAuto(300)}>
+                  {[
+                    { label: 'DataEntry Mode', field: 'dataEntryMode' },
+                    { label: 'Print Demand Format Horizontal', field: 'printDemandFormatHorizontal' },
+                    { label: 'Consider Intt. Before 10th', field: 'considerIntBefore10th' },
+                    { label: 'Calculate Interest Using Reducing Balance', field: 'calculateInterestUsingReducingBalance' },
+                    { label: 'Show Consolidate Intt. Amount in Demand', field: 'showConsolidateIntAmountInDemand' },
+                    { label: 'Get Working Charges (Rs.)', field: 'getWorkingCharges' },
+                    { label: 'Auto Day-End (Nightly Close, 11:30 PM)', field: 'autoDayEndCloseEnabled' },
+                    { label: 'Enable tiered penalties for all loans', field: 'tieredLoanPenaltiesEnabled' },
+                  ].map(item => (
+                    <ToggleRow key={item.field} label={item.label}
+                      checked={(gs as any)[item.field]}
+                      onChange={val => updateGeneralSetting(item.field as keyof GeneralSettings, val)} />
+                  ))}
+                </div>
+              </Section>
+
+              <Section icon={<Calculator size={14} />} title="Interest & Charges">
+                <div className="aw-stack">
+                  <div className="aw-panel aw-panel-accent">
+                    <span className="aw-label">Loan Interest Method</span>
+                    <p className="aw-strong">Reducing Balance</p>
+                    <p className="aw-meta" style={{ marginTop: 4 }}>Fixed application rule. Principal and reducing-balance interest are posted separately.</p>
+                  </div>
+
+                  <p className="aw-meta" style={{ lineHeight: 1.5 }}>
+                    Existing overdue loans start accruing penalties from the activation date, never retroactively. Re-enabling after a pause starts a new penalty period today. The global annual penal rate is configured on the Regular Loan card and applies to every loan type.
+                  </p>
+
+                  <div className="aw-two">
+                    {[
+                      { label: 'Min. Balance For Saving A/c', field: 'minBalanceForSavingAc', type: 'float' },
+                      { label: 'Working Charges Amount', field: 'workingChargesAmount', type: 'int' },
+                      { label: 'Average Interest Calculation Slot', field: 'averageInterestCalculationSlot', type: 'int' },
+                    ].map(f => (
+                      <Field key={f.field} label={f.label}>
+                        <input type="number" step={f.type === 'float' ? '0.01' : '1'}
+                          value={(gs as any)[f.field]}
+                          onChange={e => updateGeneralSetting(f.field as keyof GeneralSettings, f.type === 'float' ? num(e.target.value) : int(e.target.value))}
+                          className="aw-input" />
+                      </Field>
+                    ))}
+                    {/* Working Charges Head — income head dropdown (required when Get Working Charges is enabled) */}
+                    <Field label={<>Working Charges Head {gs.getWorkingCharges && <span style={{ color: 'var(--aw-danger)' }}>*</span>}</>}>
+                      <Select
+                        className={`aw-select ${gs.getWorkingCharges && !gs.workingChargesHead ? 'is-invalid' : ''}`}
+                        popupClassName="aw-select-popup"
+                        value={gs.workingChargesHead || undefined}
+                        onChange={(v) => updateGeneralSetting('workingChargesHead' as keyof GeneralSettings, v ?? '')}
+                        placeholder="Select head..."
+                        options={[
+                          { value: 'I1001', label: 'ENTRY FEE' },
+                          { value: 'I1002', label: 'INTT FROM MEMBER' },
+                          { value: 'I1003', label: 'INTT FROM M BANK' },
+                          { value: 'I1004', label: 'INTT FROM STAFF CONSUMER LOAN' },
+                          { value: 'I1005', label: 'INTT FROM STAFF S.D. LOAN' },
+                          { value: 'I1007', label: 'INTT FORFIT A/C' },
+                          { value: 'I1008', label: 'MISC RECEIPTS' },
+                          { value: 'I1009', label: 'HOUSE RENT' },
+                        ]}
+                      />
+                    </Field>
+                    <Field label="Profit Head">
+                      <IconInput icon={<Database size={13} />}>
+                        <input type="text" value={gs.profitHead} onChange={e => updateGeneralSetting('profitHead', e.target.value)} placeholder="System ledger head" className="aw-input" />
+                      </IconInput>
+                    </Field>
+                  </div>
+                </div>
+              </Section>
+
+              {/* Loan Early Closure protection — password re-entry and a minimum-role
+                  gate are deliberately deferred; only the type-to-confirm toggle
+                  exists so far. */}
+              <Section icon={<ShieldCheck size={14} />} title="Loan Early Closure Protection">
+                <ToggleRow
+                  label="Require typing the loan case number to confirm before executing"
+                  checked={businessRules.earlyClosureProtection.requireTypeConfirm}
+                  onChange={val => setBusinessRules(prev => ({
+                    ...prev,
+                    earlyClosureProtection: { ...prev.earlyClosureProtection, requireTypeConfirm: val },
+                  }))}
+                />
+              </Section>
+
+              {/* Slot delay months are added to the disbursement month to get the
+                  first due month; the same configured delay also sizes delay
+                  interest in the EMI calculation. */}
+              <Section icon={<Clock size={14} />} title="Loan Slots (Application Day Window & Delay)">
+                <div className="aw-stack">
+                  <div className="aw-two">
+                    <Field label="Slot 1 Window — From Day">
+                      <input type="number" min={1} max={31} step="1" value={slot.slot1StartDay}
+                        onChange={e => updateSlot({ slot1StartDay: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) })} className="aw-input" />
+                    </Field>
+                    <Field label="Slot 1 Window — To Day">
+                      <input type="number" min={1} max={31} step="1" value={slot.slot1EndDay}
+                        onChange={e => updateSlot({ slot1EndDay: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) })} className="aw-input" />
+                    </Field>
+                  </div>
+                  <div className="aw-panel">
+                    <span className="aw-strong" style={{ fontWeight: 600 }}>
+                      Slot 1 = application day {slotLabels.slot1}{'  ·  '}Slot 2 = application day {slotLabels.slot2}
+                    </span>
+                  </div>
+                  <div className="aw-two">
+                    <Field label={`Slot 1 (day ${slotLabels.slot1}) Delay`}>
+                      <input type="number" min={0} step="1" value={slot.slot1DelayMonths} onChange={e => updateSlot({ slot1DelayMonths: int(e.target.value) })} className="aw-input" />
+                    </Field>
+                    <Field label={`Slot 2 (day ${slotLabels.slot2}) Delay`}>
+                      <input type="number" min={0} step="1" value={slot.slot2DelayMonths} onChange={e => updateSlot({ slot2DelayMonths: int(e.target.value) })} className="aw-input" />
+                    </Field>
+                    {/* Governs both the EMI's constant monthly interest at disbursement
+                        (frozen into instal_amt) and every early-closure line item.
+                        NEAREST reproduces the society's manual whole-rupee worksheets. */}
+                    <Field label="Loan Rounding (EMI & Closure)">
+                      <Select
+                        className="aw-select" popupClassName="aw-select-popup"
+                        value={businessRules.loanRounding.mode}
+                        onChange={(v) => setBusinessRules(prev => ({ ...prev, loanRounding: { mode: v as typeof prev.loanRounding.mode } }))}
+                        options={[
+                          { value: 'NEAREST', label: 'Nearest Rupee — .00-.49 down, .50-.99 up (manual)' },
+                          { value: 'UP', label: 'Always Round Up (whole rupee)' },
+                          { value: 'DOWN', label: 'Always Round Down (whole rupee)' },
+                          { value: 'NONE', label: 'No Rounding (paisa precision)' },
+                        ]}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              </Section>
+            </div>
+          )}
+
+          {/* ── 3. Fund Management ── */}
+          {activeTab === 'fundManagement' && (
+            <>
+              <Section icon={<Settings size={14} />} title="Global Fund Parameters">
+                <div style={gridAuto(240)}>
+                  <Field label="Annual Fund Interest Rate (%)" hint="Applied on opening balance annually">
+                    <IconInput icon={<Percent size={13} />}>
+                      <input type="number" step="0.01" value={businessRules.fundManagement.fundInterestRate} onChange={e => updateFundManagement('fundInterestRate', num(e.target.value))} placeholder="0.00" className="aw-input" />
+                    </IconInput>
+                  </Field>
+                  <Field label="Dividend Payout (%)" hint="Percentage of share capital">
+                    <IconInput icon={<TrendingUp size={13} />}>
+                      <input type="number" step="0.01" value={businessRules.fundManagement.dividendPercent} onChange={e => updateFundManagement('dividendPercent', num(e.target.value))} placeholder="0.00" className="aw-input" />
+                    </IconInput>
+                  </Field>
+                  <Field label="Group Insurance Deduction (₹)" hint="Fixed yearly deduction amount">
+                    <IconInput icon={<ShieldCheck size={13} />}>
+                      <input type="number" value={businessRules.fundManagement.groupInsuranceAmount} onChange={e => updateFundManagement('groupInsuranceAmount', num(e.target.value))} placeholder="0" className="aw-input" />
+                    </IconInput>
+                  </Field>
+                </div>
+              </Section>
+
+              <Section
+                icon={<Calculator size={14} />}
+                title="Monthly Contribution Interest Chart"
+                hint="Define yearly interest for each contribution slab"
+                action={<button type="button" onClick={addChartRow} className="aw-btn aw-btn-secondary aw-btn-sm"><Plus size={12} /> Add Slab</button>}
+              >
+                {businessRules.fundManagement.interestChart.length === 0 ? (
+                  <div className="aw-empty" style={{ padding: 32 }}>
+                    <Database size={28} />
+                    <strong className="aw-strong">No slabs configured</strong>
+                    <span className="aw-meta">Click "Add Slab" to start building the chart</span>
+                  </div>
+                ) : (
+                  <div className="aw-table-wrap" style={{ maxHeight: '48vh' }}>
+                    <table className="aw-table">
+                      <thead>
+                        <tr>
+                          <th className="is-center" style={{ width: 50 }}>#</th>
+                          <th>Monthly Contribution (₹)</th>
+                          <th>Yearly Interest Credit (₹)</th>
+                          <th style={{ width: 50 }} />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {businessRules.fundManagement.interestChart.map((row, idx) => (
+                          <tr key={idx}>
+                            <td className="is-muted is-center">{idx + 1}</td>
+                            <td className="has-input">
+                              <input type="number" aria-label={`Slab ${idx + 1} monthly contribution`} value={row.monthlyContribution}
+                                onChange={e => handleChartChange(idx, 'monthlyContribution', num(e.target.value))} placeholder="0" className="aw-input" />
+                            </td>
+                            <td className="has-input">
+                              <input type="number" step="0.01" aria-label={`Slab ${idx + 1} yearly interest`} value={row.yearlyInterest}
+                                onChange={e => handleChartChange(idx, 'yearlyInterest', num(e.target.value))} placeholder="0.00" className="aw-input" />
+                            </td>
+                            <td className="is-center">
+                              <button type="button" onClick={() => removeChartRow(idx)} className="aw-icon-btn is-sm is-danger" aria-label={`Remove slab ${idx + 1}`} data-tip="Remove slab" data-tip-pos="left">
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Section>
+            </>
+          )}
+
+          {/* ── 4. RD System ── */}
+          {activeTab === 'rdSystem' && (
+            <>
+              <Section icon={<IndianRupee size={14} />} title="Core RD Settings">
+                <div style={gridAuto(240)}>
+                  <Field label="Minimum Monthly RD Amount (₹)" hint="Floor a member may select for their monthly RD contribution">
+                    <IconInput icon={<IndianRupee size={13} />}>
+                      <input type="number" step="1" value={businessRules.rdSystem.minMonthlyAmount} onChange={e => updateRdSystem('minMonthlyAmount', num(e.target.value))} className="aw-input" />
+                    </IconInput>
+                  </Field>
+                  <Field label="Opening-Balance Interest Rate (%)" hint="Annual rate on the opening balance timeline — frozen per financial year at closing">
+                    <IconInput icon={<Percent size={13} />}>
+                      <input type="number" step="0.01" value={businessRules.rdSystem.openingBalanceRate} onChange={e => updateRdSystem('openingBalanceRate', num(e.target.value))} className="aw-input" />
+                    </IconInput>
+                  </Field>
+                  <Field label="Min. Balance After Withdrawal (₹)" hint="A withdrawal must never take the balance below this">
+                    <IconInput icon={<IndianRupee size={13} />}>
+                      <input type="number" step="1" value={businessRules.rdSystem.minBalanceAfterWithdrawal} onChange={e => updateRdSystem('minBalanceAfterWithdrawal', num(e.target.value))} className="aw-input" />
+                    </IconInput>
+                  </Field>
+                </div>
+              </Section>
+
+              {/* Payment-pattern eligibility thresholds */}
+              <Section icon={<TrendingUp size={14} />} title="Full-Interest Eligibility Thresholds">
+                <div className="aw-stack">
+                  <div style={gridAuto(190)}>
+                    {([
+                      { label: 'Min. Consecutive Installments', field: 'minConsecutiveInstallments' as const },
+                      { label: 'Max. Payment Gap (Months)', field: 'maxPaymentGapMonths' as const },
+                      { label: 'Max. Missed Installments', field: 'maxMissedInstallments' as const },
+                      { label: 'Min. Regular After Recovery', field: 'minRegularAfterRecovery' as const },
+                      { label: 'Max. Arrears Clearance (Months)', field: 'maxArrearsClearanceMonths' as const },
+                    ]).map(item => (
+                      <Field key={item.field} label={item.label}>
+                        <input type="number" step="1" value={businessRules.rdSystem[item.field]} onChange={e => updateRdSystem(item.field, parseInt(e.target.value, 10) || 0)} className="aw-input" />
+                      </Field>
+                    ))}
+                  </div>
+                  <div style={gridAuto(280)}>
+                    <ToggleRow label="Allow Recovery From an Initial-Month Gap" checked={businessRules.rdSystem.allowInitialMissRecovery} onChange={v => updateRdSystem('allowInitialMissRecovery', v)} />
+                    <ToggleRow label="Allow Recovery From a Later Gap" checked={businessRules.rdSystem.allowLaterMissRecovery} onChange={v => updateRdSystem('allowLaterMissRecovery', v)} />
+                    <ToggleRow label="Allow Multiple Separate Gaps in One Year" checked={businessRules.rdSystem.allowMultipleGaps} onChange={v => updateRdSystem('allowMultipleGaps', v)} />
+                  </div>
+                  <p className="aw-meta" style={{ lineHeight: 1.5 }}>
+                    These thresholds drive one automatic rule engine that evaluates each member's real 12-month
+                    payment history — not a fixed list of patterns. A member who doesn't automatically qualify
+                    still receives their normal RD interest in full; an authority can separately upgrade them to
+                    full annual interest as an exception, never a prerequisite.
+                  </p>
+                </div>
+              </Section>
+
+              <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0 }}>
+                <Info size={15} />
+                <span>
+                  <strong style={{ textTransform: 'uppercase', letterSpacing: '.04em' }}>Placeholder Values: </strong>
+                  The numbers shown above are working defaults, not finalized policy. Update them once the society
+                  confirms the real thresholds — nothing about the eligibility engine itself is hardcoded to these.
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="aw-footer">
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> Policy Governance</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><ShieldCheck size={12} /> Standard Compliant</span>
+          <span>RULESET_V3.1.2</span>
+        </span>
+      </div>
+
+      {/* Loading / saving overlay */}
+      {(loading || saving) && (
+        <div className="aw-modal-backdrop">
+          <div className="aw-modal" role="alertdialog" aria-modal="true" aria-label={saving ? 'Saving rules' : 'Loading rules'} style={{ height: 'auto', maxWidth: '18rem' }}>
+            <div className="aw-stack" style={{ alignItems: 'center', textAlign: 'center', padding: 'calc(var(--aw-pad) * 1.4)' }}>
+              <RefreshCw size={28} className="aw-spin" style={{ color: 'var(--aw-accent)' }} />
+              <span className="aw-strong">{saving ? 'Saving rules…' : 'Loading rules…'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

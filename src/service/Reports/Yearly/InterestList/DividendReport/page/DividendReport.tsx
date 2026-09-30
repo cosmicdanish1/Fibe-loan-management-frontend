@@ -55,8 +55,7 @@ const DividendReport: React.FC = () => {
   const [showLookupModal, setShowLookupModal] = useState(false);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = interfaceMode === 'dark';
 
   // Calculate dynamic years
   const years = useMemo(() => Array.from({ length: 5 }, (_, i) => {

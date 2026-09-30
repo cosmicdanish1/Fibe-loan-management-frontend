@@ -5,7 +5,8 @@ import { type LoanDetails } from '../../types';
 import { getLoanTypeOptions } from '../../utils/utilsloanApplication';
 import { handleEnterAsTab } from '../../utils/keyboardNav';
 import type { EmployeeDetail } from '../../types/employee';
-import { ShieldCheck, RotateCcw } from 'lucide-react';
+import { ShieldCheck, RefreshCw, User, Users, Wallet, MapPin, Search, FileText } from 'lucide-react';
+import { Select } from 'antd';
 
 interface LoanEligibilityStatus {
   isEligible: boolean;
@@ -141,413 +142,377 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
     }
   };
 
+  const inr = (n: number | string | undefined | null) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
+  const blocked = !!eligibilityStatus && !eligibilityStatus.isEligible;
+  const hasShortfall = !!eligibilityStatus && eligibilityStatus.totalShortfall > 0;
+  const eligTone = blocked ? 'danger' : hasShortfall ? 'warning' : 'success';
+
+  const caseHint = !selectedMember
+    ? 'Select member first'
+    : isLoadingLoanCases
+      ? 'Loading loan cases...'
+      : memberLoanCases.length > 0
+        ? 'Select existing loan case'
+        : 'Auto-generated on save';
+
   return (
-    <div className="flex flex-col h-full gap-2">
-      {/* Top row: form + member info */}
-      <div className="flex gap-2 flex-1 min-h-0">
-      {/* Left Panel - Form Fields */}
-      <div className="loan-left-panel w-80 bg-slate-50 p-3 rounded border border-slate-200 overflow-y-auto" onKeyDown={handleEnterAsTab}>
-        <div className="space-y-2">
-          <FormField
-            label="Appl Date"
-            name="applDate"
-            type="date"
-            value={loanDetails.applDate}
-            onChange={(value: string) => onLoanDetailsChange('applDate', value)}
-            required
-          />
+    <div className="aw-stack" style={{ minHeight: 0 }}>
+      <div className="aw-split aw-split-form" style={{ height: 'auto' }}>
+        {/* ── Left: application form ── */}
+        <div className="aw-side" style={{ overflow: 'visible' }} onKeyDown={handleEnterAsTab}>
+          <section className="aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><Wallet size={14} /></span>
+              <h2 className="aw-card-title">Application</h2>
+            </div>
+            <div className="aw-stack">
+              <FormField
+                label="Appl Date"
+                name="applDate"
+                type="date"
+                value={loanDetails.applDate}
+                onChange={(value: string) => onLoanDetailsChange('applDate', value)}
+                required
+              />
 
-          <FormField
-            label="Member No."
-            name="memberNo"
-            type="text"
-            value={loanDetails.memberNo}
-            onChange={handleMemberNoChange}
-            onKeyDown={handleMemberNoKeyDown}
-            onClick={() => {
-              onLookup?.('memberNo');
-              handleMemberNoClick();
-            }}
-            placeholder="Search MBNo (Click or F2)"
-            required
-          />
+              <FormField
+                label="Member No."
+                name="memberNo"
+                type="text"
+                value={loanDetails.memberNo}
+                onChange={handleMemberNoChange}
+                onKeyDown={handleMemberNoKeyDown}
+                onClick={() => {
+                  onLookup?.('memberNo');
+                  handleMemberNoClick();
+                }}
+                placeholder="Search MBNo (Click or F2)"
+                required
+              />
 
-          <FormField
-            label="Loan Type"
-            name="loanType"
-            type="select"
-            value={loanDetails.loanType}
-            onChange={handleLoanTypeChange}
-            options={getLoanTypeOptions()}
-            required
-          />
+              <FormField
+                label="Loan Type"
+                name="loanType"
+                type="select"
+                value={loanDetails.loanType}
+                onChange={handleLoanTypeChange}
+                options={getLoanTypeOptions()}
+                required
+              />
 
-          {/* Loan Case No. - Dropdown shows existing cases only */}
-          <div className="space-y-1">
-            <label className="block fz-label font-medium text-slate-700">
-              Loan Case No. <span className="text-slate-400 font-normal">(optional — auto-generated)</span>
-            </label>
-            <select
-              value={loanDetails.loanCaseNo}
-              onChange={(e) => handleLoanCaseChange(e.target.value)}
-              className={`w-full px-2 py-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 fz-body ${!selectedMember || isLoadingLoanCases
-                ? 'bg-slate-50 text-slate-400 cursor-not-allowed'
-                : loanDetails.loanCaseNo
-                  ? 'bg-white text-slate-900'
-                  : 'bg-white text-slate-600'
-                }`}
-              disabled={!selectedMember || isLoadingLoanCases}
-            >
-              <option value="" className="text-slate-600">
-                {!selectedMember
-                  ? "Select member first"
-                  : isLoadingLoanCases
-                    ? "Loading loan cases..."
-                    : memberLoanCases.length > 0
-                      ? "Select existing loan case"
-                      : "Auto-generated on save"}
-              </option>
-
-              {/* Show existing loan cases if any */}
-              {memberLoanCases.map((loanCase, index) => (
-                <option key={index} value={loanCase.loanCaseNo} className="text-slate-900">
-                  {loanCase.loanCaseNo} — {loanCase.loanType} (₹{Number(loanCase.loanAmount || 0).toLocaleString('en-IN')})
-                </option>
-              ))}
-            </select>
-
-            {/* Helper text - more compact */}
-            {isLoadingLoanCases && (
-              <p className="fz-caption text-blue-600 flex items-center gap-1">
-                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Loading...
-              </p>
-            )}
-            {selectedMember && !isLoadingLoanCases && memberLoanCases.length === 0 && (
-              <p className="fz-caption text-green-600">
-                ✓ Auto-generated on save
-              </p>
-            )}
-            {selectedMember && !isLoadingLoanCases && memberLoanCases.length > 0 && !loanDetails.loanCaseNo && (
-              <p className="fz-caption text-amber-600">
-                ⚠ Select existing or auto-generate new
-              </p>
-            )}
-          </div>
-
-          {/* Loan Amount with formatting and helper text */}
-          <div className="space-y-1">
-            <FormField
-              label="Loan Amount"
-              name="loanAmount"
-              type="text"
-              value={loanDetails.loanAmount}
-              onChange={(value: string) => {
-                // Only allow numbers
-                const numbersOnly = value.replace(/[^0-9]/g, '');
-                onLoanDetailsChange('loanAmount', numbersOnly);
-              }}
-              required
-            />
-            {/* Show formatted amount and helper text - more compact */}
-            {loanDetails.loanAmount && (
-              <div className="fz-caption">
-                <p className="text-blue-600 font-medium">
-                  ₹{parseInt(loanDetails.loanAmount || '0').toLocaleString('en-IN')}
-                </p>
-                {loanDetails.loanType && (
-                  <p className="text-slate-500 fz-small">
-                    {loanDetails.loanType.toUpperCase() === 'ALN' &&
-                      'Emergency Loan - Max: ₹5,00,000'}
-                    {loanDetails.loanType.toUpperCase() === 'RLN' &&
-                      'Regular Loan - Default: ₹10,00,000'}
-                    {loanDetails.loanType.toUpperCase() === 'ELN' &&
-                      'Loan Against Recovery - Manual entry'}
+              {/* Loan Case No. - Dropdown shows existing cases only */}
+              <div>
+                <label className="aw-label" htmlFor="loanCaseNo">
+                  Loan Case No. <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>(optional — auto-generated)</span>
+                </label>
+                <Select
+                  id="loanCaseNo"
+                  className="aw-select"
+                  popupClassName="aw-select-popup"
+                  value={loanDetails.loanCaseNo || undefined}
+                  onChange={(v) => handleLoanCaseChange(v ?? '')}
+                  disabled={!selectedMember || isLoadingLoanCases}
+                  placeholder={caseHint}
+                  allowClear
+                  options={memberLoanCases.map((loanCase) => ({
+                    value: loanCase.loanCaseNo,
+                    label: `${loanCase.loanCaseNo} — ${loanCase.loanType} (${inr(loanCase.loanAmount)})`,
+                  }))}
+                />
+                {isLoadingLoanCases && (
+                  <p className="aw-meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <RefreshCw size={11} className="aw-spin" /> Loading...
                   </p>
                 )}
+                {selectedMember && !isLoadingLoanCases && memberLoanCases.length === 0 && (
+                  <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-success)' }}>✓ Auto-generated on save</p>
+                )}
+                {selectedMember && !isLoadingLoanCases && memberLoanCases.length > 0 && !loanDetails.loanCaseNo && (
+                  <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-warning)' }}>⚠ Select existing or auto-generate new</p>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* Loan Amount with formatting and helper text */}
+              <div>
+                <FormField
+                  label="Loan Amount"
+                  name="loanAmount"
+                  type="text"
+                  value={loanDetails.loanAmount}
+                  onChange={(value: string) => {
+                    // Only allow numbers
+                    const numbersOnly = value.replace(/[^0-9]/g, '');
+                    onLoanDetailsChange('loanAmount', numbersOnly);
+                  }}
+                  required
+                />
+                {loanDetails.loanAmount && (
+                  <div style={{ marginTop: 4 }}>
+                    <p className="aw-strong" style={{ color: 'var(--aw-accent)' }}>
+                      {inr(parseInt(loanDetails.loanAmount || '0'))}
+                    </p>
+                    {loanDetails.loanType && (
+                      <p className="aw-meta">
+                        {loanDetails.loanType.toUpperCase() === 'ALN' && 'Emergency Loan - Max: ₹5,00,000'}
+                        {loanDetails.loanType.toUpperCase() === 'RLN' && 'Regular Loan - Default: ₹10,00,000'}
+                        {loanDetails.loanType.toUpperCase() === 'ELN' && 'Loan Against Recovery - Manual entry'}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <FormField
+                label="Form Number"
+                name="formNumber"
+                type="text"
+                value={loanDetails.formNumber}
+                onChange={(value: string) => onLoanDetailsChange('formNumber', value)}
+                maxLength={10}
+              />
+
+              <FormField
+                label="Reason"
+                name="reason"
+                type="textarea"
+                value={loanDetails.reason}
+                onChange={(value: string) => onLoanDetailsChange('reason', value)}
+                required
+                maxLength={50}
+              />
+            </div>
+          </section>
+        </div>
+
+        {/* ── Right: member profile, eligibility, pending cases ── */}
+        <div className="aw-stack" style={{ minWidth: 0 }}>
+        <div className="aw-card aw-main" style={{ overflow: 'visible', padding: 0 }}>
+          {selectedMember ? (
+            <div className="aw-main-body aw-stack aw-fade-in">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span className="aw-card-icon" style={{ width: 40, height: 40, borderRadius: '50%', fontSize: 'calc(var(--type-body-size) + 5px)', fontWeight: 700 }}>
+                  {(selectedMember.name || '?')[0]}
+                </span>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p className="aw-strong" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedMember.name}</p>
+                  <p className="aw-meta">{selectedMember.memberNo}</p>
+                </div>
+                <span className={`aw-pill tone-${selectedMember.isRetired ? 'warning' : 'success'}`}>
+                  {selectedMember.isRetired ? 'Retired' : 'Active'}
+                </span>
+              </div>
+
+              <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+                <div><dt>Office</dt><dd>{selectedMember.officeName || selectedMember.officeNo || '—'}</dd></div>
+                <div><dt>Basic Pay</dt><dd style={{ color: 'var(--aw-success)' }}>{selectedMember.basicPay ? inr(selectedMember.basicPay) : '—'}</dd></div>
+                <div><dt>Retire Date</dt><dd>{selectedMember.dateOfRetire || 'N/A'}</dd></div>
+              </dl>
+
+              <div>
+                <p className="aw-label">Financial Summary</p>
+                <div className="aw-stats aw-stats-3">
+                  <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-accent)' }}>
+                    <div className="aw-stat-label">Shares</div>
+                    <div className="aw-stat-value">{inr(selectedMember.shareBalance)}</div>
+                  </div>
+                  <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-warning)' }}>
+                    <div className="aw-stat-label">Regular Loan</div>
+                    <div className="aw-stat-value">{inr(selectedMember.regularLoanBal)}</div>
+                  </div>
+                  <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-danger)' }}>
+                    <div className="aw-stat-label">Emergency Loan</div>
+                    <div className="aw-stat-value">{inr(selectedMember.emergencyLoanBal)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {(selectedMember.presentAddress || selectedMember.permanentAddress) && (
+                <div className="aw-panel">
+                  <p className="aw-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={12} /> Address</p>
+                  <p className="aw-strong" style={{ fontWeight: 500 }}>{selectedMember.presentAddress || selectedMember.permanentAddress}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="aw-empty" style={{ margin: 'auto', padding: 40 }}>
+              <User size={30} />
+              <strong className="aw-strong">No Member Selected</strong>
+              <span className="aw-meta">Click Member No. to search</span>
+            </div>
+          )}
+        </div>
 
           {/* ── Regular Loan Eligibility Panel (RLN only) ──
               A shortfall is NOT a rejection — it is withheld from the
               disbursement. Only breaching the maximum limit blocks the loan. */}
-          {(isCheckingEligibility || eligibilityStatus) && (() => {
-            const blocked = !!eligibilityStatus && !eligibilityStatus.isEligible;
-            const hasShortfall = !!eligibilityStatus && eligibilityStatus.totalShortfall > 0;
-            const tone = blocked ? 'rose' : hasShortfall ? 'amber' : 'emerald';
-            return (
-            <div className={`rounded border shadow-sm ${tone === 'rose' ? 'border-rose-200' : tone === 'amber' ? 'border-amber-200' : 'border-emerald-200'}`}>
-              <div className={`px-2 py-1 border-b flex items-center justify-between ${tone === 'rose' ? 'bg-rose-50 border-rose-100' : tone === 'amber' ? 'bg-amber-50 border-amber-100' : 'bg-emerald-50 border-emerald-100'}`}>
-                <div className="flex items-center gap-1">
-                  <ShieldCheck size={10} className={tone === 'rose' ? 'text-rose-500' : tone === 'amber' ? 'text-amber-500' : 'text-emerald-500'} />
-                  <span className={`fz-micro font-black uppercase tracking-widest ${tone === 'rose' ? 'text-rose-600' : tone === 'amber' ? 'text-amber-600' : 'text-emerald-600'}`}>
-                    Regular Loan Eligibility
-                  </span>
-                </div>
-                <div>
+          {(isCheckingEligibility || eligibilityStatus) && (
+            <section className="aw-card aw-fade-in">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><ShieldCheck size={14} /></span>
+                <h2 className="aw-card-title">Regular Loan Eligibility</h2>
+                <span style={{ marginLeft: 'auto' }}>
                   {isCheckingEligibility ? (
-                    <span className="fz-mini font-bold text-slate-500 flex items-center gap-1">
-                      <RotateCcw size={8} className="animate-spin" /> Checking...
-                    </span>
-                  ) : blocked ? (
-                    <span className="px-1 py-0.5 rounded bg-rose-100 text-rose-700 fz-micro font-black uppercase tracking-widest border border-rose-200">
-                      Over Limit
-                    </span>
-                  ) : hasShortfall ? (
-                    <span className="px-1 py-0.5 rounded bg-amber-100 text-amber-700 fz-micro font-black uppercase tracking-widest border border-amber-200">
-                      Shortfall
+                    <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <RefreshCw size={11} className="aw-spin" /> Checking...
                     </span>
                   ) : (
-                    <span className="px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 fz-micro font-black uppercase tracking-widest border border-emerald-200">
-                      Eligible
+                    <span className={`aw-pill tone-${eligTone}`}>
+                      {blocked ? 'Over Limit' : hasShortfall ? 'Shortfall' : 'Eligible'}
                     </span>
                   )}
-                </div>
+                </span>
               </div>
               {eligibilityStatus && (
-                <div className="p-2 space-y-1.5">
-                  {/* Exposure vs limit */}
-                  <div className={`p-1.5 rounded border ${eligibilityStatus.withinMaxLimit ? 'bg-slate-50 border-slate-200' : 'bg-rose-50 border-rose-200'}`}>
-                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">Total Exposure</div>
-                    <div className="flex justify-between fz-small">
-                      <span className="text-slate-600">Existing Regular:</span>
-                      <span className="font-mono font-bold">₹{eligibilityStatus.existingOutstanding.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between fz-small">
-                      <span className="text-slate-600">+ New Loan:</span>
-                      <span className="font-mono font-bold">₹{eligibilityStatus.loanAmount.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="mt-0.5 pt-0.5 border-t border-slate-200 flex justify-between fz-small">
-                      <span className="text-slate-700 font-bold">Total / Max:</span>
-                      <span className={`font-mono font-black ${eligibilityStatus.withinMaxLimit ? 'text-indigo-600' : 'text-rose-600'}`}>
-                        ₹{eligibilityStatus.totalExposure.toLocaleString('en-IN')} / ₹{eligibilityStatus.maxLimit.toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Share */}
-                  <div className="bg-slate-50 border border-slate-200 p-1.5 rounded">
-                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">Share Value</div>
-                    <div className="flex justify-between fz-small">
-                      <span className="text-slate-600">Current:</span>
-                      <span className="font-mono font-bold">₹{eligibilityStatus.currentShare.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between fz-small">
-                      <span className="text-slate-600">Required ({eligibilityStatus.sharePct}%):</span>
-                      <span className="font-mono font-bold text-indigo-600">₹{eligibilityStatus.requiredShare.toLocaleString('en-IN')}</span>
-                    </div>
-                    {eligibilityStatus.shareShortfall > 0 && (
-                      <div className="mt-0.5 pt-0.5 border-t border-amber-200 flex justify-between fz-small">
-                        <span className="text-amber-700 font-bold">Shortfall:</span>
-                        <span className="font-mono font-black text-amber-700">₹{eligibilityStatus.shareShortfall.toLocaleString('en-IN')}</span>
+                <div className="aw-stack">
+                  <div className="aw-panel">
+                    <p className="aw-label">Total Exposure</p>
+                    <div className="aw-rows">
+                      <div className="aw-row"><span className="aw-row-label">Existing Regular</span><span className="aw-row-value">{inr(eligibilityStatus.existingOutstanding)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">+ New Loan</span><span className="aw-row-value">{inr(eligibilityStatus.loanAmount)}</span></div>
+                      <div className="aw-row aw-row-total">
+                        <span className="aw-row-label">Total / Max</span>
+                        <span className="aw-row-value" style={eligibilityStatus.withinMaxLimit ? undefined : { color: 'var(--aw-danger)' }}>
+                          {inr(eligibilityStatus.totalExposure)} / {inr(eligibilityStatus.maxLimit)}
+                        </span>
                       </div>
-                    )}
+                    </div>
                   </div>
 
-                  {/* RD */}
-                  <div className="bg-slate-50 border border-slate-200 p-1.5 rounded">
-                    <div className="fz-mini font-bold text-slate-500 uppercase mb-0.5">RD Balance</div>
-                    <div className="flex justify-between fz-small">
-                      <span className="text-slate-600">Current:</span>
-                      <span className="font-mono font-bold">₹{eligibilityStatus.currentRd.toLocaleString('en-IN')}</span>
+                  <div className="aw-panel">
+                    <p className="aw-label">Share Value</p>
+                    <div className="aw-rows">
+                      <div className="aw-row"><span className="aw-row-label">Current</span><span className="aw-row-value">{inr(eligibilityStatus.currentShare)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">Required ({eligibilityStatus.sharePct}%)</span><span className="aw-row-value">{inr(eligibilityStatus.requiredShare)}</span></div>
+                      {eligibilityStatus.shareShortfall > 0 && (
+                        <div className="aw-row"><span className="aw-row-label" style={{ color: 'var(--aw-warning)' }}>Shortfall</span><span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>{inr(eligibilityStatus.shareShortfall)}</span></div>
+                      )}
                     </div>
-                    <div className="flex justify-between fz-small">
-                      <span className="text-slate-600">Required ({eligibilityStatus.rdPct}%):</span>
-                      <span className="font-mono font-bold text-indigo-600">₹{eligibilityStatus.requiredRd.toLocaleString('en-IN')}</span>
-                    </div>
-                    {eligibilityStatus.rdShortfall > 0 && (
-                      <div className="mt-0.5 pt-0.5 border-t border-amber-200 flex justify-between fz-small">
-                        <span className="text-amber-700 font-bold">Shortfall:</span>
-                        <span className="font-mono font-black text-amber-700">₹{eligibilityStatus.rdShortfall.toLocaleString('en-IN')}</span>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Net disbursement after withholding */}
+                  <div className="aw-panel">
+                    <p className="aw-label">RD Balance</p>
+                    <div className="aw-rows">
+                      <div className="aw-row"><span className="aw-row-label">Current</span><span className="aw-row-value">{inr(eligibilityStatus.currentRd)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">Required ({eligibilityStatus.rdPct}%)</span><span className="aw-row-value">{inr(eligibilityStatus.requiredRd)}</span></div>
+                      {eligibilityStatus.rdShortfall > 0 && (
+                        <div className="aw-row"><span className="aw-row-label" style={{ color: 'var(--aw-warning)' }}>Shortfall</span><span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>{inr(eligibilityStatus.rdShortfall)}</span></div>
+                      )}
+                    </div>
+                  </div>
+
                   {hasShortfall && eligibilityStatus.withinMaxLimit && (
-                    <div className="bg-amber-50 border border-amber-200 p-1.5 rounded">
-                      <div className="fz-mini font-bold text-amber-700 uppercase mb-0.5">Disbursement</div>
-                      <div className="flex justify-between fz-small">
-                        <span className="text-slate-600">Withheld:</span>
-                        <span className="font-mono font-bold text-amber-700">− ₹{eligibilityStatus.totalShortfall.toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="mt-0.5 pt-0.5 border-t border-amber-200 flex justify-between fz-small">
-                        <span className="text-slate-700 font-bold">Net Payable:</span>
-                        <span className="font-mono font-black text-emerald-700">₹{eligibilityStatus.netDisbursement.toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="fz-mini text-slate-500 mt-0.5 leading-tight">
-                        Withheld towards RD/Share — not added to the loan.
-                      </div>
+                    <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0, flexDirection: 'column', gap: 4 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}><span>Withheld</span><span>− {inr(eligibilityStatus.totalShortfall)}</span></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', color: 'var(--aw-success)' }}><span>Net Payable</span><span>{inr(eligibilityStatus.netDisbursement)}</span></div>
+                      <span className="aw-meta" style={{ fontWeight: 500 }}>Withheld towards RD/Share — not added to the loan.</span>
                     </div>
                   )}
                 </div>
               )}
-            </div>
-            );
-          })()}
+            </section>
+          )}
 
-          <FormField
-            label="Form Number"
-            name="formNumber"
-            type="text"
-            value={loanDetails.formNumber}
-            onChange={(value: string) => onLoanDetailsChange('formNumber', value)}
-            maxLength={10}
-          />
-
-          <FormField
-            label="Reason"
-            name="reason"
-            type="textarea"
-            value={loanDetails.reason}
-            onChange={(value: string) => onLoanDetailsChange('reason', value)}
-            required
-            maxLength={50}
-          />
-
-
-        </div>
-      </div>
-
-      {/* Right Panel - Member Information Display */}
-      <div className="loan-right-panel flex-1 min-w-0 rounded-lg border border-slate-200 overflow-hidden">
-        {selectedMember ? (
-          <div className="h-full flex flex-col">
-            {/* Profile Header */}
-            <div className="loan-member-hdr bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
-                {(selectedMember.name || '?')[0]}
+          {/* ── Pending applications for this member (already fetched for the dropdown) ── */}
+          {selectedMember && (
+            <section className="aw-card aw-fade-in">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><FileText size={14} /></span>
+                <h2 className="aw-card-title">Pending Applications</h2>
+                <span className="aw-meta" style={{ marginLeft: 'auto' }}>{memberLoanCases.length} open</span>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-white font-semibold text-sm truncate">{selectedMember.name}</p>
-                <p className="text-blue-200 text-xs font-mono">{selectedMember.memberNo}</p>
-              </div>
-              <div className={`px-2 py-0.5 rounded-full fz-small font-bold uppercase tracking-wider ${selectedMember.isRetired ? 'bg-amber-400/20 text-amber-200' : 'bg-emerald-400/20 text-emerald-200'}`}>
-                {selectedMember.isRetired ? 'Retired' : 'Active'}
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 p-3 bg-slate-50 overflow-y-auto space-y-3">
-              {/* Employment Row */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="loan-member-card bg-white rounded-lg p-2 border border-slate-200">
-                  <p className="fz-small text-slate-400 font-medium uppercase tracking-wide">Office</p>
-                  <p className="text-xs font-semibold text-slate-800 mt-0.5">{selectedMember.officeName || selectedMember.officeNo || '—'}</p>
-                </div>
-                <div className="loan-member-card bg-white rounded-lg p-2 border border-slate-200">
-                  <p className="fz-small text-slate-400 font-medium uppercase tracking-wide">Basic Pay</p>
-                  <p className="text-xs font-semibold text-emerald-600 mt-0.5">{selectedMember.basicPay ? `₹${Number(selectedMember.basicPay).toLocaleString('en-IN')}` : '—'}</p>
-                </div>
-                <div className="loan-member-card bg-white rounded-lg p-2 border border-slate-200">
-                  <p className="fz-small text-slate-400 font-medium uppercase tracking-wide">Retire Date</p>
-                  <p className="text-xs font-semibold text-slate-700 mt-0.5">{selectedMember.dateOfRetire || 'N/A'}</p>
-                </div>
-              </div>
-
-              {/* Financial Summary */}
-              <div>
-                <p className="fz-small text-slate-400 font-bold uppercase tracking-widest mb-1.5">Financial Summary</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="loan-member-card bg-white rounded-lg p-2.5 border border-slate-200 text-center">
-                    <p className="fz-small text-slate-400 font-medium uppercase">Shares</p>
-                    <p className="text-sm font-bold text-blue-600 mt-1">{selectedMember.shareBalance ? `₹${Number(selectedMember.shareBalance).toLocaleString('en-IN')}` : '₹0'}</p>
-                  </div>
-                  <div className="loan-member-card bg-white rounded-lg p-2.5 border border-orange-200 text-center">
-                    <p className="fz-small text-orange-400 font-medium uppercase">Regular Loan</p>
-                    <p className="text-sm font-bold text-orange-600 mt-1">{selectedMember.regularLoanBal ? `₹${Number(selectedMember.regularLoanBal).toLocaleString('en-IN')}` : '₹0'}</p>
-                  </div>
-                  <div className="loan-member-card bg-white rounded-lg p-2.5 border border-red-200 text-center">
-                    <p className="fz-small text-red-400 font-medium uppercase">Emergency Loan</p>
-                    <p className="text-sm font-bold text-red-600 mt-1">{selectedMember.emergencyLoanBal ? `₹${Number(selectedMember.emergencyLoanBal).toLocaleString('en-IN')}` : '₹0'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Address */}
-              {(selectedMember.presentAddress || selectedMember.permanentAddress) && (
-                <div className="loan-member-card bg-white rounded-lg p-2.5 border border-slate-200">
-                  <p className="fz-small text-slate-400 font-medium uppercase tracking-wide">Address</p>
-                  <p className="text-xs text-slate-700 mt-0.5 leading-relaxed">{selectedMember.presentAddress || selectedMember.permanentAddress}</p>
+              {memberLoanCases.length === 0 ? (
+                <p className="aw-meta">No open applications. A new case number is generated on save.</p>
+              ) : (
+                <div className="aw-table-wrap" style={{ maxHeight: 220 }}>
+                  <table className="aw-table">
+                    <thead>
+                      <tr><th>Case No.</th><th>Type</th><th className="is-right">Amount</th><th>Purpose</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                      {memberLoanCases.map((c, i) => (
+                        <tr
+                          key={c.loanCaseNo ?? i}
+                          className="is-clickable"
+                          onClick={() => handleLoanCaseChange(c.loanCaseNo)}
+                          aria-selected={loanDetails.loanCaseNo === c.loanCaseNo}
+                        >
+                          <td className={loanDetails.loanCaseNo === c.loanCaseNo ? 'is-accent' : ''}>{c.loanCaseNo}</td>
+                          <td>{c.loanType}</td>
+                          <td className="is-right">{inr(c.loanAmount)}</td>
+                          <td className="is-muted">{c.purpose || '—'}</td>
+                          <td><span className={`aw-pill tone-${c.sanctioned ? 'success' : 'warning'}`}>{c.sanctioned ? 'Sanctioned' : 'Awaiting sanction'}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
-            </div>
-          </div>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50">
-            <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center mb-3">
-              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <h4 className="text-slate-600 font-semibold fz-heading mb-1">No Member Selected</h4>
-            <p className="text-slate-400 fz-label">Click Member No. to search</p>
-          </div>
-        )}
-      </div>
-      </div>{/* end top row */}
-
-      {/* Surety Table — only for Regular Loan (RLN) */}
-      {isRegularLoan && (
-        <div className="border border-slate-300 rounded bg-white">
-          <div className="surety-hdr flex items-center gap-2 px-3 py-1.5 bg-slate-100 border-b border-slate-300 rounded-t">
-            <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="fz-label font-black text-slate-700 uppercase tracking-wide">Surety Details</span>
-            <span className="fz-caption text-slate-400">(max 2 sureties)</span>
-          </div>
-          <table className="surety-table w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                {['Sr. No.', 'MB No.', 'Name', 'Net Salary', 'Date Of Retire', 'Office Name', 'Address'].map(h => (
-                  <th key={h} className="px-2 py-1.5 fz-label font-black text-slate-600 uppercase tracking-wide text-left whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[0, 1].map((idx) => {
-                const s = suretyDetails[idx] || {};
-                return (
-                  <tr key={idx} className="border-b border-slate-100 hover:bg-blue-50/30">
-                    <td className="px-2 py-1 fz-body text-slate-500 font-medium w-10 text-center">{idx + 1}</td>
-                    <td className="px-2 py-1 w-28">
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="text"
-                          value={s.mbNo || ''}
-                          readOnly
-                          placeholder="Click..."
-                          className="w-16 h-6 px-1.5 border border-slate-200 rounded fz-body bg-white cursor-pointer focus:outline-none focus:border-indigo-400"
-                          onClick={() => onSuretyLookup?.(idx)}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => onSuretyLookup?.(idx)}
-                          className="h-6 px-1.5 bg-slate-200 hover:bg-indigo-500 hover:text-white text-slate-600 rounded fz-label font-black transition-colors"
-                          title="Search member"
-                        >
-                          ...
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-2 py-1 fz-body text-slate-800 font-medium min-w-32">{s.name || <span className="text-slate-300">—</span>}</td>
-                    <td className="px-2 py-1 fz-body text-slate-700 w-24">{s.netSalary ? `₹${s.netSalary}` : <span className="text-slate-300">—</span>}</td>
-                    <td className="px-2 py-1 fz-body text-slate-700 w-28">{s.dateOfRetire || <span className="text-slate-300">—</span>}</td>
-                    <td className="px-2 py-1 fz-body text-slate-700 min-w-28">{s.officeName || <span className="text-slate-300">—</span>}</td>
-                    <td className="px-2 py-1 fz-body text-slate-700">{s.address || <span className="text-slate-300">—</span>}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+              {memberLoanCases.length > 0 && <p className="aw-meta" style={{ marginTop: 6 }}>Click a row to load that case into the form.</p>}
+            </section>
+          )}
         </div>
+      </div>
+
+      {/* ── Surety table — only for Regular Loan (RLN) ── */}
+      {isRegularLoan && (
+        <section className="aw-card aw-fade-in" style={{ flex: 'none' }}>
+          <div className="aw-card-head">
+            <span className="aw-card-icon"><Users size={14} /></span>
+            <h2 className="aw-card-title">Surety Details</h2>
+            <span className="aw-meta">(max 2 sureties)</span>
+          </div>
+          <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+            <table className="aw-table">
+              <thead>
+                <tr>
+                  {['Sr. No.', 'MB No.', 'Name', 'Net Salary', 'Date Of Retire', 'Office Name', 'Address'].map(h => (
+                    <th key={h}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[0, 1].map((idx) => {
+                  const s: any = suretyDetails[idx] || {};
+                  const dash = <span className="aw-meta">—</span>;
+                  return (
+                    <tr key={idx}>
+                      <td className="is-muted is-center">{idx + 1}</td>
+                      <td style={{ width: 160 }}>
+                        <div className="aw-input-wrap has-action">
+                          <input
+                            type="text"
+                            value={s.mbNo || ''}
+                            readOnly
+                            placeholder="Click..."
+                            aria-label={`Surety ${idx + 1} member number`}
+                            className="aw-input"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => onSuretyLookup?.(idx)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => onSuretyLookup?.(idx)}
+                            className="aw-input-action"
+                            aria-label={`Search surety ${idx + 1}`}
+                            data-tip="Search member"
+                            data-tip-pos="top-end"
+                          >
+                            <Search size={13} />
+                          </button>
+                        </div>
+                      </td>
+                      <td>{s.name || dash}</td>
+                      <td>{s.netSalary ? `₹${s.netSalary}` : dash}</td>
+                      <td>{s.dateOfRetire || dash}</td>
+                      <td>{s.officeName || dash}</td>
+                      <td>{s.address || dash}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </div>
   );

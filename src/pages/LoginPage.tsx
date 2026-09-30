@@ -1,25 +1,11 @@
 import React from 'react';
 import { LoginForm } from '../auth/components';
-import { IS_LOGIN_WINDOW } from '../utils/windowIdentity';
 
 const LoginPage: React.FC = () => {
-  console.log('[LoginPage] Rendering LoginPage');
-
-  // Logon dialog: the form fills the window, and draws its own dark title
-  // bar (app name, minimize, close, drag region) — the window is frameless,
-  // so LoginForm supplies the only chrome there is. See LoginForm's
-  // IS_LOGIN_WINDOW branch.
-  if (IS_LOGIN_WINDOW) {
-    return <LoginForm />;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <LoginForm />
-      </div>
-    </div>
-  );
+  // The form is a full window on the shared kit: in the frameless logon dialog
+  // its header doubles as the drag bar and window controls (see LoginForm's
+  // IS_LOGIN_WINDOW branches); in a normal window it is the same layout.
+  return <LoginForm />;
 };
 
 export default LoginPage;

@@ -13,7 +13,6 @@ interface LoanAgainstDepositTabProps {
 
 const LoanAgainstDepositTab: React.FC<LoanAgainstDepositTabProps> = ({
   loanAgainstDeposit,
-  onLoanAgainstDepositChange,
   onFDRDetailsChange
 }) => {
   const fdrColumns: TableColumn<FDRDetail>[] = [
@@ -123,10 +122,10 @@ const LoanAgainstDepositTab: React.FC<LoanAgainstDepositTabProps> = ({
   }, [loanAgainstDeposit.fdrDetails, onFDRDetailsChange]);
 
   return (
-    <div className="h-full">
-      <div className="mb-4">
-        <h3 className="fz-heading font-semibold text-slate-800">Loan Against Deposit</h3>
-        <p className="fz-body text-slate-600 mt-1">Fixed Deposit Receipt details for loan collateral</p>
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <h2 className="aw-card-title">Loan Against Deposit</h2>
+        <p className="aw-desc">Fixed Deposit Receipt details for loan collateral</p>
       </div>
       <DataTable
         data={loanAgainstDeposit.fdrDetails}

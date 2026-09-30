@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AccessRecoveryData, MemberRecord } from '../interfaces';
+import { AccessRecoveryData } from '../interfaces';
 
 const useAccessRecovery = () => {
   const [formData, setFormData] = useState<AccessRecoveryData>({

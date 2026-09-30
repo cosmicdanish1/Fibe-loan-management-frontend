@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Select, Input, DatePicker, Table, message } from 'antd';
-import { ArrowRightLeft, RotateCcw, Zap, Send, X, ShieldCheck, Building2, Calendar } from 'lucide-react';
+import { Select, DatePicker, message } from 'antd';
+import { ArrowRightLeft, RotateCcw, Zap, Send, X, Users } from 'lucide-react';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../services/api';
 import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
-
-const { Option } = Select;
 
 interface HeadOption { code: string; name: string; }
 interface TransferEntry {
@@ -128,17 +126,6 @@ const MemberBalanceTransfer: React.FC = () => {
 
   const headOptions = heads.map(h => ({ value: h.code, label: `${h.code} - ${h.name}` }));
 
-  const columns = [
-    { title: 'SrNo', dataIndex: 'srNo', width: 50, render: (v: number) => <span className="fz-small text-slate-500">{v}</span> },
-    { title: 'MbNo', dataIndex: 'mbno', width: 100, render: (v: string) => <span className="fz-small font-mono font-bold text-indigo-700">{v}</span> },
-    { title: 'Name', dataIndex: 'name', render: (v: string) => <span className="fz-small font-semibold text-slate-800">{v}</span> },
-    { title: 'DB Head Bal', dataIndex: 'dbHeadBal', width: 110, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono text-slate-600">{fmt(v)}</span> },
-    { title: 'CR Head Bal', dataIndex: 'crHeadBal', width: 110, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono text-slate-600">{fmt(v)}</span> },
-    { title: 'DB Amt', dataIndex: 'dbAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono font-bold text-rose-600">{fmt(v)}</span> },
-    { title: 'CR Amt', dataIndex: 'crAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono font-bold text-emerald-600">{fmt(v)}</span> },
-    { title: 'Ex.CR Amt', dataIndex: 'exCrAmt', width: 100, align: 'right' as const, render: (v: number) => <span className="fz-small font-mono text-amber-600">{v > 0 ? fmt(v) : ''}</span> },
-  ];
-
   usePageToolbarActions({
     onSave: handlePost,
     saveLabel: posting ? 'Posting...' : 'Post Transaction',
@@ -146,143 +133,113 @@ const MemberBalanceTransfer: React.FC = () => {
   });
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#6366f1', borderRadius: 6 } }}>
-      <div className="mbt-page h-screen flex flex-col bg-white font-sans text-slate-900">
-
-        {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-indigo-600"><ArrowRightLeft size={13} className="text-white" /></div>
-            <div>
-              <h1 className="fz-caption font-black text-white uppercase tracking-wider leading-none">Member Balance Transfer</h1>
-              <p className="fz-micro font-bold text-indigo-300 uppercase tracking-widest mt-0.5">
-                <ShieldCheck size={7} className="inline text-indigo-400" /> Bulk Head-to-Head Transfer
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button onClick={handleCancel} className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-white/20 uppercase tracking-wide">
-              <RotateCcw size={11} /> Cancel
-            </button>
-            <button onClick={handleGenerate} disabled={loading}
-              className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-emerald-400 shadow-lg uppercase tracking-wide disabled:opacity-50">
-              <Zap size={11} /> {loading ? 'Generating...' : 'Generate Transaction'}
-            </button>
-            <button onClick={handlePost} disabled={posting || entries.length === 0}
-              className="h-7 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-indigo-400 shadow-lg uppercase tracking-wide disabled:opacity-50">
-              <Send size={11} /> {posting ? 'Posting...' : 'Post Transaction'}
-            </button>
-            <button onClick={handleExit} className="h-7 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg fz-tiny font-black flex items-center gap-1.5 border border-rose-500/30 uppercase tracking-wide">
-              <X size={11} /> Exit
-            </button>
-          </div>
+    <div className="app-window">
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Member Balance Transfer</h1>
+          <p className="aw-desc">Bulk Head-to-Head Transfer</p>
         </div>
-
-        {/* Form — compact like legacy */}
-        <div className="mbt-form bg-slate-50 border-b border-slate-200 px-3 py-2">
-          <div className="grid grid-cols-12 gap-2 items-end">
-            <div className="col-span-3">
-              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Debit Head</label>
-              <Select showSearch value={debitHead} onChange={setDebitHead} placeholder="Select..." className="w-full" style={{ height: 28 }}
-                optionFilterProp="label" options={headOptions} />
-            </div>
-            <div className="col-span-3">
-              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Credit Head</label>
-              <Select showSearch value={creditHead} onChange={setCreditHead} placeholder="Select..." className="w-full" style={{ height: 28 }}
-                optionFilterProp="label" options={headOptions} />
-            </div>
-            <div className="col-span-1">
-              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Credit Limit</label>
-              <Input value={creditLimit} onChange={e => setCreditLimit(e.target.value.replace(/[^0-9.]/g, ''))}
-                placeholder="0" className="h-7 fz-caption font-bold text-center" />
-            </div>
-            <div className="col-span-3">
-              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Excess Amt CR Head</label>
-              <Select showSearch value={excessHead} onChange={setExcessHead} placeholder="Select..." className="w-full" style={{ height: 28 }}
-                optionFilterProp="label" options={headOptions} allowClear />
-            </div>
-            <div className="col-span-2">
-              <label className="block fz-mini font-black text-purple-700 uppercase tracking-wider mb-0.5">Balance As On</label>
-              <DatePicker value={balanceAsOn ? dayjs(balanceAsOn) : null}
-                onChange={d => setBalanceAsOn(d ? d.format('YYYY-MM-DD') : '')}
-                format="DD-MMM-YYYY" className="w-full h-7 fz-caption" />
-            </div>
-          </div>
+        <div className="aw-actions">
+          <button type="button" onClick={handleCancel} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Cancel</button>
+          <button type="button" onClick={handleGenerate} disabled={loading} className="aw-btn aw-btn-secondary">
+            {loading ? <RotateCcw size={13} className="aw-spin" /> : <Zap size={13} />} {loading ? 'Generating...' : 'Generate Transaction'}
+          </button>
+          <button type="button" onClick={handlePost} disabled={posting || entries.length === 0} className="aw-btn aw-btn-primary">
+            {posting ? <RotateCcw size={13} className="aw-spin" /> : <Send size={13} />} {posting ? 'Posting...' : 'Post Transaction'}
+          </button>
+          <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
         </div>
-
-        {/* Member List label */}
-        <div className="mbt-label px-3 py-0.5 bg-white border-b border-slate-200 flex items-center gap-1.5">
-          <Building2 size={9} className="text-slate-400" />
-          <span className="fz-mini font-black text-slate-500 uppercase tracking-widest">Member List</span>
-          {entries.length > 0 && <span className="fz-mini font-bold text-indigo-500">{entries.length} members</span>}
-        </div>
-
-        {/* Data Grid */}
-        <div className="flex-1 overflow-auto">
-          <Table columns={columns} dataSource={entries} pagination={false} size="small" rowKey="srNo"
-            scroll={{ y: 'calc(100vh - 250px)' }}
-            locale={{ emptyText: <span className="fz-small text-slate-400 py-8 block text-center font-bold uppercase">Select heads and click Generate Transaction</span> }}
-          />
-        </div>
-
-        {/* Footer Totals */}
-        <div className="mbt-footer px-3 py-1.5 bg-white border-t border-slate-200 flex items-center gap-6 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="fz-tiny font-black text-slate-500 uppercase">Total Debit</span>
-            <span className="fz-label font-black text-rose-600 font-mono">{fmt(totals.totalDebit)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="fz-tiny font-black text-slate-500 uppercase">Total Credit</span>
-            <span className="fz-label font-black text-emerald-600 font-mono">{fmt(totals.totalCredit)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="fz-tiny font-black text-slate-500 uppercase">Exc Credit</span>
-            <span className="fz-label font-black text-amber-600 font-mono">{fmt(totals.excCredit)}</span>
-          </div>
-          <div className="ml-auto flex items-center gap-1 text-slate-400">
-            <Calendar size={9} />
-            <span className="fz-mini font-black uppercase">{dayjs().format('DD-MMM-YY')}</span>
-          </div>
-        </div>
-
-        <style>{`
-          /* ── Member Balance Transfer — dark mode (Settings-panel palette) ── */
-          html.dark .mbt-page { background-color: #000000 !important; color: #f5f5f7 !important; }
-          html.dark .mbt-form { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-          html.dark .mbt-label,
-          html.dark .mbt-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-          html.dark .mbt-page .text-slate-900,
-          html.dark .mbt-page .text-slate-800 { color: #f5f5f7 !important; }
-          html.dark .mbt-page .text-slate-600,
-          html.dark .mbt-page .text-slate-500 { color: #8e8e93 !important; }
-          html.dark .mbt-page .text-slate-400 { color: #71717a !important; }
-          html.dark .mbt-page label.text-purple-700 { color: #8e8e93 !important; }
-          html.dark .mbt-page .text-rose-600 { color: #ff453a !important; }
-          html.dark .mbt-page .text-emerald-600 { color: #34d399 !important; }
-          html.dark .mbt-page .text-amber-600 { color: #fbbf24 !important; }
-          /* antd inputs */
-          html.dark .mbt-page .ant-select-selector,
-          html.dark .mbt-page .ant-input,
-          html.dark .mbt-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-          html.dark .mbt-page .ant-select-selection-item,
-          html.dark .mbt-page .ant-select-selection-search-input,
-          html.dark .mbt-page .ant-picker input { color: #f5f5f7 !important; }
-          html.dark .mbt-page .ant-select-selection-placeholder,
-          html.dark .mbt-page .ant-input::placeholder,
-          html.dark .mbt-page .ant-picker input::placeholder { color: #71717a !important; }
-          html.dark .mbt-page .ant-select-arrow,
-          html.dark .mbt-page .ant-picker-suffix { color: #8e8e93 !important; }
-          /* antd table */
-          html.dark .mbt-page .ant-table,
-          html.dark .mbt-page .ant-table-container { background-color: #000000 !important; color: #f5f5f7 !important; }
-          html.dark .mbt-page .ant-table-thead > tr > th { background-color: #1c1c1e !important; color: #8e8e93 !important; border-color: rgba(255,255,255,.07) !important; }
-          html.dark .mbt-page .ant-table-tbody > tr > td { background-color: #000000 !important; border-color: rgba(255,255,255,.07) !important; }
-          html.dark .mbt-page .ant-table-tbody > tr:hover > td { background-color: rgba(255,255,255,.05) !important; }
-          html.dark .mbt-page .ant-table-placeholder .ant-table-cell,
-          html.dark .mbt-page .ant-empty-description { background-color: #000000 !important; color: #71717a !important; }
-        `}</style>
       </div>
-    </ConfigProvider>
+
+      <div className="aw-content">
+        <div className="aw-stack">
+          <section className="aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><ArrowRightLeft size={14} /></span>
+              <h2 className="aw-card-title">Transfer Heads</h2>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'end' }}>
+              <div>
+                <label className="aw-label" htmlFor="mbt-debit">Debit Head</label>
+                <Select id="mbt-debit" showSearch value={debitHead} onChange={setDebitHead} placeholder="Select..."
+                  className="aw-select" popupClassName="aw-select-popup" optionFilterProp="label" options={headOptions} />
+              </div>
+              <div>
+                <label className="aw-label" htmlFor="mbt-credit">Credit Head</label>
+                <Select id="mbt-credit" showSearch value={creditHead} onChange={setCreditHead} placeholder="Select..."
+                  className="aw-select" popupClassName="aw-select-popup" optionFilterProp="label" options={headOptions} />
+              </div>
+              <div>
+                <label className="aw-label" htmlFor="mbt-limit">Credit Limit</label>
+                <input id="mbt-limit" value={creditLimit} onChange={e => setCreditLimit(e.target.value.replace(/[^0-9.]/g, ''))}
+                  placeholder="0" className="aw-input is-right" />
+              </div>
+              <div>
+                <label className="aw-label" htmlFor="mbt-excess">Excess Amt CR Head</label>
+                <Select id="mbt-excess" showSearch value={excessHead} onChange={setExcessHead} placeholder="Select..."
+                  className="aw-select" popupClassName="aw-select-popup" optionFilterProp="label" options={headOptions} allowClear />
+              </div>
+              <div>
+                <label className="aw-label" htmlFor="mbt-date">Balance As On</label>
+                <DatePicker id="mbt-date" value={balanceAsOn ? dayjs(balanceAsOn) : null}
+                  onChange={d => setBalanceAsOn(d ? d.format('YYYY-MM-DD') : '')}
+                  format="DD-MMM-YYYY" className="aw-picker" popupClassName="aw-select-popup" />
+              </div>
+            </div>
+          </section>
+
+          <section className="aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><Users size={14} /></span>
+              <h2 className="aw-card-title">Member List</h2>
+              {entries.length > 0 && <span className="aw-meta">{entries.length} members</span>}
+              <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
+                <span className="aw-pill tone-danger">Total Debit {fmt(totals.totalDebit)}</span>
+                <span className="aw-pill tone-success">Total Credit {fmt(totals.totalCredit)}</span>
+                <span className="aw-pill tone-warning">Exc Credit {fmt(totals.excCredit)}</span>
+              </span>
+            </div>
+            <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: 180 }}>
+              <table className="aw-table" style={{ minWidth: 860 }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 60 }}>SrNo</th>
+                    <th style={{ width: 120 }}>MbNo</th>
+                    <th>Name</th>
+                    <th className="is-right">DB Head Bal</th>
+                    <th className="is-right">CR Head Bal</th>
+                    <th className="is-right">DB Amt</th>
+                    <th className="is-right">CR Amt</th>
+                    <th className="is-right">Ex.CR Amt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.length === 0 ? (
+                    <tr><td colSpan={8}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-meta">Select heads and click Generate Transaction</span></div></td></tr>
+                  ) : entries.map(e => (
+                    <tr key={e.srNo}>
+                      <td className="is-muted">{e.srNo}</td>
+                      <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{e.mbno}</td>
+                      <td>{e.name}</td>
+                      <td className="is-right is-muted">{fmt(e.dbHeadBal)}</td>
+                      <td className="is-right is-muted">{fmt(e.crHeadBal)}</td>
+                      <td className="is-right is-danger" style={{ fontWeight: 700 }}>{fmt(e.dbAmt)}</td>
+                      <td className="is-right is-success" style={{ fontWeight: 700 }}>{fmt(e.crAmt)}</td>
+                      <td className="is-right is-warning">{e.exCrAmt > 0 ? fmt(e.exCrAmt) : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div className="aw-footer">
+        <span>Member Balance Transfer</span>
+        <span>{dayjs().format('DD-MMM-YY')}</span>
+      </div>
+    </div>
   );
 };
 

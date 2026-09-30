@@ -136,8 +136,7 @@ const LoanStatement: React.FC = () => {
     const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>(loadVisibleColumns);
 
     const { interfaceMode } = useSelector((state: RootState) => state.theme);
-    const isDark = interfaceMode === 'dark' ||
-        (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const isDark = interfaceMode === 'dark';
 
     const selectedLoan = activeLoans.find(l => l.loancaseno === selectedLoanCase);
     const shownColumns = ALL_COLUMNS.filter(c => visibleCols[c.key] !== false);

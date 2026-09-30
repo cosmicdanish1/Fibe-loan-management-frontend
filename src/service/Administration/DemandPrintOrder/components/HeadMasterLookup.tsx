@@ -1,7 +1,7 @@
 // components/HeadMasterLookup.tsx
 
 import React, { useState, useEffect } from "react";
-import { Database, Search } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import { apiService } from "../../../../services/api";
 
 interface HeadMasterRow {
@@ -47,72 +47,59 @@ const HeadMasterLookup: React.FC<HeadMasterLookupProps> = ({ onSelect }) => {
   });
 
   return (
-    <div className="w-full bg-white flex flex-col h-full overflow-hidden">
-
-      {/* Header */}
-      <div className="p-3 border-b border-slate-100 flex items-center justify-between gap-3 bg-slate-50/30">
-        <div className="flex items-center gap-2 px-1">
-          <Database size={14} className="text-indigo-600" />
-          <h2 className="fz-small font-black text-slate-700 uppercase tracking-widest leading-none">List of Heads</h2>
-        </div>
-        <div className="relative group max-w-[160px] flex-1">
-          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      <div style={{ padding: 'var(--aw-pad)', borderBottom: '1px solid var(--aw-border)' }}>
+        <div className="aw-input-wrap has-icon">
+          <Search size={13} />
           <input
             type="text"
             placeholder="Search heads..."
+            aria-label="Search heads"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-8 pl-8 pr-3 bg-white border border-slate-200 rounded-lg fz-small font-bold text-slate-600 outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300 shadow-sm"
+            className="aw-input"
             autoFocus
           />
         </div>
       </div>
 
-      {/* Table header */}
-      <div className="grid grid-cols-[80px_70px_60px_1fr] gap-1 px-3 py-1.5 bg-slate-100 border-b border-slate-200">
-        {["Code", "Head Type", "Interest", "Head Name"].map((col) => (
-          <span key={col} className="fz-tiny font-black text-slate-500 uppercase tracking-widest">{col}</span>
-        ))}
-      </div>
-
-      {/* Rows */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {loading ? (
-          <div className="flex items-center justify-center h-20">
-            <span className="fz-small font-bold text-slate-400 animate-pulse">Loading heads…</span>
+          <div className="aw-empty" style={{ padding: 32 }}>
+            <RefreshCw size={22} className="aw-spin" />
+            <span className="aw-meta">Loading heads…</span>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex items-center justify-center h-20">
-            <span className="fz-small font-bold text-slate-300 uppercase italic tracking-widest">No matching heads</span>
+          <div className="aw-empty" style={{ padding: 32 }}>
+            <span className="aw-meta">No matching heads</span>
           </div>
         ) : (
-          filtered.map((h, idx) => (
-            <button
-              key={idx}
-              onClick={() => { setSelectedIndex(idx); onSelect?.(h.code); }}
-              className={`w-full grid grid-cols-[80px_70px_60px_1fr] gap-1 px-3 py-2 text-left border-b border-slate-50 transition-all ${
-                selectedIndex === idx
-                  ? "bg-indigo-600 text-white"
-                  : "hover:bg-indigo-50 text-slate-700"
-              }`}
-            >
-              <span className={`fz-small font-black truncate ${selectedIndex === idx ? "text-white" : "text-indigo-700"}`}>{h.code}</span>
-              <span className={`fz-small font-bold truncate ${selectedIndex === idx ? "text-indigo-100" : "text-slate-600"}`}>{h.headType}</span>
-              <span className={`fz-small font-bold truncate ${selectedIndex === idx ? "text-indigo-100" : "text-slate-600"}`}>{h.interest ?? "—"}</span>
-              <span className={`fz-small font-semibold truncate ${selectedIndex === idx ? "text-white" : "text-slate-700"}`}>{h.headName}</span>
-            </button>
-          ))
+          <table className="aw-table">
+            <thead>
+              <tr><th>Code</th><th>Head Type</th><th>Interest</th><th>Head Name</th></tr>
+            </thead>
+            <tbody>
+              {filtered.map((h, idx) => (
+                <tr
+                  key={idx}
+                  className="is-clickable"
+                  aria-selected={selectedIndex === idx}
+                  onClick={() => { setSelectedIndex(idx); onSelect?.(h.code); }}
+                >
+                  <td className="is-accent">{h.code}</td>
+                  <td className="is-muted">{h.headType}</td>
+                  <td className="is-muted">{h.interest ?? "—"}</td>
+                  <td>{h.headName}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-slate-100 bg-white">
-        <div className="flex items-center justify-between px-1">
-          <span className="fz-tiny font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-1.5">
-            <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" /> Head Count
-          </span>
-          <span className="fz-small font-black text-indigo-600 uppercase tracking-tighter">{filtered.length} Heads</span>
-        </div>
+      <div className="aw-main-foot">
+        <span>Head Count</span>
+        <span style={{ color: 'var(--aw-accent)', fontWeight: 700 }}>{filtered.length} Heads</span>
       </div>
     </div>
   );
