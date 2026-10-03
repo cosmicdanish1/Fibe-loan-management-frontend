@@ -45,6 +45,9 @@ const showConfirm = async (title: string, detail: string, confirmLabel = 'Confir
     return window.confirm(`${title}\n\n${detail}`);
 };
 
+const formatMoney = (value: unknown) =>
+    `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export const usePassTransactions = (): PassTransactionsHookReturn => {
     const [transactionData, setTransactionData] = useState<TransactionEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -100,18 +103,41 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
                 if (consolidation) {
                     const caseLines = consolidation.consolidatedCases
                         .map((c: any) =>
-                            `    • Case ${c.loancaseno}: old balance ₹${c.oldBalance.toLocaleString('en-IN')} `
-                            + `+ closure interest ₹${c.closureInterest.toLocaleString('en-IN')} `
-                            + `(NR ₹${c.nrInterest.toLocaleString('en-IN')} + AP ₹${c.apInterest.toLocaleString('en-IN')} `
-                            + `+ penal ₹${c.penalInterest.toLocaleString('en-IN')})`
+                            `CASE ${c.loancaseno} WAS SETTLED\n`
+                            + `  Outstanding principal                 ${formatMoney(c.oldBalance)}\n`
+                            + `  Closure interest: NR ${formatMoney(c.nrInterest)} + AP ${formatMoney(c.apInterest)} + Penal ${formatMoney(c.penalInterest)}\n`
+                            + `  Settlement Amount                     ${formatMoney(c.oldBalance)} + ${formatMoney(c.closureInterest)} = ${formatMoney(Number(c.oldBalance) + Number(c.closureInterest))}`
                         )
+                        .join('\n\n');
+                    const deductionLines = (consolidation.disbursementDeductions || [])
+                        .map((d: any) => `  ${d.name} (${d.code})                 ${formatMoney(d.amount)}`)
                         .join('\n');
+                    const plan = consolidation.repaymentPlan;
                     consolidationDetail =
-                        `\n\n⚠ LOAN CONSOLIDATION OCCURRED\n` +
-                        `This disbursement absorbed ${consolidation.consolidatedCases.length} existing loan(s) ` +
-                        `into new case ${consolidation.newLoanCaseNo}:\n${caseLines}\n` +
-                        `Combined principal: ₹${consolidation.combinedPrincipal.toLocaleString('en-IN')}\n` +
-                        `Total closure interest withheld from payout: ₹${consolidation.oldClosureInterestTotal.toLocaleString('en-IN')}`;
+                        `\n\nLOAN CONSOLIDATION COMPLETED\n` +
+                        `Member: ${consolidation.memberNo}    Loan Type: ${consolidation.loanType}\n` +
+                        `The active loan of the same type was settled and replaced by the new loan.\n\n` +
+                        `1. OLD LOAN SETTLEMENT\n${caseLines}\n\n` +
+                        `2. NEW CONSOLIDATED LOAN\n` +
+                        `  Fresh Sanctioned Amount              ${formatMoney(consolidation.sanctionedAmount)}\n` +
+                        `+ Old Outstanding Principal            ${formatMoney(consolidation.existingOutstandingPrincipal)}\n` +
+                        `= Consolidated Loan Amount             ${formatMoney(consolidation.combinedPrincipal)}\n` +
+                        `  New Loan Case                         ${consolidation.newLoanCaseNo}\n\n` +
+                        `3. CASH PAYOUT TO THE MEMBER\n` +
+                        `  Fresh Sanctioned Amount              ${formatMoney(consolidation.sanctionedAmount)}\n` +
+                        `- Old loan closure interest            ${formatMoney(consolidation.oldClosureInterestTotal)}\n` +
+                        (deductionLines ? `- RD / Share deductions\n${deductionLines}\n` : '') +
+                        `= Net Disbursement Amount              ${formatMoney(consolidation.netDisbursement)}\n` +
+                        `  Note: old principal is carried into the new loan, not deducted from the cash payout.\n\n` +
+                        `4. NEW REPAYMENT BASIS\n` +
+                        `  Installments                           ${plan?.installments ?? '—'}\n` +
+                        `  Principal per installment             ${formatMoney(plan?.monthlyPrincipal)}\n` +
+                        `  Scheduled interest per installment    ${formatMoney(plan?.monthlyInterest)}\n` +
+                        `  Scheduled installment amount          ${formatMoney(plan?.monthlyInstallment)}\n` +
+                        `  Slot / sub-slot                       Slot ${plan?.slot ?? '—'} / ${plan?.subSlot ?? '—'}\n` +
+                        `  Interest delay                       ${plan?.interestDelayMonths ?? '—'} month(s)\n` +
+                        `  First EMI delay                      ${plan?.firstDueDelayMonths ?? plan?.delayMonths ?? '—'} month(s)\n\n` +
+                        `Audit result: the old case balance is zero and linked to new case ${consolidation.newLoanCaseNo}.`;
                 }
                 await showDialog(
                     'info',

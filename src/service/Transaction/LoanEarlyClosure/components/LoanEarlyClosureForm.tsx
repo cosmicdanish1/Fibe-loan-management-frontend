@@ -217,12 +217,12 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                         )}
                     </div>
 
-                    {/* ── Right column — Closure Quote ── */}
+                    {/* ── Right column — Settlement Quote ── */}
                     <section className="aw-card" style={{ minWidth: 0 }}>
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
                             <div>
-                                <h2 className="aw-card-title">{selectedLoanIsClosed ? 'Loan History' : 'Closure Quote'}</h2>
+                                <h2 className="aw-card-title">{selectedLoanIsClosed ? 'Loan History' : 'Settlement Quote'}</h2>
                                 {form.memberName && (
                                     <p className="aw-meta">
                                         {form.memberName}
@@ -242,11 +242,11 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                         ) : quoteLoading ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <RefreshCw size={26} className="aw-spin" style={{ color: 'var(--aw-accent)' }} />
-                                <strong className="aw-strong">Calculating closure amount…</strong>
+                                <strong className="aw-strong">Calculating settlement amount…</strong>
                             </div>
                         ) : !quote ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
-                                <span className="aw-meta">{form.mbno ? 'Select a loan case to see its closure quote.' : 'Search for a member to begin.'}</span>
+                                <span className="aw-meta">{form.mbno ? 'Select a loan case to see its settlement quote.' : 'Search for a member to begin.'}</span>
                             </div>
                         ) : (
                             <div className="aw-stack aw-fade-in">
@@ -280,7 +280,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                     {quote.consolidationHistory.absorbedCases.map(c => (
                                                         <div key={c.loancaseno} className="aw-panel" style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: 'var(--aw-text)', fontWeight: 500 }}>
                                                             <span><b>#{c.loancaseno}</b> ({LOAN_TYPE_LABEL[c.loantype] || c.loantype}) — original ₹{fmt(c.originalLoanAmt)}</span>
-                                                            <span className="aw-meta">{c.closureDate ? `closed ${c.closureDate}` : ''}</span>
+                                                            <span className="aw-meta">Settlement ₹{fmt(c.closedBalance)}{c.closureDate ? ` on ${c.closureDate}` : ''}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -288,7 +288,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                         )}
                                         {quote.consolidationHistory.consolidatedIntoLoancaseno && (
                                             <div style={{ fontWeight: 500 }}>
-                                                This loan was closed and folded into <b>#{quote.consolidationHistory.consolidatedIntoLoancaseno}</b>.
+                                                This loan was settled and consolidated into <b>#{quote.consolidationHistory.consolidatedIntoLoancaseno}</b>.
                                             </div>
                                         )}
                                     </div>
@@ -372,7 +372,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                             <span style={{ fontWeight: 500 }}>
                                                 One more EMI at the predecessor loan's old rate was still deducted through BSP's payroll
                                                 pipeline before it could switch to this loan. This is a suggested credit only — it is
-                                                <b> not</b> included in the Final Closure Amount below. Review it, then click Apply &amp;
+                                                <b> not</b> included in the Settlement Amount below. Review it, then click Apply &amp;
                                                 Recalc to add it to the Adjustment field and see the updated total, or leave it and close
                                                 without applying it.
                                             </span>
@@ -425,7 +425,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                 {' '}= <b style={{ color: 'var(--aw-danger)' }}>₹{fmt(quote.penalInterest)}</b>
                                             </div>
                                             <div style={{ paddingTop: 5, borderTop: '1px solid var(--aw-border)', marginTop: 2 }}>
-                                                Final Closure Amount = Outstanding Principal (₹{fmt(quote.outstandingPrincipal)}) + Closure Interest (₹{fmt(quote.closureInterest)}) + Penal Interest (₹{fmt(quote.penalInterest)})
+                                                Settlement Amount = Outstanding Principal (₹{fmt(quote.outstandingPrincipal)}) + Closure Interest (₹{fmt(quote.closureInterest)}) + Penal Interest (₹{fmt(quote.penalInterest)})
                                                 {quote.adjustment !== 0 && ` + Adjustment (₹${fmt(quote.adjustment)})`}
                                                 {' '}= <b style={{ color: 'var(--aw-accent)' }}>₹{fmt(quote.finalClosureAmount)}</b>
                                                 {quote.suggestedAdjustment !== 0 && (
@@ -439,7 +439,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
 
                                     {/* Final amount highlight */}
                                     <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <span className="aw-strong">Final Closure Amount</span>
+                                        <span className="aw-strong">Settlement Amount</span>
                                         <span className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 7px)', color: 'var(--aw-accent)' }}>₹{fmt(quote.finalClosureAmount)}</span>
                                     </div>
 

@@ -22,7 +22,7 @@ const LoanConsolidationChainView: React.FC<Props> = ({
                 <div className="flex items-baseline gap-2.5">
                     <h1 className="m-0 font-semibold text-white" style={{ fontSize: 15 }}>Loan Consolidation Chain</h1>
                     <span style={{ fontSize: 11.5, color: '#9296a8' }}>
-                        Full multi-hop history — every absorbed loan, before-and-after balance at each step
+                        Full history of each loan settlement and successor loan in the consolidation chain
                     </span>
                 </div>
                 <button onClick={reset} className="lcc-ghost-btn flex items-center gap-1.5"
@@ -83,7 +83,6 @@ const LoanConsolidationChainView: React.FC<Props> = ({
                             {chain.links.map((link, i) => {
                                 const prev = i > 0 ? chain.links[i - 1] : null;
                                 const oldBalance = prev ? prev.contributedAtClosure ?? 0 : 0;
-                                const newSanctioned = prev ? Math.max(0, link.loanAmt - oldBalance) : link.loanAmt;
 
                                 return (
                                     <React.Fragment key={link.loancaseno}>
@@ -94,7 +93,7 @@ const LoanConsolidationChainView: React.FC<Props> = ({
                                                     fontSize: 11.5, color: '#2563a8', background: '#eef5fc', border: '1px solid #bcd7ef',
                                                     borderRadius: 6, padding: '6px 12px', margin: '2px 0', fontFamily: "'IBM Plex Mono', monospace",
                                                 }}>
-                                                    ₹{fmt(oldBalance)} (from #{prev!.loancaseno}) + ₹{fmt(newSanctioned)} (new) = ₹{fmt(link.loanAmt)}
+                                                    Settlement Amount from #{prev!.loancaseno}: ₹{fmt(oldBalance)} · Consolidated Loan Amount: ₹{fmt(link.loanAmt)}
                                                 </div>
                                             </div>
                                         )}
@@ -124,11 +123,11 @@ const LoanConsolidationChainView: React.FC<Props> = ({
                                             </div>
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                                                 <div className="lcc-stat">
-                                                    <div className="lcc-stat-label">{i === 0 ? 'Original Amount' : 'Combined Principal (after this consolidation)'}</div>
+                                                    <div className="lcc-stat-label">{i === 0 ? 'Original Sanctioned Amount' : 'Consolidated Loan Amount'}</div>
                                                     <div className="lcc-stat-value">₹{fmt(link.loanAmt)}</div>
                                                 </div>
                                                 <div className="lcc-stat">
-                                                    <div className="lcc-stat-label">{link.isActive ? 'Current Balance' : 'Balance at Closure'}</div>
+                                                    <div className="lcc-stat-label">{link.isActive ? 'Current Balance' : 'Settlement Amount'}</div>
                                                     <div className="lcc-stat-value" style={{ color: link.isActive ? '#dc2626' : '#1a1d29' }}>
                                                         ₹{fmt(link.isActive ? link.currentBalance : link.contributedAtClosure)}
                                                     </div>
@@ -138,7 +137,7 @@ const LoanConsolidationChainView: React.FC<Props> = ({
                                                     <div className="lcc-stat-value" style={{ fontSize: 12.5 }}>
                                                         {link.isActive
                                                             ? 'Open'
-                                                            : <>Closed {fmtDate(link.closedDate)} → #{link.closedIntoLoancaseno}</>}
+                                                            : <>Settled {fmtDate(link.closedDate)} → #{link.closedIntoLoancaseno}</>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -146,6 +145,11 @@ const LoanConsolidationChainView: React.FC<Props> = ({
                                     </React.Fragment>
                                 );
                             })}
+                            {chain.chainLength > 1 && (
+                                <p style={{ margin: '14px 0 0', fontSize: 11.5, color: '#5b6072', lineHeight: 1.5 }}>
+                                    Settlement Amount is the value used to close the earlier loan. Net Disbursement Amount is not shown here because the existing report response does not include the final payout after interest and other deductions.
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>
