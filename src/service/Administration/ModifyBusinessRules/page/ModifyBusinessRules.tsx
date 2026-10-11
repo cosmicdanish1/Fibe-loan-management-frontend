@@ -53,11 +53,26 @@ const slotWindowLabels = (startDay: number, endDay: number): { slot1: string; sl
   return { slot1, slot2: `${s2}–${e2}` };
 };
 
+// Reasons shown on settings that do not drive anything yet. Such a setting is greyed out and locked so
+// nobody changes it believing it takes effect (audit ES-53).
+const NOT_USED = 'Not in use: this value is saved, but the application does not use it yet.';
+const CALC_ONLY = 'Calculator only: shown on the Calculator screen, it does not limit any loan.';
+const NO_GUARANTOR_CHECK = 'Not in use: the number of guarantors is not checked anywhere yet.';
+const LOOKUP_ONLY = 'Display only: shown in an account lookup, it is not enforced.';
+
+const UnusedTag: React.FC<{ reason: string }> = ({ reason }) => (
+  <span className="aw-pill tone-muted" style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, textTransform: 'none', letterSpacing: 0 }} title={reason}>
+    {reason.startsWith('Calculator') ? 'Calculator only' : reason.startsWith('Display') ? 'Display only' : 'Not in use'}
+  </span>
+);
+
 // ── Small presentational helpers (layout only) ──
-const Field: React.FC<{ label: React.ReactNode; hint?: string; title?: string; htmlFor?: string; children: React.ReactNode }> = ({ label, hint, title, htmlFor, children }) => (
-  <div>
-    <label className="aw-label" htmlFor={htmlFor} title={title}>{label}</label>
-    {children}
+const Field: React.FC<{ label: React.ReactNode; hint?: string; title?: string; htmlFor?: string; unused?: string | undefined; children: React.ReactNode }> = ({ label, hint, title, htmlFor, unused, children }) => (
+  <div title={unused}>
+    <label className="aw-label" htmlFor={htmlFor} title={unused ?? title}>{label}{unused && <UnusedTag reason={unused} />}</label>
+    {unused ? (
+      <fieldset disabled style={{ border: 0, padding: 0, margin: 0, minWidth: 0, opacity: 0.5 }}>{children}</fieldset>
+    ) : children}
     {hint && <p className="aw-meta" style={{ marginTop: 4 }}>{hint}</p>}
   </div>
 );
@@ -66,15 +81,17 @@ const IconInput: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> 
   <div className="aw-input-wrap has-icon">{icon}{children}</div>
 );
 
-const ToggleRow: React.FC<{ label: string; checked: boolean; onChange: (v: boolean) => void }> = ({ label, checked, onChange }) => (
-  <div className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-    <span className="aw-strong" style={{ fontWeight: 600 }}>{label}</span>
+const ToggleRow: React.FC<{ label: string; checked: boolean; onChange: (v: boolean) => void; unused?: string | undefined }> = ({ label, checked, onChange, unused }) => (
+  <div className="aw-panel" title={unused} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, opacity: unused ? 0.5 : 1 }}>
+    <span className="aw-strong" style={{ fontWeight: 600 }}>{label}{unused && <UnusedTag reason={unused} />}</span>
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       aria-label={label}
-      onClick={() => onChange(!checked)}
+      aria-disabled={!!unused}
+      disabled={!!unused}
+      onClick={() => !unused && onChange(!checked)}
       className="aw-switch"
     />
   </div>
@@ -131,6 +148,10 @@ const ModifyBusinessRules: React.FC = () => {
     setBusinessRules(prev => ({ ...prev, regularLoanEligibility: { ...prev.regularLoanEligibility, ...patch } }));
   };
 
+  const updateReagreement = (patch: Partial<BusinessRulesData['loanReagreement']>) => {
+    setBusinessRules(prev => ({ ...prev, loanReagreement: { ...prev.loanReagreement, ...patch } }));
+  };
+
   const updateSlot = (patch: Partial<BusinessRulesData['loanSlotDelay']>) => {
     setBusinessRules(prev => ({ ...prev, loanSlotDelay: { ...prev.loanSlotDelay, ...patch } }));
   };
@@ -176,33 +197,42 @@ const ModifyBusinessRules: React.FC = () => {
   const int = (v: string) => parseInt(v) || 0;
   const elig = businessRules.regularLoanEligibility;
   const slot = businessRules.loanSlotDelay;
+  const ra = businessRules.loanReagreement;
   const slotLabels = slotWindowLabels(slot.slot1StartDay, slot.slot1EndDay);
   const gs = businessRules.generalSettings;
 
   // ── Loan section renderer ──
-  const renderLoanSection = (title: string, loanType: keyof BusinessRulesData, data: LoanType) => (
+  // `unusedFields` names the fields on a card that the application does not use, with the reason shown
+  // on them. Regular / Emergency / Loan Against RD: the rate, max amount and instalments are enforced;
+  // the guarantor count is not. Grain and Loan On Deposit drive nothing (Calculator display at most).
+  const renderLoanSection = (
+    title: string,
+    loanType: keyof BusinessRulesData,
+    data: LoanType,
+    unusedFields: Partial<Record<'maxAmount' | 'rate' | 'installments' | 'guarantors', string>> = {},
+  ) => (
     <Section icon={<Database size={14} />} title={title}>
       <div className="aw-two">
-        <Field label="Max.Amount">
+        <Field label="Max.Amount" unused={unusedFields.maxAmount}>
           <IconInput icon={<IndianRupee size={13} />}>
             <input type="number" step="0.01" value={data.maxAmount} onChange={e => updateLoanType(loanType, 'maxAmount', num(e.target.value))} className="aw-input" />
           </IconInput>
         </Field>
-        <Field label="Rate (%)">
+        <Field label="Rate (%)" unused={unusedFields.rate}>
           <IconInput icon={<Percent size={13} />}>
             <input type="number" step="0.01" value={data.rate} onChange={e => updateLoanType(loanType, 'rate', num(e.target.value))} className="aw-input" />
           </IconInput>
         </Field>
-        <Field label="No.Of Install">
+        <Field label="No.Of Install" unused={unusedFields.installments}>
           <input type="number" value={data.numberOfInstallments} onChange={e => updateLoanType(loanType, 'numberOfInstallments', int(e.target.value))} className="aw-input" />
         </Field>
-        <Field label="No. Of Gr">
+        <Field label="No. Of Gr" unused={unusedFields.guarantors}>
           <IconInput icon={<Users size={13} />}>
             <input type="number" value={data.numberOfGuarantors} onChange={e => updateLoanType(loanType, 'numberOfGuarantors', int(e.target.value))} className="aw-input" />
           </IconInput>
         </Field>
-        {data.penalRate !== undefined && loanType === 'regularLoan' && (
-          <Field label="Global Penal Rate (% p.a.)" title="One global annual Tier 2 rate used for every loan type.">
+        {data.penalRate !== undefined && (
+          <Field label="Penal Rate (% p.a.)" title="Annual rate for the monthly late penalty (Tier 2) on this loan type only.">
             <IconInput icon={<Percent size={13} />}>
               <input type="number" step="0.01" value={data.penalRate} onChange={e => updateLoanType(loanType, 'penalRate', num(e.target.value))} className="aw-input" />
             </IconInput>
@@ -278,22 +308,23 @@ const ModifyBusinessRules: React.FC = () => {
                   mapping note in useBusinessRules.ts. Only titles differ from the
                   prop names; no stored value moves between columns. */}
               <div style={gridAuto(300)}>
-                {renderLoanSection('Regular Loan', 'regularLoan', businessRules.regularLoan)}
-                {renderLoanSection('Emergency Loan', 'additionalLoan', businessRules.additionalLoan)}
-                {renderLoanSection('Grain Loan', 'mediumTermLoan', businessRules.mediumTermLoan)}
-                {renderLoanSection('Loan Against Recovery', 'emergencyLoan', businessRules.emergencyLoan)}
-                {renderLoanSection('Loan On Deposit', 'loanOnDeposit', businessRules.loanOnDeposit)}
+                {renderLoanSection('Regular Loan', 'regularLoan', businessRules.regularLoan, { guarantors: NO_GUARANTOR_CHECK })}
+                {renderLoanSection('Emergency Loan', 'additionalLoan', businessRules.additionalLoan, { guarantors: NO_GUARANTOR_CHECK })}
+                {renderLoanSection('Grain Loan', 'mediumTermLoan', businessRules.mediumTermLoan, { maxAmount: NOT_USED, rate: NOT_USED, installments: NOT_USED, guarantors: NOT_USED })}
+                {renderLoanSection('Loan Against RD', 'emergencyLoan', businessRules.emergencyLoan, { guarantors: NO_GUARANTOR_CHECK })}
+                {renderLoanSection('Loan On Deposit', 'loanOnDeposit', businessRules.loanOnDeposit, { maxAmount: CALC_ONLY, rate: CALC_ONLY, installments: CALC_ONLY, guarantors: NOT_USED })}
 
                 {/* Loan Against Deposits — custom layout */}
                 <Section icon={<TrendingUp size={14} />} title="Loan Against Deposits">
                   <div className="aw-two">
                     {[
-                      { label: 'Share Value%', field: 'shareValue', step: '0.1' },
-                      { label: 'FD (%)', field: 'fdPercentage', step: '0.01' },
-                      { label: 'Overall Limit', field: 'overallLimit', step: '1' },
-                      { label: 'Basic Pay', field: 'basicPay', step: '0.01' },
+                      { label: 'Share Value%', field: 'shareValue', step: '0.1', unused: CALC_ONLY },
+                      // FD (%) is the share of a member's RD that can be borrowed against it (Loan Against RD).
+                      { label: 'FD (%)', field: 'fdPercentage', step: '0.01', unused: undefined as string | undefined },
+                      { label: 'Overall Limit', field: 'overallLimit', step: '1', unused: CALC_ONLY },
+                      { label: 'Basic Pay', field: 'basicPay', step: '0.01', unused: NOT_USED },
                     ].map(f => (
-                      <Field key={f.field} label={f.label}>
+                      <Field key={f.field} label={f.label} unused={f.unused}>
                         <input type="number" step={f.step}
                           value={(businessRules.loanAgainstDeposits as any)[f.field]}
                           onChange={e => setBusinessRules(prev => ({
@@ -356,7 +387,7 @@ const ModifyBusinessRules: React.FC = () => {
                   <div style={gridAuto(240)}>
                     <ToggleRow label="Apply to Regular Loan" checked={elig.applyToRegularLoan} onChange={v => updateEligibility({ applyToRegularLoan: v })} />
                     <ToggleRow label="Apply to Emergency Loan" checked={elig.applyToAdditionalLoan} onChange={v => updateEligibility({ applyToAdditionalLoan: v })} />
-                    <ToggleRow label="Apply to Loan Against Recovery" checked={elig.applyToEmergencyLoan} onChange={v => updateEligibility({ applyToEmergencyLoan: v })} />
+                    <ToggleRow label="Apply to Loan Against RD" checked={elig.applyToEmergencyLoan} onChange={v => updateEligibility({ applyToEmergencyLoan: v })} />
                   </div>
                   <p className="aw-meta" style={{ lineHeight: 1.5 }}>
                     Independently switchable per loan type (all on by default). RD/Share requirements are
@@ -369,7 +400,7 @@ const ModifyBusinessRules: React.FC = () => {
               {/* Others & Penal Sector */}
               <Section icon={<Calculator size={14} />} title="Others & Penal Sector">
                 <div style={gridAuto(170)}>
-                  <Field label="Min. Membership (Months)">
+                  <Field label="Min. Membership (Months)" unused={NOT_USED}>
                     <input type="number" value={businessRules.others.minMembership} onChange={e => updateOthers('minMembership', int(e.target.value))} className="aw-input" />
                   </Field>
                   {/* Min./Max. CD Amt removed — dead legacy fields, never enforced by
@@ -380,7 +411,7 @@ const ModifyBusinessRules: React.FC = () => {
                     { label: 'Max. Share Amt', field: 'maxShareAmt' },
                     { label: 'Security Dep', field: 'securityDep' },
                   ].map(item => (
-                    <Field key={item.field} label={item.label}>
+                    <Field key={item.field} label={item.label} unused={NOT_USED}>
                       <input type="number" step="0.01" value={(businessRules.others as any)[item.field]} onChange={e => updateOthers(item.field, num(e.target.value))} className="aw-input" />
                     </Field>
                   ))}
@@ -403,17 +434,19 @@ const ModifyBusinessRules: React.FC = () => {
               <Section icon={<Settings size={14} />} title="Behaviour">
                 <div style={gridAuto(300)}>
                   {[
-                    { label: 'DataEntry Mode', field: 'dataEntryMode' },
-                    { label: 'Print Demand Format Horizontal', field: 'printDemandFormatHorizontal' },
-                    { label: 'Consider Intt. Before 10th', field: 'considerIntBefore10th' },
-                    { label: 'Calculate Interest Using Reducing Balance', field: 'calculateInterestUsingReducingBalance' },
-                    { label: 'Show Consolidate Intt. Amount in Demand', field: 'showConsolidateIntAmountInDemand' },
-                    { label: 'Get Working Charges (Rs.)', field: 'getWorkingCharges' },
-                    { label: 'Auto Day-End (Nightly Close, 11:30 PM)', field: 'autoDayEndCloseEnabled' },
-                    { label: 'Enable tiered penalties for all loans', field: 'tieredLoanPenaltiesEnabled' },
+                    { label: 'DataEntry Mode', field: 'dataEntryMode', unused: NOT_USED },
+                    { label: 'Print Demand Format Horizontal', field: 'printDemandFormatHorizontal', unused: NOT_USED },
+                    { label: 'Consider Intt. Before 10th', field: 'considerIntBefore10th', unused: NOT_USED },
+                    { label: 'Calculate Interest Using Reducing Balance', field: 'calculateInterestUsingReducingBalance', unused: 'Not in use: reducing balance is the only supported method, so this switch changes nothing.' },
+                    { label: 'Show Consolidate Intt. Amount in Demand', field: 'showConsolidateIntAmountInDemand', unused: NOT_USED },
+                    { label: 'Get Working Charges (Rs.)', field: 'getWorkingCharges', unused: NOT_USED },
+                    // Live: day-end.service.ts runs the 11:30 PM job only when this switch is ON.
+                    { label: 'Auto Day-End (Nightly Close, 11:30 PM)', field: 'autoDayEndCloseEnabled', unused: undefined as string | undefined },
+                    { label: 'Enable tiered penalties for all loans', field: 'tieredLoanPenaltiesEnabled', unused: undefined as string | undefined },
                   ].map(item => (
                     <ToggleRow key={item.field} label={item.label}
                       checked={(gs as any)[item.field]}
+                      unused={item.unused}
                       onChange={val => updateGeneralSetting(item.field as keyof GeneralSettings, val)} />
                   ))}
                 </div>
@@ -428,16 +461,16 @@ const ModifyBusinessRules: React.FC = () => {
                   </div>
 
                   <p className="aw-meta" style={{ lineHeight: 1.5 }}>
-                    Existing overdue loans start accruing penalties from the activation date, never retroactively. Re-enabling after a pause starts a new penalty period today. The global annual penal rate is configured on the Regular Loan card and applies to every loan type.
+                    Penalties are counted from each instalment's real due month. Money posted through the demand master pays its own month only and never pays the same-month fee; cash keeps the same-month fee when it is late in the due month. Each loan type has its own annual penal rate, set on its own card (Regular, Emergency, Loan Against RD).
                   </p>
 
                   <div className="aw-two">
                     {[
-                      { label: 'Min. Balance For Saving A/c', field: 'minBalanceForSavingAc', type: 'float' },
-                      { label: 'Working Charges Amount', field: 'workingChargesAmount', type: 'int' },
-                      { label: 'Average Interest Calculation Slot', field: 'averageInterestCalculationSlot', type: 'int' },
+                      { label: 'Min. Balance For Saving A/c', field: 'minBalanceForSavingAc', type: 'float', unused: LOOKUP_ONLY },
+                      { label: 'Working Charges Amount', field: 'workingChargesAmount', type: 'int', unused: NOT_USED },
+                      { label: 'Average Interest Calculation Slot', field: 'averageInterestCalculationSlot', type: 'int', unused: NOT_USED },
                     ].map(f => (
-                      <Field key={f.field} label={f.label}>
+                      <Field key={f.field} label={f.label} unused={f.unused}>
                         <input type="number" step={f.type === 'float' ? '0.01' : '1'}
                           value={(gs as any)[f.field]}
                           onChange={e => updateGeneralSetting(f.field as keyof GeneralSettings, f.type === 'float' ? num(e.target.value) : int(e.target.value))}
@@ -445,7 +478,7 @@ const ModifyBusinessRules: React.FC = () => {
                       </Field>
                     ))}
                     {/* Working Charges Head — income head dropdown (required when Get Working Charges is enabled) */}
-                    <Field label={<>Working Charges Head {gs.getWorkingCharges && <span style={{ color: 'var(--aw-danger)' }}>*</span>}</>}>
+                    <Field label={<>Working Charges Head {gs.getWorkingCharges && <span style={{ color: 'var(--aw-danger)' }}>*</span>}</>} unused={NOT_USED}>
                       <Select
                         className={`aw-select ${gs.getWorkingCharges && !gs.workingChargesHead ? 'is-invalid' : ''}`}
                         popupClassName="aw-select-popup"
@@ -485,6 +518,36 @@ const ModifyBusinessRules: React.FC = () => {
                     earlyClosureProtection: { ...prev.earlyClosureProtection, requireTypeConfirm: val },
                   }))}
                 />
+              </Section>
+
+              {/* Loan re-agreement (restructure) guard-rails. The member already holds the loan and the
+                  sanctioning authority decides, so every limit is optional: 0 / unchecked = no limit. */}
+              <Section icon={<ShieldCheck size={14} />} title="Loan Re-agreement Limits">
+                <div className="aw-stack">
+                  <p className="aw-meta">Optional guard-rails for restructuring an active loan. 0 means no limit. The hard checks (loan active, no other open operation, valid term and rate) always apply.</p>
+                  <div className="aw-two">
+                    <Field label="Minimum installments paid before the first re-agreement">
+                      <input type="number" min={0} step="1" value={ra.minInstallmentsPaid} onChange={e => updateReagreement({ minInstallmentsPaid: int(e.target.value) })} className="aw-input" />
+                    </Field>
+                    <Field label="Minimum outstanding principal (₹)">
+                      <input type="number" min={0} step="1" value={ra.minOutstanding} onChange={e => updateReagreement({ minOutstanding: num(e.target.value) })} className="aw-input" />
+                    </Field>
+                    <Field label="Maximum tenure (months)">
+                      <input type="number" min={0} step="1" value={ra.maxTenure} onChange={e => updateReagreement({ maxTenure: int(e.target.value) })} className="aw-input" />
+                    </Field>
+                    <Field label="Maximum re-agreements per loan">
+                      <input type="number" min={0} step="1" value={ra.maxPerLoan} onChange={e => updateReagreement({ maxPerLoan: int(e.target.value) })} className="aw-input" />
+                    </Field>
+                    <Field label="Minimum rate (% p.a.)">
+                      <input type="number" min={0} step="0.01" value={ra.minRate} onChange={e => updateReagreement({ minRate: num(e.target.value) })} className="aw-input" />
+                    </Field>
+                    <Field label="Maximum rate (% p.a.)">
+                      <input type="number" min={0} step="0.01" value={ra.maxRate} onChange={e => updateReagreement({ maxRate: num(e.target.value) })} className="aw-input" />
+                    </Field>
+                  </div>
+                  <ToggleRow label="Allow the new rate to be higher than the current rate" checked={ra.allowRateIncrease} onChange={v => updateReagreement({ allowRateIncrease: v })} />
+                  <ToggleRow label="Allow a back-dated application date (it decides the slot)" checked={ra.allowBackdate} onChange={v => updateReagreement({ allowBackdate: v })} />
+                </div>
               </Section>
 
               {/* Slot delay months are added to the disbursement month to get the
@@ -529,6 +592,14 @@ const ModifyBusinessRules: React.FC = () => {
                           { value: 'NONE', label: 'No Rounding (paisa precision)' },
                         ]}
                       />
+                    </Field>
+                    {/* After a consolidation payroll keeps deducting the old EMI for a month or two.
+                        A payment / demand-file amount this close to the old EMI (but not equal) is
+                        flagged "check this". Equal amounts are always matched within Rs 1. */}
+                    <Field label="Old EMI Check Range (₹)" hint="Flag amounts within this of the old EMI after a consolidation">
+                      <input type="number" min={0} step="1" value={businessRules.oldEmiFlag.tolerance}
+                        onChange={e => setBusinessRules(prev => ({ ...prev, oldEmiFlag: { tolerance: Math.max(0, Number(e.target.value) || 0) } }))}
+                        className="aw-input" />
                     </Field>
                   </div>
                 </div>

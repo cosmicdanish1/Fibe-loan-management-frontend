@@ -37,6 +37,8 @@ export interface LoanCase {
     surety2Name?: string;
     surety2Office?: string;
     surety2LoanBalance?: string;
+    /** 'REAGREEMENT' for a loan re-agreement (restructure) case; 'NEW' for a normal loan. */
+    applicationKind?: string;
 }
 
 export interface LoanPaymentData {
@@ -92,6 +94,8 @@ export interface ModalData {
 }
 
 export interface LoanPaymentHookReturn {
+    /** Set when the selected case is a re-agreement: no payout, only NR interest + penalty are collected. */
+    reagreement: any | null;
     formData: LoanPaymentData;
     modalData: ModalData;
     loanCases: LoanCase[];

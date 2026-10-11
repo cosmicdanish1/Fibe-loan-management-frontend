@@ -19,6 +19,10 @@ export interface TransactionEntry {
     passFlag: string;    // Pass Flag (Status)
     narration: string;   // Narration
     loanCaseNo?: string; // Internal mapping
+    /** 'REAGREEMENT' for a loan re-agreement voucher (a receipt of NR interest + penalty, no payout). */
+    kind?: 'VOUCHER' | 'REAGREEMENT';
+    /** Full re-agreement summary (old vs new terms, amounts) when kind is REAGREEMENT. */
+    reagreement?: any;
 }
 
 export interface PassTransactionsHookReturn {
@@ -29,4 +33,7 @@ export interface PassTransactionsHookReturn {
     handleDelete: (voucherNo: string) => Promise<void>;
     handleExport: () => void;
     handleExit: () => void;
+    /** Set after a re-agreement is passed, so the screen can show the result and the saved agreement. */
+    reagreementResult: any | null;
+    clearReagreementResult: () => void;
 }

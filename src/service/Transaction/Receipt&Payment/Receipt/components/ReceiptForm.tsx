@@ -13,7 +13,7 @@ interface HeadCode { code: string; name: string; }
 
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const HEAD_CODES: Record<string, string> = {
-    'A1002': 'RLN', 'A1047': 'ALN', 'I1002': 'OTH',
+    'A1002': 'RLN', 'A1047': 'ALN', 'I1002': 'OTH', 'I1013': 'OTH', 'I1014': 'OTH', // I1013/I1014: ES-46 per-loan-type interest
     'L1004': 'CD',  'L1002': 'MD',  'L1045': 'MD1',
     'L1001': 'SHR', 'I1008': 'OTH', 'I1001': 'OTH',
 };

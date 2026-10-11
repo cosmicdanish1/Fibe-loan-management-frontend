@@ -2,9 +2,9 @@ import React from 'react';
 import TabNavigation from '../components/tabs/TabNavigation';
 import LoanDetailsTab from '../components/tabs/LoanDetailsTab';
 import NomineeDetailsTab from '../components/tabs/NomineeDetailsTab';
-import LoanAgainstDepositTab from '../components/tabs/LoanAgainstDepositTab';
+import LoanAgainstRdTab from '../components/tabs/LoanAgainstRdTab';
 import { useLoanApplication } from '../hooks';
-import type { LoanDetails, NomineeDetail, FDRDetail } from '../types';
+import type { LoanDetails, NomineeDetail } from '../types';
 import { API_ROUTES, API_BASE_URL, getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
@@ -31,6 +31,13 @@ interface LoanEligibilityStatus {
   netDisbursement: number;
 
   message?: string;
+
+  // Loan Against RD (ELN) only
+  rdBacked?: boolean;
+  totalRd?: number;
+  lockedRd?: number;
+  freeRd?: number;
+  maxLoanAmount?: number;
 }
 
 const LoanApplication: React.FC = () => {
@@ -39,8 +46,6 @@ const LoanApplication: React.FC = () => {
     setActiveTab,
     updateLoanDetails,
     updateNomineeDetails,
-    updateLoanAgainstDeposit,
-    updateFDRDetails
   } = useLoanApplication();
 
   // State for selected member data
@@ -65,10 +70,11 @@ const LoanApplication: React.FC = () => {
     const memberNo = state.loanDetails.memberNo;
     const loanType = state.loanDetails.loanType;
 
-    // The Regular Loan rules (max limit, RD %, Share %) apply to RLN at ANY
-    // amount — there is no minimum threshold. Emergency Loan (ALN) and Loan
-    // Against Recovery (ELN) are exempt entirely.
-    if (!memberNo || amount <= 0 || (loanType || '').toUpperCase() !== 'RLN') {
+    // Loan Against RD (ELN) is limited by the member's own RD, so its figures are
+    // read as soon as a member is chosen (amount may still be empty) to show the
+    // largest loan allowed. Regular and Emergency loans are checked by the server
+    // when the application is saved.
+    if (!memberNo || (loanType || '').toUpperCase() !== 'ELN') {
       setEligibilityStatus(null);
       setIsCheckingEligibility(false);
       return;
@@ -377,21 +383,6 @@ const LoanApplication: React.FC = () => {
     });
   };
 
-  const handleLoanAgainstDepositChange = (isEnabled: boolean) => {
-    updateLoanAgainstDeposit('isEnabled', isEnabled);
-  };
-
-  const handleFDRDetailsChange = (details: FDRDetail[]) => {
-    // Update FDR details through the hook
-    details.forEach((detail, index) => {
-      Object.entries(detail).forEach(([key, value]) => {
-        if (key !== 'id') {
-          updateFDRDetails(index, key as keyof FDRDetail, value as string | boolean);
-        }
-      });
-    });
-  };
-
   const resetAll = () => {
     updateLoanDetails('memberNo', '');
     updateLoanDetails('loanType', '');
@@ -482,18 +473,20 @@ const LoanApplication: React.FC = () => {
     // application — it is withheld from the disbursement instead (confirmed
     // below), so only a genuine over-limit breach stops the save here.
     if (eligibilityStatus && !eligibilityStatus.isEligible) {
-      const detail =
-        `Total regular loan exposure exceeds the permitted maximum.\n\n` +
-        `Existing Regular Outstanding : ₹${eligibilityStatus.existingOutstanding.toLocaleString('en-IN')}\n` +
-        `New Loan Requested           : ₹${eligibilityStatus.loanAmount.toLocaleString('en-IN')}\n` +
-        `Total Exposure               : ₹${eligibilityStatus.totalExposure.toLocaleString('en-IN')}\n` +
-        `Maximum Limit                : ₹${eligibilityStatus.maxLimit.toLocaleString('en-IN')}`;
+      const isRd = !!eligibilityStatus.rdBacked;
+      const detail = isRd
+        ? (eligibilityStatus.message || 'This loan is above what the member\'s RD allows.')
+        : `Total regular loan exposure exceeds the permitted maximum.\n\n` +
+          `Existing Regular Outstanding : ₹${eligibilityStatus.existingOutstanding.toLocaleString('en-IN')}\n` +
+          `New Loan Requested           : ₹${eligibilityStatus.loanAmount.toLocaleString('en-IN')}\n` +
+          `Total Exposure               : ₹${eligibilityStatus.totalExposure.toLocaleString('en-IN')}\n` +
+          `Maximum Limit                : ₹${eligibilityStatus.maxLimit.toLocaleString('en-IN')}`;
 
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
           type: 'error',
           title: 'Loan Eligibility Failed',
-          message: 'Cannot Save — Maximum Regular Loan Limit Exceeded',
+          message: isRd ? 'Cannot Save — Above The Loan Against RD Limit' : 'Cannot Save — Maximum Regular Loan Limit Exceeded',
           detail,
           buttons: ['OK'],
           defaultId: 0,
@@ -551,10 +544,8 @@ const LoanApplication: React.FC = () => {
         surety2: state.loanDetails.surety2,
         // Nominee details — saved to loan_nominee table
         nominees: state.nomineeDetails.filter(n => n.name && n.name.trim()),
-        // FDR details — saved to loan_fdr table (only when Loan Against Deposit is enabled)
-        fdrDetails: state.loanAgainstDeposit.isEnabled
-          ? state.loanAgainstDeposit.fdrDetails.filter(f => f.fdrNo && f.fdrNo.trim())
-          : [],
+        // No collateral rows are sent: a Loan Against RD is secured by the member's own RD,
+        // which the server locks when the loan is paid out.
       };
 
       console.log('📤 FRONTEND: Sending loan application to backend...');
@@ -658,7 +649,7 @@ const LoanApplication: React.FC = () => {
 
       console.log('✅ FRONTEND: Loan application saved successfully!');
 
-      const loanTypeLabel: Record<string, string> = { 'ALN': 'EMERGENCY LOAN', 'RLN': 'REGULAR LOAN', 'ELN': 'LOAN AGAINST RECOVERY' };
+      const loanTypeLabel: Record<string, string> = { 'ALN': 'EMERGENCY LOAN', 'RLN': 'REGULAR LOAN', 'ELN': 'LOAN AGAINST RD' };
       // Show True Native OS Message Box
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
@@ -676,7 +667,7 @@ const LoanApplication: React.FC = () => {
             `✓ Saved to loan_pending\n` +
             (state.loanDetails.surety1 ? `✓ Suretymaster updated\n` : '') +
             (result.nomineesSaved > 0 ? `✓ ${result.nomineesSaved} nominee(s) saved\n` : '') +
-            (result.fdrRowsSaved > 0 ? `✓ ${result.fdrRowsSaved} FDR record(s) saved\n` : '') +
+            (state.loanDetails.loanType?.toUpperCase() === 'ELN' ? `✓ RD will be locked when the loan is paid out\n` : '') +
             `✓ Pending administrative sanction`,
           buttons: ['OK'],
           defaultId: 0,
@@ -743,10 +734,12 @@ const LoanApplication: React.FC = () => {
 
       case 'loan-against-deposit':
         return (
-          <LoanAgainstDepositTab
-            loanAgainstDeposit={state.loanAgainstDeposit}
-            onLoanAgainstDepositChange={handleLoanAgainstDepositChange}
-            onFDRDetailsChange={handleFDRDetailsChange}
+          <LoanAgainstRdTab
+            loanType={state.loanDetails.loanType}
+            memberNo={state.loanDetails.memberNo}
+            loanAmount={state.loanDetails.loanAmount}
+            eligibilityStatus={eligibilityStatus}
+            isCheckingEligibility={isCheckingEligibility}
           />
         );
 

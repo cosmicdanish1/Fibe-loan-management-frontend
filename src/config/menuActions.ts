@@ -22,6 +22,8 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'LOAN_REPAYMENT': { route: '/transaction/loan-repayment', electronMethod: 'openNewWindow' },
   'LOAN_EARLY_CLOSURE': { route: '/transaction/loan-early-closure', electronMethod: 'openNewWindow' },
   'LOAN_CONSOLIDATION_CHAIN': { route: '/reports/loan-consolidation-chain', electronMethod: 'openNewWindow' },
+  'LOAN_REAGREEMENT': { route: '/transaction/loan-reagreement', electronMethod: 'openNewWindow' },
+  'LOAN_REAGREEMENT_HISTORY': { route: '/reports/loan-reagreement-history', electronMethod: 'openNewWindow' },
   'COMPULSORY_DEPOSIT_TRANSACTION': { route: '/transaction/compulsory-deposit', electronMethod: 'openNewWindow' },
   'MEMBER_BALANCE_TRANSFER': { route: '/transaction/member-balance-transfer', electronMethod: 'openNewWindow' },
   'PASS_TRANSACTIONS': { route: '/transaction/pass-transactions', electronMethod: 'openNewWindow' },
@@ -147,6 +149,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'UPDATE_SAVING_INTT': { route: '/utility/update-saving-interest', electronMethod: 'openNewWindow' },
   'INTEREST_RECEIVABLE_RECEIVED_STATEMENT': { route: '/utility/interest-receivable-received-statement', electronMethod: 'openNewWindow' },
   'COMMUNICATION_HUB': { route: '/utility/communication-center', electronMethod: 'openNewWindow' },
+  'SUPPORT_DESK': { route: '/utility/support-desk', electronMethod: 'openNewWindow' },
   // Help Routes
   'ABOUT': { route: '/help/about', electronMethod: 'openNewWindow' },
   'CONTENTS': { route: '/help/contents', electronMethod: 'openNewWindow' },

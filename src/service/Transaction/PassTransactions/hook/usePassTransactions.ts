@@ -51,6 +51,7 @@ const formatMoney = (value: unknown) =>
 export const usePassTransactions = (): PassTransactionsHookReturn => {
     const [transactionData, setTransactionData] = useState<TransactionEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [reagreementResult, setReagreementResult] = useState<any | null>(null);
 
     const fetchPendingVouchers = useCallback(async () => {
         setIsLoading(true);
@@ -82,9 +83,16 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
         // BUG FIX: Modal.confirm silently no-ops in Electron — replaced with native confirm dialog.
         // This is a CRITICAL fix: passing a voucher posts permanently to the ledger.
         // Without this fix, the user saw no dialog and the pass never executed.
+        const pendingRow: any = transactionData.find(t => t.voucherNo === voucherNo);
+        const raInfo = pendingRow?.kind === 'REAGREEMENT' ? pendingRow.reagreement : null;
         const confirmed = await showConfirm(
-            'Pass Voucher — Final Confirmation',
-            `Voucher No: ${voucherNo}\n\nThis will PERMANENTLY post the transaction to the ledger and cashbook. This action cannot be undone.\n\nAre you sure you want to proceed?`,
+            raInfo ? 'Pass Loan Re-agreement — Final Confirmation' : 'Pass Voucher — Final Confirmation',
+            raInfo
+                ? `Voucher No: ${voucherNo}\nRe-agreement ${raInfo.reagreementNo}: case ${raInfo.oldLoanCaseNo} -> new case ${raInfo.newLoanCaseNo}\n\n`
+                  + `Collected now: ${formatMoney(raInfo.collect?.total)} (NR interest + penalty)\n`
+                  + `New agreement: ${raInfo.neu?.installments} installments @ ${raInfo.neu?.rate}%, EMI ${formatMoney(raInfo.neu?.monthlyInstallment)}\n\n`
+                  + `This will make the new loan case active, close the old case as re-agreed, post the receipts to the ledger and save the printed agreement. The figures are re-checked first; the pass is refused if the loan has changed since the voucher was created.\n\nProceed?`
+                : `Voucher No: ${voucherNo}\n\nThis will PERMANENTLY post the transaction to the ledger and cashbook. This action cannot be undone.\n\nAre you sure you want to proceed?`,
             'Pass'
         );
         if (!confirmed) return;
@@ -99,6 +107,13 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
                 // silently: an old case got zeroed and a new combined one
                 // created with no indication to the operator it occurred.
                 const consolidation = (response.data as any)?.consolidation;
+                const reagreement = (response.data as any)?.reagreement;
+                if (reagreement) {
+                    // The screen shows the result + the saved agreement (view / print / PDF / image).
+                    setReagreementResult({ ...reagreement, voucherNo });
+                    fetchPendingVouchers();
+                    return;
+                }
                 let consolidationDetail = '';
                 if (consolidation) {
                     const caseLines = consolidation.consolidatedCases
@@ -220,7 +235,11 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
         }
     }, []);
 
+    const clearReagreementResult = useCallback(() => setReagreementResult(null), []);
+
     return {
+        reagreementResult,
+        clearReagreementResult,
         transactionData,
         isLoading,
         handleRefresh,

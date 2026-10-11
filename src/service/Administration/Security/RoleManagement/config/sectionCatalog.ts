@@ -25,7 +25,7 @@ const SECTION_CATALOG: [string, string[]][] = [
     'EMI Chart', 'Saakh Score - Member Health', 'Saakh Score', 'FD/RD/SB Entry', 'Loan Entry',
   ]],
   ['Transaction', [
-    'Loan Application', 'Loan Scrutiny / Sanction', 'Loan Payment', 'Loan Repayment', 'Loan Early Closure',
+    'Loan Application', 'Loan Scrutiny / Sanction', 'Loan Payment', 'Loan Repayment', 'Loan Early Closure', 'Loan Re-agreement',
     'New Loan Disbursed', 'FD / Interest Voucher Posting', 'FD Withdrawl / Int. Payment',
     'FD Withdrawal / Int. Payment', 'RD A/c Opening', 'Pass RD A/C', 'Saving A/c Opening',
     'Saving [Receipt -- Payment]', 'Saving Receipt Payment', 'Journal / Transfer Entry',

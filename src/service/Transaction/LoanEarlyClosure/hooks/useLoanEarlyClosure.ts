@@ -13,6 +13,10 @@ export interface ActiveLoan {
      *  either by a real-time consolidation (PassTransactionService) or by
      *  legacy migration replay. null while the loan is still open/standalone. */
     consolidatedIntoLoancaseno: string | null;
+    /** What the member's loan account in the ledger says is owed. */
+    ledgerBalance?: number;
+    /** The loan record still lists this case as open, but the ledger says the account is repaid. */
+    ledgerShowsRepaid?: boolean;
 }
 
 export interface ConsolidationHistoryEntry {

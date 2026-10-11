@@ -163,6 +163,7 @@ export const ROUTES = {
     DATABASE_BACKUP: '/utility/database-backup',
     UPDATE_SAVING_INTEREST: '/utility/update-saving-interest',
     INTEREST_RECEIVABLE_RECEIVED_STATEMENT: '/utility/interest-receivable-received-statement',
+    SUPPORT_DESK: '/utility/support-desk',
 
     // Help
     ABOUT: '/help/about',

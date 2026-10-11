@@ -14,6 +14,7 @@ import {
     RefreshCw,
 } from 'lucide-react';
 import { LoanSanctionHookReturn } from '../interface/LoanSanctionInterfaces';
+import ReagreementQuotePanel from '@/components/shared/loan/ReagreementQuotePanel';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 
@@ -25,6 +26,9 @@ const Fact: React.FC<{ label: string; tone?: string; span2?: boolean; children: 
 );
 
 const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
+    reagreement,
+    raQuote,
+    raQuoteLoading,
     loanCases,
     selectedLoanCase,
     isLoadingCases,
@@ -44,7 +48,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
     usePageToolbarActions({
         onSave: handleSanctionSave,
         saveLabel: isSaving ? 'Processing...' : 'Sanction',
-        saveEnabled: !!selectedLoanCase && !isSaving,
+        saveEnabled: !!selectedLoanCase && !isSaving && (!reagreement || !!raQuote?.valid),
     });
 
     const surety = (n: 1 | 2) => {
@@ -75,14 +79,14 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
             {/* ── Header ── */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Loan Sanction Console</h1>
+                    <h1 className="aw-title">Loan Sanction Console{reagreement && <span className="aw-pill tone-warning" style={{ marginLeft: 10 }}>RE-AGREEMENT</span>}</h1>
                     <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <ShieldCheck size={12} /> Executive Authority
                     </p>
                 </div>
                 <div className="aw-actions">
                     <span className="aw-pill">{loanCases.length} pending</span>
-                    <button type="button" onClick={handleSanctionSave} disabled={!selectedLoanCase || isSaving} className="aw-btn aw-btn-primary">
+                    <button type="button" onClick={handleSanctionSave} disabled={!selectedLoanCase || isSaving || (!!reagreement && !raQuote?.valid)} className="aw-btn aw-btn-primary">
                         {isSaving ? <RefreshCw size={13} className="aw-spin" /> : <CheckCircle size={13} />}
                         {isSaving ? 'Processing...' : 'Sanction'}
                     </button>
@@ -114,7 +118,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                             listHeight={400}
                             options={loanCases.map(loan => ({
                                 value: loan.loanCaseNo,
-                                label: `${loan.loanCaseNo} - ${loan.memberName} (${loan.loanType}) | ${formatCurrency(loan.appliedAmount)}`,
+                                label: `${loan.loanCaseNo} - ${loan.memberName} (${loan.loanType}) | ${formatCurrency(loan.appliedAmount)}${loan.applicationKind === 'REAGREEMENT' ? '  [RE-AGREEMENT]' : ''}`,
                             }))}
                         />
                     </section>
@@ -160,7 +164,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
 
                             {/* ── Right: sanction controls ── */}
                             <div className="aw-stack" style={{ minWidth: 0 }}>
-                                <section className="aw-card">
+                                {!reagreement && (<section className="aw-card">
                                     <div className="aw-card-head">
                                         <h2 className="aw-card-title">Rules</h2>
                                         <span className="aw-label" style={{ marginLeft: 'auto', marginBottom: 0 }}>Amount</span>
@@ -181,7 +185,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                                             <span className="aw-row-value" style={{ color: 'var(--aw-danger)' }}>{applied10}</span>
                                         </label>
                                     </div>
-                                </section>
+                                </section>)}
 
                                 <section className="aw-card">
                                     <div className="aw-card-head">
@@ -190,9 +194,10 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                                     </div>
                                     <div className="aw-stack">
                                         <div>
-                                            <label className="aw-label" htmlFor="ls-amt">Sanction Amount</label>
+                                            <label className="aw-label" htmlFor="ls-amt">{reagreement ? 'Principal carried over (locked)' : 'Sanction Amount'}</label>
                                             <div className="aw-input-wrap has-action">
                                                 <input id="ls-amt" className="aw-input" style={{ color: 'var(--aw-success)', fontWeight: 700 }} value={sanctionDetails.sanctionedAmount}
+                                                    readOnly={!!reagreement}
                                                     onChange={(e) => updateSanctionField('sanctionedAmount', e.target.value)} />
                                                 <span className="aw-meta" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>INR</span>
                                             </div>
@@ -216,22 +221,33 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                                             </div>
                                             <div>
                                                 <label className="aw-label" htmlFor="ls-pen">Penalty %</label>
-                                                <input id="ls-pen" className="aw-input" style={{ color: 'var(--aw-danger)' }} value={sanctionDetails.penalRate} onChange={(e) => updateSanctionField('penalRate', e.target.value)} />
+                                                <input id="ls-pen" className="aw-input" style={{ color: 'var(--aw-danger)' }} value={sanctionDetails.penalRate} readOnly={!!reagreement} onChange={(e) => updateSanctionField('penalRate', e.target.value)} />
                                             </div>
                                         </div>
 
                                         <div style={{ paddingTop: 'var(--aw-gap)', borderTop: '1px solid var(--aw-border)' }} className="aw-stack">
                                             <div>
                                                 <label className="aw-label" htmlFor="ls-emi">Installment Amt</label>
-                                                <input id="ls-emi" className="aw-input" value={sanctionDetails.installmentAmount} onChange={(e) => updateSanctionField('installmentAmount', e.target.value)} />
+                                                <input id="ls-emi" className="aw-input" value={sanctionDetails.installmentAmount} readOnly={!!reagreement} onChange={(e) => updateSanctionField('installmentAmount', e.target.value)} />
                                             </div>
                                             <div>
                                                 <label className="aw-label" htmlFor="ls-int">Total Interest</label>
-                                                <input id="ls-int" className="aw-input" style={{ color: 'var(--aw-success)' }} value={sanctionDetails.interestAmount} onChange={(e) => updateSanctionField('interestAmount', e.target.value)} />
+                                                <input id="ls-int" className="aw-input" style={{ color: 'var(--aw-success)' }} value={sanctionDetails.interestAmount} readOnly={!!reagreement} onChange={(e) => updateSanctionField('interestAmount', e.target.value)} />
                                             </div>
                                         </div>
                                     </div>
                                 </section>
+
+                                {reagreement && (
+                                    <section className="aw-card aw-fade-in">
+                                        <div className="aw-card-head">
+                                            <span className="aw-card-icon"><FileText size={14} /></span>
+                                            <h2 className="aw-card-title">Re-agreement {reagreement.reagreementNo} — calculated by the server</h2>
+                                        </div>
+                                        <p className="aw-meta" style={{ marginBottom: 8 }}>Case #{reagreement.oldLoanCaseNo} → new case #{reagreement.newLoanCaseNo}. Change the tenure or rate above; installment and interest are recalculated automatically. No new money is paid out.</p>
+                                        <ReagreementQuotePanel quote={raQuote} loading={raQuoteLoading} hideSchedule />
+                                    </section>
+                                )}
                             </div>
                         </div>
                     )}

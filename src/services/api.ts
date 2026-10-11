@@ -15,6 +15,30 @@ function newRequestId(): string {
   return `web-${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}`;
 }
 
+/** PC name / MAC / app version of this machine, sent on every request so the backend's
+ *  Telegram alerts can say which PC a login or crash came from. Resolved once; empty in a
+ *  plain browser. Header values must be printable ASCII or fetch() rejects the request. */
+let clientHeadersPromise: Promise<Record<string, string>> | null = null;
+function getClientHeaders(): Promise<Record<string, string>> {
+  if (!clientHeadersPromise) {
+    clientHeadersPromise = (async () => {
+      try {
+        const info = await (globalThis as any).window?.electronAPI?.getClientInfo?.();
+        if (!info) return {};
+        const ascii = (v: unknown) => String(v ?? '').replace(/[^\x20-\x7E]/g, '?').slice(0, 60);
+        return {
+          'X-Client-Host': ascii(info.hostname),
+          'X-Client-Mac': ascii(info.mac),
+          'X-Client-Version': ascii(info.version),
+        };
+      } catch {
+        return {};
+      }
+    })();
+  }
+  return clientHeadersPromise;
+}
+
 /** Returns true once the server URL has been configured (used by App startup guard) */
 export async function isServerConfigured(): Promise<boolean> {
   const url = await getApiBaseUrl();
@@ -98,11 +122,14 @@ class ApiService {
       ? setTimeout(() => controller.abort(), timeoutMs)
       : null;
 
+    const clientHeaders = await getClientHeaders();
+
     const config: RequestInit = {
       headers: {
         ...(!isFormData && { 'Content-Type': 'application/json' }),
         ...(currentToken && { Authorization: `Bearer ${currentToken}` }),
         'X-Request-Id': requestId,
+        ...clientHeaders,
         ...fetchOptions.headers,
       },
       ...fetchOptions,

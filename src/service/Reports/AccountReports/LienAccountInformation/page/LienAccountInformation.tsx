@@ -11,7 +11,7 @@ interface LienItem {
   memberNo: string;
   memberName: string;
   loanCaseNo: string;
-  fdrdAccountNumber: string;
+  lienAmount: number;
   lienFromDate: string;
 }
 
@@ -23,6 +23,7 @@ const col = (s: string, w: number, align: 'l' | 'r' = 'l') =>
   align === 'l' ? s.substring(0, w).padEnd(w) : s.substring(0, w).padStart(w);
 
 const fmtDate = (d?: string) => (d ? dayjs(d).format('DD-MMM-YYYY') : '---');
+const fmtAmt = (n: number) => (Number(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const buildReportText = (data: LienItem[]): string => {
   const lines: string[] = [];
@@ -36,12 +37,14 @@ const buildReportText = (data: LienItem[]): string => {
   lines.push(rl());
   lines.push('');
 
-  // Header matching legacy: MB No, Member Name, Loan A/c, FD A/c, Lien Date
+  // Legacy layout: MB No, Member Name, Loan A/c, <deposit>, Lien Date. The old "FD A/c"
+  // column is now "RD Locked": the amount of the member's RD held as security for the loan.
   lines.push(
     col('MB No', 12) +
     col('Member Name', 28) +
-    col('Loan A/c', 14) +
-    col('FD A/c', 18) +
+    col('Loan A/c', 12) +
+    col('RD Locked (Rs.)', 18, 'r') +
+    '  ' +
     col('Lien Date', 14)
   );
   lines.push(rl());
@@ -52,12 +55,18 @@ const buildReportText = (data: LienItem[]): string => {
     data.forEach(item => {
       lines.push(
         col(String(item.memberNo), 12) +
-        col(item.memberName, 28) +
-        col(String(item.loanCaseNo), 14) +
-        col(item.fdrdAccountNumber || '', 18) +
+        col(item.memberName, 26).padEnd(28) +
+        col(String(item.loanCaseNo), 12) +
+        col(fmtAmt(item.lienAmount), 18, 'r') +
+        '  ' +
         col(fmtDate(item.lienFromDate), 14)
       );
     });
+    lines.push(rl());
+    lines.push(
+      col('Total RD locked', 52) +
+      col(fmtAmt(data.reduce((sum, item) => sum + (Number(item.lienAmount) || 0), 0)), 18, 'r')
+    );
   }
 
   lines.push(rl());

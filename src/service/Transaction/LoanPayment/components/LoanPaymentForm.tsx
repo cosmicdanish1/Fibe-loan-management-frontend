@@ -12,7 +12,7 @@ import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 
 const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
-    formData, modalData, loanCases, isLoadingCases,
+    reagreement, formData, modalData, loanCases, isLoadingCases,
     actualAmount, bankBalance, totalReceipt, totalPayment,
     data, headList, bankList,
     updateField, updateModalField, handleLoanCaseChange,
@@ -28,6 +28,8 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
     // showed ₹166.67 here vs the ₹224.98 actually charged) — mirror the same formula so
     // the preview matches what will actually be posted.
     const installmentAmt = (() => {
+        // A re-agreement's EMI is calculated by the server (it includes the carried closure interest and delay interest)
+        if (reagreement) return Number(reagreement.neu?.monthlyInstallment || 0).toFixed(2);
         const principal = parseFloat(formData.sanctionLoanAmount) || 0;
         const n = parseInt(formData.noOfInstallments) || 0;
         if (!principal || !n) return '0.00';
@@ -49,9 +51,9 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
             {/* ── Header ── */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Loan Payment</h1>
+                    <h1 className="aw-title">Loan Payment{reagreement && <span className="aw-pill tone-warning" style={{ marginLeft: 10 }}>RE-AGREEMENT</span>}</h1>
                     <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <ShieldCheck size={12} /> Loan Disbursement
+                        <ShieldCheck size={12} /> {reagreement ? 'Loan Re-agreement — collect NR interest and penalty (no payout)' : 'Loan Disbursement'}
                     </p>
                 </div>
                 <div className="aw-actions">
@@ -85,7 +87,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                     options={[
                                         { value: 'RLN', label: 'REGULAR LOAN' },
                                         { value: 'ALN', label: 'EMERGENCY LOAN' },
-                                        { value: 'ELN', label: 'LOAN AGAINST RECOVERY' },
+                                        { value: 'ELN', label: 'LOAN AGAINST RD' },
                                     ]} />
                             </div>
                             <div style={{ flex: 1, minWidth: 240 }}>
@@ -101,7 +103,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                         return String(loan.loanCaseNo).toLowerCase().includes(q)
                                             || String(loan.memberName || '').toLowerCase().includes(q);
                                     }}
-                                    options={loanCases.map(loan => ({ value: loan.loanCaseNo, label: `${loan.loanCaseNo}  ${loan.memberName}` }))} />
+                                    options={loanCases.map(loan => ({ value: loan.loanCaseNo, label: `${loan.loanCaseNo}  ${loan.memberName}${loan.applicationKind === 'REAGREEMENT' ? '  [RE-AGREEMENT]' : ''}` }))} />
                             </div>
                             {formData.noOfInstallments && (
                                 <span className="aw-inline aw-fade-in" style={{ gap: 6 }}>
@@ -114,6 +116,24 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                             </button>
                         </div>
                     </section>
+
+                    {reagreement && (
+                        <section className="aw-card aw-fade-in">
+                            <div className="aw-card-head">
+                                <span className="aw-card-icon"><FileText size={14} /></span>
+                                <h2 className="aw-card-title">Re-agreement {reagreement.reagreementNo}</h2>
+                                <span className="aw-meta" style={{ marginLeft: 'auto' }}>case #{reagreement.oldLoanCaseNo} → new case #{reagreement.newLoanCaseNo}</span>
+                            </div>
+                            <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+                                <div><dt>Principal carried over</dt><dd>₹{Number(reagreement.position?.outstandingPrincipal || 0).toLocaleString('en-IN')}</dd></div>
+                                <div><dt>Old EMI</dt><dd>₹{Number(reagreement.old?.monthlyInstallment || 0).toLocaleString('en-IN')}</dd></div>
+                                <div><dt>New term</dt><dd>{reagreement.neu?.installments} @ {reagreement.neu?.rate}%</dd></div>
+                                <div><dt>New EMI</dt><dd className="aw-strong">₹{Number(reagreement.neu?.monthlyInstallment || 0).toLocaleString('en-IN')}</dd></div>
+                                <div><dt>Closure interest carried</dt><dd>₹{Number(reagreement.position?.apInterest || 0).toLocaleString('en-IN')}</dd></div>
+                            </dl>
+                            <p className="aw-meta" style={{ marginTop: 6 }}>No money is paid out. The member pays only the NR interest and penalty below; save the voucher, then pass it in Pass Transactions. Use “Sanction Loan Amount” to change the tenure or rate (the principal is locked).</p>
+                        </section>
+                    )}
 
                     {/* 2. Member details */}
                     <section className="aw-card">
@@ -140,7 +160,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                             <h2 className="aw-card-title">Mode of Payment</h2>
                             <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
                                 <span className="aw-pill tone-success">
-                                    Actual Amount ₹{(actualAmount > 0 ? actualAmount : parseFloat(formData.sanctionLoanAmount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    {reagreement ? 'Amount to collect' : 'Actual Amount'} ₹{(reagreement ? actualAmount : (actualAmount > 0 ? actualAmount : parseFloat(formData.sanctionLoanAmount) || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </span>
                                 <span className={`aw-pill tone-${(bankBalance || 0) < 0 ? 'danger' : 'muted'}`}>
                                     {formData.paymentMode === 'bank' ? 'Bank Bal' : 'Cash Bal'} ₹{(bankBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -191,10 +211,26 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                 <h2 className="aw-card-title">Transaction Breakdown</h2>
                                 <p className="aw-meta">{data.length} row(s)</p>
                             </div>
-                            <button type="button" onClick={addVoucherEntry} className="aw-btn aw-btn-secondary aw-btn-sm" style={{ marginLeft: 'auto' }}>
-                                <Plus size={12} /> Add Row
-                            </button>
+                            {!reagreement && (
+                                <button type="button" onClick={addVoucherEntry} className="aw-btn aw-btn-secondary aw-btn-sm" style={{ marginLeft: 'auto' }}>
+                                    <Plus size={12} /> Add Row
+                                </button>
+                            )}
                         </div>
+                        {reagreement ? (
+                            <div className="aw-table-wrap" style={{ maxHeight: '40vh' }}>
+                                <table className="aw-table" style={{ minWidth: 560 }}>
+                                    <thead><tr><th className="is-center" style={{ width: 50 }}>Sr</th><th style={{ width: 120 }}>Code</th><th>Name</th><th style={{ width: 110 }}>R/P</th><th className="is-right" style={{ width: 150 }}>Amount</th></tr></thead>
+                                    <tbody>
+                                        {data.length > 0 ? data.map((entry: PaymentEntry, index: number) => (
+                                            <tr key={entry.key || index}><td className="is-muted is-center">{index + 1}</td><td>{entry.code}</td><td>{entry.name}</td><td>{entry.rp}</td><td className="is-right" style={{ fontFamily: 'monospace' }}>{Number(entry.amount).toFixed(2)}</td></tr>
+                                        )) : (
+                                            <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 20 }}><span className="aw-meta">Nothing to collect — no NR interest or penalty is due. The voucher is still created so it can be passed.</span></div></td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
                         <div className="aw-table-wrap" style={{ maxHeight: '40vh' }}>
                             <table className="aw-table" style={{ minWidth: 760 }}>
                                 <thead>
@@ -269,6 +305,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                 </tbody>
                             </table>
                         </div>
+                        )}
                     </section>
 
                     {/* 5. Narration + totals */}

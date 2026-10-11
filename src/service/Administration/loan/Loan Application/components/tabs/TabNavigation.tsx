@@ -11,7 +11,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
   const tabs = [
     { id: 'loan-details' as const, label: 'Loan Details' },
     { id: 'nominee-details' as const, label: 'Nominee Details' },
-    { id: 'loan-against-deposit' as const, label: 'Loan Against Deposit' }
+    { id: 'loan-against-deposit' as const, label: 'Loan Against RD' }
   ];
 
   return (

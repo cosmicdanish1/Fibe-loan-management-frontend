@@ -108,6 +108,8 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
     const [voucherEntries, setVoucherEntries] = useState<PaymentEntry[]>([]);
     const [headList, setHeadList] = useState<{ code: string; name: string }[]>([]);
     const [bankList, setBankList] = useState<{ code: string; name: string }[]>([]);
+    // A re-agreement is not a disbursement: nothing is paid out, only NR interest + penalty are collected.
+    const [reagreement, setReagreement] = useState<any | null>(null);
 
     useEffect(() => {
         const sanctionAmt = parseFloat(formData.sanctionLoanAmount) || 0;
@@ -119,9 +121,9 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
         });
         setTotalReceipt(receipts);
         setTotalPayment(payments);
-        // Actual Amount = Sanction - all deductions (Receipt entries)
-        setActualAmount(sanctionAmt - receipts);
-    }, [voucherEntries, formData.sanctionLoanAmount]);
+        // Actual Amount = Sanction - all deductions (Receipt entries); for a re-agreement it is simply what is collected
+        setActualAmount(reagreement ? receipts : sanctionAmt - receipts);
+    }, [voucherEntries, formData.sanctionLoanAmount, reagreement]);
 
     useEffect(() => {
         fetchPendingLoans();
@@ -342,10 +344,21 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                 // eligibility response itself, so they always match whatever is
                 // actually configured on the Business Rules screen.
                 setVoucherEntries([]);
+                const ra = loanData.applicationKind === 'REAGREEMENT' ? (loanData.reagreement || null) : null;
+                setReagreement(ra);
+                if (ra) {
+                    // Receipts of NR interest and penalty (the server builds the real voucher lines; these are shown read-only)
+                    const raEntries: PaymentEntry[] = [];
+                    // ES-46: per-loan-type child of I1002 (mirrors interestHeadForLoanType on the server)
+                    const raInterestHead = loanData.loanType === 'RLN' ? 'I1013' : loanData.loanType === 'ALN' ? 'I1014' : 'I1002';
+                    if (Number(ra.collect?.nrInterest) > 0) raEntries.push({ key: 'ra-nr', srNo: '1', code: raInterestHead, name: 'NR interest recovered (re-agreement)', rp: 'Receipt', amount: Number(ra.collect.nrInterest) });
+                    if (Number(ra.collect?.penalty) > 0) raEntries.push({ key: 'ra-pen', srNo: String(raEntries.length + 1), code: raInterestHead, name: 'Penalty recovered (re-agreement)', rp: 'Receipt', amount: Number(ra.collect.penalty) });
+                    setVoucherEntries(raEntries);
+                }
                 const memberNo = loanData.memberNo;
                 const loanAmount = parseFloat(sancAmt) || 0;
                 const loanType = loanData.loanType;
-                if (memberNo && loanAmount > 0) {
+                if (!ra && memberNo && loanAmount > 0) {
                     try {
                         const eligResp = await fetch(
                             `${await getApiBaseUrl()}/loans/eligibility/${memberNo}?amount=${loanAmount}&loanType=${loanType}`,
@@ -493,7 +506,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                 rp: 'Payment',
                 amount: sanctionAmt
             };
-            const fullBreakdown = [mainLoanEntry, ...voucherEntries];
+            const fullBreakdown = reagreement ? voucherEntries : [mainLoanEntry, ...voucherEntries];
 
             const voucherData = {
                 loanCaseNo: formData.loanCaseNo,
@@ -502,9 +515,9 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                 bankName: formData.bankName,
                 chequeNo: formData.chequeNo,
                 chequeDate: formData.chequeDate ? formData.chequeDate.format('YYYY-MM-DD') : null,
-                narration: formData.narration || `Loan disbursement for case ${formData.loanCaseNo}`,
+                narration: formData.narration || (reagreement ? `Loan re-agreement for case ${formData.loanCaseNo}` : `Loan disbursement for case ${formData.loanCaseNo}`),
                 breakdown: fullBreakdown,
-                createdBy: 'admin'
+                createdBy: (() => { try { return JSON.parse(localStorage.getItem('user') || '{}')?.username || 'admin'; } catch { return 'admin'; } })()
             };
 
             const endpoint = API_ROUTES.transactions.generateLoanVoucher();
@@ -529,12 +542,14 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
             await showDialog(
                 'info',
                 'electron-react-ts',
-                'Loan Voucher Generated!',
+                reagreement ? 'Re-agreement Voucher Generated!' : 'Loan Voucher Generated!',
                 `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `VOUCHER NO    : ${vNo || '—'}\n` +
                 `LOAN CASE     : ${formData.loanCaseNo}\n` +
                 `MEMBER        : ${formData.memberNo} — ${formData.memberName}\n` +
-                `AMOUNT        : ₹${parseFloat(formData.sanctionLoanAmount).toLocaleString('en-IN')}\n` +
+                (reagreement
+                    ? `PRINCIPAL      : ₹${parseFloat(formData.sanctionLoanAmount).toLocaleString('en-IN')} (carried over, nothing paid out)\nTO COLLECT    : ₹${(actualAmount || 0).toLocaleString('en-IN')} (NR interest + penalty)\n`
+                    : `AMOUNT        : ₹${parseFloat(formData.sanctionLoanAmount).toLocaleString('en-IN')}\n`) +
                 `MODE          : ${formData.paymentMode.toUpperCase()}\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `✓ Voucher staged (status: PENDING)\n` +
@@ -570,6 +585,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                 noOfInstallments: ''
             });
             setVoucherEntries([]);
+            setReagreement(null);
         };
 
         if (skipConfirm) {
@@ -588,6 +604,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
     }, []);
 
     return {
+        reagreement,
         formData,
         modalData,
         loanCases,

@@ -8,10 +8,11 @@ import { LoanEntryHookReturn } from '../interface/LoanEntryInterfaces';
 import MemberField from '@/components/shared/kit/MemberField';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
+// Loan Against RD (ELN) is deliberately not offered: it must be entered through Loan Application so the
+// member's RD gets locked. The server refuses it here as well.
 const LOAN_TYPES = [
     { id: 'ALN', label: 'Emergency Loan (ALN)' },
     { id: 'RLN', label: 'Regular Loan (RLN)' },
-    { id: 'ELN', label: 'Loan Against Recovery (ELN)' },
 ];
 
 const fmtInr = (n: number) => `₹${n.toLocaleString('en-IN')}`;

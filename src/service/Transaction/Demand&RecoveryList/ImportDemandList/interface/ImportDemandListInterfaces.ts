@@ -16,6 +16,8 @@ export interface DemandListItem {
     frs2Amount: number;
     status: 'Valid' | 'Error';
     remarks?: string;
+    /** "Check this" flags (possible old-EMI / new-EMI mix-up). Never blocks a save. */
+    flags?: Array<{ code: string; message: string; loancaseno: string; loantype: string; amount: number }>;
 }
 
 export interface ImportConfig {

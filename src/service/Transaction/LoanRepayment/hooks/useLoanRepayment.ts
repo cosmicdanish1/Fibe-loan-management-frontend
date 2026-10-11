@@ -76,6 +76,7 @@ export const useLoanRepayment = () => {
     const [loading, setLoading] = useState(false);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [flagNotice, setFlagNotice] = useState<string | null>(null);
 
     const updateForm = <K extends keyof RepaymentForm>(key: K, value: RepaymentForm[K]) => {
         setForm(prev => ({ ...prev, [key]: value }));
@@ -85,6 +86,7 @@ export const useLoanRepayment = () => {
         if (!mbno) return;
         setLoading(true);
         setMessage(null);
+        setFlagNotice(null);
         try {
             const base = await getApiBaseUrl();
             const token = localStorage.getItem('accessToken');
@@ -152,6 +154,7 @@ export const useLoanRepayment = () => {
         setDueStatus(null);
         await fetchMemberLoans(mbno);
         await fetchRepaymentHistory(mbno);
+        setFlagNotice(null);
     }, [fetchMemberLoans, fetchRepaymentHistory]);
 
     const handleLoanSelect = useCallback(async (loancaseno: string) => {
@@ -190,6 +193,8 @@ export const useLoanRepayment = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Repayment failed');
             setMessage({ type: 'success', text: data.message });
+            const flag = data.flag ?? data.data?.flag;
+            setFlagNotice(flag?.message ?? null);
             // Refresh loans, due status and history after successful repayment
             await fetchMemberLoans(form.mbno);
             await fetchRepaymentHistory(form.mbno);
@@ -207,6 +212,7 @@ export const useLoanRepayment = () => {
         setDueStatus(null);
         setRepaymentHistory([]);
         setMessage(null);
+        setFlagNotice(null);
     };
 
     return {
@@ -218,6 +224,7 @@ export const useLoanRepayment = () => {
         loading,
         historyLoading,
         message,
+        flagNotice,
         updateForm,
         handleMemberLookup,
         handleLoanSelect,

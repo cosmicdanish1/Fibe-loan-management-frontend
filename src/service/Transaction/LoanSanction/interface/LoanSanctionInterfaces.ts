@@ -10,6 +10,8 @@ export interface LoanCase {
     officeNo: string;
     officeName: string;
     sanctioned?: boolean;
+    /** 'REAGREEMENT' for a loan re-agreement (restructure); 'NEW' for a normal loan application. */
+    applicationKind?: string;
 }
 
 export interface LoanDetails {
@@ -52,6 +54,11 @@ export interface SanctionRules {
 }
 
 export interface LoanSanctionHookReturn {
+    /** Set when the selected case is a re-agreement: principal is locked; tenure and rate are editable. */
+    reagreement: any | null;
+    /** Live server quote for the re-agreement while tenure / rate are edited. */
+    raQuote: import('../../../../services/reagreementApi').ReagreementQuote | null;
+    raQuoteLoading: boolean;
     loanCases: LoanCase[];
     selectedLoanCase: string;
     isLoadingCases: boolean;

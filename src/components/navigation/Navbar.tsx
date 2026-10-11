@@ -127,6 +127,7 @@ const navConfig: NavItem[] = [
       { title: 'Loan Payment', action: 'LOAN_PAYMENT' },
       { title: 'Loan Repayment', action: 'LOAN_REPAYMENT' },
       { title: 'Loan Early Closure', action: 'LOAN_EARLY_CLOSURE' },
+      { title: 'Loan Re-agreement', action: 'LOAN_REAGREEMENT' },
       { title: 'Compulsory Deposit Transaction', action: 'COMPULSORY_DEPOSIT_TRANSACTION' },
       { title: 'Member Balance Transfer', action: 'MEMBER_BALANCE_TRANSFER' },
       { title: 'Pass Transactions', action: 'PASS_TRANSACTIONS' },
@@ -230,6 +231,7 @@ const navConfig: NavItem[] = [
           { title: '6. Loan Contributions Register', action: 'LOAN_CONTRIBUTIONS_REGISTER' },
           { title: '7. Lien Account Information', action: 'LIEN_ACCOUNT_INFORMATION' },
           { title: '8. Loan Consolidation Chain', action: 'LOAN_CONSOLIDATION_CHAIN' },
+          { title: '9. Loan Re-agreement History', action: 'LOAN_REAGREEMENT_HISTORY' },
         ]
       },
       { title: '13. Pass Book Printing', action: 'PASS_BOOK_PRINTING' },
@@ -254,6 +256,7 @@ const navConfig: NavItem[] = [
       { title: 'Update Saving Intt.', action: 'UPDATE_SAVING_INTT' },
       { title: 'Interest Receivable/Received Statement', action: 'INTEREST_RECEIVABLE_RECEIVED_STATEMENT' },
       { title: 'Communication Hub', action: 'COMMUNICATION_HUB' },
+      { title: 'Support Desk', action: 'SUPPORT_DESK' },
     ]
   },
   {

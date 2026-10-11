@@ -609,6 +609,25 @@ ipcMain.on('app-quit-force', () => {
 //   4. null / unconfigured — client PC with no config → show ServerSetup screen
 ipcMain.handle('get-app-version', () => app.getVersion());
 
+// PC name + MAC of the main network adapter, sent to the backend so alerts can say WHICH
+// machine logged in or crashed. Self-reported: for recognising a PC, never for security.
+ipcMain.handle('get-client-info', () => {
+  const virtual = /vmware|virtual|vbox|vethernet|hyper-v|loopback|bluetooth|tailscale|zerotier|docker|wsl/i;
+  let mac = '';
+  try {
+    const nets = os.networkInterfaces();
+    outer: for (const preferReal of [true, false]) {
+      for (const [name, addrs] of Object.entries(nets)) {
+        if (preferReal && virtual.test(name)) continue;
+        for (const a of addrs || []) {
+          if (!a.internal && a.mac && a.mac !== '00:00:00:00:00:00') { mac = a.mac; break outer; }
+        }
+      }
+    }
+  } catch { /* MAC is optional */ }
+  return { hostname: os.hostname(), mac, version: app.getVersion() };
+});
+
 ipcMain.handle('get-server-url', async () => {
   const cfg = readServerConfig();
   if (cfg) {
@@ -847,6 +866,7 @@ const WINDOW_CONFIGS: Record<string, {
   '/utility/database-backup': { title: 'Database BackUp', frameless: false, width: 1200, height: 900 },
   '/utility/update-saving-interest': { title: 'Update Saving Intt.', frameless: false, width: 800, height: 600 },
   '/utility/interest-receivable-received-statement': { title: 'Interest Receivable/Received Statement', frameless: false, width: 1200, height: 850 },
+  '/utility/support-desk': { title: 'Support Desk', frameless: false, width: 1100, height: 780, resizable: true, singleton: true },
 
   // ===== HELP SECTION =====
 

@@ -158,6 +158,7 @@ const DatabaseBackup = lazy(() => import('../service/Utility/DatabaseBackup/page
 const UpdateSavingInterest = lazy(() => import('../service/Utility/UpdateSavingInterest/page/UpdateSavingInterest'));
 const InterestReceivableReceivedStatement = lazy(() => import('../service/Utility/InterestReceivableReceivedStatement/page/InterestReceivableReceivedStatement'));
 const CommunicationCenter = lazy(() => import('../service/Utility/CommunicationCenter/page/CommunicationCenter'));
+const SupportDesk = lazy(() => import('../service/Utility/SupportDesk/page/SupportDesk'));
 
 // Lazy load Help components
 const About = lazy(() => import('../service/Help/About/page/About'));
@@ -180,6 +181,8 @@ const JournalTransferEntry = lazy(() => import('../service/Transaction/JournalTr
 const LoanPayment = lazy(() => import('../service/Transaction/LoanPayment/page/LoanPayment'));
 const LoanRepayment = lazy(() => import('../service/Transaction/LoanRepayment/page/LoanRepaymentPage'));
 const LoanEarlyClosure = lazy(() => import('../service/Transaction/LoanEarlyClosure/page/LoanEarlyClosurePage'));
+const LoanReagreement = lazy(() => import('../service/Transaction/LoanReagreement/page/LoanReagreementPage'));
+const LoanReagreementHistory = lazy(() => import('../service/Reports/LoanReagreementHistory/page/LoanReagreementHistoryPage'));
 const LoanConsolidationChain = lazy(() => import('../service/Reports/LoanConsolidationChain/page/LoanConsolidationChainPage'));
 const LoanSanction = lazy(() => import('../service/Transaction/LoanSanction/page/LoanSanction'));
 const CompulsoryDepositTransaction = lazy(() => import('../service/Transaction/CompulsoryDepositTransaction/page/CompulsoryDepositTransaction'));
@@ -401,6 +404,7 @@ const App: React.FC = () => {
                   <Route path="/utility/update-saving-interest" element={<UpdateSavingInterest />} />
                   <Route path="/utility/interest-receivable-received-statement" element={<InterestReceivableReceivedStatement />} />
                   <Route path="/utility/communication-center" element={<CommunicationCenter />} />
+                  <Route path="/utility/support-desk" element={<SupportDesk />} />
 
                   {/* Help Routes */}
                   <Route path="/help/about" element={<About />} />
@@ -448,6 +452,8 @@ const App: React.FC = () => {
                   <Route path="/transaction/loan-payment" element={<LoanPayment />} />
                   <Route path="/transaction/loan-repayment" element={<LoanRepayment />} />
                   <Route path="/transaction/loan-early-closure" element={<LoanEarlyClosure />} />
+                  <Route path="/transaction/loan-reagreement" element={<LoanReagreement />} />
+                  <Route path="/reports/loan-reagreement-history" element={<LoanReagreementHistory />} />
                   <Route path="/reports/loan-consolidation-chain" element={<LoanConsolidationChain />} />
                   <Route path="/loan-sanction" element={<LoanSanction />} />
                   <Route path="/transaction/compulsory-deposit" element={<CompulsoryDepositTransaction />} />

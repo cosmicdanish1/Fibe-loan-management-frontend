@@ -120,6 +120,18 @@ export interface EarlyClosureProtection {
  * All four are resolved at disbursement and frozen onto the loan, so editing
  * them never reprices a loan that has already gone out.
  */
+/** Optional guard-rails for loan re-agreements (restructures). 0 / off = no limit; every default is permissive. */
+export interface LoanReagreementRules {
+  minInstallmentsPaid: number;
+  minOutstanding: number;
+  maxTenure: number;
+  minRate: number;
+  maxRate: number;
+  allowRateIncrease: boolean;
+  maxPerLoan: number;
+  allowBackdate: boolean;
+}
+
 export interface LoanSlotDelay {
   slot1DelayMonths: number;
   slot2DelayMonths: number;
@@ -142,6 +154,15 @@ export interface LoanSlotDelay {
  */
 export interface LoanRounding {
   mode: 'NONE' | 'NEAREST' | 'UP' | 'DOWN';
+}
+
+/**
+ * "Close to the old EMI" range, in rupees. After a consolidation, payroll keeps deducting the old
+ * loan's EMI for a month or two. A payment / demand-file amount within this range of the old EMI
+ * (but not equal) gets a "check this" flag. Equal amounts are always matched within ₹1.
+ */
+export interface OldEmiFlag {
+  tolerance: number;
 }
 
 /**
@@ -203,7 +224,9 @@ export interface BusinessRulesData {
   fundManagement: FundManagement;
   earlyClosureProtection: EarlyClosureProtection;
   loanSlotDelay: LoanSlotDelay;
+  loanReagreement: LoanReagreementRules;
   loanRounding: LoanRounding;
+  oldEmiFlag: OldEmiFlag;
   rdSystem: RdSystemRules;
 }
 
@@ -235,7 +258,7 @@ const initialData: BusinessRulesData = {
   // Grain Loan mapped as Medium Term  (legacy: 25,000 / 13% / 10 / 0 gr)
   mediumTermLoan: { maxAmount: 25000, rate: 13, numberOfInstallments: 10, numberOfGuarantors: 0 },
   // Emergency Loan  (legacy: 300,000 / 12% / 80 / 0 gr)
-  emergencyLoan: { maxAmount: 300000, rate: 12, numberOfInstallments: 80, numberOfGuarantors: 0, penalRate: 2, graceDays: 0, sameMonthPenalPercent: 1, sameMonthPenalDivisor: 4 },
+  emergencyLoan: { maxAmount: 300000, rate: 9, numberOfInstallments: 80, numberOfGuarantors: 0, penalRate: 2, graceDays: 0, sameMonthPenalPercent: 1, sameMonthPenalDivisor: 4 },
   // Loan On Deposit  (legacy: 500,000 / 2% / 50 / 0 gr)
   loanOnDeposit: { maxAmount: 500000, rate: 2, numberOfInstallments: 50, numberOfGuarantors: 0 },
   // Loan Against Deposits  (legacy: shareValue=0, FD=90%, overallLimit=500000, basicPay=0)
@@ -276,9 +299,23 @@ const initialData: BusinessRulesData = {
     slot1StartDay: 25,
     slot1EndDay: 5,
   },
+  // Re-agreement limits — all permissive by default (the sanctioning authority decides).
+  loanReagreement: {
+    minInstallmentsPaid: 0,
+    minOutstanding: 0,
+    maxTenure: 0,
+    minRate: 0,
+    maxRate: 0,
+    allowRateIncrease: true,
+    maxPerLoan: 0,
+    allowBackdate: false,
+  },
   // Whole-rupee half-up, matching the society's manual/legacy closure worksheets.
   loanRounding: {
     mode: 'NEAREST',
+  },
+  oldEmiFlag: {
+    tolerance: 10,
   },
   // Placeholder thresholds pending the society's final policy numbers — not
   // authoritative, just defaults so the screen has something sensible to
@@ -442,8 +479,21 @@ export const useBusinessRules = () => {
             slot1StartDay: num(d.RULE_LOAN_SLOT1_START_DAY, def.loanSlotDelay.slot1StartDay),
             slot1EndDay: num(d.RULE_LOAN_SLOT1_END_DAY, def.loanSlotDelay.slot1EndDay),
           },
+          loanReagreement: {
+            minInstallmentsPaid: num(d.RULE_REAGREEMENT_MIN_INSTALLMENTS_PAID, def.loanReagreement.minInstallmentsPaid),
+            minOutstanding: num(d.RULE_REAGREEMENT_MIN_OUTSTANDING, def.loanReagreement.minOutstanding),
+            maxTenure: num(d.RULE_REAGREEMENT_MAX_TENURE, def.loanReagreement.maxTenure),
+            minRate: num(d.RULE_REAGREEMENT_MIN_RATE, def.loanReagreement.minRate),
+            maxRate: num(d.RULE_REAGREEMENT_MAX_RATE, def.loanReagreement.maxRate),
+            allowRateIncrease: bool(d.RULE_REAGREEMENT_ALLOW_RATE_INCREASE, def.loanReagreement.allowRateIncrease),
+            maxPerLoan: num(d.RULE_REAGREEMENT_MAX_PER_LOAN, def.loanReagreement.maxPerLoan),
+            allowBackdate: bool(d.RULE_REAGREEMENT_ALLOW_BACKDATE, def.loanReagreement.allowBackdate),
+          },
           loanRounding: {
             mode: str(d.RULE_LOAN_ROUNDING_MODE, def.loanRounding.mode) as LoanRounding['mode'],
+          },
+          oldEmiFlag: {
+            tolerance: num(d.RULE_LOAN_OLD_EMI_FLAG_TOLERANCE, def.oldEmiFlag.tolerance),
           },
           rdSystem: {
             minMonthlyAmount: num(d.RULE_RD_MIN_MONTHLY_AMOUNT, def.rdSystem.minMonthlyAmount),
@@ -568,7 +618,16 @@ export const useBusinessRules = () => {
         RULE_LOAN_SLOT2_DELAY_MONTHS: currentData.loanSlotDelay.slot2DelayMonths,
         RULE_LOAN_SLOT1_START_DAY: currentData.loanSlotDelay.slot1StartDay,
         RULE_LOAN_SLOT1_END_DAY: currentData.loanSlotDelay.slot1EndDay,
+        RULE_REAGREEMENT_MIN_INSTALLMENTS_PAID: currentData.loanReagreement.minInstallmentsPaid,
+        RULE_REAGREEMENT_MIN_OUTSTANDING: currentData.loanReagreement.minOutstanding,
+        RULE_REAGREEMENT_MAX_TENURE: currentData.loanReagreement.maxTenure,
+        RULE_REAGREEMENT_MIN_RATE: currentData.loanReagreement.minRate,
+        RULE_REAGREEMENT_MAX_RATE: currentData.loanReagreement.maxRate,
+        RULE_REAGREEMENT_ALLOW_RATE_INCREASE: currentData.loanReagreement.allowRateIncrease,
+        RULE_REAGREEMENT_MAX_PER_LOAN: currentData.loanReagreement.maxPerLoan,
+        RULE_REAGREEMENT_ALLOW_BACKDATE: currentData.loanReagreement.allowBackdate,
         RULE_LOAN_ROUNDING_MODE: currentData.loanRounding.mode,
+        RULE_LOAN_OLD_EMI_FLAG_TOLERANCE: currentData.oldEmiFlag.tolerance,
 
         // RD system — built from scratch, own tab
         RULE_RD_MIN_MONTHLY_AMOUNT: currentData.rdSystem.minMonthlyAmount,

@@ -122,12 +122,16 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
                         `TOTAL RECORDS : ${summary.total || rows.length}\n` +
                         `VALID         : ${summary.valid ?? rows.filter((r: any) => r.status === 'Valid').length}\n` +
                         `ERRORS        : ${summary.errors ?? rows.filter((r: any) => r.status === 'Error').length}\n` +
+                        (summary.flagged > 0 ? `NEED CHECKING : ${summary.flagged} (possible old EMI / new EMI mix-up)\n` : '') +
                         `COLUMNS       : ${(summary.columns || []).join(', ') || '—'}\n` +
                         `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━` +
-                        (warnings.length > 0 ? `\n\n⚠ WARNINGS:\n${warnings.map((w: string) => `• ${w}`).join('\n')}` : '');
+                        (warnings.length > 0 ? `\n\n⚠ WARNINGS:\n${warnings.map((w: string) => `• ${w}`).join('\n')}` : '') +
+                        (summary.flagged > 0
+                            ? `\n\n⚠ PLEASE CHECK (first 8):\n${rows.filter((r: any) => r.flags?.length).slice(0, 8).map((r: any) => `• Member ${r.memberId}: ${r.flags[0].message}`).join('\n')}`
+                            : '');
 
                     await showDialog(
-                        warnings.length > 0 ? 'warning' : 'info',
+                        (warnings.length > 0 || summary.flagged > 0) ? 'warning' : 'info',
                         'electron-react-ts',
                         `Import Preview — ${rows.length} Records Loaded`,
                         msg
@@ -188,7 +192,8 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
                 return;
             }
 
-            const skippedMsg = data.skipped > 0 ? `\nSKIPPED       : ${data.skipped} (already exist)\n` : '';
+            const skippedMsg = (data.skipped > 0 ? `\nSKIPPED       : ${data.skipped} (already exist)\n` : '')
+                + (data.flagged > 0 ? `\nNEED CHECKING : ${data.flagged} row(s) flagged - see the Loan Position notices on Loan Repayment\n` : '');
 
             await showDialog(
                 'info',

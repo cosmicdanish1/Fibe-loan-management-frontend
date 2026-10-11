@@ -72,7 +72,7 @@ export const formatDate = (date: string): string => {
   
   export const getLoanTypeOptions = () => [
     { value: 'ALN', label: 'EMERGENCY LOAN' },
-    { value: 'ELN', label: 'LOAN AGAINST RECOVERY' },
+    { value: 'ELN', label: 'LOAN AGAINST RD' },
     { value: 'RLN', label: 'REGULAR LOAN' }
   ];
   

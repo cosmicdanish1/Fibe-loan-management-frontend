@@ -10,7 +10,7 @@ import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLo
 const { Option } = Select;
 
 const LOAN_TYPE_LABEL: Record<string, string> = {
-    RLN: 'Regular Loan', ALN: 'Emergency Loan', ELN: 'Loan Against Recovery',
+    RLN: 'Regular Loan', ALN: 'Emergency Loan', ELN: 'Loan Against RD',
 };
 const MONTHS = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 

@@ -52,6 +52,7 @@ const validReceiveChannels = [
 
 const validInvokeChannels = [
   'get-app-version',
+  'get-client-info',
   'open-external',
   'get-window-states',
   'print-content',
@@ -158,6 +159,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // App info
   getAppVersion: () => secureIpcRenderer.invoke('get-app-version'),
+  getClientInfo: () => secureIpcRenderer.invoke('get-client-info'),
 
   // Identifies THIS launch of the app. Changes every time the app restarts, so
   // a session stamped with an older id is treated as expired.

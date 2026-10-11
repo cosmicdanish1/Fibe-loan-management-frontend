@@ -8,7 +8,7 @@ import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 const LOAN_TYPE_OPTIONS = [
   { value: 'RLN', label: 'RLN - Regular Loan' },
   { value: 'ALN', label: 'ALN - Emergency Loan' },
-  { value: 'ELN', label: 'ELN - Loan Against Recovery' },
+  { value: 'ELN', label: 'ELN - Loan Against RD' },
 ];
 
 const ChangeLoanSuretyForm: React.FC = () => {

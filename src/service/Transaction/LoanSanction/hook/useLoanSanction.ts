@@ -11,6 +11,7 @@ import {
     LoanSanctionHookReturn
 } from '../interface/LoanSanctionInterfaces';
 import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { reagreementApi, ReagreementQuote } from '../../../../services/reagreementApi';
 
 export const useLoanSanction = (): LoanSanctionHookReturn => {
     const [loanCases, setLoanCases] = useState<LoanCase[]>([]);
@@ -18,6 +19,10 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
     const [isLoadingCases, setIsLoadingCases] = useState(false);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    // A re-agreement is sanctioned like a loan, but its principal is locked and the figures come from the server.
+    const [reagreement, setReagreement] = useState<any | null>(null);
+    const [raQuote, setRaQuote] = useState<ReagreementQuote | null>(null);
+    const [raQuoteLoading, setRaQuoteLoading] = useState(false);
 
     // Loan details state (read-only)
     const [loanDetails, setLoanDetails] = useState<LoanDetails>({
@@ -69,8 +74,37 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         fetchPendingLoanCases();
     }, []);
 
+    // Re-agreement: the server recalculates on every tenure / rate edit (debounced); nothing is computed here
+    useEffect(() => {
+        if (!reagreement) { setRaQuote(null); return; }
+        const n = Number(sanctionDetails.noOfInstallments), r = Number(sanctionDetails.rate);
+        if (!sanctionDetails.noOfInstallments || !sanctionDetails.rate || !Number.isFinite(n) || !Number.isFinite(r)) { setRaQuote(null); return; }
+        let cancelled = false;
+        setRaQuoteLoading(true);
+        const t = setTimeout(async () => {
+            try {
+                const q = await reagreementApi.quote({
+                    mbno: String(reagreement.mbno), loancaseno: String(reagreement.oldLoanCaseNo), loantype: reagreement.loantype,
+                    newInstallments: n, newRate: r, applicationDate: reagreement.applicationDate, reagreementId: reagreement.id,
+                });
+                if (!cancelled) {
+                    setRaQuote(q);
+                    if (q.valid && q.neu) {
+                        setSanctionDetails(prev => ({ ...prev, installmentAmount: String(q.neu!.monthlyInstallment), interestAmount: String(q.neu!.totalInterestForEmi) }));
+                    }
+                }
+            } catch (e: any) {
+                if (!cancelled) { setRaQuote(null); message.error(e.message || 'Could not calculate the re-agreement'); }
+            } finally {
+                if (!cancelled) setRaQuoteLoading(false);
+            }
+        }, 350);
+        return () => { cancelled = true; clearTimeout(t); };
+    }, [reagreement, sanctionDetails.noOfInstallments, sanctionDetails.rate]);
+
     // Auto-calculate installment amount
     useEffect(() => {
+        if (reagreement) return;
         if (sanctionDetails.sanctionedAmount && sanctionDetails.noOfInstallments) {
             const amount = parseFloat(sanctionDetails.sanctionedAmount);
             const installments = parseInt(sanctionDetails.noOfInstallments);
@@ -82,7 +116,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 }));
             }
         }
-    }, [sanctionDetails.sanctionedAmount, sanctionDetails.noOfInstallments]);
+    }, [sanctionDetails.sanctionedAmount, sanctionDetails.noOfInstallments, reagreement]);
 
     const fetchPendingLoanCases = async () => {
         setIsLoadingCases(true);
@@ -98,8 +132,8 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 const result = await response.json();
                 const loans = Array.isArray(result) ? result : (result.data || []);
 
-                // Filter only non-sanctioned loans
-                const pendingLoans = loans.filter((loan: any) => !loan.sanctioned);
+                // Filter only non-sanctioned loans (a re-agreement stays listed so its tenure / rate can be changed)
+                const pendingLoans = loans.filter((loan: any) => !loan.sanctioned || loan.applicationKind === 'REAGREEMENT');
 
                 setLoanCases(pendingLoans);
                 console.log(`✅ Found ${pendingLoans.length} pending loan cases`);
@@ -120,6 +154,8 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
 
         // Reset rule acknowledgements whenever the selected case changes
         setRules({ sharesBalance: false, tenPercentOfLoan: false });
+        setReagreement(null);
+        setRaQuote(null);
 
         if (!caseNo) {
             // Reset
@@ -208,6 +244,18 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 // NOTE: loan_pending has no rate/penalRate columns, so those keep
                 // their editable defaults and are entered at sanction time.
                 const recordInstallments = parseInt(String(details.noOfInstallments || ""));
+                const ra = details.applicationKind === 'REAGREEMENT' ? (details.reagreement || null) : null;
+                if (ra) {
+                    // principal locked to the outstanding principal; tenure / rate start from the application
+                    setSanctionDetails(prev => ({
+                        ...prev,
+                        sanctionedAmount: String(ra.position?.outstandingPrincipal ?? details.appliedAmount ?? ""),
+                        noOfInstallments: String(ra.neu?.installments ?? recordInstallments),
+                        rate: String(ra.neu?.rate ?? details.rate ?? prev.rate),
+                        penalRate: String(details.penalRate ?? prev.penalRate),
+                    }));
+                    setReagreement(ra);
+                } else {
                 setSanctionDetails(prev => ({
                     ...prev,
                     sanctionedAmount: String(details.appliedAmount || ""),
@@ -215,6 +263,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                         ? String(recordInstallments)
                         : prev.noOfInstallments,
                 }));
+                }
 
             } else {
                 throw new Error('Failed to load loan details');
@@ -260,6 +309,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 rate: parseFloat(sanctionDetails.rate),
                 penalRate: parseFloat(sanctionDetails.penalRate),
                 installmentAmount: parseFloat(sanctionDetails.installmentAmount),
+                sanctionedBy: (() => { try { return JSON.parse(localStorage.getItem('user') || '{}')?.username || undefined; } catch { return undefined; } })(),
             };
 
             console.log('💾 Saving sanction data:', sanctionData);
@@ -282,7 +332,9 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 const result = await response.json();
                 console.log('✅ Sanction saved successfully:', result);
 
-                message.success(`✅ Loan Case ${selectedLoanCase} sanctioned successfully!`);
+                message.success(reagreement
+                    ? `✅ Re-agreement case ${selectedLoanCase} sanctioned: ${sanctionDetails.noOfInstallments} installments @ ${sanctionDetails.rate}%. Continue in Loan Payment.`
+                    : `✅ Loan Case ${selectedLoanCase} sanctioned successfully!`);
 
                 // Send success message to parent window if opened from loan payment
                 if ((window as any).electronAPI) {
@@ -298,10 +350,12 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
 
                 // Reset selection
                 setSelectedLoanCase("");
+                setReagreement(null);
+                setRaQuote(null);
 
             } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to save sanction');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(Array.isArray(errorData.message) ? errorData.message.join(', ') : (errorData.message || 'Failed to save sanction'));
             }
         } catch (error: any) {
             console.error('❌ Error saving sanction:', error);
@@ -323,6 +377,9 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
     }, []);
 
     return {
+        reagreement,
+        raQuote,
+        raQuoteLoading,
         loanCases,
         selectedLoanCase,
         isLoadingCases,

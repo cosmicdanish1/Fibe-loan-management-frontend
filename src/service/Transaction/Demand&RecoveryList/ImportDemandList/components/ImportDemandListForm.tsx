@@ -9,7 +9,7 @@ import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const YEARS = Array.from({ length: 30 }, (_, i) => (2020 + i).toString());
 
-const HEADERS = ['Period', 'Branch', 'Member No', 'Personal No', 'Member Name', 'Total Amount', 'RD Amount', 'Regular Loan', 'Emergency Loan', 'Loan Interest', 'IFRS Amt', 'FRS 1 Amt', 'Status'];
+const HEADERS = ['Period', 'Branch', 'Member No', 'Personal No', 'Member Name', 'Total Amount', 'RD Amount', 'Regular Loan', 'Emergency Loan', 'Loan Interest', 'IFRS Amt', 'FRS 1 Amt', 'Status', 'Check'];
 
 const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
     importConfig, previewData, branches, isImporting, isSaving, recordCount,
@@ -17,6 +17,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
 }) => {
     const validCount = previewData.filter(r => r.status === 'Valid').length;
     const errorCount = previewData.filter(r => r.status === 'Error').length;
+    const flaggedCount = previewData.filter(r => (r.flags?.length ?? 0) > 0).length;
 
     usePageToolbarActions({
         onSave: handleSave,
@@ -51,6 +52,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                                     <span className="aw-pill">{recordCount} Record(s)</span>
                                     {validCount > 0 && <span className="aw-pill tone-success"><CheckCircle2 size={11} /> {validCount} Valid</span>}
                                     {errorCount > 0 && <span className="aw-pill tone-danger"><AlertCircle size={11} /> {errorCount} Error</span>}
+                                    {flaggedCount > 0 && <span className="aw-pill tone-warning"><AlertCircle size={11} /> {flaggedCount} Need Checking</span>}
                                 </span>
                             )}
                         </div>
@@ -109,11 +111,11 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                             </div>
                         ) : (
                             <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 340px)', minHeight: 200 }}>
-                                <table className="aw-table" style={{ minWidth: 1250 }}>
+                                <table className="aw-table" style={{ minWidth: 1330 }}>
                                     <thead>
                                         <tr>
                                             {HEADERS.map((h, i) => (
-                                                <th key={h} className={i >= 5 && i <= 11 ? 'is-right' : i === 12 ? 'is-center' : undefined}>{h}</th>
+                                                <th key={h} className={i >= 5 && i <= 11 ? 'is-right' : i >= 12 ? 'is-center' : undefined}>{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
@@ -138,6 +140,15 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                                                     ) : (
                                                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--aw-danger)' }} title={row.remarks}>
                                                             <AlertCircle size={14} /> <span>{row.remarks}</span>
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                {/* Check-this flag: possible old-EMI / new-EMI mix-up. Saving is never blocked. */}
+                                                <td className="is-center">
+                                                    {(row.flags?.length ?? 0) > 0 && (
+                                                        <span className="aw-pill tone-warning" style={{ cursor: 'help' }}
+                                                            title={row.flags!.map(f => `Loan #${f.loancaseno}: ${f.message}`).join('\n\n')}>
+                                                            <AlertCircle size={11} style={{ marginRight: 4 }} /> Check
                                                         </span>
                                                     )}
                                                 </td>

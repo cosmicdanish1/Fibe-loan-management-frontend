@@ -4,11 +4,12 @@ import type { useLoanEarlyClosure } from '../hooks/useLoanEarlyClosure';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import MemberField from '@/components/shared/kit/MemberField';
 import AwDialog from '@/components/shared/kit/AwDialog';
+import LoanPositionPanel from '@/components/shared/loan/LoanPositionPanel';
 
 type Props = ReturnType<typeof useLoanEarlyClosure>;
 
 const LOAN_TYPE_LABEL: Record<string, string> = {
-    RLN: 'Regular Loan', ALN: 'Emergency Loan', ELN: 'Loan Against Recovery',
+    RLN: 'Regular Loan', ALN: 'Emergency Loan', ELN: 'Loan Against RD',
 };
 
 const fmt = (n: number | string) =>
@@ -84,6 +85,11 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                         ? (loan.consolidatedIntoLoancaseno ? <>Closed — folded into #{loan.consolidatedIntoLoancaseno}</> : <>Closed</>)
                         : <>Balance: <strong style={{ color: 'var(--aw-danger)' }}>₹{fmt(loan.balance)}</strong></>}
                 </span>
+                {!closedRow && loan.ledgerShowsRepaid && (
+                    <span className="aw-pill tone-warning" style={{ alignSelf: 'flex-start' }}>
+                        <AlertTriangle size={11} style={{ marginRight: 5 }} />Ledger shows this loan repaid — check before closing
+                    </span>
+                )}
             </button>
         );
     };
@@ -214,6 +220,18 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                             <div className={`aw-alert aw-fade-in ${message.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0 }} role="status">
                                 <span>{message.text}</span>
                             </div>
+                        )}
+
+                        {/* Read-only Loan Position: ledger vs loan record, schedule and notices (nothing saved).
+                            The closure figures are left out here - this window has its own full quote. */}
+                        {form.selectedLoanCase && (
+                            <LoanPositionPanel
+                                mbno={form.mbno}
+                                loancaseno={form.selectedLoanCase}
+                                loantype={activeLoans.find(l => l.loancaseno === form.selectedLoanCase)?.loantype}
+                                showClosure={false}
+                                refreshKey={closed ? 'closed' : 'open'}
+                            />
                         )}
                     </div>
 

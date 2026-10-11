@@ -35,6 +35,14 @@ interface LoanEligibilityStatus {
   netDisbursement: number;
 
   message?: string;
+
+  // Loan Against RD (ELN) only — the RD is the security, so these replace the
+  // RD%/Share% fields above for that loan type.
+  rdBacked?: boolean;
+  totalRd?: number;
+  lockedRd?: number;
+  freeRd?: number;
+  maxLoanAmount?: number;
 }
 
 interface LoanDetailsTabProps {
@@ -63,6 +71,9 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
   isCheckingEligibility = false,
 }) => {
   const isRegularLoan = loanDetails.loanType?.toUpperCase() === 'RLN';
+  const isLoanAgainstRd = loanDetails.loanType?.toUpperCase() === 'ELN';
+  // The RD panel only when the server actually answered with RD figures for this member.
+  const isRdPanel = isLoanAgainstRd && !!eligibilityStatus?.rdBacked;
   const [lastSpaceTime, setLastSpaceTime] = React.useState<number>(0);
 
   const handleMemberLookup = () => {
@@ -124,7 +135,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
         shouldAutoPopulate = true;
         break;
       case 'ELN':
-        // Loan Against Recovery — user specifies amount
+        // Loan Against RD — user specifies amount
         shouldAutoPopulate = false;
         break;
       default:
@@ -255,7 +266,9 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                       <p className="aw-meta">
                         {loanDetails.loanType.toUpperCase() === 'ALN' && 'Emergency Loan - Max: ₹5,00,000'}
                         {loanDetails.loanType.toUpperCase() === 'RLN' && 'Regular Loan - Default: ₹10,00,000'}
-                        {loanDetails.loanType.toUpperCase() === 'ELN' && 'Loan Against Recovery - Manual entry'}
+                        {isLoanAgainstRd && (isRdPanel
+                          ? `Loan Against RD - up to ${inr(eligibilityStatus!.maxLoanAmount)} for this member`
+                          : 'Loan Against RD - limit depends on the member\'s RD')}
                       </p>
                     )}
                   </div>
@@ -345,7 +358,80 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
           {/* ── Regular Loan Eligibility Panel (RLN only) ──
               A shortfall is NOT a rejection — it is withheld from the
               disbursement. Only breaching the maximum limit blocks the loan. */}
-          {(isCheckingEligibility || eligibilityStatus) && (
+          {/* ── Loan Against RD panel (ELN only) ──
+              The member's own RD is the security: show what they have, what is
+              already locked, and the largest loan allowed. The amount stays free
+              to edit — the maximum is a ceiling, not a default. */}
+          {isLoanAgainstRd && (isCheckingEligibility || eligibilityStatus) && (
+            <section className="aw-card aw-fade-in">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><ShieldCheck size={14} /></span>
+                <h2 className="aw-card-title">Loan Against RD</h2>
+                <span style={{ marginLeft: 'auto' }}>
+                  {isCheckingEligibility && !isRdPanel ? (
+                    <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <RefreshCw size={11} className="aw-spin" /> Checking...
+                    </span>
+                  ) : isRdPanel ? (
+                    <span className={`aw-pill tone-${eligibilityStatus!.isEligible ? 'success' : 'danger'}`}>
+                      {(eligibilityStatus!.maxLoanAmount ?? 0) <= 0 ? 'No RD Available' : eligibilityStatus!.isEligible ? 'Eligible' : 'Over Limit'}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+              {isRdPanel && (
+                <div className="aw-stack">
+                  <div className="aw-panel">
+                    <p className="aw-label">Member's RD</p>
+                    <div className="aw-rows">
+                      <div className="aw-row"><span className="aw-row-label">Total RD</span><span className="aw-row-value">{inr(eligibilityStatus!.totalRd)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">Locked for other loans</span><span className="aw-row-value">{inr(eligibilityStatus!.lockedRd)}</span></div>
+                      <div className="aw-row aw-row-total"><span className="aw-row-label">Free RD</span><span className="aw-row-value">{inr(eligibilityStatus!.freeRd)}</span></div>
+                    </div>
+                  </div>
+
+                  <div className="aw-panel">
+                    <p className="aw-label">Largest loan allowed</p>
+                    <div className="aw-rows">
+                      <div className="aw-row aw-row-total">
+                        <span className="aw-row-label">Up to ({eligibilityStatus!.rdPct}% of RD, within the per-member maximum)</span>
+                        <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>{inr(eligibilityStatus!.maxLoanAmount)}</span>
+                      </div>
+                    </div>
+                    {(eligibilityStatus!.maxLoanAmount ?? 0) > 0 && (
+                      <button
+                        type="button"
+                        className="aw-btn aw-btn-ghost"
+                        style={{ marginTop: 8 }}
+                        onClick={() => onLoanDetailsChange('loanAmount', String(eligibilityStatus!.maxLoanAmount))}
+                      >
+                        Use maximum
+                      </button>
+                    )}
+                  </div>
+
+                  {parseInt(loanDetails.loanAmount || '0', 10) > 0 && eligibilityStatus!.isEligible && (
+                    <div className="aw-alert aw-alert-success" style={{ marginBottom: 0, flexDirection: 'column', gap: 4 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <span>RD locked for this loan</span><span>{inr(parseInt(loanDetails.loanAmount, 10))}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <span>RD left free</span>
+                        <span>{inr(Math.max(0, (eligibilityStatus!.freeRd ?? 0) - parseInt(loanDetails.loanAmount, 10)))}</span>
+                      </div>
+                      <span className="aw-meta" style={{ fontWeight: 500 }}>Only the loan amount is locked, and the lock is released when the loan closes.</span>
+                    </div>
+                  )}
+
+                  {!eligibilityStatus!.isEligible && eligibilityStatus!.message && (
+                    <div className="aw-alert aw-alert-danger" style={{ marginBottom: 0 }}>{eligibilityStatus!.message}</div>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
+          {!isLoanAgainstRd && (isCheckingEligibility || eligibilityStatus) && (
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><ShieldCheck size={14} /></span>

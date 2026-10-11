@@ -126,7 +126,7 @@ class MemberLoanService {
     const loanTypes: Record<string, string> = {
       ALN: 'Emergency Loan',
       RLN: 'Regular Loan',
-      ELN: 'Loan Against Recovery',
+      ELN: 'Loan Against RD',
       MLN: 'Medical Loan',
     };
     return loanTypes[loanType] || loanType;

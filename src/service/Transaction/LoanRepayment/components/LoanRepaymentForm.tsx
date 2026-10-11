@@ -3,6 +3,7 @@ import { Search, RefreshCw, Users, CreditCard, IndianRupee, CheckCircle2, AlertC
 import type { useLoanRepayment, UnpaidInstallment } from '../hooks/useLoanRepayment';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import MemberField from '@/components/shared/kit/MemberField';
+import LoanPositionPanel from '@/components/shared/loan/LoanPositionPanel';
 
 type Props = ReturnType<typeof useLoanRepayment>;
 
@@ -14,7 +15,7 @@ const MONTHS = [
 ];
 
 const LOAN_TYPE_LABEL: Record<string, string> = {
-    RLN: 'Regular Loan', ALN: 'Emergency Loan', ELN: 'Loan Against Recovery',
+    RLN: 'Regular Loan', ALN: 'Emergency Loan', ELN: 'Loan Against RD',
 };
 
 const fmt = (n: number | string) =>
@@ -79,7 +80,7 @@ function simulateWaterfall(paymentAmount: number, unpaidInstallments: UnpaidInst
 
 const LoanRepaymentForm: React.FC<Props> = ({
     form, activeLoans, dueStatus, dueStatusLoading, repaymentHistory, loading, historyLoading,
-    message, updateForm, handleMemberLookup, handleLoanSelect, handleSubmit, handleReset,
+    message, flagNotice, updateForm, handleMemberLookup, handleLoanSelect, handleSubmit, handleReset,
 }) => {
     const [loanSearch, setLoanSearch] = useState('');
     const [paymentMode, setPaymentMode] = useState<'due' | 'advance' | 'custom'>('due');
@@ -414,6 +415,15 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                         </div>
                                     )}
 
+                                    {/* Check-this flag raised by this payment (possible old-EMI / new-EMI mix-up).
+                                        The payment is already recorded - this only asks someone to look. */}
+                                    {flagNotice && (
+                                        <div className="aw-alert aw-alert-warning aw-fade-in" style={{ marginBottom: 0 }} role="alert">
+                                            <AlertCircle size={14} />
+                                            <span><strong>Please check this payment.</strong> {flagNotice}</span>
+                                        </div>
+                                    )}
+
                                     <button type="button" onClick={handleSubmit} disabled={loading || form.paymentAmount <= 0} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
                                         {loading ? <RefreshCw size={13} className="aw-spin" /> : null}
                                         {loading ? 'Recording…' : 'Record Repayment'}
@@ -502,6 +512,16 @@ const LoanRepaymentForm: React.FC<Props> = ({
                         {/* Repayment history — filtered to the selected loan by default, since
                             /repayment-history returns every loan the member has and it's otherwise
                             easy to lose the payment you just made in someone else's history. */}
+                        {/* Read-only Loan Position: ledger vs loan record, schedule, closure and notices (nothing saved) */}
+                        {form.selectedLoanCase && (
+                            <LoanPositionPanel
+                                mbno={form.mbno}
+                                loancaseno={form.selectedLoanCase}
+                                loantype={selectedLoan?.loantype}
+                                refreshKey={`${repaymentHistory.length}|${message?.text ?? ''}`}
+                            />
+                        )}
+
                         <section className="aw-card">
                             <div className="aw-card-head">
                                 <span className="aw-card-icon"><FileText size={14} /></span>
@@ -554,7 +574,9 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                                         ₹... + closure interest ₹...)" written by passTransaction()'s
                                                         consolidation branch — so a case that hit ₹0 balance via
                                                         consolidation doesn't look like an unexplained data gap. */}
-                                                    <td className={row.narration?.startsWith('Consolidated into') ? 'is-warning' : 'is-muted'} style={{ maxWidth: 260 }}>{row.narration || '—'}</td>
+                                                    <td className={row.narration?.startsWith('Consolidated into') ? 'is-warning' : 'is-muted'} style={{ maxWidth: 260 }}>
+                                                        {row.narration || '—'}
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
