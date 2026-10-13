@@ -81,7 +81,7 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
       } else {
         message.warning('Member not found');
         setSignatureObjectUrl('');
-        setData(prev => ({ ...prev, loading: false, memberId: undefined, memberName: '' }));
+        setData(prev => ({ ...prev, loading: false, memberId: '', memberName: '' }));
       }
     } catch (error) {
       console.error(error);

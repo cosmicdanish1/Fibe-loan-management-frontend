@@ -1,6 +1,6 @@
 // hook/useCompulsoryDeposit.ts
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
     DepositTransaction,
     CompulsoryDepositHookReturn,
@@ -54,6 +54,7 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
     const [incomeHeads, setIncomeHeads] = useState<IncomeHead[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isPosting, setIsPosting] = useState(false);
+    const postingRef = useRef(false); // in-flight guard for Save
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -98,17 +99,24 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
         }
         if (members.length === 0) return;
 
-        const perMember = (total / members.length).toFixed(2);
-        setMembers(prev => prev.map(m => ({ ...m, postAmount: perMember })));
+        // Distribute in whole paise; the leftover paise go one each to the first members so the rows sum exactly to the total
+        const totalPaise = Math.round(total * 100);
+        const count = members.length;
+        const basePaise = Math.floor(totalPaise / count);
+        const remainder = totalPaise - basePaise * count;
+        const share = (index: number) => ((basePaise + (index < remainder ? 1 : 0)) / 100).toFixed(2);
+        setMembers(prev => prev.map((m, i) => ({ ...m, postAmount: share(i) })));
         await showDialog(
             'info',
             'electron-react-ts',
             'Amount Distributed',
-            `₹${total.toLocaleString('en-IN')} distributed equally among ${members.length} members.\nPer member: ₹${perMember}`
+            `₹${(totalPaise / 100).toLocaleString('en-IN')} distributed among ${count} members.\nPer member: ₹${share(count - 1)}` +
+            (remainder > 0 ? `  (first ${remainder} member(s): ₹${share(0)} - the remaining paise are added so the total matches)` : '')
         );
     }, [formData.amount, members.length]);
 
     const handleSave = async () => {
+        if (postingRef.current) return;
         if (!formData.incomeHead) {
             await showDialog('error', 'electron-react-ts', 'Income Head Required', 'Please select an Income Head (Debit GL code) before posting.');
             return;
@@ -120,23 +128,28 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
                 memberNo: m.memberNo,
                 memberName: m.memberName,
                 currentBalance: m.currentBalance,
-                postAmount: parseFloat(m.postAmount as string)
-            }));
+                // posted at paise precision - the same figure the confirmation below states
+                postAmount: Math.round(parseFloat(m.postAmount as string) * 100) / 100
+            }))
+            .filter(d => d.postAmount > 0);
 
         if (validDistributions.length === 0) {
             await showDialog('error', 'electron-react-ts', 'No Amounts Entered', 'No valid credit amounts found in the members list. Please enter amounts before posting.');
             return;
         }
 
-        const totalDistributed = validDistributions.reduce((sum, d) => sum + d.postAmount, 0);
+        const totalDistributed = validDistributions.reduce((sum, d) => sum + Math.round(d.postAmount * 100), 0) / 100;
+        const typedTotal = parseFloat(formData.amount);
+        const totalMismatch = !isNaN(typedTotal) && typedTotal > 0 && Math.round(typedTotal * 100) !== Math.round(totalDistributed * 100);
 
         // BUG FIX: Modal.confirm silently no-ops in Electron — replaced with native confirm dialog.
         const confirmed = await showConfirm(
             'Confirm Bulk CD Posting',
-            `You are about to post ₹${totalDistributed.toLocaleString('en-IN')} to ${validDistributions.length} members.\n\nDebit Head   : ${formData.incomeHead}\nNarration    : ${formData.narration || '—'}\n\nThis will immediately update all member CD balances and the ledger.`
+            `You are about to post ₹${totalDistributed.toLocaleString('en-IN')} to ${validDistributions.length} members.\n\nDebit Head   : ${formData.incomeHead}\nNarration    : ${formData.narration || '—'}${totalMismatch ? `\n\nWARNING: the typed Total Amount (₹${typedTotal.toLocaleString('en-IN')}) differs from the sum of the member amounts (₹${totalDistributed.toLocaleString('en-IN')}). The member amounts will be posted.` : ''}\n\nThis will immediately update all member CD balances and the ledger.`
         );
         if (!confirmed) return;
 
+        postingRef.current = true;
         setIsPosting(true);
         try {
             const response = await apiService.postCDTransaction({
@@ -169,6 +182,7 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
         } catch (error: any) {
             await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${error.message}`);
         } finally {
+            postingRef.current = false;
             setIsPosting(false);
         }
     };

@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Settings, RefreshCw, Printer, FileDown, Search, PiggyBank, ShieldCheck } from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Spin, Tooltip, theme as antdTheme } from 'antd';
+import { ConfigProvider, Button, DatePicker, Spin, Tooltip, message, theme as antdTheme } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import dayjs from 'dayjs';
+import { csvCell } from '@/utils/csv';
+import { escapeHtml } from '@/utils/html';
 
 interface SBEntry {
   srNo: number;
@@ -60,7 +62,7 @@ const padL = (s: string, w: number) => s.padStart(w);
 const padR = (s: string, w: number) => (s.length > w ? s.slice(0, w) : s.padEnd(w));
 const centerIn = (s: string, w: number) => ' '.repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s;
 
-function buildSBPrintLines(data: SBData, dateLabel: string): string[] {
+function buildSBPrintLines(data: SBData, dateLabel: string, bookLabel = 'Saving'): string[] {
   const lines: string[] = [];
   const prefixW = SB_COL_TR + SB_COL_ACC + SB_COL_NAME;
   const amtSpan = SB_COL_AMT * 3;
@@ -68,7 +70,7 @@ function buildSBPrintLines(data: SBData, dateLabel: string): string[] {
   lines.push(centerIn('Espat Karmchari Co-Operative Credit Society Limited.', SB_LINE_W));
   lines.push(centerIn('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', SB_LINE_W));
   lines.push('');
-  lines.push(centerIn(`Day Book [Saving] for Date :${dateLabel}`, SB_LINE_W));
+  lines.push(centerIn(`Day Book [${bookLabel}] for Date :${dateLabel}`, SB_LINE_W));
   lines.push('');
   lines.push(padL('Page Number : 1', SB_LINE_W));
   lines.push(SB_DASH);
@@ -128,14 +130,17 @@ function buildSBPrintLines(data: SBData, dateLabel: string): string[] {
   return lines;
 }
 
-const DayBookSB: React.FC = () => {
+// filterType 'cd' reuses this flat-entries layout: the backend returns the same
+// {entries,...} shape for the CD and SB filters (only 'all' is grouped).
+const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }) => {
+  const bookLabel = filterType === 'cd' ? 'CD' : 'Saving';
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs().subtract(1, 'day'));
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<SBData | null>(null);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
+  const isDark = interfaceMode === 'dark';
 
   // Theme variables
   const bg        = isDark ? 'bg-[#0f172a]'                             : 'bg-slate-50';
@@ -159,26 +164,37 @@ const DayBookSB: React.FC = () => {
   const compBdr   = isDark ? 'border-b border-dashed border-slate-600'  : 'border-b border-dashed border-slate-300';
   const ftrBg     = isDark ? 'bg-slate-800 border-t border-slate-700'   : 'bg-white/80 border-t border-slate-200';
 
-  useEffect(() => { loadData(); }, [selectedDate]);
+  useEffect(() => { loadData(); }, [selectedDate, filterType]);
+
+  const loadRequestId = useRef(0);
 
   const loadData = async () => {
+    const requestId = ++loadRequestId.current;
     setLoading(true);
     try {
-      const response = await apiService.getDayBookSBReport(selectedDate.format('YYYY-MM-DD'), 'screen');
+      const response = filterType === 'cd'
+        ? await apiService.getDayBookReport(selectedDate.format('YYYY-MM-DD'), 'screen', 'cd')
+        : await apiService.getDayBookSBReport(selectedDate.format('YYYY-MM-DD'), 'screen');
+      if (requestId !== loadRequestId.current) return; // a newer date was requested meanwhile
       if (response.success && response.data) {
         const d = response.data?.data ?? response.data;
         setData(d);
+      } else {
+        setData(null);
+        message.error(response.message || response.error || 'Failed to load report');
       }
     } catch {
-      // silent
+      if (requestId !== loadRequestId.current) return;
+      setData(null);
+      message.error('An error occurred while fetching report');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestId.current) setLoading(false);
     }
   };
 
   const handlePrint = () => {
     if (!data) return;
-    const lines = buildSBPrintLines(data, selectedDate.format('DD-MMM-YYYY'));
+    const lines = buildSBPrintLines(data, selectedDate.format('DD-MMM-YYYY'), bookLabel);
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
     document.body.appendChild(iframe);
@@ -190,7 +206,7 @@ const DayBookSB: React.FC = () => {
   @page { size: A4 portrait; margin: 12mm; }
   body { margin: 0; }
   pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
-</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+</style></head><body><pre>${escapeHtml(lines.join('\n'))}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -204,7 +220,7 @@ const DayBookSB: React.FC = () => {
     if (!data) return;
     let csv = 'Sr No,A/C No,A/C Name,Deposit Cash,Deposit Transfer,Deposit Total,Withdrawal Cash,Withdrawal Transfer,Withdrawal Total\n';
     data.entries.forEach(e =>
-      csv += `${e.srNo},${e.accNo},"${e.acName}",${e.depositCash},${e.depositTransfer},${e.depositCash + e.depositTransfer},${e.withdrawalCash},${e.withdrawalTransfer},${e.withdrawalCash + e.withdrawalTransfer}\n`
+      csv += `${e.srNo},${e.accNo},${csvCell(e.acName)},${e.depositCash},${e.depositTransfer},${e.depositCash + e.depositTransfer},${e.withdrawalCash},${e.withdrawalTransfer},${e.withdrawalCash + e.withdrawalTransfer}\n`
     );
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
@@ -233,7 +249,7 @@ const DayBookSB: React.FC = () => {
               <PiggyBank size={18} className="text-white" />
             </div>
             <div>
-              <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Day Book [Saving]</h1>
+              <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Day Book [{bookLabel}]</h1>
               <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
                 <ShieldCheck size={10} className="text-sky-400" /> Savings Bank Ledger
               </div>
@@ -328,7 +344,7 @@ const DayBookSB: React.FC = () => {
           <div className={`dbsb-panel flex-1 rounded-xl flex flex-col overflow-hidden ${panel}`}>
             <div className={`dbsb-panel-header px-4 py-2 flex items-center justify-between shrink-0 ${panelHd}`}>
               <span className={`text-xs font-extrabold uppercase tracking-wide ${panelHdTx}`}>
-                Day Book [Saving] — {selectedDate.format('DD-MMM-YYYY')}
+                Day Book [{bookLabel}] — {selectedDate.format('DD-MMM-YYYY')}
               </span>
               {data && (
                 <span className={`fz-small font-mono ${subtle}`}>{data.totalTransactions} entries</span>
@@ -343,7 +359,7 @@ const DayBookSB: React.FC = () => {
                     <div className={`text-center mb-4 pb-3 ${compBdr}`}>
                       <div className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
                       <div className={`fz-caption ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                      <div className={`fz-small mt-0.5 ${subtle}`}>Day Book [Saving] for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
+                      <div className={`fz-small mt-0.5 ${subtle}`}>Day Book [{bookLabel}] for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
                     </div>
 
                     {/* Main table */}

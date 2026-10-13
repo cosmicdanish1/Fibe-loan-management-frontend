@@ -7,15 +7,15 @@ import { vi } from 'vitest';
 import type { Mock } from 'vitest';
 
 // Mock the component since we're focusing on hook testing
-vi.mock('../../../service/Transaction/JournalTransferEntry/page/JournalTransferEntry', () => ({
+vi.mock('../../../src/service/Transaction/JournalTransferEntry/page/JournalTransferEntry', () => ({
   __esModule: true,
   default: () => <div data-testid="journal-transfer-entry" />
 }));
 
-import JournalTransferEntry from '../../../service/Transaction/JournalTransferEntry/page/JournalTransferEntry';
+import JournalTransferEntry from '../../../src/service/Transaction/JournalTransferEntry/page/JournalTransferEntry';
 
 // Import the hook directly for testing
-import { useJournalEntry } from '../../../service/Transaction/JournalTransferEntry/hooks/useJournalEntry';
+import { useJournalEntry } from '../../../src/service/Transaction/JournalTransferEntry/hooks/useJournalEntry';
 
 // Define the row type
 type JournalEntryRow = {
@@ -60,7 +60,7 @@ type UseJournalEntryReturn = {
 const mockUseJournalEntry = vi.fn() as Mock<[void], UseJournalEntryReturn>;
 
 // Mock the module after the mock function is defined
-vi.mock('../../../service/Transaction/JournalTransferEntry/hooks/useJournalEntry', () => ({
+vi.mock('../../../src/service/Transaction/JournalTransferEntry/hooks/useJournalEntry', () => ({
   __esModule: true,
   useJournalEntry: mockUseJournalEntry,
 }));

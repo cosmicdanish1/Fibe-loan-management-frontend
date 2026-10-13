@@ -16,6 +16,8 @@ import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { csvCell } from '@/utils/csv';
+import { isFromAfterTo } from '@/utils/dates';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -132,33 +134,30 @@ const MemberLoanLedger: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark';
 
+  // Changing the member invalidates the selected loan case and the case list.
+  // Case lookups are debounced and guarded so a slow earlier response (typed digit by digit)
+  // can never overwrite the list for the current member.
   useEffect(() => {
-    if (memberNo) {
-      fetchLoanCases();
-    }
-  }, [memberNo]);
-
-  const fetchLoanCases = async () => {
+    setLoanCaseNo('');
+    setLoanCases([]);
     if (!memberNo) return;
-    
-    try {
-      const response = await apiService.getMemberLoanCases(memberNo);
-      
-      if (response.success && Array.isArray(response.data)) {
-        const cases = response.data.map((item: any) => item.loanCaseNo.toString());
-        setLoanCases(cases);
-      } else if (Array.isArray(response)) {
-        // Handle direct array response
-        const cases = response.map((item: any) => item.loanCaseNo.toString());
-        setLoanCases(cases);
-      } else {
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const response: any = await apiService.getMemberLoanCases(memberNo);
+        if (cancelled) return;
+        const list: any[] | null = response?.success && Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : null;
+        setLoanCases(list
+          ? list.map((item: any) => item?.loanCaseNo).filter((v: any) => v !== null && v !== undefined).map((v: any) => v.toString())
+          : []);
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Error fetching loan cases:', error);
         setLoanCases([]);
       }
-    } catch (error) {
-      console.error('Error fetching loan cases:', error);
-      setLoanCases([]);
-    }
-  };
+    }, 350);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [memberNo]);
 
   const fetchLedgerData = async () => {
     if (!memberNo) {
@@ -170,6 +169,10 @@ const MemberLoanLedger: React.FC = () => {
       return;
     }
 
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      await showDialog('warning', 'Validation', 'From date cannot be after To date');
+      return;
+    }
     setLoading(true);
     try {
       const response = await apiService.getMemberLoanLedger(
@@ -292,7 +295,7 @@ const MemberLoanLedger: React.FC = () => {
       ...csvData,
       [`Total`, '', '', totalDebits, totalCredits, closingBalance],
     ]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .map(row => row.map(cell => csvCell(cell)).join(','))
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -564,7 +567,7 @@ const MemberLoanLedger: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {data.map((item, index) => (
+                        {data.map((item) => (
                           <tr key={item.key} className="border-b border-dashed border-slate-200 hover:bg-blue-50/30 transition-colors">
                             <td className="py-2 px-2 text-slate-700 border-r border-dashed border-slate-200 font-medium">
                               {dayjs(item.date).format('DD-MM-YYYY')}

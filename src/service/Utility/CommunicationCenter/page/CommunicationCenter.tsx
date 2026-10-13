@@ -60,11 +60,20 @@ const CommunicationCenter: React.FC = () => {
         apiService.get('/notifications/stats'),
         apiService.get('/notifications/channel-status'),
       ]);
-      setLogs(Array.isArray((logRes as any)?.data) ? (logRes as any).data : Array.isArray(logRes) ? logRes as any : []);
-      const sd = (statRes as any)?.data || statRes;
-      if (sd?.totalPending !== undefined) setStats(sd);
-      const cd = (chRes as any)?.data || chRes;
-      if (cd?.email !== undefined) setChannels(cd);
+      if (logRes.success) {
+        setLogs(Array.isArray((logRes as any)?.data) ? (logRes as any).data : []);
+      } else {
+        // keep the previously loaded logs rather than blanking the queue
+        message.error(logRes.message || logRes.error || 'Failed to load notification history');
+      }
+      if (statRes.success) {
+        const sd = (statRes as any)?.data;
+        if (sd?.totalPending !== undefined) setStats(sd);
+      }
+      if (chRes.success) {
+        const cd = (chRes as any)?.data;
+        if (cd?.email !== undefined) setChannels(cd);
+      }
     } catch { message.error('Failed to load'); }
     finally { setLoading(false); }
   }, []);
@@ -92,7 +101,7 @@ const CommunicationCenter: React.FC = () => {
 
   const promptChannelAndSend = (type: 'one' | 'batch', id?: number) => {
     if (type === 'batch' && selectedIds.size === 0) return;
-    setPendingSendAction({ type, id });
+    setPendingSendAction(id !== undefined ? { type, id } : { type });
     setShowChannelPicker(true);
   };
 
@@ -123,14 +132,18 @@ const CommunicationCenter: React.FC = () => {
         const res = await apiService.post('/notifications/send-batch', {
           ids: Array.from(selectedIds), channel: selectedChannel,
         });
-        const d = (res as any)?.data || res;
-        message.success(`Sent: ${d?.sent || 0} | Failed: ${d?.failed || 0}`);
-        clearSelection();
+        if (!res.success) {
+          message.error(res.message || res.error || 'Batch send failed');
+        } else {
+          const d = (res as any)?.data;
+          message.success(`Sent: ${d?.sent || 0} | Failed: ${d?.failed || 0}`);
+          clearSelection();
+        }
       } else if (pendingSendAction.id) {
         const res = await apiService.post(`/notifications/send-one/${pendingSendAction.id}`, {
           channel: selectedChannel,
         });
-        const d = (res as any)?.data || res;
+        const d = res.success ? ((res as any)?.data || res) : { success: false, error: res.message || res.error };
         d?.success ? message.success(`Sent via ${selectedChannel}! Ref: ${d.msgRef || ''}`) : message.error(d?.error || 'Failed');
       }
       await loadAll();
@@ -144,7 +157,8 @@ const CommunicationCenter: React.FC = () => {
 
   const handleCancelBatch = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    await apiService.post('/notifications/cancel-batch', { ids: Array.from(selectedIds) });
+    const res = await apiService.post('/notifications/cancel-batch', { ids: Array.from(selectedIds) });
+    if (!res.success) { message.error(res.message || res.error || 'Cancel failed'); return; }
     message.info(`${selectedIds.size} cancelled`);
     clearSelection(); await loadAll();
   }, [selectedIds, loadAll]);
@@ -152,10 +166,11 @@ const CommunicationCenter: React.FC = () => {
   const handleQueueManual = useCallback(async () => {
     if (!form.memberNo || !form.recipient || !form.message) { message.warning('Fill all fields'); return; }
     try {
-      await apiService.post('/notifications/queue-manual', {
+      const res = await apiService.post('/notifications/queue-manual', {
         memberNo: form.memberNo, channel: form.channel,
         recipient: form.recipient, message: form.message,
       });
+      if (!res.success) { message.error(res.message || res.error || 'Queue failed'); return; }
       message.success('Queued for review');
       setForm(p => ({ ...p, message: '', recipient: '' }));
       setActiveTab('queue');
@@ -165,7 +180,8 @@ const CommunicationCenter: React.FC = () => {
 
   const handleTrigger = useCallback(async (type: 'emi' | 'maturity') => {
     try {
-      await apiService.post(type === 'emi' ? '/notifications/trigger-emi-check' : '/notifications/trigger-maturity-check', {});
+      const res = await apiService.post(type === 'emi' ? '/notifications/trigger-emi-check' : '/notifications/trigger-maturity-check', {});
+      if (!res.success) { message.error(res.message || res.error || 'Trigger failed'); return; }
       message.success(`${type === 'emi' ? 'EMI' : 'Maturity'} alerts queued`);
       await loadAll();
     } catch { message.error('Trigger failed'); }

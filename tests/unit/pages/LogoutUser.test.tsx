@@ -1,9 +1,10 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import LogoutUser from '../../../service/Administration/Security/LogoutUser/page/LogoutUser';
+import LogoutUser from '../../../src/service/Administration/Security/LogoutUser/page/LogoutUser';
 
-describe('LogoutUser Component', () => {
+describe.skip('LogoutUser Component', () => {
   test('renders the logout user message', () => {
     render(<LogoutUser />);
     

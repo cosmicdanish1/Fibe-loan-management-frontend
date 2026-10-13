@@ -188,7 +188,7 @@ const HeadAdditionModification: React.FC = () => {
         setFormOpen(false);
         await load();
       } else {
-        message.error((res as any).error || 'Save failed');
+        message.error(res.message || (res as any).error || 'Save failed');
       }
     } catch {
       message.error('Save failed');
@@ -208,7 +208,7 @@ const HeadAdditionModification: React.FC = () => {
         setSelected(prev => { const n = new Set(prev); n.delete(code); return n; });
         await load();
       } else {
-        message.error((res as any).error || 'Delete failed');
+        message.error(res.message || (res as any).error || 'Delete failed');
       }
     } catch (e: any) {
       message.error(e?.message || 'Delete failed');

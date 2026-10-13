@@ -11,8 +11,8 @@ export interface AnalyticsConfig {
 // Session data interface
 export interface SessionData {
   sessionId: string;
-  userId?: number;
-  username?: string;
+  userId?: number | undefined;
+  username?: string | undefined;
   deviceType: string;
   browserName: string;
   browserVersion: string;
@@ -29,9 +29,9 @@ export interface PageVisitData {
   pageName: string;
   windowTitle: string;
   routePath: string;
-  componentName?: string;
-  pageLoadTime?: number;
-  referrerPage?: string;
+  componentName?: string | undefined;
+  pageLoadTime?: number | undefined;
+  referrerPage?: string | undefined;
 }
 
 // Feature usage data interface
@@ -39,13 +39,13 @@ export interface FeatureUsageData {
   sessionId: string;
   featureCategory: string;
   featureName: string;
-  subFeature?: string;
+  subFeature?: string | undefined;
   actionType: 'view' | 'click' | 'submit' | 'download' | 'print' | 'search' | 'filter';
   actionDetails?: any;
-  executionTime?: number;
-  successStatus?: boolean;
-  errorMessage?: string;
-  resultCount?: number;
+  executionTime?: number | undefined;
+  successStatus?: boolean | undefined;
+  errorMessage?: string | undefined;
+  resultCount?: number | undefined;
 }
 
 // Error data interface
@@ -54,14 +54,15 @@ export interface ErrorData {
   errorType: 'javascript' | 'api' | 'validation' | 'network' | 'render';
   severityLevel: 'low' | 'medium' | 'high' | 'critical';
   errorMessage: string;
-  errorCode?: string;
-  stackTrace?: string;
-  componentName?: string;
-  fileName?: string;
-  lineNumber?: number;
-  columnNumber?: number;
-  userActionBeforeError?: string;
-  networkStatus?: string;
+  errorCode?: string | undefined;
+  stackTrace?: string | undefined;
+  componentName?: string | undefined;
+  fileName?: string | undefined;
+  lineNumber?: number | undefined;
+  columnNumber?: number | undefined;
+  userActionBeforeError?: string | undefined;
+  networkStatus?: string | undefined;
+  browserConsoleLog?: string | undefined;
 }
 
 class AnalyticsService {
@@ -111,15 +112,15 @@ class AnalyticsService {
   }
 
   // Load configuration from backend
-  private async loadConfiguration(): Promise<void> {
+  protected async loadConfiguration(): Promise<void> {
     try {
       const response = await apiService.request('/analytics/config');
       if (response.success && response.data) {
-        const configMap = new Map(response.data.map((item: any) => [item.config_key, item.config_value]));
+        const configMap = new Map<string, string>((response.data as any[]).map((item: any): [string, string] => [item.config_key, item.config_value]));
 
         this.config = {
           enabled: configMap.get('analytics_enabled') === 'true',
-          trackingLevel: configMap.get('tracking_level') || 'standard',
+          trackingLevel: (configMap.get('tracking_level') as AnalyticsConfig['trackingLevel'] | undefined) || 'standard',
           anonymizeUserData: configMap.get('anonymize_user_data') === 'true',
           excludeSensitiveData: configMap.get('exclude_sensitive_data') === 'true',
         };
@@ -146,19 +147,19 @@ class AnalyticsService {
     if (userAgent.includes('Chrome')) {
       browserName = 'Chrome';
       const match = userAgent.match(/Chrome\/([0-9.]+)/);
-      browserVersion = match ? match[1] : 'Unknown';
+      browserVersion = match?.[1] ?? 'Unknown';
     } else if (userAgent.includes('Firefox')) {
       browserName = 'Firefox';
       const match = userAgent.match(/Firefox\/([0-9.]+)/);
-      browserVersion = match ? match[1] : 'Unknown';
+      browserVersion = match?.[1] ?? 'Unknown';
     } else if (userAgent.includes('Safari')) {
       browserName = 'Safari';
       const match = userAgent.match(/Version\/([0-9.]+)/);
-      browserVersion = match ? match[1] : 'Unknown';
+      browserVersion = match?.[1] ?? 'Unknown';
     } else if (userAgent.includes('Edge')) {
       browserName = 'Edge';
       const match = userAgent.match(/Edge\/([0-9.]+)/);
-      browserVersion = match ? match[1] : 'Unknown';
+      browserVersion = match?.[1] ?? 'Unknown';
     }
 
     // Simple OS detection
@@ -168,7 +169,7 @@ class AnalyticsService {
     if (userAgent.includes('Windows NT')) {
       osName = 'Windows';
       const match = userAgent.match(/Windows NT ([0-9.]+)/);
-      osVersion = match ? match[1] : 'Unknown';
+      osVersion = match?.[1] ?? 'Unknown';
     } else if (userAgent.includes('Mac OS X')) {
       osName = 'macOS';
       const match = userAgent.match(/Mac OS X ([0-9_]+)/);
@@ -481,11 +482,8 @@ class AnalyticsService {
     limit?: number;
   }): Promise<{ success: boolean; data: any[] }> {
     try {
-      const response = await apiService.request('/analytics/users', {
-        method: 'GET',
-        params: query,
-      });
-      return response;
+      const response = await apiService.get('/analytics/users', { params: query as Record<string, any> });
+      return { success: response.success, data: response.data ?? [] };
     } catch (error) {
       console.error('Failed to get all users analytics:', error);
       return { success: false, data: [] };
@@ -495,7 +493,7 @@ class AnalyticsService {
   public async getStatus(): Promise<{ success: boolean; data: any }> {
     try {
       const response = await apiService.request('/analytics/status');
-      return response;
+      return { success: response.success, data: response.data ?? {} };
     } catch (error) {
       console.error('Failed to get analytics status:', error);
       return { success: false, data: {} };
@@ -512,11 +510,8 @@ class AnalyticsService {
     data_type?: string;
   }): Promise<{ success: boolean; data: any }> {
     try {
-      const response = await apiService.request('/analytics/user', {
-        method: 'GET',
-        params: query,
-      });
-      return response;
+      const response = await apiService.get('/analytics/user', { params: query as Record<string, any> });
+      return { success: response.success, data: response.data ?? null };
     } catch (error) {
       console.error('Failed to get user analytics:', error);
       return { success: false, data: null };
@@ -531,11 +526,8 @@ class AnalyticsService {
     end_date?: string;
   }): Promise<{ success: boolean; data: any }> {
     try {
-      const response = await apiService.request('/analytics/user/export', {
-        method: 'GET',
-        params: query,
-      });
-      return response;
+      const response = await apiService.get('/analytics/user/export', { params: query as Record<string, any> });
+      return { success: response.success, data: response.data ?? null };
     } catch (error) {
       console.error('Failed to export user analytics:', error);
       return { success: false, data: null };
@@ -548,11 +540,8 @@ class AnalyticsService {
     metric_type?: string;
   }): Promise<{ success: boolean; data: any }> {
     try {
-      const response = await apiService.request('/analytics/performance', {
-        method: 'GET',
-        params: query,
-      });
-      return response;
+      const response = await apiService.get('/analytics/performance', { params: query as Record<string, any> });
+      return { success: response.success, data: response.data ?? [] };
     } catch (error) {
       console.error('Failed to get performance metrics:', error);
       return { success: false, data: [] };
@@ -568,11 +557,8 @@ class AnalyticsService {
     limit?: number;
   }): Promise<{ success: boolean; data: any }> {
     try {
-      const response = await apiService.request('/analytics/errors', {
-        method: 'GET',
-        params: query,
-      });
-      return response;
+      const response = await apiService.get('/analytics/errors', { params: query as Record<string, any> });
+      return { success: response.success, data: response.data ?? [] };
     } catch (error) {
       console.error('Failed to get error analytics:', error);
       return { success: false, data: [] };
@@ -582,7 +568,7 @@ class AnalyticsService {
   public async getSystemHealth(): Promise<{ success: boolean; data: any }> {
     try {
       const response = await apiService.request('/analytics/system/health');
-      return response;
+      return { success: response.success, data: response.data ?? {} };
     } catch (error) {
       console.error('Failed to get system health:', error);
       return { success: false, data: {} };
@@ -592,12 +578,3 @@ class AnalyticsService {
 
 // Export singleton instance
 export const analyticsService = new AnalyticsService();
-
-// Export types
-export type {
-  AnalyticsConfig,
-  SessionData,
-  PageVisitData,
-  FeatureUsageData,
-  ErrorData,
-};

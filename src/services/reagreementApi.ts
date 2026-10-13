@@ -101,11 +101,8 @@ export type DocFormat = 'pdf' | 'png' | 'text';
 /** Fetches the saved agreement (or the DRAFT copy) as a Blob, with the login token. */
 export async function fetchAgreementBlob(id: number, format: DocFormat, opts: { draft?: boolean | undefined; issue?: number | undefined } = {}): Promise<Blob> {
     const base = await getApiBaseUrl();
-    const token = localStorage.getItem('accessToken');
     const q = `format=${format}${opts.issue ? `&issue=${opts.issue}` : ''}`;
-    const res = await fetch(`${base}/loans/reagreement/${id}/${opts.draft ? 'draft' : 'document'}?${q}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const res = await apiService.authedFetch(`${base}/loans/reagreement/${id}/${opts.draft ? 'draft' : 'document'}?${q}`, {}, 60000);
     if (!res.ok) {
         let msg = `Could not load the agreement (HTTP ${res.status})`;
         try { const j = await res.json(); if (j?.message) msg = Array.isArray(j.message) ? j.message.join(', ') : j.message; } catch { /* keep default */ }
@@ -138,6 +135,7 @@ export function printImageBlob(blob: Blob) {
             setTimeout(() => { iframe.remove(); URL.revokeObjectURL(url); }, 60000);
         }
     };
+    img.onerror = () => { iframe.remove(); URL.revokeObjectURL(url); };
     if (img.complete) go(); else img.onload = go;
 }
 

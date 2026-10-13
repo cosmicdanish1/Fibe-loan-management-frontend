@@ -5,6 +5,9 @@ import {
   message,
 } from 'antd';
 import { FONT_OPTIONS } from '../../config/fontOptions';
+import { TopBarLookSettings } from './TopBarLookSettings';
+import LoadingAnimation from '../loaders/LoadingAnimation';
+import { LOADING_ANIMATIONS, saveLoadingAnimation, useLoadingAnimation } from '../../config/loadingAnimation';
 import { DEFAULT_TYPOGRAPHY_OFFSETS, normalizeTypographyOffsets, readTypographyOffsets, saveTypographyOffsets, TYPOGRAPHY_SYNC_CHANNEL, type TypographyOffsets } from '../../config/typographyPreferences';
 import {
   Settings,
@@ -42,7 +45,7 @@ import {
   FileText, ArrowLeftRight, Wallet, ArrowRightLeft, CreditCard,
   CheckSquare, Receipt, ReceiptText, DollarSign, Landmark,
   PenLine, Moon, Sun, Calculator, TrendingUp, Star, Settings2, ListOrdered,
-  Hash, Banknote, MessageSquare, Award, Medal, type LucideIcon,
+  Hash, Banknote, MessageSquare, Award, Medal, Send, MessageCircle, Mail, Smartphone, type LucideIcon,
 } from 'lucide-react';
 import {
   ALL_QUICK_ACTION_DEFS, DEFAULT_ENABLED_QA_IDS,
@@ -53,6 +56,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { setTheme } from '../../store/slices/themeSlice';
 import { apiService } from '../../services/api';
+import { useAuth } from '../../auth/context/AuthContext';
 import { useLicense } from '../license/LicenseContext';
 import { DEFAULT_WIDGET_CONFIG, clearLayout, type WidgetConfig } from '../../pages/dashboard/dashboardLayout';
 import { runThemeTransition } from '../../utils/themeTransition';
@@ -185,15 +189,52 @@ const BG_PRESETS = [
   '#fafafa', // Zinc
 ];
 
-const DEVELOPER_PIN = '0786';
+// SHA-256 of the developer PIN (the plaintext PIN is no longer in the bundle).
+// NOTE: a client-side hash is still only a speed bump, not a security control -
+// the real gate must be a backend permission check.
+const DEVELOPER_PIN_SHA256 = '27ed5b43a1c87bdf97934b51528c17cf26f3e34ba4328041da951caad6dcd884';
 const MAX_ATTEMPTS = 3;
+const PIN_LOCK_MINUTES = 5;
+const PIN_FAIL_KEY = 'devPinFailCount';
+const PIN_LOCK_KEY = 'devPinLockUntil';
+
+const sha256Hex = async (text: string): Promise<string> => {
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return '';
+  }
+};
+const readPinLockUntil = (): number => {
+  try { return Number(sessionStorage.getItem(PIN_LOCK_KEY)) || 0; } catch { return 0; }
+};
+const clearPinFailures = () => {
+  try { sessionStorage.removeItem(PIN_FAIL_KEY); sessionStorage.removeItem(PIN_LOCK_KEY); } catch { /* ignore */ }
+};
+// Records a failed attempt; starts the lock when the limit is reached. Returns the new count.
+const recordPinFailure = (): number => {
+  let count = 1;
+  try {
+    count = (Number(sessionStorage.getItem(PIN_FAIL_KEY)) || 0) + 1;
+    if (count >= MAX_ATTEMPTS) {
+      sessionStorage.setItem(PIN_LOCK_KEY, String(Date.now() + PIN_LOCK_MINUTES * 60000));
+      sessionStorage.setItem(PIN_FAIL_KEY, '0');
+    } else {
+      sessionStorage.setItem(PIN_FAIL_KEY, String(count));
+    }
+  } catch { /* storage unavailable: fall back to per-dialog counting */ }
+  return count;
+};
 
 // Sidebar / content header copy, keyed by tab.
 const TAB_META: Record<string, { title: string; subtitle: string; keywords: string }> = {
   appearance: { title: 'Appearance', subtitle: 'Colors, typography and canvas',      keywords: 'theme dark light accent colour color gradient font text size bold shadow shadows density corner radius background image' },
   dashboard:  { title: 'Dashboard',  subtitle: 'Widgets, quick actions and layout',  keywords: 'widgets quick actions shortcuts fy banner opacity transparency background notice board' },
+  alerts:     { title: 'Notifications', subtitle: 'Telegram, Discord and Jira: what is sent and where', keywords: 'telegram discord jira alerts notifications webhook login logout errors crashes backup day-end licence digest mute turn off on ticket' },
   system:     { title: 'System & Window', subtitle: 'Notifications and global behavior', keywords: 'notifications toasts sound effects audio chatbot ai assistant' },
   developer:  { title: 'Developer',  subtitle: 'Root-level diagnostics',             keywords: 'analytics realtime monitor window geometry reset layouts console' },
+  approvers:  { title: 'Approvers',  subtitle: 'Who may approve sensitive actions with their phone code', keywords: 'approver otp authenticator two-factor 2fa approval code loan closure early closure pass reverse authorised authorized privilege' },
   license:    { title: 'License',    subtitle: 'Activation and renewal',             keywords: 'license key activate renew expiry grace customer' },
 };
 
@@ -349,6 +390,619 @@ const ColorWell: React.FC<{ value: string; onChange: (hex: string) => void; aria
 );
 
 const fieldLabel: React.CSSProperties = { color: C.dim };
+
+// --- Notifications (admin): channels, per-channel alert switches, limits and the Jira card ---
+type ChannelId = 'telegram' | 'discord';
+interface AlertParamData { label: string; unit: string; default: number; min: number; max: number; value: number }
+interface AlertItemData { key: string; label: string; description: string; enabled: boolean; telegram: boolean; discord: boolean; param: AlertParamData | null }
+interface AlertGroupData { id: string; label: string; description: string; alerts: AlertItemData[] }
+interface AlertSettingsData {
+  master: boolean;
+  telegram: { enabled: boolean; configured: boolean; channels: Record<string, boolean> };
+  discord: { enabled: boolean; configured: boolean; channels: Record<string, boolean> };
+  jira: { enabled: boolean; configured: boolean; site: string; projectKey: string; issueType: string };
+  groups: AlertGroupData[];
+}
+
+interface OnlineUser { username: string; role: string; host: string; ip: string; mac: string; version: string; minutes: number }
+
+const ALERT_GROUP_TINT: Record<string, string> = {
+  queries: '#38bdf8', errors: '#f87171', activity: '#34d399', business: '#fbbf24', digest: '#a78bfa',
+};
+
+/** Channels that work today. Each gets its own big card and its own settings panel. */
+const CHANNEL_DEFS: { id: ChannelId; name: string; tagline: string; Icon: LucideIcon; gradient: string; tint: string }[] = [
+  { id: 'telegram', name: 'Telegram', tagline: 'One group chat with topics', Icon: Send, gradient: 'linear-gradient(135deg,#229ed9,#4fc3f7)', tint: '#229ed9' },
+  { id: 'discord', name: 'Discord', tagline: 'A server with channels', Icon: MessageSquare, gradient: 'linear-gradient(135deg,#5865f2,#8e9bff)', tint: '#5865f2' },
+];
+
+/** Placeholders for channels planned for later. Not clickable, nothing to configure yet. */
+const COMING_SOON: { id: string; name: string; Icon: LucideIcon; gradient: string }[] = [
+  { id: 'whatsapp', name: 'WhatsApp', Icon: MessageCircle, gradient: 'linear-gradient(135deg,#25d366,#6ee7a0)' },
+  { id: 'email', name: 'Email', Icon: Mail, gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)' },
+  { id: 'sms', name: 'SMS', Icon: Smartphone, gradient: 'linear-gradient(135deg,#8b5cf6,#a78bfa)' },
+  { id: 'slack', name: 'Slack', Icon: Hash, gradient: 'linear-gradient(135deg,#e01e5a,#f472b6)' },
+  { id: 'teams', name: 'Microsoft Teams', Icon: Users, gradient: 'linear-gradient(135deg,#464eb8,#7b83eb)' },
+];
+
+/** Approvers (ES-124): choose which existing users may approve sensitive actions with the code from their own phone. */
+const ApproversSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  type Row = { userid: number; username: string; level: string; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean };
+  const [rows, setRows] = useState<Row[] | null>(null);
+  const [guards, setGuards] = useState<Record<string, { enabled: boolean }>>({});
+  const [labels, setLabels] = useState<Record<string, string>>({});
+  const [pick, setPick] = useState('');
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const g = await apiService.twoFaGetGuards();
+      setRows(g.approvers); setGuards(g.guards);
+      setLabels(Object.fromEntries(g.actions.map((a) => [a.key, a.label])));
+    } catch (e) { setNote({ ok: false, text: e instanceof Error ? e.message : 'Could not load approvers' }); }
+  }, []);
+  useEffect(() => { if (isAdmin) void load(); }, [isAdmin, load]);
+
+  if (!isAdmin) {
+    return (
+      <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title="Approvers" subtitle="Administrators only">
+        <p className="fz-body" style={{ color: C.dim }}>Only an administrator can choose who may approve sensitive actions.</p>
+      </Panel>
+    );
+  }
+
+  const change = async (id: number, add: boolean, name: string) => {
+    try {
+      const r = await apiService.twoFaSetApprovers(add ? [id] : [], add ? [] : [id]);
+      setRows(r.approvers); setPick('');
+      setNote({ ok: true, text: add ? `${name} is now an approver. They must set up their authenticator in My Profile before their code counts.` : `${name} is no longer an approver. Their code stops working immediately.` });
+    } catch (e) { setNote({ ok: false, text: e instanceof Error ? e.message : 'Could not change approver' }); }
+  };
+
+  const current = (rows ?? []).filter((r) => r.approver);
+  const candidates = (rows ?? []).filter((r) => !r.approver && r.enabled);
+  const activeCount = current.filter((r) => r.active).length;
+  const btn: React.CSSProperties = { background: C.fill, border: `1px solid ${C.border}`, color: C.text };
+  const protectedOn = Object.entries(guards).filter(([, v]) => v.enabled).map(([k]) => labels[k] || k);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title="Approvers (OTP)" subtitle="Existing users who can approve with the code from their own phone"
+        right={<Counter color={activeCount > 0 ? C.green : C.red}>{activeCount} active</Counter>}>
+        <div className="flex flex-col gap-3">
+          <p className="fz-body" style={{ color: C.dim }}>
+            An approver gives the current 6-digit code from their authenticator app to the person doing a protected action (for example an Early Loan Closure).
+            Each approver sets up their own authenticator in <strong>My Profile</strong>. You can also grant this as <strong>Approver (OTP)</strong> in the Access Privilege Matrix (Create / Modify Users).
+          </p>
+
+          {note && <div className="px-3.5 py-2.5 rounded-xl fz-body" style={{ background: C.fill, color: note.ok ? C.green : C.red }}>{note.text}</div>}
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <select aria-label="Add approver" value={pick} onChange={(e) => setPick(e.target.value)}
+              className="rounded-lg px-3 fz-body outline-none" style={{ height: 34, minWidth: 220, ...btn }}>
+              <option value="">Add an approver…</option>
+              {candidates.map((u) => <option key={u.userid} value={u.userid}>{u.username}{u.level ? ` (${u.level})` : ''}</option>)}
+            </select>
+            <button type="button" disabled={!pick} className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
+              style={{ height: 34, background: pick ? accent : C.fill, color: pick ? '#fff' : C.dim, border: 0, opacity: pick ? 1 : 0.6 }}
+              onClick={() => { const u = candidates.find((c) => String(c.userid) === pick); if (u) void change(u.userid, true, u.username); }}>
+              Add
+            </button>
+          </div>
+
+          {rows === null ? <p className="fz-body" style={{ color: C.dim }}>Loading…</p>
+            : current.length === 0 ? <p className="fz-body" style={{ color: C.dim }}>No approver yet.</p>
+            : (
+              <div className="flex flex-col gap-1.5">
+                {current.map((r) => (
+                  <div key={r.userid} className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl" style={{ background: C.fill }}>
+                    <div className="min-w-0">
+                      <span className="fz-body font-bold" style={{ color: C.textStrong }}>{r.username}</span>
+                      <span className="fz-small ml-2" style={{ color: C.dim }}>{r.level}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Counter color={!r.enabled ? C.red : r.enrolled ? C.green : C.amber ?? C.dim}>
+                        {!r.enabled ? 'Disabled' : r.enrolled ? 'Active' : 'Needs authenticator'}
+                      </Counter>
+                      <button type="button" className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={{ height: 30, ...btn }}
+                        onClick={() => void change(r.userid, false, r.username)}>Remove</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+      </Panel>
+
+      <Panel icon={<KeyRound size={16} />} tint="#38bdf8" title="Protected actions" subtitle="Which windows ask for an approver's code"
+        right={<button type="button" className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={{ height: 30, ...btn }}
+          onClick={() => (window as any).electronAPI?.openNewWindow?.('/two-factor-settings')}>Manage…</button>}>
+        <p className="fz-body" style={{ color: C.dim }}>
+          {protectedOn.length > 0
+            ? <>Approver code required for: <strong style={{ color: C.textStrong }}>{protectedOn.join(', ')}</strong>.</>
+            : 'No window asks for an approver code at the moment.'}
+          {' '}Switching a protection on or off is done in <strong>Administration &gt; Security &gt; Two-Factor Authentication</strong>; switching one off needs your password and an approver's code.
+        </p>
+      </Panel>
+    </div>
+  );
+};
+
+const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  const [data, setData] = useState<AlertSettingsData | null>(null);
+  const [loadError, setLoadError] = useState('');
+  const [sel, setSel] = useState<ChannelId | null>(null);
+  const [testingDest, setTestingDest] = useState<string | null>(null);
+  const [jiraTesting, setJiraTesting] = useState(false);
+  const [jiraResult, setJiraResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [online, setOnline] = useState<OnlineUser[] | null>(null);
+  const [onlineError, setOnlineError] = useState('');
+  const [posting, setPosting] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res: any = await apiService.get('/alert-settings');
+      const d = res?.data ?? res;
+      if (d && Array.isArray(d.groups)) { setData(d); setLoadError(''); }
+      else setLoadError(res?.message || 'Could not load the notification settings.');
+    } catch (e: any) {
+      setLoadError(e?.message || 'Could not reach the server.');
+    }
+  }, []);
+
+  useEffect(() => { if (isAdmin) void load(); }, [isAdmin, load]);
+
+  const loadOnline = useCallback(async () => {
+    try {
+      const res: any = await apiService.get('/alert-settings/online');
+      const d = res?.data ?? res;
+      if (d && Array.isArray(d.users)) { setOnline(d.users); setOnlineError(''); }
+      else setOnlineError(res?.message || 'Could not load who is online.');
+    } catch (e: any) {
+      setOnlineError(e?.message || 'Could not reach the server.');
+    }
+  }, []);
+
+  // Refresh the online list every 30 seconds while the home view is showing.
+  useEffect(() => {
+    if (!isAdmin || sel) return undefined;
+    void loadOnline();
+    const timer = window.setInterval(() => { void loadOnline(); }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [isAdmin, sel, loadOnline]);
+
+  const postOnline = async () => {
+    setPosting(true);
+    try {
+      const res: any = await apiService.post('/alert-settings/online/post');
+      const d = res?.data ?? res;
+      message.success(`Posted to the channels that receive it (${d?.count ?? 0} online).`);
+    } catch { message.error('Could not post the online list.'); }
+    finally { setTimeout(() => setPosting(false), 3000); }
+  };
+
+  /** Saves one change straight away (these are shared server settings, not part of the page's Save). */
+  const save = async (path: string, body: Record<string, unknown>, optimistic?: (d: AlertSettingsData) => AlertSettingsData) => {
+    const before = data;
+    if (optimistic && data) setData(optimistic(data));
+    try {
+      const res: any = await apiService.put(path, body);
+      const d = res?.data ?? res;
+      if (res?.success === false || !d || !Array.isArray(d.groups)) throw new Error(res?.message || res?.error || 'Save failed');
+      setData(d);
+    } catch (e: any) {
+      setData(before);
+      message.error(e?.message || 'Could not save that change.');
+    }
+  };
+
+  const mapAlert = (key: string, patch: Partial<AlertItemData>) => (d: AlertSettingsData): AlertSettingsData => ({
+    ...d, groups: d.groups.map((g) => ({ ...g, alerts: g.alerts.map((a) => (a.key === key ? { ...a, ...patch } : a)) })),
+  });
+
+  /** One alert, one channel. Switching on also clears any older global mute on that alert. */
+  const toggleAlertFor = (key: string, dest: ChannelId, on: boolean) =>
+    save(`/alert-settings/${key}`, on ? { [dest]: true, enabled: true } : { [dest]: false },
+      mapAlert(key, on ? { [dest]: true, enabled: true } : { [dest]: false }));
+
+  /** A whole group of alerts, for one channel only. */
+  const toggleGroupFor = (id: string, dest: ChannelId, on: boolean) =>
+    save(`/alert-settings/group/${id}`, { enabled: on, dest }, (d) => ({
+      ...d, groups: d.groups.map((g) => (g.id === id
+        ? { ...g, alerts: g.alerts.map((a) => ({ ...a, [dest]: on, ...(on ? { enabled: true } : {}) })) }
+        : g)),
+    }));
+
+  const toggleMaster = (enabled: boolean) => save('/alert-settings/master', { enabled }, (d) => ({ ...d, master: enabled }));
+  const toggleDest = (dest: ChannelId, enabled: boolean) =>
+    save(`/alert-settings/dest.${dest}`, { enabled }, (d) => ({ ...d, [dest]: { ...d[dest], enabled } }));
+  const toggleJira = (enabled: boolean) => save('/alert-settings/jira.create', { enabled }, (d) => ({ ...d, jira: { ...d.jira, enabled } }));
+
+  const commitParam = (item: AlertItemData) => {
+    const raw = drafts[item.key];
+    if (raw === undefined || !item.param) return;
+    const n = Number(raw);
+    setDrafts((p) => { const { [item.key]: _drop, ...rest } = p; return rest; });
+    if (!Number.isFinite(n) || raw.trim() === '' || n < item.param.min || n > item.param.max) {
+      message.error(`${item.param.label} must be between ${item.param.min} and ${item.param.max}.`);
+      return;
+    }
+    if (n !== item.param.value) void save(`/alert-settings/${item.key}`, { param: n });
+  };
+
+  const sendTest = async (dest: ChannelId) => {
+    setTestingDest(dest);
+    try {
+      const res: any = await apiService.post(`/alert-settings/test/${dest}`);
+      const d = res?.data ?? res;
+      const name = dest === 'telegram' ? 'Telegram' : 'Discord';
+      if (d?.queued > 0) message.success(`Test messages are on their way to ${name} (${d.queued} channel${d.queued === 1 ? '' : 's'}).`);
+      else message.warning(`${name} is not configured on the server (see the .env file).`);
+    } catch { message.error('Could not send the test messages.'); }
+    finally { setTimeout(() => setTestingDest(null), 4000); }
+  };
+
+  const testJira = async () => {
+    setJiraTesting(true);
+    setJiraResult(null);
+    try {
+      const res: any = await apiService.post('/alert-settings/jira/test');
+      const d = res?.data ?? res;
+      setJiraResult({ ok: !!d?.ok, message: d?.message || 'No answer from the server.' });
+    } catch { setJiraResult({ ok: false, message: 'Could not reach the server.' }); }
+    finally { setJiraTesting(false); }
+  };
+
+  const smallButton = (disabled: boolean): React.CSSProperties => ({
+    height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text, opacity: disabled ? 0.5 : 1,
+  });
+
+  if (!isAdmin) {
+    return (
+      <Panel icon={<Bell size={16} />} tint="#38bdf8" title="Notifications" subtitle="Administrators only">
+        <p className="fz-body" style={{ color: C.dim }}>Only an administrator can choose which alerts are sent and where.</p>
+      </Panel>
+    );
+  }
+  if (!data) {
+    return (
+      <Panel icon={<Bell size={16} />} tint="#38bdf8" title="Notifications" subtitle={loadError ? 'Could not load' : 'Loading…'}>
+        {loadError && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
+            <span className="fz-body" style={{ color: C.red }}>{loadError}</span>
+            <button onClick={load} className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(false)}>Retry</button>
+          </div>
+        )}
+      </Panel>
+    );
+  }
+
+  const allAlerts = data.groups.flatMap((g) => g.alerts);
+  const withLimits = allAlerts.filter((a) => a.param);
+  const statusOf = (id: ChannelId) => {
+    const ch = data[id];
+    if (!ch.configured) return { text: 'Not configured', color: C.amber };
+    if (!ch.enabled) return { text: 'Switched off', color: C.dimmer };
+    return { text: 'Active', color: C.green };
+  };
+
+  // These are plain render functions (not components), so React keeps focus when a switch is pressed.
+  const renderChannelCard = (def: (typeof CHANNEL_DEFS)[number]) => {
+    const ch = data[def.id];
+    const selected = sel === def.id;
+    const status = statusOf(def.id);
+    return (
+      <div
+        key={def.id}
+        className="rounded-[20px] flex flex-col justify-between"
+        style={{
+          aspectRatio: '1 / 1', minHeight: 176, padding: 16,
+          background: selected ? `color-mix(in srgb, ${def.tint} 12%, ${C.panel})` : C.fill,
+          border: `2px solid ${selected ? def.tint : C.border}`,
+          opacity: ch.enabled ? 1 : 0.78,
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setSel(def.id)}
+          aria-pressed={selected}
+          aria-label={`Open ${def.name} settings`}
+          className="text-left cursor-pointer flex flex-col gap-3"
+          style={{ flex: 1, border: 'none', background: 'transparent', padding: 0, color: 'inherit' }}
+        >
+          <span className="rounded-2xl flex items-center justify-center" style={{ width: 52, height: 52, background: def.gradient, color: '#fff' }}>
+            <def.Icon size={26} />
+          </span>
+          <span>
+            <span className="block font-black" style={{ fontSize: 19, color: C.textStrong }}>{def.name}</span>
+            <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{def.tagline}</span>
+          </span>
+          <span className="flex items-center gap-1.5 fz-small font-bold" style={{ color: status.color }}>
+            <span className="block rounded-full" style={{ width: 8, height: 8, background: status.color }} />
+            {status.text}
+          </span>
+        </button>
+        <div className="flex items-center justify-between gap-2">
+          <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: selected ? def.tint : C.dimmer }}>
+            Open settings ›
+          </span>
+          <Toggle on={ch.enabled} accent={def.tint} label={`Send alerts to ${def.name}`} onChange={(v) => toggleDest(def.id, v)} />
+        </div>
+      </div>
+    );
+  };
+
+  const renderComingSoon = (c: (typeof COMING_SOON)[number]) => (
+    <div
+      key={c.id}
+      aria-disabled="true"
+      className="rounded-2xl flex items-center gap-3"
+      style={{ padding: '10px 12px', background: C.fillSoft, border: `1px dashed ${C.border}`, opacity: 0.7 }}
+    >
+      <span className="rounded-xl flex items-center justify-center shrink-0" style={{ width: 34, height: 34, background: c.gradient, color: '#fff', filter: 'grayscale(.35)' }}>
+        <c.Icon size={17} />
+      </span>
+      <span className="min-w-0">
+        <span className="fz-body font-bold block truncate" style={{ color: C.text }}>{c.name}</span>
+        <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Coming soon</span>
+      </span>
+    </div>
+  );
+
+  const renderChannelPanel = (sel: ChannelId) => {
+    const def = CHANNEL_DEFS.find((d) => d.id === sel)!;
+    const ch = data[sel];
+    const effective = (a: AlertItemData) => a.enabled && a[sel];
+    const onCount = allAlerts.filter(effective).length;
+    const status = statusOf(sel);
+    const chMap: Record<string, boolean> | undefined = sel === 'discord' ? data.discord?.channels : data.telegram?.channels;
+    const mapping = chMap ? Object.entries(chMap) : [];
+    const noTopics = sel === 'telegram' && ch.configured && mapping.length > 0 && mapping.every(([, ok]) => !ok);
+    return (
+      <Panel
+        icon={<def.Icon size={16} />} tint={def.tint} title={`${def.name} settings`}
+        subtitle={`Choose which alerts are sent to ${def.name}. Nothing here affects the other channels.`}
+        right={<Counter color={ch.enabled && data.master ? C.green : C.red}>{ch.enabled && data.master ? `${onCount} / ${allAlerts.length} alerts` : 'Off'}</Counter>}
+      >
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
+            <div>
+              <span className="fz-body font-bold block" style={{ color: C.text }}>
+                Connection: <span style={{ color: status.color }}>{status.text}</span>
+              </span>
+              <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
+                {sel === 'telegram'
+                  ? (ch.configured ? 'Sends to the topics of your Telegram group.' : 'Add the bot token and chat id to the server .env file.')
+                  : (ch.configured ? 'Sends to the Discord channels that have a webhook in the server .env file.' : 'Add a webhook URL per channel (DISCORD_WEBHOOK_…) to the server .env file. Nothing is sent until you do.')}
+              </span>
+              {ch.configured && mapping.length > 0 && (
+                <span className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: C.dimmer }}>{sel === 'discord' ? 'Channels' : 'Topics'}</span>
+                  {noTopics && <span className="fz-small" style={{ color: C.dim }}>none set up: everything goes to the group's General chat</span>}
+                  {!noTopics && mapping.map(([name, ok]) => (
+                    <span key={name} className="px-2 py-0.5 rounded-full fz-tiny font-bold"
+                      style={{ background: `color-mix(in srgb, ${ok ? C.green : C.amber} 16%, transparent)`, color: ok ? C.green : C.amber }}>
+                      #{name} {ok ? '✓' : '—'}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={() => sendTest(sel)}
+                disabled={testingDest === sel || !ch.configured}
+                className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
+                style={smallButton(testingDest === sel || !ch.configured)}
+              >
+                {testingDest === sel ? 'Sending…' : 'Send test'}
+              </button>
+              <Toggle on={ch.enabled} accent={def.tint} label={`Send alerts to ${def.name}`} onChange={(v) => toggleDest(sel, v)} />
+            </div>
+          </div>
+
+          <div style={{ opacity: ch.enabled && data.master ? 1 : 0.5 }} className="space-y-4">
+            {data.groups.map((g) => {
+              const on = g.alerts.filter(effective).length;
+              return (
+                <div key={g.id}>
+                  <div className="flex items-center justify-between gap-3 px-1 pb-2">
+                    <div className="min-w-0">
+                      <span className="fz-body font-black block" style={{ color: ALERT_GROUP_TINT[g.id] || accent }}>{g.label}</span>
+                      <span className="fz-small block" style={{ color: C.dim }}>{g.description}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Counter color={on === g.alerts.length ? C.green : on === 0 ? C.red : C.amber}>{on} / {g.alerts.length}</Counter>
+                      <Toggle on={on === g.alerts.length} accent={def.tint} label={`All ${g.label} alerts to ${def.name}`} onChange={(v) => toggleGroupFor(g.id, sel, v)} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {g.alerts.map((a) => (
+                      <div key={a.key} className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ background: C.fill }}>
+                        <div className="min-w-0">
+                          <span className="fz-body font-bold block" style={{ color: C.text }}>{a.label}</span>
+                          <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{a.description}</span>
+                        </div>
+                        <Toggle on={effective(a)} accent={def.tint} label={`${a.label} to ${def.name}`} onChange={(v) => toggleAlertFor(a.key, sel, v)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Panel>
+    );
+  };
+
+  const fmtMinutes = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
+
+  const renderOnlinePanel = () => (
+    <Panel
+      icon={<Bell size={16} />} tint="#34d399" title="Online now"
+      subtitle="Everyone whose app is open and has signalled in the last few minutes"
+      right={(
+        <>
+          <Counter color={online && online.length > 0 ? C.green : C.dimmer}>{online ? `${online.length} online` : '…'}</Counter>
+          <button onClick={loadOnline} className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(false)}>Refresh</button>
+          <button onClick={postOnline} disabled={posting || !online} className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(posting || !online)}>
+            {posting ? 'Posting…' : 'Post to channels'}
+          </button>
+        </>
+      )}
+    >
+      {onlineError && (
+        <div className="px-4 py-3 rounded-xl fz-small font-semibold" style={{ background: C.fill, color: C.red }}>
+          {onlineError} (the backend may need a restart)
+        </div>
+      )}
+      {!onlineError && online && online.length === 0 && (
+        <div className="px-4 py-3 rounded-xl fz-small" style={{ background: C.fill, color: C.dim }}>Nobody is online right now.</div>
+      )}
+      {online && online.length > 0 && (
+        <div className="space-y-2">
+          {online.map((u, i) => (
+            <div key={`${u.username}-${u.host}-${i}`} className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ background: C.fill }}>
+              <div className="min-w-0">
+                <span className="fz-body font-bold block" style={{ color: C.text }}>
+                  <span className="inline-block rounded-full align-middle mr-2" style={{ width: 8, height: 8, background: C.green }} />
+                  {u.username}
+                  {u.role && <span className="fz-tiny font-black uppercase tracking-widest ml-2" style={{ color: C.dimmer }}>{u.role.toLowerCase()}</span>}
+                </span>
+                <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
+                  {[u.host, u.ip, u.mac && `MAC ${u.mac}`, u.version && `v${u.version}`].filter(Boolean).join(' · ')}
+                </span>
+              </div>
+              <span className="fz-small font-bold shrink-0" style={{ color: C.dim }}>online {fmtMinutes(u.minutes)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+
+  const renderLimitsPanel = () => (
+      <Panel icon={<Bell size={16} />} tint="#fbbf24" title="Alert limits" subtitle="These limits apply to every channel, so changing one here changes it everywhere">
+        <div className="space-y-2.5">
+          {withLimits.map((a) => (
+            <div key={a.key} className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ background: C.fill }}>
+              <div className="min-w-0">
+                <span className="fz-body font-bold block" style={{ color: C.text }}>{a.label}</span>
+                <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{a.description}</span>
+              </div>
+              <label className="flex items-center gap-2 fz-small shrink-0" style={{ color: C.dim }}>
+                {a.param!.label}
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={a.param!.min}
+                  max={a.param!.max}
+                  aria-label={`${a.label}: ${a.param!.label} (${a.param!.unit})`}
+                  value={drafts[a.key] ?? String(a.param!.value)}
+                  onChange={(e) => setDrafts((p) => ({ ...p, [a.key]: e.target.value }))}
+                  onBlur={() => commitParam(a)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  className="rounded-lg px-2 text-right font-bold"
+                  style={{ width: 64, height: 30, background: C.panel, border: `1px solid ${C.border}`, color: C.text }}
+                />
+                <span>{a.param!.unit}</span>
+              </label>
+            </div>
+          ))}
+        </div>
+      </Panel>
+  );
+
+  // A channel is open: show EVERYTHING for that channel on its own page, with a way back.
+  if (sel) {
+    return (
+      <div className="space-y-5">
+        <button
+          type="button"
+          onClick={() => setSel(null)}
+          className="flex items-center gap-1.5 fz-small font-bold cursor-pointer"
+          style={{ border: 'none', background: 'transparent', color: C.dim, padding: 0 }}
+        >
+          ‹ Back to Notifications
+        </button>
+        {renderChannelPanel(sel)}
+        {renderLimitsPanel()}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <Panel
+        icon={<Bell size={16} />} tint="#38bdf8" title="Notifications"
+        subtitle="Click a channel to open all of its settings. A society can use one, both or none."
+        right={<Counter color={data.master ? C.green : C.red}>{data.master ? 'Alerts on' : 'All muted'}</Counter>}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
+            <div>
+              <span className="fz-body font-bold block" style={{ color: C.text }}>Send alerts</span>
+              <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
+                Master switch for every channel. Off = nothing is sent anywhere. Muted alerts are dropped, never saved up for later.
+              </span>
+            </div>
+            <Toggle on={data.master} accent={accent} label="Send alerts" onChange={toggleMaster} />
+          </div>
+
+          <div>
+            <span className="fz-tiny font-black uppercase tracking-widest block mb-2" style={{ color: C.dimmer }}>Channels you can use now</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 220px))', gap: 14 }}>
+              {CHANNEL_DEFS.map(renderChannelCard)}
+            </div>
+          </div>
+
+          <div>
+            <span className="fz-tiny font-black uppercase tracking-widest block mb-2" style={{ color: C.dimmer }}>Planned</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10 }}>
+              {COMING_SOON.map(renderComingSoon)}
+            </div>
+          </div>
+        </div>
+      </Panel>
+
+      {renderOnlinePanel()}
+
+      <Panel icon={<Bell size={16} />} tint="#2684ff" title="Jira" subtitle="Support Desk queries become Jira tickets">
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
+            <div>
+              <span className="fz-body font-bold block" style={{ color: C.text }}>Create a Jira ticket for each query</span>
+              <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
+                {data.jira.configured
+                  ? `Tickets go to project ${data.jira.projectKey} on ${data.jira.site} as "${data.jira.issueType}". Off = queries are still saved here, with no ticket.`
+                  : 'Jira is not configured on the server (.env). Queries are saved here until it is.'}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={testJira}
+                disabled={jiraTesting || !data.jira.configured}
+                className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
+                style={smallButton(jiraTesting || !data.jira.configured)}
+              >
+                {jiraTesting ? 'Testing…' : 'Test connection'}
+              </button>
+              <Toggle on={data.jira.enabled} accent={accent} label="Create a Jira ticket for each query" onChange={toggleJira} />
+            </div>
+          </div>
+          {jiraResult && (
+            <div className="px-4 py-3 rounded-xl fz-small font-semibold" role="status"
+              style={{ background: C.fill, color: jiraResult.ok ? C.green : C.red }}>
+              {jiraResult.ok ? '✓ ' : '✕ '}{jiraResult.message}
+            </div>
+          )}
+        </div>
+      </Panel>
+    </div>
+  );
+};
 
 // --- License Section Component ---
 const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
@@ -539,6 +1193,8 @@ const SettingsPage: React.FC = () => {
   }, []);
 
   const [activeTab, setActiveTab] = useState('appearance');
+  const { user: authUser } = useAuth();
+  const isAdmin = ['administrator', 'admin', 'system'].includes(String(authUser?.role || '').toLowerCase());
   const [isSaving, setIsSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   useEffect(() => {
@@ -553,12 +1209,13 @@ const SettingsPage: React.FC = () => {
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
-  const [attempts, setAttempts] = useState(0);
+  const [, setAttempts] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pinInputRef = useRef<HTMLInputElement>(null);
 
   const accent = settings.accentColor || '#6366f1';
+  const loadingAnimation = useLoadingAnimation();
   const [ar, ag, ab] = hexToRgb(accent);
   const accentRgba = useCallback(
     (a: number) => `rgba(${ar},${ag},${ab},${a})`,
@@ -700,8 +1357,17 @@ const SettingsPage: React.FC = () => {
     }
   }, [isDeveloperMode]);
 
-  const handlePinSubmit = useCallback(() => {
-    if (pinInput === DEVELOPER_PIN) {
+  const handlePinSubmit = useCallback(async () => {
+    const lockedUntil = readPinLockUntil();
+    if (lockedUntil > Date.now()) {
+      const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
+      setPinError(`Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`);
+      setPinInput('');
+      return;
+    }
+    const pinOk = (await sha256Hex(pinInput)) === DEVELOPER_PIN_SHA256;
+    if (pinOk) {
+      clearPinFailures();
       setIsDeveloperMode(true);
       sessionStorage.setItem('developerModeEnabled', 'true');
       setShowPinDialog(false);
@@ -711,20 +1377,19 @@ const SettingsPage: React.FC = () => {
       message.success('Developer mode activated');
       setActiveTab('developer');
     } else {
-      const newAttempts = attempts + 1;
+      const newAttempts = recordPinFailure();
       setAttempts(newAttempts);
 
       if (newAttempts >= MAX_ATTEMPTS) {
-        setPinError(`Too many failed attempts.`);
+        setPinError(`Too many failed attempts. Locked for ${PIN_LOCK_MINUTES} minutes.`);
         setTimeout(() => setShowPinDialog(false), 1500);
         setPinInput('');
-        setAttempts(0);
       } else {
         setPinError(`Incorrect PIN. ${MAX_ATTEMPTS - newAttempts} attempts remaining.`);
         setPinInput('');
       }
     }
-  }, [pinInput, attempts]);
+  }, [pinInput]);
 
   const handleSaveWithAnimation = useCallback(async () => {
     setIsSaving(true);
@@ -768,12 +1433,28 @@ const SettingsPage: React.FC = () => {
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith('image/')) {
+        message.error('Please choose an image file.');
+        e.target.value = '';
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        message.error('Image is too large. Maximum size is 2 MB.');
+        e.target.value = '';
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageUrl = event.target?.result as string;
-        applyTheme({ backgroundImage: imageUrl, backgroundType: 'image' });
+        // Make sure the data actually decodes as an image before persisting it.
+        const probe = new Image();
+        probe.onload = () => applyTheme({ backgroundImage: imageUrl, backgroundType: 'image' });
+        probe.onerror = () => message.error('That file could not be read as an image.');
+        probe.src = imageUrl;
       };
+      reader.onerror = () => message.error('Failed to read the selected file.');
       reader.readAsDataURL(file);
+      e.target.value = '';
     }
   }, [applyTheme]);
 
@@ -801,6 +1482,8 @@ const SettingsPage: React.FC = () => {
     { key: 'appearance', label: 'Appearance',      Icon: Palette,   gradient: 'linear-gradient(135deg,#6366f1,#818cf8)' },
     { key: 'dashboard',  label: 'Dashboard',       Icon: BarChart2, gradient: 'linear-gradient(135deg,#10b981,#34d399)' },
     { key: 'system',     label: 'System & Window', Icon: Monitor,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)' },
+    { key: 'alerts',     label: 'Notifications',   Icon: Bell,      gradient: 'linear-gradient(135deg,#229ed9,#4fc3f7)', adminOnly: true },
+    { key: 'approvers',  label: 'Approvers',       Icon: ShieldCheck, gradient: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', adminOnly: true },
     { key: 'developer',  label: 'Developer',       Icon: Code,      gradient: 'linear-gradient(135deg,#3f3f46,#71717a)', devOnly: true },
     { key: 'license',    label: 'License',         Icon: KeyRound,  gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)', afterDivider: true },
   ]), []);
@@ -811,13 +1494,14 @@ const SettingsPage: React.FC = () => {
     const q = navQuery.trim().toLowerCase();
     return NAV_ITEMS
       .filter(item => !item.devOnly || isDeveloperMode)
+      .filter(item => !item.adminOnly || isAdmin)
       .filter(item => {
         if (!q) return true;
         const meta = TAB_META[item.key];
         return item.label.toLowerCase().includes(q)
           || (meta ? `${meta.title} ${meta.subtitle} ${meta.keywords}`.toLowerCase().includes(q) : false);
       });
-  }, [NAV_ITEMS, isDeveloperMode, navQuery]);
+  }, [NAV_ITEMS, isDeveloperMode, isAdmin, navQuery]);
 
   const navButtonStyle = (key: string): React.CSSProperties => ({
     width: '100%',
@@ -1564,6 +2248,41 @@ const SettingsPage: React.FC = () => {
           </div>
         </Panel>
 
+        {/* ── Loading Animation ─────────────────────────────────────── */}
+        <Panel
+          icon={<Zap size={16} />}
+          tint="#34d399"
+          title="Loading Animation"
+          subtitle="Shown while data loads from the database"
+          right={<Counter>{LOADING_ANIMATIONS.find(a => a.id === loadingAnimation)?.name}</Counter>}
+        >
+          <div className="grid grid-cols-3 gap-2.5">
+            {LOADING_ANIMATIONS.map(opt => {
+              const selected = loadingAnimation === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => saveLoadingAnimation(opt.id)}
+                  aria-pressed={selected}
+                  className="flex flex-col items-center gap-1 p-2 rounded-[10px] cursor-pointer overflow-hidden"
+                  style={{
+                    background: selected ? accentRgba(0.12) : C.fill,
+                    border: `1.5px solid ${selected ? accent : C.border}`,
+                  }}
+                >
+                  <div style={{ width: '100%', height: 96, display: 'grid', placeItems: 'center', transform: 'scale(.8)' }}>
+                    <LoadingAnimation variant={opt.id} height={96} />
+                  </div>
+                  <span className="fz-small font-bold flex items-center gap-1" style={{ color: selected ? accent : C.textStrong }}>
+                    {selected && <Check size={12} />}{opt.name}
+                  </span>
+                  <span className="fz-tiny font-medium text-center" style={{ color: C.dim }}>{opt.description}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Panel>
+
         {/* ── Background Theme ──────────────────────────────────────── */}
         <Panel
           icon={<ImageIcon size={16} />}
@@ -1626,6 +2345,7 @@ const SettingsPage: React.FC = () => {
     ];
 
     return (
+      <div className="space-y-5">
       <Panel icon={<Monitor size={16} />} tint="#fbbf24" title="System & Windows" subtitle="Global behavior">
         <div className="space-y-2.5">
           {rows.map(row => (
@@ -1643,6 +2363,10 @@ const SettingsPage: React.FC = () => {
           ))}
         </div>
       </Panel>
+      <Panel icon={<Bell size={16} />} tint="#38bdf8" title="Notifications & Search" subtitle="Look and feel of the top-bar alerts and search">
+        <TopBarLookSettings accent={accent} />
+      </Panel>
+      </div>
     );
   };
 
@@ -1871,6 +2595,8 @@ const SettingsPage: React.FC = () => {
               {activeTab === 'appearance' && renderAppearance()}
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'system' && renderSystem()}
+              {activeTab === 'alerts' && <AlertSettingsSection accent={accent} isAdmin={isAdmin} />}
+              {activeTab === 'approvers' && <ApproversSettingsSection accent={accent} isAdmin={isAdmin} />}
               {activeTab === 'developer' && renderDeveloper()}
               {activeTab === 'license' && renderLicense()}
             </div>

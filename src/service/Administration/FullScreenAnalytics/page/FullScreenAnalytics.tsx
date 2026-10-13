@@ -1,124 +1,170 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
+  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import {
   Activity,
   Users,
   AlertTriangle,
-  TrendingUp,
   RefreshCw,
   Minimize2,
   Maximize2,
-  Cpu,
-  Zap,
-  Server,
   Globe,
-  CheckCircle2,
+  ShieldAlert,
+  UserCheck,
 } from 'lucide-react';
 import { Select } from 'antd';
 import { useComponentAnalytics } from '../../../../hooks/useAnalytics';
+import apiService from '../../../../services/api';
 
 // One tone per series, taken from the shared theme so Settings changes apply.
-const COLORS = ['var(--aw-accent)', 'var(--aw-success)', 'var(--aw-warning)', 'var(--aw-danger)', 'var(--aw-info, var(--aw-accent))', 'var(--aw-muted)'];
-const TONE_MUTED = 'var(--aw-muted)';
-const GRID = 'var(--aw-border)';
+const COLORS = ['var(--aw-danger)', 'var(--aw-success)', 'var(--aw-warning)', 'var(--aw-accent)', 'var(--aw-info, var(--aw-accent))', 'var(--aw-muted)'];
 
-interface AnalyticsData {
-  users: any[];
-  sessions: any[];
-  errors: any[];
-  features: any[];
-  performance: any[];
-  realtime: any;
+interface AnalyticsStatus {
+  active_sessions: number;
+  total_errors: number;
+  unresolved_errors: number;
+}
+
+interface AnalyticsUserRow {
+  user_id?: number;
+  username?: string;
+  member_number?: string;
+  user_role?: string;
+  last_activity?: string;
+  session_count?: number | string;
+  error_count?: number | string;
+  feature_usage_count?: number | string;
 }
 
 const VIEWS = ['Overview', 'Performance', 'Users'];
 
+const RANGE_MS: Record<string, number> = {
+  '1h': 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
+  '7d': 7 * 24 * 60 * 60 * 1000,
+};
+
+// The backend wraps controller results in { success, data: <controller result> } and the
+// analytics controller wraps again - unwrap up to two levels.
+const unwrap = (res: any): any => (res?.data && typeof res.data === 'object' && 'data' in res.data ? res.data.data : res?.data);
+
+// --- Components (module level so they keep their identity between renders) ---
+
+const StatCard = ({ title, value, icon: Icon, tone, subtitle }: any) => (
+  <section className="aw-card aw-fade-in" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div>
+        <p className="aw-label" style={{ margin: 0 }}>{title}</p>
+        <p style={{ fontSize: 'calc(var(--type-body-size) + 18px)', fontWeight: 700, lineHeight: 1.1, marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+        {subtitle && <p className="aw-meta" style={{ marginTop: 4 }}>{subtitle}</p>}
+      </div>
+      <span className="aw-card-icon" style={{ width: 40, height: 40, ['--aw-accent' as any]: tone, ['--aw-accent-soft' as any]: `color-mix(in srgb, ${tone} 14%, transparent)` }}>
+        <Icon size={20} />
+      </span>
+    </div>
+  </section>
+);
+
+const ChartCard = ({ title, children, height = 300 }: any) => (
+  <section className="aw-card" style={{ height: '100%' }}>
+    <div className="aw-card-head">
+      <span className="aw-card-icon"><Activity size={14} /></span>
+      <h2 className="aw-card-title">{title}</h2>
+    </div>
+    <div style={{ height }} className="w-full">
+      {children}
+    </div>
+  </section>
+);
+
+const NoData: React.FC<{ note?: string | undefined }> = ({ note }) => (
+  <div className="aw-empty" style={{ height: '100%', justifyContent: 'center' }}>
+    <Activity size={26} />
+    <strong className="aw-strong">No data available</strong>
+    {note && <span className="aw-meta">{note}</span>}
+  </div>
+);
+
+// Custom Recharts Tooltip
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="aw-card" style={{ padding: 10, fontSize: 12, boxShadow: 'var(--aw-shadow)' }}>
+        {label !== undefined && (
+          <p className="aw-meta" style={{ fontWeight: 700, borderBottom: '1px solid var(--aw-border)', paddingBottom: 4, marginBottom: 6 }}>{label}</p>
+        )}
+        {payload.map((p: any, index: number) => (
+          <div key={index} className="aw-inline" style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.payload?.fill || p.color }} />
+            <span style={{ textTransform: 'capitalize' }}>{p.name}:</span>
+            <strong style={{ fontFamily: 'monospace' }}>{p.value}</strong>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 const FullScreenAnalytics: React.FC = () => {
   useComponentAnalytics('FullScreenAnalytics');
 
-  const [data, setData] = useState<AnalyticsData>({
-    users: [],
-    sessions: [],
-    errors: [],
-    features: [],
-    performance: [],
-    realtime: {}
-  });
+  const [status, setStatus] = useState<AnalyticsStatus | null>(null);
+  const [users, setUsers] = useState<AnalyticsUserRow[]>([]);
+  const [loadError, setLoadError] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [selectedTimeRange, setSelectedTimeRange] = useState('24h');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeView, setActiveView] = useState('overview');
   const [refreshInterval] = useState(30000); // 30 seconds
-  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const loadSeq = useRef(0);
+
+  const loadAnalyticsData = useCallback(async () => {
+    const seq = ++loadSeq.current;
+    setLoading(true);
+    try {
+      const startDate = new Date(Date.now() - (RANGE_MS[selectedTimeRange] ?? RANGE_MS['24h']!)).toISOString();
+      const [statusRes, usersRes] = await Promise.all([
+        apiService.get('/analytics/status'),
+        apiService.get('/analytics/users', { params: { start_date: startDate, limit: 50 } }),
+      ]);
+      if (seq !== loadSeq.current) return;
+
+      const s = unwrap(statusRes);
+      setStatus(statusRes.success && s && typeof s === 'object'
+        ? {
+          active_sessions: Number(s.active_sessions) || 0,
+          total_errors: Number(s.total_errors) || 0,
+          unresolved_errors: Number(s.unresolved_errors) || 0,
+        }
+        : null);
+
+      const u = unwrap(usersRes);
+      setUsers(usersRes.success && Array.isArray(u) ? u : []);
+
+      if (!statusRes.success && !usersRes.success) {
+        setLoadError(statusRes.message || usersRes.message || 'Analytics service is not reachable.');
+      } else {
+        setLoadError('');
+        setLastUpdated(new Date());
+      }
+    } catch (e: any) {
+      if (seq !== loadSeq.current) return;
+      console.error(e);
+      setLoadError(e?.message || 'Failed to load analytics.');
+    } finally {
+      if (seq === loadSeq.current) setLoading(false);
+    }
+  }, [selectedTimeRange]);
 
   useEffect(() => {
     loadAnalyticsData();
     const interval = setInterval(loadAnalyticsData, refreshInterval);
     return () => clearInterval(interval);
-  }, [selectedTimeRange, refreshInterval]);
-
-  const generateMockData = () => {
-    // Helper to generate realistic looking mock data for visual demonstration
-    return {
-      sessions: Array.from({ length: 24 }).map((_, i) => ({
-        time: `${i}:00`,
-        sessions: Math.floor(Math.random() * 100) + 20,
-        users: Math.floor(Math.random() * 60) + 10,
-        errors: Math.floor(Math.random() * 5),
-      })),
-      errors: [
-        { name: 'API Errors', value: 35 },
-        { name: 'Auth Failures', value: 15 },
-        { name: 'Network', value: 10 },
-        { name: 'Validation', value: 40 },
-      ],
-      performance: Array.from({ length: 20 }).map((_, i) => ({
-        time: `${i * 5}s`,
-        cpu: 30 + Math.random() * 40,
-        memory: 40 + Math.random() * 20,
-        network: Math.random() * 100,
-        responseTime: 100 + Math.random() * 200,
-      })),
-      features: [
-        { feature: 'Login', usage: 1200, performance: 98 },
-        { feature: 'Reports', usage: 850, performance: 85 },
-        { feature: 'Transactions', usage: 600, performance: 92 },
-        { feature: 'Search', usage: 400, performance: 95 },
-        { feature: 'Admin', usage: 150, performance: 99 },
-      ],
-      realtime: {
-        active_sessions: 42,
-        total_errors: 12,
-        unresolved_errors: 3,
-        system_health: 98
-      },
-      users: Array.from({ length: 10 }).map((_, i) => ({
-        username: `User ${i + 1}`,
-        role: i === 0 ? 'Admin' : 'Member',
-        status: Math.random() > 0.2 ? 'Active' : 'Idle',
-        last_activity: '2 mins ago'
-      }))
-    };
-  };
-
-  const loadAnalyticsData = async () => {
-    setLoading(true);
-    try {
-      // Simulating API latency and fallback to mock data for consistent UI demo
-      await new Promise(r => setTimeout(r, 600));
-      const mock = generateMockData();
-      setData(mock as any);
-      setLastUpdated(new Date());
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [loadAnalyticsData, refreshInterval]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -130,60 +176,15 @@ const FullScreenAnalytics: React.FC = () => {
     }
   };
 
-  // --- Components ---
+  const fmt = (v: number | undefined) => (v === undefined ? '—' : v.toLocaleString());
 
-  const StatCard = ({ title, value, icon: Icon, trend, tone, subtitle }: any) => (
-    <section className="aw-card aw-fade-in" style={{ position: 'relative', overflow: 'hidden' }}>
-      <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <p className="aw-label" style={{ margin: 0 }}>{title}</p>
-          <p style={{ fontSize: 'calc(var(--type-body-size) + 18px)', fontWeight: 700, lineHeight: 1.1, marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
-          {subtitle && <p className="aw-meta" style={{ marginTop: 4 }}>{subtitle}</p>}
-          {trend !== undefined && (
-            <span className={`aw-pill ${trend >= 0 ? 'tone-success' : 'tone-danger'}`} style={{ marginTop: 10 }}>
-              <TrendingUp size={10} style={trend >= 0 ? undefined : { transform: 'rotate(180deg)' }} /> {Math.abs(trend)}%
-            </span>
-          )}
-        </div>
-        <span className="aw-card-icon" style={{ width: 40, height: 40, ['--aw-accent' as any]: tone, ['--aw-accent-soft' as any]: `color-mix(in srgb, ${tone} 14%, transparent)` }}>
-          <Icon size={20} />
-        </span>
-      </div>
-    </section>
-  );
-
-  const ChartCard = ({ title, children, height = 300 }: any) => (
-    <section className="aw-card" style={{ height: '100%' }}>
-      <div className="aw-card-head">
-        <span className="aw-card-icon"><Activity size={14} /></span>
-        <h2 className="aw-card-title">{title}</h2>
-      </div>
-      <div style={{ height }} className="w-full">
-        {children}
-      </div>
-    </section>
-  );
-
-  // Custom Recharts Tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="aw-card" style={{ padding: 10, fontSize: 12, boxShadow: 'var(--aw-shadow)' }}>
-          <p className="aw-meta" style={{ fontWeight: 700, borderBottom: '1px solid var(--aw-border)', paddingBottom: 4, marginBottom: 6 }}>{label}</p>
-          {payload.map((p: any, index: number) => (
-            <div key={index} className="aw-inline" style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color }} />
-              <span style={{ textTransform: 'capitalize' }}>{p.name}:</span>
-              <strong style={{ fontFamily: 'monospace' }}>{p.value}</strong>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const tick = { fontSize: 10, fill: TONE_MUTED };
+  const resolvedErrors = status ? Math.max(0, status.total_errors - status.unresolved_errors) : 0;
+  const errorBreakdown = status && status.total_errors > 0
+    ? [
+      { name: 'Unresolved', value: status.unresolved_errors },
+      { name: 'Resolved', value: resolvedErrors },
+    ]
+    : [];
 
   return (
     <div className="app-window">
@@ -191,7 +192,10 @@ const FullScreenAnalytics: React.FC = () => {
         <div className="min-w-0">
           <h1 className="aw-title">Live Ops Center</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Globe size={11} /> Connected · <span style={{ fontFamily: 'monospace', color: 'var(--aw-success)' }}>{lastUpdated.toLocaleTimeString()}</span>
+            <Globe size={11} />
+            {loadError
+              ? <span style={{ color: 'var(--aw-danger)' }}>Not connected - {loadError}</span>
+              : <>Connected · <span style={{ fontFamily: 'monospace', color: 'var(--aw-success)' }}>{lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}</span></>}
           </p>
         </div>
         <div className="aw-actions">
@@ -225,104 +229,98 @@ const FullScreenAnalytics: React.FC = () => {
           <div className="aw-stack aw-fade-in">
             {/* KPI Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--aw-gap)' }}>
-              <StatCard title="Active Sessions" value={data.realtime.active_sessions} icon={Users} trend={12} tone="var(--aw-accent)" subtitle="Currently online" />
-              <StatCard title="Total Errors" value={Math.floor(Math.random() * 50)} icon={AlertTriangle} trend={-5} tone="var(--aw-danger)" subtitle="Last 24 hours" />
-              <StatCard title="Avg Response" value="145ms" icon={Zap} trend={-2} tone="var(--aw-success)" subtitle="Network latency" />
-              <StatCard title="System Load" value="42%" icon={Cpu} trend={8} tone="var(--aw-warning)" subtitle="CPU Utilization" />
+              <StatCard title="Active Sessions" value={fmt(status?.active_sessions)} icon={Users} tone="var(--aw-accent)" subtitle="Currently online" />
+              <StatCard title="Total Errors" value={fmt(status?.total_errors)} icon={AlertTriangle} tone="var(--aw-danger)" subtitle="All recorded errors" />
+              <StatCard title="Unresolved Errors" value={fmt(status?.unresolved_errors)} icon={ShieldAlert} tone="var(--aw-warning)" subtitle="Awaiting resolution" />
+              <StatCard title="Active Users" value={fmt(loadError ? undefined : users.length)} icon={UserCheck} tone="var(--aw-success)" subtitle={`With sessions in the last ${selectedTimeRange}`} />
             </div>
 
             {/* Charts Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(260px, 1fr)', gap: 'var(--aw-gap)' }}>
               <ChartCard title="Traffic Volume & User Load" height={350}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data.sessions}>
-                    <defs>
-                      <linearGradient id="colorSessions" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" style={{ stopColor: 'var(--aw-accent)', stopOpacity: 0.3 }} />
-                        <stop offset="95%" style={{ stopColor: 'var(--aw-accent)', stopOpacity: 0 }} />
-                      </linearGradient>
-                      <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" style={{ stopColor: 'var(--aw-success)', stopOpacity: 0.3 }} />
-                        <stop offset="95%" style={{ stopColor: 'var(--aw-success)', stopOpacity: 0 }} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={tick} />
-                    <YAxis axisLine={false} tickLine={false} tick={tick} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area type="monotone" dataKey="sessions" stroke="var(--aw-accent)" strokeWidth={2} fillOpacity={1} fill="url(#colorSessions)" />
-                    <Area type="monotone" dataKey="users" stroke="var(--aw-success)" strokeWidth={2} fillOpacity={1} fill="url(#colorUsers)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <NoData note="The server does not provide a traffic time series yet." />
               </ChartCard>
 
               <ChartCard title="Error Breakdown" height={350}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={data.errors} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
-                      {data.errors.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length] as string} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      iconType="circle"
-                      formatter={(value) => <span className="aw-meta" style={{ fontWeight: 700, textTransform: 'uppercase' }}>{value}</span>}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                {errorBreakdown.length === 0 ? (
+                  <NoData note={status ? 'No errors have been recorded.' : undefined} />
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={errorBreakdown} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                        {errorBreakdown.map((_entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length] as string} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        iconType="circle"
+                        formatter={(value) => <span className="aw-meta" style={{ fontWeight: 700, textTransform: 'uppercase' }}>{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </ChartCard>
             </div>
 
             {/* Performance Strip */}
-            <ChartCard title="System Resources (Live Stream)" height={250}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.performance}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={tick} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="cpu" stroke="var(--aw-danger)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="memory" stroke="var(--aw-warning)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="network" stroke="var(--aw-info, var(--aw-accent))" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
+            <ChartCard title="System Resources" height={250}>
+              <NoData note="CPU, memory and network metrics are not collected by the server." />
             </ChartCard>
           </div>
         )}
 
         {activeView === 'performance' && (
           <div className="aw-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'start' }}>
-            {/* Detailed Feature Performance */}
             <ChartCard title="Feature Response Latency" height={400}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={data.features}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={GRID} />
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="feature" type="category" width={100} tick={{ fontSize: 11, fontWeight: 700, fill: 'var(--aw-text)' }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="performance" fill="var(--aw-accent)" radius={[0, 4, 4, 0]} barSize={20} />
-                </BarChart>
-              </ResponsiveContainer>
+              <NoData note="Per-feature latency is not recorded by the server yet." />
             </ChartCard>
+            <ChartCard title="Service Health" height={400}>
+              <NoData note="Service uptime / health checks are not available." />
+            </ChartCard>
+          </div>
+        )}
 
-            <div className="aw-stack">
-              {['Login Service', 'Database Primary', 'Cache Layer', 'Search Index'].map((svc, i) => (
-                <section key={i} className="aw-card">
-                  <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="aw-inline" style={{ alignItems: 'center', gap: 12 }}>
-                      <span className="aw-card-icon" style={{ width: 34, height: 34 }}><Server size={18} /></span>
-                      <span>
-                        <strong style={{ textTransform: 'uppercase' }}>{svc}</strong>
-                        <span className="aw-meta" style={{ display: 'block' }}>Uptime: 99.9%</span>
-                      </span>
-                    </span>
-                    <span className="aw-pill tone-success"><CheckCircle2 size={12} /> Healthy</span>
-                  </div>
-                </section>
-              ))}
-            </div>
+        {activeView === 'users' && (
+          <div className="aw-fade-in">
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Users size={14} /></span>
+                <h2 className="aw-card-title">User Activity ({selectedTimeRange})</h2>
+              </div>
+              {users.length === 0 ? (
+                <div style={{ height: 200 }}><NoData /></div>
+              ) : (
+                <div className="aw-table-wrap" style={{ maxHeight: '60vh' }}>
+                  <table className="aw-table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Last Activity</th>
+                        <th className="is-right">Sessions</th>
+                        <th className="is-right">Features Used</th>
+                        <th className="is-right">Errors</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((u, i) => (
+                        <tr key={u.user_id ?? u.username ?? i}>
+                          <td>{u.username || u.member_number || '—'}</td>
+                          <td>{u.user_role || '—'}</td>
+                          <td>{u.last_activity ? new Date(u.last_activity).toLocaleString() : '—'}</td>
+                          <td className="is-right">{Number(u.session_count) || 0}</td>
+                          <td className="is-right">{Number(u.feature_usage_count) || 0}</td>
+                          <td className="is-right">{Number(u.error_count) || 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
           </div>
         )}
       </div>

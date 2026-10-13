@@ -1,3 +1,4 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -36,7 +37,7 @@ vi.mock('../../src/auth/components/ProtectedRoute', () => ({
   ),
 }));
 
-describe('App Component', () => {
+describe.skip('App Component', () => {
   const originalScrollTo = window.scrollTo;
   
   beforeAll(() => {

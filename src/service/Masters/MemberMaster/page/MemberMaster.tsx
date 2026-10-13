@@ -6,7 +6,6 @@ import { getApiBaseUrlSync } from '../../../../services/apiVersionConfig';
 import { useMemberForm } from '../Hook/useMemberForm';
 import { Select as AntSelect } from 'antd';
 import MemberLookupDialog from '../../../../components/shared/kit/MemberLookupDialog';
-import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import type { RootState } from '../../../../store';
 
@@ -105,7 +104,8 @@ const MemberMaster: React.FC = () => {
   const setMediaObjectUrl = useCallback((key: MediaKey, url: string) => {
     const prev = mediaObjectUrlsRef.current[key];
     if (prev) URL.revokeObjectURL(prev);
-    mediaObjectUrlsRef.current[key] = url || undefined;
+    if (url) mediaObjectUrlsRef.current[key] = url;
+    else delete mediaObjectUrlsRef.current[key];
     if (key === 'signature') {
       setSavedSigUrl(url);
       return;
@@ -124,14 +124,20 @@ const MemberMaster: React.FC = () => {
   // BUG FIX: /members/master/:mbno/(signature|photo/:type) are JWT-protected —
   // a plain <img src="..."> can't carry the Authorization header and 401s.
   // Fetch as a blob (with the header) and hand the <img> an object URL instead.
-  const loadProtectedImage = useCallback(async (key: MediaKey, endpoint: string) => {
+  // isCurrent lets a caller drop a response that arrives after the user already picked another member.
+  const loadProtectedImage = useCallback(async (key: MediaKey, endpoint: string, isCurrent?: () => boolean) => {
     try {
       const blob = await apiService.fetchProtectedFile(endpoint);
+      if (isCurrent && !isCurrent()) return;
       setMediaObjectUrl(key, blob ? URL.createObjectURL(blob) : '');
     } catch {
+      if (isCurrent && !isCurrent()) return;
       setMediaObjectUrl(key, '');
     }
   }, [setMediaObjectUrl]);
+
+  // Bumped on every member selection; late responses from an older selection are ignored.
+  const memberSelectSeqRef = useRef(0);
 
   // ── KYC Documents state ───────────────────────────────────────────────────
   const DOC_TYPES = ['Aadhaar', 'PAN', 'Voter ID', 'Driving License', 'Passport', 'Ration Card', 'Bank Passbook', 'Photo', 'Other'];
@@ -248,40 +254,67 @@ const MemberMaster: React.FC = () => {
   };
 
   // Upload all queued media after save
-  const uploadQueuedMedia = useCallback(async (mbno: string) => {
+  // Returns a human-readable line for every upload that failed; failed items stay queued so
+  // the user can retry with Save (successful ones are removed from the queue).
+  const uploadQueuedMedia = useCallback(async (mbno: string): Promise<string[]> => {
+    const PHOTO_LABELS: Record<PhotoType, string> = { profile: 'Profile photo', doc_front: 'ID document (front)', doc_back: 'ID document (back)' };
+    const failed: string[] = [];
+    const uploadedPhotos: PhotoType[] = [];
+    let signatureUploaded = false;
+    const queuedSig = sigQueue;
     const uploads: Promise<void>[] = [];
     for (const [type, file] of Object.entries(mediaQueue) as [PhotoType, File][]) {
-      uploads.push(apiService.uploadMemberPhotoMaster(mbno, type, file).then(() =>
-        loadProtectedImage(type, `/members/master/${mbno}/photo/${type}`)
-      ).catch(() => {}));
+      uploads.push((async () => {
+        try {
+          const res = await apiService.uploadMemberPhotoMaster(mbno, type, file);
+          if (!res.success) throw new Error(res.message || res.error || 'Upload failed');
+          uploadedPhotos.push(type);
+          await loadProtectedImage(type, `/members/master/${mbno}/photo/${type}`);
+        } catch (e: any) {
+          failed.push(`${PHOTO_LABELS[type]}: ${e?.message || 'Upload failed'}`);
+        }
+      })());
     }
-    if (sigQueue) {
-      uploads.push(apiService.uploadMemberSignatureMaster(mbno, sigQueue).then(async () => {
-        await loadProtectedImage('signature', `/members/master/${mbno}/signature`);
-        clearCanvas();
-      }).catch(() => {}));
+    if (queuedSig) {
+      uploads.push((async () => {
+        try {
+          const res = await apiService.uploadMemberSignatureMaster(mbno, queuedSig);
+          if (!res.success) throw new Error(res.message || res.error || 'Upload failed');
+          signatureUploaded = true;
+          await loadProtectedImage('signature', `/members/master/${mbno}/signature`);
+          clearCanvas();
+        } catch (e: any) {
+          failed.push(`Signature: ${e?.message || 'Upload failed'}`);
+        }
+      })());
     }
     await Promise.all(uploads);
-    setMediaQueue({});
-    setSigQueue(null);
+    setMediaQueue(prev => {
+      const next = { ...prev };
+      uploadedPhotos.forEach(t => { delete next[t]; });
+      return next;
+    });
+    if (signatureUploaded) setSigQueue(prev => (prev === queuedSig ? null : prev));
+    return failed;
   }, [mediaQueue, sigQueue, clearCanvas, loadProtectedImage]);
 
   // Load saved media when an existing member is loaded
-  const loadMemberMedia = useCallback((mbno: string) => {
-    loadProtectedImage('signature', `/members/master/${mbno}/signature`);
+  const loadMemberMedia = useCallback((mbno: string, isCurrent?: () => boolean) => {
+    loadProtectedImage('signature', `/members/master/${mbno}/signature`, isCurrent);
     (['profile', 'doc_front', 'doc_back'] as PhotoType[]).forEach(type =>
-      loadProtectedImage(type, `/members/master/${mbno}/photo/${type}`)
+      loadProtectedImage(type, `/members/master/${mbno}/photo/${type}`, isCurrent)
     );
     setMediaQueue({}); setMediaPreviews({}); setSigQueue(null); clearCanvas();
   }, [clearCanvas, loadProtectedImage]);
 
   // ── KYC Documents handlers ────────────────────────────────────────────────
-  const loadKycDocuments = useCallback(async (mbno: string) => {
+  const loadKycDocuments = useCallback(async (mbno: string, isCurrent?: () => boolean) => {
     try {
       const res = await apiService.getMemberDocuments(mbno);
+      if (isCurrent && !isCurrent()) return;
       const docs = Array.isArray(res.data) ? res.data : ((res.data as any)?.data || []);
       setKycDocuments(Array.isArray(docs) ? docs : []);
-    } catch { setKycDocuments([]); }
+    } catch { if (!isCurrent || isCurrent()) setKycDocuments([]); }
   }, []);
 
   const handleKycUpload = async (file: File) => {
@@ -302,7 +335,8 @@ const MemberMaster: React.FC = () => {
     try {
       const res = await apiService.deleteMemberDocument(mbno, id);
       if (res.success) { showNotification('info', 'Document removed.'); await loadKycDocuments(mbno); }
-    } catch { /* ignore */ }
+      else await showErrorDialog('Document Delete Failed', res.message || res.error || 'The document could not be removed.');
+    } catch (e: any) { await showErrorDialog('Document Delete Failed', e?.message || 'The document could not be removed.'); }
   };
 
   const handleSearchClick = () => {
@@ -490,22 +524,18 @@ const MemberMaster: React.FC = () => {
         email: formData.email || '',
       };
 
-      const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
+      // Shared apiService: adds auth, refreshes the token on 401 and copes with non-JSON error bodies.
+      const response = await apiService.request(endpoint, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
-        },
         body: JSON.stringify(memberPayload),
       });
 
-      if (response.ok) {
-        const result = await response.json();
-
+      if (response.success) {
         // TransformInterceptor wraps all responses: { success, data: <controller_return> }.
         // saveMemberMaster service also wraps: { success, data: <pg_row> }.
-        // Double-nested: result.data.data = the actual PostgreSQL RETURNING row.
-        const savedDetails = result?.data?.data || result?.data || result;
+        // apiService.request already strips the outer envelope, so response.data.data
+        // is the actual PostgreSQL RETURNING row.
+        const savedDetails = (response.data as any)?.data || response.data;
 
         // Helper to get value from multiple possible keys (already defined in scope if we want, or just redefine)
         const getVal = (d: any, keys: string[]) => {
@@ -562,7 +592,7 @@ const MemberMaster: React.FC = () => {
 
         const finalMemberNo = String(getVal(savedDetails, ['memberNumber', 'member_no', 'memberNo', 'mbno']) || (isNewMember ? memberDataToSave.memberNumber : formData.memberNumber));
         // Upload queued photos + signature now that we have the mbno
-        if (finalMemberNo) await uploadQueuedMedia(finalMemberNo);
+        const failedUploads = finalMemberNo ? await uploadQueuedMedia(finalMemberNo) : [];
         const fullName = [memberPayload.prefix, memberPayload.f_name, memberPayload.m_name, memberPayload.l_name].filter(Boolean).join(' ');
         const fmtAmt = (v: any) => v ? `₹${Number(v).toLocaleString('en-IN')}` : '—';
         const fmtDate = (v: any) => v ? new Date(v).toLocaleDateString('en-IN') : '—';
@@ -623,9 +653,15 @@ const MemberMaster: React.FC = () => {
         } else {
           showNotification('success', isNewMember ? 'Member registered successfully!' : 'Member updated successfully!');
         }
+
+        if (failedUploads.length > 0) {
+          await showErrorDialog(
+            'Member Saved - Some Uploads Failed',
+            `The member record was saved, but these uploads failed:\n\n${failedUploads.join('\n')}\n\nThey are still queued - press Save again to retry.`
+          );
+        }
       } else {
-        const error = await response.json();
-        await showErrorDialog('Failed To Save Member', Array.isArray(error.message) ? error.message.join('\n') : (error.message || 'Unknown error'));
+        await showErrorDialog('Failed To Save Member', response.message || response.error || 'Unknown error');
       }
     } catch (error) {
       await showErrorDialog('Error Saving Member', 'Please try again.');
@@ -641,17 +677,17 @@ const MemberMaster: React.FC = () => {
   const handleMemberSelect = async (memberNo: string) => {
     setShowLookupModal(false);
     setIsLoadingMember(true);
+    const seq = ++memberSelectSeqRef.current;
+    const isCurrent = () => seq === memberSelectSeqRef.current;
 
     try {
       showNotification('info', `Loading member details for ${memberNo}...`);
 
-      const response = await fetch(`${await getApiBaseUrl()}/members/details/${memberNo}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}` }
-      });
+      const response = await apiService.request(`/members/details/${encodeURIComponent(memberNo)}`);
+      if (!isCurrent()) return; // user picked another member meanwhile
 
-      if (response.ok) {
-        const responseData = await response.json();
-        const memberDetails = responseData.data || responseData;
+      if (response.success) {
+        const memberDetails = (response.data || {}) as any;
 
         // Helper to get value from multiple possible keys
         const getVal = (d: any, keys: string[]) => {
@@ -732,16 +768,15 @@ const MemberMaster: React.FC = () => {
         });
 
         showNotification('success', `Member details loaded successfully for ${memberNo}`);
-        loadMemberMedia(memberNo);
-        loadKycDocuments(memberNo);
+        loadMemberMedia(memberNo, isCurrent);
+        loadKycDocuments(memberNo, isCurrent);
       } else {
-        const errorText = await response.text();
-        await showErrorDialog('Failed To Fetch Member Details', errorText);
+        await showErrorDialog('Failed To Fetch Member Details', response.message || response.error || 'Unknown error');
       }
     } catch (error) {
-      await showErrorDialog('Error Fetching Member Details', (error as Error).message);
+      if (isCurrent()) await showErrorDialog('Error Fetching Member Details', (error as Error).message);
     } finally {
-      setIsLoadingMember(false);
+      if (isCurrent()) setIsLoadingMember(false);
     }
   };
 

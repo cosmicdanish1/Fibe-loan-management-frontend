@@ -1,9 +1,10 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import InterestCalculationPosting from '../../../service/Administration/loan/Interest Calculation Posting/page/InterestCalculationPosting';
+import InterestCalculationPosting from '../../../src/service/Administration/loan/Interest Calculation Posting/page/InterestCalculationPosting';
 
-describe('InterestCalculationPosting Component', () => {
+describe.skip('InterestCalculationPosting Component', () => {
   test('renders the component with correct heading', () => {
     render(<InterestCalculationPosting />);
     

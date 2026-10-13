@@ -71,6 +71,7 @@ const openReport = (report: ReportCard) => {
   if (!report.route) return;
   const electronApi = (window as any).electronAPI;
   if (electronApi?.openNewWindow) electronApi.openNewWindow(report.route);
+  else window.location.hash = report.route; // browser / non-Electron fallback: navigate in place
 };
 
 const ReportPro: React.FC = () => (

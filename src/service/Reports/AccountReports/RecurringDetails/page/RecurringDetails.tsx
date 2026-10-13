@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { ConfigProvider, Button, Input, Spin, Radio, Modal, message, theme } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
-import { FileText, Printer, Search, RotateCcw, Repeat, User, Users, Monitor } from 'lucide-react';
+import { Printer, Search, RotateCcw, Repeat, User, Users, Monitor } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 

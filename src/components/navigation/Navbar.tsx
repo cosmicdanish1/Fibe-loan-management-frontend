@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { UserProfileMenu } from '../UserProfileMenu';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, X, ShieldCheck, Users, ArrowLeftRight, FileText, Wrench, HelpCircle, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
+import { GlobalSearch, type SearchItem } from '../topbar/GlobalSearch';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../auth/context/AuthContext';
 import { ACTION_ROUTE_MAP, isActionAllowed } from '../../config/menuActions';
@@ -47,6 +48,7 @@ const navConfig: NavItem[] = [
       },
       { title: 'DayEnd', action: 'DAY_END' },
       { title: 'Interest Calculation', action: 'INTEREST_CALC' },
+      { title: 'Group Insurance', action: 'GROUP_INSURANCE' },
       { title: 'Deposite/Loan Slab', action: 'DEPOSIT_LOAN_SLAB' },
       { title: 'Head Addition / Modification', action: 'HEAD_ADD_MOD' },
       { title: 'Head Opening Balance', action: 'HEAD_OPEN_BAL' },
@@ -58,6 +60,7 @@ const navConfig: NavItem[] = [
           { title: 'Configure UserLevel Default Rights', action: 'ROLE_MANAGEMENT' },
           { title: 'Change Password', action: 'CHANGE_PASSWORD' },
           { title: 'LogOut User', action: 'LOGOUT_USER' },
+          { title: 'Two-Factor Authentication', action: 'TWOFA_SETTINGS' },
         ]
       },
       {
@@ -90,6 +93,7 @@ const navConfig: NavItem[] = [
     title: 'Masters',
     items: [
       { title: 'Member Master', action: 'MEMBER_MASTER' },
+      { title: 'Member Status (Retired / Inactive)', action: 'MEMBER_STATUS' },
       { title: 'Signature Scanning', action: 'SIGNATURE_SCANNING' },
       { title: 'Saving A/c Opening', action: 'SAVING_AC_OPENING' },
       { title: 'Wing / Office Master', action: 'WING_OFFICE_MASTER' },
@@ -235,6 +239,7 @@ const navConfig: NavItem[] = [
         ]
       },
       { title: '13. Pass Book Printing', action: 'PASS_BOOK_PRINTING' },
+      { title: '14. Report Head Order', action: 'REPORT_HEAD_ORDER' },
       {
         title: 'Report Pro',
         submenu: [
@@ -256,6 +261,7 @@ const navConfig: NavItem[] = [
       { title: 'Update Saving Intt.', action: 'UPDATE_SAVING_INTT' },
       { title: 'Interest Receivable/Received Statement', action: 'INTEREST_RECEIVABLE_RECEIVED_STATEMENT' },
       { title: 'Communication Hub', action: 'COMMUNICATION_HUB' },
+      { title: 'Notification Centre', action: 'NOTIFICATION_CENTRE' },
       { title: 'Support Desk', action: 'SUPPORT_DESK' },
     ]
   },
@@ -371,6 +377,67 @@ function filterNavConfig(config: NavItem[], allowedActions: string[] | null | un
   }, []);
 }
 
+// Extra words so people find a window by what they call it, not only its menu title.
+const SEARCH_KEYWORDS: Record<string, string> = {
+  INTEREST_CALC: 'interest int accrual posting savings rd fd',
+  INTEREST_CALC_POST: 'interest int loan posting',
+  DAY_END: 'dayend close day eod end of day',
+  LOAN_APP: 'new loan apply application',
+  LOAN_PAYMENT: 'disburse disbursement pay out',
+  LOAN_REPAYMENT: 'emi recovery installment repay',
+  LOAN_EARLY_CLOSURE: 'foreclose close loan settle',
+  DATABASE_BACKUP: 'backup restore database data safe',
+  USER_MANAGEMENT: 'users create modify password staff login',
+  ROLE_MANAGEMENT: 'rights permissions roles access',
+  CHANGE_PASSWORD: 'password security',
+  MEMBER_MASTER: 'member customer kyc add edit',
+  SAVING_AC_OPENING: 'sb savings account open',
+  SETTINGS: 'theme dark mode appearance font colour color notifications search glass',
+  NOTIFICATION_CENTRE: 'alerts bell inbox',
+  COMMUNICATION_HUB: 'sms email whatsapp message send',
+  SUPPORT_DESK: 'help bug issue ticket report problem',
+  CALCULATOR: 'calc',
+  MEMBER_LEDGER_REPORT: 'ledger statement',
+  DEFAULTER_LIST: 'overdue npa arrears',
+};
+const SEARCH_SUGGESTED = new Set(['MEMBER_MASTER', 'LOAN_REPAYMENT', 'DAY_END', 'INTEREST_CALC', 'LOAN_APP', 'MEMBER_LEDGER_REPORT']);
+const SECTION_ICON: Record<string, React.ReactNode> = {
+  admin: <ShieldCheck size={15} />, masters: <Users size={15} />, transaction: <ArrowLeftRight size={15} />,
+  reports: <FileText size={15} />, utility: <Wrench size={15} />, help: <HelpCircle size={15} />, settings: <SettingsIcon size={15} />,
+};
+
+function flattenForSearch(config: NavItem[], run: (action: string) => void): SearchItem[] {
+  const out: SearchItem[] = [];
+  const walk = (items: MenuItem[], trail: string[], icon: React.ReactNode) => {
+    items.forEach(item => {
+      if (item.submenu) { walk(item.submenu, [...trail, item.title], icon); return; }
+      if (!item.action) return;
+      const action = item.action;
+      out.push({
+        id: action,
+        title: item.title,
+        path: trail.join(' › '),
+        keywords: SEARCH_KEYWORDS[action],
+        suggest: SEARCH_SUGGESTED.has(action),
+        icon,
+        run: () => run(action),
+      });
+    });
+  };
+  config.forEach(nav => {
+    // File and Exit are window actions (Save, Print…), not places to go.
+    if (nav.id === 'file' || nav.id === 'exit') return;
+    const icon = SECTION_ICON[nav.id];
+    if (nav.items.length === 0 && nav.action) {
+      const action = nav.action;
+      out.push({ id: action, title: nav.title, path: 'Application', keywords: SEARCH_KEYWORDS[action], icon, run: () => run(action) });
+    } else {
+      walk(nav.items, [nav.title], icon);
+    }
+  });
+  return out;
+}
+
 const Navbar: React.FC = () => {
   const { user } = useAuth();
   const visibleNavConfig = useMemo(
@@ -463,6 +530,17 @@ const Navbar: React.FC = () => {
 
     setMenuState({ activeMenu: null, activeSubmenus: {} });
   };
+
+  const searchItems = useMemo<SearchItem[]>(() => {
+    const items = flattenForSearch(visibleNavConfig, handleMenuItemClick);
+    items.push({
+      id: 'MY_PROFILE', title: 'My Profile', path: 'Account', keywords: 'account me profile details',
+      icon: <UserIcon size={15} />,
+      run: () => { if (window.electronAPI?.openNewWindow) window.electronAPI.openNewWindow('/my-profile'); else window.location.hash = '#/my-profile'; },
+    });
+    return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleNavConfig]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -579,6 +657,9 @@ const Navbar: React.FC = () => {
             ))}
           </ul>
         </div>
+
+        {/* Global search */}
+        <GlobalSearch items={searchItems} />
 
         {/* Right side — compact status dot + user profile */}
         <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-gray-100">

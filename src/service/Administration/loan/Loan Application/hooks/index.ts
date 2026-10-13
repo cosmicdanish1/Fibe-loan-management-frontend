@@ -10,7 +10,7 @@ import type { NomineeDetail } from '../types/nominee';
 export const useLoanApplication = (): {
   state: LoanApplicationState;
   setActiveTab: (tab: LoanApplicationState['activeTab']) => void;
-  updateLoanDetails: <K extends keyof LoanDetails>(field: K, value: LoanDetails[K]) => void;
+  updateLoanDetails: (field: keyof LoanDetails, value: string) => void;
   updateEmployeeDetails: (index: number, field: keyof Omit<EmployeeDetail, 'id'>, value: string) => void;
   updateNomineeDetails: (index: number, field: keyof NomineeDetail, value: string | number) => void;
   updateFDRDetails: (index: number, field: string, value: string | boolean) => void;

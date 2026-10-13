@@ -5,6 +5,7 @@ import { RootState } from '../../../../store';
 import { FileText, Printer, Search, RotateCcw, Calendar, Wallet, Monitor } from 'lucide-react';
 import { apiService } from '../../../../services/api';
 import dayjs from 'dayjs';
+import { isFromAfterTo } from '@/utils/dates';
 
 interface DepositRecord {
   key: string;
@@ -66,8 +67,8 @@ const printReport = (html: string) => {
 
 const DepositDueDateRegister: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
+  const isDark = interfaceMode === 'dark';
 
   const [fromDate, setFromDate]     = useState<dayjs.Dayjs>(dayjs());
   const [toDate, setToDate]         = useState<dayjs.Dayjs>(dayjs().add(30, 'days'));
@@ -77,6 +78,10 @@ const DepositDueDateRegister: React.FC = () => {
   const [reportData, setReportData] = useState<DepositRecord[]>([]);
 
   const handleGenerate = useCallback(async () => {
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      message.warning('From date cannot be after To date');
+      return;
+    }
     setLoading(true);
     try {
       const response = await apiService.post('/reports/deposit/maturity', {
@@ -84,6 +89,11 @@ const DepositDueDateRegister: React.FC = () => {
         toDate: toDate.format('YYYY-MM-DD'),
         depositType: depositType === 'ALL' ? undefined : depositType,
       });
+      if (!response.success) {
+        setReportData([]);
+        message.error(response.message || response.error || 'Failed to generate report');
+        return;
+      }
       const data: DepositRecord[] = Array.isArray(response)
         ? response
         : Array.isArray((response as any)?.data)

@@ -70,6 +70,11 @@ const Calculator: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [, setError] = useState<string | null>(null);
   const [comparisonLoans, setComparisonLoans] = useState<LoanCalculation[]>([]);
+  const [eligibilityUnavailable, setEligibilityUnavailable] = useState(false);
+  const [ratesNotice, setRatesNotice] = useState<string | null>(null);
+
+  // Upper bound on tenure so a typo like 99999999 can't freeze the renderer building the schedule
+  const MAX_TENURE_MONTHS = 600;
 
   const formatCurrency = useMemo(() => (amount: number): string =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
@@ -79,7 +84,8 @@ const Calculator: React.FC = () => {
     try {
       setLoading(true); setError(null);
       const response = await apiService.getLoanRates();
-      if (response.success && response.data) {
+      if (response.success && Array.isArray(response.data)) {
+        setRatesNotice(null);
         setLoanTypes(response.data.map((loan: any) => ({
           name: loan.name, code: loan.code, rate: parseFloat(loan.rate),
           maxAmount: parseFloat(loan.maxAmount || loan.max_amount || 0),
@@ -87,9 +93,11 @@ const Calculator: React.FC = () => {
           description: loan.description || `${loan.name} with ${loan.rate}% interest rate`
         })));
       } else {
+        setRatesNotice('Could not load loan rates from the server - showing a default 12% Regular Loan only. Rates may be outdated.');
         setLoanTypes([{ name: 'Regular Loan', code: 'RLN', rate: 12.0, maxAmount: 500000, maxTenure: 60, description: 'Standard loan' }]);
       }
     } catch {
+      setRatesNotice('Could not load loan rates from the server - showing a default 12% Regular Loan only. Rates may be outdated.');
       setLoanTypes([{ name: 'Regular Loan', code: 'RLN', rate: 12.0, maxAmount: 500000, maxTenure: 60, description: 'Standard loan' }]);
     } finally { setLoading(false); }
   }, []);
@@ -111,18 +119,21 @@ const Calculator: React.FC = () => {
   const fetchMemberEligibility = useCallback(async (memberNumber: string) => {
     try {
       setLoading(true);
+      setEligibilityUnavailable(false);
       const response = await apiService.getMemberEligibility(memberNumber);
-      if (response.success && response.data) {
+      if (!response.success || !response.data) {
+        setEligibilityUnavailable(true);
+      } else {
         const d = response.data;
         setSelectedMember(prev => prev ? { ...prev, basicPay: parseFloat(d.basicPay || 0), activeLoans: parseInt(d.activeLoans || 0), totalOutstanding: parseFloat(d.totalOutstanding || 0), eligibleAmount: parseFloat(d.availableEligibility || 0) } : null);
       }
-    } catch { await showDialog('error', 'Eligibility Error', 'Could not load eligibility details for this member.'); }
+    } catch { setEligibilityUnavailable(true); await showDialog('error', 'Eligibility Error', 'Could not load eligibility details for this member.'); }
     finally { setLoading(false); }
   }, []);
 
   const handleMemberSelect = useCallback(async (member: any) => {
     const md: MemberData = { memberNo: member.memberNo, name: member.memberName || member.name, basicPay: parseFloat(member.basicPay || '0'), activeLoans: 0, totalOutstanding: 0, eligibleAmount: 0 };
-    setSelectedMember(md); setMemberNo(member.memberNo); setShowMemberLookup(false);
+    setEligibilityUnavailable(false); setSelectedMember(md); setMemberNo(member.memberNo); setShowMemberLookup(false);
     await fetchMemberEligibility(member.memberNo);
   }, [fetchMemberEligibility]);
 
@@ -145,7 +156,7 @@ const Calculator: React.FC = () => {
 
   const calculateLoan = useCallback(() => {
     const p = parseFloat(principal), r = parseFloat(annualRate), n = parseInt(tenure);
-    if (isNaN(p) || isNaN(r) || isNaN(n) || p <= 0 || r < 0 || n <= 0) { setCalculation(null); return; }
+    if (isNaN(p) || isNaN(r) || isNaN(n) || p <= 0 || r < 0 || n <= 0 || n > MAX_TENURE_MONTHS) { setCalculation(null); return; }
     const emi = calculateEMI(p, r, n);
     const totalAmount = Math.round(emi * n * 100) / 100;
     setCalculation({ emi, totalAmount, totalInterest: Math.round((totalAmount - p) * 100) / 100, monthlyBreakdown: generateSchedule(p, r, n, emi) });
@@ -153,7 +164,7 @@ const Calculator: React.FC = () => {
 
   const generateComparison = useCallback(() => {
     const p = parseFloat(principal), n = parseInt(tenure);
-    if (isNaN(p) || isNaN(n) || p <= 0 || n <= 0) { setComparisonLoans([]); return; }
+    if (isNaN(p) || isNaN(n) || p <= 0 || n <= 0 || n > MAX_TENURE_MONTHS) { setComparisonLoans([]); return; }
     setComparisonLoans(loanTypes.map(lt => {
       const ap = Math.min(p, lt.maxAmount), at = Math.min(n, lt.maxTenure);
       const emi = calculateEMI(ap, lt.rate, at);
@@ -243,7 +254,7 @@ const Calculator: React.FC = () => {
                       </div>
                       <div>
                         <dt>Eligible</dt>
-                        <dd style={{ color: 'var(--aw-success)' }}>{formatCurrency(selectedMember.eligibleAmount)}</dd>
+                        <dd style={{ color: 'var(--aw-success)' }}>{eligibilityUnavailable ? 'Unavailable' : formatCurrency(selectedMember.eligibleAmount)}</dd>
                       </div>
                     </dl>
                   </div>
@@ -274,6 +285,7 @@ const Calculator: React.FC = () => {
                     ]}
                   />
                 </div>
+                {ratesNotice && <p className="aw-muted" role="alert" style={{ color: 'var(--aw-warning)' }}>{ratesNotice}</p>}
                 {selectedType && (
                   <div className="aw-panel aw-fade-in">
                     <p className="aw-muted" style={{ marginBottom: 6 }}>{selectedType.description}</p>
@@ -302,7 +314,7 @@ const Calculator: React.FC = () => {
                     <label className="aw-label" htmlFor={id}>{label}</label>
                     <div className="aw-input-wrap has-icon">
                       <Icon size={13} />
-                      <input id={id} type="number" value={value} onChange={(e) => setter(e.target.value)} disabled={disabled} className="aw-input" />
+                      <input id={id} type="number" value={value} onChange={(e) => setter(e.target.value)} disabled={disabled} className="aw-input" max={id === 'calc-months' ? MAX_TENURE_MONTHS : undefined} />
                     </div>
                   </div>
                 ))}

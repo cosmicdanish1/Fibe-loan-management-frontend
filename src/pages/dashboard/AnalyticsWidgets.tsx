@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Donut, LegendRow, type Slice } from './DashCharts';
 import apiService from '../../services/api';
+import LoadingAnimation from '../../components/loaders/LoadingAnimation';
 
 // ─── Shared card shell — the kit card, with a small tone marker in the head ──
 export const WidgetCard: React.FC<{
@@ -25,7 +26,7 @@ export const ErrorNote: React.FC<{ message: string }> = ({ message }) => (
 );
 
 export const Loading: React.FC<{ height?: number }> = ({ height = 64 }) => (
-  <div className="aw-empty" style={{ height, padding: 0 }}><span className="aw-spin" /></div>
+  <div className="aw-empty" style={{ height: Math.max(height, 96), padding: 0 }}><LoadingAnimation height="100%" /></div>
 );
 
 export const money = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;

@@ -19,6 +19,9 @@ import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { csvCell } from '@/utils/csv';
+import { escapeHtml } from '@/utils/html';
+import { isFromAfterTo } from '@/utils/dates';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -154,6 +157,10 @@ const DetailLedger: React.FC = () => {
       return;
     }
 
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      await showDialog('warning', 'Validation', 'From date cannot be after To date');
+      return;
+    }
     setLoading(true);
     try {
       const response = await apiService.getDetailLedger(
@@ -181,7 +188,7 @@ const DetailLedger: React.FC = () => {
   const calculateTotals = () => {
     const totalDebit = data.reduce((sum, item) => sum + (Number(item.debit) || 0), 0);
     const totalCredit = data.reduce((sum, item) => sum + (Number(item.credit) || 0), 0);
-    const closingBalance = data.length > 0 ? (Number(data[data.length - 1].balance) || 0) : 0;
+    const closingBalance = data.length > 0 ? (Number(data[data.length - 1]?.balance) || 0) : 0;
     return { totalDebit, totalCredit, closingBalance };
   };
 
@@ -218,7 +225,7 @@ const DetailLedger: React.FC = () => {
   @page { size: A4 portrait; margin: 12mm; }
   body { margin: 0; }
   pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
-</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+</style></head><body><pre>${escapeHtml(lines.join('\n'))}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -247,10 +254,10 @@ const DetailLedger: React.FC = () => {
       csvContent += 'Date,Voucher No,Narration,Debit,Credit,Balance\n';
       
       data.forEach(item => {
-        csvContent += `${dayjs(item.date).format('DD-MMM-YYYY')},${item.voucherNo},"${item.narration}",${item.debit},${item.credit},${item.balance}\n`;
+        csvContent += `${dayjs(item.date).format('DD-MMM-YYYY')},${csvCell(item.voucherNo)},${csvCell(item.narration)},${item.debit},${item.credit},${item.balance}\n`;
       });
       
-      csvContent += `\nTotal,,${totalDebit},${totalCredit},${closingBalance}\n`;
+      csvContent += `\nTotal,,,${totalDebit},${totalCredit},${closingBalance}\n`;
       
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
@@ -351,7 +358,7 @@ const DetailLedger: React.FC = () => {
                     showSearch
                     size="small"
                     filterOption={(input, option) => {
-                      const label = option?.label || '';
+                      const label = String(option?.label ?? '');
                       return label.toLowerCase().includes(input.toLowerCase());
                     }}
                     optionLabelProp="label"

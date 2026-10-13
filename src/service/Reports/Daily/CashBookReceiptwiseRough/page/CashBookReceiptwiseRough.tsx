@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
+import { csvCell } from '@/utils/csv';
 
 interface VoucherEntry {
   sno: number;
@@ -132,8 +133,8 @@ const CashBookReceiptwiseRough: React.FC = () => {
   const printRef = useRef<HTMLDivElement>(null);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
+  const isDark = interfaceMode === 'dark';
 
   // Theme variables
   const bg        = isDark ? 'bg-[#0f172a]'                             : 'bg-slate-50';
@@ -210,7 +211,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
     let csv = 'Voucher No,Member No,Member Name,Mode,Head Code,Head Name,Receipt,Payment\n';
     data.vouchers.forEach(v => {
       v.entries.forEach(e => {
-        csv += `${v.voucherNo},${v.memberNo},"${v.memberName}",${v.modeOfPayment},${e.headCode},"${e.headName}",${e.receipt},${e.payment}\n`;
+        csv += `${v.voucherNo},${v.memberNo},${csvCell(v.memberName)},${v.modeOfPayment},${e.headCode},${csvCell(e.headName)},${e.receipt},${e.payment}\n`;
       });
     });
     const a = document.createElement('a');

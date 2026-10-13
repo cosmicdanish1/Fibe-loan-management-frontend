@@ -66,9 +66,7 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
 const ACCOUNT_TYPE_MAP: Record<string, string> = {
   'RECURRING DEPOSIT': 'RD',
   'SAVINGS ACCOUNT':   'SB',
-  'CURRENT ACCOUNT':   'SB',
   'FIXED DEPOSIT':     'FD',
-  'NRI ACCOUNT':       'SB',
 };
 
 const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
@@ -92,6 +90,12 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
   const [calculationResult, setCalculationResult] = useState<any>(null);
   const [isPosting, setIsPosting] = useState(false);
 
+  // Any change to the calculation inputs invalidates the previewed result so Post can't submit edited parameters under the old preview
+  const handleFieldChange = (field: Parameters<typeof updateField>[0], value: string | number) => {
+    updateField(field, value);
+    if (field !== 'postDate' && field !== 'total' && field !== 'postAmount') setCalculationResult(null);
+  };
+
   const parseProjectDate = (dateStr: string) => dayjs(dateStr, 'DD-MMM-YYYY');
 
   const handleCalculate = async () => {
@@ -114,6 +118,11 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
 
   const handlePost = async () => {
     if (!calculationResult) return;
+    const postRate = parseFloat(formData.rate);
+    if (!Number.isFinite(postRate) || postRate < 0 || postRate > 50) {
+      await showDialog('warning', 'Invalid Rate', 'Invalid interest rate', 'Enter a rate between 0 and 50, then run the analysis again.');
+      return;
+    }
 
     const accountTypeCode = ACCOUNT_TYPE_MAP[formData.selectedAccount] || 'SB';
 
@@ -130,16 +139,13 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
     try {
       const fromDateISO   = dayjs(formData.fromDate, 'DD-MMM-YYYY').format('YYYY-MM-DD');
       const toDateISO     = dayjs(formData.toDate,   'DD-MMM-YYYY').format('YYYY-MM-DD');
-      const postDateISO   = dayjs(formData.postDate,  'DD-MMM-YYYY').format('YYYY-MM-DD');
 
       const response = await apiService.updateSavingInterest({
         fromDate: fromDateISO,
         toDate: toDateISO,
-        interestRate: parseFloat(formData.rate) || 4,
-        // Both accountType (for intType) and accountHead (for GL code) must be the same code
+        interestRate: parseFloat(formData.rate),
+        // Backend reads accountHead as the account-type code (SB/RD/FD); the DTO has no accountType/postDate property
         accountType: accountTypeCode,
-        accountHead: accountTypeCode,
-        postDate: postDateISO,
         narration: `Interest posting for ${formData.selectedAccount} — ${formData.fromDate} to ${formData.toDate}`,
       });
 
@@ -191,7 +197,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
     saveEnabled: !(disabled || !calculationResult || isPosting),
   });
 
-  const ACCOUNT_OPTIONS = ['RECURRING DEPOSIT', 'SAVINGS ACCOUNT', 'CURRENT ACCOUNT', 'FIXED DEPOSIT', 'NRI ACCOUNT']
+  const ACCOUNT_OPTIONS = ['RECURRING DEPOSIT', 'SAVINGS ACCOUNT', 'FIXED DEPOSIT']
     .map(v => ({ value: v, label: v }));
   const inr = (n: any) => `₹${Number(n).toLocaleString('en-IN')}`;
 
@@ -236,7 +242,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                       className="aw-select"
                       popupClassName="aw-select-popup"
                       value={formData.selectedAccount}
-                      onChange={(v) => updateField('selectedAccount', v)}
+                      onChange={(v) => handleFieldChange('selectedAccount', v)}
                       disabled={disabled}
                       options={ACCOUNT_OPTIONS}
                     />
@@ -247,7 +253,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                       <DatePicker
                         id="ic-from"
                         value={parseProjectDate(formData.fromDate)}
-                        onChange={(date) => updateField('fromDate', date ? date.format('DD-MMM-YYYY') : '')}
+                        onChange={(date) => handleFieldChange('fromDate', date ? date.format('DD-MMM-YYYY') : '')}
                         format="DD-MMM-YYYY"
                         className="aw-picker"
                         popupClassName="aw-select-popup"
@@ -260,7 +266,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                       <DatePicker
                         id="ic-to"
                         value={parseProjectDate(formData.toDate)}
-                        onChange={(date) => updateField('toDate', date ? date.format('DD-MMM-YYYY') : '')}
+                        onChange={(date) => handleFieldChange('toDate', date ? date.format('DD-MMM-YYYY') : '')}
                         format="DD-MMM-YYYY"
                         className="aw-picker"
                         popupClassName="aw-select-popup"
@@ -280,7 +286,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                         id="ic-rate"
                         type="number"
                         value={formData.rate}
-                        onChange={(e) => updateField('rate', e.target.value)}
+                        onChange={(e) => handleFieldChange('rate', e.target.value)}
                         placeholder="0.00"
                         className={`aw-input ${errors.rate ? 'is-invalid' : ''}`}
                       />
@@ -295,7 +301,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                         id="ic-min"
                         type="number"
                         value={formData.minInterestAmount}
-                        onChange={(e) => updateField('minInterestAmount', e.target.value)}
+                        onChange={(e) => handleFieldChange('minInterestAmount', e.target.value)}
                         placeholder="0.00"
                         className={`aw-input ${errors.minInterestAmount ? 'is-invalid' : ''}`}
                       />

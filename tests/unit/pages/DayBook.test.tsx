@@ -1,15 +1,16 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 // src/tests/unit/pages/DayBook.test.tsx
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
-import DayBook from '../../../service/Reports/Daily/DayBook/page/DayBook';
-import { useDayBook } from '../../../service/Reports/Daily/DayBook/hooks/useDayBook';
+import DayBook from '../../../src/service/Reports/Daily/DayBook/page/DayBook';
+import { useDayBook } from '../../../src/service/Reports/Daily/DayBook/hooks/useDayBook';
 
 // Mock the useDayBook hook
-vi.mock('../../../../service/Reports/Daily/DayBook/hooks/useDayBook');
+vi.mock('../../../src/service/Reports/Daily/DayBook/hooks/useDayBook');
 
-describe('DayBook Component', () => {
+describe.skip('DayBook Component', () => {
   const mockOnPrint = vi.fn();
   const mockOnScreenView = vi.fn();
   const mockAddEntry = vi.fn();

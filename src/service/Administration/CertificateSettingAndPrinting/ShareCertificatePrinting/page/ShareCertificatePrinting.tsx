@@ -44,7 +44,7 @@ const ShareCertificatePrinting: React.FC = () => {
     if (!form.memberNo.trim()) return;
     setFetching(true);
     try {
-      const resp = await apiService.getShareCertificate({ memberNo: form.memberNo.trim(), certificateNo: form.certificateNo || undefined });
+      const resp = await apiService.getShareCertificate({ memberNo: form.memberNo.trim(), ...(form.certificateNo ? { certificateNo: form.certificateNo } : {}) });
       if (resp.success && resp.data) {
         const d = resp.data as any;
         setMemberName(d.memberName || '');

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { DatePicker, Button, ConfigProvider, Select, InputNumber, Pagination, Input, Space, Spin, Modal, theme as antdTheme } from 'antd';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Button, ConfigProvider, Select, InputNumber, Pagination, Input, Space, Spin, Modal, theme as antdTheme } from 'antd';
 import MemberLookup from '../../../../../../components/shared/MemberLookup/MemberLookup';
 import {
   Printer,
@@ -8,14 +8,14 @@ import {
   Building2,
   Users,
   Percent,
-  Search,
-  Calendar
+  Search
 } from 'lucide-react';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { apiService } from '../../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { csvCell } from '@/utils/csv';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -37,15 +37,17 @@ interface DividendData {
 }
 
 const DividendReport: React.FC = () => {
-  const currentYear = new Date().getFullYear();
+  // Start year of the current Indian financial year (Apr-Mar): Jan-Mar belongs to the previous year's FY.
+  const currentYear = new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1;
   const [selectedWing, setSelectedWing] = useState<string>('');
   const [selectedOffice, setSelectedOffice] = useState<string>('');
   const [dividendRate, setDividendRate] = useState<number>(10);
   const [financialYear, setFinancialYear] = useState<string>(`${currentYear}-${currentYear + 1}`);
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<DividendData[]>([]);
-  const [wings, setWings] = useState<string[]>([]);
-  const [offices, setOffices] = useState<string[]>([]);
+  // The report API filters by wingNo / officeNo (sent through the wingName / officeName params).
+  const [wings, setWings] = useState<{ value: string; label: string }[]>([]);
+  const [offices, setOffices] = useState<{ value: string; label: string }[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(100);
   const [totalRecords, setTotalRecords] = useState<number>(0);
@@ -67,6 +69,51 @@ const DividendReport: React.FC = () => {
     fetchData(1);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Wing / Office options come from the master lists (not from report rows), so
+  // filtering the report never shrinks the options.
+  const toOptions = (res: any, noKeys: string[], nameKeys: string[]) => {
+    const list: any[] = Array.isArray(res?.data) ? res.data : Array.isArray(res?.data?.data) ? res.data.data : [];
+    const seen = new Set<string>();
+    const out: { value: string; label: string }[] = [];
+    list.forEach((x: any) => {
+      const no = noKeys.map(k => x?.[k]).find(v => v !== undefined && v !== null && v !== '');
+      if (no === undefined || seen.has(String(no))) return;
+      seen.add(String(no));
+      const name = nameKeys.map(k => x?.[k]).find(Boolean);
+      out.push({ value: String(no), label: name ? `${name} (${no})` : String(no) });
+    });
+    return out;
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res: any = await apiService.getReportWings();
+        if (!cancelled && res?.success) setWings(toOptions(res, ['wingNo'], ['name', 'wingName']));
+      } catch (error) {
+        console.error('Error loading wing master:', error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res: any = await apiService.getReportOffices(selectedWing || undefined);
+        if (!cancelled && res?.success) setOffices(toOptions(res, ['officeNo'], ['name', 'officeName']));
+      } catch (error) {
+        console.error('Error loading office master:', error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedWing]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // validateMember is memoised once; read the latest fetchData (current wing/office/year/rate) through a ref.
+  const fetchDataRef = useRef<(page?: number, searchValue?: string) => Promise<void>>(async () => {});
+
   const validateMember = useCallback(async (mbno: string) => {
     if (!mbno.trim()) { setSelectedMemberName(''); return; }
     setValidatingMember(true);
@@ -75,7 +122,7 @@ const DividendReport: React.FC = () => {
       if (res.success && res.data?.exists) {
         setSelectedMemberName(res.data.memberName || '');
         setCurrentPage(1);
-        fetchData(1, mbno.trim());
+        fetchDataRef.current(1, mbno.trim());
       } else {
         setSelectedMemberName('');
       }
@@ -104,7 +151,6 @@ const DividendReport: React.FC = () => {
 
     setLoading(true);
     try {
-      const offset = (page - 1) * pageSize;
       const search = searchValue !== undefined ? searchValue : searchText;
 
       const response = await apiService.getDividendReport(
@@ -115,7 +161,7 @@ const DividendReport: React.FC = () => {
       );
 
       if (response && response.success) {
-        let responseData = [];
+        let responseData: DividendData[] = [];
 
         if (Array.isArray(response.data)) {
           responseData = response.data;
@@ -135,14 +181,6 @@ const DividendReport: React.FC = () => {
         setCurrentPage(page);
         setTotalRecords(responseData.length);
 
-        // Extract unique wings and offices
-        if (page === 1 && responseData.length > 0) {
-          const uniqueWings = [...new Set(responseData.map((m: any) => m.wing).filter(Boolean))];
-          const uniqueOffices = [...new Set(responseData.map((m: any) => m.office).filter(Boolean))];
-          setWings(uniqueWings.sort());
-          setOffices(uniqueOffices.sort());
-        }
-
         if (responseData.length === 0) {
           await showDialog('info', 'Info', 'No dividend records found');
         }
@@ -160,6 +198,8 @@ const DividendReport: React.FC = () => {
       setLoading(false);
     }
   };
+
+  fetchDataRef.current = fetchData;
 
   const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -195,7 +235,7 @@ const DividendReport: React.FC = () => {
     ]);
 
     const csvContent = [headers, ...csvData]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .map(row => row.map(cell => csvCell(cell)).join(','))
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -321,13 +361,13 @@ const DividendReport: React.FC = () => {
               <label className={`block fz-label font-bold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Wing</label>
               <Select
                 value={selectedWing}
-                onChange={setSelectedWing}
+                onChange={(v) => { setSelectedWing(v || ''); setSelectedOffice(''); }}
                 className="w-full h-9"
                 placeholder="All Wings"
                 allowClear
               >
                 {wings.map(w => (
-                  <Option key={w} value={w}>{w}</Option>
+                  <Option key={w.value} value={w.value}>{w.label}</Option>
                 ))}
               </Select>
             </div>
@@ -336,13 +376,13 @@ const DividendReport: React.FC = () => {
               <label className={`block fz-label font-bold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Office</label>
               <Select
                 value={selectedOffice}
-                onChange={setSelectedOffice}
+                onChange={(v) => setSelectedOffice(v || '')}
                 className="w-full h-9"
                 placeholder="All Offices"
                 allowClear
               >
                 {offices.map(o => (
-                  <Option key={o} value={o}>{o}</Option>
+                  <Option key={o.value} value={o.value}>{o.label}</Option>
                 ))}
               </Select>
             </div>

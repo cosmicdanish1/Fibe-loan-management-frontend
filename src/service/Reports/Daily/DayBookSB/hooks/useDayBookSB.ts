@@ -1,4 +1,4 @@
-import { DayBookSavingProps, UseDayBookSBReturnType } from '../interfaces';
+import { UseDayBookSBReturnType } from '../interfaces';
 
 export const useDayBookSB = (): UseDayBookSBReturnType => {
   const formatDate = (date: Date): string => {

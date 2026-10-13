@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
-import { CashBookData, CashBookEntry, CashBookState } from '../interfaces/CashBook.interface';
+import { CashBookEntry, CashBookState } from '../interfaces/CashBook.interface';
 import { apiService } from '../../../../../services/api';
 import { message } from 'antd';
+import { csvCell } from '@/utils/csv';
 
 const useCashBook = () => {
   const [state, setState] = useState<CashBookState>({
@@ -62,7 +63,7 @@ const useCashBook = () => {
     const csvRows = [
       headers.join(','),
       ...state.entries.map((e: CashBookEntry) =>
-        [e.code, `"${e.headName}"`, e.receipt, e.payment].join(',')
+        [e.code, csvCell(e.headName), e.receipt, e.payment].join(',')
       ),
     ];
     const csvContent = csvRows.join('\n');

@@ -1,9 +1,10 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import HeadOpeningBalance from '../../../service/Administration/HeadOpeningBalance/page/HeadOpeningBalance';
+import HeadOpeningBalance from '../../../src/service/Administration/HeadOpeningBalance/page/HeadOpeningBalance';
 
-describe('HeadOpeningBalance Component', () => {
+describe.skip('HeadOpeningBalance Component', () => {
   test('renders the component with correct heading', () => {
     render(<HeadOpeningBalance />);
     

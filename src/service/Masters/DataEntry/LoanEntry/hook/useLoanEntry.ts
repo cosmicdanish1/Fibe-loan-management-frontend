@@ -35,7 +35,8 @@ export const useLoanEntry = (): LoanEntryHookReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [eligibilityStatus, setEligibilityStatus] = useState<LoanEligibilityStatus | null>(null);
   const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const savingRef = useRef(false); // in-flight guard for Save
 
   const updateField = useCallback((field: keyof LoanEntryData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -106,6 +107,7 @@ export const useLoanEntry = (): LoanEntryHookReturn => {
   }, [formData.loanAmount, formData.memberNo]);
 
   const handleSave = useCallback(async () => {
+    if (savingRef.current) return;
     if (!formData.memberNo) {
       await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before saving.');
       return;
@@ -130,11 +132,23 @@ export const useLoanEntry = (): LoanEntryHookReturn => {
       await showDialog('warning', 'Input Validation Error', 'Invalid Installment Amount', 'Please enter a valid installment amount greater than zero.');
       return;
     }
+    const g1 = String(formData.g1MbNo || '').trim();
+    const g2 = String(formData.g2MbNo || '').trim();
+    const borrower = String(formData.memberNo).trim();
+    if ((g1 && g1 === borrower) || (g2 && g2 === borrower)) {
+      await showDialog('warning', 'Input Validation Error', 'Invalid Surety', 'A surety cannot be the borrower. Please choose a different member.');
+      return;
+    }
+    if (g1 && g2 && g1 === g2) {
+      await showDialog('warning', 'Input Validation Error', 'Invalid Surety', 'Surety 1 and Surety 2 must be different members.');
+      return;
+    }
     if (eligibilityStatus && !eligibilityStatus.isEligible) {
       await showDialog('error', 'Eligibility Failed', 'Cannot Save Loan', eligibilityStatus.message || 'The member does not meet the 5% Share Value and 5% FD balance requirements.');
       return;
     }
 
+    savingRef.current = true;
     setIsLoading(true);
     try {
       const payload = {
@@ -179,9 +193,10 @@ export const useLoanEntry = (): LoanEntryHookReturn => {
     } catch (err: any) {
       await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${err.message}`);
     } finally {
+      savingRef.current = false;
       setIsLoading(false);
     }
-  }, [formData]);
+  }, [formData, eligibilityStatus]);
 
   const handleClear = useCallback(() => {
     setFormData(emptyForm());

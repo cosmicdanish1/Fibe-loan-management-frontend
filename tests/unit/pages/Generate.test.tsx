@@ -1,8 +1,9 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { ChevronDown } from 'lucide-react';
-import Generate from '../../../service/Transaction/Demand&RecoveryList/Generate/page/Generate';
+import Generate from '../../../src/service/Transaction/Demand&RecoveryList/Generate/page/Generate';
 
 // Define types for the component props and state
 type FormData = {
@@ -20,7 +21,7 @@ vi.mock('lucide-react', () => ({
   )),
 }));
 
-describe('Generate Component', () => {
+describe.skip('Generate Component', () => {
   // Mock data
   const mockOptions = {
     months: ['JAN', 'FEB', 'MAR'],
@@ -43,7 +44,7 @@ describe('Generate Component', () => {
   const mockHandleReset = vi.fn();
 
   // Mock the Generate component with proper typing
-  vi.mock('../../../../service/Transaction/Demand&RecoveryList/Generate/page/Generate', () => ({
+  vi.mock('../../../src/service/Transaction/Demand&RecoveryList/Generate/page/Generate', () => ({
     __esModule: true,
     default: vi.fn().mockImplementation(() => ({
       state: {

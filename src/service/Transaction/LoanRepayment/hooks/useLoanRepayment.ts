@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { getApiBaseUrl } from '../../../../services/serverConfig';
 
 export interface ActiveLoan {
@@ -78,12 +78,19 @@ export const useLoanRepayment = () => {
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [flagNotice, setFlagNotice] = useState<string | null>(null);
 
+    // Request-sequence guards: only the latest lookup of each kind may write state
+    const loansSeq = useRef(0);
+    const historySeq = useRef(0);
+    const dueSeq = useRef(0);
+    const submitting = useRef(false);
+
     const updateForm = <K extends keyof RepaymentForm>(key: K, value: RepaymentForm[K]) => {
         setForm(prev => ({ ...prev, [key]: value }));
     };
 
     const fetchMemberLoans = useCallback(async (mbno: string) => {
         if (!mbno) return;
+        const seq = ++loansSeq.current;
         setLoading(true);
         setMessage(null);
         setFlagNotice(null);
@@ -95,19 +102,23 @@ export const useLoanRepayment = () => {
             });
             if (!res.ok) throw new Error('Member not found or no active loans');
             const data = await res.json();
-            const loans: ActiveLoan[] = (data.data || data || []).filter((l: any) => parseFloat(l.balance || 0) > 0);
+            if (seq !== loansSeq.current) return;
+            const rawLoans = data.data || data || [];
+            const loans: ActiveLoan[] = (Array.isArray(rawLoans) ? rawLoans : []).filter((l: any) => parseFloat(l.balance || 0) > 0);
             setActiveLoans(loans);
             if (loans.length === 0) setMessage({ type: 'error', text: 'No active loans found for this member.' });
         } catch (err: any) {
+            if (seq !== loansSeq.current) return;
             setActiveLoans([]);
             setMessage({ type: 'error', text: err.message });
         } finally {
-            setLoading(false);
+            if (seq === loansSeq.current) setLoading(false);
         }
     }, []);
 
     const fetchRepaymentHistory = useCallback(async (mbno: string) => {
         if (!mbno) return;
+        const seq = ++historySeq.current;
         setHistoryLoading(true);
         try {
             const base = await getApiBaseUrl();
@@ -115,12 +126,16 @@ export const useLoanRepayment = () => {
             const res = await fetch(`${base}/loans/member/${mbno}/repayment-history`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
+            if (!res.ok) throw new Error('Failed to load repayment history');
             const data = await res.json();
-            setRepaymentHistory(data.data || data || []);
+            if (seq !== historySeq.current) return;
+            const rows = data.data || data || [];
+            setRepaymentHistory(Array.isArray(rows) ? rows : []);
         } catch {
+            if (seq !== historySeq.current) return;
             setRepaymentHistory([]);
         } finally {
-            setHistoryLoading(false);
+            if (seq === historySeq.current) setHistoryLoading(false);
         }
     }, []);
 
@@ -129,6 +144,7 @@ export const useLoanRepayment = () => {
     // instead of letting the operator pick an arbitrary month.
     const fetchDueStatus = useCallback(async (loancaseno: string): Promise<DueStatus | null> => {
         if (!loancaseno) return null;
+        const seq = ++dueSeq.current;
         setDueStatusLoading(true);
         try {
             const base = await getApiBaseUrl();
@@ -139,19 +155,21 @@ export const useLoanRepayment = () => {
             if (!res.ok) throw new Error('Failed to load due status');
             const data = await res.json();
             const status: DueStatus = data.data || data;
+            if (seq !== dueSeq.current) return null;
             setDueStatus(status);
             return status;
         } catch {
-            setDueStatus(null);
+            if (seq === dueSeq.current) setDueStatus(null);
             return null;
         } finally {
-            setDueStatusLoading(false);
+            if (seq === dueSeq.current) setDueStatusLoading(false);
         }
     }, []);
 
     const handleMemberLookup = useCallback(async (mbno: string, memberName: string) => {
         setForm(prev => ({ ...prev, mbno, memberName, selectedLoanCase: '', paymentAmount: 0 }));
         setDueStatus(null);
+        dueSeq.current++;
         await fetchMemberLoans(mbno);
         await fetchRepaymentHistory(mbno);
         setFlagNotice(null);
@@ -159,7 +177,9 @@ export const useLoanRepayment = () => {
 
     const handleLoanSelect = useCallback(async (loancaseno: string) => {
         setForm(prev => ({ ...prev, selectedLoanCase: loancaseno, paymentAmount: 0 }));
+        const seq = dueSeq.current + 1; // the id fetchDueStatus is about to take
         const status = await fetchDueStatus(loancaseno);
+        if (seq !== dueSeq.current) return; // a newer selection superseded this one
         // "Pay What's Due" (the default mode) means exactly that — 0 when
         // nothing is overdue, not the next not-yet-due EMI. A member who is
         // fully caught up shouldn't see a payable amount sitting in the box.
@@ -167,10 +187,12 @@ export const useLoanRepayment = () => {
     }, [fetchDueStatus]);
 
     const handleSubmit = async () => {
+        if (submitting.current) return;
         if (!form.mbno || !form.selectedLoanCase || form.paymentAmount <= 0) {
             setMessage({ type: 'error', text: 'Please fill all required fields.' });
             return;
         }
+        submitting.current = true;
         setLoading(true);
         setMessage(null);
         try {
@@ -202,11 +224,15 @@ export const useLoanRepayment = () => {
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
         } finally {
+            submitting.current = false;
             setLoading(false);
         }
     };
 
     const handleReset = () => {
+        loansSeq.current++;
+        historySeq.current++;
+        dueSeq.current++;
         setForm(defaultForm);
         setActiveLoans([]);
         setDueStatus(null);

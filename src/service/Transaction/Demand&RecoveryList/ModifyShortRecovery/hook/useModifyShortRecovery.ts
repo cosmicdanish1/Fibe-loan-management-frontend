@@ -1,6 +1,6 @@
 // hook/useModifyShortRecovery.ts
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { apiService } from '../../../../../services/api';
 import {
     ModifyShortRecoveryFormData,
@@ -44,10 +44,12 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
     return window.confirm(`${title}\n\n${detail}`);
 };
 
+const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
 export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
     const [formData, setFormData] = useState<ModifyShortRecoveryFormData>({
         wing: '',
-        month: 'APR',
+        month: MONTH_ABBR[new Date().getMonth()] as string,
         year: new Date().getFullYear().toString(),
         selectedMemberId: '',
         adjustmentReason: ''
@@ -71,25 +73,35 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
             .catch(err => console.error('[ModifyShortRecovery] Failed to load wings:', err));
     }, []);
 
+    const fetchSeq = useRef(0);
+    const savingRef = useRef(false);
+
     const fetchRecoveries = useCallback(async () => {
+        const seq = ++fetchSeq.current;
         try {
             const response = await apiService.getShortRecoveries({
                 month: formData.month,
                 year: formData.year,
                 wing: formData.wing
             });
-            if (response.success && response.data) {
+            if (seq !== fetchSeq.current) return;
+            if (response.success && Array.isArray(response.data)) {
                 setShortRecoveryList(response.data);
             } else {
                 setShortRecoveryList([]);
             }
         } catch (error: any) {
+            if (seq !== fetchSeq.current) return;
             console.error(error);
+            setShortRecoveryList([]);
             await showDialog('error', 'electron-react-ts', 'Failed to Fetch Recoveries', `Could not retrieve short recovery records.\n\nTechnical: ${error.message}`);
         }
     }, [formData.month, formData.year, formData.wing]);
 
     useEffect(() => {
+        // The list/selection belong to the month/year/wing they were loaded for
+        setSelectedRecord(null);
+        setFormData(prev => (prev.selectedMemberId ? { ...prev, selectedMemberId: '' } : prev));
         fetchRecoveries();
     }, [fetchRecoveries]);
 
@@ -102,7 +114,7 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
         setFormData(prev => ({ ...prev, selectedMemberId: record.memberNo }));
     }, []);
 
-    const handleSaveAdjustment = useCallback(async () => {
+    const runSaveAdjustment = useCallback(async () => {
         if (!selectedRecord) {
             await showDialog('warning', 'electron-react-ts', 'No Record Selected', 'Please select a member record from the list before saving an adjustment.');
             return;
@@ -161,6 +173,17 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
             await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${error.message}`);
         }
     }, [selectedRecord, formData.adjustmentReason]);
+
+    // Double-click guard: held for the whole flow (validation, confirm dialog and the request)
+    const handleSaveAdjustment = useCallback(async () => {
+        if (savingRef.current) return;
+        savingRef.current = true;
+        try {
+            await runSaveAdjustment();
+        } finally {
+            savingRef.current = false;
+        }
+    }, [runSaveAdjustment]);
 
     const handleRefresh = useCallback(() => {
         fetchRecoveries();

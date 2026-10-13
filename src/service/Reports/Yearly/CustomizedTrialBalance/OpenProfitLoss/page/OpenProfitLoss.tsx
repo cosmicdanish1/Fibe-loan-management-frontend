@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Select, Button, Table, DatePicker, Spin, Empty, ConfigProvider, theme as antdTheme } from 'antd';
+import { Select, Button, Table, DatePicker, Empty, ConfigProvider, theme as antdTheme } from 'antd';
 import {
   Printer,
   Search,
@@ -8,7 +8,6 @@ import {
   Calendar,
   TrendingUp,
   TrendingDown,
-  IndianRupee,
   BarChart2
 } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
@@ -16,6 +15,7 @@ import { apiService } from '../../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { isFromAfterTo } from '@/utils/dates';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -84,6 +84,10 @@ const OpenProfitLoss: React.FC = () => {
       return;
     }
 
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      await showDialog('warning', 'Validation', 'From date cannot be after To date');
+      return;
+    }
     setLoading(true);
     try {
       const response = await apiService.executeReportSchedule(

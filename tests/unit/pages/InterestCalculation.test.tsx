@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi, type Mock } from 'vitest';
-import InterestCalculation from '../../../service/Administration/InterestCalculation/page/InterestCalculation';
-import { useInterestCalculator, useDropdownData } from '../../../service/Administration/InterestCalculation/hook/useIntresterCal';
+import InterestCalculation from '../../../src/service/Administration/InterestCalculation/page/InterestCalculation';
+import { useInterestCalculator, useDropdownData } from '../../../src/service/Administration/InterestCalculation/hook/useIntresterCal';
 
 // Define types for the hooks since they might not be exported
 type FormData = {
@@ -24,7 +24,7 @@ type DropdownOption = {
 };
 
 // Mock the hooks
-vi.mock('../../../../service/Administration/InterestCalculation/hook/useIntresterCal', () => ({
+vi.mock('../../../src/service/Administration/InterestCalculation/hook/useIntresterCal', () => ({
   useInterestCalculator: vi.fn(),
   useDropdownData: vi.fn(),
   __esModule: true,
@@ -35,7 +35,7 @@ const mockUseInterestCalculator = useInterestCalculator as unknown as Mock;
 const mockUseDropdownData = useDropdownData as unknown as Mock;
 
 // Mock the FormControl and Dropdown components
-vi.mock('../../../../service/Administration/InterestCalculation/page/InterestCalculation', () => {
+vi.mock('../../../src/service/Administration/InterestCalculation/page/InterestCalculation', () => {
   const MockFormControl = ({ label, value, onChange, type = 'text', error, disabled }: any) => (
     <div>
       <label>{label}</label>

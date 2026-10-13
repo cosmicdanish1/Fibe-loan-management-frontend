@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import {
     DividendPaymentData,
@@ -70,7 +70,21 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
         return () => { cancelled = true; };
     }, [activeAccount]);
 
+    // Member the currently loaded `data` / `actualAmount` belong to. Save is
+    // blocked unless this equals formData.memberNo.
+    const [loadedFor, setLoadedFor] = useState('');
+    const fetchSeq = useRef(0);
+
     const updateField = useCallback((field: keyof DividendPaymentData, value: any) => {
+        if (field === 'memberNo') {
+            // Drop the previous member's dividends immediately and invalidate
+            // any fetch still in flight.
+            fetchSeq.current++;
+            setData([]);
+            setActualAmount(0);
+            setLoadedFor('');
+            setIsLoading(false);
+        }
         setFormData(prev => ({
             ...prev,
             [field]: value
@@ -78,15 +92,18 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
     }, []);
 
     const fetchPendingDividends = useCallback(async (memberNo: string) => {
+        const seq = ++fetchSeq.current;
         if (!memberNo) {
             setData([]);
             setActualAmount(0);
+            setLoadedFor('');
             return;
         }
 
         setIsLoading(true);
         try {
             const response = await apiService.getPendingDividends(memberNo);
+            if (seq !== fetchSeq.current) return;
             if (response.success && Array.isArray(response.data)) {
                 const entries: DividendEntry[] = response.data.map((item: any) => ({
                     key: item.id?.toString() || '',
@@ -102,6 +119,7 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
                 setData(entries);
                 const total = entries.reduce((sum, item) => sum + item.dividend, 0);
                 setActualAmount(total);
+                setLoadedFor(memberNo);
 
                 if (entries.length === 0) {
                     await showDialog('info', 'electron-react-ts', 'No Pending Dividends', 'No pending dividends were found for this member.');
@@ -109,12 +127,17 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
             } else {
                 setData([]);
                 setActualAmount(0);
+                setLoadedFor('');
             }
         } catch (error: any) {
+            if (seq !== fetchSeq.current) return;
             console.error('Error fetching dividends:', error);
+            setData([]);
+            setActualAmount(0);
+            setLoadedFor('');
             await showDialog('error', 'Load Error', 'Failed to Fetch Dividends', `Could not retrieve pending dividends. Technical details: ${error.message}`);
         } finally {
-            setIsLoading(false);
+            if (seq === fetchSeq.current) setIsLoading(false);
         }
     }, []);
 
@@ -131,6 +154,12 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
     const handleSave = useCallback(async () => {
         if (!formData.memberNo) {
             await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before processing dividend payment.');
+            return;
+        }
+        // The loaded dividends must belong to the member currently shown
+        // (they are cleared on member change and reloaded after a short debounce).
+        if (loadedFor !== formData.memberNo) {
+            await showDialog('warning', 'Input Validation Error', 'Dividends Not Loaded', 'The pending dividends for this member are still loading. Please wait a moment and try again.');
             return;
         }
         if (data.length === 0) {
@@ -204,9 +233,11 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
         } finally {
             setIsLoading(false);
         }
-    }, [formData, data, actualAmount]);
+    }, [formData, data, actualAmount, loadedFor]);
 
     const handleReset = useCallback(() => {
+        fetchSeq.current++;
+        setLoadedFor('');
         setFormData(prev => ({
             memberNo: '',
             subDivision: '',

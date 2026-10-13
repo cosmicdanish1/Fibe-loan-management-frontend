@@ -1,12 +1,12 @@
 // page/LogoutUser.tsx
 
 import React, { useState, useEffect } from 'react';
+import { localISODate } from '../../../../../utils/dates';
 import {
   LogOut, X, Calendar, Clock, UserX, Search, Activity, Building2, UserCircle2, RefreshCw,
 } from 'lucide-react';
 import { Select } from 'antd';
 import { apiService } from '../../../../../services/api';
-import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 import { useAuth } from '../../../../../auth/context/AuthContext';
 
 interface LogoutUserProps {
@@ -50,14 +50,12 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
 
   const loadLoggedInUsers = async () => {
     try {
-      const base = await getApiBaseUrl();
-      // Use public endpoint — works in Electron child windows without JWT
-      const res = await fetch(`${base}/auth/usernames`);
-      if (res.ok) {
-        const data = await res.json();
-        const list = data.data || data || [];
-        setLoggedInUsers(Array.isArray(list) ? list : []);
-      }
+      // /auth/usernames no longer exists; /auth/users-list is the authenticated replacement
+      // (apiService attaches the JWT from localStorage, shared with child windows).
+      const res: any = await apiService.get('/auth/users-list');
+      const raw = res?.data ?? res ?? [];
+      const list = Array.isArray(raw) ? raw : (raw?.data ?? []);
+      setLoggedInUsers(Array.isArray(list) ? list : []);
     } catch { /* silent */ }
   };
 
@@ -250,7 +248,7 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
                           updateField('userName', s.username);
                           if (s.loginDate) {
                             const d = new Date(s.loginDate);
-                            updateField('loginDate', d.toISOString().split('T')[0] || '');
+                            updateField('loginDate', localISODate(d));
                           }
                           updateField('loginTime', s.loginTime || '');
                         }}

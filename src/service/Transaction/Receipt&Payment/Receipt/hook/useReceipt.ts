@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import { ReceiptData, ReceiptHookReturn, ReceiptRow } from '../interfaces/ReceiptInterfaces';
 import { apiService } from '../../../../../services/api';
@@ -52,6 +52,8 @@ export const useReceipt = (): ReceiptHookReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMember, setIsLoadingMember] = useState(false);
   const [lastSaved, setLastSaved] = useState<{ voucherNo: string; memberNo: string; memberName: string; total: number } | null>(null);
+  const memberSeq = useRef(0);   // order guard for member balance lookups
+  const savingRef = useRef(false); // in-flight guard for Save
 
   // Load the real bank current accounts on mount (from /reports/banks)
   useEffect(() => {
@@ -105,9 +107,11 @@ export const useReceipt = (): ReceiptHookReturn => {
 
   // Load loan balances for a member
   const loadMemberBalances = useCallback(async (memberNo: string, memberName: string, officeNo: string) => {
+    const seq = ++memberSeq.current;
     setIsLoadingMember(true);
     try {
       const response = await apiService.get(`/utilities/member/balance?memberNo=${memberNo}`);
+      if (seq !== memberSeq.current) return; // a newer member was picked meanwhile
       // Response is double-wrapped by the transform interceptor: data.data holds the payload.
       const data = response?.data?.data ?? response?.data;
       const loan = data?.loan_summary || {};
@@ -125,9 +129,14 @@ export const useReceipt = (): ReceiptHookReturn => {
         flnIntt: 0,
       }));
     } catch {
-      setFormData(prev => ({ ...prev, memberNo, memberName, officeNo: officeNo || prev.officeNo }));
+      if (seq !== memberSeq.current) return;
+      // Lookup failed: never leave the previous member's loan balances under this member
+      setFormData(prev => ({
+        ...prev, memberNo, memberName, officeNo: officeNo || prev.officeNo,
+        rlnBal: 0, rlnIntt: 0, elnBal: 0, elnIntt: 0, flnBal: 0, flnIntt: 0,
+      }));
     } finally {
-      setIsLoadingMember(false);
+      if (seq === memberSeq.current) setIsLoadingMember(false);
     }
   }, []);
 
@@ -154,6 +163,7 @@ export const useReceipt = (): ReceiptHookReturn => {
   }, []);
 
   const handleSave = useCallback(async () => {
+    if (savingRef.current) return;
     if (!formData.memberNo) {
       await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before saving.');
       return;
@@ -163,11 +173,23 @@ export const useReceipt = (): ReceiptHookReturn => {
       await showDialog('warning', 'Input Validation Error', 'No Valid Rows', 'Please add at least one row with a head code and amount greater than zero.');
       return;
     }
-    if (totalAmount <= 0) {
+    // Only the rows that are actually posted count towards the total shown/validated
+    const validTotal = Math.round(validRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0) * 100) / 100;
+    if (validTotal <= 0) {
       await showDialog('warning', 'Input Validation Error', 'Invalid Total Amount', 'Total receipt amount must be greater than zero.');
       return;
     }
+    if (!formData.transDate || !/^\d{4}-\d{2}-\d{2}$/.test(formData.transDate) || !dayjs(formData.transDate).isValid()) {
+      await showDialog('warning', 'Input Validation Error', 'Date Required', 'Please enter a valid transaction date.');
+      return;
+    }
+    const isBank = formData.modeOfPay === 'bank';
+    if (isBank && !formData.chequeNo.trim()) {
+      await showDialog('warning', 'Input Validation Error', 'Cheque Number Required', 'Please enter the cheque number for bank/cheque payment mode.');
+      return;
+    }
 
+    savingRef.current = true;
     setIsLoading(true);
     try {
       // BUG FIX: cash mode must DR A1001 (CINH), not A1008 (bank).
@@ -181,7 +203,15 @@ export const useReceipt = (): ReceiptHookReturn => {
         transDate: formData.transDate,
         modeOfPay: formData.modeOfPay === 'bank' ? 'B' : 'C',
         bankCode: resolvedBankCode,
-        narration: formData.narration || '',
+        // /utilities/receipt writes straight to the ledger and has no cheque columns, so the cheque details
+        // are also carried in the narration (the only place the ledger row can keep them).
+        narration: isBank
+          ? [formData.narration, `Cheque ${formData.chequeNo.trim()}${formData.chequeDate ? ` dt ${formData.chequeDate}` : ''}${formData.customerBankName ? ` (${formData.customerBankName})` : ''}`]
+              .filter(Boolean).join(' | ')
+          : (formData.narration || ''),
+        cheqNo: isBank ? formData.chequeNo.trim() : '',
+        cheqDate: isBank ? (formData.chequeDate || '') : '',
+        bankName: isBank ? (formData.customerBankName || '') : '',
         rows: validRows.map(r => ({
           code: r.code,
           accType: r.accType || 'OTH',
@@ -202,7 +232,7 @@ export const useReceipt = (): ReceiptHookReturn => {
           `MEMBER NO     : ${formData.memberNo} - ${formData.memberName || 'N/A'}\n` +
           `TRANS DATE    : ${formData.transDate}\n` +
           `MODE OF PAY   : ${formData.modeOfPay === 'bank' ? 'Bank/Cheque' : 'Cash'}\n` +
-          `TOTAL AMOUNT  : ₹${totalAmount.toLocaleString('en-IN')}\n` +
+          `TOTAL AMOUNT  : ₹${validTotal.toLocaleString('en-IN')}\n` +
           `ROWS          : ${validRows.length}\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `✓ Saved to ledger\n` +
@@ -212,7 +242,7 @@ export const useReceipt = (): ReceiptHookReturn => {
           voucherNo: vchr,
           memberNo: formData.memberNo,
           memberName: formData.memberName,
-          total: totalAmount,
+          total: validTotal,
         });
         setFormData(emptyForm());
       } else {
@@ -222,9 +252,10 @@ export const useReceipt = (): ReceiptHookReturn => {
     } catch (err: any) {
       await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${err.message}`);
     } finally {
+      savingRef.current = false;
       setIsLoading(false);
     }
-  }, [formData, totalAmount]);
+  }, [formData]);
 
   const handleCancel = useCallback(() => {
     setFormData(emptyForm());

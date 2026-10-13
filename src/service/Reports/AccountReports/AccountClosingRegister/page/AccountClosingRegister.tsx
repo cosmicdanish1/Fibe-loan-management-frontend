@@ -142,6 +142,12 @@ const AccountClosingRegister: React.FC = () => {
       const response = await apiService.get('/reports/account-closing', {
         params: { month, year, accountType: accountType === 'ALL' ? undefined : accountType },
       });
+      if (!response.success) {
+        setReportText('');
+        setRecordCount(0);
+        message.error(response.message || response.error || 'Failed to load account closing register');
+        return;
+      }
       const data: ClosingItem[] = Array.isArray((response as any)?.data)
         ? (response as any).data
         : Array.isArray(response) ? (response as any) : [];

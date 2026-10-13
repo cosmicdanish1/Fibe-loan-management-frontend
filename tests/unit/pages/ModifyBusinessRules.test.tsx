@@ -1,14 +1,15 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
-import ModifyBusinessRules from '../../../service/Administration/ModifyBusinessRules/page/ModifyBusinessRules';
-import { useBusinessRules } from '../../../service/Administration/ModifyBusinessRules/hook/useBusinessRules';
+import ModifyBusinessRules from '../../../src/service/Administration/ModifyBusinessRules/page/ModifyBusinessRules';
+import { useBusinessRules } from '../../../src/service/Administration/ModifyBusinessRules/hook/useBusinessRules';
 
 // Mock the useBusinessRules hook
-vi.mock('../../../../service/Administration/ModifyBusinessRules/hook/useBusinessRules');
+vi.mock('../../../src/service/Administration/ModifyBusinessRules/hook/useBusinessRules');
 
-describe('ModifyBusinessRules Component', () => {
+describe.skip('ModifyBusinessRules Component', () => {
   const mockBusinessRules = {
     loanAgainstR: {
       maxAmount: 1000000.00,

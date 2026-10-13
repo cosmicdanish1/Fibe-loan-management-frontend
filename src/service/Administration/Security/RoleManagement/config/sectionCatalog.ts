@@ -18,7 +18,7 @@ const SECTION_CATALOG: [string, string[]][] = [
     'Signature Scanning',
   ]],
   ['Masters', [
-    'Member Master', 'Wing / Office Master', 'Wing / Office List', 'Head Addition / Modification',
+    'Member Master', 'Member Status (Retired / Inactive)', 'Wing / Office Master', 'Wing / Office List', 'Head Addition / Modification',
     'Head Opening Balance', 'Deposite/Loan Slab', 'Designation Master', 'Cast Category',
     'Certificate Parameter Setting', 'Passbook Parameter Setting', 'Change Member Office',
     'Change Loan Surety', 'Member Balance Transfer', 'Modify Member Balance', 'Modify FD A/c',
@@ -31,13 +31,13 @@ const SECTION_CATALOG: [string, string[]][] = [
     'Saving [Receipt -- Payment]', 'Saving Receipt Payment', 'Journal / Transfer Entry',
     'Journal / Transfer Voucher', 'Payment Voucher Creation', 'Voucher Payment', 'Receipt',
     'Fixed Deposit Receipt', 'Dividend Payment', 'Dividend Warrant', 'Interest Calculation',
-    'Interest Calculation / Posting', 'Yearly TF Interest', 'Update Saving Intt.',
+    'Interest Calculation / Posting', 'Group Insurance', 'Yearly TF Interest', 'Update Saving Intt.',
     'Modify Short Recovery', 'Compulsory Deposit Transaction', 'Demand Print Order',
     'Import Demand List', 'Generate', 'Generate Demand', 'Change Member Office',
     'Print Members Demand List',
   ]],
   ['Reports', [
-    '1.1 Cash Book (Receiptwise Rough)', 'Cash Book Receiptwise Rough', '1.2 Cash-Book', 'Cash Book',
+    'Report Head Order', '1.1 Cash Book (Receiptwise Rough)', 'Cash Book Receiptwise Rough', '1.2 Cash-Book', 'Cash Book',
     '1.3 Day-Book', 'Day Book', '1.4 Day-Book [CD]', 'Day Book CD', '1.5 Consolidation Of Daily A/c',
     'Consolidation Of Daily A/c', '2. Member Ledger Report', 'Member Ledger Report', '3. General Ledger',
     'General Ledger', '4. Monthly', '4.1 Print Vouchers', '4.1.1 Receipt/Payment Voucher',
@@ -63,7 +63,7 @@ const SECTION_CATALOG: [string, string[]][] = [
   ['Utility', [
     'Calculator', 'Find', 'Pass Book Printing', 'New Share Certificate', 'Interest Certificate',
     'Loan Nil Certificate', 'Share Certificate Printing', 'Fixed Deposit Certificate Printing',
-    'Communication Hub',
+    'Communication Hub', 'Notification Centre',
   ]],
   ['Help', ['About', 'Contents']],
 ];

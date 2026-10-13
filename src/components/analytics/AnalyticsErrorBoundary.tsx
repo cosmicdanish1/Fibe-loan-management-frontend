@@ -4,15 +4,15 @@ import { rendererLogger } from '../../services/logger';
 
 interface Props {
   children: ReactNode;
-  componentName?: string;
-  fallback?: ReactNode;
+  componentName?: string | undefined;
+  fallback?: ReactNode | undefined;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
-  error?: Error;
-  errorInfo?: ErrorInfo;
+  error?: Error | undefined;
+  errorInfo?: ErrorInfo | undefined;
 }
 
 export class AnalyticsErrorBoundary extends Component<Props, State> {
@@ -77,10 +77,10 @@ export class AnalyticsErrorBoundary extends Component<Props, State> {
     }
   }
 
-  private extractComponentName(componentStack: string): string {
+  private extractComponentName(componentStack: string | null | undefined): string {
     // Extract the first component name from the stack
-    const match = componentStack.match(/^\s*in (\w+)/);
-    return match ? match[1] : 'UnknownComponent';
+    const match = componentStack?.match(/^\s*in (\w+)/);
+    return match?.[1] ?? 'UnknownComponent';
   }
 
   private determineSeverityLevel(error: Error): 'low' | 'medium' | 'high' | 'critical' {
@@ -121,14 +121,14 @@ export class AnalyticsErrorBoundary extends Component<Props, State> {
     if (!stackTrace) return undefined;
     
     const match = stackTrace.match(/at .* \(.+:(\d+):\d+\)/);
-    return match ? parseInt(match[1], 10) : undefined;
+    return match?.[1] ? parseInt(match[1], 10) : undefined;
   }
 
   private extractColumnNumber(stackTrace?: string): number | undefined {
     if (!stackTrace) return undefined;
     
     const match = stackTrace.match(/at .* \(.+:\d+:(\d+)\)/);
-    return match ? parseInt(match[1], 10) : undefined;
+    return match?.[1] ? parseInt(match[1], 10) : undefined;
   }
 
   private getUserActionContext(): string {

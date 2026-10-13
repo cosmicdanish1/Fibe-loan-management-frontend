@@ -149,8 +149,9 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
     
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (searchResults.length > 0) {
-        handleMemberSelect(searchResults[0]);
+      const firstResult = searchResults[0];
+      if (firstResult) {
+        handleMemberSelect(firstResult);
       } else if (searchTerm) {
         searchMembers(searchTerm);
       }

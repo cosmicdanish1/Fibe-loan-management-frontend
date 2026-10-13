@@ -2,10 +2,11 @@ import React, { useState, useCallback } from 'react';
 import { ConfigProvider, Button, Input, DatePicker, Spin, Radio, Modal, message, theme } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
-import { FileText, Printer, Search, RotateCcw, Briefcase, User, Users, Monitor, Calendar } from 'lucide-react';
+import { Printer, Search, RotateCcw, Briefcase, User, Users, Monitor, Calendar } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { isFromAfterTo } from '@/utils/dates';
 
 // ── text helpers ──────────────────────────────────────────────────
 const W = 100;
@@ -119,6 +120,10 @@ const LoanContributionsRegister: React.FC = () => {
   const handleGenerate = useCallback(async () => {
     if (!memberNo.trim()) {
       message.warning('Please enter Member Number');
+      return;
+    }
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      message.warning('From date cannot be after To date');
       return;
     }
     setLoading(true);

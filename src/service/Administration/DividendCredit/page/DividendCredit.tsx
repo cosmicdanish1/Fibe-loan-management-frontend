@@ -24,7 +24,7 @@ const DividendCredit: React.FC = () => {
                     <p className="aw-desc">Applies the PRIOR financial year's already-calculated dividend into Share Value at this year's close</p>
                 </div>
                 <div className="aw-actions">
-                    <button type="button" onClick={loadPreview} disabled={loading} className="aw-btn aw-btn-secondary">
+                    <button type="button" onClick={() => loadPreview()} disabled={loading} className="aw-btn aw-btn-secondary">
                         {loading ? <RefreshCw size={13} className="aw-spin" /> : <Search size={13} />}
                         {loading ? 'Loading…' : 'Preview'}
                     </button>

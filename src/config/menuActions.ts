@@ -8,6 +8,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'LOAN_APP': { route: '/loan-application', electronMethod: 'openLoanAppWindow' },
   'CHANGE_LOAN_SURETY': { route: '/change-loan-surety', electronMethod: 'openNewWindow' },
   'INTEREST_CALC_POST': { route: '/interest-calculation-posting', electronMethod: 'openNewWindow' },
+  'GROUP_INSURANCE': { route: '/administration/group-insurance', electronMethod: 'openNewWindow' },
 
   // Payment related
   'RECEIPT_PAYMENT_VOUCHER_CREATION': { route: '/transaction/receipt-payment/payment-voucher-creation', electronMethod: 'openNewWindow' },
@@ -41,6 +42,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'CHANGE_PASSWORD': { route: '/change-password', electronMethod: 'openNewWindow' },
   'MY_PROFILE': { route: '/my-profile', electronMethod: 'openNewWindow' },
   'LOGOUT_USER': { route: '/logout-user', electronMethod: 'openNewWindow' },
+  'TWOFA_SETTINGS': { route: '/two-factor-settings', electronMethod: 'openNewWindow' },
 
   // Financial Year
   'FIN_YEAR_TRANSFER': { route: '/financial-year/transfer-entries', electronMethod: 'openNewWindow' },
@@ -62,6 +64,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
 
   // Masters
   'MEMBER_MASTER': { route: '/masters/member', electronMethod: 'openNewWindow' },
+  'MEMBER_STATUS': { route: '/masters/member-status', electronMethod: 'openNewWindow' },
   'SIGNATURE_SCANNING': { route: '/masters/signature-scanning', electronMethod: 'openNewWindow' },
   'SAVING_AC_OPENING': { route: '/masters/saving-account-opening', electronMethod: 'openNewWindow' },
   'WING_OFFICE_MASTER': { route: '/masters/wing-office', electronMethod: 'openNewWindow' },
@@ -124,10 +127,6 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'DIVIDEND_PAID': { route: '/reports/yearly/interest-list/dividend-paid', electronMethod: 'openNewWindow' },
   'INT_LIST_CD_MD_SHRt': { route: '/reports/yearly/interest-list/cd-md-shrt', electronMethod: 'openNewWindow' },
   'DIVIDEND_WARRANT': { route: '/reports/yearly/interest-list/dividend-warrant', electronMethod: 'openNewWindow' },
-  'DEFINE_TRIAL_BALANCE': { route: '/reports/yearly/customized-trial-balance/define-trial-balance', electronMethod: 'openNewWindow' },
-  'OPEN_TRIAL_BALANCE': { route: '/reports/yearly/customized-trial-balance/open-trial-balance', electronMethod: 'openNewWindow' },
-  'DEFINE_BALANCE_SHEET': { route: '/reports/yearly/customized-trial-balance/define-balance-sheet', electronMethod: 'openNewWindow' },
-  'OPEN_BALANCE_SHEET': { route: '/reports/yearly/customized-trial-balance/open-balance-sheet', electronMethod: 'openNewWindow' },
   'MEMBER_LOAN_DETAIL': { route: '/reports/yearly/member-loan-detail', electronMethod: 'openNewWindow' },
   'SHARE_WARRANT_PRINTING': { route: '/reports/yearly/share-warrant-printing', electronMethod: 'openNewWindow' },
   'ANNUAL_MEMBER_STATEMENT': { route: '/reports/yearly/annual-member-statement', electronMethod: 'openNewWindow' },
@@ -149,6 +148,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'UPDATE_SAVING_INTT': { route: '/utility/update-saving-interest', electronMethod: 'openNewWindow' },
   'INTEREST_RECEIVABLE_RECEIVED_STATEMENT': { route: '/utility/interest-receivable-received-statement', electronMethod: 'openNewWindow' },
   'COMMUNICATION_HUB': { route: '/utility/communication-center', electronMethod: 'openNewWindow' },
+  'NOTIFICATION_CENTRE': { route: '/utility/notification-centre', electronMethod: 'openNewWindow' },
   'SUPPORT_DESK': { route: '/utility/support-desk', electronMethod: 'openNewWindow' },
   // Help Routes
   'ABOUT': { route: '/help/about', electronMethod: 'openNewWindow' },
@@ -160,6 +160,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'RECOVERY_DETAILS': { route: '/reports/account-reports/recovery-details', electronMethod: 'openNewWindow' },
   'LOAN_CONTRIBUTIONS_REGISTER': { route: '/reports/account-reports/loan-contributions-register', electronMethod: 'openNewWindow' },
   'LIEN_ACCOUNT_INFORMATION': { route: '/reports/account-reports/lien-account-information', electronMethod: 'openNewWindow' },
+  'REPORT_HEAD_ORDER': { route: '/reports/head-order', electronMethod: 'openNewWindow' },
   'REPORT_PRO': { route: '/reports/report-pro', electronMethod: 'openNewWindow' },
   'SETTINGS': { route: '/settings', electronMethod: 'openSettingsWindow' },
 };
@@ -172,11 +173,24 @@ const NEVER_GATED = new Set(['SETTINGS', 'MY_PROFILE', 'SAVE', 'CANCEL', 'DELETE
 
 /** route path -> action code, for enforcing access when a window is opened
  * directly (e.g. via IPC deep link) rather than clicked from the Navbar. */
-export const ROUTE_TO_ACTION: Record<string, string> = Object.fromEntries(
-  Object.entries(ACTION_ROUTE_MAP)
-    .filter(([action]) => !NEVER_GATED.has(action))
-    .map(([action, { route }]) => [route, action]),
-);
+export const ROUTE_TO_ACTION: Record<string, string> = {
+  ...Object.fromEntries(
+    Object.entries(ACTION_ROUTE_MAP)
+      .filter(([action]) => !NEVER_GATED.has(action))
+      .map(([action, { route }]) => [route, action]),
+  ),
+  // Routes that render the same screen as a menu item but aren't that item's
+  // canonical route. They must be gated by the same right as their twin.
+  '/reports/member-statement/member-statement': 'MEMBER_STATEMENT',
+  '/reports/member-statement/saving-statement': 'SAVING_STATEMENT',
+  '/reports/member-statement/rd-statement': 'RD_STATEMENT',
+  '/reports/member-statement/new-share-certificate': 'NEW_SHARE_CERTIFICATE',
+  '/reports/member-statement/interest-certificate': 'INTEREST_CERTIFICATE',
+  '/reports/member-statement/loan-nil-certificate': 'LOAN_NIL_CERTIFICATE',
+  '/reports/daily/cash-book-old': 'CASH_BOOK',
+  // Opened from the Loan Payment window (useLoanPayment.openSanctionWindow).
+  '/loan-sanction': 'LOAN_PAYMENT',
+};
 
 /** True if `action` should open given the user's allowedActions from login.
  * null/undefined allowedActions means unrestricted (SYSTEM/ADMINISTRATOR). */

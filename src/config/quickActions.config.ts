@@ -14,8 +14,7 @@ export interface QuickActionDef {
 export const ALL_QUICK_ACTION_DEFS: QuickActionDef[] = [
   // ── Masters ────────────────────────────────────────────────────────────────
   { id: 'new-member',        label: 'New Member',        route: '/masters/member',                              iconName: 'Users',          colorCls: 'bg-indigo-50 text-indigo-600 border-indigo-100',   category: 'Masters' },
-  { id: 'new-rd',            label: 'New RD A/c',        route: '/masters/rd-account/opening',                  iconName: 'BookOpen',       colorCls: 'bg-blue-50 text-blue-600 border-blue-100',         category: 'Masters' },
-  { id: 'pass-rd',           label: 'Pass RD A/c',       route: '/masters/rd-account/pass',                     iconName: 'BookMarked',     colorCls: 'bg-sky-50 text-sky-600 border-sky-100',            category: 'Masters' },
+  { id: 'new-rd',            label: 'New RD A/c',        route: '/masters/rd-member-setup',                      iconName: 'BookOpen',       colorCls: 'bg-blue-50 text-blue-600 border-blue-100',         category: 'Masters' },
   { id: 'new-sb',            label: 'New SB A/c',        route: '/masters/saving-account-opening',              iconName: 'PiggyBank',      colorCls: 'bg-emerald-50 text-emerald-600 border-emerald-100',category: 'Masters' },
   { id: 'wing-office',       label: 'Wing / Office',     route: '/masters/wing-office',                         iconName: 'Building2',      colorCls: 'bg-cyan-50 text-cyan-600 border-cyan-100',         category: 'Masters' },
   { id: 'modify-balance',    label: 'Member Balance',    route: '/masters/modify-member-balance',               iconName: 'Scale',          colorCls: 'bg-orange-50 text-orange-600 border-orange-100',   category: 'Masters' },

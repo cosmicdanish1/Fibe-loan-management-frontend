@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Select } from 'antd';
-import { Calculator, CheckCircle2, Camera, AlertCircle, RefreshCw } from 'lucide-react';
+import { Calculator, CheckCircle2, Camera, AlertCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import AwDialog from '@/components/shared/kit/AwDialog';
 import { useDividendCalculation } from '../hooks/useDividendCalculation';
 
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -14,6 +15,7 @@ const DividendCalculation: React.FC = () => {
         loadPreview, commit,
         snapMonth, setSnapMonth, snapYear, setSnapYear, snapshotting, snapshotMessage, captureSnapshot,
     } = useDividendCalculation();
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const totalDividend = preview ? preview.members.reduce((sum, m) => sum + m.dividendAmount, 0) : 0;
     const incompleteCount = preview ? preview.members.filter((m) => m.monthsFound < m.monthsExpected).length : 0;
@@ -27,12 +29,12 @@ const DividendCalculation: React.FC = () => {
                     <p className="aw-desc">Total Product × Approved Rate ÷ 1200 — writes dividend_master only, never touches Share Value</p>
                 </div>
                 <div className="aw-actions">
-                    <button type="button" onClick={loadPreview} disabled={loading} className="aw-btn aw-btn-secondary">
+                    <button type="button" onClick={() => loadPreview()} disabled={loading} className="aw-btn aw-btn-secondary">
                         {loading ? <RefreshCw size={13} className="aw-spin" /> : <Calculator size={13} />}
                         {loading ? 'Calculating…' : 'Preview'}
                     </button>
                     {preview && preview.members.length > 0 && (
-                        <button type="button" onClick={commit} disabled={committing} className="aw-btn aw-btn-primary aw-fade-in">
+                        <button type="button" onClick={() => setShowConfirm(true)} disabled={committing} className="aw-btn aw-btn-primary aw-fade-in">
                             {committing ? <RefreshCw size={13} className="aw-spin" /> : <CheckCircle2 size={13} />}
                             {committing ? 'Committing…' : `Commit for ${preview.members.length} member(s)`}
                         </button>
@@ -88,7 +90,7 @@ const DividendCalculation: React.FC = () => {
                             </div>
                             <div style={{ width: 160 }}>
                                 <label className="aw-label" htmlFor="dc-rate">Dividend Rate (%)</label>
-                                <input id="dc-rate" type="number" value={dividendRate} onChange={(e) => setDividendRate(Number(e.target.value))} className="aw-input" />
+                                <input id="dc-rate" type="number" value={dividendRate ?? ''} min={0} max={100} step="any" onChange={(e) => setDividendRate(e.target.value.trim() === '' ? null : Number(e.target.value))} className="aw-input" />
                             </div>
                         </div>
                     </section>
@@ -188,6 +190,25 @@ const DividendCalculation: React.FC = () => {
                     <Calculator size={12} /> Committing here only records the calculation — crediting it into member Share Value is a separate step (Dividend Credit), run at the following year's close.
                 </span>
             </div>
+            <AwDialog
+                open={showConfirm}
+                title="Confirm dividend calculation commit"
+                icon={<AlertTriangle size={14} />}
+                onClose={() => setShowConfirm(false)}
+                maxWidth="28rem"
+                compact
+            >
+                <div className="aw-stack">
+                    <p className="aw-meta" style={{ lineHeight: 1.6 }}>
+                        <AlertTriangle size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4, color: 'var(--aw-warning)' }} />
+                        This records the dividend calculation for FY {preview?.calculationYear} at {preview?.dividendRatePercent}% - {preview?.members.length ?? 0} member(s), total ₹{fmt(totalDividend)} - into the dividend register. Please confirm the rate and year are correct.
+                    </p>
+                    <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
+                        <button type="button" onClick={() => setShowConfirm(false)} className="aw-btn aw-btn-secondary">Cancel</button>
+                        <button type="button" onClick={() => { setShowConfirm(false); commit(); }} className="aw-btn aw-btn-primary">Yes, Commit</button>
+                    </div>
+                </div>
+            </AwDialog>
         </div>
     );
 };

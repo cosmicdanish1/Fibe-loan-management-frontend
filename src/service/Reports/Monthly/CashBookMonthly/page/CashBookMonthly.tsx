@@ -18,6 +18,8 @@ import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { csvCell, round2 } from '@/utils/csv';
+import { escapeHtml } from '@/utils/html';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -185,7 +187,7 @@ const CashBookMonthly: React.FC = () => {
   @page { size: A4 portrait; margin: 12mm; }
   body { margin: 0; }
   pre { font-family: 'Courier New', Courier, monospace; font-size: 9pt; white-space: pre; width: fit-content; margin: 0 auto; }
-</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+</style></head><body><pre>${escapeHtml(lines.join('\n'))}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -213,13 +215,13 @@ const CashBookMonthly: React.FC = () => {
       csvContent += 'Code,Head Name,Receipt,Payment\n';
       
       data.forEach(item => {
-        csvContent += `${item.code},"${item.headName}",${item.receipt},${item.payment}\n`;
+        csvContent += `${item.code},${csvCell(item.headName)},${item.receipt},${item.payment}\n`;
       });
       
-      csvContent += `\nTotal,,${totalReceipt},${totalPayment}\n`;
-      csvContent += `\nOpening Balance,,${openingBalance},\n`;
-      csvContent += `Total (Opening + Receipts),,${openingBalance + totalReceipt},\n`;
-      csvContent += `Closing Balance (Total - Payments),,${closingBalance},\n`;
+      csvContent += `\nTotal,,${round2(totalReceipt)},${round2(totalPayment)}\n`;
+      csvContent += `\nOpening Balance,,${round2(openingBalance)},\n`;
+      csvContent += `Total (Opening + Receipts),,${round2(openingBalance + totalReceipt)},\n`;
+      csvContent += `Closing Balance (Total - Payments),,${round2(closingBalance)},\n`;
       
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');

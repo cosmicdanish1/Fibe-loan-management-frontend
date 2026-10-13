@@ -25,71 +25,39 @@ const SEARCH_TYPE_LABELS: Record<string, string> = {
   memberNo: 'Member No',
   accountNo: 'A/C Number',
   memberName: 'Member Name',
-  headCode: 'Head Code',
-  headName: 'Head Name',
+  // Head Code / Head Name are not offered: the backend search endpoint has no head-of-account search.
 };
 
-// Maps each GlobalSearchResult category (members/loans/deposits/transactions —
-// see backend/src/modules/utility/dto/search.dto.ts GlobalSearchResult) into
-// the flat row shape this screen renders.
-const flattenSearchResults = (payload: any): SearchResult[] => {
-  const rows: SearchResult[] = [];
-
-  (payload?.members?.data ?? []).forEach((m: any) => {
-    rows.push({
-      id: `member-${m.mbno}`,
-      memberNo: m.mbno,
-      name: m.name,
-      wing: m.wingName,
-      division: m.divisionName,
-      type: 'member',
-      title: m.name || String(m.mbno),
-      subtitle: `Member No ${m.mbno}`,
-      details: '',
+// Maps the flat array returned by GET /search/global (backend/src/modules/search —
+// items are {id, type, title, subtitle, details}) into the row shape this screen renders.
+const flattenSearchResults = (items: any): SearchResult[] => {
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((r: any) => r && (r.type === 'member' || r.type === 'account' || r.type === 'loan'))
+    .map((r: any) => {
+      const id = String(r.id ?? '');
+      const title = String(r.title ?? '');
+      const details = String(r.details ?? '');
+      if (r.type === 'member') {
+        const memberNo = id.replace(/^member-/, '');
+        return {
+          id, memberNo, name: title, type: 'member' as const,
+          title, subtitle: String(r.subtitle ?? ''), details,
+        };
+      }
+      if (r.type === 'loan') {
+        const caseNo = id.replace(/^loan-/, '');
+        return {
+          id, accountNo: caseNo, name: details.split(' - ')[0] || '', type: 'loan' as const,
+          title, subtitle: String(r.subtitle ?? ''), details,
+        };
+      }
+      const accountNo = id.replace(/^account-(sb|fd)-/, '');
+      return {
+        id, accountNo, name: details.split(' | ')[0] || '', type: 'account' as const,
+        title, subtitle: String(r.subtitle ?? ''), details,
+      };
     });
-  });
-
-  (payload?.loans?.data ?? []).forEach((l: any) => {
-    rows.push({
-      id: `loan-${l.loanType}-${l.loanCaseNo}`,
-      memberNo: l.mbno,
-      name: l.name,
-      wing: l.wingName,
-      division: l.divisionName,
-      accountNo: l.loanCaseNo,
-      type: 'loan',
-      title: l.name || String(l.mbno),
-      subtitle: `Loan A/c ${l.loanCaseNo}`,
-      details: '',
-    });
-  });
-
-  (payload?.deposits?.data ?? []).forEach((d: any) => {
-    rows.push({
-      id: `deposit-${d.accountNumber}`,
-      memberNo: d.mbno,
-      name: d.name,
-      wing: d.wingName,
-      division: d.divisionName,
-      accountNo: d.accountNumber,
-      type: 'account',
-      title: d.name || String(d.mbno),
-      subtitle: `RD A/c ${d.accountNumber}`,
-      details: '',
-    });
-  });
-
-  (payload?.transactions?.data ?? []).forEach((t: any) => {
-    rows.push({
-      id: `transaction-${t.id}`,
-      type: 'transaction',
-      title: t.transactionNumber || 'Transaction',
-      subtitle: t.description || '',
-      details: '',
-    });
-  });
-
-  return rows;
 };
 
 // Native "record not found" popup — mirrors the legacy Find dialog.
@@ -120,18 +88,24 @@ const Find: React.FC = () => {
     setError(null);
     try {
       const token = localStorage.getItem('accessToken');
-      const typeMapping: Record<string, string> = {
-        memberNo: 'member', memberName: 'member', accountNo: 'account',
-        headCode: 'all', headName: 'all'
+      const typeMapping: Record<string, string[]> = {
+        memberNo: ['member'], memberName: ['member'], accountNo: ['account', 'loan'],
       };
-      const backendType = typeMapping[searchType] || 'all';
-      const searchUrl = `${await getApiBaseUrl()}/search/global?query=${encodeURIComponent(searchQuery)}&entityType=${backendType}&limit=100`;
-      const response = await fetch(searchUrl, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-      });
-      if (!response.ok) throw new Error(`Search failed: ${response.status}`);
-      const data = await response.json();
-      const actualData: any[] = data.success && data.data ? flattenSearchResults(data.data) : [];
+      const backendTypes = typeMapping[searchType] || ['member'];
+      const base = await getApiBaseUrl();
+      const responses = await Promise.all(backendTypes.map(async (t) => {
+        const searchUrl = `${base}/search/global?q=${encodeURIComponent(searchQuery.trim())}&type=${t}&limit=100`;
+        const response = await fetch(searchUrl, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+        const body = await response.json();
+        // Envelope is double-wrapped: { data: { success, data: [...] } }
+        const inner = body?.data;
+        if (body?.success === false || inner?.success === false) throw new Error(body?.message || 'Search failed');
+        return Array.isArray(inner) ? inner : inner?.data;
+      }));
+      const actualData: SearchResult[] = flattenSearchResults(responses.flat());
       setResults(actualData);
       if (actualData.length === 0) {
         setError('No results found for your search.');

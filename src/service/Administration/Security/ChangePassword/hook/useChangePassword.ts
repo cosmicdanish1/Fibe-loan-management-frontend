@@ -1,12 +1,13 @@
 // useChangePassword.ts
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type {
     ChangePasswordFormData,
     PasswordValidation,
     UseChangePasswordReturn,
     PasswordRequirements
 } from '../interface/types';
-import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
+import { apiService } from '../../../../../services/api';
+import { useAuth } from '../../../../../auth/context/AuthContext';
 
 const defaultPasswordRequirements: PasswordRequirements = {
   minLength: 8,
@@ -17,12 +18,19 @@ const defaultPasswordRequirements: PasswordRequirements = {
 };
 
 export const useChangePassword = (): UseChangePasswordReturn => {
+  // Self-service: the account being changed is always the logged-in user
+  const { user } = useAuth();
+  const sessionUsername = user?.username ?? '';
   const [formData, setFormData] = useState<ChangePasswordFormData>({
     userName: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+
+  useEffect(() => {
+    setFormData(prev => (prev.userName === sessionUsername ? prev : { ...prev, userName: sessionUsername }));
+  }, [sessionUsername]);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -147,24 +155,15 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     setIsLoading(true);
 
     try {
-      // BUG FIX 1: Actually call the backend API — was previously only simulating
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${await getApiBaseUrl()}/auth/change-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          username: formData.userName,
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword,
-        }),
+      // apiService sends the accessToken and refreshes on 401. The username is the logged-in session user.
+      const response = await apiService.post('/auth/change-password', {
+        username: sessionUsername,
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || `Server error: ${response.statusText}`;
+      if (!response.success) {
+        const errorMessage = response.message || response.error || 'Failed to change password';
         setErrors({ general: errorMessage });
         return { success: false, error: errorMessage };
       }
@@ -180,18 +179,18 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [formData, validateForm]);
+  }, [formData, validateForm, sessionUsername]);
 
   const resetForm = useCallback(() => {
     setFormData({
-      userName: '',
+      userName: sessionUsername,
       currentPassword: '',
       newPassword: '',
       confirmPassword: ''
     });
     setErrors({});
     setIsLoading(false);
-  }, []);
+  }, [sessionUsername]);
 
   const clearErrors = useCallback(() => {
     setErrors({});

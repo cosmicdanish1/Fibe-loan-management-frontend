@@ -73,7 +73,7 @@ const EMIChart: React.FC = () => {
     setLoading(true); setError(null);
     try {
       const response = await emiService.getMemberLoans(memberNo);
-      const allLoans = [...response.activeLoans, ...response.pendingLoans];
+      const allLoans = [...(response?.activeLoans ?? []), ...(response?.pendingLoans ?? [])];
       setMemberLoans(allLoans);
       if (allLoans.length === 0) {
         setError(`No active loans found for member ${memberNo}.`);
@@ -90,9 +90,13 @@ const EMIChart: React.FC = () => {
     setLoading(true); setError(null);
     try {
       const response: EMIScheduleResponse = await emiService.getEMISchedule(loan.loanCaseNo);
-      setEmiSchedule(response.schedule);
-      setSelectedLoan({ ...loan, ...response.loanDetails });
-    } catch { setError(`Consultation for ${loan.loanCaseNo} timed out.`); }
+      setEmiSchedule(Array.isArray(response?.schedule) ? response.schedule : []);
+      setSelectedLoan({ ...loan, ...response?.loanDetails });
+    } catch (e: any) {
+      // don't leave the previous loan's schedule on screen under this loan
+      setEmiSchedule([]);
+      setError(`Could not load the EMI schedule for ${loan.loanCaseNo}: ${e?.message || 'unknown error'}`);
+    }
     finally { setLoading(false); }
   }, []);
 

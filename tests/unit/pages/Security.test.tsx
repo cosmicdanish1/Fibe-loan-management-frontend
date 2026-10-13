@@ -24,22 +24,22 @@ const Security: React.FC = () => (
 );
 
 // Mock child components
-vi.mock('../../../../service/Administration/Security/ChangePassword/page/ChangePassword', () => ({
+vi.mock('../../../src/service/Administration/Security/ChangePassword/page/ChangePassword', () => ({
   __esModule: true,
   default: () => <div>ChangePassword Component</div>,
 }));
 
-vi.mock('../../../../service/Administration/Security/CreateModifyUsers/page/CreateModifyUsers', () => ({
+vi.mock('../../../src/service/Administration/Security/CreateModifyUsers/page/CreateModifyUsers', () => ({
   __esModule: true,
   default: () => <div>CreateModifyUsers Component</div>,
 }));
 
-vi.mock('../../../../service/Administration/Security/LogoutUser/page/LogoutUser', () => ({
+vi.mock('../../../src/service/Administration/Security/LogoutUser/page/LogoutUser', () => ({
   __esModule: true,
   default: () => <div>LogoutUser Component</div>,
 }));
 
-vi.mock('../../../../service/Administration/Security/RoleManagement/page/RoleManagement', () => ({
+vi.mock('../../../src/service/Administration/Security/RoleManagement/page/RoleManagement', () => ({
   __esModule: true,
   default: () => <div>RoleManagement Component</div>,
 }));

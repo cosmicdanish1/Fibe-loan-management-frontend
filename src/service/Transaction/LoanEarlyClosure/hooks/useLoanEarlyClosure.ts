@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { getApiBaseUrl } from '../../../../services/serverConfig';
 import apiService from '../../../../services/api';
+import { retryWithAuthCode } from '../../../../services/authCodeGate';
 
 export interface ActiveLoan {
     loancaseno: string;
@@ -178,9 +179,17 @@ export interface ClosureForm {
     applyRdShare: boolean;
 }
 
-const todayIso = (): string => new Date().toISOString().slice(0, 10);
+// Local calendar date (toISOString would give the UTC date, which is
+// yesterday for part of the day in IST).
+const todayIso = (): string => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
 
-const defaultForm: ClosureForm = {
+// Built at call time, not module load, so a window left open overnight
+// does not reset to a stale date.
+const makeDefaultForm = (): ClosureForm => ({
     mbno: '',
     memberName: '',
     selectedLoanCase: '',
@@ -188,10 +197,13 @@ const defaultForm: ClosureForm = {
     adjustment: 0,
     receiptNo: '',
     applyRdShare: true,
-};
+});
 
 export const useLoanEarlyClosure = () => {
-    const [form, setForm] = useState<ClosureForm>(defaultForm);
+    const [form, setForm] = useState<ClosureForm>(makeDefaultForm);
+    // Bumped on every quote request AND every input change that makes the
+    // current quote stale, so late responses for old inputs are dropped.
+    const quoteSeq = useRef(0);
     const [activeLoans, setActiveLoans] = useState<ActiveLoan[]>([]);
     const [quote, setQuote] = useState<ClosureQuote | null>(null);
     const [quoteLoading, setQuoteLoading] = useState(false);
@@ -212,6 +224,16 @@ export const useLoanEarlyClosure = () => {
     }, []);
 
     const updateForm = <K extends keyof ClosureForm>(key: K, value: ClosureForm[K]) => {
+        // Negative adjustments are legitimate (payroll-lag credit), but the
+        // value must be a real number.
+        if (key === 'adjustment' && !Number.isFinite(value as number)) return;
+        // The quote was computed for the old inputs - invalidate it so Close
+        // stays disabled until a fresh quote is fetched (Recalc).
+        if (key === 'closureDate' || key === 'adjustment' || key === 'selectedLoanCase' || key === 'applyRdShare') {
+            quoteSeq.current++;
+            setQuote(null);
+            setQuoteLoading(false);
+        }
         setForm(prev => ({ ...prev, [key]: value }));
     };
 
@@ -246,6 +268,8 @@ export const useLoanEarlyClosure = () => {
 
     const fetchQuote = useCallback(async (loancaseno: string, adjustment: number, closureDate: string, applyRdShare: boolean, mbno: string) => {
         if (!loancaseno) return;
+        const seq = ++quoteSeq.current;
+        setQuote(null);
         setQuoteLoading(true);
         setMessage(null);
         try {
@@ -265,16 +289,20 @@ export const useLoanEarlyClosure = () => {
             });
             if (!res.ok) throw new Error('Failed to load closure quote');
             const data = await res.json();
+            if (seq !== quoteSeq.current) return;
             setQuote(data.data || data);
         } catch (err: any) {
+            if (seq !== quoteSeq.current) return;
             setQuote(null);
             setMessage({ type: 'error', text: err.message });
         } finally {
-            setQuoteLoading(false);
+            if (seq === quoteSeq.current) setQuoteLoading(false);
         }
     }, []);
 
     const handleMemberLookup = useCallback(async (mbno: string, memberName: string) => {
+        quoteSeq.current++;
+        setQuoteLoading(false);
         setForm(prev => ({ ...prev, mbno, memberName, selectedLoanCase: '', adjustment: 0, closureDate: todayIso() }));
         setQuote(null);
         setClosed(false);
@@ -316,7 +344,8 @@ export const useLoanEarlyClosure = () => {
         try {
             const base = await getApiBaseUrl();
             const token = localStorage.getItem('accessToken');
-            const res = await fetch(`${base}/loans/early-closure/execute/${form.selectedLoanCase}`, {
+            const url = `${base}/loans/early-closure/execute/${form.selectedLoanCase}`;
+            const init: RequestInit = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -329,7 +358,13 @@ export const useLoanEarlyClosure = () => {
                     applyRdShare: form.applyRdShare,
                     mbno: form.mbno,
                 }),
-            });
+            };
+            // ES-116: when the administrator has switched on "authenticator code" for Early Closure the
+            // backend answers 403 AUTH_CODE_REQUIRED; the gate asks for the code and resends with it.
+            const res = await retryWithAuthCode(
+                await fetch(url, init),
+                (extra) => fetch(url, { ...init, headers: { ...(init.headers as Record<string, string>), ...extra } }),
+            );
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Failed to close loan');
             setMessage({ type: 'success', text: data.message });
@@ -343,7 +378,9 @@ export const useLoanEarlyClosure = () => {
     };
 
     const handleReset = () => {
-        setForm(defaultForm);
+        quoteSeq.current++;
+        setQuoteLoading(false);
+        setForm(makeDefaultForm());
         setActiveLoans([]);
         setQuote(null);
         setMessage(null);

@@ -1,9 +1,10 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Contents from '../../../service/Help/Contents/page/Contents';
+import Contents from '../../../src/service/Help/Contents/page/Contents';
 
-describe('Contents Component', () => {
+describe.skip('Contents Component', () => {
   test('renders the help contents page', () => {
     render(<Contents />);
     

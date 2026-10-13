@@ -1,11 +1,13 @@
 // hook/usePassTransactions.ts
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
     TransactionEntry,
     PassTransactionsHookReturn
 } from '../interface/PassTransactionsInterfaces';
 import { apiService } from '../../../../services/api';
+import { csvCell } from '@/utils/csv';
+import { localISODate } from '../../../../utils/dates';
 
 // BUG FIX: removed 'message' and 'Modal' from antd — both silently fail in Electron renderer windows.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).
@@ -52,6 +54,20 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
     const [transactionData, setTransactionData] = useState<TransactionEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [reagreementResult, setReagreementResult] = useState<any | null>(null);
+    // Per-voucher in-flight guard: the ref blocks a second click synchronously, the state disables the buttons
+    const inFlight = useRef<Set<string>>(new Set());
+    const [busyVouchers, setBusyVouchers] = useState<string[]>([]);
+    const withVoucherLock = async (voucherNo: string, fn: () => Promise<void>) => {
+        if (inFlight.current.has(voucherNo)) return;
+        inFlight.current.add(voucherNo);
+        setBusyVouchers(Array.from(inFlight.current));
+        try {
+            await fn();
+        } finally {
+            inFlight.current.delete(voucherNo);
+            setBusyVouchers(Array.from(inFlight.current));
+        }
+    };
 
     const fetchPendingVouchers = useCallback(async () => {
         setIsLoading(true);
@@ -60,7 +76,8 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
             if (response.success && response.data) {
                 setTransactionData(response.data.map((item: any, index: number) => ({
                     ...item,
-                    key: item.voucherNo || index.toString()
+                    // a multi-line voucher repeats voucherNo, so the row key must include the position
+                    key: `${item.voucherNo || 'row'}-${item.trNo ?? ''}-${index}`
                 })));
             }
         } catch (error: any) {
@@ -79,7 +96,9 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
         fetchPendingVouchers();
     }, [fetchPendingVouchers]);
 
-    const handlePass = async (voucherNo: string) => {
+    const handlePass = (voucherNo: string) => withVoucherLock(voucherNo, () => runPass(voucherNo));
+
+    const runPass = async (voucherNo: string) => {
         // BUG FIX: Modal.confirm silently no-ops in Electron — replaced with native confirm dialog.
         // This is a CRITICAL fix: passing a voucher posts permanently to the ledger.
         // Without this fix, the user saw no dialog and the pass never executed.
@@ -177,7 +196,9 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
         }
     };
 
-    const handleDelete = async (voucherNo: string) => {
+    const handleDelete = (voucherNo: string) => withVoucherLock(voucherNo, () => runDelete(voucherNo));
+
+    const runDelete = async (voucherNo: string) => {
         // BUG FIX: Modal.confirm silently no-ops in Electron — replaced with native confirm dialog.
         // This is a CRITICAL fix: deleting a voucher permanently removes it and all its entries.
         // Without this fix, the user saw no dialog and the delete never executed.
@@ -218,15 +239,16 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
             r.trNo, r.voucherNo, r.memberNo, r.memberName, r.noOfAcc, r.head, r.transType, r.amount, r.vchrType, r.chequeNo,
         ]);
         const csv = [headers, ...rows]
-            .map(row => row.map(c => `"${(c ?? '').toString().replace(/"/g, '""')}"`).join(','))
+            .map(row => row.map(c => csvCell(c)).join(','))
             .join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `pending-vouchers-${new Date().toISOString().split('T')[0]}.csv`;
+        link.download = `pending-vouchers-${localISODate()}.csv`;
         link.click();
-        URL.revokeObjectURL(url);
+        // Revoking immediately can cancel the download in some browsers - defer it
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
     }, [transactionData]);
 
     const handleExit = useCallback(() => {
@@ -242,6 +264,7 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
         clearReagreementResult,
         transactionData,
         isLoading,
+        busyVouchers,
         handleRefresh,
         handlePass,
         handleDelete,

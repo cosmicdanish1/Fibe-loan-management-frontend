@@ -32,6 +32,10 @@ import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLo
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
+import { csvCell } from '@/utils/csv';
+import { escapeHtml } from '@/utils/html';
+import { indianFinancialYearStart } from '@/utils/dates';
+import { isFromAfterTo } from '@/utils/dates';
 
 interface WingData {
     wingNo: string;
@@ -55,8 +59,8 @@ interface YearlyStatementData {
 
 const YearlyMemberStatement: React.FC = () => {
     // State
-    const [fromDate, setFromDate] = useState<dayjs.Dayjs>(dayjs('2024-01-01'));
-    const [toDate, setToDate] = useState<dayjs.Dayjs>(dayjs('2024-12-31'));
+    const [fromDate, setFromDate] = useState<dayjs.Dayjs>(dayjs(indianFinancialYearStart()));
+    const [toDate, setToDate] = useState<dayjs.Dayjs>(dayjs());
     const [wings, setWings] = useState<WingData[]>([]);
     const [offices, setOffices] = useState<OfficeData[]>([]);
     const [selectedWing, setSelectedWing] = useState<string>('');
@@ -108,6 +112,10 @@ const YearlyMemberStatement: React.FC = () => {
             return;
         }
 
+        if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+          message.warning('From date cannot be after To date');
+          return;
+        }
         setLoading(true);
         try {
             const response = await apiService.getYearlyMemberStatement(
@@ -156,8 +164,8 @@ const YearlyMemberStatement: React.FC = () => {
         setToMemberNo('');
         setSelectedWing('');
         setSelectedOffice('');
-        setFromDate(dayjs('2024-01-01'));
-        setToDate(dayjs('2024-12-31'));
+        setFromDate(dayjs(indianFinancialYearStart()));
+        setToDate(dayjs());
         setStatementData([]);
         setOutputType('screen');
         setSortBy('MBNO');
@@ -205,7 +213,7 @@ const YearlyMemberStatement: React.FC = () => {
         }), { shares: 0, cd: 0, rl: 0, el: 0 });
 
         const body = rows.map((item, idx) => `<tr>
-            <td class="c">${idx + 1}</td><td>${item.memberNo}</td><td>${item.memberName}</td>
+            <td class="c">${idx + 1}</td><td>${escapeHtml(item.memberNo)}</td><td>${escapeHtml(item.memberName)}</td>
             <td class="r">${formatCurrency(item.shares)}</td><td class="r">${formatCurrency(item.compulsoryDeposit)}</td>
             <td class="r">${formatCurrency(item.regularLoan)}</td><td class="r">${formatCurrency(item.emergencyLoan)}</td>
           </tr>`).join('');
@@ -224,8 +232,8 @@ const YearlyMemberStatement: React.FC = () => {
   @page { size: portrait; margin: 10mm; }
 </style></head><body>
   <div class="hdr">
-    <div class="nm">${society.name}</div>
-    <div>${society.address}</div>
+    <div class="nm">${escapeHtml(society.name)}</div>
+    <div>${escapeHtml(society.address)}</div>
     <div class="ti">YEARLY MEMBER STATEMENT</div>
     <div>${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}</div>
   </div>
@@ -274,7 +282,7 @@ const YearlyMemberStatement: React.FC = () => {
             csvContent += 'Member No,Member Name,Shares,Compulsory Deposit,Regular Loan,Emergency Loan\n';
 
             statementData.forEach(item => {
-                csvContent += `${item.memberNo},"${item.memberName}",${item.shares},${item.compulsoryDeposit},${item.regularLoan},${item.emergencyLoan}\n`;
+                csvContent += `${item.memberNo},${csvCell(item.memberName)},${item.shares},${item.compulsoryDeposit},${item.regularLoan},${item.emergencyLoan}\n`;
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -501,7 +509,7 @@ const YearlyMemberStatement: React.FC = () => {
                                         className="w-full fz-caption"
                                         placeholder="Wing"
                                         allowClear
-                                        value={selectedWing || undefined}
+                                        {...(selectedWing ? { value: selectedWing } : {})}
                                         onChange={setSelectedWing}
                                         options={wings.map(w => ({ value: w.wingNo, label: `${w.wingNo} - ${w.name}` }))}
                                         size="small"
@@ -513,7 +521,7 @@ const YearlyMemberStatement: React.FC = () => {
                                         className="w-full fz-caption"
                                         placeholder="Office"
                                         allowClear
-                                        value={selectedOffice || undefined}
+                                        {...(selectedOffice ? { value: selectedOffice } : {})}
                                         onChange={setSelectedOffice}
                                         options={offices.map(o => ({ value: o.officeNo, label: `${o.officeNo} - ${o.name}` }))}
                                         size="small"

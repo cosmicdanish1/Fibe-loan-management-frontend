@@ -6,6 +6,7 @@ import {
 import { Select } from 'antd';
 import { apiService } from '../../../../services/api';
 import dayjs from 'dayjs';
+import { localISODate } from '../../../../utils/dates';
 
 
 const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
@@ -69,7 +70,8 @@ const InterestReceivableReceivedStatement: React.FC = () => {
       const response = await apiService.getInterestReceivableReceivedStatement({
         fromMonth: filters.fromMonth, fromYear: filters.fromYear,
         toMonth: filters.toMonth, toYear: filters.toYear,
-        branch: filters.branch, fromMember: filters.fromMember, toMember: filters.toMember
+        ...(filters.branch !== undefined ? { branch: filters.branch } : {}),
+        ...(filters.wingNo !== undefined ? { wingNo: filters.wingNo } : {}), fromMember: filters.fromMember, toMember: filters.toMember
       });
       if (response.success && response.data) {
         setData(response.data);
@@ -89,7 +91,7 @@ const InterestReceivableReceivedStatement: React.FC = () => {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url; link.download = `interest-statement-${new Date().toISOString().split('T')[0]}.csv`;
+    link.href = url; link.download = `interest-statement-${localISODate()}.csv`;
     link.click(); URL.revokeObjectURL(url);
   }, [data]);
 
@@ -178,7 +180,7 @@ const InterestReceivableReceivedStatement: React.FC = () => {
                 <div style={{ height: 1, background: 'var(--aw-border)' }} />
 
                 <div>
-                  <label className="aw-label" htmlFor="irr-wing">Wing / Section</label>
+                  <label className="aw-label" htmlFor="irr-wing" data-tip="Filters the statement to members of this wing. Pick an Office to narrow further." data-tip-pos="bottom">Wing / Section</label>
                   <Select id="irr-wing" className="aw-select" popupClassName="aw-select-popup" placeholder="Select Wing" allowClear
                     value={filters.wingNo ?? null} onChange={v => handleWingChange(v as string)}
                     options={wings.map(w => ({ value: w.wingNo, label: w.name || w.wingName || w.wingNo }))} />

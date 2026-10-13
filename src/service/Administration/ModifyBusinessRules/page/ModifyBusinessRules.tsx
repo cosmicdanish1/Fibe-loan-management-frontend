@@ -59,10 +59,11 @@ const NOT_USED = 'Not in use: this value is saved, but the application does not 
 const CALC_ONLY = 'Calculator only: shown on the Calculator screen, it does not limit any loan.';
 const NO_GUARANTOR_CHECK = 'Not in use: the number of guarantors is not checked anywhere yet.';
 const LOOKUP_ONLY = 'Display only: shown in an account lookup, it is not enforced.';
+const ALWAYS_ON = 'Always on: a loan against RD is secured by a lock on the member\'s RD, so its limit check (90% of RD, the per-member maximum) cannot be switched off.';
 
 const UnusedTag: React.FC<{ reason: string }> = ({ reason }) => (
   <span className="aw-pill tone-muted" style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, textTransform: 'none', letterSpacing: 0 }} title={reason}>
-    {reason.startsWith('Calculator') ? 'Calculator only' : reason.startsWith('Display') ? 'Display only' : 'Not in use'}
+    {reason.startsWith('Always') ? 'Always on' : reason.startsWith('Calculator') ? 'Calculator only' : reason.startsWith('Display') ? 'Display only' : 'Not in use'}
   </span>
 );
 
@@ -115,7 +116,7 @@ const gridAuto = (min: number): React.CSSProperties => ({ display: 'grid', gridT
 
 const ModifyBusinessRules: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('loanParameters');
-  const { businessRules, setBusinessRules, loading, saveBusinessRules } = useBusinessRules();
+  const { businessRules, setBusinessRules, loading, loaded, loadError, saveBusinessRules, refresh } = useBusinessRules();
   const [saving, setSaving] = useState(false);
 
   const updateLoanType = (loanType: keyof BusinessRulesData, field: string, value: number) => {
@@ -157,9 +158,9 @@ const ModifyBusinessRules: React.FC = () => {
   };
 
   const handleChartChange = (index: number, field: 'monthlyContribution' | 'yearlyInterest', value: number) => {
-    const chart = [...businessRules.fundManagement.interestChart];
-    const row = chart[index];
-    if (row) { row[field] = value; updateFundManagement('interestChart', chart); }
+    // Replace the row with a copy instead of mutating the object held in state
+    const chart = businessRules.fundManagement.interestChart.map((r, i) => (i === index ? { ...r, [field]: value } : r));
+    updateFundManagement('interestChart', chart);
   };
 
   const addChartRow = () => {
@@ -173,7 +174,72 @@ const ModifyBusinessRules: React.FC = () => {
     updateFundManagement('interestChart', businessRules.fundManagement.interestChart.filter((_, i) => i !== index));
   };
 
+  // Returns human-readable problems (empty = OK). Rates may not be negative, percentages are 0-100,
+  // re-agreement min rate may not exceed max rate (0 = no limit), slot days are 1-31 (the Slot 1 window
+  // may legitimately wrap the month end, e.g. the default 25-5, so start > end is allowed).
+  const validateRules = (): string[] => {
+    const bad: string[] = [];
+    const neg = (label: string, v: number | undefined) => { if (v !== undefined && (!Number.isFinite(v) || v < 0)) bad.push(`${label} cannot be negative`); };
+    const pct = (label: string, v: number | undefined) => { if (v !== undefined && (!Number.isFinite(v) || v < 0 || v > 100)) bad.push(`${label} must be between 0 and 100`); };
+    const loans: Array<[string, LoanType]> = [
+      ['Regular Loan', businessRules.regularLoan], ['Additional Loan', businessRules.additionalLoan],
+      ['Emergency Loan', businessRules.emergencyLoan], ['Grain Loan', businessRules.mediumTermLoan],
+      ['Loan On Deposit', businessRules.loanOnDeposit],
+    ];
+    for (const [name, l] of loans) {
+      neg(`${name} Max.Amount`, l.maxAmount);
+      pct(`${name} Rate (%)`, l.rate);
+      neg(`${name} No.Of Install`, l.numberOfInstallments);
+      neg(`${name} No. Of Gr`, l.numberOfGuarantors);
+      pct(`${name} Penal Rate (%)`, l.penalRate);
+      if (l.graceDays !== undefined && (l.graceDays < 0 || l.graceDays > 31)) bad.push(`${name} Grace Ends day must be between 0 and 31`);
+      pct(`${name} Same-Month Late Fee (%)`, l.sameMonthPenalPercent);
+      if (l.sameMonthPenalDivisor !== undefined && !(l.sameMonthPenalDivisor > 0)) bad.push(`${name} Same-Month Fee Divisor must be greater than 0`);
+    }
+    const el = businessRules.regularLoanEligibility;
+    neg('Max. Regular Loan Limit', el.maxLimit); pct('RD Req. (%)', el.rdPercent); pct('Share Req. (%)', el.sharePercent);
+    const lad = businessRules.loanAgainstDeposits;
+    pct('Loan Against Deposits Share Value (%)', lad.shareValue); pct('Loan Against Deposits FD (%)', lad.fdPercentage);
+    neg('Loan Against Deposits Overall Limit', lad.overallLimit); neg('Loan Against Deposits Basic Pay', lad.basicPay);
+    const o = businessRules.others;
+    neg('Min. Membership (Months)', o.minMembership); neg('Min Share Amount', o.minShareAmt); neg('Max Share Amount', o.maxShareAmt); neg('Security Deposit', o.securityDep);
+    if (o.maxShareAmt > 0 && o.minShareAmt > o.maxShareAmt) bad.push('Min Share Amount cannot exceed Max Share Amount');
+    neg('Min Balance For Saving A/c', businessRules.generalSettings.minBalanceForSavingAc);
+    neg('Working Charges Amount', businessRules.generalSettings.workingChargesAmount);
+    const fm = businessRules.fundManagement;
+    pct('Annual Fund Interest Rate (%)', fm.fundInterestRate); pct('Dividend Payout (%)', fm.dividendPercent); neg('Group Insurance Amount', fm.groupInsuranceAmount);
+    fm.interestChart.forEach((r, i) => {
+      neg(`Interest chart row ${i + 1} monthly contribution`, r.monthlyContribution);
+      neg(`Interest chart row ${i + 1} yearly interest`, r.yearlyInterest);
+    });
+    const rg = businessRules.loanReagreement;
+    neg('Re-agreement minimum installments paid', rg.minInstallmentsPaid); neg('Re-agreement minimum outstanding', rg.minOutstanding);
+    neg('Re-agreement maximum tenure', rg.maxTenure); neg('Re-agreement maximum per loan', rg.maxPerLoan);
+    pct('Re-agreement minimum rate (%)', rg.minRate); pct('Re-agreement maximum rate (%)', rg.maxRate);
+    if (rg.maxRate > 0 && rg.minRate > rg.maxRate) bad.push('Re-agreement minimum rate cannot be greater than the maximum rate');
+    const sl = businessRules.loanSlotDelay;
+    for (const [label, d] of [['Slot 1 Window — From Day', sl.slot1StartDay], ['Slot 1 Window — To Day', sl.slot1EndDay]] as Array<[string, number]>) {
+      if (!Number.isInteger(d) || d < 1 || d > 31) bad.push(`${label} must be a whole day between 1 and 31`);
+    }
+    neg('Slot 1 delay months', sl.slot1DelayMonths); neg('Slot 2 delay months', sl.slot2DelayMonths);
+    neg('Old EMI flag range', businessRules.oldEmiFlag.tolerance);
+    const rd = businessRules.rdSystem;
+    neg('Minimum Monthly RD Amount', rd.minMonthlyAmount); pct('Opening-Balance Interest Rate (%)', rd.openingBalanceRate); neg('Min. Balance After Withdrawal', rd.minBalanceAfterWithdrawal);
+    neg('RD min consecutive installments', rd.minConsecutiveInstallments); neg('RD max payment gap months', rd.maxPaymentGapMonths);
+    neg('RD max missed installments', rd.maxMissedInstallments); neg('RD min regular after recovery', rd.minRegularAfterRecovery); neg('RD max arrears clearance months', rd.maxArrearsClearanceMonths);
+    return bad;
+  };
+
   const handleSave = async () => {
+    if (!loaded) {
+      await showDialog('error', 'Rules Not Loaded', 'The live business rules have not been loaded.', 'Saving is disabled so the placeholder defaults on screen cannot overwrite the real rules. Use Retry to reload.');
+      return;
+    }
+    const problems = validateRules();
+    if (problems.length > 0) {
+      await showDialog('warning', 'Check These Fields', 'Business rules were not saved.', problems.slice(0, 15).join('\n') + (problems.length > 15 ? `\n...and ${problems.length - 15} more` : ''));
+      return;
+    }
     setSaving(true);
     try {
       const success = await saveBusinessRules(businessRules);
@@ -190,7 +256,7 @@ const ModifyBusinessRules: React.FC = () => {
   usePageToolbarActions({
     onSave: handleSave,
     saveLabel: 'Save Rules',
-    saveEnabled: !(saving || loading),
+    saveEnabled: !(saving || loading || !loaded),
   });
 
   const num = (v: string) => parseFloat(v) || 0;
@@ -280,7 +346,7 @@ const ModifyBusinessRules: React.FC = () => {
           </p>
         </div>
         <div className="aw-actions">
-          <button type="button" onClick={handleSave} disabled={saving || loading} className="aw-btn aw-btn-primary">
+          <button type="button" onClick={handleSave} disabled={saving || loading || !loaded} className="aw-btn aw-btn-primary">
             {saving ? <RefreshCw size={13} className="aw-spin" /> : <Save size={13} />} Save Rules
           </button>
           <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
@@ -288,6 +354,15 @@ const ModifyBusinessRules: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {loadError && !loading && (
+        <div className="aw-alert aw-alert-danger" role="alert" style={{ margin: 'var(--aw-pad) var(--aw-pad) 0' }}>
+          <span>Could not load the live business rules: {loadError}. The values below are placeholder defaults and Save is disabled.</span>
+          <button type="button" onClick={() => refresh()} className="aw-btn aw-btn-secondary" style={{ marginLeft: 'auto' }}>
+            <RefreshCw size={13} /> Retry
+          </button>
+        </div>
+      )}
 
       {/* ── Tabs ── */}
       <div className="aw-tabs" role="tablist">
@@ -387,7 +462,7 @@ const ModifyBusinessRules: React.FC = () => {
                   <div style={gridAuto(240)}>
                     <ToggleRow label="Apply to Regular Loan" checked={elig.applyToRegularLoan} onChange={v => updateEligibility({ applyToRegularLoan: v })} />
                     <ToggleRow label="Apply to Emergency Loan" checked={elig.applyToAdditionalLoan} onChange={v => updateEligibility({ applyToAdditionalLoan: v })} />
-                    <ToggleRow label="Apply to Loan Against RD" checked={elig.applyToEmergencyLoan} onChange={v => updateEligibility({ applyToEmergencyLoan: v })} />
+                    <ToggleRow label="Apply to Loan Against RD" checked unused={ALWAYS_ON} onChange={() => undefined} />
                   </div>
                   <p className="aw-meta" style={{ lineHeight: 1.5 }}>
                     Independently switchable per loan type (all on by default). RD/Share requirements are

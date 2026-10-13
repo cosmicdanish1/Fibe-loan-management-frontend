@@ -28,6 +28,8 @@ export interface TransactionEntry {
 export interface PassTransactionsHookReturn {
     transactionData: TransactionEntry[];
     isLoading: boolean;
+    /** Voucher numbers with a Pass/Reject request currently in flight (their buttons are disabled). */
+    busyVouchers: string[];
     handleRefresh: () => void;
     handlePass: (voucherNo: string) => Promise<void>;
     handleDelete: (voucherNo: string) => Promise<void>;

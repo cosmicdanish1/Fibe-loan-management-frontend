@@ -50,7 +50,13 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   error?: string;
+  metadata?: { totalCount?: number; [key: string]: any };
 }
+
+import { retryWithAuthCode } from './authCodeGate';
+
+/** localStorage key holding the 'remember this device' token for a username. */
+export const deviceTokenKey = (username: string) => 'lms_2fa_device_' + String(username || '').toLowerCase();
 
 export interface LoginCredentials {
   username: string;
@@ -105,7 +111,8 @@ class ApiService {
     const url = `${baseURL}${endpoint}`;
 
     // Ensure we have the freshest token from localStorage if internal state is missing
-    const currentToken = this.token || localStorage.getItem('accessToken');
+    // (localStorage wins: another window may have refreshed the token since this.token was cached)
+    const currentToken = localStorage.getItem('accessToken') || this.token;
 
     // Mint the correlation id up front and send it — the backend honors an
     // incoming X-Request-Id, so the UI click and all server logs share one id.
@@ -124,15 +131,30 @@ class ApiService {
 
     const clientHeaders = await getClientHeaders();
 
+    // Merge caller headers over the defaults (a plain spread of `...fetchOptions` would let a
+    // caller-supplied `headers` replace the whole object and drop Authorization / X-Request-Id).
+    const { headers: callerHeaders, ...restOptions } = fetchOptions;
+    const callerHeaderObj: Record<string, string> = {};
+    if (callerHeaders) new Headers(callerHeaders).forEach((v, k) => { callerHeaderObj[k] = v; });
+
+    const mergedHeaders: Record<string, string> = {
+      ...(!isFormData && { 'Content-Type': 'application/json' }),
+      ...(currentToken && { Authorization: `Bearer ${currentToken}` }),
+      'X-Request-Id': requestId,
+      ...clientHeaders,
+    };
+    // Header names are case-insensitive: a caller's 'content-type' must REPLACE the default
+    // 'Content-Type', not sit next to it (fetch would then send "application/json, application/json"
+    // and the server's body parser would read an empty body).
+    for (const [k, v] of Object.entries(callerHeaderObj)) {
+      const existing = Object.keys(mergedHeaders).find((h) => h.toLowerCase() === k.toLowerCase());
+      if (existing) delete mergedHeaders[existing];
+      mergedHeaders[k] = v;
+    }
+
     const config: RequestInit = {
-      headers: {
-        ...(!isFormData && { 'Content-Type': 'application/json' }),
-        ...(currentToken && { Authorization: `Bearer ${currentToken}` }),
-        'X-Request-Id': requestId,
-        ...clientHeaders,
-        ...fetchOptions.headers,
-      },
-      ...fetchOptions,
+      ...restOptions,
+      headers: mergedHeaders,
       ...(controller && { signal: controller.signal }),
     };
 
@@ -141,18 +163,37 @@ class ApiService {
       let response = await fetch(url, config);
 
       // Handle 401 Unauthorized by attempting a token refresh
-      if (response.status === 401 && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login')) {
+      if (response.status === 401 && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login')
+          && !(endpoint.includes('/auth/2fa/') && (options.method || 'GET') === 'POST')) {
         const refreshResult = await this.refreshToken();
 
         if (refreshResult.success) {
           const newToken = localStorage.getItem('accessToken');
           if (newToken) {
             if (config.headers) {
-              (config.headers as any)['Authorization'] = `Bearer ${newToken}`;
+              const h = config.headers as Record<string, string>;
+              const authKey = Object.keys(h).find((k) => k.toLowerCase() === 'authorization') || 'Authorization';
+              h[authKey] = `Bearer ${newToken}`;
             }
             response = await fetch(url, config);
           }
         }
+      }
+
+      // ES-116: an administrator can require the performer's authenticator code for some actions.
+      // The backend then answers 403 AUTH_CODE_REQUIRED; ask for the code and retry with X-Auth-Code.
+      if (response.status === 403) {
+        // The user may take a while to type the code, so the retry gets a fresh timeout instead of the
+        // original (already running) abort signal.
+        const { signal: spentSignal, ...configNoSignal } = config;
+        response = await retryWithAuthCode(response, (extra) => {
+          const retrySignal = controller ? (timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined) : spentSignal;
+          return fetch(url, {
+            ...configNoSignal,
+            headers: { ...(config.headers as Record<string, string>), ...extra },
+            ...(retrySignal && { signal: retrySignal }),
+          });
+        });
       }
 
       const requestBody = isFormData
@@ -259,10 +300,11 @@ class ApiService {
   }
 
   // Authentication methods
-  async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
+  async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse | any>> {
+    const deviceToken = (() => { try { return localStorage.getItem(deviceTokenKey(credentials.username)) || undefined; } catch { return undefined; } })();
     const response = await this.request<any>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify(credentials),
+      body: JSON.stringify({ ...credentials, ...(deviceToken && { deviceToken }) }),
     });
 
     // Backend wraps response in { success, statusCode, message, data }
@@ -271,10 +313,15 @@ class ApiService {
       // Check if backend wrapped the response
       const authData = response.data.data || response.data;
 
+      // Password was right but a second step is pending: no tokens yet.
+      if (authData.requires2fa || authData.requires2faEnrol) {
+        return { success: true, data: authData };
+      }
+
       if (authData.accessToken) {
         this.token = authData.accessToken;
         localStorage.setItem('accessToken', authData.accessToken);
-        localStorage.setItem('refreshToken', authData.refreshToken);
+        if (authData.refreshToken) localStorage.setItem('refreshToken', authData.refreshToken);
 
         // Return in the expected format
         return {
@@ -288,6 +335,99 @@ class ApiService {
       success: false,
       error: response.error || 'Login failed'
     };
+  }
+
+  // ---- Two-factor authentication (TOTP) ----
+
+  /** request() reports failures as { success:false, error } instead of throwing; the 2FA calls need the error. */
+  private async req2fa<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
+    const r = await this.request<T>(endpoint, options);
+    if (!r.success) throw new Error(r.error || r.message || 'Request failed');
+    return r.data as T;
+  }
+
+  /** Keep a completed 2FA login's tokens the way login() does. */
+  private storeAuthTokens(authData: any): void {
+    if (authData?.accessToken) {
+      this.token = authData.accessToken;
+      localStorage.setItem('accessToken', authData.accessToken);
+      if (authData.refreshToken) localStorage.setItem('refreshToken', authData.refreshToken);
+    }
+  }
+
+  /** Second login step: authenticator code (or recovery code). Throws on a wrong code. */
+  async twoFaLoginVerify(username: string, challengeToken: string, code: string, rememberDevice: boolean): Promise<any> {
+    const d = await this.req2fa('/auth/2fa/login/verify', {
+      method: 'POST',
+      body: JSON.stringify({ challengeToken, code, rememberDevice }),
+    });
+    this.storeAuthTokens(d);
+    if (d?.deviceToken) {
+      try { localStorage.setItem(deviceTokenKey(username), d.deviceToken); } catch { /* storage unavailable */ }
+    }
+    return d;
+  }
+
+  async twoFaLoginEnrolBegin(challengeToken: string): Promise<{ secret: string; otpauthUrl: string; qrDataUrl: string }> {
+    return this.req2fa('/auth/2fa/login/enroll/begin', { method: 'POST', body: JSON.stringify({ challengeToken }) });
+  }
+
+  /** Does NOT store tokens: the UI shows the recovery codes first, then calls adoptAuth(). */
+  async twoFaLoginEnrolConfirm(challengeToken: string, code: string): Promise<any> {
+    return this.req2fa('/auth/2fa/login/enroll/confirm', { method: 'POST', body: JSON.stringify({ challengeToken, code }) });
+  }
+
+  adoptAuth(authData: any): void {
+    this.storeAuthTokens(authData);
+  }
+
+  async twoFaStatus(): Promise<any> {
+    return await this.req2fa('/auth/2fa/status');
+  }
+  async twoFaEnrolBegin(password: string): Promise<{ secret: string; otpauthUrl: string; qrDataUrl: string }> {
+    return await this.req2fa('/auth/2fa/enroll/begin', { method: 'POST', body: JSON.stringify({ password }) });
+  }
+  async twoFaEnrolConfirm(code: string): Promise<{ recoveryCodes: string[] }> {
+    return await this.req2fa('/auth/2fa/enroll/confirm', { method: 'POST', body: JSON.stringify({ code }) });
+  }
+  async twoFaDisable(password: string, code: string): Promise<void> {
+    await this.req2fa('/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ password, code }) });
+  }
+  async twoFaRegenerate(code: string): Promise<{ recoveryCodes: string[] }> {
+    return await this.req2fa('/auth/2fa/recovery/regenerate', { method: 'POST', body: JSON.stringify({ code }) });
+  }
+  async twoFaGetSettings(): Promise<{ settings: any; levels: { id: number; name: string }[] }> {
+    return await this.req2fa('/auth/2fa/settings');
+  }
+  async twoFaSaveSettings(patch: any): Promise<{ settings: any }> {
+    return await this.req2fa('/auth/2fa/settings', { method: 'PUT', body: JSON.stringify(patch) });
+  }
+  async twoFaGetGuards(): Promise<{
+    actions: { key: string; label: string; hint: string }[];
+    guards: Record<string, { enabled: boolean }>;
+    approvers: { userid: number; username: string; level: string; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }[];
+  }> {
+    return await this.req2fa('/auth/2fa/guards');
+  }
+  /** Switching a protection OFF needs { password, code } (logged-in password + an approver's code). */
+  async twoFaSaveGuards(guards: Record<string, { enabled: boolean }>, confirm?: { password: string; code: string }): Promise<{
+    guards: Record<string, { enabled: boolean }>;
+    approvers?: { userid: number; username: string; level: string; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }[];
+  }> {
+    return await this.req2fa('/auth/2fa/guards', { method: 'PUT', body: JSON.stringify({ guards, ...(confirm || {}) }) });
+  }
+  /** Grant (add) or remove the Approver (OTP) right. */
+  async twoFaSetApprovers(add: number[], remove: number[]): Promise<{ approvers: { userid: number; username: string; level: string; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }[] }> {
+    return await this.req2fa('/auth/2fa/approvers', { method: 'PUT', body: JSON.stringify({ add, remove }) });
+  }
+  async twoFaAdminUsers(): Promise<any[]> {
+    return await this.req2fa('/auth/2fa/admin/users');
+  }
+  async twoFaAdminReset(userid: number): Promise<void> {
+    await this.req2fa(`/auth/2fa/admin/reset/${userid}`, { method: 'POST' });
+  }
+  async twoFaAdminUnlock(userid: number): Promise<void> {
+    await this.req2fa(`/auth/2fa/admin/unlock/${userid}`, { method: 'POST' });
   }
 
   /**
@@ -319,36 +459,105 @@ class ApiService {
     return this.request('/auth/me');
   }
 
-  async refreshToken(): Promise<ApiResponse<AuthResponse>> {
+  private refreshInFlight: Promise<ApiResponse<AuthResponse>> | null = null;
+
+  /** Single-flight: parallel 401s share one /auth/refresh call. */
+  refreshToken(): Promise<ApiResponse<AuthResponse>> {
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = this.doRefreshToken().finally(() => { this.refreshInFlight = null; });
+    }
+    return this.refreshInFlight;
+  }
+
+  private expireSession(): void {
+    this.token = null;
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('user');
+    localStorage.removeItem('sessionStartTime');
+    localStorage.removeItem('lastActivity');
+    // Dispatch a custom event so AuthContext can react
+    window.dispatchEvent(new CustomEvent('auth:session-expired'));
+  }
+
+  private async doRefreshToken(): Promise<ApiResponse<AuthResponse>> {
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) {
+      this.expireSession();
       return {
         success: false,
         error: 'No refresh token available',
       };
     }
 
-    const response = await this.request<AuthResponse>('/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-    });
+    // Raw fetch (not request()) so we can tell "refresh token rejected" (401/403 -> session over)
+    // apart from network errors / timeouts / 5xx (transient -> keep the session, let the caller retry).
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    try {
+      const baseURL = await this.getBaseURL();
+      const response = await fetch(`${baseURL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Request-Id': newRequestId() },
+        body: JSON.stringify({ refreshToken }),
+        signal: controller.signal,
+      });
 
-    if (response.success && response.data) {
-      this.token = response.data.accessToken;
-      localStorage.setItem('accessToken', response.data.accessToken);
-    } else {
-      // Refresh token is expired or invalid — force a clean logout
-      this.token = null;
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('user');
-      localStorage.removeItem('sessionStartTime');
-      localStorage.removeItem('lastActivity');
-      // Dispatch a custom event so AuthContext can react
-      window.dispatchEvent(new CustomEvent('auth:session-expired'));
+      if (response.status === 401 || response.status === 403) {
+        // Refresh token is expired or invalid — force a clean logout
+        this.expireSession();
+        return { success: false, error: 'Session expired' };
+      }
+      if (!response.ok) {
+        return { success: false, error: `Token refresh failed (HTTP ${response.status})` };
+      }
+
+      const body = await response.json();
+      const authData = (body && typeof body === 'object' && 'data' in body && body.data !== undefined ? body.data : body) as AuthResponse;
+      if (!authData?.accessToken) {
+        return { success: false, error: 'Token refresh returned no access token' };
+      }
+      this.token = authData.accessToken;
+      localStorage.setItem('accessToken', authData.accessToken);
+      // The backend rotates the refresh token; keep the new one or the next refresh uses a stale token.
+      if (authData.refreshToken) localStorage.setItem('refreshToken', authData.refreshToken);
+      return { success: true, data: authData };
+    } catch (error) {
+      const timedOut = (error as any)?.name === 'AbortError';
+      return {
+        success: false,
+        error: timedOut ? 'Token refresh timed out' : error instanceof Error ? error.message : 'Token refresh failed',
+      };
+    } finally {
+      clearTimeout(timeoutId);
     }
+  }
 
+  /**
+   * fetch() with the bearer token, a timeout, and one retry after a token refresh on 401.
+   * For raw-body endpoints (blobs/files) that can't go through request(). Returns the Response untouched.
+   */
+  async authedFetch(url: string, init: RequestInit = {}, timeoutMs = 30000): Promise<Response> {
+    const attempt = async (): Promise<Response> => {
+      const token = localStorage.getItem('accessToken') || this.token;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, {
+          ...init,
+          headers: { ...(init.headers as Record<string, string> | undefined), ...(token && { Authorization: `Bearer ${token}` }) },
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+    let response = await attempt();
+    if (response.status === 401) {
+      const refreshed = await this.refreshToken();
+      if (refreshed.success) response = await attempt();
+    }
     return response;
   }
 
@@ -378,7 +587,7 @@ class ApiService {
   }
 
   async getMemberDetails(memberNo: string): Promise<ApiResponse> {
-    return this.request(`/members/details/${memberNo}`);
+    return this.request(`/members/details/${encodeURIComponent(memberNo)}`);
   }
 
   async createMember(memberData: any): Promise<ApiResponse> {
@@ -482,14 +691,8 @@ class ApiService {
 
   async exportEMISchedulePDF(loanCaseNo: string): Promise<Blob> {
     const baseURL = await this.getBaseURL();
-    const url = `${baseURL}/loans/master/${loanCaseNo}/emi-schedule/export`;
-    const config: RequestInit = {
-      headers: {
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-      },
-    };
-
-    const response = await fetch(url, config);
+    const url = `${baseURL}/loans/master/${encodeURIComponent(loanCaseNo)}/emi-schedule/export`;
+    const response = await this.authedFetch(url);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
@@ -507,12 +710,7 @@ class ApiService {
   async fetchProtectedFile(endpoint: string): Promise<Blob | null> {
     const baseURL = await this.getBaseURL();
     const url = `${baseURL}${endpoint}`;
-    const token = this.token || localStorage.getItem('accessToken');
-    const response = await fetch(url, {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    });
+    const response = await this.authedFetch(url);
     if (response.status === 404) return null;
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -683,6 +881,7 @@ class ApiService {
     toMonth?: number;
     toYear?: number;
     branch?: string;
+    wingNo?: string;
     fromMember?: string;
     toMember?: string;
   }): Promise<ApiResponse> {
@@ -1269,7 +1468,7 @@ class ApiService {
     return this.request<any[]>(`/transactions/short-recovery?${params.toString()}`);
   }
 
-  async adjustShortRecovery(data: { demandId: number; reason: string; amount: number }): Promise<ApiResponse<any>> {
+  async adjustShortRecovery(data: { demandId: string; reason: string; amount: number }): Promise<ApiResponse<any>> {
     return this.request<any>('/transactions/short-recovery/adjust', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -1467,7 +1666,7 @@ class ApiService {
   }
 
   async getMemberProfile(memberNo: string): Promise<ApiResponse> {
-    return this.request(`/report/member-profile?memberNo=${memberNo}`);
+    return this.request(`/report/member-profile?memberNo=${encodeURIComponent(memberNo)}`);
   }
 
   async getInterestCertificate(data: {
@@ -1482,7 +1681,7 @@ class ApiService {
   }
 
   async getLoanNilCertificate(memberNo: string): Promise<ApiResponse> {
-    return this.request(`/report/loan-nil-certificate?memberNo=${memberNo}`);
+    return this.request(`/report/loan-nil-certificate?memberNo=${encodeURIComponent(memberNo)}`);
   }
 
   async getSuretyRegister(data: {
@@ -1756,9 +1955,16 @@ class ApiService {
     });
   }
 
-  async getBalanceSheet(asOnDate?: string): Promise<ApiResponse> {
-    const params = asOnDate ? `?asOnDate=${asOnDate}` : '';
-    return this.request(`/reports/balance-sheet${params}`);
+  async getBalanceSheet(
+    asOnDate?: string,
+    opts?: { includeZeroClosing?: boolean; includeZeroTransaction?: boolean },
+  ): Promise<ApiResponse> {
+    const q = new URLSearchParams();
+    if (asOnDate) q.set('asOnDate', asOnDate);
+    if (opts?.includeZeroClosing !== undefined) q.set('includeZeroClosing', String(opts.includeZeroClosing));
+    if (opts?.includeZeroTransaction !== undefined) q.set('includeZeroTransaction', String(opts.includeZeroTransaction));
+    const qs = q.toString();
+    return this.request(`/reports/balance-sheet${qs ? `?${qs}` : ''}`);
   }
 
   async getFinancialSummary(
@@ -2327,7 +2533,7 @@ class ApiService {
   }
 
   async getUserByUsername(username: string): Promise<ApiResponse> {
-    return this.request(`/admin/users?username=${username}`);
+    return this.request(`/admin/users?username=${encodeURIComponent(username)}`);
   }
 
   async createUser(userData: any): Promise<ApiResponse> {
@@ -2468,6 +2674,108 @@ class ApiService {
     });
   }
 
+  // Report Head Order (ES-57): one global head order used by every head-grouped report
+  async getReportHeadOrder(): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>('/report-head-order');
+  }
+
+  async saveReportHeadOrder(codes: string[]): Promise<ApiResponse> {
+    return this.request('/report-head-order', { method: 'PUT', body: JSON.stringify({ codes }) });
+  }
+
+  async resetReportHeadOrder(): Promise<ApiResponse> {
+    return this.request('/report-head-order/reset', { method: 'POST' });
+  }
+
+  // Member Status (ES-100): retired / inactive member flagging and the manual "mark inactive" action
+  async getMemberStatusSummary(months = 12): Promise<ApiResponse<any>> {
+    return this.request<any>(`/member-status/summary?months=${months}`);
+  }
+
+  async getMemberStatusList(params: { category: string; months?: number; search?: string; limit?: number; offset?: number }): Promise<ApiResponse<any>> {
+    const q = new URLSearchParams();
+    q.set('category', params.category);
+    if (params.months) q.set('months', String(params.months));
+    if (params.search) q.set('search', params.search);
+    if (params.limit) q.set('limit', String(params.limit));
+    if (params.offset) q.set('offset', String(params.offset));
+    return this.request<any>(`/member-status/list?${q.toString()}`);
+  }
+
+  async checkMemberStatus(memberNo: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/member-status/${encodeURIComponent(memberNo)}/check`);
+  }
+
+  async getMemberStatusHistory(memberNo: string): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>(`/member-status/${encodeURIComponent(memberNo)}/history`);
+  }
+
+  async markMemberInactive(memberNo: string, reason: string, force = false): Promise<ApiResponse<any>> {
+    return this.request<any>(`/member-status/${encodeURIComponent(memberNo)}/inactive`, {
+      method: 'POST', body: JSON.stringify({ reason, force }),
+    });
+  }
+
+  async reactivateMember(memberNo: string, reason: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/member-status/${encodeURIComponent(memberNo)}/reactivate`, {
+      method: 'POST', body: JSON.stringify({ reason }),
+    });
+  }
+
+  // Notification Centre (ES-101): stored system notifications with a per-user read state
+  async getNotificationCentreSummary(): Promise<ApiResponse<any>> {
+    return this.request<any>('/notification-centre/summary');
+  }
+
+  async getNotificationCentreList(params: { status?: string | undefined; kind?: string | undefined; severity?: string | undefined; unreadOnly?: boolean | undefined; search?: string | undefined; limit?: number | undefined; offset?: number | undefined } = {}): Promise<ApiResponse<any>> {
+    const q = new URLSearchParams();
+    if (params.status) q.set('status', params.status);
+    if (params.kind) q.set('kind', params.kind);
+    if (params.severity) q.set('severity', params.severity);
+    if (params.unreadOnly) q.set('unreadOnly', 'true');
+    if (params.search) q.set('search', params.search);
+    if (params.limit) q.set('limit', String(params.limit));
+    if (params.offset) q.set('offset', String(params.offset));
+    return this.request<any>(`/notification-centre/list?${q.toString()}`);
+  }
+
+  async syncNotificationCentre(): Promise<ApiResponse<any>> {
+    return this.request<any>('/notification-centre/sync', { method: 'POST' });
+  }
+
+  async markNotificationRead(id: number): Promise<ApiResponse<any>> {
+    return this.request<any>(`/notification-centre/${id}/read`, { method: 'POST' });
+  }
+
+  async markNotificationUnread(id: number): Promise<ApiResponse<any>> {
+    return this.request<any>(`/notification-centre/${id}/unread`, { method: 'POST' });
+  }
+
+  async markAllNotificationsRead(kind?: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/notification-centre/read-all', { method: 'POST', body: JSON.stringify(kind ? { kind } : {}) });
+  }
+
+  // Group Insurance (ES-98): yearly lump sum split over active members, deducted from RD at year end
+  async getGroupInsuranceContext(): Promise<ApiResponse<any>> {
+    return this.request<any>('/group-insurance/context');
+  }
+
+  async previewGroupInsurance(body: { yearcode: number; lumpSum: number; postingDate?: string | undefined; filter?: string | undefined; search?: string | undefined; limit?: number | undefined; offset?: number | undefined }): Promise<ApiResponse<any>> {
+    return this.request<any>('/group-insurance/preview', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  async postGroupInsurance(body: { yearcode: number; lumpSum: number; postingDate?: string | undefined }): Promise<ApiResponse<any>> {
+    return this.request<any>('/group-insurance/post', { method: 'POST', body: JSON.stringify(body), timeoutMs: 120000 });
+  }
+
+  async getGroupInsuranceRun(id: number, params: { search?: string | undefined; limit?: number | undefined; offset?: number | undefined } = {}): Promise<ApiResponse<any>> {
+    const q = new URLSearchParams();
+    if (params.search) q.set('search', params.search);
+    if (params.limit) q.set('limit', String(params.limit));
+    if (params.offset) q.set('offset', String(params.offset));
+    return this.request<any>(`/group-insurance/runs/${id}?${q.toString()}`);
+  }
+
   async getFinancialYears(): Promise<ApiResponse<any[]>> {
     return this.request<any[]>('/admin/financial-year/list');
   }
@@ -2575,9 +2883,8 @@ class ApiService {
 
   // Communication Hub / Notifications
   async getNotificationHistory(limit?: number): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/notifications/history', {
+    return this.request<any[]>(`/notifications/history${limit ? `?limit=${encodeURIComponent(String(limit))}` : ''}`, {
       method: 'GET',
-      params: limit ? { limit } : undefined,
     });
   }
 

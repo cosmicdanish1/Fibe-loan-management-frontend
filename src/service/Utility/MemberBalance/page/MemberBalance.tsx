@@ -16,6 +16,7 @@ import {
   ArrowDownRight
 } from 'lucide-react';
 import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { localISODate } from '../../../../utils/dates';
 
 interface BalanceItem {
   code: string;
@@ -105,7 +106,7 @@ const MemberBalance: React.FC = () => {
           totalLiabilities: d.summary?.totalLiabilities?.toString() || '0',
           netBalance: d.summary?.netBalance?.toString() || '0',
           balanceItems: d.balanceItems || [],
-          balanceDate: new Date().toISOString().split('T')[0]
+          balanceDate: localISODate()
         };
       } else { bd = result; }
 
@@ -152,7 +153,7 @@ const MemberBalance: React.FC = () => {
     if (window.electronAPI) {
       const handler = (_: any, data: any) => { setMemberNumber(data.memberNo); handleSearch(data.memberNo); };
       window.electronAPI.ipcRenderer?.on('member-selected', handler);
-      return () => { window.electronAPI.ipcRenderer?.removeAllListeners('member-selected'); };
+      return () => { window.electronAPI.ipcRenderer?.removeListener?.('member-selected', handler); };
     }
   }, [handleSearch]);
 

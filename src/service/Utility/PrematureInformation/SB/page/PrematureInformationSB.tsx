@@ -189,7 +189,7 @@ const PrematureInformationSB: React.FC = () => {
                 <Select
                   id="psb-holder"
                   showSearch
-                  value={selectedMember?.memberNo || undefined}
+                  {...(selectedMember?.memberNo ? { value: selectedMember.memberNo } : {})}
                   onChange={handleMemberSelect}
                   loading={holdersLoading}
                   placeholder={holdersLoading ? 'Loading account holders...' : 'Search member no. or name...'}

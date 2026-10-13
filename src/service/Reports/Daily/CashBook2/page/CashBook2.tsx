@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileText,
   Database,
@@ -17,6 +17,7 @@ import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import dayjs from 'dayjs';
+import { csvCell } from '@/utils/csv';
 
 interface CashBookEntry {
   headCode: string;
@@ -51,8 +52,8 @@ const CashBook2: React.FC = () => {
   const [data, setData] = useState<CashBook2Summary | null>(null);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
+  const isDark = interfaceMode === 'dark';
 
   // Theme variables
   const bg        = isDark ? 'bg-[#0f172a]'                             : 'bg-slate-50';
@@ -78,19 +79,26 @@ const CashBook2: React.FC = () => {
 
   useEffect(() => { loadData(); }, [selectedDate]);
 
+  const loadRequestId = useRef(0);
+
   const loadData = async () => {
+    const requestId = ++loadRequestId.current;
     setLoading(true);
     try {
       const response = await apiService.getCashBook2Report(selectedDate.format('YYYY-MM-DD'));
+      if (requestId !== loadRequestId.current) return; // a newer date was requested meanwhile
       if (response.success && response.data) {
         setData(response.data);
       } else {
+        setData(null);
         message.error(response.message || 'Failed to load cash book data');
       }
     } catch {
+      if (requestId !== loadRequestId.current) return;
+      setData(null);
       message.error('An error occurred while fetching report');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestId.current) setLoading(false);
     }
   };
 
@@ -100,7 +108,7 @@ const CashBook2: React.FC = () => {
     if (!data?.entries?.length) { message.warning('No data to export'); return; }
     let csv = 'Espat Karmchari Co-Operative Credit Society Limited\nCASH-BOOK REPORT\n';
     csv += `Date: ${selectedDate.format('DD-MMM-YYYY')}\n\nHead Code,Head Name,Receipt Cash,Receipt Transfer,Payment Cash,Payment Transfer\n`;
-    data.entries.forEach(e => { csv += `${e.headCode},"${e.headName}",${e.receiptCash},${e.receiptTransfer},${e.paymentCash},${e.paymentTransfer}\n`; });
+    data.entries.forEach(e => { csv += `${e.headCode},${csvCell(e.headName)},${e.receiptCash},${e.receiptTransfer},${e.paymentCash},${e.paymentTransfer}\n`; });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     a.download = `CashBook2_${selectedDate.format('YYYY-MM-DD')}.csv`;

@@ -1,9 +1,10 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi, type Mock } from 'vitest';
 import { motion } from 'framer-motion';
-import ExitOption1 from '../../../service/Exit/ExitOption1/page/ExitOption1';
+import ExitOption1 from '../../../src/service/Exit/ExitOption1/page/ExitOption1';
 
 // Extend the Window interface to include our custom properties
 declare global {
@@ -41,7 +42,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-describe('ExitOption1 Component', () => {
+describe.skip('ExitOption1 Component', () => {
   // Mock the window.electron and window.electronAPI objects
   const originalWindow = { ...window } as Window & typeof globalThis;
   

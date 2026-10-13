@@ -7,6 +7,7 @@ import { useLoanApplication } from '../hooks';
 import type { LoanDetails, NomineeDetail } from '../types';
 import { API_ROUTES, API_BASE_URL, getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { localISODate } from '../../../../../utils/dates';
 
 interface LoanEligibilityStatus {
   isEligible: boolean;
@@ -121,7 +122,8 @@ const LoanApplication: React.FC = () => {
   const updateSuretyRowLocal = (idx: number, data: Partial<typeof suretyRows[0]>) => {
     setSuretyRows(prev => {
       const next = [...prev];
-      next[idx] = { ...next[idx], ...data };
+      // merge of a full row and a partial patch is a full row; TS cannot see that under exactOptionalPropertyTypes
+      next[idx] = { ...next[idx], ...data } as (typeof prev)[number];
       return next;
     });
   };
@@ -362,7 +364,7 @@ const LoanApplication: React.FC = () => {
 
       // Cleanup on unmount
       return () => {
-        window.electronAPI.ipcRenderer?.removeAllListeners('member-selected');
+        window.electronAPI.ipcRenderer?.removeListener?.('member-selected', handleMemberSelected);
       };
     }
   }, [updateLoanDetails]);
@@ -390,7 +392,7 @@ const LoanApplication: React.FC = () => {
     updateLoanDetails('loanAmount', '');
     updateLoanDetails('formNumber', '');
     updateLoanDetails('reason', '');
-    updateLoanDetails('applDate', new Date().toISOString().split('T')[0] as any);
+    updateLoanDetails('applDate', localISODate() as any);
     setSelectedMember(null);
     setMemberLoanCases([]);
     setEligibilityStatus(null);
@@ -442,14 +444,17 @@ const LoanApplication: React.FC = () => {
       }
       return;
     }
-    if (!state.loanDetails.loanAmount || state.loanDetails.loanAmount === '0') {
+    // Plain decimal only: rejects negatives, text, exponent forms (1e5), signs and more than 2 decimals
+    const rawLoanAmount = String(state.loanDetails.loanAmount ?? '').trim();
+    const loanAmountOk = /^\d+(\.\d{1,2})?$/.test(rawLoanAmount) && parseFloat(rawLoanAmount) > 0;
+    if (!loanAmountOk) {
       console.error('❌ Validation failed: No loan amount');
       if (window.electronAPI?.showMessageBox) {
         window.electronAPI.showMessageBox({
           type: 'warning',
           title: 'Input Validation Error',
           message: 'Loan Amount Required',
-          detail: 'Please enter a valid loan amount greater than zero.',
+          detail: 'Please enter a valid loan amount greater than zero (digits and up to 2 decimals only).',
           buttons: ['OK']
         });
       }
@@ -536,7 +541,7 @@ const LoanApplication: React.FC = () => {
         memberNo: state.loanDetails.memberNo,
         loanType: state.loanDetails.loanType,
         loanCaseNo: finalLoanCaseNo, // Can be empty - backend will generate
-        loanAmount: state.loanDetails.loanAmount,
+        loanAmount: parseFloat(rawLoanAmount).toFixed(2), // clean numeric string
         reason: state.loanDetails.reason,
         applDate: state.loanDetails.applDate,
         formNumber: state.loanDetails.formNumber,
@@ -589,7 +594,10 @@ const LoanApplication: React.FC = () => {
             const currentBalMatch = errorMsg.match(/current.*?balance:? ₹?([\d,]+)/i);
             const appliedMatch = errorMsg.match(/applied:? ₹?([\d,]+)/i);
 
-            const maxLimit = maxLimitMatch ? maxLimitMatch[1] : '5,00,000';
+            // Fallback comes from the loaded eligibility data (no hardcoded figure)
+            const maxLimit = maxLimitMatch
+              ? maxLimitMatch[1]
+              : (eligibilityStatus?.maxLimit != null ? Number(eligibilityStatus.maxLimit).toLocaleString('en-IN') : 'per Business Rules');
             const currentBal = currentBalMatch ? currentBalMatch[1] : '0';
             const appliedAmt = appliedMatch ? appliedMatch[1] : state.loanDetails.loanAmount;
 

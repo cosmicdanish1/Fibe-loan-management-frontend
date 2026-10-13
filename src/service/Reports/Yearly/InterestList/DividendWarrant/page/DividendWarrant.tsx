@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Select, Button, Input, ConfigProvider, DatePicker, Pagination, Modal, Radio, theme as antdTheme } from 'antd';
+import { Select, Button, Input, ConfigProvider, DatePicker, Pagination, Modal, Radio, message, theme as antdTheme } from 'antd';
 import { ScrollText, Printer, Search, Download, FileCheck, Monitor } from 'lucide-react';
 import { apiService } from '../../../../../../services/api';
 import MemberLookup from '../../../../../../components/shared/MemberLookup/MemberLookup';
@@ -7,6 +7,8 @@ import dayjs, { Dayjs } from 'dayjs';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { csvCell } from '@/utils/csv';
+import { isFromAfterTo } from '@/utils/dates';
 
 const { Option } = Select;
 
@@ -84,6 +86,10 @@ const DividendWarrant: React.FC = () => {
   };
 
   const loadData = useCallback(async (): Promise<WarrantData[]> => {
+    if (fromDate && uptoDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), uptoDate.format('YYYY-MM-DD'))) {
+      message.warning('From date cannot be after To date');
+      return [];
+    }
     setLoading(true);
     try {
       const res = await apiService.getDividendWarrant(
@@ -94,12 +100,16 @@ const DividendWarrant: React.FC = () => {
         memberNo || undefined,
         sortBy
       );
+      if (!res.success) {
+        message.error(res.message || res.error || 'Failed to load dividend warrant data');
+      }
       const rows: WarrantData[] = res.success && res.data?.data ? res.data.data : [];
       setData(rows);
       setCurrentPage(1);
       return rows;
     } catch (e) {
       console.error('DividendWarrant load error:', e);
+      message.error('Failed to load dividend warrant data');
       setData([]);
       return [];
     } finally {
@@ -213,7 +223,7 @@ const DividendWarrant: React.FC = () => {
       fmt(r.shareBalance), fmt(r.dividendAmount), `${r.dividendRate}%`,
       r.chequeNo||'', r.paymentDate ? dayjs(r.paymentDate).format('DD/MM/YYYY') : ''
     ]);
-    const csv = [headers,...rows].map(row=>row.map(c=>`"${c}"`).join(',')).join('\n');
+    const csv = [headers,...rows].map(row=>row.map(c=>csvCell(c)).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
     a.download = `dividend-warrants-${dayjs().format('YYYY-MM-DD')}.csv`;

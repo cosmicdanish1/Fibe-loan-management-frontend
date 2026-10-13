@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi, describe, test, expect } from 'vitest';
-import FinancialYearClosing from '../../../service/Administration/FinancialYear/FinancialYearClosing/page/FinancialYearClosing';
+import FinancialYearClosing from '../../../src/service/Administration/FinancialYear/FinancialYearClosing/page/FinancialYearClosing';
 
 // Mock the lucide-react icons
 vi.mock('lucide-react', () => ({
@@ -12,7 +12,7 @@ vi.mock('lucide-react', () => ({
 }));
 
 // Mock the component
-vi.mock('../../../service/Administration/FinancialYear/FinancialYearClosing/page/FinancialYearClosing', () => ({
+vi.mock('../../../src/service/Administration/FinancialYear/FinancialYearClosing/page/FinancialYearClosing', () => ({
   __esModule: true,
   default: () => <div data-testid="financial-year-closing">FinancialYearClosing Component</div>
 }));

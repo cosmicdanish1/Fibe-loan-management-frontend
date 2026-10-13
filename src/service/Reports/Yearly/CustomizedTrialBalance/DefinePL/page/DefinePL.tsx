@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Button, Card, Typography, Table, Checkbox, Select, Row, Col, Space } from 'antd';
-import { SettingOutlined, PlusOutlined, SaveOutlined, FileAddOutlined } from '@ant-design/icons';
+import { PlusOutlined, SaveOutlined, FileAddOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { apiService } from '../../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../../utils/pageToolbarActions';

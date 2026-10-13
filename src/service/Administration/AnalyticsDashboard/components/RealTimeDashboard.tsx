@@ -339,7 +339,7 @@ const RealTimeDashboard: React.FC = () => {
                           <p><strong>Current Page:</strong> {currentJourney.currentPage}</p>
                         </div>
                         
-                        <Timeline size="small">
+                        <Timeline>
                           {currentJourney.pageSequence.slice(-5).map((page, index) => (
                             <Timeline.Item key={index}>
                               <div>

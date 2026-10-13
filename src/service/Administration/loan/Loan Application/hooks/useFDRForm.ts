@@ -6,6 +6,7 @@ export const useFDRForm = () => {
     isEnabled: false,
     fdrDetails: [{
       id: 1,
+      srno: '1',
       lien: false,
       fdrNo: '',
       accountNo: '',
@@ -14,7 +15,10 @@ export const useFDRForm = () => {
       unit: '',
       rate: '',
       amount: '',
-      matAmount: ''
+      matAmount: '',
+      matDate: '',
+      lastIntt: '',
+      inttPaid: ''
     }]
   });
 
@@ -45,6 +49,7 @@ export const useFDRForm = () => {
         ...prev.fdrDetails,
         {
           id: prev.fdrDetails.length + 1,
+          srno: String(prev.fdrDetails.length + 1),
           lien: false,
           fdrNo: '',
           accountNo: '',
@@ -53,7 +58,10 @@ export const useFDRForm = () => {
           unit: '',
           rate: '',
           amount: '',
-          matAmount: ''
+          matAmount: '',
+          matDate: '',
+          lastIntt: '',
+          inttPaid: ''
         }
       ]
     }));

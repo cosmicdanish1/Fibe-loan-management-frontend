@@ -29,7 +29,7 @@ export const useAnalytics = () => {
       windowTitle: document.title,
       routePath: location.pathname,
       componentName: componentName.current,
-      pageLoadTime: startTime - performance.navigationStart,
+      pageLoadTime: startTime - performance.timeOrigin,
     });
 
     // Cleanup function to track page exit
@@ -53,7 +53,6 @@ export const useAnalytics = () => {
       featureName: buttonName,
       actionType: 'click',
       actionDetails: additionalData,
-      sessionId: '',
     });
   }, [trackFeatureUsage]);
 
@@ -66,7 +65,6 @@ export const useAnalytics = () => {
       successStatus: success,
       resultCount,
       errorMessage,
-      sessionId: '',
     });
   }, [trackFeatureUsage]);
 
@@ -80,7 +78,6 @@ export const useAnalytics = () => {
       resultCount,
       executionTime,
       successStatus: true,
-      sessionId: '',
     });
   }, [trackFeatureUsage]);
 
@@ -94,7 +91,6 @@ export const useAnalytics = () => {
       resultCount,
       executionTime,
       successStatus: resultCount >= 0,
-      sessionId: '',
     });
   }, [trackFeatureUsage]);
 
@@ -106,7 +102,6 @@ export const useAnalytics = () => {
       actionType: 'download',
       actionDetails: { fileType, fileSize },
       successStatus: true,
-      sessionId: '',
     });
   }, [trackFeatureUsage]);
 
@@ -118,7 +113,6 @@ export const useAnalytics = () => {
       actionType: 'print',
       actionDetails: { pageCount },
       successStatus: true,
-      sessionId: '',
     });
   }, [trackFeatureUsage]);
 
@@ -177,7 +171,6 @@ export const useComponentAnalytics = (componentName: string) => {
       featureCategory: 'Components',
       featureName: componentName,
       actionType: 'view',
-      sessionId: '',
     });
   }, [analytics, componentName]);
 
@@ -203,7 +196,6 @@ export const usePerformanceTracking = (operationName: string) => {
       executionTime,
       successStatus: success,
       resultCount,
-      sessionId: '',
     });
   }, [analytics, operationName]);
 
@@ -227,5 +219,5 @@ function extractLineNumber(stackTrace?: string): number | undefined {
   if (!stackTrace) return undefined;
   
   const match = stackTrace.match(/at .* \(.+:(\d+):\d+\)/);
-  return match ? parseInt(match[1], 10) : undefined;
+  return match?.[1] ? parseInt(match[1], 10) : undefined;
 }

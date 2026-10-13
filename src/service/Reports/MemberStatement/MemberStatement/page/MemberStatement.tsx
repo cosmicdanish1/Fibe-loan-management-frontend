@@ -12,6 +12,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { csvCell } from '@/utils/csv';
 
 // ── types ─────────────────────────────────────────────────────────────────────
 interface SummaryItem { headCode: string; headName: string; balance: number; }
@@ -45,6 +46,24 @@ const fmtAmt = (n: number) =>
 // Loans are on the Payment side; deposits/savings on the Receipt side
 const isPayment = (item: SummaryItem) =>
   (item.headCode?.startsWith('A') ?? false) || /loan/i.test(item.headName);
+
+// Derive per-head balances from the ledger transactions returned by the backend
+// (asset heads 'A...' e.g. loans: DR - CR; other heads: CR - DR; 'I...' interest/income heads are not balances)
+const deriveSummary = (transactions: any[]): SummaryItem[] => {
+  const map = new Map<string, number>();
+  for (const t of transactions || []) {
+    const code = String(t.code || '').trim();
+    // Show every head exactly as it sits in the ledger (decision on ES-73): no heads are hidden.
+    if (!code) continue;
+    const amt = Number(t.amount) || 0;
+    const isDr = String(t.type || '').toUpperCase().startsWith('D');
+    const signed = code.toUpperCase().startsWith('A') ? (isDr ? amt : -amt) : (isDr ? -amt : amt);
+    map.set(code, (map.get(code) || 0) + signed);
+  }
+  return Array.from(map.entries())
+    .map(([headCode, balance]) => ({ headCode, headName: headCode, balance: Math.round(balance * 100) / 100 }))
+    .filter(s => s.balance !== 0);
+};
 
 const buildReportText = (
   summary: SummaryItem[],
@@ -141,7 +160,7 @@ const MemberStatement: React.FC = () => {
 
   const [memberNo,    setMemberNo]    = useState('');
   const [memberName,  setMemberName]  = useState('');
-  const [asOnDate,    setAsOnDate]    = useState<Dayjs>(dayjs('2020-03-31'));
+  const [asOnDate,    setAsOnDate]    = useState<Dayjs>(dayjs());
   const [outputType,  setOutputType]  = useState('screen');
   const [loading,     setLoading]     = useState(false);
   const [summaryData, setSummaryData] = useState<SummaryItem[]>([]);
@@ -156,7 +175,7 @@ const MemberStatement: React.FC = () => {
   const handleReset = useCallback(() => {
     setMemberNo('');
     setMemberName('');
-    setAsOnDate(dayjs('2020-03-31'));
+    setAsOnDate(dayjs());
     setSummaryData([]);
     setOutputType('screen');
   }, []);
@@ -167,12 +186,17 @@ const MemberStatement: React.FC = () => {
     try {
       const response = await apiService.getMemberStatement({
         memberNo,
-        fromDate: dayjs('2000-01-01').toISOString(),
-        toDate: asOnDate.toISOString(),
+        fromDate: '2000-01-01',
+        toDate: asOnDate.format('YYYY-MM-DD'),
       });
-      const data: MemberStatementData = response.success ? response.data : (response.data || response);
+      if (!response.success) {
+        setSummaryData([]);
+        message.error(response.message || response.error || 'Failed to generate statement');
+        return;
+      }
+      const data: MemberStatementData | null = response.data;
       if (data) {
-        const summary = data.summary || [];
+        const summary = data.summary || deriveSummary(data.transactions || []);
         setSummaryData(summary);
         if (data.memberName) setMemberName(data.memberName);
 
@@ -186,7 +210,8 @@ const MemberStatement: React.FC = () => {
           printReportText(buildReportText(summary, name, asOnDate.format('YYYY-MM-DD')));
         }
       } else {
-        message.warning('No data returned');
+        setSummaryData([]);
+        message.warning('Member not found or no data returned');
       }
     } catch (err) {
       console.error('[MemberStatement]', err);
@@ -211,7 +236,7 @@ const MemberStatement: React.FC = () => {
     if (summaryData.length === 0) { message.warning('No data to export'); return; }
     const rows = [
       '"Account Type","Balance"',
-      ...summaryData.map(s => `"${s.headName}","${s.balance.toFixed(2)}"`),
+      ...summaryData.map(s => `${csvCell(s.headName)},${csvCell(s.balance.toFixed(2))}`),
     ];
     const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');

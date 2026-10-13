@@ -4,6 +4,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
+import { csvCell } from '@/utils/csv';
+import { escapeHtml } from '@/utils/html';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -162,13 +164,25 @@ const DefaulterList: React.FC = () => {
   const animLoan = useCountUp(totalLoanAmount);
   const animOutstanding = useCountUp(totalOutstanding);
 
+  // Only the latest request may update state (stale responses are dropped).
+  const requestIdRef = useRef(0);
+
+  // Print / CSV must cover every matching record, not just the visible page.
+  const fetchAllDefaulters = async (): Promise<DefaulterRecord[] | null> => {
+    const response = await apiService.getDefaulterList(minBalance, Math.max(totalCount, 1), 0);
+    if (!response.success || !response.data) return null;
+    return ((response.data as DefaulterResponse).data) || [];
+  };
+
   const fetchDefaulterList = async (balance?: number, page?: number, size?: number) => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     const effectiveBalance = balance ?? minBalance;
     const effectivePage = page ?? currentPage;
     const effectiveSize = size ?? pageSize;
     try {
       const response = await apiService.getDefaulterList(effectiveBalance, effectiveSize, (effectivePage - 1) * effectiveSize);
+      if (requestId !== requestIdRef.current) return;
       if (response.success && response.data) {
         const rd = response.data as DefaulterResponse;
         setData(rd.data || []);
@@ -179,12 +193,13 @@ const DefaulterList: React.FC = () => {
         await showDialog('warning', 'No Data', 'No defaulter data found');
       }
     } catch (error) {
+      if (requestId !== requestIdRef.current) return;
       console.error('Error fetching defaulter list:', error);
       await showDialog('error', 'Fetch Error', 'Failed to load defaulter list');
       setData([]);
       setTotalCount(0);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   };
 
@@ -195,8 +210,12 @@ const DefaulterList: React.FC = () => {
   const generateReport = () => {
     const bal = Number(inputValue) || 0;
     setMinBalance(bal);
-    setCurrentPage(1);
-    fetchDefaulterList(bal, 1, pageSize);
+    if (currentPage !== 1) {
+      // The [currentPage, pageSize] effect performs the single fetch.
+      setCurrentPage(1);
+    } else {
+      fetchDefaulterList(bal, 1, pageSize);
+    }
   };
 
   const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -217,11 +236,20 @@ const DefaulterList: React.FC = () => {
   // same hidden-iframe + monospace lines[] technique used everywhere else
   // — an isolated document that can never inherit the parent page's
   // `html.dark` styling at all.
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (data.length === 0) return;
+    let allRows: DefaulterRecord[] | null = null;
+    try {
+      allRows = await fetchAllDefaulters();
+    } catch (error) {
+      console.error('Error fetching all defaulters for print:', error);
+    }
+    if (!allRows) { await showDialog('error', 'Print Error', 'Failed to load all records for printing'); return; }
     const lines = buildDefaulterListLines(
-      data, minBalance, currentPage, totalPages, rangeStart,
-      totalLoanAmount, totalOutstanding, totalPenalDue,
+      allRows, minBalance, 1, 1, 1,
+      allRows.reduce((s, r) => s + (Number(r.loanAmount) || 0), 0),
+      allRows.reduce((s, r) => s + (Number(r.balance) || 0), 0),
+      allRows.reduce((s, r) => s + (Number(r.penalDue) || 0), 0),
     );
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
@@ -240,7 +268,7 @@ const DefaulterList: React.FC = () => {
   @page { size: A4 portrait; margin: 10mm; }
   body { margin: 0; }
   pre { font-family: 'Courier New', Courier, monospace; font-size: 7.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
-</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+</style></head><body><pre>${escapeHtml(lines.join('\n'))}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -253,18 +281,20 @@ const DefaulterList: React.FC = () => {
   const handleExportCSV = useCallback(async () => {
     if (data.length === 0) { await showDialog('warning', 'No Data', 'No data to export'); return; }
     try {
+      const allRows = await fetchAllDefaulters();
+      if (!allRows) { await showDialog('error', 'Export Error', 'Failed to load all records for export'); return; }
       let csv = 'Espat Karmchari Co-Operative Credit Society Limited\n';
       csv += 'Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006\n';
       csv += 'Reg No: A.R/DRG/1796, Tel No: 0788-2298736\n\nDEFAULTER LIST REPORT\n';
-      csv += `Minimum Balance: Rs.${fmt(minBalance)}\nPage: ${currentPage} of ${totalPages}\n\n`;
+      csv += `Minimum Balance: Rs.${fmt(minBalance)}\nTotal Records: ${allRows.length}\n\n`;
       csv += 'Member No,Member Name,Loan Type,Case No,Loan Amount,Outstanding,Months Overdue,Penal Due\n';
-      data.forEach(r => {
-        csv += `${r.memberNo},"${r.memberName}",${r.loanType},${r.loanCaseNo},${r.loanAmount},${r.balance},${r.monthsOverdue || 0},${r.penalDue || 0}\n`;
+      allRows.forEach(r => {
+        csv += `${r.memberNo},${csvCell(r.memberName)},${r.loanType},${r.loanCaseNo},${r.loanAmount},${r.balance},${r.monthsOverdue || 0},${r.penalDue || 0}\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `DefaulterList_Page${currentPage}.csv`;
+      link.download = `DefaulterList_${dayjs().format('YYYY-MM-DD')}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -272,7 +302,7 @@ const DefaulterList: React.FC = () => {
     } catch {
       await showDialog('error', 'Export Error', 'Failed to export CSV');
     }
-  }, [data, minBalance, currentPage, totalPages]);
+  }, [data, minBalance, totalCount]);
 
   const pagerBtn: React.CSSProperties = {
     width: 30, height: 30, borderRadius: 6, background: '#fbf9f4',

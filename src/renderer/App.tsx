@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import SplashScreen from '../components/SplashScreen';
-import { Spin } from 'antd';
+import LoadingAnimation from '../components/loaders/LoadingAnimation';
 import { AuthProvider } from '../auth/context/AuthContext';
 import ThemeProvider from '../components/shared/ThemeProvider';
 import { ProtectedRoute } from '../auth/components';
@@ -10,6 +10,7 @@ import { LicenseProvider } from '../components/license/LicenseContext';
 import LicenseGate from '../components/license/LicenseGate';
 import LicenseWarningBanner from '../components/license/LicenseWarningBanner';
 import ServerSetup from '../pages/setup/ServerSetup';
+import AuthCodeDialogHost from '../components/shared/AuthCodeDialogHost';
 
 
 // Lazy load pages
@@ -34,7 +35,7 @@ const NotFound = lazy(() => import('../components/NotFound'));
 // Loading component
 const Loading = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-    <Spin size="large" />
+    <LoadingAnimation height={160} />
   </div>
 );
 // Lazy load security components
@@ -42,6 +43,7 @@ const UserManagement = lazy(() => import('../service/Administration/Security/Cre
 const RoleManagement = lazy(() => import('../service/Administration/Security/RoleManagement/page/RoleManagement'));
 const ChangePassword = lazy(() => import('../service/Administration/Security/ChangePassword/page/ChangePassword'));
 const LogoutUser = lazy(() => import('../service/Administration/Security/LogoutUser/page/LogoutUser'));
+const TwoFactorSettings = lazy(() => import('../service/Administration/Security/TwoFactorSettings/page/TwoFactorSettings'));
 
 // Lazy load financial year components
 const TransferEntriesForClosing = lazy(() => import('../service/Administration/FinancialYear/TransferEntriesForClosing/page/TransferEntriesForClosing'));
@@ -99,6 +101,7 @@ const CashBookReceiptwiseRough = lazy(() => import('../service/Reports/Daily/Cas
 const CashBook = lazy(() => import('../service/Reports/Daily/CashBook/page/CashBook'));
 const CashBook2 = lazy(() => import('../service/Reports/Daily/CashBook2/page/CashBook2'));
 const DayBook = lazy(() => import('../service/Reports/Daily/DayBook/page/DayBook'));
+const DayBookSB = lazy(() => import('../service/Reports/Daily/DayBookSB/page/DayBookSB'));
 const ConsolidationOfDailyAccount = lazy(() => import('../service/Reports/Daily/ConsolidationOfDailyAccount/page/ConsolidationOfDailyAccount'));
 
 // Lazy load monthly report components
@@ -146,6 +149,10 @@ const RecurringDetails = lazy(() => import('../service/Reports/AccountReports/Re
 const RecoveryDetails = lazy(() => import('../service/Reports/AccountReports/RecoveryDetails/page/RecoveryDetails'));
 const LoanContributionsRegister = lazy(() => import('../service/Reports/AccountReports/LoanContributionsRegister/page/LoanContributionsRegister'));
 const LienAccountInformation = lazy(() => import('../service/Reports/AccountReports/LienAccountInformation/page/LienAccountInformation'));
+const ReportHeadOrder = lazy(() => import('../service/Reports/ReportHeadOrder/page/ReportHeadOrder'));
+const MemberStatus = lazy(() => import('../service/Masters/MemberStatus/page/MemberStatus'));
+const GroupInsurance = lazy(() => import('../service/Administration/GroupInsurance/page/GroupInsurance'));
+const NotificationCentre = lazy(() => import('../service/Utility/NotificationCentre/page/NotificationCentre'));
 const ReportPro = lazy(() => import('../service/Reports/ReportPro/page/ReportPro'));
 
 // Lazy load Utility components
@@ -280,6 +287,7 @@ const App: React.FC = () => {
           <AuthProvider>
             <ThemeProvider>
               <LicenseWarningBanner />
+              <AuthCodeDialogHost />
               <Router>
             <Suspense fallback={<Loading />}>
               <Routes>
@@ -309,6 +317,7 @@ const App: React.FC = () => {
                   <Route path="/role-management" element={<RoleManagement />} />
                   <Route path="/change-password" element={<ChangePassword />} />
                   <Route path="/logout-user" element={<LogoutUser />} />
+                  <Route path="/two-factor-settings" element={<TwoFactorSettings />} />
                   <Route path="/financial-year/transfer-entries" element={<TransferEntriesForClosing />} />
                   <Route path="/financial-year/closing" element={<FinancialYearClosing />} />
                   <Route path="/financial-year/balance-transfer" element={<BalanceTransfer />} />
@@ -338,7 +347,6 @@ const App: React.FC = () => {
 
                   {/* Reports - General */}
                   <Route path="/reports/member-ledger" element={<MemberLedgerReport />} />
-                  <Route path='/common/member-lookup' element={<MemberLookup />} />
                   <Route path="/reports/general-ledger" element={<GeneralLedger />} />
                   <Route path="/reports/member-detail-ledger" element={<MemberDetailLedger />} />
                   <Route path="/reports/account-balance" element={<AccountBalance />} />
@@ -347,6 +355,10 @@ const App: React.FC = () => {
 
                   {/* Reports - Account Reports */}
                   <Route path="/reports/report-pro" element={<ReportPro />} />
+                  <Route path="/reports/head-order" element={<ReportHeadOrder />} />
+                  <Route path="/masters/member-status" element={<MemberStatus />} />
+                  <Route path="/administration/group-insurance" element={<GroupInsurance />} />
+                  <Route path="/utility/notification-centre" element={<NotificationCentre />} />
                   <Route path="/reports/account-reports/account-closing-register" element={<AccountClosingRegister />} />
                   <Route path="/reports/account-reports/share-certificate" element={<ShareCertificate />} />
                   <Route path="/reports/account-reports/recurring-details" element={<RecurringDetails />} />
@@ -362,8 +374,8 @@ const App: React.FC = () => {
                   <Route path="/reports/daily/cash-book" element={<CashBook2 />} />
                   <Route path="/reports/daily/cash-book-old" element={<CashBook />} />
                   <Route path="/reports/daily/day-book" element={<DayBook />} />
-                  <Route path="/reports/daily/day-book-cd" element={<DayBook filterType="cd" />} />
-                  <Route path="/reports/daily/day-book-sb" element={<DayBook filterType="cd" />} />
+                  <Route path="/reports/daily/day-book-cd" element={<DayBookSB filterType="cd" />} />
+                  <Route path="/reports/daily/day-book-sb" element={<DayBookSB />} />
                   <Route path="/reports/daily/consolidation" element={<ConsolidationOfDailyAccount />} />
 
                   {/* Reports - Monthly */}
@@ -398,7 +410,6 @@ const App: React.FC = () => {
                   <Route path="/utility/calculator" element={<Calculator />} />
                   <Route path="/utility/find" element={<Find />} />
                   <Route path="/utility/member-balance" element={<MemberBalance />} />
-                  <Route path='/common/member-lookup' element={<MemberLookup />} />
                   <Route path="/utility/emi-chart" element={<EMIChart />} />
                   <Route path="/utility/database-backup" element={<DatabaseBackup />} />
                   <Route path="/utility/update-saving-interest" element={<UpdateSavingInterest />} />

@@ -1,6 +1,6 @@
 // hook/useImportDemandList.ts
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
     ImportConfig,
     DemandListItem,
@@ -24,7 +24,8 @@ const showDialog = async (
     }
 };
 
-const currentMonth = new Date().toLocaleString('default', { month: 'short' }).toUpperCase();
+const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const currentMonth = MONTH_ABBR[new Date().getMonth()] as string;
 
 export const useImportDemandList = (): ImportDemandListHookReturn => {
     const [importConfig, setImportConfig] = useState<ImportConfig>({
@@ -38,6 +39,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
     const [branches, setBranches] = useState<BranchOption[]>([]);
     const [isImporting, setIsImporting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const savingRef = useRef(false);
     useEffect(() => {
         (async () => {
             try {
@@ -63,6 +65,10 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
 
     const updateConfig = useCallback((field: keyof ImportConfig, value: any) => {
         setImportConfig(prev => ({ ...prev, [field]: value }));
+        // The preview belongs to the month/year/branch it was imported for - drop it when those change
+        if (field === 'monthStr' || field === 'yearStr' || field === 'branch') {
+            setPreviewData([]);
+        }
     }, []);
 
     const handleImport = useCallback(() => {
@@ -150,6 +156,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
     }, [importConfig]);
 
     const handleSave = useCallback(async () => {
+        if (savingRef.current) return;
         if (previewData.length === 0) {
             await showDialog('warning', 'electron-react-ts', 'No Data', 'Please import a file first before saving.');
             return;
@@ -161,6 +168,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
             return;
         }
 
+        savingRef.current = true;
         setIsSaving(true);
         try {
             const base = await getApiBaseUrl();
@@ -209,12 +217,14 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
                 `✓ Saved to demand_master (pending posting)\n` +
                 `➜ Go to 'Updation / Ledger Posting' to post`
             );
+            setPreviewData([]);
         } catch (err: any) {
             console.error('Save failed:', err);
             let msg = err.message || 'Unknown error';
             try { msg = JSON.parse(msg)?.message || msg; } catch {}
             await showDialog('error', 'electron-react-ts', 'Save Failed', msg);
         } finally {
+            savingRef.current = false;
             setIsSaving(false);
         }
     }, [previewData, importConfig]);

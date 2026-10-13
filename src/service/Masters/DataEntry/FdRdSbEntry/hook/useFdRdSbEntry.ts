@@ -1,6 +1,6 @@
 // hook/useFdRdSbEntry.ts
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import dayjs from 'dayjs';
 import { FdRdSbEntryData, FdRdSbEntryHookReturn, EntryType } from '../interface/FdRdSbEntryInterfaces';
 import { apiService } from '../../../../../services/api';
@@ -39,22 +39,18 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
   const [formData, setFormData] = useState<FdRdSbEntryData>(emptyForm('RD'));
   const [isLoading, setIsLoading] = useState(false);
 
-  const updateField = useCallback((field: keyof FdRdSbEntryData, value: any) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      if (field === 'entryType' && prev.memberNo) {
-        updated.accountNo = '';
-        updated.accounts = [];
-        loadAccounts(prev.memberNo, value as EntryType);
-      }
-      return updated;
-    });
-  }, []);
+  // Latest form state for callbacks that must not read it inside a setState updater.
+  const formRef = useRef(formData);
+  formRef.current = formData;
+  // Out-of-order guard: only the most recent accounts request may apply.
+  const accountsSeq = useRef(0);
 
   const loadAccounts = useCallback(async (memberNo: string, type: EntryType) => {
+    const seq = ++accountsSeq.current;
     if (!memberNo) return;
     try {
       const response = await apiService.getFdRdSbAccounts(memberNo, type);
+      if (seq !== accountsSeq.current) return;
       const raw = Array.isArray(response.data) ? response.data : [];
       const accounts = raw.map((a: any) => ({
         accountNo: a.accountNo?.toString() || '',
@@ -68,10 +64,26 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
     }
   }, []);
 
+  const updateField = useCallback((field: keyof FdRdSbEntryData, value: any) => {
+    // Side effect kept OUT of the state updater (updaters run twice in StrictMode).
+    const memberNo = formRef.current.memberNo;
+    const typeChanged = field === 'entryType' && !!memberNo;
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'entryType' && prev.memberNo) {
+        updated.accountNo = '';
+        updated.accounts = [];
+      }
+      return updated;
+    });
+    if (typeChanged) loadAccounts(memberNo, value as EntryType);
+  }, [loadAccounts]);
+
   const handleMemberSelect = useCallback(async (memberNo: string, memberData?: any) => {
     const actualNo = memberData?.memberNo || memberNo;
     const name = memberData?.memberName || '';
 
+    accountsSeq.current++;
     setFormData(prev => ({
       ...prev,
       memberNo: actualNo,
@@ -90,6 +102,10 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
       await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before saving.');
       return;
     }
+    if (formData.accounts.length > 0 && !formData.accountNo) {
+      await showDialog('warning', 'Input Validation Error', 'Account Required', 'Please select the account this entry belongs to.');
+      return;
+    }
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       await showDialog('warning', 'Input Validation Error', 'Invalid Amount', 'Please enter a valid amount greater than zero.');
       return;
@@ -104,7 +120,7 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
       const payload = {
         entryType: formData.entryType,
         memberNo: parseInt(formData.memberNo),
-        accountNo: 0,
+        accountNo: parseInt(formData.accountNo, 10) || 0,
         transDate: formData.transDate,
         transType: formData.transType,
         amount: parseFloat(formData.amount),
@@ -153,6 +169,7 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
   }, [formData]);
 
   const handleClear = useCallback(() => {
+    accountsSeq.current++;
     setFormData(emptyForm(formData.entryType));
   }, [formData.entryType]);
 

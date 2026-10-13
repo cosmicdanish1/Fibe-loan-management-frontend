@@ -34,6 +34,7 @@ export const ROUTES = {
     ROLE_MANAGEMENT: '/role-management',
     CHANGE_PASSWORD: '/change-password',
     LOGOUT_USER: '/logout-user',
+    TWOFA_SETTINGS: '/two-factor-settings',
 
     // Administration - Financial Year Management
     FINANCIAL_YEAR_TRANSFER_ENTRIES: '/financial-year/transfer-entries',
@@ -54,6 +55,7 @@ export const ROUTES = {
 
     // Masters
     MEMBER_MASTER: '/masters/member',
+    MEMBER_STATUS: '/masters/member-status',
     SIGNATURE_SCANNING: '/masters/signature-scanning',
     RD_ACCOUNT_OPENING: '/masters/rd-account/opening',
     RD_ACCOUNT_PASS: '/masters/rd-account/pass',

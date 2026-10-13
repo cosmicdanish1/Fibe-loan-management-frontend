@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { useLoanStatement } from '../hooks/useLoanStatement';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { csvCell } from '@/utils/csv';
 
 const { Option } = Select;
 
@@ -229,7 +230,7 @@ const LoanStatement: React.FC = () => {
         if (rows.length === 0) return;
         const headers = shownColumns.map(c => c.label);
         const csvRows = rows.map(r => shownColumns.map(c => CELL_VALUE[c.key]?.(r) ?? ''));
-        const csv = [headers, ...csvRows].map(row => row.map(c => `"${c}"`).join(',')).join('\n');
+        const csv = [headers, ...csvRows].map(row => row.map(c => csvCell(c)).join(',')).join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);

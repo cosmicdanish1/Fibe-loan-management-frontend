@@ -55,8 +55,9 @@ const LicenseActivation: React.FC<Props> = ({ onActivated }) => {
 
   const getMachineId = async (): Promise<string> => {
     try {
-      if (window.electronAPI?.invoke) {
-        return await window.electronAPI.invoke('get-machine-id') || 'unknown';
+      const api = (window as any).electronAPI;
+      if (api?.getMachineId) {
+        return (await api.getMachineId()) || 'unknown';
       }
     } catch {}
     return navigator.userAgent.slice(0, 50);

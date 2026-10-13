@@ -99,7 +99,7 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
         setNewEnd('');
         await fetchCurrentYear();
       } else {
-        await showDialog('error', 'Create Failed', response.error || 'Failed to create financial year.', '');
+        await showDialog('error', 'Create Failed', response.message || response.error || 'Failed to create financial year.', '');
       }
     } catch (err: any) {
       await showDialog('error', 'System Error', 'Unable to create financial year.', err?.message || 'Check server connection.');
@@ -150,7 +150,7 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
           `Period: ${fy.startDate} → ${fy.endDate}\n\n✓ All transactions for this year are now locked.\n✓ Ready for next financial year operations.`
         );
       } else {
-        await showDialog('error', 'Close Failed', response.error || 'Failed to close financial year.', 'Please check server logs and retry.');
+        await showDialog('error', 'Close Failed', response.message || response.error || 'Failed to close financial year.', 'Please check server logs and retry.');
       }
     } catch (err: any) {
       await showDialog('error', 'System Error', 'Unable to close financial year.', err?.message || 'Check server connection.');

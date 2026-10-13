@@ -156,7 +156,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
         setShowSuccess(true);
       } else {
         setShowConfirm(false);
-        setErrors({ general: response.error || 'Transfer failed. Please try again.' });
+        setErrors({ general: response.message || response.error || 'Transfer failed. Please try again.' });
       }
     } catch (err: any) {
       setShowConfirm(false);

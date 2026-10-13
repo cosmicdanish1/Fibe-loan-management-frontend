@@ -7,6 +7,7 @@ import { apiService } from '../../../../services/api';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 import { DatePicker, Select } from 'antd';
+import { isFromAfterTo } from '@/utils/dates';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -57,16 +58,22 @@ const UpdateSavingInterest: React.FC = () => {
   }, []);
 
   const setDefaultDates = useCallback(() => {
+    // Default to the last COMPLETED quarter (the current one is still unfinished).
     const now = dayjs();
-    const qStart = dayjs().year(now.year()).month(Math.floor(now.month() / 3) * 3).date(1);
+    const qStart = dayjs().year(now.year()).month(Math.floor(now.month() / 3) * 3).date(1).subtract(3, 'month');
     setFormData(prev => ({ ...prev, fromDate: qStart.format('YYYY-MM-DD'), toDate: qStart.add(3, 'month').date(0).format('YYYY-MM-DD') }));
   }, []);
 
   const loadCurrentRate = useCallback(async () => {
     const response = await apiService.getCurrentInterestRate();
-    if (response.success && response.data) {
-      const rate = typeof response.data === 'number' ? response.data : 4.0;
-      setCurrentRate(rate); setFormData(prev => ({ ...prev, interestRate: rate }));
+    if (response.success && response.data !== undefined && response.data !== null) {
+      // Only overwrite the form when the server returned a usable rate.
+      const raw: any = response.data;
+      const candidate = typeof raw === 'object' ? (raw.rate ?? raw.currentRate ?? raw.interestRate) : raw;
+      const rate = typeof candidate === 'number' ? candidate : (typeof candidate === 'string' && candidate.trim() !== '' ? Number(candidate) : NaN);
+      if (Number.isFinite(rate) && rate > 0) {
+        setCurrentRate(rate); setFormData(prev => ({ ...prev, interestRate: rate }));
+      }
     }
   }, []);
 
@@ -81,6 +88,7 @@ const UpdateSavingInterest: React.FC = () => {
   }, []);
 
   const validateParameters = useCallback(async () => {
+    if (isFromAfterTo(formData.fromDate, formData.toDate)) { await showDialog('warning', 'Invalid Dates', 'From date cannot be after To date'); return; }
     if (!formData.fromDate || !formData.toDate || !formData.interestRate) { await showDialog('warning', 'Missing Fields', 'Please fill all required fields.'); return; }
     setIsValidating(true);
     try {
@@ -95,6 +103,7 @@ const UpdateSavingInterest: React.FC = () => {
   }, [formData]);
 
   const previewCalculation = useCallback(async () => {
+    if (isFromAfterTo(formData.fromDate, formData.toDate)) { await showDialog('warning', 'Invalid Dates', 'From date cannot be after To date'); return; }
     setIsPreviewing(true);
     try {
       const response = await apiService.previewInterestCalculation(formData);
@@ -105,6 +114,7 @@ const UpdateSavingInterest: React.FC = () => {
   }, [formData]);
 
   const processInterest = useCallback(async () => {
+    if (isFromAfterTo(formData.fromDate, formData.toDate)) { await showDialog('warning', 'Invalid Dates', 'From date cannot be after To date'); return; }
     const confirmed = await showConfirm('Confirm Interest Posting', `Post interest for ${formData.fromDate} to ${formData.toDate}. This cannot be undone.`);
     if (!confirmed) return;
     setIsProcessing(true);

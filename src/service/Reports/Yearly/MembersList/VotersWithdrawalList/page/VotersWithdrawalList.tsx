@@ -10,10 +10,12 @@ import {
   UserCheck,
   UserMinus
 } from 'lucide-react';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { apiService } from '../../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
+import { csvCell } from '@/utils/csv';
+import { escapeHtml } from '@/utils/html';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -58,6 +60,47 @@ const VotersWithdrawalList: React.FC = () => {
     fetchData(1);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Division / Branch dropdowns come from the master list once, so filtering
+  // the report never shrinks the options.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res: any = await apiService.getDivisionList();
+        const list: any[] = Array.isArray(res?.data) ? res.data : Array.isArray(res?.data?.data) ? res.data.data : [];
+        if (cancelled || !res?.success) return;
+        setDivisions([...new Set(list.map((o: any) => o.name).filter(Boolean))].map(String).sort());
+        setBranches([...new Set(list.map((o: any) => String(o.officeNo ?? '')).filter(Boolean))].sort());
+      } catch (error) {
+        console.error('Error loading division/branch masters:', error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const extractRows = (response: any): MemberData[] => {
+    if (Array.isArray(response?.data)) return response.data;
+    if (response?.data && Array.isArray(response.data.data)) return response.data.data;
+    if (response?.data) return [response.data];
+    return [];
+  };
+
+  // Print / CSV must cover every matching record, not just the visible page:
+  // the backend returns all rows when no limit is sent.
+  const fetchAllRows = async (): Promise<MemberData[] | null> => {
+    const response = await apiService.getVotersList(
+      selectedDivision,
+      selectedBranch,
+      selectedMemberList,
+      sortBy,
+      undefined,
+      undefined,
+      searchText
+    );
+    if (!response || !response.success) return null;
+    return extractRows(response);
+  };
+
   const handleMemberSelect = (memberNo: string, memberData?: MemberLookupData) => {
     setSearchText(memberNo);
     setSelectedMemberName(memberData?.memberName || '');
@@ -82,7 +125,7 @@ const VotersWithdrawalList: React.FC = () => {
       );
 
       if (response && response.success) {
-        let responseData = [];
+        let responseData: MemberData[] = [];
 
         // Handle different response structures
         if (Array.isArray(response.data)) {
@@ -99,14 +142,6 @@ const VotersWithdrawalList: React.FC = () => {
         // Get total count from metadata
         const totalCount = response.metadata?.totalCount || response.data?.metadata?.totalCount || responseData.length;
         setTotalRecords(totalCount);
-
-        // Extract unique divisions and branches from the data (only on first load)
-        if (page === 1 && responseData.length > 0) {
-          const uniqueDivisions = [...new Set(responseData.map((m: any) => m.officeName).filter(Boolean))];
-          const uniqueBranches = [...new Set(responseData.map((m: any) => String(m.officeNo)).filter(Boolean))];
-          setDivisions(uniqueDivisions.sort());
-          setBranches(uniqueBranches.sort());
-        }
 
         if (responseData.length === 0) {
           await showDialog('info', 'Info', 'No records found matching the criteria');
@@ -138,7 +173,52 @@ const VotersWithdrawalList: React.FC = () => {
       await showDialog('warning', 'Warning', 'No data available for printing');
       return;
     }
-    window.print();
+    setLoading(true);
+    let rows: MemberData[] | null = null;
+    try {
+      rows = await fetchAllRows();
+    } catch (error) {
+      console.error('Error fetching all rows for print:', error);
+    } finally {
+      setLoading(false);
+    }
+    if (!rows) {
+      await showDialog('error', 'Error', 'Unable to load all records for printing');
+      return;
+    }
+    const body = rows.map((item, index) => `<tr>
+      <td class="c">${index + 1}</td><td>${escapeHtml(item.memberNo)}</td><td>${escapeHtml(item.memberName)}</td>
+      <td>${escapeHtml(item.designation || '-')}</td><td>${escapeHtml(item.officeName || '-')}</td>
+      <td class="c">${item.membershipDate ? dayjs(item.membershipDate).format('DD-MM-YYYY') : '-'}</td>
+      <td class="r">${formatCurrency(item.shareBalance)}</td><td class="c">${item.isActive ? 'ACTIVE' : 'INACTIVE'}</td>
+    </tr>`).join('');
+    const html = `<!DOCTYPE html><html><head><title>Voters/Withdrawal List</title>
+<style>
+  body { font-family: 'Courier New', monospace; color: #000; margin: 10mm; }
+  h2 { text-align: center; font-size: 14px; margin: 0 0 4px; }
+  p { text-align: center; font-size: 10px; margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #000; padding: 2px 5px; font-size: 10px; }
+  th { background: #ddd; text-transform: uppercase; }
+  .r { text-align: right; } .c { text-align: center; }
+  thead { display: table-header-group; } tr { page-break-inside: avoid; }
+  @page { size: portrait; margin: 10mm; }
+</style></head><body>
+<h2>VOTERS / WITHDRAWAL LIST</h2>
+<p>Records: ${rows.length}</p>
+<table><thead><tr><th>SR</th><th>Member No</th><th>Member Name</th><th>Designation</th><th>Office</th><th>Join Date</th><th>Shares</th><th>Status</th></tr></thead>
+<tbody>${body}</tbody></table></body></html>`;
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open(); doc.write(html); doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus(); iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 400);
+    }
   };
 
   const handleExportCSV = async () => {
@@ -147,8 +227,22 @@ const VotersWithdrawalList: React.FC = () => {
       return;
     }
 
+    setLoading(true);
+    let rows: MemberData[] | null = null;
+    try {
+      rows = await fetchAllRows();
+    } catch (error) {
+      console.error('Error fetching all rows for export:', error);
+    } finally {
+      setLoading(false);
+    }
+    if (!rows) {
+      await showDialog('error', 'Error', 'Unable to load all records for export');
+      return;
+    }
+
     const headers = ['SR', 'MEMBER NO', 'MEMBER NAME', 'DESIGNATION', 'OFFICE', 'JOIN DATE', 'SHARES', 'STATUS'];
-    const csvData = data.map((item, index) => [
+    const csvData = rows.map((item, index) => [
       index + 1,
       item.memberNo,
       item.memberName,
@@ -159,9 +253,9 @@ const VotersWithdrawalList: React.FC = () => {
       item.isActive ? 'ACTIVE' : 'INACTIVE'
     ]);
 
-    const csvContent = [headers, ...csvData]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
+    const csvContent = '\uFEFF' + [headers, ...csvData]
+      .map(row => row.map(cell => csvCell(cell)).join(','))
+      .join('\r\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');

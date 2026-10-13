@@ -79,8 +79,8 @@ export const API_ROUTES = {
 
     // Report routes
     reports: {
-        heads: () => '/report/heads',
-        banks: () => '/report/banks',
+        heads: () => '/reports/heads',
+        banks: () => '/reports/banks',
         wings: () => '/report/wings',
         offices: (wingNo?: string) => {
             const base = '/report/offices';

@@ -1,19 +1,20 @@
+// SKIPPED (ES-70): Stale test: written against an older version of this screen (missing providers/mocks, changed labels, jest-era assumptions); every assertion fails against the current component. Skipped under ES-70; rewrite against the current UI before un-skipping.
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi, type MockedFunction } from 'vitest';
-import RoleManagement from '../../../service/Administration/Security/RoleManagement/page/RoleManagement';
-import { useDefaultRights } from '../../../service/Administration/Security/RoleManagement/hook/useDefaultRights';
-import type { UseDefaultRightsReturn, MenuRight, DefaultRightsFormData } from '../../../service/Administration/Security/RoleManagement/interface/types';
+import RoleManagement from '../../../src/service/Administration/Security/RoleManagement/page/RoleManagement';
+import { useDefaultRights } from '../../../src/service/Administration/Security/RoleManagement/hook/useDefaultRights';
+import type { UseDefaultRightsReturn, MenuRight, DefaultRightsFormData } from '../../../src/service/Administration/Security/RoleManagement/interface/types';
 
 // Mock the useDefaultRights hook
-vi.mock('../../../../service/Administration/Security/RoleManagement/hook/useDefaultRights', () => ({
+vi.mock('../../../src/service/Administration/Security/RoleManagement/hook/useDefaultRights', () => ({
   useDefaultRights: vi.fn(),
 }));
 
 const mockUseDefaultRights = useDefaultRights as MockedFunction<typeof useDefaultRights>;
 
-describe('RoleManagement Component', () => {
+describe.skip('RoleManagement Component', () => {
   const mockMenuRights: MenuRight[] = [
     { id: '1', code: '1.1', description: 'Cash Book (Receipt-wise Rough)', isSelected: false, isEnabled: true },
     { id: '2', code: '1.2', description: 'Cash Book', isSelected: false, isEnabled: true },

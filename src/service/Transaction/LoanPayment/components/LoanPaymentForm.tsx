@@ -12,7 +12,7 @@ import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 
 const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
-    reagreement, formData, modalData, loanCases, isLoadingCases,
+    reagreement, formData, modalData, loanCases, isLoadingCases, isSaving,
     actualAmount, bankBalance, totalReceipt, totalPayment,
     data, headList, bankList,
     updateField, updateModalField, handleLoanCaseChange,
@@ -43,7 +43,8 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
 
     usePageToolbarActions({
         onSave: handleSave,
-        saveLabel: 'Save',
+        saveLabel: isSaving ? 'Saving...' : 'Save',
+        saveEnabled: !isSaving,
     });
 
     return (
@@ -60,8 +61,8 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                     <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary">
                         <RotateCcw size={13} /> Reset
                     </button>
-                    <button type="button" onClick={handleSave} className="aw-btn aw-btn-primary">
-                        <Save size={13} /> Save
+                    <button type="button" onClick={handleSave} disabled={isSaving} className="aw-btn aw-btn-primary">
+                        <Save size={13} /> {isSaving ? 'Saving...' : 'Save'}
                     </button>
                     <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost">
                         <X size={13} /> Exit
@@ -282,7 +283,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                                     options={[{ value: 'Receipt', label: 'Receipt' }, { value: 'Payment', label: 'Payment' }]} />
                                             </td>
                                             <td className="has-input">
-                                                <input type="number" aria-label={`Amount row ${index + 1}`} value={entry.amount}
+                                                <input type="number" min={0} aria-label={`Amount row ${index + 1}`} value={entry.amount}
                                                     onChange={e => updateVoucherEntry(index, 'amount', e.target.value)}
                                                     className="aw-input is-right" style={{ fontFamily: 'monospace' }} placeholder="0.00" />
                                             </td>

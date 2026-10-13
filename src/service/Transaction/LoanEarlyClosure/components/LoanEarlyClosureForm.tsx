@@ -264,7 +264,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                             </div>
                         ) : !quote ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
-                                <span className="aw-meta">{form.mbno ? 'Select a loan case to see its settlement quote.' : 'Search for a member to begin.'}</span>
+                                <span className="aw-meta">{form.mbno ? (form.selectedLoanCase ? 'Inputs changed - click Recalc to refresh the settlement quote.' : 'Select a loan case to see its settlement quote.') : 'Search for a member to begin.'}</span>
                             </div>
                         ) : (
                             <div className="aw-stack aw-fade-in">

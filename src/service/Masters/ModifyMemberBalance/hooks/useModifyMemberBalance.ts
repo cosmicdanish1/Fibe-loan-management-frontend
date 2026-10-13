@@ -27,6 +27,9 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
   const [memberIndex, setMemberIndex] = useState<number>(0);
   const [memberTotal, setMemberTotal] = useState<number>(0);
   const [formData, setFormData] = useState<MemberBalanceData>(emptyForm());
+  // Member whose balances are actually on screen (null until a load succeeds) + request-sequence guard
+  const [loadedMemberNo, setLoadedMemberNo] = useState<string | null>(null);
+  const loadSeq = useRef(0);
 
   // Ordered list of member numbers for navigation
   const memberListRef = useRef<string[]>([]);
@@ -70,9 +73,11 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
       return;
     }
 
+    const seq = ++loadSeq.current;
     setMemberNo(no);
     setMemberName(name || '');
     setFormData(emptyForm());
+    setLoadedMemberNo(null);
 
     // Update index in list — reset to 0 (unranked) when the loaded member isn't
     // part of the current wing-filtered list, instead of leaving a stale value
@@ -85,14 +90,15 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
       apiService.lookupMembers(no, 1, 0)
         .then(r => {
           const members = Array.isArray(r.data) ? r.data : [];
-          if (members.length > 0) setMemberName(members[0].memberName || '');
+          if (seq === loadSeq.current && members.length > 0) setMemberName(members[0].memberName || '');
         })
         .catch(() => {});
     }
 
     try {
       const response = await apiService.getMemberFunds(numericNo);
-      const data = response?.data;
+      if (seq !== loadSeq.current) return; // a newer member was requested - drop this stale response
+      const data = response?.success ? response.data : null;
       if (data) {
         setFormData({
           shareOpBal: (data.sharesOpeningBalance ?? 0).toString(),
@@ -108,9 +114,15 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
           elnOpBal: (data.elnOpBal ?? 0).toString(),
           elnAmt: (data.elnAmt ?? 0).toString(),
         });
+        setLoadedMemberNo(no);
+      } else {
+        setFormData(emptyForm());
+        notify('error', 'Load Error', 'Failed to Load Member Balances', response?.message || 'No balance data was returned for this member. Saving is disabled until the balances load.');
       }
     } catch (err) {
+      if (seq !== loadSeq.current) return;
       console.error('[ModifyMemberBalance] Failed to fetch funds:', err);
+      setFormData(emptyForm());
       notify('error', 'Load Error', 'Failed to Load Member Balances', 'Could not retrieve balance data for this member. Please try again.');
     }
   }, []);
@@ -143,7 +155,8 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     }
 
     if (newIdx !== idx || direction === 'first' || direction === 'last') {
-      loadMember(list[newIdx]);
+      const target = list[newIdx];
+      if (target !== undefined) loadMember(target);
     }
   }, [memberNo, loadMember]);
 
@@ -151,6 +164,12 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     const numericMemberNo = memberNo ? parseInt(memberNo, 10) : NaN;
     if (!memberNo || !memberNo.trim() || !Number.isFinite(numericMemberNo) || numericMemberNo <= 0) {
       await notify('warning', 'Input Validation Error', 'No Member Selected', 'Please select a valid member before saving balances.');
+      return;
+    }
+
+    // Never save unless the balances on screen were actually loaded for this member
+    if (loadedMemberNo !== memberNo) {
+      await notify('warning', 'Balances Not Loaded', 'Cannot Save', 'The balances for this member have not been loaded. Re-select the member and try again.');
       return;
     }
 
@@ -179,20 +198,31 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
       return;
     }
 
-    const payload = {
-      sharesOpeningBalance: parseFloat(formData.shareOpBal) || 0,
-      sharesInstallment: parseFloat(formData.shareAmt) || 0,
-      monthlyContributionOpeningBalance: parseFloat(formData.mdOpBal) || 0,
-      monthlyContributionInstallment: parseFloat(formData.mdAmt) || 0,
-      compulsoryDepositOpeningBalance: parseFloat(formData.cdOpBal) || 0,
-      compulsoryDepositInstallment: parseFloat(formData.cdAmt) || 0,
-      loanExecutionReceipt: parseFloat(formData.lnExecRec) || 0,
-      suspenseBalance: parseFloat(formData.suspBal) || 0,
-      rlnOpBal: parseFloat(formData.rlnOpBal) || 0,
-      rlnAmt: parseFloat(formData.rlnAmt) || 0,
-      elnOpBal: parseFloat(formData.elnOpBal) || 0,
-      elnAmt: parseFloat(formData.elnAmt) || 0,
-    };
+    // Blank fields are omitted (backend does a partial update) - never silently sent as 0.
+    // Only an explicitly typed number (including 0) is sent.
+    const fieldMap: Array<[keyof MemberBalanceData, string]> = [
+      ['shareOpBal', 'sharesOpeningBalance'], ['shareAmt', 'sharesInstallment'],
+      ['mdOpBal', 'monthlyContributionOpeningBalance'], ['mdAmt', 'monthlyContributionInstallment'],
+      ['cdOpBal', 'compulsoryDepositOpeningBalance'], ['cdAmt', 'compulsoryDepositInstallment'],
+      ['lnExecRec', 'loanExecutionReceipt'], ['suspBal', 'suspenseBalance'],
+      ['rlnOpBal', 'rlnOpBal'], ['rlnAmt', 'rlnAmt'],
+      ['elnOpBal', 'elnOpBal'], ['elnAmt', 'elnAmt'],
+    ];
+    const payload: Record<string, number> = {};
+    for (const [formKey, apiKey] of fieldMap) {
+      const raw = String(formData[formKey] ?? '').trim();
+      if (raw === '') continue;
+      const n = Number(raw);
+      if (!Number.isFinite(n)) {
+        await notify('warning', 'Input Validation Error', 'Invalid Amount', `The value "${raw}" is not a valid number.`);
+        return;
+      }
+      payload[apiKey] = n;
+    }
+    if (Object.keys(payload).length === 0) {
+      await notify('warning', 'Input Validation Error', 'Nothing to Save', 'All balance fields are blank.');
+      return;
+    }
 
     try {
       const response = await apiService.updateMemberFunds(numericMemberNo, payload);
@@ -218,7 +248,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     } catch (error: any) {
       await notify('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${error.message}`);
     }
-  }, [formData, memberNo, memberName]);
+  }, [formData, memberNo, memberName, loadedMemberNo]);
 
   const reset = useCallback(() => {
     if (memberNo) {

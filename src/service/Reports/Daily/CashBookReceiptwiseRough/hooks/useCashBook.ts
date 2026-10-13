@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { CashBookState, UseCashBookReturnType } from '../interfaces';
+import { UseCashBookReturnType } from '../interfaces';
+import { localISODate } from '../../../../../utils/dates';
 
 export const useCashBook = (): UseCashBookReturnType => {
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState<string>(localISODate());
   const [outputType, setOutputType] = useState<'screen' | 'printer'>('screen');
 
   return {

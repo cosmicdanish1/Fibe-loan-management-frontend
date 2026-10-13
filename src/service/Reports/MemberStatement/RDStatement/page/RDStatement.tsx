@@ -14,6 +14,7 @@ import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { isFromAfterTo } from '@/utils/dates';
 
 // ── types ────────────────────────────────────────────────────────────────────
 // One row per FINANCIAL YEAR the member has RD activity in — the real RD
@@ -174,6 +175,10 @@ const RDStatement: React.FC = () => {
   const handleGenerate = useCallback(async () => {
     if (!memberNo) { message.warning('Please enter a Member Number'); return; }
 
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      message.warning('From date cannot be after To date');
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await apiService.post('/reports/rd/statement', {

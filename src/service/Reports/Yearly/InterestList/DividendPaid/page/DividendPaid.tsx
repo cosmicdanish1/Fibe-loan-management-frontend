@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { DatePicker, Button, ConfigProvider, Select, Radio, theme as antdTheme } from 'antd';
+import { DatePicker, Button, ConfigProvider, Select, Radio, message, theme as antdTheme } from 'antd';
 import { Printer, CreditCard, Building2, Search, Monitor } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { isFromAfterTo } from '@/utils/dates';
 
 const { Option } = Select;
 
@@ -54,6 +55,10 @@ const DividendPaid: React.FC = () => {
 
   const doFetch = async (): Promise<DividendPaidData[]> => {
     if (!fromDate || !toDate) return [];
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      message.warning('From date cannot be after To date');
+      return [];
+    }
     setLoading(true);
     try {
       const response = await apiService.getDividendPaid(

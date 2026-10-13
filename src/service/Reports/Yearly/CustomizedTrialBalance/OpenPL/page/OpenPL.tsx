@@ -10,6 +10,7 @@ import {
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../../services/api';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { isFromAfterTo } from '@/utils/dates';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -78,6 +79,10 @@ const OpenPL: React.FC = () => {
       return;
     }
 
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      await showDialog('warning', 'Validation', 'From date cannot be after To date');
+      return;
+    }
     setLoading(true);
     try {
       const response = await apiService.executeReportSchedule(
@@ -410,7 +415,7 @@ const OpenPL: React.FC = () => {
               size="small"
               bordered={isPrinting}
               loading={loading}
-              scroll={isPrinting ? undefined : { x: 1000 }}
+              {...(isPrinting ? {} : { scroll: { x: 1000 } })}
               className="custom-table open-pl-table"
               summary={() => (
                 grandTotals && (

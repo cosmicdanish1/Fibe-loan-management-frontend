@@ -74,7 +74,9 @@ const DeveloperAnalytics: React.FC = () => {
     try {
       const response = await apiService.request('/analytics/config');
       if (response.success && response.data) {
-        const configMap = new Map(response.data.map((item: any) => [item.config_key, item.config_value]));
+        // Backend result is wrapped twice ({ success, data: [...] } inside the envelope)
+        const items = ((response.data as any)?.data ?? response.data) as any[];
+        const configMap = new Map<string, string>(items.map((item: any): [string, string] => [item.config_key, item.config_value]));
         
         setAnalyticsConfig({
           analytics_enabled: configMap.get('analytics_enabled') === 'true',
@@ -104,7 +106,7 @@ const DeveloperAnalytics: React.FC = () => {
     try {
       const response = await apiService.request('/analytics/status');
       if (response.success && response.data) {
-        setStatus(response.data);
+        setStatus(((response.data as any)?.data ?? response.data) as AnalyticsStatus);
       }
     } catch (error) {
       console.error('Failed to load analytics status:', error);
@@ -118,7 +120,6 @@ const DeveloperAnalytics: React.FC = () => {
         featureCategory: 'Analytics',
         featureName: 'Save Settings',
         actionType: 'submit',
-        sessionId: '',
       });
 
       const response = await apiService.request('/analytics/settings', {
@@ -135,7 +136,6 @@ const DeveloperAnalytics: React.FC = () => {
           featureName: 'Save Settings',
           actionType: 'submit',
           successStatus: true,
-          sessionId: '',
         });
       } else {
         message.error('Failed to save analytics settings');
@@ -145,7 +145,6 @@ const DeveloperAnalytics: React.FC = () => {
           actionType: 'submit',
           successStatus: false,
           errorMessage: 'API request failed',
-          sessionId: '',
         });
       }
     } catch (error) {
@@ -170,7 +169,6 @@ const DeveloperAnalytics: React.FC = () => {
       subFeature: key,
       actionType: 'click',
       actionDetails: { setting: key, newValue: value },
-      sessionId: '',
     });
   };
 
@@ -283,7 +281,7 @@ const DeveloperAnalytics: React.FC = () => {
               <Switch
                 checked={analyticsConfig.analytics_enabled}
                 onChange={(checked) => handleSettingChange('analytics_enabled', checked)}
-                size="large"
+                size="default"
               />
             </div>
             

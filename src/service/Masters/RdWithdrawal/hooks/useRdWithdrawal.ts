@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import apiService from '../../../../services/api';
 
 export interface RdBalanceEventRow {
@@ -24,6 +24,9 @@ export const useRdWithdrawal = () => {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+    const loadSeq = useRef(0);
+    const savingRef = useRef(false);
+
     const loadFinancialYear = useCallback(async (): Promise<number | null> => {
         const res = await apiService.getCurrentFinancialYear();
         const fy = res.success ? (res.data?.data ?? res.data) : null;
@@ -37,11 +40,21 @@ export const useRdWithdrawal = () => {
         return null;
     }, []);
 
-    const loadMember = useCallback(async (memberNo: string, name: string, yc?: number | null) => {
+    // keepMessage = true only for the internal refresh after a withdrawal (so its success message survives)
+    const loadMember = useCallback(async (memberNo: string, name: string, yc?: number | null, keepMessage = false) => {
+        const seq = ++loadSeq.current;
         setMbno(memberNo);
         setMemberName(name);
-        setMessage(null);
+        if (!keepMessage) {
+            setMessage(null);
+            // never leave the previous member's balance/timeline under the new member
+            setBalance(null);
+            setMaxWithdrawable(null);
+            setTimeline([]);
+            setAmount(0);
+        }
         const year = yc ?? yearcode ?? (await loadFinancialYear());
+        if (seq !== loadSeq.current) return;
         if (!year) return;
 
         setLoading(true);
@@ -50,30 +63,49 @@ export const useRdWithdrawal = () => {
                 apiService.getRdCurrentBalance(memberNo, year),
                 apiService.getRdBalanceTimeline(memberNo, year),
             ]);
-            setBalance(bal.success ? bal.data?.balance ?? 0 : 0);
-            setMaxWithdrawable(bal.success ? bal.data?.maxWithdrawable ?? 0 : 0);
-            setTimeline(tl.success ? tl.data ?? [] : []);
+            if (seq !== loadSeq.current) return;
+            if (!bal.success) {
+                setBalance(null);
+                setMaxWithdrawable(null);
+                setTimeline([]);
+                setAmount(0);
+                setMessage({ type: 'error', text: bal.message || 'Failed to load the RD balance.' });
+                return;
+            }
+            setBalance(bal.data?.balance ?? 0);
+            setMaxWithdrawable(bal.data?.maxWithdrawable ?? 0);
+            setTimeline(tl.success && Array.isArray(tl.data) ? tl.data : []);
             setAmount(0);
+        } catch (err: any) {
+            if (seq !== loadSeq.current) return;
+            setBalance(null);
+            setMaxWithdrawable(null);
+            setTimeline([]);
+            setAmount(0);
+            setMessage({ type: 'error', text: err?.message || 'Failed to load the RD balance.' });
         } finally {
-            setLoading(false);
+            if (seq === loadSeq.current) setLoading(false);
         }
     }, [yearcode, loadFinancialYear]);
 
     const withdraw = useCallback(async () => {
+        if (savingRef.current) return;
         if (!mbno || !yearcode || amount <= 0) return;
+        savingRef.current = true;
         setSaving(true);
         setMessage(null);
         try {
             const res = await apiService.withdrawRd(mbno, yearcode, amount, narration);
             if (res.success) {
                 setMessage({ type: 'success', text: res.message || 'Withdrawal recorded.' });
-                await loadMember(mbno, memberName, yearcode);
+                await loadMember(mbno, memberName, yearcode, true);
             } else {
                 setMessage({ type: 'error', text: res.message || 'Withdrawal failed.' });
             }
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message || 'Withdrawal failed.' });
         } finally {
+            savingRef.current = false;
             setSaving(false);
         }
     }, [mbno, yearcode, amount, narration, memberName, loadMember]);

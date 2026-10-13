@@ -1,5 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// antd 5 + React 19: without this patch the static message.* / notification.* / Modal.* helpers render
+// NOTHING (React 19 removed ReactDOM.render), so every toast in the app was silently invisible.
+import '@ant-design/v5-patch-for-react-19';
 import { StyleProvider } from '@ant-design/cssinjs';
 import App from './App';
 import './input.css';

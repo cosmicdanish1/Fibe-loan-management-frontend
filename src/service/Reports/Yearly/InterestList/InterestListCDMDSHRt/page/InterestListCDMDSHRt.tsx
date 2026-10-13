@@ -14,6 +14,7 @@ import MemberLookup from '../../../../../../components/shared/MemberLookup/Membe
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { csvCell } from '@/utils/csv';
 
 const { Option } = Select;
 
@@ -216,7 +217,7 @@ const InterestListCDMDSHRt: React.FC = () => {
       formatCurrency(r.interestAmount),
       dayjs(r.fromDate).format('DD/MM/YYYY')
     ]);
-    const csv = [headers, ...rows].map(row => row.map(c => `"${c}"`).join(',')).join('\n');
+    const csv = [headers, ...rows].map(row => row.map(c => csvCell(c)).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);

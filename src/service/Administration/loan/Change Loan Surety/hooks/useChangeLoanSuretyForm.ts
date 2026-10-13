@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { FormData } from '../type/types';
 import { API_ROUTES, getApiBaseUrl, logApiVersion } from '../../../../../services/apiVersionConfig';
 
@@ -24,7 +24,37 @@ export const useChangeLoanSuretyForm = () => {
   const [isLoadingCases, setIsLoadingCases] = useState(false);
   const [lookupTarget, setLookupTarget] = useState<'memberNumber' | 'surety1' | 'surety2' | null>(null);
 
+  // Request-sequence guards (stale lookups ignored), submit guard, and the post-save reset timer
+  const casesSeq = useRef(0);
+  const detailSeq = useRef(0);
+  const submittingRef = useRef(false);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const validationMsgRef = useRef('');
+  useEffect(() => () => {
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+  }, []);
+
+  // Everything that belongs to the previously selected member's loan case
+  const clearLoanFields = useCallback(() => {
+    casesSeq.current++;
+    detailSeq.current++;
+    setLoanCases([]);
+    setIsLoadingCases(false);
+    setFormData(prev => ({
+      ...prev,
+      loanType: '',
+      loanCaseNo: '',
+      sanctionDate: '',
+      sanctionAmount: '',
+      surety1: '',
+      surety1Name: '',
+      surety2: '',
+      surety2Name: '',
+    }));
+  }, []);
+
   const fetchLoanDetails = useCallback(async (caseNo: string) => {
+    const seq = ++detailSeq.current;
     try {
       const endpoint = API_ROUTES.loans.caseDetails(caseNo);
       logApiVersion('Loan Details', endpoint.includes('/v2/'));
@@ -34,6 +64,7 @@ export const useChangeLoanSuretyForm = () => {
       });
       if (response.ok) {
         const result = await response.json();
+        if (seq !== detailSeq.current) return;
         const data = result.data || result;
         setFormData(prev => ({
           ...prev,
@@ -49,8 +80,14 @@ export const useChangeLoanSuretyForm = () => {
           memberNumber: String(data.memberNo || prev.memberNumber),
           memberName: String(data.memberName || prev.memberName),
         }));
+      } else if (seq === detailSeq.current) {
+        // Don't leave the previous case's sureties under a case whose details failed to load
+        setFormData(prev => ({ ...prev, surety1: '', surety1Name: '', surety2: '', surety2Name: '' }));
       }
     } catch (error) {
+      if (seq === detailSeq.current) {
+        setFormData(prev => ({ ...prev, surety1: '', surety1Name: '', surety2: '', surety2Name: '' }));
+      }
       console.error('Error fetching loan details:', error);
     }
   }, []);
@@ -58,6 +95,7 @@ export const useChangeLoanSuretyForm = () => {
   const fetchMemberLoans = useCallback(async (memberNo: string) => {
     if (!memberNo || memberNo.length < 3) return;
 
+    const seq = ++casesSeq.current;
     setIsLoadingCases(true);
     try {
       console.log('🔍 Searching for ALL loans (pending + active) for member:', memberNo);
@@ -68,8 +106,10 @@ export const useChangeLoanSuretyForm = () => {
       const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+      if (seq !== casesSeq.current) return;
       if (response.ok) {
         const result = await response.json();
+        if (seq !== casesSeq.current) return;
         const data = result.data || result;
         const cases = Array.isArray(data) ? data : [];
         setLoanCases(cases);
@@ -89,11 +129,15 @@ export const useChangeLoanSuretyForm = () => {
             });
           }
         }
+      } else {
+        setLoanCases([]);
       }
     } catch (error) {
+      if (seq !== casesSeq.current) return;
+      setLoanCases([]);
       console.error('Error fetching member loans:', error);
     } finally {
-      setIsLoadingCases(false);
+      if (seq === casesSeq.current) setIsLoadingCases(false);
     }
   }, [fetchLoanDetails]);
 
@@ -103,8 +147,10 @@ export const useChangeLoanSuretyForm = () => {
       [name]: value
     }));
 
-    if (name === 'memberNumber' && value.length >= 3) {
-      fetchMemberLoans(value);
+    if (name === 'memberNumber') {
+      // Editing the member invalidates the selected loan case and its sureties
+      clearLoanFields();
+      if (value.length >= 3) fetchMemberLoans(value);
     }
     // Note: loanCaseNo fetch is triggered directly at the call site (not here) to avoid double-call
 
@@ -115,7 +161,7 @@ export const useChangeLoanSuretyForm = () => {
         return newErrors;
       });
     }
-  }, [errors, fetchLoanDetails, fetchMemberLoans]);
+  }, [errors, fetchLoanDetails, fetchMemberLoans, clearLoanFields]);
 
   const validateForm = useCallback((): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
@@ -124,11 +170,22 @@ export const useChangeLoanSuretyForm = () => {
     if (!formData.loanCaseNo) newErrors.loanCaseNo = 'Loan case number is required';
     if (!formData.surety1) newErrors.surety1 = 'Surety 1 is required';
 
+    const s1 = String(formData.surety1 || '').trim();
+    const s2 = String(formData.surety2 || '').trim();
+    const borrower = String(formData.memberNumber || '').trim();
+    if (s1 && borrower && s1 === borrower) newErrors.surety1 = 'Surety 1 cannot be the borrower';
+    if (s2 && borrower && s2 === borrower) newErrors.surety2 = 'Surety 2 cannot be the borrower';
+    if (s1 && s2 && s1 === s2) newErrors.surety2 = 'Surety 1 and Surety 2 must be different members';
+    validationMsgRef.current = Object.values(newErrors).filter(Boolean).join('\n');
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
   const resetForm = useCallback(() => {
+    casesSeq.current++;
+    detailSeq.current++;
+    setIsLoadingCases(false);
     setFormData({
       loanType: '',
       memberNumber: '',
@@ -148,7 +205,9 @@ export const useChangeLoanSuretyForm = () => {
 
   const handleSubmit = useCallback(async () => {
     console.log('Attempting to submit surety change...');
+    if (submittingRef.current) return;
     if (validateForm()) {
+      submittingRef.current = true;
       setIsSubmitting(true);
       try {
         console.log('🚀 FRONTEND: Submitting change surety request...', formData);
@@ -221,7 +280,9 @@ ${dbUpdates}${suretyUpdate}
           console.log('✅ Modal.success called');
 
           // Reset form after successful update
-          setTimeout(() => {
+          if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+          resetTimerRef.current = setTimeout(() => {
+            resetTimerRef.current = null;
             resetForm();
           }, 1000);
         } else {
@@ -253,19 +314,21 @@ ${dbUpdates}${suretyUpdate}
           alert(`❌ Connection Error: ${error.message}`);
         }
       } finally {
+        submittingRef.current = false;
         setIsSubmitting(false);
       }
     } else {
+      const validationDetail = validationMsgRef.current || 'Please fill required fields: Member, Loan Case, and Guarantor 1';
       if (window.electronAPI?.showMessageBox) {
         window.electronAPI.showMessageBox({
           type: 'warning',
           title: 'Validation Error',
-          message: 'Required Fields Missing',
-          detail: 'Please fill required fields: Member, Loan Case, and Guarantor 1',
+          message: 'Please correct the form',
+          detail: validationDetail,
           buttons: ['OK']
         });
       } else {
-        alert('⚠️ Please fill required fields: Member, Loan Case, and Guarantor 1');
+        alert(`⚠️ ${validationDetail}`);
       }
     }
   }, [formData, validateForm, resetForm]);
@@ -290,6 +353,7 @@ ${dbUpdates}${suretyUpdate}
         memberName: member.memberName || member.name,
         office: member.officeName || member.officeNo || ''
       }));
+      clearLoanFields();
       fetchMemberLoans(mbNo);
     } else if (lookupTarget === 'surety1') {
       setFormData(prev => ({
@@ -307,7 +371,7 @@ ${dbUpdates}${suretyUpdate}
 
     setIsLookupOpen(false);
     setLookupTarget(null);
-  }, [lookupTarget, fetchMemberLoans]);
+  }, [lookupTarget, fetchMemberLoans, clearLoanFields]);
 
   useEffect(() => {
     if (window.electronAPI) {
@@ -321,6 +385,7 @@ ${dbUpdates}${suretyUpdate}
             memberName: member.memberName || member.name,
             office: member.officeName || member.officeNo || ''
           }));
+          clearLoanFields();
           fetchMemberLoans(mbNo);
         }
       };
@@ -333,7 +398,7 @@ ${dbUpdates}${suretyUpdate}
         if (typeof cleanup === 'function') cleanup();
       };
     }
-  }, [isLookupOpen, fetchMemberLoans]);
+  }, [isLookupOpen, fetchMemberLoans, clearLoanFields]);
 
   return {
     formData,

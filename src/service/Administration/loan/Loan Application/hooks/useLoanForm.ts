@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { localISODate } from '../../../../../utils/dates';
 import type { LoanDetails } from '../types/loan';
 import type { EmployeeDetail } from '../types/employee';
 
 export const useLoanForm = () => {
   const [loanDetails, setLoanDetails] = useState<LoanDetails>({
-    applDate: new Date().toISOString().split('T')[0] || '',
+    applDate: localISODate(),
     memberNo: '',
     loanType: '',
     loanCaseNo: '',

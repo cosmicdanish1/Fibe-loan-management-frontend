@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, Eye, EyeOff, RotateCcw, X, Minus, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, RotateCcw, X, Minus, CheckCircle2, ShieldCheck, AlertCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { TwoFaChallenge } from '../types/auth.types';
+import TwoFaStep from './TwoFaStep';
 import { IS_LOGIN_WINDOW } from '../../utils/windowIdentity';
 import fibeLogo from '../../assets/fibe-logo.png';
+import { apiService } from '../../services/api';
+import LoadingAnimation from '../../components/loaders/LoadingAnimation';
+
+const apiServiceAdopt = (authData: any) => apiService.adoptAuth(authData);
 
 const REMEMBERED_USERNAME_KEY = 'lms_remembered_username';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const { login, finishLogin, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const [challenge, setChallenge] = useState<TwoFaChallenge | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [username, setUsername] = useState('');
@@ -69,6 +76,28 @@ const LoginForm: React.FC = () => {
     (window as any).electronAPI?.minimizeWindow?.();
   };
 
+  // Runs once a login is fully complete (password-only, or after the 2FA step).
+  const afterLogin = () => {
+    if (IS_LOGIN_WINDOW) {
+      if (remember) {
+        localStorage.setItem(REMEMBERED_USERNAME_KEY, username);
+      } else {
+        localStorage.removeItem(REMEMBERED_USERNAME_KEY);
+      }
+      setSuccess(true);
+    }
+  };
+
+  const handleTwoFaComplete = (authData: any) => {
+    try {
+      apiServiceAdopt(authData);
+      finishLogin(authData);
+      afterLogin();
+    } catch (e) {
+      console.error('[LoginForm] Completing 2FA login failed:', e);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || isLoading || success) return;
@@ -83,15 +112,13 @@ const LoginForm: React.FC = () => {
     setFieldError('');
     try {
       setIsSubmitting(true);
-      await login({ username, password });
-      if (IS_LOGIN_WINDOW) {
-        if (remember) {
-          localStorage.setItem(REMEMBERED_USERNAME_KEY, username);
-        } else {
-          localStorage.removeItem(REMEMBERED_USERNAME_KEY);
-        }
-        setSuccess(true);
+      const result = await login({ username, password });
+      if (typeof result === 'object') {
+        // Password accepted; a second step (authenticator code / set-up) is next.
+        setChallenge(result);
+        return;
       }
+      afterLogin();
     } catch (err) {
       console.error('[LoginForm] Login failed:', err);
     } finally {
@@ -111,29 +138,33 @@ const LoginForm: React.FC = () => {
   const noDrag = { WebkitAppRegion: 'no-drag' } as React.CSSProperties;
 
   return (
-    <div className="app-window" style={{ position: 'relative' }}>
-      {/* Header — also the drag bar and window controls of the frameless logon dialog */}
-      <div className="aw-header aw-ambient" style={IS_LOGIN_WINDOW ? ({ WebkitAppRegion: 'drag' } as React.CSSProperties) : undefined}>
-        <div className="min-w-0">
-          <h1 className="aw-title">{IS_LOGIN_WINDOW ? 'Fibe Loan Management' : 'Login'}</h1>
-          <p className="aw-desc">Sign in to your loan management workspace</p>
-        </div>
-        {IS_LOGIN_WINDOW && (
+    <div className="app-window login-shell">
+      {/* Drag bar + window controls of the frameless logon dialog */}
+      {IS_LOGIN_WINDOW && (
+        <div className="login-bar" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
           <div className="aw-actions" style={noDrag}>
             <button type="button" className="aw-icon-btn is-sm" onClick={handleMinimize} aria-label="Minimize" data-tip="Minimize" data-tip-pos="bottom-end"><Minus size={14} /></button>
             <button type="button" className="aw-icon-btn is-sm is-danger" onClick={handleCancel} aria-label="Close" data-tip="Close" data-tip-pos="bottom-end"><X size={14} /></button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="aw-content" style={{ display: 'grid', placeItems: 'center' }}>
-        <form onSubmit={handleSubmit} className="aw-card aw-fade-in" style={{ width: '100%', maxWidth: 400 }} noValidate>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fff', display: 'grid', placeItems: 'center', border: '1px solid var(--aw-border)' }}>
-              <img src={fibeLogo} alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} />
-            </div>
-            <h2 className="aw-card-title" style={{ fontSize: 'calc(var(--type-page-title) + 2px)' }}>Welcome back</h2>
-            <p className="aw-meta">Sign in to your loan management workspace</p>
+      <div className="login-stage">
+        <div className="login-brand aw-fade-in">
+          <div className="login-mark"><img src={fibeLogo} alt="" /></div>
+          <div>
+            <h1 className="login-name">Fibe <span>Loan Management</span></h1>
+            <p className="login-tag">Sign in to your loan management workspace</p>
+          </div>
+        </div>
+
+        {challenge ? (
+          <TwoFaStep challenge={challenge} onComplete={handleTwoFaComplete} onBack={() => { setChallenge(null); setPassword(''); clearError(); }} />
+        ) : (
+        <form onSubmit={handleSubmit} className="aw-card login-card aw-fade-in" noValidate>
+          <div className="login-card-head">
+            <h2>Welcome back</h2>
+            <p className="aw-meta">Enter your credentials to continue</p>
           </div>
 
           <div>
@@ -160,8 +191,8 @@ const LoginForm: React.FC = () => {
             </div>
           </div>
 
-          <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-            <label className="aw-inline" style={{ gap: 8, cursor: 'pointer', alignItems: 'center', fontWeight: 600 }}>
+          <div className="login-row">
+            <label className="login-remember">
               <input type="checkbox" checked={remember} onChange={() => setRemember((r) => !r)} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
               Remember me
             </label>
@@ -178,20 +209,27 @@ const LoginForm: React.FC = () => {
             </div>
           )}
 
-          <button type="submit" disabled={busy} className="aw-btn aw-btn-primary" style={{ height: 'calc(var(--aw-control-h) + 6px)' }}>
+          <button type="submit" disabled={busy} className="aw-btn aw-btn-primary login-submit">
             {busy && <RotateCcw size={14} className="aw-spin" />}
             {busy ? 'Signing in…' : 'Sign In'}
+            {!busy && <ArrowRight size={16} className="login-arrow" />}
           </button>
 
-          <div className="aw-btn-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--aw-gap)' }}>
-            <button type="button" onClick={handleClear} disabled={busy} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Clear</button>
-            <button type="button" onClick={handleCancel} disabled={busy} className="aw-btn aw-btn-danger"><X size={13} /> Cancel</button>
+          <div className="login-secondary">
+            <button type="button" onClick={handleClear} disabled={busy} className="aw-btn aw-btn-ghost aw-btn-sm"><RotateCcw size={13} /> Clear</button>
+            <span className="login-sep" />
+            <button type="button" onClick={handleCancel} disabled={busy} className="aw-btn aw-btn-ghost aw-btn-sm aw-btn-danger-text"><X size={13} /> Cancel</button>
           </div>
         </form>
+        )}
+
+        <div className="login-trust aw-fade-in">
+          <span className="login-chip"><ShieldCheck size={12} /> Secure connection</span>
+          <span className="login-chip"><Lock size={12} /> Encrypted session</span>
+        </div>
       </div>
 
       <div className="aw-footer">
-        <span><ShieldCheck size={11} style={{ verticalAlign: '-1px' }} /> Secure connection</span>
         <span>{appVersion ? `Version ${appVersion}` : ''}</span>
       </div>
 
@@ -201,7 +239,7 @@ const LoginForm: React.FC = () => {
             <CheckCircle2 size={44} style={{ color: 'var(--aw-success)' }} />
             <h2 className="aw-card-title">Signed in</h2>
             <p className="aw-meta">Preparing your dashboard…</p>
-            <div className="aw-bar" style={{ width: 172 }}><span style={{ width: '100%', transition: 'width 1.5s ease-out' }} /></div>
+            <LoadingAnimation height={84} />
           </div>
         </div>
       )}

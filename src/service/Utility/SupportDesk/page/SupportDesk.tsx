@@ -130,7 +130,9 @@ const SupportDesk: React.FC = () => {
   const loadMine = useCallback(async () => {
     setLoading(true);
     try {
-      const res = unwrap(await apiService.get('/support-queries/mine'));
+      const raw: any = await apiService.get('/support-queries/mine');
+      if (raw?.success === false) { message.error(raw.message || raw.error || 'Could not load your queries.'); return; }
+      const res = unwrap(raw);
       setMine(Array.isArray(res) ? res : []);
     } catch { message.error('Could not load your queries.'); }
     finally { setLoading(false); }
@@ -140,7 +142,9 @@ const SupportDesk: React.FC = () => {
     if (!isAdmin) return;
     setLoading(true);
     try {
-      const res = unwrap(await apiService.get('/support-queries/admin/all'));
+      const raw: any = await apiService.get('/support-queries/admin/all');
+      if (raw?.success === false) { message.error(raw.message || raw.error || 'Could not load all queries.'); return; }
+      const res = unwrap(raw);
       setAll(Array.isArray(res) ? res : []);
     } catch { message.error('Could not load all queries.'); }
     finally { setLoading(false); }
@@ -198,7 +202,8 @@ const SupportDesk: React.FC = () => {
   const retry = async (id: number) => {
     setRetryingId(id);
     try {
-      await apiService.post(`/support-queries/${id}/retry`);
+      const res = await apiService.post(`/support-queries/${id}/retry`);
+      if (!res.success) { message.error(res.message || res.error || 'Retry failed.'); return; }
       message.success('Delivery retried.');
       await loadAll();
     } catch { message.error('Retry failed.'); }
@@ -215,10 +220,10 @@ const SupportDesk: React.FC = () => {
   }, [isAdmin]);
 
   const deliveryPill = (status: string, error: string | null) => {
-    const tone = status === 'SENT' ? 'var(--aw-success)' : status === 'FAILED' ? 'var(--aw-danger)' : 'var(--aw-warning)';
+    const tone = status === 'SENT' ? 'var(--aw-success)' : status === 'FAILED' ? 'var(--aw-danger)' : status === 'SKIPPED' ? 'var(--aw-muted)' : 'var(--aw-warning)';
     return (
       <span className="aw-pill" title={error || undefined} style={{ color: tone, background: `color-mix(in srgb, ${tone} 12%, transparent)` }}>
-        {status === 'SENT' ? 'Sent' : status === 'FAILED' ? 'Failed' : status === 'DISABLED' ? 'Not set up' : 'Queued'}
+        {status === 'SENT' ? 'Sent' : status === 'FAILED' ? 'Failed' : status === 'DISABLED' ? 'Not set up' : status === 'SKIPPED' ? 'Muted' : 'Queued'}
       </span>
     );
   };
@@ -254,7 +259,7 @@ const SupportDesk: React.FC = () => {
                 {!admin && <td><span className="aw-pill">{r.status.replace('_', ' ')}</span></td>}
                 {admin && (
                   <td>
-                    {(r.jiraStatus !== 'SENT' || r.telegramStatus !== 'SENT') && (
+                    {((r.jiraStatus !== 'SENT' && r.jiraStatus !== 'SKIPPED') || (r.telegramStatus !== 'SENT' && r.telegramStatus !== 'SKIPPED')) && (
                       <button type="button" className="aw-btn aw-btn-secondary" disabled={retryingId === r.id} onClick={() => retry(r.id)}>
                         <RotateCw size={12} className={retryingId === r.id ? 'aw-spin' : ''} /> Retry
                       </button>

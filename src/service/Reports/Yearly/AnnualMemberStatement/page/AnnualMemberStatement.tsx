@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
+import { escapeHtml } from '@/utils/html';
 
 const { Option } = Select;
 
@@ -137,7 +138,7 @@ const AnnualMemberStatement: React.FC = () => {
     const colHdr =
       `${'MbNo'.padEnd(W_MBNO)} ${'Name'.padEnd(W_NAME)} |` +
       `${'R. LOAN BAL'.padStart(W_VAL)}|` +
-      `${'E. LOAN BAL'.padStart(W_VAL)}|` +
+      `${'T. LOAN BAL'.padStart(W_VAL)}|` +
       `${'SHARE BAL'.padStart(W_VAL)}|` +
       `${'THRIFT'.padStart(W_VAL)}`;
 
@@ -184,8 +185,18 @@ const AnnualMemberStatement: React.FC = () => {
       `Date : ${dayjs().format('DD-MMM-YYYY/ h:mmA')}`,
     ].join('\n');
 
+    // Derive page count and grand totals from the rows passed in (not from state, which is
+    // stale when printing straight after loadData()).
+    const rowTotalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    const rowTotals = rows.reduce((acc, r) => ({
+      regularLoan: acc.regularLoan + (r.regularLoanBalance || 0),
+      termLoan:    acc.termLoan    + (r.termLoanBalance    || 0),
+      share:       acc.share       + (r.curShareAmount     || 0),
+      thrift:      acc.thrift      + (r.curThriftAmount    || 0),
+    }), { regularLoan: 0, termLoan: 0, share: 0, thrift: 0 });
+
     const pages: string[] = [];
-    for (let p = 0; p < totalPages; p++) {
+    for (let p = 0; p < rowTotalPages; p++) {
       const slice = rows.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE);
       const pt = slice.reduce((a, r) => ({
         rl: a.rl + (r.regularLoanBalance || 0),
@@ -193,15 +204,15 @@ const AnnualMemberStatement: React.FC = () => {
         sh: a.sh + (r.curShareAmount     || 0),
         th: a.th + (r.curThriftAmount    || 0),
       }), { rl: 0, tl: 0, sh: 0, th: 0 });
-      pages.push(buildPageText(slice, p + 1, p === totalPages - 1, pt));
+      pages.push(buildPageText(slice, p + 1, p === rowTotalPages - 1, pt));
     }
 
     const grandTotal =
       `${'Grand Total'.padEnd(PFX)}` +
-      `|${fmt(totals.regularLoan).padStart(W_VAL)}` +
-      `|${fmt(totals.termLoan).padStart(W_VAL)}` +
-      `|${fmt(totals.share).padStart(W_VAL)}` +
-      `|${fmt(totals.thrift).padStart(W_VAL)}`;
+      `|${fmt(rowTotals.regularLoan).padStart(W_VAL)}` +
+      `|${fmt(rowTotals.termLoan).padStart(W_VAL)}` +
+      `|${fmt(rowTotals.share).padStart(W_VAL)}` +
+      `|${fmt(rowTotals.thrift).padStart(W_VAL)}`;
 
     return [header, ...pages, SEP, grandTotal, SEP].join('\n');
   };
@@ -212,7 +223,7 @@ const AnnualMemberStatement: React.FC = () => {
   body { font-family: 'Courier New', monospace; font-size: 10px; margin: 15px; background: white; color: black; }
   pre { white-space: pre; }
   @page { size: landscape; margin: 10mm; }
-</style></head><body><pre>${buildFullReportText(rows)}</pre></body></html>`;
+</style></head><body><pre>${escapeHtml(buildFullReportText(rows))}</pre></body></html>`;
 
   const printWithData = (rows: AnnualStatementItem[]) => {
     const iframe = document.createElement('iframe');

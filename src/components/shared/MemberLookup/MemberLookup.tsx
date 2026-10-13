@@ -158,8 +158,8 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
                                 <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-spin" /></div></td></tr>
                             ) : members.length === 0 ? (
                                 <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-meta">No members matching your search</span></div></td></tr>
-                            ) : members.map(record => (
-                                <tr key={record.memberNo} className="is-clickable" onClick={() => handleSelect(record)}>
+                            ) : members.map((record, idx) => (
+                                <tr key={`${record.memberNo}-${idx}`} className="is-clickable" onClick={() => handleSelect(record)}>
                                     <td className="is-accent" style={{ fontWeight: 700 }}>{record.memberNo}</td>
                                     <td style={{ fontWeight: 600, textTransform: 'uppercase' }}>{record.memberName}</td>
                                     <td className="is-muted" style={{ fontFamily: 'monospace' }}>{record.memberNo}</td>

@@ -1,0 +1,75 @@
+name: Release
+
+# Push a tag like v1.6.0 (it must match "version" in package.json).
+# 1. CI must pass.
+# 2. A Windows runner builds the installer and uploads it, latest.yml and the
+#    blockmap to the public releases repo as a DRAFT.
+# 3. Nothing reaches clients until someone clicks Publish on that draft.
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: test
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tag must match package.json version
+        shell: bash
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          TAG="${GITHUB_REF_NAME#v}"
+          if [ "$PKG" != "$TAG" ]; then
+            echo "::error::Tag v$TAG does not match package.json version $PKG. Bump the version and re-tag."
+            exit 1
+          fi
+          echo "VERSION=$PKG" >> "$GITHUB_ENV"
+
+      - run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package installer and upload draft release
+        run: npx electron-builder --win --publish always
+        env:
+          # Fine-grained token with Contents: read/write on the releases repo.
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+
+      - name: Build update-info.json
+        shell: bash
+        run: |
+          PREV=$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          RANGE=${PREV:+$PREV..}HEAD
+          export NOTES=$(git log $RANGE --no-merges --pretty='- %s' | head -40)
+          node -e '
+            const fs = require("fs");
+            const req = JSON.parse(fs.readFileSync("backend-requirement.json", "utf8")).requiresBackend;
+            if (!req) throw new Error("backend-requirement.json has no requiresBackend");
+            fs.writeFileSync("update-info.json", JSON.stringify({
+              version: process.env.VERSION,
+              requiresBackend: req,
+              notes: process.env.NOTES,
+            }, null, 2));
+          '
+          cat update-info.json
+
+      - name: Attach update-info.json to the draft
+        shell: bash
+        run: gh release upload "v$VERSION" update-info.json --repo cosmicdanish1/fibe-loan-releases --clobber
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}

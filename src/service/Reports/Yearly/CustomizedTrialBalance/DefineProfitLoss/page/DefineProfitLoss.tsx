@@ -2,18 +2,16 @@ import React, { useState, useEffect } from 'react';
 import {
   Settings,
   Plus,
-  Trash2,
   Save,
   CheckSquare,
   Square,
   Search,
-  FileSpreadsheet,
   LayoutTemplate,
   RefreshCw,
   Info,
   TrendingUp // Changed icon for PL
 } from 'lucide-react';
-import { ConfigProvider, Input, Button, Table, Select, Spin, Checkbox, theme as antdTheme } from 'antd';
+import { ConfigProvider, Table, Select, Spin, theme as antdTheme } from 'antd';
 import { apiService } from '../../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../../utils/pageToolbarActions';
 import { useSelector } from 'react-redux';

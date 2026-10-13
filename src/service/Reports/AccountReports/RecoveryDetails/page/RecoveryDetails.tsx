@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { ConfigProvider, Button, Input, Select, Spin, Radio, Modal, message, theme } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
-import { FileText, Printer, Search, RotateCcw, IndianRupee, User, Users, Monitor, Calendar } from 'lucide-react';
+import { Printer, Search, RotateCcw, IndianRupee, User, Users, Monitor, Calendar } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
@@ -160,7 +160,7 @@ const RecoveryDetails: React.FC = () => {
 
   const [memberNo, setMemberNo]     = useState('');
   const [memberName, setMemberName] = useState('');
-  const [month, setMonth]           = useState<string>(MONTH_NAMES[dayjs().month()]);
+  const [month, setMonth]           = useState<string>((MONTH_NAMES[dayjs().month()] ?? ''));
   const [year, setYear]             = useState<number>(dayjs().year());
   const [outputType, setOutputType] = useState<'screen' | 'printer'>('screen');
   const [loading, setLoading]       = useState(false);
@@ -214,7 +214,7 @@ const RecoveryDetails: React.FC = () => {
   const handleReset = useCallback(() => {
     setMemberNo('');
     setMemberName('');
-    setMonth(MONTH_NAMES[dayjs().month()]);
+    setMonth((MONTH_NAMES[dayjs().month()] ?? ''));
     setYear(dayjs().year());
     setReportText('');
   }, []);

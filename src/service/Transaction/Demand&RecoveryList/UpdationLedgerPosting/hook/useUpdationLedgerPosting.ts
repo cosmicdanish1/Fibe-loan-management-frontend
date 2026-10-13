@@ -35,7 +35,8 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
     return window.confirm(`${title}\n\n${detail}`);
 };
 
-const currentMonth = new Date().toLocaleString('default', { month: 'short' }).toUpperCase();
+const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const currentMonth = MONTH_ABBR[new Date().getMonth()] as string;
 
 export const useUpdationLedgerPosting = (): UpdationLedgerPostingHookReturn => {
     const [formData, setFormData] = useState<PostingFormData>({
@@ -82,6 +83,10 @@ export const useUpdationLedgerPosting = (): UpdationLedgerPostingHookReturn => {
 
     const updateField = useCallback((field: keyof PostingFormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        // The loaded preview belongs to the period/branch/range it was loaded for - drop it when those change
+        if (field === 'month' || field === 'year' || field === 'branch' || field === 'fromMember' || field === 'toMember') {
+            setMemberGroups([]);
+        }
     }, []);
 
     const handleLoad = useCallback(async () => {
@@ -132,7 +137,7 @@ export const useUpdationLedgerPosting = (): UpdationLedgerPostingHookReturn => {
             return;
         }
 
-        if (grandTotalSend !== grandTotalReceived) {
+        if (Math.round(grandTotalSend * 100) !== Math.round(grandTotalReceived * 100)) {
             await showDialog('error', 'electron-react-ts', 'Totals Do Not Match',
                 `Demand Send (₹${grandTotalSend.toLocaleString('en-IN')}) ≠ Demand Received (₹${grandTotalReceived.toLocaleString('en-IN')}).\n\n` +
                 `Both totals must be equal before posting.`);

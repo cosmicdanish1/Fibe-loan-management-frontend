@@ -29,6 +29,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../services/api';
+import { csvCell } from '@/utils/csv';
 
 const { TextArea } = Input;
 
@@ -69,7 +70,7 @@ const AdHocReports: React.FC = () => {
 
     return () => {
       if (window.electronAPI?.ipcRenderer) {
-        window.electronAPI.ipcRenderer.removeAllListeners('member-selected');
+        window.electronAPI.ipcRenderer.removeListener?.('member-selected', handleMemberSelected);
       }
     };
   }, []);
@@ -157,15 +158,15 @@ const AdHocReports: React.FC = () => {
   const exportCSV = () => {
     if (!reportData?.data) return;
     const columns = getColumns();
-    const headers = columns.map(col => col.key).join(',');
+    const headers = columns.map(col => csvCell(col.key)).join(',');
     const rows = reportData.data.map(row =>
       columns.map(col => {
         const value = row[col.key || ''];
-        return typeof value === 'string' && value.includes(',') ? `"${value}"` : value || '';
+        return csvCell(value !== null && typeof value === 'object' ? JSON.stringify(value) : value);
       }).join(',')
-    ).join('\n');
+    ).join('\r\n');
 
-    const blob = new Blob([`${headers}\n${rows}`], { type: 'text/csv' });
+    const blob = new Blob([`﻿${headers}\r\n${rows}`], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

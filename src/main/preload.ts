@@ -47,7 +47,8 @@ const validReceiveChannels = [
   'member-selected',
   'loan-sanctioned',
   'toolbar-state-changed',
-  'toolbar-do-save'
+  'toolbar-do-save',
+  'updater:state'
 ];
 
 const validInvokeChannels = [
@@ -62,14 +63,37 @@ const validInvokeChannels = [
   'passbook-print',
   'show-message-box',
   'get-license-status',
+  'get-machine-id',
   'get-server-url',
   'save-server-config',
-  'clear-server-config'
+  'clear-server-config',
+  'updater:get-state',
+  'updater:check',
+  'updater:download',
+  'updater:install'
 ];
 
 // Validate IPC channel names
 const isValidChannel = (channel: string, validChannels: string[]): boolean => {
   return validChannels.includes(channel);
+};
+
+// Remembers the wrapper registered for each (channel, callback) so removeListener
+// can detach the function that was actually passed to ipcRenderer.on.
+const listenerWrappers = new Map<string, Map<(...args: any[]) => void, (...args: any[]) => void>>();
+const rememberWrapper = (channel: string, callback: (...args: any[]) => void, wrapper: (...args: any[]) => void) => {
+  let byCallback = listenerWrappers.get(channel);
+  if (!byCallback) {
+    byCallback = new Map();
+    listenerWrappers.set(channel, byCallback);
+  }
+  byCallback.set(callback, wrapper);
+};
+const takeWrapper = (channel: string, callback: (...args: any[]) => void) => {
+  const byCallback = listenerWrappers.get(channel);
+  const wrapper = byCallback?.get(callback);
+  byCallback?.delete(callback);
+  return wrapper;
 };
 
 // Secure IPC bridge
@@ -85,13 +109,18 @@ const secureIpcRenderer = {
     if (isValidChannel(channel, validReceiveChannels)) {
       const subscription = (_event: IpcRendererEvent, ...args: unknown[]) => callback(_event, ...args);
       ipcRenderer.on(channel, subscription);
-      return () => ipcRenderer.removeListener(channel, subscription);
+      rememberWrapper(channel, callback, subscription);
+      return () => {
+        ipcRenderer.removeListener(channel, subscription);
+        listenerWrappers.get(channel)?.delete(callback);
+      };
     }
     return () => { }; // Return empty cleanup function for invalid channels
   },
   removeListener: (channel: string, callback: (...args: unknown[]) => void) => {
     if (isValidChannel(channel, validReceiveChannels)) {
-      ipcRenderer.removeListener(channel, callback);
+      const wrapper = takeWrapper(channel, callback);
+      if (wrapper) ipcRenderer.removeListener(channel, wrapper as any);
     }
   },
   invoke: async (channel: string, ...args: unknown[]) => {
@@ -148,7 +177,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onMessage: (callback: (message: string) => void) => {
     if (typeof callback === 'function') {
-      return secureIpcRenderer.on('message', (message) => {
+      return secureIpcRenderer.on('message', (_event, message) => {
         if (typeof message === 'string') {
           callback(message);
         }
@@ -160,6 +189,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // App info
   getAppVersion: () => secureIpcRenderer.invoke('get-app-version'),
   getClientInfo: () => secureIpcRenderer.invoke('get-client-info'),
+
+  // App updates (see main/updater.ts)
+  updater: {
+    getState: () => secureIpcRenderer.invoke('updater:get-state'),
+    check: () => secureIpcRenderer.invoke('updater:check'),
+    download: () => secureIpcRenderer.invoke('updater:download'),
+    install: (when: 'now' | 'on-quit') => secureIpcRenderer.invoke('updater:install', when),
+    onState: (callback: (state: unknown) => void) =>
+      secureIpcRenderer.on('updater:state', (_event, state) => callback(state)),
+  },
 
   // Identifies THIS launch of the app. Changes every time the app restarts, so
   // a session stamped with an older id is treated as expired.
@@ -183,7 +222,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onSettingsUpdate: (callback: (settings: unknown) => void) => {
     if (typeof callback === 'function') {
-      return secureIpcRenderer.on('settings-updated', (settings) => {
+      return secureIpcRenderer.on('settings-updated', (_event, settings) => {
         if (settings && typeof settings === 'object') {
           callback(settings);
         }
@@ -295,6 +334,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  // Machine identifier (hashed in the main process, never raw)
+  getMachineId: (): Promise<string | null> => secureIpcRenderer.invoke('get-machine-id'),
+
+  // Generic invoke, restricted to the whitelisted invoke channels
+  invoke: (channel: string, ...args: unknown[]) => secureIpcRenderer.invoke(channel, ...args),
+
   // Generic send method for settings and other features
   send: (channel: string, ...args: unknown[]) => {
     if (isValidChannel(channel, validSendChannels)) {
@@ -336,6 +381,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
       }
       return () => { };
     },
+    removeListener: (channel: string, func: (...args: any[]) => void) => {
+      secureIpcRenderer.removeListener(channel, func);
+    },
     removeAllListeners: (channel: string) => {
       if (isValidChannel(channel, validReceiveChannels)) {
         secureIpcRenderer.removeAllListeners(channel);
@@ -357,17 +405,51 @@ declare global {
   }
 }
 
-// Expose ipcRenderer for legacy code
+// Expose ipcRenderer for legacy code (window.electron) — restricted to the
+// channels the renderer actually uses.
+const legacySendChannels = ['window-close', 'close-latest-window', 'app-quit', 'app-quit-force'];
+const legacyReceiveChannels = ['member-selected'];
+const legacyWrappers = new Map<string, Map<(...args: any[]) => void, (...args: any[]) => void>>();
+const rememberLegacyWrapper = (channel: string, func: (...args: any[]) => void, wrapper: (...args: any[]) => void) => {
+  let byFunc = legacyWrappers.get(channel);
+  if (!byFunc) {
+    byFunc = new Map();
+    legacyWrappers.set(channel, byFunc);
+  }
+  byFunc.set(func, wrapper);
+};
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', {
       ipcRenderer: {
-        send: (channel: string, ...args: unknown[]) => ipcRenderer.send(channel, ...args),
+        send: (channel: string, ...args: unknown[]) => {
+          if (legacySendChannels.includes(channel)) {
+            ipcRenderer.send(channel, ...args);
+          } else {
+            console.warn(`Blocked attempt to send on channel: ${channel}`);
+          }
+        },
         on: (channel: string, func: (...args: unknown[]) => void) => {
-          ipcRenderer.on(channel, (_event: Electron.IpcRendererEvent, ...args: unknown[]) => func(...args));
+          if (!legacyReceiveChannels.includes(channel)) {
+            console.warn(`Blocked attempt to listen on channel: ${channel}`);
+            return;
+          }
+          const wrapper = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => func(...args);
+          ipcRenderer.on(channel, wrapper);
+          rememberLegacyWrapper(channel, func, wrapper);
+        },
+        removeListener: (channel: string, func: (...args: unknown[]) => void) => {
+          if (!legacyReceiveChannels.includes(channel)) return;
+          const wrapper = legacyWrappers.get(channel)?.get(func);
+          if (wrapper) {
+            ipcRenderer.removeListener(channel, wrapper);
+            legacyWrappers.get(channel)?.delete(func);
+          }
         },
         removeAllListeners: (channel: string) => {
-          ipcRenderer.removeAllListeners(channel);
+          if (legacyReceiveChannels.includes(channel)) {
+            ipcRenderer.removeAllListeners(channel);
+          }
         }
       }
     });

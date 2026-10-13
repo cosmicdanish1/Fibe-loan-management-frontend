@@ -5,6 +5,7 @@ import AwDialog from '@/components/shared/kit/AwDialog';
 import ReagreementDocumentActions from '@/components/shared/loan/ReagreementDocumentActions';
 import { fmtDate, fmtMoney, fmtMonth, ReagreementDto, STATUS_LABEL, STATUS_TONE } from '../../../../services/reagreementApi';
 import type { LoanReagreementHistoryHook } from '../hook/useLoanReagreementHistory';
+import { localISODate } from '../../../../utils/dates';
 
 const TYPE_LABEL: Record<string, string> = { RLN: 'Regular Loan', ALN: 'Emergency Loan', ELN: 'Loan Against RD' };
 
@@ -184,7 +185,7 @@ const LoanReagreementHistoryView: React.FC<LoanReagreementHistoryHook> = ({
                 </div>
             </div>
 
-            <div className="aw-footer"><span>Loan Re-agreement History{history ? ` · Member ${history.mbno}` : ''}</span><span>{fmtDate(new Date().toISOString().slice(0, 10))}</span></div>
+            <div className="aw-footer"><span>Loan Re-agreement History{history ? ` · Member ${history.mbno}` : ''}</span><span>{fmtDate(localISODate())}</span></div>
 
             <AwDialog open={!!reverseTarget} title={`Reverse ${reverseTarget?.reagreementNo || ''}`} icon={<Undo2 size={14} />} onClose={() => setReverseTarget(null)} maxWidth="32rem" compact>
                 <div className="aw-stack">

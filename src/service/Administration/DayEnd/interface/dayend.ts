@@ -34,7 +34,7 @@ export interface DayendData {
     isProcessing: boolean;
     isLoading: boolean;
     error: string | null;
-    processDayend: () => Promise<void>;
+    processDayend: (nextWorkingDate?: string) => Promise<void>;
     refreshData: () => Promise<void>;
     formatAmount: (amount: number) => string;
     formatDate: (date: string) => string;

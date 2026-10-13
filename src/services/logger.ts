@@ -28,7 +28,7 @@ function createEntry(level: LogLevel, message: string, data?: any): LogEntry {
     route: getCurrentRoute(),
     message,
     timestamp: new Date().toISOString(),
-    ...(data !== undefined && { data }),
+    ...(data !== undefined && { data: safeSerialize(data) }),
   };
 }
 
@@ -51,9 +51,15 @@ function writeToConsole(entry: LogEntry): void {
 
 /** JSON.stringify that survives circular refs, DOM nodes, functions, and
  *  Errors — console.log gets called with all of those across this codebase. */
+const SENSITIVE_KEYS = new Set([
+  'password', 'currentpassword', 'newpassword', 'confirmpassword', 'oldpassword',
+  'accesstoken', 'refreshtoken', 'token', 'authorization', 'secret', 'apikey',
+]);
+
 function safeSerialize(value: any): any {
   const seen = new WeakSet();
-  const replacer = (_key: string, val: any) => {
+  const replacer = (key: string, val: any) => {
+    if (key && SENSITIVE_KEYS.has(key.toLowerCase().replace(/[_-]/g, ''))) return '[REDACTED]';
     if (val instanceof Error) return { name: val.name, message: val.message, stack: val.stack };
     if (typeof val === 'function') return `[Function ${val.name || 'anonymous'}]`;
     if (typeof Node !== 'undefined' && val instanceof Node) return `[DOMNode ${val.nodeName}]`;
@@ -163,11 +169,17 @@ async function flushLogs(): Promise<void> {
   // Ship every log level to the backend server
   try {
     const baseUrl = await getApiBaseUrl();
-    fetch(`${baseUrl}/client-logs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hostname: getHostname(), entries: batch }),
-    }).catch(() => { /* best effort */ });
+    // Upload in small chunks: one batch of 200 entries can exceed the server's request-size limit and be
+    // rejected as a whole (ES-44), losing every log in it.
+    const CHUNK = 40;
+    const hostname = getHostname();
+    for (let i = 0; i < batch.length; i += CHUNK) {
+      fetch(`${baseUrl}/client-logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hostname, entries: batch.slice(i, i + CHUNK) }),
+      }).catch(() => { /* best effort */ });
+    }
   } catch {
     // best effort — don't block UI
   }
@@ -215,10 +227,14 @@ export const rendererLogger = {
     requestBody?: any,
     responseBody?: any,
   ): void {
+    // Never log bodies for auth endpoints (credentials / tokens).
+    const isAuth = /\/auth(\/|\?|$)/.test(endpoint);
     const entry = createEntry(
       status >= 400 ? 'error' : 'info',
       `API ${method} ${endpoint} → ${status} (${duration}ms)`,
-      { requestId, requestBody, responseBody },
+      isAuth
+        ? { requestId, requestBody: '[omitted: auth endpoint]', responseBody: '[omitted: auth endpoint]' }
+        : { requestId, requestBody, responseBody },
     );
     writeToConsole(entry);
     bufferForShipping(entry);

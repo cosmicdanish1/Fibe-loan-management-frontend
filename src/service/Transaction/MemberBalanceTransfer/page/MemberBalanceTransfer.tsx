@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Select, DatePicker, message } from 'antd';
 import { ArrowRightLeft, RotateCcw, Zap, Send, X, Users } from 'lucide-react';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../services/api';
-import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { useAuth } from '../../../../auth/context/AuthContext';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 
 interface HeadOption { code: string; name: string; }
@@ -15,7 +15,10 @@ interface TransferEntry {
 
 const fmt = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const NO_LIMIT = 999999999;
+
 const MemberBalanceTransfer: React.FC = () => {
+  const { user } = useAuth();
   const [heads, setHeads] = useState<HeadOption[]>([]);
   const [debitHead, setDebitHead] = useState<string | undefined>();
   const [creditHead, setCreditHead] = useState<string | undefined>();
@@ -26,6 +29,22 @@ const MemberBalanceTransfer: React.FC = () => {
   const [totals, setTotals] = useState({ totalDebit: 0, totalCredit: 0, excCredit: 0 });
   const [loading, setLoading] = useState(false);
   const [posting, setPosting] = useState(false);
+  // Bumped whenever an input changes so a generated preview / in-flight Generate can't be posted under edited parameters
+  const inputVersion = useRef(0);
+
+  useEffect(() => {
+    inputVersion.current += 1;
+    setEntries([]);
+    setTotals({ totalDebit: 0, totalCredit: 0, excCredit: 0 });
+  }, [debitHead, creditHead, excessHead, creditLimit, balanceAsOn]);
+
+  // Blank = unlimited; a typed value (including 0) is used as-is; negatives / non-numbers are rejected
+  const resolveCreditLimit = (): number | null => {
+    if (creditLimit.trim() === '') return NO_LIMIT;
+    const n = Number(creditLimit);
+    if (!Number.isFinite(n) || n < 0) { message.warning('Credit Limit must be a non-negative number (leave blank for no limit)'); return null; }
+    return n;
+  };
 
   useEffect(() => {
     const loadHeads = async () => {
@@ -39,22 +58,21 @@ const MemberBalanceTransfer: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!debitHead || !creditHead) { message.warning('Select both Debit Head and Credit Head'); return; }
+    const limit = resolveCreditLimit();
+    if (limit === null) return;
+    if (!balanceAsOn) { message.warning('Select Balance As On date'); return; }
+    const version = inputVersion.current;
     setLoading(true);
     try {
-      const base = await getApiBaseUrl();
-      const res = await fetch(`${base}/transactions/member-balance-transfer/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          debitHead, creditHead,
-          creditLimit: parseFloat(creditLimit) || 999999999,
-          excessHead: excessHead || '',
-          balanceAsOn,
-        }),
+      const res = await apiService.post('/transactions/member-balance-transfer/generate', {
+        debitHead, creditHead,
+        creditLimit: limit,
+        excessHead: excessHead || '',
+        balanceAsOn,
       });
-      if (res.ok) {
-        const data = await res.json();
-        const result = data.data || data;
+      if (version !== inputVersion.current) return; // inputs changed while generating - discard
+      if (res.success) {
+        const result = res.data || {};
         setEntries(result.entries || []);
         setTotals({
           totalDebit: result.totalDebit || 0,
@@ -63,7 +81,7 @@ const MemberBalanceTransfer: React.FC = () => {
         });
         message.success(`Generated ${(result.entries || []).length} entries`);
       } else {
-        message.error('Failed to generate');
+        message.error(res.message || 'Failed to generate');
       }
     } catch (e: any) {
       message.error(e?.message || 'Generate failed');
@@ -74,23 +92,21 @@ const MemberBalanceTransfer: React.FC = () => {
 
   const handlePost = async () => {
     if (entries.length === 0) { message.warning('Generate transactions first'); return; }
+    const limit = resolveCreditLimit();
+    if (limit === null) return;
+    const postedBy = user?.username;
+    if (!postedBy) { message.error('No logged-in user - please sign in again'); return; }
     setPosting(true);
     try {
-      const base = await getApiBaseUrl();
-      const res = await fetch(`${base}/transactions/member-balance-transfer/post`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entries, debitHead, creditHead,
-          excessHead: excessHead || '',
-          postedBy: 'admin',
-          creditLimit: parseFloat(creditLimit) || 999999999,
-          balanceAsOn,
-        }),
+      const res = await apiService.post('/transactions/member-balance-transfer/post', {
+        entries, debitHead, creditHead,
+        excessHead: excessHead || '',
+        postedBy,
+        creditLimit: limit,
+        balanceAsOn,
       });
-      if (res.ok) {
-        const data = await res.json();
-        const result = data.data || data;
+      if (res.success) {
+        const result = res.data || {};
         if (window.electronAPI?.showMessageBox) {
           await window.electronAPI.showMessageBox({
             type: 'info', title: 'Member Balance Transfer',
@@ -104,7 +120,7 @@ const MemberBalanceTransfer: React.FC = () => {
         setEntries([]);
         setTotals({ totalDebit: 0, totalCredit: 0, excCredit: 0 });
       } else {
-        message.error('Post failed');
+        message.error(res.message || 'Post failed');
       }
     } catch (e: any) {
       message.error(e?.message || 'Post failed');

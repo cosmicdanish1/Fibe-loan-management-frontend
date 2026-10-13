@@ -100,6 +100,7 @@ export interface LoanPaymentHookReturn {
     modalData: ModalData;
     loanCases: LoanCase[];
     isLoadingCases: boolean;
+    isSaving: boolean;
     actualAmount: number;
     bankBalance: number;
     totalReceipt: number;

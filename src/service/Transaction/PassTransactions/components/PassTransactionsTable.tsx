@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
     transactionData,
     isLoading,
+    busyVouchers,
     handleRefresh,
     handlePass,
     handleDelete,
@@ -147,10 +148,10 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                                                                     <Eye size={12} /> Details
                                                                 </button>
                                                             )}
-                                                            <button type="button" onClick={() => handleDelete(record.voucherNo)} className="aw-btn aw-btn-danger aw-btn-sm">
+                                                            <button type="button" onClick={() => handleDelete(record.voucherNo)} disabled={busyVouchers.includes(record.voucherNo)} className="aw-btn aw-btn-danger aw-btn-sm">
                                                                 <Trash2 size={12} /> Reject
                                                             </button>
-                                                            <button type="button" onClick={() => handlePass(record.voucherNo)} className="aw-btn aw-btn-primary aw-btn-sm">
+                                                            <button type="button" onClick={() => handlePass(record.voucherNo)} disabled={busyVouchers.includes(record.voucherNo)} className="aw-btn aw-btn-primary aw-btn-sm">
                                                                 <CheckCircle2 size={12} /> Pass
                                                             </button>
                                                         </div>

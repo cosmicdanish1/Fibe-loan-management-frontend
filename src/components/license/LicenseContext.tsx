@@ -37,11 +37,13 @@ export const useLicense = () => useContext(LicenseContext);
 function mapPayload(payload: any): LicenseState {
   return {
     status: payload?.status ?? 'not_activated',
-    daysRemaining: payload?.days_remaining ?? 0,
-    graceDaysRemaining: payload?.grace_days_remaining ?? 0,
+    // The backend (and the main-process cache) use snake_case; the renderer's own
+    // cache writes (updateLicenseCache) are camelCase — accept both.
+    daysRemaining: payload?.days_remaining ?? payload?.daysRemaining ?? 0,
+    graceDaysRemaining: payload?.grace_days_remaining ?? payload?.graceDaysRemaining ?? 0,
     message: payload?.message ?? '',
-    customerName: payload?.customer_name ?? null,
-    expiresAt: payload?.expires_at ?? null,
+    customerName: payload?.customer_name ?? payload?.customerName ?? null,
+    expiresAt: payload?.expires_at ?? payload?.expiresAt ?? null,
   };
 }
 
@@ -53,12 +55,13 @@ function mapPayload(payload: any): LicenseState {
 async function fetchFreshStatus(): Promise<LicenseState | null> {
   try {
     const res = await apiService.getLicenseStatus();
-    if (res.success && res.data) {
-      const payload = (res.data as any).data || res.data;
-      return mapPayload(payload);
-    }
-    // Backend responded but gave no usable data → treat as not activated
-    return { ...defaultState, status: 'not_activated' };
+    // apiService.request() never throws: network errors, timeouts and 4xx/5xx
+    // all come back as { success: false } — that is "unknown", not "not activated".
+    if (!res.success) return null;
+    const payload = (res.data as any)?.data || res.data;
+    // Only an explicit status from the server may change the licence state.
+    if (!payload || typeof payload.status !== 'string') return null;
+    return mapPayload(payload);
   } catch {
     // Network error / backend not ready — do NOT downgrade to not_activated
     return null;

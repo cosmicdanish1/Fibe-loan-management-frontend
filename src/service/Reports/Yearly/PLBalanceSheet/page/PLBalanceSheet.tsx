@@ -1,14 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { DatePicker, Button, ConfigProvider, Checkbox, Input, Tabs, theme as antdTheme } from 'antd';
+import React, { useState, useCallback } from 'react';
+import { DatePicker, Button, ConfigProvider, Checkbox, Input, theme as antdTheme } from 'antd';
 import {
   Printer,
-  FileDown,
   Scale,
-  Calendar,
   FileCheck,
-  Activity,
   Search,
-  Building2,
   Settings
 } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
@@ -22,8 +18,6 @@ const showDialog = async (type: 'info' | 'warning' | 'error', title: string, det
     await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: title, detail, buttons: ['OK'], defaultId: 0 });
   }
 };
-
-const { TabPane } = Tabs;
 
 interface BalanceSheetItem {
   headCode: string;
@@ -70,13 +64,21 @@ const PLBalanceSheet: React.FC = () => {
   const fetchBalanceSheet = async () => {
     setLoading(true);
     try {
+      // The balance-sheet endpoint accepts a single as-on date; the "To" date is that date.
+      // (Backend has no support for the FY-opening / suppress / P&L-transfer options below.)
       const response = await apiService.getBalanceSheet(
-        fromDate?.format('YYYY-MM-DD'),
-        toDate?.format('YYYY-MM-DD')
+        toDate?.format('YYYY-MM-DD'),
+        {
+          // The two "Suppress A/c with" checkboxes: checked = hide those accounts
+          includeZeroClosing: !options.zeroClosingBalance,
+          includeZeroTransaction: !options.zeroTransactionAc,
+        }
       );
 
-      if (response.success && response.data) {
-        setData(response.data);
+      // The backend wraps the payload in { success, data } and the interceptor wraps it again
+      const payload = response.data?.liabilities ? response.data : response.data?.data;
+      if (response.success && payload) {
+        setData(payload);
       } else {
         setData(null);
         await showDialog('warning', 'No Data', 'No balance sheet data found');
@@ -218,6 +220,8 @@ const PLBalanceSheet: React.FC = () => {
                       
                       <Checkbox
                         checked={options.includeFinancialYrOpBal}
+                        disabled
+                        title="Not supported by the balance sheet report yet"
                         onChange={(e) => setOptions(prev => ({ ...prev, includeFinancialYrOpBal: e.target.checked }))}
                         className="fz-label font-bold"
                       >
@@ -266,6 +270,8 @@ const PLBalanceSheet: React.FC = () => {
                         <div className="border-b border-slate-300 pb-1">
                           <Input
                             value={options.profitLossTransferAccount}
+                            disabled
+                            title="Not supported by the balance sheet report yet"
                             onChange={(e) => setOptions(prev => ({ ...prev, profitLossTransferAccount: e.target.value }))}
                             className="border-none shadow-none p-0 fz-label"
                             placeholder="Enter account name..."
@@ -336,7 +342,7 @@ const PLBalanceSheet: React.FC = () => {
                               
                               <table className="w-full fz-label">
                                 <tbody>
-                                  {data.liabilities && Array.isArray(data.liabilities) && data.liabilities.length > 0 ? data.liabilities.map((item, index) => (
+                                  {data.liabilities && Array.isArray(data.liabilities) && data.liabilities.length > 0 ? data.liabilities.map((item) => (
                                     <tr key={item.headCode} className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                                       <td className="py-1 px-2 font-medium">
                                         <div className="flex flex-col">
@@ -379,7 +385,7 @@ const PLBalanceSheet: React.FC = () => {
                               
                               <table className="w-full fz-label">
                                 <tbody>
-                                  {data.assets && Array.isArray(data.assets) && data.assets.length > 0 ? data.assets.map((item, index) => (
+                                  {data.assets && Array.isArray(data.assets) && data.assets.length > 0 ? data.assets.map((item) => (
                                     <tr key={item.headCode} className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                                       <td className="py-1 px-2 font-medium">
                                         <div className="flex flex-col">

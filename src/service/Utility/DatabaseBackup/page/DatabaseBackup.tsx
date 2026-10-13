@@ -76,15 +76,17 @@ const DatabaseBackup: React.FC = () => {
 
   const handleBackup = useCallback(async () => {
     if (connectionStatus !== 'connected') { await showDialog('error', 'Connection Unavailable', 'Database connection is not available.'); return; }
+    if (!backupOptions.includeSchema && !backupOptions.includeData) { await showDialog('warning', 'Nothing To Back Up', 'Select at least one of Include Schema or Include Data.'); return; }
     setIsBackingUp(true); setBackupProgress(0);
+    let progressInterval: ReturnType<typeof setInterval> | undefined;
     try {
-      const progressInterval = setInterval(() => { setBackupProgress(prev => { if (prev >= 95) { clearInterval(progressInterval); return prev; } return prev + (prev < 30 ? 5 : prev < 70 ? 2 : 1); }); }, 500);
+      progressInterval = setInterval(() => { setBackupProgress(prev => { if (prev >= 95) { clearInterval(progressInterval); return prev; } return prev + (prev < 30 ? 5 : prev < 70 ? 2 : 1); }); }, 500);
       const response = await apiService.createDatabaseBackup({ destinationPath, ...backupOptions });
-      clearInterval(progressInterval); setBackupProgress(100);
+      clearInterval(progressInterval); progressInterval = undefined; setBackupProgress(100);
       if (response.success) { await showDialog('info', 'Backup Successful', 'Database backup completed!'); await loadBackupList(); }
       else throw new Error(response.message || 'Backup failed');
     } catch (e: any) { await showDialog('error', 'Backup Failed', e.message || 'Unknown error.'); }
-    finally { setTimeout(() => { setIsBackingUp(false); setBackupProgress(0); }, 1000); }
+    finally { if (progressInterval) clearInterval(progressInterval); setTimeout(() => { setIsBackingUp(false); setBackupProgress(0); }, 1000); }
   }, [connectionStatus, destinationPath, backupOptions, loadBackupList]);
 
   const handleCleanup = useCallback(async () => {

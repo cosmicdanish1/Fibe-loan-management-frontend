@@ -31,9 +31,7 @@ const initialFormData: CalculationData = {
 const ACCOUNT_TYPE_MAP: Record<string, string> = {
   'RECURRING DEPOSIT': 'RD',
   'SAVINGS ACCOUNT': 'SB',
-  'CURRENT ACCOUNT': 'SB', // treat current as SB
   'FIXED DEPOSIT': 'FD',
-  'NRI ACCOUNT': 'SB',
 };
 
 // Custom hook for form validation
@@ -51,7 +49,7 @@ export const useFormValidation = (): UseFormValidationReturn => {
       case 'rate':
         const rateNum = parseFloat(value as string);
         if (!value) return 'Rate is required';
-        if (isNaN(rateNum) || rateNum < 0) return 'Please enter a valid rate';
+        if (isNaN(rateNum) || rateNum < 0 || rateNum > 50) return 'Please enter a valid rate (0 - 50)';
         return undefined;
       case 'minInterestAmount':
         const minAmount = parseFloat(value as string);
@@ -71,7 +69,8 @@ export const useFormValidation = (): UseFormValidationReturn => {
     let isValid = true;
 
     (Object.keys(data) as Array<keyof CalculationData>).forEach(key => {
-      const error = validateField(key, data[key]);
+      const fieldValue = data[key];
+      const error = validateField(key, typeof fieldValue === 'string' || typeof fieldValue === 'number' ? fieldValue : '');
       if (error) {
         newErrors[key as keyof ValidationErrors] = error;
         isValid = false;
@@ -116,9 +115,7 @@ export const useDropdownData = (): UseDropdownDataReturn => {
       const options: DropdownOption[] = [
         { value: 'RECURRING DEPOSIT', label: 'RECURRING DEPOSIT' },
         { value: 'SAVINGS ACCOUNT', label: 'SAVINGS ACCOUNT' },
-        { value: 'CURRENT ACCOUNT', label: 'CURRENT ACCOUNT' },
-        { value: 'FIXED DEPOSIT', label: 'FIXED DEPOSIT' },
-        { value: 'NRI ACCOUNT', label: 'NRI ACCOUNT' }
+        { value: 'FIXED DEPOSIT', label: 'FIXED DEPOSIT' }
       ];
       
       setAccountOptions(options);
@@ -195,15 +192,17 @@ export const useInterestCalculator = (initialData?: Partial<CalculationData>): U
       // Convert DD-MMM-YYYY dates to YYYY-MM-DD for the API
       const fromDateISO = dayjs(formData.fromDate, 'DD-MMM-YYYY').format('YYYY-MM-DD');
       const toDateISO = dayjs(formData.toDate, 'DD-MMM-YYYY').format('YYYY-MM-DD');
-      const rate = parseFloat(formData.rate) || 4;
+      // validateForm has already rejected blank/NaN; a typed 0 is kept as 0 (no silent fallback to 4)
+      const rate = parseFloat(formData.rate);
+      if (!Number.isFinite(rate)) throw new Error('Please enter a valid interest rate');
 
       const accountTypeCode = ACCOUNT_TYPE_MAP[formData.selectedAccount] || 'SB';
       const payload = {
         fromDate: fromDateISO,
         toDate: toDateISO,
         interestRate: rate,
+        // Backend DTO has no accountType property (forbidNonWhitelisted); accountHead carries the type code
         accountType: accountTypeCode,
-        accountHead: accountTypeCode,
         narration: `Interest calculation for ${formData.selectedAccount}`,
       };
 

@@ -1,5 +1,5 @@
 // useDefaultRights.ts
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { apiService } from '../../../../../services/api';
 import type {
   DefaultRightsFormData,
@@ -29,6 +29,9 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
   });
 
   const [selectedUserLevel, setSelectedUserLevel] = useState<string>('');
+  // Level whose saved rights are actually on screen (null while loading / after a failed load) + request-sequence guard
+  const [loadedLevel, setLoadedLevel] = useState<string | null>(null);
+  const fetchSeq = useRef(0);
   const [userLevels, setUserLevels] = useState<{ value: string; label: string }[]>([]);
 
   const [query, setQuery] = useState('');
@@ -79,28 +82,47 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
     initializeData();
   }, []);
 
+  const clearSelection = () => {
+    setFormData(prev => ({
+      ...prev,
+      menuRights: prev.menuRights.map(right => (right.isSelected ? { ...right, isSelected: false } : right)),
+    }));
+  };
+
   // 2. Selection Sync: When user level changes, fetch its saved default rights
   useEffect(() => {
-    const fetchDefaults = async () => {
-      if (!selectedUserLevel) return;
+    // Every level change (or reset) invalidates any fetch still in flight
+    const seq = ++fetchSeq.current;
+    const level = selectedUserLevel;
+    setLoadedLevel(null);
+    if (!level) return;
 
+    const fetchDefaults = async () => {
       try {
-        const response = await apiService.getRoleDefaultRights(parseInt(selectedUserLevel));
-        if (response.success && response.data) {
+        const response = await apiService.getRoleDefaultRights(parseInt(level));
+        if (seq !== fetchSeq.current) return; // a newer level was selected - drop this stale response
+
+        if (response.success && Array.isArray(response.data)) {
           const savedMenuIds = response.data;
 
           setFormData(prev => ({
             ...prev,
-            userLevel: selectedUserLevel,
+            userLevel: level,
             menuRights: prev.menuRights.map(right => ({
               ...right,
               isSelected: savedMenuIds.includes(parseInt(right.code))
             }))
           }));
+          setLoadedLevel(level);
+        } else {
+          clearSelection();
+          await showDialog('error', 'Sync Error', 'Failed to load default rights for the selected level.', response.message || response.error || 'The policy matrix could not be retrieved. Saving is disabled for this level until it loads.');
         }
       } catch (err) {
+        if (seq !== fetchSeq.current) return;
         console.error('Failed to fetch default rights:', err);
-        await showDialog('error', 'Sync Error', 'Failed to load default rights for the selected level.', 'The policy matrix could not be retrieved.');
+        clearSelection();
+        await showDialog('error', 'Sync Error', 'Failed to load default rights for the selected level.', 'The policy matrix could not be retrieved. Saving is disabled for this level until it loads.');
       }
     };
 
@@ -108,6 +130,10 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
   }, [selectedUserLevel]);
 
   const updateUserLevel = (level: string) => {
+    if (level === selectedUserLevel) return;
+    // Drop the previous level's checkboxes immediately so they can never show (or be saved) under the new level
+    clearSelection();
+    setLoadedLevel(null);
     setSelectedUserLevel(level);
   };
 
@@ -145,6 +171,11 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
   const saveDefaultRights = async () => {
     if (!selectedUserLevel) return;
 
+    if (loadedLevel !== selectedUserLevel) {
+      await showDialog('error', 'Rights Not Loaded', 'Cannot save: the rights on screen are not the saved rights for this user level.', 'Re-select the user level and wait for its rights to load, then try again.');
+      return;
+    }
+
     try {
       const selectedMenuIds = formData.menuRights
         .filter(right => right.isSelected)
@@ -167,7 +198,7 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
           `✓ Database updated successfully`
         );
       } else {
-        throw new Error(response.error || 'Backend rejected synchronization');
+        throw new Error(response.message || response.error || 'Backend rejected synchronization');
       }
     } catch (err: any) {
       await showDialog(
@@ -214,7 +245,7 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
         }
         await showDialog('info', 'Role Governance System', 'New Control Level Established!', `Level "${roleName.toUpperCase()}" has been added to the hierarchy.`);
       } else {
-        throw new Error(response.error || 'Failed to create role');
+        throw new Error(response.message || response.error || 'Failed to create role');
       }
     } catch (err: any) {
       console.error('Create role error:', err);

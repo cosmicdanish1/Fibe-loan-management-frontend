@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Select, Input, Button, DatePicker, Modal, ConfigProvider, Tooltip, theme as antdTheme } from 'antd';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Input, Button, DatePicker, Modal, ConfigProvider, Tooltip, message, theme as antdTheme } from 'antd';
 import {
   Printer,
   Search,
@@ -19,6 +19,7 @@ import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLo
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { escapeHtml } from '@/utils/html';
 
 
 interface ShareWarrantItem {
@@ -57,8 +58,10 @@ const ShareWarrantPrinting: React.FC = () => {
         setTableData(data);
         return data;
       }
+      message.error(response?.message || response?.error || 'Failed to load share warrant data');
     } catch (error) {
       console.error('ShareWarrant fetch error:', error);
+      message.error('Failed to load share warrant data');
     } finally {
       setLoading(false);
     }
@@ -101,12 +104,12 @@ const ShareWarrantPrinting: React.FC = () => {
   const buildPrintHtml = (rows: ShareWarrantItem[]) => {
     const tRows = rows.map(r => `<tr>
       <td style="text-align:center">${r.srno}</td>
-      <td>${r.mbno}</td>
-      <td>${r.memberName || ''}</td>
-      <td>${r.pfno || ''}</td>
-      <td>${r.officeno || ''}</td>
+      <td>${escapeHtml(r.mbno)}</td>
+      <td>${escapeHtml(r.memberName)}</td>
+      <td>${escapeHtml(r.pfno)}</td>
+      <td>${escapeHtml(r.officeno)}</td>
       <td style="text-align:right">₹ ${r.shareAmount}</td>
-      <td style="text-align:center">${r.warrantDate || ''}</td>
+      <td style="text-align:center">${escapeHtml(r.warrantDate)}</td>
     </tr>`).join('');
     return `<!DOCTYPE html><html><head><title>Share Warrant Printing</title>
 <style>

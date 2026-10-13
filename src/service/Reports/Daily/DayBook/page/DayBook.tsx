@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Settings, RefreshCw, Printer, FileDown, Search, BookOpen, ShieldCheck } from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Spin, Tooltip, theme as antdTheme } from 'antd';
+import { ConfigProvider, Button, DatePicker, Spin, Tooltip, message, theme as antdTheme } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
+import { csvCell } from '@/utils/csv';
+import { escapeHtml } from '@/utils/html';
 
 interface DayBookEntry {
   mbNo: string;
@@ -74,8 +76,8 @@ function buildLines(data: DayBookData, dateLabel: string): string[] {
   lines.push(`${padR('Mem No.', COL_MB)}${padR('Name', COL_NAME)}${padR('Voucher', COL_VCHR)}${padL('Amount', COL_AMT)}  ${padR('User', COL_USER)}`);
   lines.push(DASH_LINE);
 
-  const section = (title: string, groups: HeadGroup[]) => {
-    if (!groups.length) return;
+  const section = (title: string, groups?: HeadGroup[]) => {
+    if (!groups?.length) return;
     lines.push(title);
     lines.push(DASH_LINE);
     groups.forEach(g => {
@@ -113,14 +115,15 @@ function buildLines(data: DayBookData, dateLabel: string): string[] {
   return lines;
 }
 
-const DayBook: React.FC = () => {
+const DayBook: React.FC<{ filterType?: 'all' | 'cd' | 'sb' }> = ({ filterType = 'all' }) => {
+  const titleSuffix = filterType === 'cd' ? ' (CD)' : filterType === 'sb' ? ' (SB)' : '';
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs().subtract(1, 'day'));
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DayBookData | null>(null);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark' ||
-    (interfaceMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
+  const isDark = interfaceMode === 'dark';
 
   // Theme variables
   const bg        = isDark ? 'bg-[#0f172a]'                                  : 'bg-slate-50';
@@ -145,24 +148,33 @@ const DayBook: React.FC = () => {
   const lineSummary  = isDark ? 'text-emerald-300 font-semibold' : 'text-emerald-700 font-semibold';
   const lineFooter   = isDark ? 'text-slate-500 italic'        : 'text-slate-400 italic';
 
-  useEffect(() => { loadData(); }, [selectedDate]);
+  useEffect(() => { loadData(); }, [selectedDate, filterType]);
+
+  const loadRequestId = useRef(0);
 
   const loadData = async () => {
+    const requestId = ++loadRequestId.current;
     setLoading(true);
     try {
-      const response = await apiService.getDayBookReport(selectedDate.format('YYYY-MM-DD'), 'screen', 'all');
+      const response = await apiService.getDayBookReport(selectedDate.format('YYYY-MM-DD'), 'screen', filterType);
+      if (requestId !== loadRequestId.current) return; // a newer date was requested meanwhile
       if (response.success && response.data) {
         const d = response.data?.data ?? response.data;
         setData(d);
+      } else {
+        setData(null);
+        message.error(response.message || response.error || 'Failed to load report');
       }
     } catch {
-      // silent
+      if (requestId !== loadRequestId.current) return;
+      setData(null);
+      message.error('An error occurred while fetching report');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestId.current) setLoading(false);
     }
   };
 
-  const hasData = data && (data.paymentGroups.length > 0 || data.receiptGroups.length > 0);
+  const hasData = data && ((data.paymentGroups?.length ?? 0) > 0 || (data.receiptGroups?.length ?? 0) > 0);
   const reportLines = data ? buildLines(data, selectedDate.format('DD-MMM-YYYY')) : [];
 
   const handlePrint = () => {
@@ -179,7 +191,7 @@ const DayBook: React.FC = () => {
   @page { size: A4 portrait; margin: 12mm; }
   body { margin: 0; }
   pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
-</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+</style></head><body><pre>${escapeHtml(lines.join('\n'))}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -194,12 +206,12 @@ const DayBook: React.FC = () => {
     let csv = 'Section,Head Code,Head Name,MB No,Member Name,Voucher,Amount,User\n';
     data.paymentGroups.forEach(g =>
       g.entries.forEach(e =>
-        csv += `Payment,${g.headCode},"${g.headName}",${e.mbNo},"${e.memberName}",${e.voucherNo},${e.amount},"${e.username}"\n`
+        csv += `Payment,${g.headCode},${csvCell(g.headName)},${e.mbNo},${csvCell(e.memberName)},${e.voucherNo},${e.amount},${csvCell(e.username)}\n`
       )
     );
     data.receiptGroups.forEach(g =>
       g.entries.forEach(e =>
-        csv += `Receipt,${g.headCode},"${g.headName}",${e.mbNo},"${e.memberName}",${e.voucherNo},${e.amount},"${e.username}"\n`
+        csv += `Receipt,${g.headCode},${csvCell(g.headName)},${e.mbNo},${csvCell(e.memberName)},${e.voucherNo},${e.amount},${csvCell(e.username)}\n`
       )
     );
     const a = document.createElement('a');
@@ -227,7 +239,7 @@ const DayBook: React.FC = () => {
               <BookOpen size={18} className="text-white" />
             </div>
             <div>
-              <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Day Book</h1>
+              <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Day Book{titleSuffix}</h1>
               <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
                 <ShieldCheck size={10} className="text-indigo-400" /> Daily Transaction Journal
               </div>

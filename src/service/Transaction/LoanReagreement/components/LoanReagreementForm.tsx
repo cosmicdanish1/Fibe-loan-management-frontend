@@ -7,6 +7,7 @@ import ReagreementDocumentActions from '@/components/shared/loan/ReagreementDocu
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import { fmtDate, fmtMoney, ReagreementDto, STATUS_LABEL, STATUS_TONE } from '../../../../services/reagreementApi';
 import type { LoanReagreementHook } from '../hook/useLoanReagreement';
+import { localISODate } from '../../../../utils/dates';
 
 const TYPE_LABEL: Record<string, string> = { RLN: 'Regular Loan', ALN: 'Emergency Loan', ELN: 'Loan Against RD' };
 
@@ -194,7 +195,7 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
 
             <div className="aw-footer">
                 <span>Loan Re-agreement{selected ? ` · Case #${selected.loanCaseNo}` : ''}{mbno ? ` · Member ${mbno}` : ''}</span>
-                <span>{fmtDate(new Date().toISOString().slice(0, 10))}</span>
+                <span>{fmtDate(localISODate())}</span>
             </div>
 
             <AwDialog open={confirmOpen} title="Apply for re-agreement" icon={<Send size={14} />} onClose={() => setConfirmOpen(false)} maxWidth="34rem" compact>

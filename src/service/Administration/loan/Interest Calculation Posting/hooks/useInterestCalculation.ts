@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from 'react';
 import dayjs from 'dayjs';
 import type { InterestCalculationData, MemberRecord } from '../types/types';
 import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
-import { accountHeadMap } from '../constants/options';
 import { message } from 'antd';
 
 export const useInterestCalculation = () => {
@@ -44,8 +43,13 @@ export const useInterestCalculation = () => {
     fetchCurrentRate();
   }, []);
 
+  // Fields that change what the preview/post would compute: editing any of them
+  // invalidates a loaded preview so Post can't submit new parameters under the old preview.
+  const PREVIEW_AFFECTING_FIELDS = ['calcInterestFor', 'accountType', 'fromDate', 'toDate', 'memberNo', 'interestRate'];
+
   const handleInputChange = useCallback((name: string, value: any) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (PREVIEW_AFFECTING_FIELDS.includes(name)) setMemberRecords([]);
   }, []);
 
   const handleMemberLookup = useCallback(() => {
@@ -58,16 +62,29 @@ export const useInterestCalculation = () => {
       memberNo: member.memberNo || member.mbno || member.memberNumber || '',
       memberName: member.memberName || member.name || '',
     }));
+    setMemberRecords([]);
     setIsLookupOpen(false);
   }, []);
+
+  // Blank/NaN falls back to the 4% default; a typed 0 stays 0. Backend accepts 0-50.
+  const resolveRate = (raw: unknown): number => {
+    const n = typeof raw === 'number' ? raw : parseFloat(String(raw ?? ''));
+    return Number.isFinite(n) ? n : 4;
+  };
+
+  const rateError = (raw: unknown): string | null => {
+    const n = resolveRate(raw);
+    return n < 0 || n > 50 ? 'Interest rate must be between 0 and 50' : null;
+  };
 
   const buildPayload = useCallback((formData: InterestCalculationData) => {
     const payload: Record<string, any> = {
       fromDate: formData.fromDate,
       toDate: formData.toDate,
-      interestRate: Number(formData.interestRate || 4),
+      interestRate: resolveRate(formData.interestRate),
+      // Backend treats accountHead as the account-type code (SB/RD/FD), not a GL head;
+      // the DTO has no accountType property (forbidNonWhitelisted would reject it).
       accountType: formData.accountType,
-      accountHead: accountHeadMap[formData.accountType] ?? 'A1001',
       narration: `Interest posting for ${formData.accountType} — ${formData.fromDate} to ${formData.toDate}`,
     };
     if (formData.calcInterestFor === 'specific_member' && formData.memberNo) {
@@ -96,6 +113,8 @@ export const useInterestCalculation = () => {
       message.warning('Please select an Interest Type first');
       return;
     }
+    const rateErr = rateError(formData.interestRate);
+    if (rateErr) { message.warning(rateErr); return; }
     try {
       setIsLoading(true);
       setMemberRecords([]);
@@ -146,6 +165,8 @@ export const useInterestCalculation = () => {
       message.warning('Run Preview first to load records before posting');
       return;
     }
+    const rateErr = rateError(formData.interestRate);
+    if (rateErr) { message.warning(rateErr); return; }
     try {
       setIsLoading(true);
 

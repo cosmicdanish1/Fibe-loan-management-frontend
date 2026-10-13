@@ -338,10 +338,15 @@ const initialData: BusinessRulesData = {
 export const useBusinessRules = () => {
   const [businessRules, setBusinessRules] = useState<BusinessRulesData>(initialData);
   const [loading, setLoading] = useState(true);
+  // loaded = live rules were fetched successfully at least once; loadError = last load attempt failed.
+  // Until loaded, businessRules only holds the hardcoded defaults and must never be saved.
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchBusinessRules = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const response = await apiService.getBusinessRules();
       if (response.success && response.data) {
         const d = response.data;
@@ -509,15 +514,23 @@ export const useBusinessRules = () => {
             allowMultipleGaps: bool(d.RULE_RD_ALLOW_MULTIPLE_GAPS, def.rdSystem.allowMultipleGaps),
           },
         });
+        setLoaded(true);
+      } else {
+        setLoaded(false);
+        setLoadError(response.message || response.error || 'Could not load the business rules from the server.');
       }
     } catch (error) {
       console.error('Error fetching business rules:', error);
+      setLoaded(false);
+      setLoadError(error instanceof Error ? error.message : 'Could not load the business rules from the server.');
     } finally {
       setLoading(false);
     }
   };
 
   const saveBusinessRules = async (currentData: BusinessRulesData) => {
+    // Refuse to overwrite live rules with the hardcoded defaults after a failed load
+    if (!loaded) return false;
     try {
       const flatRules: Record<string, any> = {
         // Regular Loan eligibility (persisted to system_configs, where the
@@ -659,6 +672,8 @@ export const useBusinessRules = () => {
     businessRules,
     setBusinessRules,
     loading,
+    loaded,
+    loadError,
     saveBusinessRules,
     refresh: fetchBusinessRules
   };

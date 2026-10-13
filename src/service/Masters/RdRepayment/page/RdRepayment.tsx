@@ -16,7 +16,7 @@ const STATUS_STYLE: Record<RdPendingInstallmentRow['status'], { tone: string; ic
 
 const RdRepayment: React.FC = () => {
     const { user } = useAuth();
-    const recordedBy = user?.username || 'admin';
+    const recordedBy = user?.username || ''; // always the logged-in user; no hardcoded fallback
 
     const {
         mbno, memberName, yearLabel, months, loading, saving, message,
@@ -46,8 +46,9 @@ const RdRepayment: React.FC = () => {
 
     const submitPayment = async () => {
         if (!selected) return;
-        await recordPayment(selected.installmentMonth, selected.installmentYear, amount, recordedBy, narration);
-        setSelected(null);
+        const ok = await recordPayment(selected.installmentMonth, selected.installmentYear, amount, recordedBy, narration);
+        // Keep the dialog and the typed amount/narration open when recording failed so the operator can retry
+        if (ok) setSelected(null);
     };
 
     return (

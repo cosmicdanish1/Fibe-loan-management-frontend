@@ -236,17 +236,13 @@ class AnalyticsMonitoringService {
       const limitMB = memory.jsHeapSizeLimit / 1024 / 1024;
       this.systemHealth.metrics.memory = (usedMB / limitMB) * 100;
     } else {
-      this.systemHealth.metrics.memory = Math.random() * 60 + 20; // Mock data
+      // No heap API available: report 0 rather than inventing a number
+      this.systemHealth.metrics.memory = 0;
     }
 
-    // CPU usage (simulated)
-    this.systemHealth.metrics.cpu = Math.random() * 50 + 10;
-    
-    // Disk usage (simulated)
-    this.systemHealth.metrics.disk = Math.random() * 40 + 30;
-    
-    // Network usage (simulated)
-    this.systemHealth.metrics.network = Math.random() * 30 + 5;
+    // CPU / disk / network cannot be measured from the renderer. They stay at 0 and the
+    // dashboard shows "No data available" (they used to be random values that also raised
+    // fake "High disk usage" alerts).
   }
 
   // Evaluate overall system health
@@ -422,7 +418,7 @@ class AnalyticsMonitoringService {
         duration,
         memoryBefore,
         memoryAfter: this.getMemoryUsage(),
-        metadata: { error: error.message },
+        metadata: { error: error instanceof Error ? error.message : String(error) },
       });
       
       throw error;
@@ -501,10 +497,3 @@ class AnalyticsMonitoringService {
 
 // Export singleton instance
 export const analyticsMonitoring = new AnalyticsMonitoringService();
-
-// Export types
-export type {
-  MonitoringConfig,
-  SystemHealth,
-  PerformanceProfile,
-};

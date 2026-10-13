@@ -38,7 +38,7 @@ interface LedgerData {
   totalTransactions: number;
 }
 
-interface HeadOption { code: string; headName: string; transactionCount?: number; hasData?: boolean; }
+interface HeadOption { code: string; headName: string; transactionCount?: number | undefined; hasData?: boolean | undefined; }
 
 const fmt = (n: number) =>
   Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -275,8 +275,9 @@ const MemberLedgerReport: React.FC = () => {
         if (res.data.memberName) setMemberName(res.data.memberName);
       } else {
         setData(null);
+        if (!res.success) message.error(res.message || res.error || 'Failed to generate the ledger report.');
       }
-    } catch { setData(null); }
+    } catch { setData(null); message.error('Failed to generate the ledger report.'); }
     finally { setLoading(false); }
   };
 
@@ -480,7 +481,8 @@ const MemberLedgerReport: React.FC = () => {
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
                   options={[...headOptions]
-                    .sort((a, b) => Number(b.hasData === true) - Number(a.hasData === true) || a.code.localeCompare(b.code))
+                    // heads with data first; otherwise keep the server's Report Head Order (stable sort)
+                    .sort((a, b) => Number(b.hasData === true) - Number(a.hasData === true))
                     .map(h => ({ ...h, value: h.code, label: `${h.code} - ${h.headName}` }))}
                 />
               </div>

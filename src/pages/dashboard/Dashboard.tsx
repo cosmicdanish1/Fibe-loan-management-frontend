@@ -185,6 +185,8 @@ const Dashboard: React.FC = () => {
 
   // Notice board — shared across every PC via the backend, not localStorage.
   const [notices, setNotices] = useState<Notice[]>([]);
+  const noticesRef = useRef<Notice[]>([]);
+  noticesRef.current = notices;
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState({ title: '', message: '', type: 'info' as Notice['type'] });
   // Ids currently animating out before removal — lets the delete fade play.
@@ -207,7 +209,7 @@ const Dashboard: React.FC = () => {
   // Ctrl+N → New Member
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'n') { e.preventDefault(); openWindow('/masters/member'); }
+      if (e.ctrlKey && e.key.toLowerCase() === 'n') { e.preventDefault(); openWindow('/masters/member'); }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
@@ -253,16 +255,22 @@ const Dashboard: React.FC = () => {
     const draggedId = dragIdRef.current;
     dragIdRef.current = null;
     if (draggedId === null || draggedId === targetId) return;
-    setNotices(prev => {
-      const list = [...prev];
-      const fromIdx = list.findIndex(n => n.id === draggedId);
-      const toIdx = list.findIndex(n => n.id === targetId);
-      if (fromIdx === -1 || toIdx === -1) return prev;
-      const [moved] = list.splice(fromIdx, 1);
-      if (!moved) return prev;
-      list.splice(toIdx, 0, moved);
-      apiService.reorderDashboardNotices(list.map(n => n.id)).catch(() => {});
-      return list;
+    // Compute the new order outside the state updater (updaters must be pure; StrictMode runs
+    // them twice) and fire the API call exactly once.
+    const prev = noticesRef.current;
+    const list = [...prev];
+    const fromIdx = list.findIndex(n => n.id === draggedId);
+    const toIdx = list.findIndex(n => n.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = list.splice(fromIdx, 1);
+    if (!moved) return;
+    list.splice(toIdx, 0, moved);
+    setNotices(list);
+    apiService.reorderDashboardNotices(list.map(n => n.id)).then(res => {
+      if (res && res.success === false) throw new Error('reorder failed');
+    }).catch(() => {
+      setNotices(prev);
+      message.error('Could not save the new notice order — please try again.');
     });
   }, []);
 

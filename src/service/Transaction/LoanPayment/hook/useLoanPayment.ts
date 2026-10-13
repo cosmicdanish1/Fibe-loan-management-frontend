@@ -10,6 +10,7 @@ import {
     PaymentEntry
 } from '../interface/LoanPaymentInterfaces';
 import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { useAuth } from '../../../../auth/context/AuthContext';
 
 // BUG FIX: removed 'message' and 'Modal' from antd — both silently fail in Electron renderer windows.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).
@@ -47,6 +48,19 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
 };
 
 export const useLoanPayment = (): LoanPaymentHookReturn => {
+    // Logged-in user for the voucher's createdBy (hook must stay usable even if
+    // rendered outside an AuthProvider, so the throw is swallowed).
+    let authUsername = '';
+    try { authUsername = useAuth().user?.username || ''; } catch { /* no provider */ }
+
+    // Save in-flight flag. The ref is set synchronously so two fast clicks
+    // (button + toolbar) cannot both pass the guard; the state drives the UI.
+    const savingRef = useRef(false);
+    const [isSaving, setIsSaving] = useState(false);
+    // Sequence guard for loan-case loading, plus the case the form is
+    // currently fully loaded for (Save is blocked unless it matches).
+    const loanCaseSeq = useRef(0);
+    const loadedCaseRef = useRef('');
     const [formData, setFormData] = useState<LoanPaymentData>({
         loanCaseNo: '',
         memberNo: '',
@@ -214,7 +228,8 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                 const head = headList.find(h => h.code === value);
                 if (head) entry.name = head.name;
             } else if (field === 'amount') {
-                entry.amount = parseFloat(value) || 0;
+                const n = parseFloat(value);
+                entry.amount = Number.isFinite(n) && n > 0 ? n : 0;
             } else {
                 (entry as any)[field] = value;
             }
@@ -260,19 +275,26 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
     }, []);
 
     const handleLoanCaseChange = async (caseNo: string) => {
-        updateField('loanCaseNo', caseNo);
+        const seq = ++loanCaseSeq.current;
+        loadedCaseRef.current = '';
         if (!caseNo) {
             handleReset(true);
             return;
         }
+        // Drop the previous case's data right away so it can never mix with the new case.
+        setFormData(prev => ({ ...prev, loanCaseNo: caseNo, memberNo: '', memberName: '', sanctionLoanAmount: '' }));
+        setVoucherEntries([]);
+        setReagreement(null);
         try {
             const endpoint = API_ROUTES.loans.caseDetails(caseNo);
             const token = localStorage.getItem('accessToken');
             const response = await fetch(`${await getApiBaseUrl()}${endpoint}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
+            if (seq !== loanCaseSeq.current) return;
             if (response.ok) {
                 const result = await response.json();
+                if (seq !== loanCaseSeq.current) return;
                 const loanData = result.data;
                 if (!loanData) return;
                 const sancAmt = loanData.sanctionedAmount || loanData.appliedAmount || '0';
@@ -355,6 +377,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                     if (Number(ra.collect?.penalty) > 0) raEntries.push({ key: 'ra-pen', srNo: String(raEntries.length + 1), code: raInterestHead, name: 'Penalty recovered (re-agreement)', rp: 'Receipt', amount: Number(ra.collect.penalty) });
                     setVoucherEntries(raEntries);
                 }
+                loadedCaseRef.current = caseNo;
                 const memberNo = loanData.memberNo;
                 const loanAmount = parseFloat(sancAmt) || 0;
                 const loanType = loanData.loanType;
@@ -364,8 +387,10 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                             `${await getApiBaseUrl()}/loans/eligibility/${memberNo}?amount=${loanAmount}&loanType=${loanType}`,
                             { headers: token ? { Authorization: `Bearer ${token}` } : {} }
                         );
+                        if (seq !== loanCaseSeq.current) return;
                         if (eligResp.ok) {
                             const eligResult = await eligResp.json();
+                            if (seq !== loanCaseSeq.current) return;
                             const elig = eligResult.data || eligResult;
                             const autoEntries: PaymentEntry[] = [];
 
@@ -475,12 +500,41 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
     };
 
     const handleSave = async () => {
+        if (savingRef.current) return;
+        savingRef.current = true;
+        setIsSaving(true);
+        try {
+            await doSave();
+        } finally {
+            savingRef.current = false;
+            setIsSaving(false);
+        }
+    };
+
+    const doSave = async () => {
         if (!formData.loanCaseNo) {
             await showDialog('warning', 'electron-react-ts', 'Loan Case Required', 'Please select a loan case before generating the voucher.');
             return;
         }
         if (!formData.sanctionLoanAmount || parseFloat(formData.sanctionLoanAmount) <= 0) {
             await showDialog('warning', 'electron-react-ts', 'Loan Not Sanctioned', 'Please sanction the loan first before generating the payment voucher.');
+            return;
+        }
+        if (loadedCaseRef.current !== formData.loanCaseNo) {
+            await showDialog('warning', 'electron-react-ts', 'Loan Case Not Loaded', 'The selected loan case is still loading or failed to load. Please wait or re-select the case.');
+            return;
+        }
+        if (voucherEntries.some(e => !Number.isFinite(e.amount) || e.amount < 0)) {
+            await showDialog('warning', 'electron-react-ts', 'Invalid Amount', 'Deduction amounts must be zero or more.');
+            return;
+        }
+        if (!reagreement && actualAmount <= 0) {
+            await showDialog('warning', 'electron-react-ts', 'Invalid Payout', 'The deductions equal or exceed the sanctioned amount, so the payout would be zero or negative. Please correct the breakdown.');
+            return;
+        }
+        const actor = authUsername || (() => { try { return JSON.parse(localStorage.getItem('user') || '{}')?.username || ''; } catch { return ''; } })();
+        if (!actor) {
+            await showDialog('warning', 'electron-react-ts', 'Not Signed In', 'Could not determine the logged-in user. Please sign in again.');
             return;
         }
         // BUG FIX: validate cheque fields for bank mode
@@ -517,7 +571,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                 chequeDate: formData.chequeDate ? formData.chequeDate.format('YYYY-MM-DD') : null,
                 narration: formData.narration || (reagreement ? `Loan re-agreement for case ${formData.loanCaseNo}` : `Loan disbursement for case ${formData.loanCaseNo}`),
                 breakdown: fullBreakdown,
-                createdBy: (() => { try { return JSON.parse(localStorage.getItem('user') || '{}')?.username || 'admin'; } catch { return 'admin'; } })()
+                createdBy: actor
             };
 
             const endpoint = API_ROUTES.transactions.generateLoanVoucher();
@@ -567,6 +621,8 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
 
     const handleReset = useCallback((skipConfirm = false) => {
         const doReset = () => {
+            loanCaseSeq.current++;
+            loadedCaseRef.current = '';
             setFormData({
                 loanCaseNo: '',
                 memberNo: '',
@@ -609,6 +665,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
         modalData,
         loanCases,
         isLoadingCases,
+        isSaving,
         actualAmount,
         bankBalance,
         totalReceipt,

@@ -34,7 +34,7 @@ export const useGenerate = (): GenerateHookReturn => {
         from: '',
         to: ''
     });
-    const [isGenerating, setIsGenerating] = useState(false);
+    const [, setIsGenerating] = useState(false);
 
     const updateField = useCallback((field: keyof DemandGenerationData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -105,7 +105,6 @@ export const useGenerate = (): GenerateHookReturn => {
 
     return {
         formData,
-        isGenerating,
         updateField,
         resetForm,
         generateDemand,

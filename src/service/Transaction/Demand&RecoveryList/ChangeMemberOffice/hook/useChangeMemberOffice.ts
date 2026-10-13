@@ -1,6 +1,6 @@
 // hook/useChangeMemberOffice.ts
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { apiService } from '../../../../../services/api';
 import {
     ChangeMemberOfficeFormData,
@@ -53,6 +53,7 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
     });
 
     const [isProcessing, setIsProcessing] = useState(false);
+    const processingRef = useRef(false);
     // BUG FIX: "New Branch" was a hardcoded 5-item fake list (BR-001..BR-005)
     // that didn't match any real office_master code — confirmed the backend's
     // real offices use plain integer codes (e.g. 1, 2). Loaded from the same
@@ -63,10 +64,13 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
         apiService.getOffices()
             .then(response => {
                 const raw = Array.isArray(response.data) ? response.data : [];
-                setOffices(raw.map((o: any) => ({
+                const mapped = raw.map((o: any) => ({
                     officeId: String(o.officeId ?? o.officeno ?? ''),
                     officeName: o.officeName || o.office_name || `Office ${o.officeId}`,
-                })));
+                }));
+                // Office codes can repeat across wings; duplicate option values/keys trigger React key warnings.
+                const seen = new Set<string>();
+                setOffices(mapped.filter((o: OfficeOption) => !seen.has(o.officeId) && !!seen.add(o.officeId)));
             })
             .catch(err => console.error('[ChangeMemberOffice] Failed to load offices:', err));
     }, []);
@@ -88,24 +92,32 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
             return;
         }
 
+        // A previous member's office must never stay visible while a new lookup is pending
+        updateField('currentBranchNo', '');
+
+        // Stale-response guard: the cleanup flips this when memberNo changes or the window unmounts
+        let cancelled = false;
         const timer = setTimeout(async () => {
             try {
                 const response = await apiService.getMemberAdminDetails(mbNoInt);
+                if (cancelled) return;
                 if (response.success && response.data) {
                     updateField('currentBranchNo', response.data.officeId || 'Not Assigned');
                 } else {
                     updateField('currentBranchNo', 'Member not found');
                 }
             } catch (error) {
+                if (cancelled) return;
                 console.error('Error fetching member details:', error);
                 updateField('currentBranchNo', '');
             }
         }, 500);
 
-        return () => clearTimeout(timer);
+        return () => { cancelled = true; clearTimeout(timer); };
     }, [formData.memberNo, updateField]);
 
     const handleTransfer = useCallback(async () => {
+        if (processingRef.current) return;
         if (!formData.memberNo || !formData.newBranchNo) {
             await showDialog('warning', 'electron-react-ts', 'Required Fields Missing', 'Please enter both Member No and the New Branch/Office before transferring.');
             return;
@@ -114,6 +126,11 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
         const mbNoInt = parseInt(formData.memberNo);
         if (isNaN(mbNoInt) || mbNoInt <= 0) {
             await showDialog('warning', 'electron-react-ts', 'Invalid Member No', 'Please enter a valid numeric Member No.');
+            return;
+        }
+        // The current office must be a real, freshly looked-up office - not blank / a placeholder string
+        if (!formData.currentBranchNo || formData.currentBranchNo === 'Member not found' || formData.currentBranchNo === 'Not Assigned') {
+            await showDialog('warning', 'electron-react-ts', 'Member Not Verified', 'The current office of this member could not be loaded (still loading, member not found, or no office assigned).\nEnter a valid Member No and wait for the Current Office to appear before transferring.');
             return;
         }
         // BUG FIX: prevent same-office transfer — would silently succeed with no real change
@@ -132,6 +149,7 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
         );
         if (!confirmed) return;
 
+        processingRef.current = true;
         setIsProcessing(true);
         try {
             const response = await apiService.transferMemberAdmin({
@@ -159,6 +177,7 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
             console.error('Transfer error:', error);
             await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${error.message}`);
         } finally {
+            processingRef.current = false;
             setIsProcessing(false);
         }
     }, [formData]);

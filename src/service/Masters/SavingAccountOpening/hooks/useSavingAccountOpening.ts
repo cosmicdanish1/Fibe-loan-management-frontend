@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { SavingAccountData, SavingAccountHookReturn, SavingNominee } from '../interfaces/interface';
 import { apiService } from '../../../../services/api';
 
@@ -10,6 +10,12 @@ const notify = async (type: 'info' | 'warning' | 'error', title: string, message
     }
 };
 
+// Local (not UTC) calendar date as YYYY-MM-DD
+const localToday = (): string => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 export const useSavingAccountOpening = (): SavingAccountHookReturn => {
     const [data, setData] = useState<SavingAccountData>({
         memberNo: '',
@@ -18,12 +24,13 @@ export const useSavingAccountOpening = (): SavingAccountHookReturn => {
         firstName: '',
         middleName: '',
         lastName: '',
-        openingDate: new Date().toISOString().split('T')[0],
+        openingDate: localToday(),
         openingBalance: '0.00',
         ledgerGroup: 'General',
         specialInstructions: '',
         nominees: []
     });
+    const savingRef = useRef(false);
 
     const updateField = (field: keyof SavingAccountData, value: any) => {
         setData(prev => ({ ...prev, [field]: value }));
@@ -51,13 +58,12 @@ export const useSavingAccountOpening = (): SavingAccountHookReturn => {
             relation: ''
         };
         // FIX 2: sbmaster stores a single nominee — warn before adding extras (consistent with RD).
-        setData(prev => {
-            if (prev.nominees.length >= 1) {
-                notify('warning', 'Nominee Limit', 'Only the first nominee is saved',
-                    'The savings account record stores one nominee. Additional nominees are for reference only and will not be persisted.');
-            }
-            return { ...prev, nominees: [...prev.nominees, newNominee] };
-        });
+        // The dialog is raised here, not inside the state updater (updaters must be pure; StrictMode runs them twice).
+        if (data.nominees.length >= 1) {
+            notify('warning', 'Nominee Limit', 'Only the first nominee is saved',
+                'The savings account record stores one nominee. Additional nominees are for reference only and will not be persisted.');
+        }
+        setData(prev => ({ ...prev, nominees: [...prev.nominees, newNominee] }));
     };
 
     // BUG FIX: removeNominee was missing — users could add nominees but never delete them
@@ -73,12 +79,35 @@ export const useSavingAccountOpening = (): SavingAccountHookReturn => {
     };
 
     const save = async () => {
+        if (savingRef.current) return;
+        savingRef.current = true;
+        try {
+            await runSave();
+        } finally {
+            savingRef.current = false;
+        }
+    };
+
+    const runSave = async () => {
         if (!data.memberNo) {
             await notify('warning', 'Input Validation Error', 'Member No Required', 'Please enter or select a member number before saving.');
             return;
         }
         if (!data.accountNo) {
             await notify('warning', 'Input Validation Error', 'Account No Required', 'Please enter an account number before saving.');
+            return;
+        }
+        const balanceText = String(data.openingBalance ?? '').trim();
+        if (!/^\d+(\.\d{1,2})?$/.test(balanceText)) {
+            await notify('warning', 'Input Validation Error', 'Invalid Opening Balance', 'Opening balance must be a non-negative amount with at most 2 decimal places.');
+            return;
+        }
+        if (!data.openingDate) {
+            await notify('warning', 'Input Validation Error', 'Opening Date Required', 'Please enter the account opening date.');
+            return;
+        }
+        if (data.openingDate > localToday()) {
+            await notify('warning', 'Input Validation Error', 'Invalid Opening Date', 'Opening date cannot be in the future.');
             return;
         }
 
@@ -89,7 +118,7 @@ export const useSavingAccountOpening = (): SavingAccountHookReturn => {
                 memberNo: data.memberNo,
                 accountNo: data.accountNo,
                 openingDate: data.openingDate,
-                openingBalance: parseFloat(data.openingBalance) || 0,
+                openingBalance: parseFloat(balanceText),
                 ledgerGroup: data.ledgerGroup,
                 specialInstructions: data.specialInstructions,
                 nomineeName: primaryNominee ? primaryNominee.name : undefined,
@@ -136,7 +165,7 @@ export const useSavingAccountOpening = (): SavingAccountHookReturn => {
             firstName: '',
             middleName: '',
             lastName: '',
-            openingDate: new Date().toISOString().split('T')[0],
+            openingDate: localToday(),
             openingBalance: '0.00',
             ledgerGroup: 'General',
             specialInstructions: '',

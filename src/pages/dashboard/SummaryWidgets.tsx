@@ -124,6 +124,9 @@ export const CashPositionWidget: React.FC = () => {
 
   const today = days?.[days.length - 1];
   const first = days?.[0];
+  // `today` is just the latest day that loaded; only call it today when it really is (a failed fetch for today must not relabel an earlier day)
+  const isToday = !!today && today.date === dayjs().format('YYYY-MM-DD');
+  const dayLabel = isToday ? 'today' : today ? dayjs(today.date).format('D MMM') : '';
   const change = today && first ? today.closing - first.closing : 0;
   return (
     <WidgetCard title="Cash Position" tone={TONE_ACCENT}>
@@ -140,8 +143,8 @@ export const CashPositionWidget: React.FC = () => {
           </div>
           <Sparkline values={days.map(d => d.closing)} ariaLabel="Closing cash balance, last 7 days" />
           <div className="aw-inline" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <span className="aw-meta">Receipts today <strong style={{ color: 'var(--aw-success)' }}>{money(today.receipts)}</strong></span>
-            <span className="aw-meta">Payments today <strong style={{ color: 'var(--aw-danger)' }}>{money(today.payments)}</strong></span>
+            <span className="aw-meta">Receipts {dayLabel} <strong style={{ color: 'var(--aw-success)' }}>{money(today.receipts)}</strong></span>
+            <span className="aw-meta">Payments {dayLabel} <strong style={{ color: 'var(--aw-danger)' }}>{money(today.payments)}</strong></span>
           </div>
         </div>
       )}

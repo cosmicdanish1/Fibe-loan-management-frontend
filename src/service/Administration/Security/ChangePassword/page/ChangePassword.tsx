@@ -1,9 +1,7 @@
 // page/ChangePassword.tsx
 
-import React, { useState, useEffect } from 'react';
-import { Select } from 'antd';
+import React, { useState } from 'react';
 import { Eye, EyeOff, Lock, User, RotateCcw, Save, X, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
-import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 import { useChangePassword } from '../hook/useChangePassword';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
@@ -36,23 +34,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
   } = useChangePassword();
 
   const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false });
-  const [users, setUsers] = useState<{ userid: number; susername: string }[]>([]);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
-
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const base = await getApiBaseUrl();
-        const res = await fetch(`${base}/auth/usernames`);
-        if (res.ok) {
-          const data = await res.json();
-          const list = data.data || data || [];
-          setUsers(Array.isArray(list) ? list : []);
-        }
-      } catch { /* silent */ }
-    };
-    loadUsers();
-  }, []);
 
   const togglePw = (field: keyof typeof showPassword) =>
     setShowPassword(prev => ({ ...prev, [field]: !prev[field] }));
@@ -169,17 +151,13 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
             <div className="aw-stack">
               <div>
                 <label className="aw-label" htmlFor="cp-user">Username</label>
-                <Select
+                <input
                   id="cp-user"
-                  className={`aw-select ${errors.userName ? 'is-invalid' : ''}`}
-                  popupClassName="aw-select-popup"
-                  showSearch
-                  optionFilterProp="label"
-                  value={formData.userName || undefined}
-                  onChange={(v) => updateField('userName', v ?? '')}
-                  placeholder="Select user..."
-                  notFoundContent="No users found"
-                  options={users.map(u => ({ value: u.susername, label: u.susername }))}
+                  type="text"
+                  readOnly
+                  value={formData.userName}
+                  placeholder="Not signed in"
+                  className={`aw-input ${errors.userName ? 'is-invalid' : ''}`}
                 />
                 {errLine(errors.userName)}
               </div>

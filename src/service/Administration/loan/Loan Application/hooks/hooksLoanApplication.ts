@@ -4,15 +4,18 @@ import type { LoanApplicationState, LoanDetails } from '../types/loan';
 import type { NomineeDetail } from '../types/nominee';
 import type { EmployeeDetail } from '../types/employee';
 import type { FDRDetail } from '../types/fdr';
+import { localISODate } from '../../../../../utils/dates';
 
 const initialLoanDetails: LoanDetails = {
-  applDate: new Date().toISOString().split('T')[0] as string,
+  applDate: localISODate() as string,
   memberNo: '',
   loanType: '',
   loanCaseNo: '',
   loanAmount: '',
   formNumber: '',
-  reason: ''
+  reason: '',
+  surety1: '',
+  surety2: ''
 };
 
 const initialNomineeDetail: NomineeDetail = {
@@ -30,6 +33,7 @@ const initialEmployeeDetails: EmployeeDetail[] = [
 
 const initialFDRDetail: FDRDetail = {
   id: 1,
+  srno: '1',
   lien: false,
   fdrNo: '',
   accountNo: '',
@@ -38,7 +42,10 @@ const initialFDRDetail: FDRDetail = {
   unit: '',
   rate: '',
   amount: '',
-  matAmount: ''
+  matAmount: '',
+  matDate: '',
+  lastIntt: '',
+  inttPaid: ''
 } as const;
 
 export const useLoanApplication = () => {

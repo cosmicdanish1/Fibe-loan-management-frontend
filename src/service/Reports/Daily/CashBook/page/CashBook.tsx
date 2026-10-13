@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileText,
-  IndianRupee,
   Calculator,
   ShieldCheck,
   Settings,
@@ -11,19 +10,16 @@ import {
   RefreshCw,
   Printer,
   FileDown,
-  Calendar,
   Search,
-  Eye,
-  Info,
-  BookOpen,
-  Monitor
+  BookOpen
 } from 'lucide-react';
-import { ConfigProvider, Table, Button, DatePicker, Spin, Tag, Tooltip, Radio } from 'antd';
+import { ConfigProvider, Button, DatePicker, Spin, Tooltip, Radio } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '../../../../../services/api';
 import { usePrintDialog } from '../../../../../components/shared/PrintDialog/usePrintDialog';
 import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import dayjs from 'dayjs';
+import { csvCell } from '@/utils/csv';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -70,21 +66,28 @@ const CashBook: React.FC = () => {
     loadData();
   }, [selectedDate]);
 
+  const loadRequestId = useRef(0);
+
   const loadData = async () => {
+    const requestId = ++loadRequestId.current;
     setLoading(true);
     try {
       const formattedDate = selectedDate.format('YYYY-MM-DD');
       const response = await apiService.getCashBookReport(formattedDate, outputType);
+      if (requestId !== loadRequestId.current) return; // a newer date was requested meanwhile
 
       if (response.success && response.data) {
         setData(response.data);
       } else {
+        setData(null);
         await showDialog('error', 'Load Failed', response.message || 'Failed to load cash book data');
       }
     } catch (err) {
+      if (requestId !== loadRequestId.current) return;
+      setData(null);
       await showDialog('error', 'Error', 'An error occurred while fetching report');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestId.current) setLoading(false);
     }
   };
 
@@ -125,23 +128,23 @@ const CashBook: React.FC = () => {
       // Vouchers
       csvContent += 'VOUCHER DETAILS\n\n';
       
-      data.vouchers.forEach((voucher, vIdx) => {
+      data.vouchers.forEach((voucher) => {
         csvContent += `Voucher No,${voucher.voucherNo}\n`;
         csvContent += `Member No,${voucher.memberNo}\n`;
-        csvContent += `Member Name,"${voucher.memberName}"\n`;
+        csvContent += `Member Name,${csvCell(voucher.memberName)}\n`;
         csvContent += `Mode of Payment,${voucher.modeOfPayment}\n`;
-        csvContent += `Narration,"${voucher.narration}"\n\n`;
+        csvContent += `Narration,${csvCell(voucher.narration)}\n\n`;
         
         // Entries header
         csvContent += 'S.No,Head Code,Head Name,Description,Payment,Receipt\n';
         
         // Entries
         voucher.entries.forEach(entry => {
-          csvContent += `${entry.sno},${entry.headCode},"${entry.headName}","${entry.description}",${entry.payment},${entry.receipt}\n`;
+          csvContent += `${entry.sno},${entry.headCode},${csvCell(entry.headName)},${csvCell(entry.description)},${entry.payment},${entry.receipt}\n`;
         });
         
         // Voucher totals
-        csvContent += `Total,,,,,${voucher.totalPayment},${voucher.totalReceipt}\n\n`;
+        csvContent += `Total,,,,${voucher.totalPayment},${voucher.totalReceipt}\n\n`;
       });
       
       // Create blob and download

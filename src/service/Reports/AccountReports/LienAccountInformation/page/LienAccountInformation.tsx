@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { ConfigProvider, Button, Spin, Radio, message, theme } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
-import { FileText, Printer, Search, RotateCcw, Lock, Monitor } from 'lucide-react';
+import { Printer, Search, RotateCcw, Lock, Monitor } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
 
@@ -105,6 +105,12 @@ const LienAccountInformation: React.FC = () => {
     setLoading(true);
     try {
       const response = await apiService.get('/reports/lien-account-information');
+      if (!response.success) {
+        setReportText('');
+        setRecordCount(0);
+        message.error(response.message || response.error || 'Failed to load lien account information');
+        return;
+      }
       const items: LienItem[] = Array.isArray((response as any)?.data)
         ? (response as any).data
         : Array.isArray(response) ? (response as any) : [];

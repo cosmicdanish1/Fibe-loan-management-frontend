@@ -16,6 +16,9 @@ import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { MemberLookupInput, MemberLookupData } from '../../../../../components/shared/MemberLookup';
+import { csvCell } from '@/utils/csv';
+import { indianFinancialYearStart } from '@/utils/dates';
+import { isFromAfterTo } from '@/utils/dates';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -146,7 +149,7 @@ function buildNewLoanDisbursedLines(
 const NewLoanDisbursed: React.FC = () => {
   const [data, setData] = useState<LoanRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [fromDate, setFromDate] = useState<Dayjs | null>(dayjs('2026-01-01'));
+  const [fromDate, setFromDate] = useState<Dayjs | null>(dayjs(indianFinancialYearStart()));
   const [toDate, setToDate] = useState<Dayjs | null>(dayjs());
   const [loanTypes, setLoanTypes] = useState<LoanType[]>([]);
   const [selectedLoanType, setSelectedLoanType] = useState<string>('');
@@ -181,6 +184,10 @@ const NewLoanDisbursed: React.FC = () => {
       return;
     }
 
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      await showDialog('warning', 'Validation', 'From date cannot be after To date');
+      return;
+    }
     setLoading(true);
     try {
       const response = await apiService.getNewLoanDisbursed(
@@ -294,7 +301,7 @@ const NewLoanDisbursed: React.FC = () => {
     ]);
 
     const csvContent = [headers, ...csvData]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .map(row => row.map(cell => csvCell(cell)).join(','))
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

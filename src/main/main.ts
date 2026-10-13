@@ -4,8 +4,9 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as https from 'https';
 import * as http from 'http';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import { initMainLogger, resolveLogDir } from './logger';
+import { initUpdater } from './updater';
 
 // Dev vs packaged — use Electron's built-in flag instead of the external
 // `electron-is-dev` module (which isn't a production dep, so it's absent from
@@ -211,6 +212,33 @@ async function getBackendOrigin(): Promise<string> {
   return 'http://localhost:3001';
 }
 
+// ===== URL SAFETY HELPERS =====
+// Only plain http(s) links may be handed to the OS shell.
+function openExternalSafe(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    Promise.resolve(shell.openExternal(parsed.toString())).catch(() => { /* ignore */ });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// True only for the app's own origins (parsed hostname/protocol, not a string prefix).
+function isInAppUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'app:') return true;
+    return (
+      (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+      (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
+    );
+  } catch {
+    return false;
+  }
+}
+
 // ===== LICENSE CHECK (once per app launch) =====
 // Stored here in the main process so every renderer window shares the same result
 let licenseResult: any = null;
@@ -380,13 +408,13 @@ function applySecurityHeaders(win: BrowserWindow): void {
   const csp = [
     "default-src 'self'",
     // Script sources - allow unsafe-eval in dev for HMR
-    "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : "") + " https://unpkg.com",
+    "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : ""),
     // Style sources
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // Font sources
     "font-src 'self' https://fonts.gstatic.com data:",
     // Image sources
-    "img-src 'self' data: blob: https:",
+    "img-src 'self' data: blob:",
     // Connect sources
     // BUG FIX: dev mode must also allow http://*:3001 so LAN IPs work when
     // a developer or client PC is connecting to a remote server in dev mode.
@@ -420,6 +448,17 @@ function applySecurityHeaders(win: BrowserWindow): void {
     }
   );
 }
+
+// Settings update handler — registered ONCE at module level (it used to be inside
+// createWindow(), so it multiplied on every login/logout).
+ipcMain.on('update-settings', (_event, settings) => {
+  // Broadcast to all windows (includes the main window)
+  BrowserWindow.getAllWindows().forEach(win => {
+    if (!win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+      win.webContents.send('settings-updated', settings);
+    }
+  });
+});
 
 function createWindow(): void {
   // Create the browser window with security-focused settings
@@ -549,25 +588,9 @@ function createWindow(): void {
     }
   })
 
-  // Settings update handler (moved here to avoid duplication)
-  ipcMain.on('update-settings', (_event, settings) => {
-    // Broadcast to all windows
-    const windows = BrowserWindow.getAllWindows();
-    windows.forEach(win => {
-      if (win.webContents && !win.isDestroyed()) {
-        win.webContents.send('settings-updated', settings);
-      }
-    });
-
-    // Also update the main window directly
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('settings-updated', settings);
-    }
-  });
-
   // Handle external links
   mainWindow.webContents.setWindowOpenHandler(({ url }: { url: string }) => {
-    shell.openExternal(url)
+    openExternalSafe(url)
     return { action: 'deny' }
   })
 }
@@ -584,18 +607,7 @@ try {
   /* electron-squirrel-startup not installed (NSIS build) — nothing to handle */
 }
 
-// IPC Handlers for application control
-ipcMain.on('app-quit', (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (win) {
-    win.close();
-  }
-  app.quit();
-});
-
-ipcMain.on('app-quit-force', () => {
-  app.exit(0);
-});
+// 'app-quit' / 'app-quit-force' handlers live further down (single registration).
 
 // ===== SERVER CONFIG IPC =====
 
@@ -628,7 +640,7 @@ ipcMain.handle('get-client-info', () => {
   return { hostname: os.hostname(), mac, version: app.getVersion() };
 });
 
-ipcMain.handle('get-server-url', async () => {
+async function resolveServerUrl(): Promise<{ url: string | null; configured: boolean }> {
   const cfg = readServerConfig();
   if (cfg) {
     const origin = await resolveConfiguredOrigin(cfg);
@@ -643,13 +655,28 @@ ipcMain.handle('get-server-url', async () => {
     return { url: 'http://localhost:3001/api/v1', configured: true };
   }
   return { url: null, configured: false };
-});
+}
+
+ipcMain.handle('get-server-url', () => resolveServerUrl());
 
 // Saves the server IP entered by the user on the setup screen
 ipcMain.handle('save-server-config', (_event, serverIP: string) => {
   try {
-    const trimmed = (serverIP || '').trim();
+    const trimmed = (typeof serverIP === 'string' ? serverIP : '').trim();
     if (!trimmed) return { success: false, error: 'IP address is required' };
+    // Plain IPv4 / hostname, optional :port. No protocol, path, spaces or control chars.
+    const hostPort = /^(?:(?:\d{1,3}\.){3}\d{1,3}|[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)(?::\d{1,5})?$/;
+    const portOk = (() => {
+      const m = trimmed.match(/:(\d{1,5})$/);
+      return !m || (Number(m[1]) >= 1 && Number(m[1]) <= 65535);
+    })();
+    const ipOk = (() => {
+      const m = trimmed.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?::\d+)?$/);
+      return !m || m.slice(1, 5).every(o => Number(o) <= 255);
+    })();
+    if (trimmed.length > 253 || !hostPort.test(trimmed) || !portOk || !ipOk) {
+      return { success: false, error: 'Enter a valid IPv4 address or hostname (optionally :port), without http:// or any path' };
+    }
     const payload = JSON.stringify({ serverIP: trimmed });
     // Primary: the visible install-folder file (installer grants Users write
     // access to it). Fall back to per-user data if that write fails.
@@ -710,6 +737,8 @@ const WINDOW_CONFIGS: Record<string, {
   '/loan-application': { title: 'Loan Application', frameless: false, width: 1100, height: 800 },
   '/change-loan-surety': { title: 'Change Loan Surety', frameless: false, width: 900, height: 700 },
   '/interest-calculation-posting': { title: 'Interest Calculation / Posting', frameless: false, width: 1000, height: 750 },
+  '/utility/notification-centre': { title: 'Notification Centre', frameless: false, width: 1100, height: 780, resizable: true, singleton: true },
+  '/administration/group-insurance': { title: 'Group Insurance', frameless: false, width: 1180, height: 800, resizable: true, singleton: true },
 
   // Daily Operations
   '/day-end': { title: 'Day End', frameless: false, width: 800, height: 600 },
@@ -723,6 +752,7 @@ const WINDOW_CONFIGS: Record<string, {
   '/role-management': { title: 'Configure UserLevel Default Rights', frameless: false, width: 900, height: 650, modal: true },
   '/change-password': { title: 'Change Password', frameless: false, width: 500, height: 400, modal: true, singleton: true },
   '/logout-user': { title: 'LogOut User', frameless: false, width: 600, height: 450, modal: true },
+  '/two-factor-settings': { title: 'Two-Factor Authentication', frameless: false, width: 1000, height: 760, modal: true, singleton: true },
 
   // Financial Year Management
   '/financial-year/transfer-entries': { title: 'Transfer Entries For Closing', frameless: false, width: 1100, height: 800 },
@@ -732,6 +762,7 @@ const WINDOW_CONFIGS: Record<string, {
 
   // Business Rules & Printing
   '/modify-business-rules': { title: 'Modify Business Rules', frameless: false, width: 1000, height: 700 },
+  '/reports/head-order': { title: 'Report Head Order', frameless: false, width: 820, height: 720 },
   '/demand-print-order': { title: 'Demand Print Order', frameless: false, width: 800, height: 600 },
 
   // Certificate Setting and Printing
@@ -751,6 +782,7 @@ const WINDOW_CONFIGS: Record<string, {
   // ===== MASTERS SECTION =====
 
   '/masters/member': { title: 'Member Master', frameless: false, width: 1200, height: 850 },
+  '/masters/member-status': { title: 'Member Status (Retired / Inactive)', frameless: false, width: 1180, height: 780, resizable: true, singleton: true },
   '/masters/signature-scanning': { title: 'Signature Scanning', frameless: false, width: 1000, height: 700 },
   '/masters/rd-account/opening': { title: 'RD A/c Opening', frameless: false, width: 1000, height: 750 },
   '/masters/rd-account/pass': { title: 'Pass RD A/C', frameless: false, width: 900, height: 650 },
@@ -821,6 +853,7 @@ const WINDOW_CONFIGS: Record<string, {
   // Yearly Reports
   '/reports/yearly/pl-balance-sheet': { title: 'P & L/ Balance Sheet', frameless: false, width: 1400, height: 950 },
   '/reports/yearly/voters-withdrawal-list': { title: 'Voters/Withdrawal List', frameless: false, width: 1300, height: 900 },
+  '/reports/yearly/members/voters-withdrawal-list': { title: 'Voters/Withdrawal List', frameless: false, width: 1300, height: 900 },
 
   // Interest List Reports
   '/reports/yearly/interest-list/dividend-report': { title: 'Dividend Report', frameless: false, width: 1300, height: 900 },
@@ -1102,7 +1135,12 @@ const resetWindowStates = (): void => {
 
 // Utility functions
 const isValidRoute = (route: string): boolean => {
-  return typeof route === 'string' && route.length > 0;
+  // In-app paths only: leading '/', safe path characters, no '..' traversal, no protocol / '//' host.
+  return typeof route === 'string'
+    && route.startsWith('/')
+    && !route.startsWith('//')
+    && !route.includes('..')
+    && /^\/[A-Za-z0-9_\-\/.?=&%]*$/.test(route);
 };
 
 const normalizeRoute = (route: string): string => {
@@ -1144,8 +1182,8 @@ const getWindowConfig = (route: string) => {
 const setupWindowEventHandlers = (window: BrowserWindow, route: string) => {
   // Handle external links
   window.webContents.setWindowOpenHandler(({ url }) => {
-    if (!url.startsWith('http://localhost') && !url.startsWith('app://')) {
-      shell.openExternal(url);
+    if (!isInAppUrl(url)) {
+      openExternalSafe(url);
       return { action: 'deny' };
     }
     return { action: 'allow' };
@@ -1721,34 +1759,39 @@ ipcMain.handle('get-window-states', () => {
 
 // Print content handler
 ipcMain.handle('print-content', async (_event, htmlContent: string) => {
+  // Create a new hidden window for printing
+  const printWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false, // Need to disable sandbox for printing
+    },
+  });
   try {
-    // Create a new hidden window for printing
-    const printWindow = new BrowserWindow({
-      width: 800,
-      height: 600,
-      show: false,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-        sandbox: false, // Need to disable sandbox for printing
-      },
+    // loadURL resolves once the page has finished loading (did-finish-load),
+    // so no extra 'dom-ready' wait is needed (it had already fired -> hang).
+    let timer: NodeJS.Timeout | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('Print content load timed out')), 30000);
     });
-
-    // Load the HTML content
-    await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
-
-    // Wait for content to load
-    await new Promise<void>(resolve => {
-      printWindow.webContents.once('dom-ready', () => resolve());
-    });
+    try {
+      await Promise.race([
+        printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`),
+        timeout,
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
 
     // Print the content with correct options
-    return new Promise<{ success: boolean }>((resolve, reject) => {
+    return await new Promise<{ success: boolean }>((resolve, reject) => {
       printWindow.webContents.print({
         silent: false,
         printBackground: true
       }, (success, failureReason) => {
-        printWindow.close();
         if (success) {
           resolve({ success: true });
         } else {
@@ -1759,6 +1802,8 @@ ipcMain.handle('print-content', async (_event, htmlContent: string) => {
   } catch (error) {
     console.error('Print error:', error);
     throw error;
+  } finally {
+    if (!printWindow.isDestroyed()) printWindow.destroy();
   }
 });
 
@@ -1963,9 +2008,51 @@ ipcMain.handle('get-license-status', () => {
 });
 
 // IPC handler: renderer updates the cache after activation
-ipcMain.on('update-license-cache', (_event, data) => {
+const KNOWN_LICENSE_STATUSES = ['checking', 'not_activated', 'active', 'grace', 'expired'];
+const isNumOrNullish = (v: unknown) => v === undefined || v === null || (typeof v === 'number' && Number.isFinite(v));
+const isStrOrNullish = (v: unknown) => v === undefined || v === null || (typeof v === 'string' && v.length <= 500);
+function isValidLicensePayload(data: any): boolean {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+  if (typeof data.status !== 'string' || !KNOWN_LICENSE_STATUSES.includes(data.status)) return false;
+  return (
+    isNumOrNullish(data.daysRemaining) && isNumOrNullish(data.days_remaining) &&
+    isNumOrNullish(data.graceDaysRemaining) && isNumOrNullish(data.grace_days_remaining) &&
+    isStrOrNullish(data.message) &&
+    isStrOrNullish(data.customerName) && isStrOrNullish(data.customer_name) &&
+    isStrOrNullish(data.expiresAt) && isStrOrNullish(data.expires_at)
+  );
+}
+
+ipcMain.on('update-license-cache', (event, data) => {
+  const senderWin = BrowserWindow.fromWebContents(event.sender);
+  if (!senderWin || senderWin.isDestroyed()) return;
+  if (!isValidLicensePayload(data)) return;
+  // 'checking' is a transient UI state, never worth persisting
+  if (data.status === 'checking') return;
   licenseResult = data;
-  if (data) saveLicenseDailyCache(data);
+  saveLicenseDailyCache(data);
+});
+
+// IPC handler: stable, non-reversible machine identifier (hash only, never raw)
+ipcMain.handle('get-machine-id', () => {
+  try {
+    const nets = os.networkInterfaces();
+    let mac = '';
+    for (const name of Object.keys(nets).sort()) {
+      const found = (nets[name] || []).find(n => !n.internal && n.mac && n.mac !== '00:00:00:00:00:00');
+      if (found) { mac = found.mac; break; }
+    }
+    return createHash('sha256')
+      .update(`${os.hostname()}|${mac}|${process.platform}`)
+      .digest('hex');
+  } catch {
+    return null;
+  }
+});
+
+// IPC handler: open an http(s) link in the default browser
+ipcMain.handle('open-external', (_event, url: unknown) => {
+  return typeof url === 'string' ? openExternalSafe(url) : false;
 });
 
 // Receive renderer logs via IPC and write to renderer.log file
@@ -2007,6 +2094,8 @@ app.whenReady().then(async () => {
     }
   }
 
+  initUpdater({ resolveServerUrl })
+
   // Start at the logon dialog — the dashboard is only built once credentials
   // check out (see the 'login-success' handler).
   createLoginWindow()
@@ -2031,6 +2120,6 @@ app.on('window-all-closed', () => {
 app.on('web-contents-created', (_event, contents) => {
   contents.on('new-window', (event: any, navigationUrl: string) => {
     event.preventDefault()
-    shell.openExternal(navigationUrl)
+    openExternalSafe(navigationUrl)
   })
 })

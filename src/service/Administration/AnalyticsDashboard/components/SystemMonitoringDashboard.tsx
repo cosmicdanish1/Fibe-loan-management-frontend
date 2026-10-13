@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, Row, Col, Statistic, Progress, Alert, Button, Tabs, Tag, Badge, Timeline, Switch, InputNumber, Form } from 'antd';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { 
@@ -24,10 +24,17 @@ const SystemMonitoringDashboard: React.FC = () => {
   const [config, setConfig] = useState<MonitoringConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  // Real samples collected on each refresh (no synthetic jitter); capped to the last 30 points
+  const metricsHistoryRef = useRef<Array<{ time: string; memory: number }>>([]);
 
   // Load monitoring data
   const loadMonitoringData = () => {
-    setSystemHealth(analyticsMonitoring.getSystemHealth());
+    const health = analyticsMonitoring.getSystemHealth();
+    metricsHistoryRef.current = [
+      ...metricsHistoryRef.current,
+      { time: new Date().toLocaleTimeString(), memory: health.metrics.memory },
+    ].slice(-30);
+    setSystemHealth(health);
     setPerformanceProfiles(analyticsMonitoring.getPerformanceProfiles());
     setAlertHistory(analyticsMonitoring.getAlertHistory());
     setConfig(analyticsMonitoring.getConfiguration());
@@ -111,13 +118,8 @@ const SystemMonitoringDashboard: React.FC = () => {
   }));
 
   // Prepare system metrics chart data
-  const metricsHistory = Array.from({ length: 10 }, (_, i) => ({
-    time: new Date(Date.now() - (9 - i) * 60000).toLocaleTimeString(),
-    cpu: Math.max(0, systemHealth.metrics.cpu + (Math.random() - 0.5) * 20),
-    memory: Math.max(0, systemHealth.metrics.memory + (Math.random() - 0.5) * 10),
-    disk: Math.max(0, systemHealth.metrics.disk + (Math.random() - 0.5) * 5),
-    network: Math.max(0, systemHealth.metrics.network + (Math.random() - 0.5) * 15),
-  }));
+  // Only the JS heap is measurable in the renderer; CPU / disk / network have no real source.
+  const metricsHistory = metricsHistoryRef.current;
 
   const activeAlerts = systemHealth.alerts.filter(alert => !alert.resolved);
   const criticalAlerts = activeAlerts.filter(alert => alert.severity === 'critical');
@@ -296,9 +298,7 @@ const SystemMonitoringDashboard: React.FC = () => {
                         <YAxis />
                         <RechartsTooltip />
                         <Legend />
-                        <Area type="monotone" dataKey="cpu" stackId="1" stroke="#8884d8" fill="#8884d8" name="CPU %" />
-                        <Area type="monotone" dataKey="memory" stackId="1" stroke="#82ca9d" fill="#82ca9d" name="Memory %" />
-                        <Area type="monotone" dataKey="network" stackId="1" stroke="#ffc658" fill="#ffc658" name="Network %" />
+                        <Area type="monotone" dataKey="memory" stroke="#82ca9d" fill="#82ca9d" name="Memory %" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </Card>
@@ -311,13 +311,9 @@ const SystemMonitoringDashboard: React.FC = () => {
                         <div>
                           <div className="flex justify-between mb-1">
                             <span>CPU</span>
-                            <span>{Math.round(systemHealth.metrics.cpu)}%</span>
+                            <span>No data available</span>
                           </div>
-                          <Progress 
-                            percent={systemHealth.metrics.cpu} 
-                            status={systemHealth.metrics.cpu > 80 ? "exception" : "success"}
-                            size="small"
-                          />
+                          <Progress percent={0} showInfo={false} size="small" />
                         </div>
                         
                         <div>
@@ -335,24 +331,17 @@ const SystemMonitoringDashboard: React.FC = () => {
                         <div>
                           <div className="flex justify-between mb-1">
                             <span>Disk</span>
-                            <span>{Math.round(systemHealth.metrics.disk)}%</span>
+                            <span>No data available</span>
                           </div>
-                          <Progress 
-                            percent={systemHealth.metrics.disk} 
-                            status={systemHealth.metrics.disk > 85 ? "exception" : "success"}
-                            size="small"
-                          />
+                          <Progress percent={0} showInfo={false} size="small" />
                         </div>
                         
                         <div>
                           <div className="flex justify-between mb-1">
                             <span>Network</span>
-                            <span>{Math.round(systemHealth.metrics.network)}%</span>
+                            <span>No data available</span>
                           </div>
-                          <Progress 
-                            percent={systemHealth.metrics.network} 
-                            size="small"
-                          />
+                          <Progress percent={0} showInfo={false} size="small" />
                         </div>
                       </div>
                     </Card>

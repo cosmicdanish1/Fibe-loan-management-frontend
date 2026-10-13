@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useRef } from 'react';
-import { AuthContextType, AuthState, User, LoginCredentials } from '../types/auth.types';
+import { AuthContextType, AuthState, User, LoginCredentials, TwoFaChallenge } from '../types/auth.types';
 import { apiService } from '../../services/api';
 import { IS_MAIN_WINDOW } from '../../utils/windowIdentity';
 
@@ -97,7 +97,7 @@ const initialState: AuthState = getInitialState();
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
-  console.log('[AuthReducer] Processing action:', action.type, { payload: action.type === 'LOGIN_SUCCESS' ? { ...action.payload, password: '***' } : action });
+  console.log('[AuthReducer] Processing action:', action.type);
 
   switch (action.type) {
     case 'LOGIN_REQUEST':
@@ -252,22 +252,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Session timeout checker removed as per user request
 
 
-  // Login function
-  const login = async (credentials: LoginCredentials): Promise<boolean> => {
-    console.log('[Auth] Login attempt with credentials:', { username: credentials.username });
-    dispatch({ type: 'LOGIN_REQUEST' });
-
-    try {
-      // Login with the backend API
-      console.log('[Auth] Attempting backend API login...');
-      const apiResponse = await apiService.login(credentials);
-
-      if (apiResponse.success && apiResponse.data) {
+  // Stores the session for a fully authenticated response (password-only login,
+  // or a login completed by the second step).
+  const finishLogin = (authData: any): boolean => {
         // The response.data contains the auth response with user, accessToken, etc.
-        const userData = apiResponse.data.user;
+        const userData = authData.user;
 
         if (!userData) {
-          console.error('[Auth] No user data in response:', apiResponse.data);
+          console.error('[Auth] No user data in response:', authData);
           throw new Error('Invalid response structure: missing user data');
         }
 
@@ -296,7 +288,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // No-op outside the logon dialog (e.g. in a plain browser).
         (window as any).electronAPI?.loginSuccess?.();
 
-        return true;
+    return true;
+  };
+
+  // Login function
+  const login = async (credentials: LoginCredentials): Promise<boolean | TwoFaChallenge> => {
+    console.log('[Auth] Login attempt with credentials:', { username: credentials.username });
+    dispatch({ type: 'LOGIN_REQUEST' });
+
+    try {
+      // Login with the backend API
+      console.log('[Auth] Attempting backend API login...');
+      const apiResponse = await apiService.login(credentials);
+
+      if (apiResponse.success && apiResponse.data) {
+        // Password accepted but a second step is pending: hand the challenge to
+        // the login form. No session exists yet (the backend sent no tokens).
+        if (apiResponse.data.requires2fa || apiResponse.data.requires2faEnrol) {
+          dispatch({ type: 'LOGIN_FAILURE', payload: '' }); // just ends the loading state
+          return {
+            mode: apiResponse.data.requires2faEnrol ? 'enrol' : 'verify',
+            challengeToken: apiResponse.data.challengeToken,
+            username: apiResponse.data.username || credentials.username,
+            rememberDays: Number(apiResponse.data.rememberDays) || 0,
+          } as TwoFaChallenge;
+        }
+        return finishLogin(apiResponse.data);
       } else {
         throw new Error(apiResponse.error || 'Backend login failed');
       }
@@ -346,6 +363,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       value={{
         ...state,
         login,
+        finishLogin,
         logout,
         clearError,
       }}

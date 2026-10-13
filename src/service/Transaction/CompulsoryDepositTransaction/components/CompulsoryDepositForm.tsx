@@ -110,8 +110,8 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                                         <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-spin" /></div></td></tr>
                                     ) : members.length === 0 ? (
                                         <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">No active members found</span></div></td></tr>
-                                    ) : members.map(m => (
-                                        <tr key={m.memberNo}>
+                                    ) : members.map((m, idx) => (
+                                        <tr key={`${m.memberNo}-${idx}`}>
                                             <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{m.memberNo}</td>
                                             <td title={m.memberName}>{m.memberName}</td>
                                             <td className="is-right is-success">₹{Number(m.currentBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>

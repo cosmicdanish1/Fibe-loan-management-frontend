@@ -60,6 +60,11 @@ const STATUS_ICONS = {
   error:   <AlertCircle   size={12} className="shrink-0" />,
 };
 // ── Animated Permission List ──────────────────────────────────────────────────
+// Friendly names for rights whose raw key is not self-explanatory.
+const PERM_LABELS: Record<string, { label: string; hint: string }> = {
+  approve_actions: { label: 'Approver (OTP)', hint: 'May give the authenticator code that authorises sensitive actions (loan closure, pass, reverse). They must also set up their authenticator in My Profile.' },
+};
+
 interface PermListProps {
   items: string[];
   selected: string[];
@@ -69,12 +74,21 @@ interface PermListProps {
   label: string;
   count: string;
   side: 'left' | 'right';
+  /** Drag and drop: called when a drag of these items starts / ends / is dropped on this list. */
+  onDragStartItems: (items: string[], side: 'left' | 'right') => void;
+  onDragEndItems: () => void;
+  onDropHere: (side: 'left' | 'right') => void;
+  /** True while some drag from the OTHER list is in flight (highlights this list as a target). */
+  dropReady: boolean;
 }
 
 const PermList: React.FC<PermListProps> = ({
   items, selected, flyingOut, justArrived, onToggle, label, count, side,
+  onDragStartItems, onDragEndItems, onDropHere, dropReady,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isOver, setIsOver] = useState(false);
+  const [draggingItems, setDraggingItems] = useState<string[]>([]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0 }}>
@@ -82,7 +96,14 @@ const PermList: React.FC<PermListProps> = ({
         <span className="aw-label" style={{ marginBottom: 0 }}>{label}</span>
         <span className={`aw-pill ${side === 'right' ? '' : 'tone-muted'}`}>{count}</span>
       </div>
-      <div ref={scrollRef} className={`aw-perm-list ${side === 'right' ? 'is-accent' : ''}`}>
+      <div
+        ref={scrollRef}
+        className={`aw-perm-list ${side === 'right' ? 'is-accent' : ''} ${dropReady ? 'is-drop-ready' : ''} ${isOver && dropReady ? 'is-drop-target' : ''}`}
+        onDragOver={(e) => { if (dropReady) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } }}
+        onDragEnter={(e) => { if (dropReady) { e.preventDefault(); setIsOver(true); } }}
+        onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setIsOver(false); }}
+        onDrop={(e) => { e.preventDefault(); setIsOver(false); if (dropReady) onDropHere(side); }}
+      >
         {items.length === 0 && (
           <div className="aw-empty" style={{ height: '100%', justifyContent: 'center' }}>
             <ShieldCheck size={26} />
@@ -97,15 +118,27 @@ const PermList: React.FC<PermListProps> = ({
           return (
             <div
               key={item}
-              onMouseDown={(e) => { e.preventDefault(); onToggle(item, e.ctrlKey || e.metaKey); }}
+              draggable
+              title={PERM_LABELS[item]?.hint}
+              onClick={(e) => onToggle(item, e.ctrlKey || e.metaKey)}
+              onDragStart={(e) => {
+                // Dragging a selected right takes the whole selection with it; otherwise just this one.
+                const carried = selected.includes(item) ? selected : [item];
+                setDraggingItems(carried);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', carried.join(', '));
+                onDragStartItems(carried, side);
+              }}
+              onDragEnd={() => { setDraggingItems([]); setIsOver(false); onDragEndItems(); }}
               className={[
                 'aw-perm-item',
+                draggingItems.includes(item) ? 'is-dragging' : '',
                 isSelected ? 'is-selected' : '',
                 isExiting   ? (side === 'left' ? 'is-fly-right' : 'is-fly-left') : '',
                 isEntering  ? (side === 'right' ? 'is-arrive-right' : 'is-arrive-left') : '',
               ].filter(Boolean).join(' ')}
             >
-              {item}
+              {PERM_LABELS[item]?.label ?? item}
             </div>
           );
         })}
@@ -125,6 +158,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
     updateFormData,
     moveRights,
     moveAllRights,
+    moveSpecificRights,
     resetForm,
     saveUser,
     isUpdating,
@@ -143,6 +177,9 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
   const [arrivedRight,  setArrivedRight]    = useState<string[]>([]);
   const [arrivedLeft,   setArrivedLeft]     = useState<string[]>([]);
   const [isAnimating,   setIsAnimating]     = useState(false);
+  // Drag and drop between the two lists (the arrow buttons keep working)
+  const dragRef = useRef<{ items: string[]; from: 'left' | 'right' } | null>(null);
+  const [dragFrom, setDragFrom] = useState<'left' | 'right' | null>(null);
 
   // Auto-dismiss status messages
   useEffect(() => {
@@ -178,6 +215,19 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
       }, 320);
     }
   }, [isAnimating]);
+
+  const handleDragStart = (items: string[], from: 'left' | 'right') => { dragRef.current = { items, from }; setDragFrom(from); };
+  const handleDragEnd = () => { dragRef.current = null; setDragFrom(null); };
+  const handleDropOn = (target: 'left' | 'right') => {
+    const d = dragRef.current;
+    dragRef.current = null; setDragFrom(null);
+    if (!d || d.from === target || d.items.length === 0 || isAnimating) return;
+    // Left list = Available Rights, right list = Active Privileges
+    const dir = target === 'right' ? 'right' : 'left';
+    const from = d.from === 'left' ? 'default' : 'allot';
+    (d.from === 'left' ? setSelectedDefaultRights : setSelectedRightsAllot)(d.items);
+    animateMove(dir, d.items, () => moveSpecificRights(from, d.items));
+  };
 
   const handleMoveSelectedRight = () => {
     animateMove('right', selectedDefaultRights, () => moveRights('default', 'allot'));
@@ -399,6 +449,23 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                       className={`aw-switch ${formData.allowPassTransactions ? 'is-on' : ''}`}
                     />
                   </div>
+                  <div className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <UserCheck size={16} style={{ color: formData.isActive ? 'var(--aw-accent)' : 'var(--aw-muted)' }} />
+                      <span>
+                        <span className="aw-strong" style={{ display: 'block' }}>Account Active</span>
+                        <span className="aw-meta">Inactive users cannot log in</span>
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={formData.isActive}
+                      aria-label="Account Active"
+                      onClick={() => updateFormData('isActive', !formData.isActive)}
+                      className={`aw-switch ${formData.isActive ? 'is-on' : ''}`}
+                    />
+                  </div>
                 </div>
               </section>
             </div>
@@ -409,7 +476,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                 <span className="aw-card-icon"><Settings2 size={14} /></span>
                 <div>
                   <h2 className="aw-card-title">Access Privilege Matrix</h2>
-                  <p className="aw-meta">Click to select · Ctrl+Click multi-select · Arrow buttons to transfer</p>
+                  <p className="aw-meta">Click to select · Ctrl+Click multi-select · Drag and drop or use the arrow buttons to transfer</p>
                 </div>
               </div>
 
@@ -423,6 +490,10 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   label="Available Rights"
                   count={`${formData.availablePermissions.length} pool`}
                   side="left"
+                  onDragStartItems={handleDragStart}
+                  onDragEndItems={handleDragEnd}
+                  onDropHere={handleDropOn}
+                  dropReady={dragFrom === 'right'}
                 />
 
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
@@ -458,6 +529,10 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   label="Active Privileges"
                   count={`${formData.assignedPermissions.length} granted`}
                   side="right"
+                  onDragStartItems={handleDragStart}
+                  onDragEndItems={handleDragEnd}
+                  onDropHere={handleDropOn}
+                  dropReady={dragFrom === 'left'}
                 />
               </div>
             </section>

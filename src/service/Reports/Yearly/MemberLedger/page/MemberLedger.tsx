@@ -7,6 +7,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
+import { indianFinancialYearStart } from '@/utils/dates';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 
 interface LedgerCell { dr: number; cr: number; bal: number | null; }
@@ -112,7 +113,7 @@ const buildReportText = (d: ColumnarLedger): string => {
 const MemberLedger: React.FC = () => {
   const [memberNumber, setMemberNumber] = useState<string>('');
   const [memberName, setMemberName] = useState<string>('');
-  const [fromDate, setFromDate] = useState<Dayjs>(dayjs('2019-11-01'));
+  const [fromDate, setFromDate] = useState<Dayjs>(dayjs(indianFinancialYearStart()));
   const [toDate, setToDate] = useState<Dayjs>(dayjs());
   const [outputType, setOutputType] = useState<string>('screen');
   const [report, setReport] = useState<ColumnarLedger | null>(null);
@@ -198,7 +199,7 @@ const MemberLedger: React.FC = () => {
   const handleReset = useCallback(() => {
     setMemberNumber('');
     setMemberName('');
-    setFromDate(dayjs('2019-11-01'));
+    setFromDate(dayjs(indianFinancialYearStart()));
     setToDate(dayjs());
     setReport(null);
     setOutputType('screen');

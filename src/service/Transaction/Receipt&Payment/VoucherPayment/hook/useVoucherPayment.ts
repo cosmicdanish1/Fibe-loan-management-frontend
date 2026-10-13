@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import { VoucherPaymentData, VoucherPaymentHookReturn, ReceiptRow } from '../interface/VoucherPaymentInterfaces';
 import { apiService } from '../../../../../services/api';
@@ -50,6 +50,7 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
   const [bankAccounts, setBankAccounts] = useState<{ code: string; name: string }[]>([CASH_ACCOUNT]);
   const [accountBalance, setAccountBalance] = useState(0);
   const [lastSaved, setLastSaved] = useState<{ voucherNo: string; memberNo: string; memberName: string; total: number } | null>(null);
+  const savingRef = useRef(false); // in-flight guard for Save
 
   // Cash + real bank current accounts (from /reports/banks) for the "Receive Into" selector
   useEffect(() => {
@@ -111,6 +112,7 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
   }, []);
 
   const handleSave = useCallback(async () => {
+    if (savingRef.current) return;
     // "General Payment" is a non-member (office/general ledger) voucher, so a member
     // is only required for a member "Payment".
     const isGeneral = formData.paymentType === 'general';
@@ -123,12 +125,22 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
       await showDialog('warning', 'Input Validation Error', 'No Valid Rows', 'Please add at least one row with a head code and amount greater than zero.');
       return;
     }
-    // BUG FIX: added total > 0 guard
-    if (totalAmount <= 0) {
+    // Only the rows that are actually posted count towards the total shown/validated
+    const validTotal = Math.round(validRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0) * 100) / 100;
+    if (validTotal <= 0) {
       await showDialog('warning', 'Input Validation Error', 'Invalid Total Amount', 'Total voucher amount must be greater than zero.');
       return;
     }
+    if (!formData.transDate || !/^\d{4}-\d{2}-\d{2}$/.test(formData.transDate) || !dayjs(formData.transDate).isValid()) {
+      await showDialog('warning', 'Input Validation Error', 'Date Required', 'Please enter a valid transaction date.');
+      return;
+    }
+    if (formData.modeOfPay === 'bank' && !formData.chequeNo.trim()) {
+      await showDialog('warning', 'Input Validation Error', 'Cheque Number Required', 'Please enter the cheque number for bank/cheque payment mode.');
+      return;
+    }
 
+    savingRef.current = true;
     setIsLoading(true);
     try {
       const payload = {
@@ -140,9 +152,9 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
         // Cash receipts debit cash (A1001); bank receipts debit the chosen bank account.
         receiveIntoCode: formData.modeOfPay === 'bank' ? (formData.receiveIntoCode || 'A1001') : 'A1001',
         narration: formData.narration || '',
-        cheqNo: formData.chequeNo || '',
-        cheqDate: formData.chequeDate || '',
-        bankName: formData.bankName || '',
+        cheqNo: formData.modeOfPay === 'bank' ? formData.chequeNo.trim() : '',
+        cheqDate: formData.modeOfPay === 'bank' ? (formData.chequeDate || '') : '',
+        bankName: formData.modeOfPay === 'bank' ? (formData.bankName || '') : '',
         rows: validRows.map(r => ({
           code: r.code,
           accType: r.accType || 'OTH',
@@ -162,7 +174,7 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
           `VOUCHER NO    : ${vchr}\n` +
           `MEMBER NO     : ${formData.memberNo} - ${formData.memberName || 'N/A'}\n` +
           `MODE OF PAY   : ${formData.modeOfPay === 'bank' ? 'Bank/Cheque' : 'Cash'}\n` +
-          `TOTAL AMOUNT  : ₹${totalAmount.toLocaleString('en-IN')}\n` +
+          `TOTAL AMOUNT  : ₹${validTotal.toLocaleString('en-IN')}\n` +
           `ROWS          : ${validRows.length}\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `✓ Staged in transactions (pending pass)\n` +
@@ -172,7 +184,7 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
           voucherNo: vchr,
           memberNo: formData.memberNo,
           memberName: formData.memberName,
-          total: totalAmount,
+          total: validTotal,
         });
         setFormData(emptyForm());
       } else {
@@ -182,9 +194,10 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
     } catch (err: any) {
       await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${err.message}`);
     } finally {
+      savingRef.current = false;
       setIsLoading(false);
     }
-  }, [formData, totalAmount]);
+  }, [formData]);
 
   const handleClear = useCallback(() => {
     setFormData(emptyForm());

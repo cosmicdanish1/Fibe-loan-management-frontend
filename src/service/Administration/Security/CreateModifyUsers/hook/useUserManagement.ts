@@ -33,6 +33,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
     lastName: '',
     userLevel: '',
     allowPassTransactions: false,
+    isActive: true,
     availablePermissions: [],
     assignedPermissions: [],
     avatar: '',
@@ -71,12 +72,20 @@ export const useUserManagement = (): UseUserManagementReturn => {
   const fetchAllUsers = useCallback(async () => {
     setIsLoadingUsers(true);
     try {
-      const response = await apiService.getUsers({ limit: 1000 });
-      if (response.success && response.data) {
-        setAllUsers((response.data as any).users || []);
-      } else {
-        setAllUsers([]);
+      // The list endpoint rejected limit=1000 (HTTP 400): page through in
+      // modest chunks instead of asking for everything at once.
+      const PAGE_SIZE = 100;
+      const collected: User[] = [];
+      for (let page = 1; page <= 100; page++) {
+        const response = await apiService.getUsers({ page, limit: PAGE_SIZE });
+        if (!response.success || !response.data) break;
+        const data = response.data as any;
+        const batch: User[] = data.users || [];
+        collected.push(...batch);
+        const total = Number(data.total) || 0;
+        if (batch.length < PAGE_SIZE || (total > 0 && collected.length >= total)) break;
       }
+      setAllUsers(collected);
     } catch (err) {
       console.error('Failed to fetch users:', err);
       setAllUsers([]);
@@ -125,6 +134,8 @@ export const useUserManagement = (): UseUserManagementReturn => {
       lastName: user.lastName,
       userLevel: user.role,
       allowPassTransactions: (user as any).allowPassTransactions ?? false,
+      // Keep the account's real state so saving an edit never silently re-activates it
+      isActive: user.isActive !== false,
       assignedPermissions: user.permissions || [],
       availablePermissions: masterPool.filter(p => !(user.permissions || []).includes(p))
     });
@@ -175,6 +186,25 @@ export const useUserManagement = (): UseUserManagementReturn => {
         ...prev,
         assignedPermissions: prev.assignedPermissions.filter(r => !toMove.includes(r)),
         availablePermissions: [...prev.availablePermissions, ...toMove]
+      }));
+      setSelectedRightsAllot([]);
+    }
+  };
+
+  /** Move exactly these rights (drag and drop), regardless of what is currently selected. */
+  const moveSpecificRights = (from: RightsTransferDirection, items: string[]) => {
+    if (from === 'default') {
+      setFormData(prev => ({
+        ...prev,
+        availablePermissions: prev.availablePermissions.filter(r => !items.includes(r)),
+        assignedPermissions: [...prev.assignedPermissions, ...items.filter(r => prev.availablePermissions.includes(r))]
+      }));
+      setSelectedDefaultRights([]);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        assignedPermissions: prev.assignedPermissions.filter(r => !items.includes(r)),
+        availablePermissions: [...prev.availablePermissions, ...items.filter(r => prev.assignedPermissions.includes(r))]
       }));
       setSelectedRightsAllot([]);
     }
@@ -253,6 +283,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
       lastName: '',
       userLevel: '',
       allowPassTransactions: false,
+      isActive: true,
       availablePermissions: Array.from(new Set(rolePermissionsMapping.flatMap((m: any) => m.permissions))) as string[],
       assignedPermissions: []
     });
@@ -279,7 +310,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
         lastName,
         role: formData.userLevel,
         permissions: formData.assignedPermissions,
-        isActive: true,
+        isActive: formData.isActive,
         allowPassTransactions: formData.allowPassTransactions,
       };
 
@@ -295,7 +326,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
       }
 
       if (!response.success) {
-        throw new Error((response as any).error || 'Identity synchronization failed');
+        throw new Error(response.message || (response as any).error || 'Identity synchronization failed');
       }
 
       await showDialog(
@@ -336,6 +367,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
     updateFormData,
     moveRights,
     moveAllRights,
+    moveSpecificRights,
     validateForm,
     resetForm,
     saveUser,

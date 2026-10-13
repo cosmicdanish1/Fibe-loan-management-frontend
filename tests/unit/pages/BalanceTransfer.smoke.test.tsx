@@ -37,12 +37,12 @@ describe('BalanceTransfer (redesigned)', () => {
     expect(processBtn).toBeDisabled();
 
     // Pick From account
-    fireEvent.click(screen.getAllByText('Select source GL head')[0]);
-    fireEvent.click(await screen.findByText('General Reserve Fund'));
+    fireEvent.mouseDown(screen.getAllByText('Select source GL head')[0]);
+    fireEvent.click((await screen.findAllByText('1001 — General Reserve Fund')).pop()!);
 
     // Pick To account
-    fireEvent.click(screen.getAllByText('Select destination GL head')[0]);
-    fireEvent.click(await screen.findByText('Salaries & Establishment'));
+    fireEvent.mouseDown(screen.getAllByText('Select destination GL head')[0]);
+    fireEvent.click((await screen.findAllByText('2010 — Salaries & Establishment')).pop()!);
 
     fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '500' } });
     fireEvent.change(screen.getByPlaceholderText(/Purpose of transfer/i), { target: { value: 'Test transfer' } });
@@ -54,11 +54,11 @@ describe('BalanceTransfer (redesigned)', () => {
     render(<BalanceTransfer />);
     await waitFor(() => expect(apiService.getHeadMasters).toHaveBeenCalled());
 
-    fireEvent.click(screen.getAllByText('Select source GL head')[0]);
-    fireEvent.click(await screen.findByText('General Reserve Fund'));
+    fireEvent.mouseDown(screen.getAllByText('Select source GL head')[0]);
+    fireEvent.click((await screen.findAllByText('1001 — General Reserve Fund')).pop()!);
 
-    fireEvent.click(screen.getAllByText('Select destination GL head')[0]);
-    fireEvent.click(await screen.findByText('General Reserve Fund'));
+    fireEvent.mouseDown(screen.getAllByText('Select destination GL head')[0]);
+    fireEvent.click((await screen.findAllByText('1001 — General Reserve Fund')).pop()!);
 
     fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '500' } });
     fireEvent.change(screen.getByPlaceholderText(/Purpose of transfer/i), { target: { value: 'Test transfer' } });
@@ -70,10 +70,10 @@ describe('BalanceTransfer (redesigned)', () => {
     render(<BalanceTransfer />);
     await waitFor(() => expect(apiService.getHeadMasters).toHaveBeenCalled());
 
-    fireEvent.click(screen.getAllByText('Select source GL head')[0]);
-    fireEvent.click(await screen.findByText('General Reserve Fund'));
-    fireEvent.click(screen.getAllByText('Select destination GL head')[0]);
-    fireEvent.click(await screen.findByText('Salaries & Establishment'));
+    fireEvent.mouseDown(screen.getAllByText('Select source GL head')[0]);
+    fireEvent.click((await screen.findAllByText('1001 — General Reserve Fund')).pop()!);
+    fireEvent.mouseDown(screen.getAllByText('Select destination GL head')[0]);
+    fireEvent.click((await screen.findAllByText('2010 — Salaries & Establishment')).pop()!);
     fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '1250.50' } });
     fireEvent.change(screen.getByPlaceholderText(/Purpose of transfer/i), { target: { value: 'Q3 reallocation' } });
 
@@ -98,10 +98,10 @@ describe('BalanceTransfer (redesigned)', () => {
     render(<BalanceTransfer />);
     await waitFor(() => expect(apiService.getHeadMasters).toHaveBeenCalled());
 
-    fireEvent.click(screen.getAllByText('Select source GL head')[0]);
-    fireEvent.click(await screen.findByText('General Reserve Fund'));
-    fireEvent.click(screen.getAllByText('Select destination GL head')[0]);
-    fireEvent.click(await screen.findByText('Salaries & Establishment'));
+    fireEvent.mouseDown(screen.getAllByText('Select source GL head')[0]);
+    fireEvent.click((await screen.findAllByText('1001 — General Reserve Fund')).pop()!);
+    fireEvent.mouseDown(screen.getAllByText('Select destination GL head')[0]);
+    fireEvent.click((await screen.findAllByText('2010 — Salaries & Establishment')).pop()!);
     fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '100' } });
     fireEvent.change(screen.getByPlaceholderText(/Purpose of transfer/i), { target: { value: 'Test' } });
     fireEvent.click(screen.getByRole('button', { name: /process transfer/i }));

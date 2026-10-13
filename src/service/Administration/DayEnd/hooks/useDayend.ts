@@ -1,12 +1,13 @@
 // hooks/useDayend.ts
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { DayendData, UseDayendReturn } from '../interface/dayend';
-import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { apiService } from '../../../../services/api';
+import { localISODate } from '../../../../utils/dates';
 
 // Helper function to get current date in YYYY-MM-DD format
 const getCurrentDate = (): string => {
   const date = new Date();
-  return date.toISOString().split('T')[0] || date.toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD format
+  return localISODate(date); // en-CA gives YYYY-MM-DD format
 };
 
 // Initial state for dayend data
@@ -24,6 +25,11 @@ export const useDayend = (): UseDayendReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   // Format currency amount
   const formatAmount = useCallback((amount: number): string => {
@@ -48,31 +54,19 @@ export const useDayend = (): UseDayendReturn => {
     try {
       console.log('📤 FRONTEND: Fetching day-end data from backend...');
 
-      // Call the backend API to get day-end summary
-      const response = await fetch(`${await getApiBaseUrl()}/admin/day-end/summary`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authentication token if available
-          ...(localStorage.getItem('token') && {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          })
-        },
-      });
+      // Call the backend API to get day-end summary (apiService sends accessToken + refreshes on 401)
+      const response = await apiService.get('/admin/day-end/summary');
 
-      console.log('📥 FRONTEND: Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ FRONTEND: Failed to fetch day-end data:', errorText);
-        throw new Error(`Failed to fetch day-end data: ${response.statusText}`);
+      if (!response.success) {
+        console.error('❌ FRONTEND: Failed to fetch day-end data:', response.message);
+        throw new Error(response.message || 'Failed to fetch day-end data');
       }
 
-      const result = await response.json();
+      const result = response.data;
       console.log('✅ FRONTEND: Day-end data received:', result);
 
       // Transform backend response to match our DayendData interface
-      const raw = result.data || result;
+      const raw = (result && result.data) || result || {};
       const data: DayendData = {
         date: raw.date || getCurrentDate(),
         openingBalance: Number(raw.openingBalance || 0),
@@ -113,16 +107,9 @@ export const useDayend = (): UseDayendReturn => {
   const initializeWorkingDate = useCallback(async (workingDate: string): Promise<void> => {
     setIsInitializing(true);
     try {
-      const response = await fetch(`${await getApiBaseUrl()}/admin/day-end/initialize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workingDate }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        let userMessage = 'Failed to initialize working date';
-        try { userMessage = JSON.parse(errorText).message || errorText; } catch { userMessage = errorText; }
-        throw new Error(userMessage);
+      const response = await apiService.post('/admin/day-end/initialize', { workingDate });
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to initialize working date');
       }
       await refreshData();
     } catch (err) {
@@ -150,13 +137,17 @@ export const useDayend = (): UseDayendReturn => {
 
       const interval = setInterval(async () => {
         attempts++;
+        // Hook unmounted: stop polling
+        if (!mountedRef.current) {
+          clearInterval(interval);
+          reject(new Error('Day-end status polling cancelled'));
+          return;
+        }
         try {
-          const response = await fetch(`${await getApiBaseUrl()}/admin/day-end/processes/${processId}`, {
-            headers: { 'Content-Type': 'application/json' },
-          });
+          const response = await apiService.get(`/admin/day-end/processes/${processId}`);
 
-          if (response.ok) {
-            const data = await response.json();
+          if (response.success && response.data) {
+            const data = response.data;
             // FIX BUG 2: DayEndStatus enum values are lowercase ('completed', 'failed').
             // Compare case-insensitively to be safe against any future casing changes.
             const status = (data.status || data.data?.status || '').toLowerCase();
@@ -190,26 +181,16 @@ export const useDayend = (): UseDayendReturn => {
 
       console.log('📤 FRONTEND: Initiating day-end process...');
 
-      const response = await fetch(`${await getApiBaseUrl()}/admin/day-end/initiate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ processDate: dayendData.date, nextWorkingDate }),
+      const response = await apiService.post('/admin/day-end/initiate', {
+        processDate: dayendData.date,
+        nextWorkingDate,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let userMessage = 'Failed to process day-end';
-        try {
-          const errorData = JSON.parse(errorText);
-          userMessage = errorData.message || errorText;
-        } catch {
-          userMessage = errorText;
-        }
-        throw new Error(userMessage);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to process day-end');
       }
 
-      const result = await response.json();
+      const result = response.data || {};
       const processId = result.id || result.data?.id;
       console.log(`✅ Day-end initiated. Process ID: ${processId}, Status: ${result.status}`);
 

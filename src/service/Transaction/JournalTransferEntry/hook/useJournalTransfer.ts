@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
     JournalTransferData,
     JournalTransferHookReturn,
@@ -6,7 +6,6 @@ import {
     VoucherOption,
 } from '../interface/JournalTransferInterfaces';
 import { apiService } from '../../../../services/api';
-import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, msg: string, detail: string) => {
     if ((window as any).electronAPI?.showMessageBox) {
@@ -48,18 +47,17 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
     const [voucherList, setVoucherList] = useState<VoucherOption[]>([]);
     const [activeMember, setActiveMember] = useState<{ mbno: string; name: string }>({ mbno: '', name: '' });
     const [rawVoucherRows, setRawVoucherRows] = useState<any[]>([]);
+    const savingRef = useRef(false); // in-flight guard for Save
 
     useEffect(() => { fetchHeadList(); fetchVoucherList(); fetchMemberList(); }, []);
 
     const fetchHeadList = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
-            const response = await fetch(`${await getApiBaseUrl()}${API_ROUTES.reports.heads()}`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            if (response.ok) {
-                const result = await response.json();
-                setHeadList(Array.isArray(result) ? result : (result.data || []));
+            // apiService handles the auth header and 401 refresh/redirect (the raw fetch used here did not)
+            const response = await apiService.getHeadList();
+            if (response.success) {
+                const result: any = response.data;
+                setHeadList(Array.isArray(result) ? result : (result?.data || []));
             }
         } catch (e) { console.error('Head list fetch error:', e); }
     };
@@ -72,6 +70,8 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
     // Both replaced with apiService.lookupMembers(), already proven working
     // elsewhere in this app with exactly the memberNo/memberName shape this
     // screen expects.
+    // NOTE: only the first 100 members are preloaded for the Member No picker (the lookup endpoint is paged);
+    // members beyond that are not offered here and must be typed in.
     const fetchMemberList = async () => {
         try {
             const response = await apiService.lookupMembers(undefined, 100);
@@ -151,8 +151,10 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
         }
     }, [rawVoucherRows]);
 
-    const totalDebit = useMemo(() => data.reduce((sum, r) => sum + (parseFloat(r.debit as string) || 0), 0), [data]);
-    const totalCredit = useMemo(() => data.reduce((sum, r) => sum + (parseFloat(r.credit as string) || 0), 0), [data]);
+    // Totals count only positive amounts - exactly the rows that get posted - so a negative cell can never
+    // make an unbalanced voucher look balanced.
+    const totalDebit = useMemo(() => data.reduce((sum, r) => { const v = parseFloat(r.debit as string); return v > 0 ? sum + v : sum; }, 0), [data]);
+    const totalCredit = useMemo(() => data.reduce((sum, r) => { const v = parseFloat(r.credit as string); return v > 0 ? sum + v : sum; }, 0), [data]);
 
     const updateField = useCallback((field: keyof JournalTransferData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -187,6 +189,16 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
     }, [headList]);
 
     const handleSave = async () => {
+        if (savingRef.current) return;
+        const hasBadAmount = data.some(r => {
+            const d = String(r.debit ?? '').trim();
+            const c = String(r.credit ?? '').trim();
+            return (d !== '' && !(parseFloat(d) >= 0)) || (c !== '' && !(parseFloat(c) >= 0));
+        });
+        if (hasBadAmount) {
+            await showDialog('warning', 'electron-react-ts', 'Invalid Amount', 'Debit and Credit amounts cannot be negative or non-numeric. Please correct the highlighted rows.');
+            return;
+        }
         if (Math.abs(totalDebit - totalCredit) > 0.01) {
             await showDialog('error', 'electron-react-ts', 'Debit - Credit is not equal',
                 `Total Debit: ₹${totalDebit.toFixed(2)}\nTotal Credit: ₹${totalCredit.toFixed(2)}\nDifference: ₹${Math.abs(totalDebit - totalCredit).toFixed(2)}`);
@@ -221,6 +233,7 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
             `Amount: ₹${totalDebit.toLocaleString('en-IN')}\nRows: ${validRows.length}\nType: ${formData.transferType === 'headToHead' ? 'Head-to-Head' : 'Member-to-Member'}\n\nThis will create a PENDING voucher for Pass Transaction.`);
         if (!confirmed) return;
 
+        savingRef.current = true;
         setIsLoading(true);
         try {
             const res = await apiService.postJournalTransaction({
@@ -247,6 +260,7 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
         } catch (error: any) {
             await showDialog('error', 'electron-react-ts', 'Server Error', error.message);
         } finally {
+            savingRef.current = false;
             setIsLoading(false);
         }
     };

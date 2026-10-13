@@ -1,12 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import Navbar from '../navigation/Navbar';
 import SubNavbar from '../navigation/SubNavbar';
+import UpdateNotice from '../UpdateNotice';
+import { apiService } from '../../services/api';
 
 const MainLayout: React.FC = () => {
     const location = useLocation();
+
+    // "Who is online": tell the server this PC's app is still open, once a minute. It lives here
+    // (not in every window) because MainLayout exists only in the main window, so there is one
+    // signal per PC. Failures are ignored: a missed beat just means the next one catches up.
+    useEffect(() => {
+        const beat = () => { apiService.post('/auth/heartbeat').catch(() => undefined); };
+        beat();
+        const timer = window.setInterval(beat, 60_000);
+        return () => window.clearInterval(timer);
+    }, []);
     // Canvas appearance comes from the Redux theme, which redux-persist already
     // stores and which theme_sync / the settings-updated IPC already mirror to
     // every window.
@@ -44,6 +56,9 @@ const MainLayout: React.FC = () => {
             <div className="flex-1 min-h-0 flex flex-col overflow-auto">
                 <Outlet />
             </div>
+
+            {/* New-version notice: dashboard window only, not every tool window */}
+            {showNavbar && <UpdateNotice />}
 
             {/* Watermark */}
             <div className="absolute bottom-4 right-4 text-sm font-medium pointer-events-none"

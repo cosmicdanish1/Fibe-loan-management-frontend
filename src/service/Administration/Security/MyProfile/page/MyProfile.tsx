@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Mail, Phone, Briefcase, MapPin, ShieldCheck, Clock, Lock, Zap, TrendingUp, IdCard } from 'lucide-react';
 import { useAuth } from '../../../../../auth/context/AuthContext';
 import AwDialog from '@/components/shared/kit/AwDialog';
+import TwoFaCard from '../components/TwoFaCard';
 
 const ACTIVITY = [
   { action: 'System Login', date: 'Today, 10:23 AM', details: 'Successful login from IP 192.168.1.45', type: 'login' },
@@ -122,6 +123,7 @@ const MyProfile: React.FC = () => {
                   <p className="aw-strong">Password management</p>
                   <span className="aw-meta" style={{ maxWidth: 320 }}>Update your password regularly to keep your account secure.</span>
                   <button type="button" onClick={() => setModal('password')} className="aw-btn aw-btn-secondary"><Zap size={13} /> Change password</button>
+                  <div style={{ width: '100%', maxWidth: 420, marginTop: 16 }}><TwoFaCard /></div>
                 </div>
               )}
             </section>

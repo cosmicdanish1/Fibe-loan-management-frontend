@@ -34,6 +34,10 @@ const HeadOpeningBalance: React.FC = () => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(SECTION_ROOTS));
   const [search, setSearch]         = useState('');
   const initialLoad = useRef(false);
+  // Year-switch race guards: only the latest load may write entries, and Save is tied to the year the rows were loaded for
+  const loadSeq = useRef(0);
+  const loadedYearRef = useRef<number | null>(null);
+  const savingRef = useRef(false);
 
   // BUG FIX: this used to call apiService.getFinancialYears(), which hits
   // /admin/financial-year/list — that returns raw entities shaped
@@ -59,10 +63,14 @@ const HeadOpeningBalance: React.FC = () => {
   }, []);
 
   const loadData = useCallback(async (yearcode: number) => {
+    const seq = ++loadSeq.current;
+    loadedYearRef.current = null;
     setLoadingData(true);
     try {
       const res = await apiService.getHeadOpeningBalances(yearcode);
+      if (seq !== loadSeq.current) return;
       if (res.success && Array.isArray(res.data)) {
+        loadedYearRef.current = yearcode;
         setEntries(res.data.map((r: any) => ({
           code:       r.code,
           parentCode: r.parentCode,
@@ -73,12 +81,15 @@ const HeadOpeningBalance: React.FC = () => {
           edited:     false,
         })));
       } else {
+        setEntries([]);
         message.error('Failed to load head opening balances');
       }
     } catch {
+      if (seq !== loadSeq.current) return;
+      setEntries([]);
       message.error('Error loading head opening balances');
     } finally {
-      setLoadingData(false);
+      if (seq === loadSeq.current) setLoadingData(false);
     }
   }, []);
 
@@ -95,7 +106,12 @@ const HeadOpeningBalance: React.FC = () => {
     });
   }, []);
 
+  const confirmDiscardEdits = () =>
+    !entries.some(e => e.edited) ||
+    window.confirm('You have unsaved edits. Discard them and reload?');
+
   const handleYearChange = (yearcode: number) => {
+    if (!confirmDiscardEdits()) return;
     setSelectedYear(yearcode);
     loadData(yearcode);
   };
@@ -107,11 +123,25 @@ const HeadOpeningBalance: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!selectedYear) return;
+    if (!selectedYear || savingRef.current) return;
+    // Only save rows for the year they were actually loaded for (never year A data into year B)
+    if (loadingData || loadedYearRef.current !== selectedYear) {
+      message.warning('Balances for the selected year are not loaded yet. Please wait or press Refresh.');
+      return;
+    }
+    // Debit side = Assets + Expenditure, credit side = Liabilities + Income. Warn (do not block) if they differ.
+    if (Math.round(debitTotal * 100) !== Math.round(creditTotal * 100)) {
+      const ok = window.confirm(
+        `Opening balances do not balance.\n\nDebit (Assets + Expenditure): ${fmt(debitTotal)}\nCredit (Liabilities + Income): ${fmt(creditTotal)}\nDifference: ${fmt(Math.abs(debitTotal - creditTotal))}\n\nSave anyway?`,
+      );
+      if (!ok) return;
+    }
+    const saveYear = selectedYear; // verified above to equal loadedYearRef.current
+    savingRef.current = true;
     setSaving(true);
     try {
       const balances = leafEntries.map(e => ({ headCode: e.code, closingBal: e.openingBal }));
-      const res = await apiService.saveHeadOpeningBalances(selectedYear, balances);
+      const res = await apiService.saveHeadOpeningBalances(saveYear, balances);
       if (res.success) {
         message.success(res.message || 'Saved successfully');
         setEntries(prev => prev.map(e => ({ ...e, edited: false, hasYearData: true })));
@@ -121,6 +151,7 @@ const HeadOpeningBalance: React.FC = () => {
     } catch (err: any) {
       message.error(err.message || 'Save failed');
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -188,7 +219,9 @@ const HeadOpeningBalance: React.FC = () => {
     return acc;
   }, [leafEntries]);
 
-  const grandTotal = useMemo(() => leafEntries.reduce((s, e) => s + e.openingBal, 0), [leafEntries]);
+  // Signed view: Assets + Expenditure are debit balances, Liabilities + Income are credit balances
+  const debitTotal = (sectionTotals.A1000 || 0) + (sectionTotals.E1000 || 0);
+  const creditTotal = (sectionTotals.L1000 || 0) + (sectionTotals.I1000 || 0);
 
   const displayRows = useMemo(() => {
     const q = search.toLowerCase();
@@ -249,7 +282,7 @@ const HeadOpeningBalance: React.FC = () => {
           {editedCount > 0 && <span className="aw-pill tone-warning aw-fade-in">{editedCount} unsaved</span>}
           <button
             type="button"
-            onClick={() => selectedYear && loadData(selectedYear)}
+            onClick={() => { if (selectedYear && confirmDiscardEdits()) loadData(selectedYear); }}
             disabled={loadingData}
             className="aw-icon-btn"
             aria-label="Refresh"
@@ -393,8 +426,15 @@ const HeadOpeningBalance: React.FC = () => {
                 <tfoot>
                   <tr>
                     <td />
-                    <td>Grand Total — {leafEntries.length} accounts</td>
-                    <td className="is-right is-warning">{fmt(grandTotal)}</td>
+                    <td>
+                      {leafEntries.length} accounts — Debit (A + E): {fmt(debitTotal)} | Credit (L + I): {fmt(creditTotal)}
+                    </td>
+                    <td
+                      className={`is-right ${Math.round(debitTotal * 100) === Math.round(creditTotal * 100) ? 'is-warning' : 'is-danger'}`}
+                      title="Debit minus Credit"
+                    >
+                      {fmt(debitTotal - creditTotal)}
+                    </td>
                     <td className="is-center is-muted">{yearStart}</td>
                     <td className="is-center is-muted">{yearEnd}</td>
                     <td className="is-center is-muted">{yearCode}</td>

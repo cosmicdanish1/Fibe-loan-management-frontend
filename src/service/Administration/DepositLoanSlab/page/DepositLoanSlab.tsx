@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Layers, Database, Plus, Trash2, Save, RefreshCcw, Percent, X,
 } from 'lucide-react';
@@ -22,6 +22,9 @@ interface SlabRow {
   applicableFromDate: string;
   applicableUptoDate: string;
   _dirty?: boolean;
+  // Tenure exactly as stored by the backend (days) - re-sent untouched for rows the user did not edit
+  _origMinDays?: number;
+  _origMaxDays?: number;
 }
 
 type DepositType = 'RD' | 'LN';
@@ -66,16 +69,34 @@ const emptyRow = (srNo: number): SlabRow => ({
   _dirty: true,
 });
 
+// Pick the coarsest unit that represents both tenures without loss
+const tenureForDisplay = (
+  minDays: number,
+  maxDays: number,
+): Pick<SlabRow, 'fromPeriod' | 'uptoPeriod' | 'periodUnit'> => {
+  const exact = (days: number, unit: 'M' | 'Y') => {
+    const v = Math.round(days / (unit === 'Y' ? 365 : 30.44));
+    return toDays(v, unit) === days ? v : null;
+  };
+  for (const unit of ['Y', 'M'] as const) {
+    const a = exact(minDays, unit);
+    const b = exact(maxDays, unit);
+    if (a !== null && b !== null && (unit === 'M' || a > 0 || b > 0)) {
+      return { fromPeriod: a, uptoPeriod: b, periodUnit: unit };
+    }
+  }
+  return { fromPeriod: minDays, uptoPeriod: maxDays, periodUnit: 'D' };
+};
+
 // Map backend response row → UI SlabRow
 const fromBackend = (r: any, i: number): SlabRow => ({
   id: r.id,
   srNo: i + 1,
   fromAmount: Number(r.minAmount ?? 0),
   uptoAmount: Number(r.maxAmount ?? 0),
-  // Backend stores tenure in days; display in months for readability
-  fromPeriod: Math.round((r.minTenure ?? 0) / 30.44),
-  uptoPeriod: Math.round((r.maxTenure ?? 0) / 30.44),
-  periodUnit: 'M',
+  // Backend stores tenure in days. Show years/months only when the stored days convert
+  // back exactly; otherwise show days so nothing is silently rounded (45 days != 1 month).
+  ...tenureForDisplay(Number(r.minTenure ?? 0), Number(r.maxTenure ?? 0)),
   interestRate: Number(r.interestRate ?? 0),
   prematureRate: Number(r.penaltyRate ?? 0),
   applicableFromDate: r.effectiveFrom
@@ -85,6 +106,8 @@ const fromBackend = (r: any, i: number): SlabRow => ({
     ? dayjs(r.effectiveTo).format('YYYY-MM-DD')
     : '',
   _dirty: false,
+  _origMinDays: Number(r.minTenure ?? 0),
+  _origMaxDays: Number(r.maxTenure ?? 0),
 });
 
 // Map UI SlabRow → backend CreateDepositSlabDto
@@ -93,8 +116,9 @@ const toBackend = (row: SlabRow, type: DepositType) => ({
   type: TO_BACKEND_TYPE[type],
   minAmount: row.fromAmount,
   maxAmount: row.uptoAmount,
-  minTenure: toDays(row.fromPeriod, row.periodUnit),
-  maxTenure: toDays(row.uptoPeriod, row.periodUnit),
+  // Untouched rows keep the exact stored days; edited rows are converted from what is shown
+  minTenure: !row._dirty && row._origMinDays !== undefined ? row._origMinDays : toDays(row.fromPeriod, row.periodUnit),
+  maxTenure: !row._dirty && row._origMaxDays !== undefined ? row._origMaxDays : toDays(row.uptoPeriod, row.periodUnit),
   interestRate: row.interestRate,
   penaltyRate: row.prematureRate,
   isActive: true,
@@ -140,22 +164,31 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
   const [rows, setRows] = useState<SlabRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Type the rows on screen were actually loaded for (Save must use this, not the tab)
+  const [loadedType, setLoadedType] = useState<DepositType | null>(null);
+  const loadSeq = useRef(0);
 
   const loadSlabs = useCallback(async (type: DepositType) => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     try {
       const backendType = TO_BACKEND_TYPE[type];
       const response = await apiService.getDepositLoanSlabs(backendType);
+      if (seq !== loadSeq.current) return; // a newer load superseded this one
       if (response.success && Array.isArray(response.data)) {
         setRows(response.data.map((r, i) => fromBackend(r, i)));
+        setLoadedType(type);
       } else {
         setRows([]);
+        setLoadedType(null);
       }
     } catch {
+      if (seq !== loadSeq.current) return;
       await showDialog('error', 'Load Error', 'Failed to load slab data', 'Check server connection and try again.');
       setRows([]);
+      setLoadedType(null);
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }, []);
 
@@ -179,6 +212,11 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
   };
 
   const handleSave = async () => {
+    if (loading || loadedType === null || loadedType !== selectedType) {
+      await showDialog('warning', 'Please Wait', 'Slabs are still loading', 'Wait for the list to finish loading, then save.');
+      return;
+    }
+    const saveType = loadedType;
     if (rows.length === 0) {
       await showDialog('warning', 'Nothing to Save', 'No slabs to save', 'Add at least one row first.');
       return;
@@ -202,26 +240,52 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
         await showDialog('warning', 'Validation', `Row ${r.srNo}: Interest Rate must be between 0.01% and 50%`, `Got: ${r.interestRate}%`);
         return;
       }
+      if (!Number.isFinite(r.prematureRate) || r.prematureRate < 0) {
+        await showDialog('warning', 'Validation', `Row ${r.srNo}: Premature Rate must be a number ≥ 0`, `Got: ${r.prematureRate}`);
+        return;
+      }
       if (!r.applicableFromDate) {
         await showDialog('warning', 'Validation', `Row ${r.srNo}: Applicable From Date is required`, '');
         return;
       }
     }
 
+    // No two slabs may cover the same amount, tenure and effective-date range
+    const span = (lo: number, hi: number, lo2: number, hi2: number) =>
+      (lo < hi2 && lo2 < hi) || (lo === lo2 && hi === hi2);
+    for (let a = 0; a < rows.length; a++) {
+      for (let b = a + 1; b < rows.length; b++) {
+        const x = rows[a]!;
+        const y = rows[b]!;
+        const amountOverlap = span(x.fromAmount, x.uptoAmount, y.fromAmount, y.uptoAmount);
+        const tenureOverlap = span(
+          toDays(x.fromPeriod, x.periodUnit), toDays(x.uptoPeriod, x.periodUnit),
+          toDays(y.fromPeriod, y.periodUnit), toDays(y.uptoPeriod, y.periodUnit),
+        );
+        const xEnd = x.applicableUptoDate || '9999-12-31';
+        const yEnd = y.applicableUptoDate || '9999-12-31';
+        const dateOverlap = x.applicableFromDate <= yEnd && y.applicableFromDate <= xEnd;
+        if (amountOverlap && tenureOverlap && dateOverlap) {
+          await showDialog('warning', 'Validation', `Rows ${x.srNo} and ${y.srNo} overlap`, 'Two slabs cover the same amount range, period range and dates. Adjust one of them.');
+          return;
+        }
+      }
+    }
+
     setSaving(true);
     try {
-      const payload = rows.map(r => toBackend(r, selectedType));
-      const response = await apiService.saveDepositLoanSlabs(payload, TO_BACKEND_TYPE[selectedType]);
+      const payload = rows.map(r => toBackend(r, saveType));
+      const response = await apiService.saveDepositLoanSlabs(payload, TO_BACKEND_TYPE[saveType]);
       if (response.success) {
         await showDialog(
           'info',
           'Saved',
-          `${TYPE_LABELS[selectedType]} Slabs Saved`,
+          `${TYPE_LABELS[saveType]} Slabs Saved`,
           `${(response.data as any)?.saved ?? rows.length} slabs saved successfully.`
         );
-        await loadSlabs(selectedType);
+        await loadSlabs(saveType);
       } else {
-        await showDialog('error', 'Save Failed', 'Failed to save slabs', (response as any).error || 'Unknown error');
+        await showDialog('error', 'Save Failed', 'Failed to save slabs', response.message || (response as any).error || 'Unknown error');
       }
     } catch (err: any) {
       await showDialog('error', 'Connection Error', 'Unable to reach server', err.message || '');
@@ -247,7 +311,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
   usePageToolbarActions({
     onSave: handleSave,
     saveLabel: 'Save Slabs',
-    saveEnabled: !(saving || rows.length === 0),
+    saveEnabled: !(saving || loading || rows.length === 0),
   });
 
   return (
@@ -278,7 +342,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
           <button type="button" onClick={addRow} className="aw-btn aw-btn-secondary">
             <Plus size={13} /> Add Row
           </button>
-          <button type="button" onClick={handleSave} disabled={saving || rows.length === 0} className="aw-btn aw-btn-primary">
+          <button type="button" onClick={handleSave} disabled={saving || loading || rows.length === 0} className="aw-btn aw-btn-primary">
             {saving ? <RefreshCcw size={13} className="aw-spin" /> : <Save size={13} />}
             Save Slabs
           </button>

@@ -26,6 +26,7 @@ import { apiService } from '../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
 import { renderCrDrText } from '../../../../components/shared/CrDrIndicator';
+import { isFromAfterTo } from '@/utils/dates';
 
 // ── layout constants ─────────────────────────────────────────────────────────
 const W_DATE    = 14;
@@ -224,6 +225,10 @@ const MemberDetailLedger: React.FC = () => {
     if (!memberNo) { message.warning('Please enter a Member Number'); return; }
     if (!fromDate || !toDate) { message.warning('Please select a date range'); return; }
 
+    if (fromDate && toDate && isFromAfterTo(fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'))) {
+      message.warning('From date cannot be after To date');
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await (apiService as any).getMemberDetailLedgerReport({

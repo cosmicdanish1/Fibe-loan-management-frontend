@@ -16,6 +16,7 @@ import AwDialog from '@/components/shared/kit/AwDialog';
 import { useDayend, useDayendCalculations } from '../hooks/useDayend';
 import type { DayendDisplayProps } from '../interface/dayend';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { localISODate } from '../../../../utils/dates';
 
 const MetricCard: React.FC<DayendDisplayProps & { icon: React.ReactNode; tone?: string }> = ({
   label,
@@ -42,7 +43,7 @@ const MetricCard: React.FC<DayendDisplayProps & { icon: React.ReactNode; tone?: 
   return (
     <div className="aw-stat aw-stat-left" style={tone ? { ['--aw-tone' as any]: tone } : undefined}>
       <div className="aw-stat-head">
-        {React.cloneElement(icon as React.ReactElement, { size: 14 })}
+        {React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 14 })}
         <span className="aw-stat-label">{label}</span>
       </div>
       <div className="aw-stat-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{formatValue()}</div>
@@ -67,12 +68,12 @@ const DayEnd: React.FC = () => {
   const [nextWorkingDate, setNextWorkingDate] = React.useState('');
 
   // Genesis "set initial working date" state — shown when getworkingdate has no rows yet
-  const [initDate, setInitDate] = React.useState(() => new Date().toISOString().split('T')[0] || '');
+  const [initDate, setInitDate] = React.useState(() => localISODate());
 
   const getDefaultNextDate = () => {
-    const d = new Date(dayendData.date);
+    const d = new Date(`${String(dayendData.date).slice(0, 10)}T00:00:00`);
     d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    return localISODate(d);
   };
 
   const getDayName = (dateStr: string) => {
@@ -81,7 +82,7 @@ const DayEnd: React.FC = () => {
   };
 
   const handleCloseDayClick = () => {
-    setNextWorkingDate(getDefaultNextDate());
+    setNextWorkingDate(getDefaultNextDate() ?? '');
     setShowNextDateModal(true);
   };
 
@@ -151,7 +152,7 @@ const DayEnd: React.FC = () => {
 
   const pendingLoans = (dayendData as any).pendingLoans as number | undefined;
   const nextOpening = (() => {
-    const d = new Date(dayendData.date);
+    const d = new Date(`${String(dayendData.date).slice(0, 10)}T00:00:00`);
     d.setDate(d.getDate() + 1);
     const dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     const dayName = d.toLocaleDateString('en-IN', { weekday: 'long' });

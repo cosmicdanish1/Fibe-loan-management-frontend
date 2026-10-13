@@ -136,7 +136,7 @@ export const useRealTimeAlerts = () => {
   useEffect(() => {
     // Subscribe to metrics for alerts
     const unsubscribeMetrics = realTimeAnalytics.subscribe('metrics', (metrics: RealTimeMetrics) => {
-      const newAlerts = [];
+      const newAlerts: Array<{ id: string; type: string; message: string; timestamp: string; severity: 'low' | 'medium' | 'high' | 'critical' }> = [];
 
       // Check for performance alerts
       if (metrics.averageResponseTime > 3000) {
@@ -272,7 +272,7 @@ export const useABTesting = (testName: string, variants: string[]) => {
     const variantIndex = sessionId % variants.length;
     const variant = variants[variantIndex];
     
-    setSelectedVariant(variant);
+    setSelectedVariant(variant ?? '');
     setIsLoading(false);
 
     // Track A/B test participation

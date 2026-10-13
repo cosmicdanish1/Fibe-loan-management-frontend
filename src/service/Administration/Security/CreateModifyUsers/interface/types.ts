@@ -1,4 +1,6 @@
 // types.ts
+import type { Dispatch, SetStateAction } from 'react';
+
 export interface User {
   id: number;
   username: string;
@@ -7,7 +9,7 @@ export interface User {
   lastName: string;
   fullName?: string;
   role: string;
-  permissions: string[];
+  permissions?: string[];
   isActive: boolean;
   allowPassTransactions?: boolean;
   createdAt?: string;
@@ -22,20 +24,25 @@ export interface UserFormData {
   lastName: string;
   userLevel: string;
   allowPassTransactions: boolean;
+  isActive: boolean;
   availablePermissions: string[];
   assignedPermissions: string[];
-  avatar: string;
+  avatar?: string;
 }
 
 export type UserLevel =
   | 'system'
   | 'administrator'
+  | 'manager'
   | 'branch_manager'
   | 'officer'
   | 'passing_officer'
   | 'clerk'
   | 'auditor'
   | 'cashier'
+  | 'accountant'
+  | 'loan_officer'
+  | 'data_operator'
   | 'user';
 
 export type RightsTransferDirection = 'default' | 'allot';
@@ -44,11 +51,12 @@ export interface UseUserManagementReturn {
   formData: UserFormData;
   selectedDefaultRights: string[];
   selectedRightsAllot: string[];
-  setSelectedDefaultRights: (rights: string[]) => void;
-  setSelectedRightsAllot: (rights: string[]) => void;
+  setSelectedDefaultRights: Dispatch<SetStateAction<string[]>>;
+  setSelectedRightsAllot: Dispatch<SetStateAction<string[]>>;
   updateFormData: (field: keyof UserFormData, value: any) => void;
   moveRights: (from: RightsTransferDirection, to: RightsTransferDirection) => void;
   moveAllRights: (from: RightsTransferDirection, to: RightsTransferDirection) => void;
+  moveSpecificRights: (from: RightsTransferDirection, items: string[]) => void;
   validateForm: () => boolean;
   resetForm: () => void;
   saveUser: () => Promise<void>;
