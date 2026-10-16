@@ -9,6 +9,9 @@ import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { escapeHtml } from '@/utils/html';
+import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import { useAnnualSpec } from '../views/annualPro';
 
 const { Option } = Select;
 
@@ -241,6 +244,9 @@ const AnnualMemberStatement: React.FC = () => {
 
   const handlePrint = () => { if (data.length > 0) printWithData(data); };
 
+  const { enabled, view, setView } = useReportViews('yearly.annual-member-statement');
+  const spec = useAnnualSpec(data, asOnDate.format('DD MMM YYYY'));
+
   return (
     <ConfigProvider theme={{
       algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
@@ -426,9 +432,15 @@ const AnnualMemberStatement: React.FC = () => {
                   <span className={`font-bold ${muted}`}>Loading statement data...</span>
                 </div>
               ) : data.length > 0 ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (data.length > 0 ? <ProBody view={view} spec={spec} title="Annual Member Statement" subtitle={`As on ${asOnDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No statement data to show'}</p>)}
+                {view === 'legacy' && (
                 <div className={`ams-report font-mono text-xs rounded-lg border p-4 overflow-x-auto ${rpBg}`}>
                   <pre style={{ fontFamily: "'Courier New', Courier, monospace", lineHeight: '1.4', fontSize: '12px' }} className="whitespace-pre">{buildFullReportText(data)}</pre>
                 </div>
+                )}
+                </>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center opacity-40">
                   <FileText size={60} className="text-slate-300 mb-4" />

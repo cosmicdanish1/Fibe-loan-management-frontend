@@ -169,7 +169,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
 // with no menu concept (File menu), and app-chrome every user must always
 // reach. Kept out of ACTION_ROUTE_MAP filtering below via this exclusion set
 // rather than by omission, so it's explicit and easy to audit.
-const NEVER_GATED = new Set(['SETTINGS', 'MY_PROFILE', 'SAVE', 'CANCEL', 'DELETE', 'REFRESH', 'PRINT', 'EXIT']);
+const NEVER_GATED = new Set(['SETTINGS', 'MY_PROFILE', 'TWOFA_SETTINGS', 'SAVE', 'CANCEL', 'DELETE', 'REFRESH', 'PRINT', 'EXIT', 'REPLAY_TOUR', 'HOW_IT_WORKS']);
 
 /** route path -> action code, for enforcing access when a window is opened
  * directly (e.g. via IPC deep link) rather than clicked from the Navbar. */

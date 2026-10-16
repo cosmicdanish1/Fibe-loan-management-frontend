@@ -6,6 +6,7 @@ import Navbar from '../navigation/Navbar';
 import SubNavbar from '../navigation/SubNavbar';
 import UpdateNotice from '../UpdateNotice';
 import { apiService } from '../../services/api';
+import OnboardingHost from '../../features/onboarding/OnboardingHost';
 
 const MainLayout: React.FC = () => {
     const location = useLocation();
@@ -59,6 +60,9 @@ const MainLayout: React.FC = () => {
 
             {/* New-version notice: dashboard window only, not every tool window */}
             {showNavbar && <UpdateNotice />}
+
+            {/* First-login walkthrough: dashboard window only */}
+            {showNavbar && <OnboardingHost />}
 
             {/* Watermark */}
             <div className="absolute bottom-4 right-4 text-sm font-medium pointer-events-none"

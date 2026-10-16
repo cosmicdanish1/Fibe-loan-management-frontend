@@ -15,6 +15,9 @@ import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { isFromAfterTo } from '@/utils/dates';
+import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import { useSavingSpec } from '../views/savingPro';
 
 // ── layout ───────────────────────────────────────────────────────────────────
 const W_DATE = 12;
@@ -153,6 +156,7 @@ const SavingStatement: React.FC = () => {
   const [showLookup, setShowLookup] = useState(false);
   const [reportText, setReportText] = useState('');
   const [isLoading,  setIsLoading]  = useState(false);
+  const [savingData, setSavingData] = useState<SavingData | null>(null);
   const reportTextRef = useRef('');
 
   const handleMemberSelect = useCallback((member: any) => {
@@ -167,6 +171,7 @@ const SavingStatement: React.FC = () => {
     setToDate(dayjs());
     setOutputType('screen');
     setReportText('');
+    setSavingData(null);
     reportTextRef.current = '';
   }, []);
 
@@ -193,6 +198,7 @@ const SavingStatement: React.FC = () => {
         if (!data.transactions || data.transactions.length === 0) {
           message.info('No transactions found for this period');
           setReportText('');
+          setSavingData(null);
           reportTextRef.current = '';
           return;
         }
@@ -200,10 +206,12 @@ const SavingStatement: React.FC = () => {
         const text = buildReportText(data, fromDate.format('YYYY-MM-DD'), toDate.format('YYYY-MM-DD'));
         reportTextRef.current = text;
         setReportText(text);
+        setSavingData(data);
 
         if (outputType === 'printer') printReportText(text);
       } else {
         setReportText('');
+        setSavingData(null);
         reportTextRef.current = '';
         message.error(response.error || response.message || 'Failed to generate report');
       }
@@ -211,6 +219,7 @@ const SavingStatement: React.FC = () => {
       console.error('[SavingStatement]', err);
       message.error('Failed to generate saving statement');
       setReportText('');
+      setSavingData(null);
       reportTextRef.current = '';
     } finally {
       setIsLoading(false);
@@ -223,6 +232,9 @@ const SavingStatement: React.FC = () => {
   }, []);
 
   const labelCls = `fz-caption font-bold uppercase tracking-tight flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`;
+
+  const { enabled, view, setView } = useReportViews('member-statement.saving');
+  const spec = useSavingSpec(savingData);
 
   return (
     <ConfigProvider
@@ -374,6 +386,10 @@ const SavingStatement: React.FC = () => {
             <div className={`svstmt-report-body flex-1 overflow-auto p-2 custom-scrollbar-emerald ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-emerald-50/10'}`}>
               <Spin spinning={isLoading} tip="Loading..." size="small">
                 {reportText ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (savingData !== null && savingData.transactions.length > 0 ? <ProBody view={view} spec={spec} title="Saving Statement" subtitle={`${memberNo} · ${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No transactions to show'}</p>)}
+                {view === 'legacy' && (
                   <pre
                     className="font-mono"
                     style={{
@@ -388,6 +404,8 @@ const SavingStatement: React.FC = () => {
                   >
                     {reportText}
                   </pre>
+                )}
+                </>
                 ) : (
                   <div className="py-32 text-center">
                     <div className="w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">

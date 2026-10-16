@@ -6,6 +6,9 @@ import { FileText, Printer, Search, RotateCcw, Shield, User, Users, Monitor } fr
 import { apiService } from '../../../../../services/api';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import dayjs from 'dayjs';
+import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import { useSuretySpec } from '../views/suretyPro';
 
 interface SuretyRecord {
   key: string;
@@ -196,6 +199,9 @@ const SuretyRegisterReport: React.FC = () => {
     ...loanTypes.map(t => ({ value: t.code, label: `${t.code} - ${t.name}` })),
   ];
 
+  const { enabled, view, setView } = useReportViews('surety-register');
+  const spec = useSuretySpec(reportData, loanType || 'all loan types');
+
   return (
     <ConfigProvider theme={{
       algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
@@ -343,6 +349,10 @@ const SuretyRegisterReport: React.FC = () => {
             <div className={`suretyreg-report-body flex-1 overflow-auto p-2 ${isDark ? 'bg-slate-900/40' : ''}`}>
               <Spin spinning={loading} size="small">
                 {reportData.length > 0 ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (reportData.length > 0 ? <ProBody view={view} spec={spec} title="Surety Register" subtitle={`${memberFrom} to ${memberTo} · ${loanType || 'ALL'}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No records to show'}</p>)}
+                {view === 'legacy' && (
                   <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11 }}>
                     {/* Society Header */}
                     <div className={`text-center mb-3 p-2 border-2 border-sky-400 rounded ${isDark ? 'bg-sky-900/20' : 'bg-sky-50'}`}>
@@ -418,6 +428,8 @@ const SuretyRegisterReport: React.FC = () => {
                       Report As Per Data Available....
                     </div>
                   </div>
+                )}
+                </>
                 ) : (
                   <div className="py-32 text-center">
                     <div className="w-20 h-20 bg-sky-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">

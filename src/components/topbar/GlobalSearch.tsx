@@ -140,6 +140,7 @@ export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
   return (
     <div
       className={`tb-root tb-search${prefs.animations ? '' : ' tb-still'}`}
+      data-tour="search"
       data-shape={prefs.shape}
       ref={rootRef}
       style={glassVars(prefs.glass, prefs.glassStrength)}

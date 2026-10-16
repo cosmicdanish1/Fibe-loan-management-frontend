@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { UserProfileMenu } from '../UserProfileMenu';
+import { ONBOARDING_REPLAY_EVENT, ONBOARDING_SLIDES_EVENT } from '../../features/onboarding/onboardingApi';
 import { AlertCircle, X, ShieldCheck, Users, ArrowLeftRight, FileText, Wrench, HelpCircle, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
 import { GlobalSearch, type SearchItem } from '../topbar/GlobalSearch';
 import { apiService } from '../../services/api';
@@ -60,7 +61,7 @@ const navConfig: NavItem[] = [
           { title: 'Configure UserLevel Default Rights', action: 'ROLE_MANAGEMENT' },
           { title: 'Change Password', action: 'CHANGE_PASSWORD' },
           { title: 'LogOut User', action: 'LOGOUT_USER' },
-          { title: 'Two-Factor Authentication', action: 'TWOFA_SETTINGS' },
+          { title: 'Two-Factor & Approvals', action: 'TWOFA_SETTINGS' },
         ]
       },
       {
@@ -271,6 +272,8 @@ const navConfig: NavItem[] = [
     items: [
       { title: 'About', action: 'ABOUT' },
       { title: 'Contents ..', action: 'CONTENTS' },
+      { title: 'Replay Tour', action: 'REPLAY_TOUR' },
+      { title: 'How It Works', action: 'HOW_IT_WORKS' },
     ]
   },
   {
@@ -504,6 +507,19 @@ const Navbar: React.FC = () => {
       return;
     }
 
+    // In-window action: no separate window, just ask the walkthrough host to start.
+    if (action === 'REPLAY_TOUR') {
+      window.dispatchEvent(new Event(ONBOARDING_REPLAY_EVENT));
+      setMenuState({ activeMenu: null, activeSubmenus: {} });
+      return;
+    }
+
+    if (action === 'HOW_IT_WORKS') {
+      window.dispatchEvent(new Event(ONBOARDING_SLIDES_EVENT));
+      setMenuState({ activeMenu: null, activeSubmenus: {} });
+      return;
+    }
+
     const serviceMap = ACTION_ROUTE_MAP;
 
     const service = serviceMap[action];
@@ -633,7 +649,7 @@ const Navbar: React.FC = () => {
         <div className="flex flex-1 min-w-0">
           <ul className="list-none m-0 p-0 flex gap-0">
             {visibleNavConfig.map(navItem => (
-              <li key={navItem.id} className="relative">
+              <li key={navItem.id} className="relative" data-tour={`menu-${navItem.id}`}>
                 <a
                   href="#"
                   className="no-underline text-gray-700 font-semibold px-3.5 py-2 fz-body transition-all duration-150 whitespace-nowrap flex items-center hover:text-blue-700 hover:bg-blue-50 rounded"
@@ -665,6 +681,7 @@ const Navbar: React.FC = () => {
         <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-gray-100">
           {/* Compact connection dot with tooltip-style label */}
           <div
+            data-tour="connection"
             title={connStatus === 'connected' ? 'Backend: Connected' : connStatus === 'disconnected' ? 'Backend: Disconnected' : 'Checking connection…'}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border fz-tiny font-bold transition-all cursor-default select-none"
             style={{

@@ -752,7 +752,7 @@ const WINDOW_CONFIGS: Record<string, {
   '/role-management': { title: 'Configure UserLevel Default Rights', frameless: false, width: 900, height: 650, modal: true },
   '/change-password': { title: 'Change Password', frameless: false, width: 500, height: 400, modal: true, singleton: true },
   '/logout-user': { title: 'LogOut User', frameless: false, width: 600, height: 450, modal: true },
-  '/two-factor-settings': { title: 'Two-Factor Authentication', frameless: false, width: 1000, height: 760, modal: true, singleton: true },
+  '/two-factor-settings': { title: 'Two-Factor & Approvals', frameless: false, width: 1000, height: 760, modal: true, singleton: true },
 
   // Financial Year Management
   '/financial-year/transfer-entries': { title: 'Transfer Entries For Closing', frameless: false, width: 1100, height: 800 },

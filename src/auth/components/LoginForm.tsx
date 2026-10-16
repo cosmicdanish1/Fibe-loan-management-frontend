@@ -4,6 +4,7 @@ import { User, Lock, Eye, EyeOff, RotateCcw, X, Minus, CheckCircle2, ShieldCheck
 import { useAuth } from '../context/AuthContext';
 import { TwoFaChallenge } from '../types/auth.types';
 import TwoFaStep from './TwoFaStep';
+import ForgotPasswordStep from './ForgotPasswordStep';
 import { IS_LOGIN_WINDOW } from '../../utils/windowIdentity';
 import fibeLogo from '../../assets/fibe-logo.png';
 import { apiService } from '../../services/api';
@@ -18,6 +19,7 @@ const LoginForm: React.FC = () => {
   const { login, finishLogin, isAuthenticated, isLoading, error, clearError } = useAuth();
   const [challenge, setChallenge] = useState<TwoFaChallenge | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forgot, setForgot] = useState(false);
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -158,7 +160,9 @@ const LoginForm: React.FC = () => {
           </div>
         </div>
 
-        {challenge ? (
+        {forgot ? (
+          <ForgotPasswordStep initialUsername={username} onBack={() => { setForgot(false); setPassword(''); }} />
+        ) : challenge ? (
           <TwoFaStep challenge={challenge} onComplete={handleTwoFaComplete} onBack={() => { setChallenge(null); setPassword(''); clearError(); }} />
         ) : (
         <form onSubmit={handleSubmit} className="aw-card login-card aw-fade-in" noValidate>
@@ -197,7 +201,7 @@ const LoginForm: React.FC = () => {
               Remember me
             </label>
             <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm"
-              onClick={() => alert('Contact your system administrator to reset your password.')}>
+              onClick={() => { clearError(); setFieldError(''); setForgot(true); }}>
               Forgot password?
             </button>
           </div>

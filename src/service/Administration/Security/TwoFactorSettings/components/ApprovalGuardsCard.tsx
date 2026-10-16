@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, KeyRound, RotateCcw, ShieldOff, UserMinus, UserPlus } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
+import PasswordInput from '../../../../../components/shared/PasswordInput';
 import AwDialog from '@/components/shared/kit/AwDialog';
 
 interface GuardAction { key: string; label: string; hint: string }
-interface ApproverRow { userid: number; username: string; level: string; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }
+interface ApproverRow { userid: number; username: string; level: string; admin: boolean; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }
 
 type Dlg = null | { key: string; label: string };
 
@@ -53,7 +54,14 @@ const ApprovalGuardsCard: React.FC = () => {
   };
 
   const current = useMemo(() => approvers.filter((a) => a.approver), [approvers]);
-  const candidates = useMemo(() => approvers.filter((a) => !a.approver && a.enabled), [approvers]);
+  // Only administrators can be approvers. Those who have not set up their authenticator yet are listed
+  // (washed out, not selectable) so it is clear why they cannot be added.
+  const candidates = useMemo(
+    () => approvers.filter((a) => !a.approver && a.enabled && a.admin).sort((x, y) => Number(y.enrolled) - Number(x.enrolled) || x.username.localeCompare(y.username)),
+    [approvers],
+  );
+  // Who can give the code when a protection is switched off: active approvers other than the person typing.
+  const codeGivers = useMemo(() => current.filter((a) => a.active), [current]);
   const activeCount = current.filter((a) => a.active).length;
 
   const changeApprover = async (id: number, add: boolean, name: string) => {
@@ -107,7 +115,11 @@ const ApprovalGuardsCard: React.FC = () => {
           <div className="aw-inline" style={{ gap: 6, alignItems: 'center' }}>
             <select className="aw-select" aria-label="Add approver" value={pick} onChange={(e) => setPick(e.target.value)} style={{ minWidth: 190 }}>
               <option value="">Add an approver…</option>
-              {candidates.map((u) => <option key={u.userid} value={u.userid}>{u.username}{u.level ? ` (${u.level})` : ''}</option>)}
+              {candidates.map((u) => (
+                <option key={u.userid} value={u.userid} disabled={!u.enrolled} style={u.enrolled ? undefined : { color: '#9aa3b2' }}>
+                  {u.username}{u.level ? ` (${u.level})` : ''}{u.enrolled ? '' : ' — set up authenticator in My Profile first'}
+                </option>
+              ))}
             </select>
             <button type="button" className="aw-btn aw-btn-primary aw-btn-sm" disabled={!pick}
               onClick={() => { const u = candidates.find((c) => String(c.userid) === pick); if (u) changeApprover(u.userid, true, u.username); }}>
@@ -177,8 +189,14 @@ const ApprovalGuardsCard: React.FC = () => {
             });
           }}>
             <span className="aw-meta">Switching <strong>{dlg.label}</strong> off removes the approval step. Enter <strong>your password</strong> and a <strong>current code from an approver</strong> (not your own).</span>
-            <input className="aw-input" type="password" placeholder="Your password" aria-label="Your password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} />
-            <input className="aw-input" inputMode="numeric" placeholder="6-digit approver code (or approver recovery code)" aria-label="Approver code" value={code} onChange={(e) => setCode(e.target.value)} />
+            <label className="aw-label" htmlFor="guard-off-pw">1. Your own login password</label>
+            <PasswordInput id="guard-off-pw" className="aw-input" placeholder="The password you sign in with" aria-label="Your login password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} />
+            <label className="aw-label" htmlFor="guard-off-code">2. Approver code</label>
+            <input id="guard-off-code" className="aw-input" inputMode="numeric" placeholder="6-digit code from an approver's authenticator app" aria-label="Approver code" value={code} onChange={(e) => setCode(e.target.value)} />
+            <span className="aw-meta">
+              The code comes from <strong>another approver's</strong> authenticator app, not yours
+              {codeGivers.length ? <> (active approvers: {codeGivers.map((a) => a.username).join(', ')})</> : null}. A code works once and lasts about 30 seconds.
+            </span>
             {err && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><div>{err}</div></div>}
             <div className="aw-btn-row">
               <button type="button" className="aw-btn aw-btn-secondary" onClick={close}>Cancel</button>

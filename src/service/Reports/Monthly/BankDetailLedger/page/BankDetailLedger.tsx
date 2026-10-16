@@ -1,20 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { DatePicker, Radio, Select, Button, ConfigProvider, Spin, Tooltip, theme as antdTheme } from 'antd';
-import {
-  Printer,
-  FileDown,
-  Landmark,
-  ShieldCheck,
-  Settings,
-  RefreshCw,
-  Database,
-  TrendingUp,
-  TrendingDown,
-  Calculator,
-  FileText,
-  Search,
-  AlertCircle
-} from 'lucide-react';
+import { DatePicker, Select, Spin } from 'antd';
+import { Printer, FileDown, Settings, RefreshCw, FileText, Search } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
@@ -22,6 +8,11 @@ import { RootState } from '../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import { csvCell } from '@/utils/csv';
 import { isFromAfterTo } from '@/utils/dates';
+import { ReportShell, ParamCard, StatCards, OutputChoice, ReportEmpty } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import { useBankSpec, ProBento, ProTerm, ProEd } from '../views/bankPro';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -29,7 +20,6 @@ const showDialog = async (type: 'info' | 'warning' | 'error', title: string, det
   }
 };
 
-const { Option } = Select;
 
 interface LedgerTransaction {
   key: string;
@@ -133,6 +123,7 @@ const BankDetailLedger: React.FC = () => {
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark';
+  const { enabled, view, setView } = useReportViews('monthly.bank-detail-ledger');
 
   useEffect(() => {
     fetchBankList();
@@ -290,218 +281,63 @@ const BankDetailLedger: React.FC = () => {
     }
   };
 
+  const spec = useBankSpec(data, `${selectedBank} ${bankName}`.trim(), totalDebit, totalCredit, closingBalance, openingBalance);
+
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#b45309',
-          borderRadius: 8,
-          fontSize: 13,
-          colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-          colorBorder: isDark ? '#334155' : '#e2e8f0',
-        },
-      }}
-    >
-      <div className={`bdl-page h-screen flex flex-col font-sans selection:bg-amber-200/60 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/40 to-orange-50/30'}`}>
-        {/* Enhanced Header with Better Typography */}
-        <div className={`bdl-header px-5 py-3 flex items-center justify-between z-10 shadow-lg shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-br from-amber-600 via-amber-700 to-orange-700 p-2.5 rounded-xl text-white shadow-lg shadow-amber-600/30">
-              <Landmark size={20} className="drop-shadow-sm" />
+    <ReportShell
+      className="bdl-page"
+      title="Bank Detail Ledger"
+      desc="Transactions of one bank account"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={() => { setSelectedBank('A1010'); setBankName(''); setData([]); setOpeningBalance(0); setFromDate(dayjs().startOf('year')); setToDate(dayjs()); }}><RefreshCw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!(data.length > 0)}><FileDown size={14} /> CSV</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!(data.length > 0)}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Parameters" icon={<Settings size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="bdl-bank">Bank account</label>
+              <Select id="bdl-bank" value={selectedBank} onChange={(v: string) => setSelectedBank(v)} className="aw-select" popupClassName="aw-select-popup" placeholder="Search by code or name…" showSearch
+                filterOption={(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                options={bankList.map(b => ({ value: b.code, label: `${b.code} - ${b.name}` }))} />
             </div>
             <div>
-              <h1 className={`fz-heading font-black tracking-tight leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Bank Detail Ledger</h1>
-              <div className="flex items-center gap-2 mt-1 fz-caption font-black text-amber-700 uppercase tracking-wider leading-none">
-                <ShieldCheck size={11} className="text-amber-600" /> 
-                <span>Financial Ledger System</span>
-              </div>
+              <label className="aw-label" htmlFor="bdl-from">From date</label>
+              <DatePicker id="bdl-from" className="aw-picker" popupClassName="aw-select-popup" style={{ width: '100%' }} value={fromDate} onChange={v => v && setFromDate(v)} format="DD-MMM-YYYY" allowClear={false} />
             </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button
-              icon={<Printer size={14} />}
-              size="middle"
-              className="h-9 px-4 rounded-xl fz-caption font-black uppercase tracking-wide border-amber-200 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 transition-all duration-200"
-              onClick={handlePrint}
-              disabled={data.length === 0}
-            >
-              Print
-            </Button>
-            <Button
-              type="primary"
-              icon={<FileDown size={14} />}
-              size="middle"
-              className="h-9 px-5 bg-gradient-to-r from-amber-600 via-amber-700 to-orange-700 hover:from-amber-700 hover:via-amber-800 hover:to-orange-800 rounded-xl fz-caption font-black uppercase tracking-wide shadow-lg shadow-amber-600/30 transition-all duration-200"
-              onClick={handleExportCSV}
-              disabled={data.length === 0}
-            >
-              Export CSV
-            </Button>
-          </div>
-        </div>
-
-        {/* Enhanced Main Content with Better Layout */}
-        <div className="flex-1 overflow-hidden p-4 flex gap-4">
-
-          {/* Enhanced Left Panel: Controls & Stats */}
-          <div className="w-[300px] flex flex-col gap-4 shrink-0">
-
-            {/* Enhanced Parameters Card */}
-            <div className={`bdl-params-card rounded-2xl overflow-hidden shadow-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
-              <div className={`bdl-card-header border-b px-4 py-3 flex items-center justify-between ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 border-amber-100'}`}>
-                <h3 className={`fz-caption font-black tracking-wider uppercase flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-amber-800'}`}>
-                  <Settings size={13} className="text-amber-700" />
-                  Report Parameters
-                </h3>
-                <Tooltip title="Refresh Data">
-                  <Button 
-                    type="text" 
-                    size="small" 
-                    icon={<RefreshCw size={12} />} 
-                    onClick={fetchLedgerData} 
-                    className="h-7 w-7 hover:bg-amber-100 rounded-lg transition-colors" 
-                  />
-                </Tooltip>
-              </div>
-
-              <div className="p-4 space-y-4">
-                <div className="space-y-2">
-                  <label className="fz-caption font-black text-slate-600 uppercase tracking-wider">Bank Account</label>
-                  <Select
-                    value={selectedBank}
-                    onChange={setSelectedBank}
-                    className="w-full enhanced-select"
-                    placeholder="Search by code or name..."
-                    showSearch
-                    size="middle"
-                    filterOption={(input, option) => {
-                      const label = String(option?.label ?? '');
-                      return label.toLowerCase().includes(input.toLowerCase());
-                    }}
-                    optionLabelProp="label"
-                  >
-                    {bankList.map(bank => (
-                      <Option 
-                        key={bank.code} 
-                        value={bank.code}
-                        label={`${bank.code} - ${bank.name}`}
-                      >
-                        <div className="flex items-start gap-3 py-1.5">
-                          <span className="font-black text-amber-700 fz-label min-w-[70px] bg-amber-50 px-2 py-0.5 rounded">{bank.code}</span>
-                          <span className="text-slate-400">—</span>
-                          <span className="font-semibold text-slate-700 fz-label flex-1 leading-tight">{bank.name}</span>
-                        </div>
-                      </Option>
-                    ))}
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="fz-caption font-black text-slate-600 uppercase tracking-wider">From Date</label>
-                    <DatePicker
-                      className="w-full h-9 fz-label font-semibold"
-                      value={fromDate}
-                      onChange={v => v && setFromDate(v)}
-                      format="DD-MMM-YYYY"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="fz-caption font-black text-slate-600 uppercase tracking-wider">To Date</label>
-                    <DatePicker
-                      className="w-full h-9 fz-label font-semibold"
-                      value={toDate}
-                      onChange={v => v && setToDate(v)}
-                      format="DD-MMM-YYYY"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="fz-caption font-black text-slate-600 uppercase tracking-wider">Output Format</label>
-                  <Radio.Group
-                    size="middle"
-                    value={outputType}
-                    onChange={e => setOutputType(e.target.value)}
-                    className="w-full enhanced-radio"
-                  >
-                    <Radio.Button value="screen" className="w-1/2 text-center font-semibold">Screen</Radio.Button>
-                    <Radio.Button value="printer" className="w-1/2 text-center font-semibold">Print</Radio.Button>
-                  </Radio.Group>
-                </div>
-
-                <Button
-                  type="primary"
-                  block
-                  size="large"
-                  icon={<Search size={14} />}
-                  onClick={fetchLedgerData}
-                  loading={loading}
-                  className="h-11 bg-gradient-to-r from-amber-600 via-amber-700 to-orange-700 hover:from-amber-700 hover:via-amber-800 hover:to-orange-800 font-black uppercase tracking-wider fz-caption mt-2 shadow-lg shadow-amber-600/30 rounded-xl"
-                >
-                  Generate Report
-                </Button>
-              </div>
+            <div>
+              <label className="aw-label" htmlFor="bdl-to">To date</label>
+              <DatePicker id="bdl-to" className="aw-picker" popupClassName="aw-select-popup" style={{ width: '100%' }} value={toDate} onChange={v => v && setToDate(v)} format="DD-MMM-YYYY" allowClear={false} />
             </div>
+            <OutputChoice value={outputType} onChange={setOutputType} id="bdl-page-output" />
+            <button type="button" className="aw-btn aw-btn-primary" onClick={fetchLedgerData} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Generate'}
+            </button>
+          </ParamCard>
+          {data.length > 0 && <StatCards items={[{ label: 'Closing', value: `${formatCurrency(Math.abs(closingBalance))} ${closingBalance >= 0 ? 'DR' : 'CR'}`, tone: 'muted' }, { label: 'Total debit', value: formatCurrency(totalDebit), tone: 'success' }, { label: 'Total credit', value: formatCurrency(totalCredit), tone: 'danger' }]} />}
+        </>
+      }
+      footerLeft="Bank Detail Ledger"
+      footerRight={bankName || 'Select bank'}
+    >
+      {data.length > 0 && view === 'bento' && <ProBento spec={spec} />}
+      {data.length > 0 && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><ProTerm spec={spec} /></div>}
+      {data.length > 0 && view === 'editorial' && <ProEd spec={spec} subtitle={`${fromDate?.format('DD-MMM-YYYY')} to ${toDate?.format('DD-MMM-YYYY')}`} />}
 
-            {/* Enhanced Stats Grid with Better Visual Hierarchy */}
-            {data.length > 0 && (
-              <div className="grid grid-cols-1 gap-3">
-                <div className={`bdl-stat-card rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 group border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="fz-caption font-black uppercase tracking-wider text-amber-700">Closing Balance</div>
-                    <Calculator size={14} className="text-amber-400 group-hover:text-amber-600 transition-colors" />
-                  </div>
-                  <div className={`text-2xl font-black font-mono tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>₹{formatCurrency(Math.abs(closingBalance))}</div>
-                  <div className="fz-caption font-black text-amber-600 uppercase mt-1 tracking-wider">{closingBalance >= 0 ? 'DEBIT' : 'CREDIT'}</div>
-                </div>
-
-                <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-xl p-4 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-300 relative overflow-hidden group">
-                  <TrendingUp size={60} className="absolute -right-3 -bottom-3 opacity-10 group-hover:scale-110 transition-transform duration-300" />
-                  <div className="fz-caption font-black uppercase tracking-wider opacity-90 mb-1">Total Debit</div>
-                  <div className="fz-heading font-black font-mono relative z-10 tracking-tight flex items-center">
-                    {totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}₹{formatCurrency(totalDebit)}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-rose-500 via-rose-600 to-pink-600 rounded-xl p-4 text-white shadow-lg shadow-rose-500/30 hover:shadow-xl hover:shadow-rose-500/40 transition-all duration-300 relative overflow-hidden group">
-                  <TrendingDown size={60} className="absolute -right-3 -bottom-3 opacity-10 group-hover:scale-110 transition-transform duration-300" />
-                  <div className="fz-caption font-black uppercase tracking-wider opacity-90 mb-1">Total Credit</div>
-                  <div className="fz-heading font-black font-mono relative z-10 tracking-tight flex items-center">
-                    {totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(totalCredit)}
-                  </div>
-                </div>
-              </div>
-            )}
+      {view === 'legacy' && (
+        <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">Bank Ledger Report</span>
+            <span className="aw-meta">{bankName || 'Select bank'}</span>
           </div>
-
-          {/* Enhanced Report Panel with Better Layout */}
-          <div className={`bdl-report-panel flex-1 rounded-2xl shadow-lg flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
-            <div className={`bdl-card-header border-b px-5 py-3 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 border-amber-100'}`}>
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-amber-100'}`}>
-                  <Database size={16} className="text-amber-700" />
-                </div>
-                <div>
-                  <h3 className="fz-body font-black text-amber-800 uppercase tracking-wider leading-none">Bank Ledger Report</h3>
-                  <p className="fz-caption font-black text-amber-600 uppercase mt-1 tracking-wider">{bankName || 'Select Bank Account'}</p>
-                </div>
-              </div>
-              {data.length === 0 && !loading && (
-                <div className="flex items-center gap-2 text-amber-600">
-                  <AlertCircle size={14} />
-                  <span className="fz-caption font-black uppercase tracking-wider">No Data</span>
-                </div>
-              )}
-            </div>
-
-            <div className={`bdl-preview-body flex-1 overflow-auto p-4 enhanced-scrollbar ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
-              <Spin spinning={loading} tip="Loading ledger data..." size="large">
-                {data.length > 0 ? (
-                  <div className="legacy-report-enhanced fz-label">
+          <div className="bdl-page-preview-body" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+            <Spin spinning={loading} tip="Loading..." size="small">
+              {data.length > 0 ? (
+                <div className="legacy-report-enhanced fz-label">
                     {/* Enhanced Company Header */}
                     <div className="text-center mb-6 pb-4 border-b-2 border-amber-200">
                       <div className="fz-body font-black text-blue-800 mb-1">Espat Karmchari Co-Operative Credit Society Limited.</div>
@@ -603,135 +439,26 @@ const BankDetailLedger: React.FC = () => {
                       </table>
                     </div>
                   </div>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center opacity-50">
-                    <FileText size={80} className="text-amber-300 mb-6" />
-                    <h3 className="fz-body font-black text-amber-600 uppercase tracking-wider mb-2">No Transactions Found</h3>
-                    <p className="fz-caption font-semibold text-amber-500 uppercase text-center max-w-[220px] leading-relaxed">
-                      Select a bank account and date range to view ledger data
-                    </p>
-                  </div>
-                )}
-              </Spin>
-            </div>
+              ) : (
+                <ReportEmpty icon={<FileText size={34} />} title="No Data" hint="Select a bank account and date range" />
+              )}
+            </Spin>
           </div>
-        </div>
-
-        {/* Enhanced Footer */}
-        <div className={`bdl-footer px-5 py-3 flex items-center justify-between shrink-0 shadow-lg border-t ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-md border-amber-200/60 shadow-amber-100/20'}`}>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-              <span className="fz-caption font-black text-amber-700 uppercase tracking-wider">Financial Ledger System v2.0</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="fz-caption font-black text-amber-600 uppercase tracking-wider">Account: {selectedBank || 'None'}</span>
-            <div className="w-px h-3 bg-amber-200" />
-            <div className="bg-gradient-to-r from-amber-100 to-orange-100 px-3 py-1 rounded-lg fz-caption font-black text-amber-800 uppercase tabular-nums tracking-wider">
-              v5.2.1
-            </div>
-          </div>
-        </div>
-      </div>
+        </section>
+      )}
+      {view !== 'legacy' && !(data.length > 0) && (
+        <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Data'} hint="Select a bank account and date range" />
+      )}
 
       <style>{`
-        .enhanced-scrollbar::-webkit-scrollbar { width: 8px; }
-        .enhanced-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .enhanced-scrollbar::-webkit-scrollbar-thumb { 
-          background: linear-gradient(to bottom, #f59e0b, #d97706); 
-          border-radius: 12px; 
-          border: 1px solid #fbbf24;
-        }
-        .enhanced-scrollbar::-webkit-scrollbar-thumb:hover { 
-          background: linear-gradient(to bottom, #d97706, #b45309); 
-        }
-        
-        .legacy-report-enhanced {
-          max-width: 100%;
-          margin: 0 auto;
-        }
-        
-        .enhanced-radio .ant-radio-button-wrapper {
-          font-size: 11px !important;
-          font-weight: 700 !important;
-          padding: 0 12px !important;
-          height: 36px !important;
-          line-height: 34px !important;
-          border-color: #f59e0b !important;
-        }
-
-        .enhanced-radio .ant-radio-button-wrapper-checked {
-          background: linear-gradient(to right, #f59e0b, #d97706) !important;
-          border-color: #d97706 !important;
-          color: white !important;
-        }
-
-        .enhanced-select .ant-select-selector {
-          height: 36px !important;
-          font-size: 12px !important;
-          font-weight: 600 !important;
-          border-color: #f59e0b !important;
-        }
-
-        .enhanced-select .ant-select-dropdown {
-          min-width: 450px !important;
-        }
-
-        .enhanced-select .ant-select-item {
-          padding: 10px 16px !important;
-        }
-
-        .enhanced-select .ant-select-item-option-content {
-          white-space: normal !important;
-          word-wrap: break-word !important;
-        }
-
-        .enhanced-select .ant-select-focused .ant-select-selector {
-          border-color: #d97706 !important;
-          box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2) !important;
-        }
-
-        /* Printing now goes through a hidden iframe (see handlePrint) that
-           renders a plain monospace layout built from the report's own data
-           — no @media print rule is needed on this live page anymore;
-           window.print() is no longer called on it. */
-
-        /* ── Bank Detail Ledger — dark mode ── */
-        html.dark .bdl-page { background-color: #000000 !important; background-image: none !important; }
-        html.dark .bdl-header,
-        html.dark .bdl-footer { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; box-shadow: none !important; }
-        html.dark .bdl-params-card,
-        html.dark .bdl-report-panel,
-        html.dark .bdl-page .bg-slate-800 { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; box-shadow: none !important; }
-        html.dark .bdl-card-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
-        html.dark .bdl-preview-body { background-color: #1c1c1e !important; }
-        html.dark .bdl-page .text-slate-100,
-        html.dark .bdl-page .text-slate-900,
-        html.dark .bdl-page h1,
-        html.dark .bdl-page h3 { color: #f5f5f7 !important; }
-        html.dark .bdl-page label,
-        html.dark .bdl-page .text-slate-600,
-        html.dark .bdl-page .text-slate-700 { color: #8e8e93 !important; }
-        html.dark .bdl-page .ant-picker,
-        html.dark .bdl-page .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .bdl-page .ant-picker input,
-        html.dark .bdl-page .ant-select-selection-item { color: #f5f5f7 !important; }
-        html.dark .bdl-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        .bdl-page .legacy-report-enhanced { max-width: 100%; margin: 0 auto; }
         html.dark .bdl-page .legacy-report-enhanced { color: #f5f5f7 !important; }
         html.dark .bdl-page .legacy-report-enhanced table,
         html.dark .bdl-page .legacy-report-enhanced th,
         html.dark .bdl-page .legacy-report-enhanced td,
         html.dark .bdl-page .legacy-report-enhanced tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.15) !important; color: #f5f5f7 !important; }
-        html.dark .bdl-page .legacy-report-enhanced .text-blue-800,
-        html.dark .bdl-page .legacy-report-enhanced .text-blue-700 { color: #60a5fa !important; }
-        html.dark .bdl-page .legacy-report-enhanced .text-emerald-700,
-        html.dark .bdl-page .legacy-report-enhanced .text-emerald-800 { color: #34d399 !important; }
-        html.dark .bdl-page .legacy-report-enhanced .text-rose-700,
-        html.dark .bdl-page .legacy-report-enhanced .text-rose-800 { color: #ff453a !important; }
-        html.dark .bdl-page .legacy-report-enhanced .bg-amber-50\/50 { background-color: rgba(255,255,255,.05) !important; }
       `}</style>
-    </ConfigProvider>
+    </ReportShell>
   );
 };
 

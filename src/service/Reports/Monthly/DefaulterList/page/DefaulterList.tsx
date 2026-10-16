@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ConfigProvider, Spin, theme as antdTheme } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
+import { Spin } from 'antd';
+import { Printer, FileDown, Settings, RefreshCw, FileText, Search } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
 import { csvCell } from '@/utils/csv';
 import { escapeHtml } from '@/utils/html';
+import { ReportShell, ParamCard, StatCards, OutputChoice, ReportEmpty } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import { useDefaulterSpec, ProBento, ProTerm, ProEd } from '../views/defaulterPro';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -147,8 +151,7 @@ const DefaulterList: React.FC = () => {
   const [pageSize, setPageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
 
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
+  const { enabled, view, setView } = useReportViews('monthly.defaulter-list');
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const rangeStart = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
@@ -304,160 +307,80 @@ const DefaulterList: React.FC = () => {
     }
   }, [data, minBalance, totalCount]);
 
-  const pagerBtn: React.CSSProperties = {
-    width: 30, height: 30, borderRadius: 6, background: '#fbf9f4',
-    border: '1px solid rgba(19,37,63,0.14)', color: '#16202c', fontSize: 13, cursor: 'pointer',
-  };
+  // Pro views read every matching defaulter, not only the visible page.
+  const [allRows, setAllRows] = useState<DefaulterRecord[] | null>(null);
+  const [allLoading, setAllLoading] = useState(false);
+  const allKey = useRef('');
+  useEffect(() => {
+    if (view === 'legacy' || totalCount === 0) return;
+    const key = `${minBalance}|${totalCount}`;
+    if (allKey.current === key && allRows) return;
+    let cancelled = false;
+    setAllLoading(true);
+    fetchAllDefaulters()
+      .then(rows => { if (!cancelled && rows) { setAllRows(rows); allKey.current = key; } })
+      .catch(() => { /* the Legacy view still works */ })
+      .finally(() => { if (!cancelled) setAllLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, minBalance, totalCount]);
+
+  const spec = useDefaulterSpec(allRows ?? [], minBalance);
+  const proReady = !!allRows && allRows.length > 0 && !allLoading;
+  const subtitle = `Minimum balance ₹${fmt(minBalance)}`;
 
   return (
-    <ConfigProvider theme={{ algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm }}>
-      <div className="dfl-page" style={{ height: '100vh', width: '100%', display: 'flex', flexDirection: 'column', background: '#f3f0e8', fontFamily: "'IBM Plex Sans', sans-serif", color: '#16202c', overflow: 'hidden' }}>
-
-        {/* Header */}
-        <div className="dfl-noprint dfl-header" style={{ height: 66, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 26px', background: '#fff', borderBottom: '1px solid rgba(19,37,63,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 9, background: '#13253f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z" stroke="#d9ac52" strokeWidth="1.6" fill="none" />
-              </svg>
-            </div>
+    <ReportShell
+      className="dfl-page"
+      title="Defaulter List"
+      desc="Loans with an outstanding balance, risk view"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={() => { setInputValue('10000'); setMinBalance(10000); setCurrentPage(1); fetchDefaulterList(10000, 1, pageSize); }}><RefreshCw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={data.length === 0}><FileDown size={14} /> CSV</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={data.length === 0}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Filter parameters" icon={<Settings size={14} />}>
             <div>
-              <div className="dfl-serif" style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-0.01em', color: '#13253f', lineHeight: 1.1 }}>Defaulter List</div>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.09em', color: '#8a7a56', marginTop: 3 }}>RISK MANAGEMENT SYSTEM</div>
+              <label className="aw-label" htmlFor="dfl-min">Minimum balance (₹)</label>
+              <input id="dfl-min" type="number" className="aw-input" value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') generateReport(); }} />
+              <span className="aw-meta">Higher values load faster</span>
             </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={handlePrint} className="dfl-btn-outline" style={{ height: 37, padding: '0 16px', display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', border: '1px solid rgba(19,37,63,0.18)', color: '#13253f', borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" stroke="currentColor" strokeWidth="1.6" /></svg>
-              Print
+            <OutputChoice value={outputType} onChange={setOutputType} id="dfl-output" />
+            <button type="button" className="aw-btn aw-btn-primary" onClick={generateReport} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Generate'}
             </button>
-            <button onClick={handleExportCSV} className="dfl-btn-gold" style={{ height: 37, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 8, background: '#b8892f', border: 'none', color: '#fff', borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(184,137,47,0.3)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="#fff" strokeWidth="1.8" /></svg>
-              Export CSV
-            </button>
+          </ParamCard>
+          <StatCards items={[
+            { label: 'Total records', value: String(totalCount), tone: 'muted' },
+            { label: 'Page', value: `${currentPage} of ${totalPages}`, tone: 'muted' },
+            { label: 'Defaulters on page', value: String(Math.round(animCount)), tone: 'muted' },
+            { label: 'Total loan amount', value: fmt(Math.round(animLoan)), tone: 'info' },
+            { label: 'Outstanding amount', value: fmt(Math.round(animOutstanding)), tone: 'danger' },
+          ]} />
+        </>
+      }
+      footerLeft="Defaulter List"
+      footerRight={`Filter: ₹${fmt(minBalance)}`}
+    >
+      {view === 'bento' && proReady && <ProBento spec={spec} />}
+      {view === 'terminal' && proReady && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><ProTerm spec={spec} /></div>}
+      {view === 'editorial' && proReady && <ProEd spec={spec} subtitle={subtitle} />}
+      {view !== 'legacy' && !proReady && (
+        <ReportEmpty icon={<FileText size={34} />} title={allLoading || loading ? 'Loading all defaulters…' : 'No defaulters found'} hint="Pro views list every matching loan, not just one page" />
+      )}
+
+      {view === 'legacy' && (
+        <section className="aw-card dfl-report-panel" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head dfl-noprint">
+            <span className="aw-card-title">Defaulter Report</span>
+            <span className="aw-meta">Min balance ₹{fmt(minBalance)} · Page {currentPage} of {totalPages}</span>
           </div>
-        </div>
-
-        {/* Body */}
-        <div style={{ flex: 1, display: 'flex', gap: 16, padding: 16, overflow: 'hidden', minHeight: 0 }}>
-
-          {/* Sidebar */}
-          <div className="dfl-noprint dfl-scroll" style={{ width: 250, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto', minHeight: 0, paddingRight: 2 }}>
-
-            {/* Filter card */}
-            <div className="dfl-card" style={{ background: '#fff', border: '1px solid rgba(19,37,63,0.08)', borderRadius: 12, overflow: 'hidden', flexShrink: 0, boxShadow: '0 1px 2px rgba(19,37,63,0.03),0 8px 20px rgba(19,37,63,0.04)' }}>
-              <div className="dfl-card-hdr" style={{ padding: '13px 16px', background: '#fbf9f4', borderBottom: '1px solid rgba(19,37,63,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div className="dfl-serif" style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '0.07em', color: '#8a7a56' }}>FILTER PARAMETERS</div>
-                <button onClick={() => fetchDefaulterList()} className="dfl-icon-btn" style={{ width: 24, height: 24, borderRadius: 6, background: 'transparent', border: 'none', color: '#8a94a0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0114-5.3M20 12a8 8 0 01-14 5.3M4 4v5h5M20 20v-5h-5" stroke="currentColor" strokeWidth="1.8" /></svg>
-                </button>
-              </div>
-              <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: '#5b6572', marginBottom: 8 }}>MINIMUM BALANCE</div>
-                  <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#b8892f', fontWeight: 700, fontSize: 13 }}>₹</span>
-                    <input
-                      type="number"
-                      value={inputValue}
-                      onChange={e => setInputValue(e.target.value)}
-                      className="dfl-input"
-                      style={{ width: '100%', height: 38, padding: '0 12px 0 28px', background: '#faf8f2', border: '1px solid rgba(19,37,63,0.14)', borderRadius: 8, color: '#16202c', fontSize: 13, fontWeight: 600, boxSizing: 'border-box', outline: 'none' }}
-                    />
-                  </div>
-                  <div style={{ fontSize: 11, color: '#8a94a0', marginTop: 6 }}>Higher values load faster</div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: '#5b6572', marginBottom: 8 }}>OUTPUT FORMAT</div>
-                  <div style={{ display: 'flex', background: '#faf8f2', border: '1px solid rgba(19,37,63,0.14)', borderRadius: 8, padding: 3, gap: 3 }}>
-                    {(['screen', 'printer'] as const).map(val => (
-                      <button
-                        key={val}
-                        onClick={() => setOutputType(val)}
-                        style={{ flex: 1, height: 32, border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .15s ease', background: outputType === val ? '#13253f' : 'transparent', color: outputType === val ? '#fff' : '#5b6572' }}
-                      >
-                        {val === 'screen' ? 'Screen' : 'Print'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={generateReport}
-                  disabled={loading}
-                  className="dfl-generate-btn"
-                  style={{ height: 41, background: '#13253f', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12.5, fontWeight: 700, letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: loading ? 'default' : 'pointer' }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" strokeWidth="1.8" /><path d="M20 20l-4-4" stroke="#fff" strokeWidth="1.8" /></svg>
-                  {loading ? 'Loading…' : 'Generate Report'}
-                </button>
-              </div>
-            </div>
-
-            {/* Data overview */}
-            <div className="dfl-card" style={{ background: '#fff', border: '1px solid rgba(19,37,63,0.08)', borderRadius: 12, overflow: 'hidden', flexShrink: 0, boxShadow: '0 1px 2px rgba(19,37,63,0.03),0 8px 20px rgba(19,37,63,0.04)' }}>
-              <div className="dfl-card-hdr dfl-serif" style={{ padding: '13px 16px', background: '#fbf9f4', borderBottom: '1px solid rgba(19,37,63,0.07)', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.07em', color: '#8a7a56' }}>DATA OVERVIEW</div>
-              <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  { label: 'Total records', value: String(totalCount) },
-                  { label: 'Current page', value: `${currentPage} of ${totalPages}` },
-                  { label: 'Page size', value: `${pageSize} records` },
-                ].map(row => (
-                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <span style={{ fontSize: 12, color: '#5b6572' }}>{row.label}</span>
-                    <span className="dfl-mono" style={{ fontWeight: 600, fontSize: 13, color: '#16202c' }}>{row.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* KPI cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
-              <div className="dfl-kpi-card" style={{ background: '#fff', border: '1px solid rgba(19,37,63,0.08)', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 2px rgba(19,37,63,0.03),0 8px 20px rgba(19,37,63,0.04)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: '#5b6572' }}>DEFAULTERS ON PAGE</span>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M17 20v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M23 20v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 12a4 4 0 100-8 4 4 0 000 8z" stroke="#b8892f" strokeWidth="1.5" /></svg>
-                </div>
-                <div className="dfl-mono" style={{ fontSize: 27, fontWeight: 700, color: '#13253f' }}>{Math.round(animCount)}</div>
-              </div>
-
-              <div className="dfl-kpi-card" style={{ background: '#fff', border: '1px solid rgba(19,37,63,0.08)', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 2px rgba(19,37,63,0.03),0 8px 20px rgba(19,37,63,0.04)' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: '#5b6572', marginBottom: 6 }}>TOTAL LOAN AMOUNT</div>
-                <div className="dfl-mono" style={{ fontSize: 20, fontWeight: 700, color: '#13253f' }}>₹{fmt(Math.round(animLoan))}</div>
-              </div>
-
-              <div className="dfl-kpi-red" style={{ background: '#fbf1ee', border: '1px solid rgba(179,57,44,0.2)', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 2px rgba(19,37,63,0.03),0 8px 20px rgba(19,37,63,0.04)' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: '#b3392c', marginBottom: 6 }}>OUTSTANDING AMOUNT</div>
-                <div className="dfl-mono" style={{ fontSize: 20, fontWeight: 700, color: '#b3392c' }}>₹{fmt(Math.round(animOutstanding))}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Report panel */}
-          <div className="dfl-report-panel" style={{ flex: 1, minWidth: 0, background: '#fff', border: '1px solid rgba(19,37,63,0.08)', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 1px 2px rgba(19,37,63,0.03),0 8px 20px rgba(19,37,63,0.04)' }}>
-
-            {/* Panel header */}
-            <div className="dfl-noprint dfl-card-hdr" style={{ padding: '14px 20px', background: '#fbf9f4', borderBottom: '1px solid rgba(19,37,63,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 8, background: '#13253f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6" rx="8" ry="3" stroke="#d9ac52" strokeWidth="1.6" fill="none" /><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6" stroke="#d9ac52" strokeWidth="1.6" /></svg>
-                </div>
-                <div>
-                  <div className="dfl-serif" style={{ fontSize: 14, fontWeight: 700, color: '#13253f' }}>Defaulter Report</div>
-                  <div style={{ fontSize: 11.5, color: '#5b6572', marginTop: 2 }}>Min balance ₹{fmt(minBalance)} · Page {currentPage} of {totalPages}</div>
-                </div>
-              </div>
-              {totalCount === 0 && !loading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#b3392c', fontSize: 11.5, fontWeight: 600 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9L2.6 17a2 2 0 001.7 3h15.4a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" stroke="currentColor" strokeWidth="1.6" /></svg>
-                  No data
-                </div>
-              )}
-            </div>
-
-            {/* Report body */}
-            <div className="dfl-scroll dfl-report" style={{ flex: 1, overflow: 'auto', padding: '22px 20px' }}>
+          <div className="dfl-report" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
               <Spin spinning={loading} size="large">
                 {!loading && data.length === 0 ? (
                   <div style={{ height: '100%', minHeight: 340, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#8a94a0' }}>
@@ -547,89 +470,33 @@ const DefaulterList: React.FC = () => {
                   </div>
                 ) : null}
               </Spin>
-            </div>
-
-            {/* Pagination footer */}
-            <div className="dfl-noprint" style={{ flexShrink: 0, padding: '12px 20px', borderTop: '1px solid rgba(19,37,63,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: 12, color: '#5b6572' }}>
-                Showing <span style={{ color: '#16202c', fontWeight: 600 }}>{rangeStart}–{rangeEnd}</span> of {totalCount} defaulters
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <select value={pageSize} onChange={handlePageSizeChange} className="dfl-select" style={{ height: 32, background: '#fbf9f4', border: '1px solid rgba(19,37,63,0.14)', borderRadius: 6, color: '#16202c', fontSize: 12, padding: '0 8px', marginRight: 10, cursor: 'pointer' }}>
-                  <option value={10}>10 / page</option>
-                  <option value={20}>20 / page</option>
-                  <option value={50}>50 / page</option>
-                </select>
-                <button onClick={() => setCurrentPage(1)} disabled={currentPage <= 1} className="dfl-pager" style={{ ...pagerBtn, cursor: currentPage <= 1 ? 'default' : 'pointer', color: currentPage <= 1 ? '#c7bfab' : '#16202c' }}>«</button>
-                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1} className="dfl-pager" style={{ ...pagerBtn, cursor: currentPage <= 1 ? 'default' : 'pointer', color: currentPage <= 1 ? '#c7bfab' : '#16202c' }}>‹</button>
-                <div className="dfl-mono" style={{ padding: '0 12px', fontSize: 12.5, color: '#16202c', fontWeight: 600 }}>{currentPage} / {totalPages}</div>
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} className="dfl-pager" style={{ ...pagerBtn, cursor: currentPage >= totalPages ? 'default' : 'pointer', color: currentPage >= totalPages ? '#c7bfab' : '#16202c' }}>›</button>
-                <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage >= totalPages} className="dfl-pager" style={{ ...pagerBtn, cursor: currentPage >= totalPages ? 'default' : 'pointer', color: currentPage >= totalPages ? '#c7bfab' : '#16202c' }}>»</button>
-              </div>
+          </div>
+          <div className="dfl-noprint aw-main-foot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span className="aw-meta">Showing {rangeStart}–{rangeEnd} of {totalCount} defaulters</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <select value={pageSize} onChange={handlePageSizeChange} className="aw-input" style={{ width: 'auto' }} aria-label="Rows per page">
+                <option value={10}>10 / page</option>
+                <option value={20}>20 / page</option>
+                <option value={50}>50 / page</option>
+              </select>
+              <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => setCurrentPage(1)} disabled={currentPage <= 1} aria-label="First page">«</button>
+              <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1} aria-label="Previous page">‹</button>
+              <span className="aw-meta">{currentPage} / {totalPages}</span>
+              <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} aria-label="Next page">›</button>
+              <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => setCurrentPage(totalPages)} disabled={currentPage >= totalPages} aria-label="Last page">»</button>
             </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="dfl-noprint dfl-footer" style={{ height: 38, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', background: '#fff', borderTop: '1px solid rgba(19,37,63,0.08)', fontSize: 11 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#5b6572' }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#2f8f5b', boxShadow: '0 0 0 3px rgba(47,143,91,0.15)' }} />
-            Risk Management System v2.0
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: '#5b6572' }}>
-            <span>Filter: ₹{fmt(minBalance)}</span>
-            <div style={{ width: 1, height: 12, background: 'rgba(19,37,63,0.12)' }} />
-            <span className="dfl-mono" style={{ background: 'rgba(184,137,47,0.12)', color: '#a6791f', padding: '3px 9px', borderRadius: 5, fontWeight: 700 }}>v5.2.1</span>
-          </div>
-        </div>
-      </div>
+        </section>
+      )}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
-
         .dfl-serif { font-family: 'Source Serif 4', serif !important; }
         .dfl-mono  { font-family: 'IBM Plex Mono', monospace !important; }
-
-        .dfl-scroll::-webkit-scrollbar { width: 9px; height: 9px; }
-        .dfl-scroll::-webkit-scrollbar-track { background: transparent; }
-        .dfl-scroll::-webkit-scrollbar-thumb { background: #d8d1c2; border-radius: 6px; }
-        .dfl-scroll::-webkit-scrollbar-thumb:hover { background: #c7bfab; }
-
-        .dfl-btn-outline:hover { background: rgba(19,37,63,0.05) !important; }
-        .dfl-btn-gold:hover    { background: #a6791f !important; }
-        .dfl-generate-btn:hover:not(:disabled) { background: #1c3455 !important; }
-        .dfl-icon-btn:hover    { background: rgba(19,37,63,0.06) !important; color: #13253f !important; }
-        .dfl-pager:hover:not(:disabled) { background: rgba(19,37,63,0.06) !important; }
-        .dfl-input:focus { border-color: #b8892f !important; background: #fff !important; }
-
-        /* Printing now goes through a hidden iframe (see handlePrint) that
-           renders a plain monospace layout built from the report's own data
-           — no @media print rule is needed on this live page anymore;
-           window.print() is no longer called on it. The old rule here would
-           also have been beaten by html.dark's own !important rules during
-           print (see handlePrint's comment for the full explanation). */
-
-        /* ── Dark mode ── */
-        html.dark .dfl-page         { background: #000 !important; }
-        html.dark .dfl-header,
-        html.dark .dfl-footer       { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .dfl-card         { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; box-shadow: none !important; }
-        html.dark .dfl-card-hdr     { background: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .dfl-report-panel { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; box-shadow: none !important; }
-        html.dark .dfl-kpi-card     { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; box-shadow: none !important; }
-        html.dark .dfl-kpi-red      { background: rgba(179,57,44,.15) !important; border-color: rgba(179,57,44,.25) !important; box-shadow: none !important; }
-        html.dark .dfl-input        { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .dfl-btn-outline  { border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
         html.dark .dfl-report-tbl th { background: #0c0c0e !important; }
         html.dark .dfl-report-tbl tr { background: transparent !important; }
         html.dark .dfl-report-tbl td { color: #c8c3bc !important; border-color: rgba(255,255,255,.06) !important; }
-        html.dark .dfl-pager        { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .dfl-pager:disabled { color: rgba(255,255,255,.2) !important; }
-        html.dark .dfl-select       { background: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .dfl-page .dfl-serif,
-        html.dark .dfl-page .dfl-mono { color: inherit; }
       `}</style>
-    </ConfigProvider>
+    </ReportShell>
   );
 };
 

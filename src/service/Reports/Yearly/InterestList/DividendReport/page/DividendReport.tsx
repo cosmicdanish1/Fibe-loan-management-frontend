@@ -16,6 +16,9 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import { csvCell } from '@/utils/csv';
+import { ProBar, ProBody } from '../../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../../components/reports/views/reportViews';
+import { useDivReportSpec } from '../views/divReportPro';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -258,6 +261,9 @@ const DividendReport: React.FC = () => {
     return data.slice(start, end);
   }, [data, currentPage, pageSize]);
 
+  const { enabled, view, setView } = useReportViews('yearly.dividend-report');
+  const spec = useDivReportSpec(data, `FY ${financialYear} at ${dividendRate}%`);
+
   return (
     <ConfigProvider
       theme={{
@@ -465,6 +471,10 @@ const DividendReport: React.FC = () => {
                   <span className="text-slate-500 font-bold">Loading dividend data...</span>
                 </div>
               ) : paginatedData.length > 0 ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} printLegacy />
+                {view !== 'legacy' && (data.length > 0 ? <ProBody view={view} spec={spec} title="Dividend Distribution Report" subtitle={`Financial year ${financialYear} · rate ${dividendRate}%`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No dividend data to show'}</p>)}
+                {view === 'legacy' && (
                 <div className="legacy-report-compact font-mono fz-label">
                   {/* Company Header */}
                     <div className={`text-center mb-4 border-b border-dashed pb-3 p-4 ${isDark ? 'bg-slate-900/30 border-slate-700' : 'bg-slate-50 border-slate-300'}`}>
@@ -561,6 +571,8 @@ const DividendReport: React.FC = () => {
                     </div>
                   )}
                 </div>
+                )}
+                </>
               ) : (
                 <div className="text-center py-12">
                   <IndianRupee size={48} className="text-slate-300 mx-auto mb-3" />

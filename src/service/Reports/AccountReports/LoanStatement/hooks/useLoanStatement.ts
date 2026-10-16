@@ -92,7 +92,7 @@ export const useLoanStatement = () => {
             const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
             const [historyRes, summaryRes] = await Promise.all([
                 fetch(`${base}/loans/member/${mbno}/repayment-history`, { headers: authHeaders }),
-                fetch(`${base}/loans/case/${loancaseno}/repayment-summary`, { headers: authHeaders }),
+                fetch(`${base}/loans/case/${loancaseno}/repayment-summary?mbno=${encodeURIComponent(mbno)}`, { headers: authHeaders }),
             ]);
             const historyData = await historyRes.json();
             const summaryData = await summaryRes.json();

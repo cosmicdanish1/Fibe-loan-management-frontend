@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { DatePicker, Select, Button, ConfigProvider, theme as antdTheme } from 'antd';
-import {
-  Printer,
-  FileDown,
-  TrendingUp,
-  Calendar,
-  FileCheck,
-  Activity,
-  Briefcase,
-  Search,
-  User
-} from 'lucide-react';
+import { DatePicker, Select, Spin } from 'antd';
+import { Printer, FileDown, Settings, RefreshCw, FileText, Search } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
@@ -19,6 +9,11 @@ import { MemberLookupInput, MemberLookupData } from '../../../../../components/s
 import { csvCell } from '@/utils/csv';
 import { indianFinancialYearStart } from '@/utils/dates';
 import { isFromAfterTo } from '@/utils/dates';
+import { ReportShell, ParamCard, StatCards, ReportEmpty } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import { useLoanSpec, ProBento, ProTerm, ProEd } from '../views/loanPro';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -26,7 +21,6 @@ const showDialog = async (type: 'info' | 'warning' | 'error', title: string, det
   }
 };
 
-const { Option } = Select;
 
 interface LoanRecord {
   key: string;
@@ -158,6 +152,7 @@ const NewLoanDisbursed: React.FC = () => {
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark';
+  const { enabled, view, setView } = useReportViews('monthly.new-loan-disbursed');
 
   useEffect(() => {
     fetchLoanTypes();
@@ -311,203 +306,70 @@ const NewLoanDisbursed: React.FC = () => {
     link.click();
   };
 
+  const spec = useLoanSpec(data, `${fromDate?.format('DD MMM YYYY')} - ${toDate?.format('DD MMM YYYY')}`);
+
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#10b981',
-          borderRadius: 8,
-          colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-          colorBorder: isDark ? '#334155' : '#e2e8f0',
-        },
-      }}
+    <ReportShell
+      className="nld-page"
+      title="New Loan Disbursed"
+      desc="Loans disbursed in a period"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={() => { setFromDate(dayjs(indianFinancialYearStart())); setToDate(dayjs()); setSelectedLoanType(''); setMemberNo(''); setMemberName(''); setData([]); }}><RefreshCw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={exportToCSV} disabled={!(data.length > 0)}><FileDown size={14} /> CSV</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!(data.length > 0)}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Parameters" icon={<Settings size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="nld-from">From date</label>
+              <DatePicker id="nld-from" className="aw-picker" popupClassName="aw-select-popup" style={{ width: '100%' }} value={fromDate} onChange={setFromDate} format="DD-MMM-YYYY" allowClear={false} />
+            </div>
+            <div>
+              <label className="aw-label" htmlFor="nld-to">To date</label>
+              <DatePicker id="nld-to" className="aw-picker" popupClassName="aw-select-popup" style={{ width: '100%' }} value={toDate} onChange={setToDate} format="DD-MMM-YYYY" allowClear={false} />
+            </div>
+            <div>
+              <label className="aw-label">Member no (optional)</label>
+              <MemberLookupInput
+                value={memberNo}
+                onChange={(no: string, d?: MemberLookupData) => { setMemberNo(no); setMemberName(d?.memberName || ''); }}
+                placeholder="Type to search member..."
+              />
+              {memberName && <span className="aw-meta">{memberName}</span>}
+            </div>
+            <div>
+              <label className="aw-label" htmlFor="nld-type">Loan type</label>
+              <Select id="nld-type" {...(selectedLoanType ? { value: selectedLoanType } : {})} onChange={(v?: string) => setSelectedLoanType(v ?? '')} className="aw-select" popupClassName="aw-select-popup" placeholder="All loan types" allowClear showSearch
+                filterOption={(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                options={loanTypes.map(t => ({ value: t.code, label: `${t.name} (${t.code})` }))} />
+            </div>
+            <button type="button" className="aw-btn aw-btn-primary" onClick={fetchLoanData} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Load Report'}
+            </button>
+          </ParamCard>
+          {data.length > 0 && <StatCards items={[{ label: 'Total amount', value: formatCurrency(totalAmount), tone: 'success' }, { label: 'Total loans', value: String(totalLoans), tone: 'muted' }]} />}
+        </>
+      }
+      footerLeft="New Loan Disbursed"
+      footerRight={`${fromDate?.format('DD MMM YYYY')} - ${toDate?.format('DD MMM YYYY')}`}
     >
-      <div className={`nld-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-        {/* Header */}
-        <div className="nld-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center justify-between shrink-0 shadow-lg border-b border-white/5">
-          <h1 className="fz-caption font-black text-white tracking-tight uppercase">New Loan Disbursed</h1>
-          <div className="flex items-center gap-2">
-            <Button
-              icon={<Printer size={13} />}
-              size="small"
-              className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide"
-              onClick={handlePrint}
-              disabled={data.length === 0}
-            >
-              Print
-            </Button>
-            <Button
-              type="primary"
-              icon={<FileDown size={13} />}
-              size="small"
-              className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide bg-gradient-to-r from-emerald-600 to-emerald-700"
-              onClick={exportToCSV}
-              disabled={data.length === 0}
-            >
-              CSV
-            </Button>
+      {data.length > 0 && view === 'bento' && <ProBento spec={spec} />}
+      {data.length > 0 && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><ProTerm spec={spec} /></div>}
+      {data.length > 0 && view === 'editorial' && <ProEd spec={spec} subtitle={`${fromDate?.format('DD-MMM-YYYY')} to ${toDate?.format('DD-MMM-YYYY')}`} />}
+
+      {view === 'legacy' && (
+        <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">Loan Disbursement Register</span>
+            <span className="aw-meta">{`${fromDate?.format('DD MMM YYYY')} - ${toDate?.format('DD MMM YYYY')}`}</span>
           </div>
-        </div>
-
-        <div className="flex-1 flex overflow-hidden">
-        {/* Compact Sidebar - 280px */}
-        <div className={`nld-sidebar w-[280px] border-r flex flex-col shrink-0 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-          {/* Header */}
-          <div className={`p-6 border-b ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-emerald-600 p-2.5 rounded-xl text-white shadow-lg">
-                <TrendingUp size={20} />
-              </div>
-              <div>
-                <h1 className={`fz-heading font-black tracking-tight leading-none ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>New Loan Disbursed</h1>
-                <div className="flex items-center gap-2 mt-1 fz-label font-bold text-slate-400 uppercase tracking-wider">
-                  <FileCheck size={10} className="text-emerald-500" />
-                  Monthly Report
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-            {/* Date Range */}
-            <div className={`nld-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-              <div className={`nld-card-header border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
-                <Calendar size={12} className="text-emerald-600" />
-                <span className={`fz-label font-black uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Date Range</span>
-              </div>
-              
-              <div className="p-3 space-y-3">
-                <div>
-                  <label className="block fz-label font-bold text-slate-500 uppercase tracking-wider mb-1">From Date</label>
-                  <DatePicker
-                    value={fromDate}
-                    onChange={setFromDate}
-                    className="w-full h-9 fz-label"
-                    format="DD-MMM-YYYY"
-                    placeholder="Select from date"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block fz-label font-bold text-slate-500 uppercase tracking-wider mb-1">To Date</label>
-                  <DatePicker
-                    value={toDate}
-                    onChange={setToDate}
-                    className="w-full h-9 fz-label"
-                    format="DD-MMM-YYYY"
-                    placeholder="Select to date"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Member Filter */}
-            <div className={`nld-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-              <div className={`nld-card-header border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
-                <User size={12} className="text-emerald-600" />
-                <span className={`fz-label font-black uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Member</span>
-              </div>
-
-              <div className="p-3">
-                <label className="block fz-label font-bold text-slate-500 uppercase tracking-wider mb-1">Member No (optional)</label>
-                <MemberLookupInput
-                  value={memberNo}
-                  onChange={(no: string, data?: MemberLookupData) => {
-                    setMemberNo(no);
-                    setMemberName(data?.memberName || '');
-                  }}
-                  placeholder="Type to search member..."
-                />
-                {memberName && (
-                  <div className={`mt-1 fz-label font-semibold truncate ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    {memberName}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Loan Type Filter */}
-            <div className={`nld-card rounded-xl overflow-hidden shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-              <div className={`nld-card-header border-b px-3 py-2 flex items-center gap-2 ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
-                <Briefcase size={12} className="text-emerald-600" />
-                <span className={`fz-label font-black uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Loan Type</span>
-              </div>
-              
-              <div className="p-3">
-                <Select
-                  value={selectedLoanType}
-                  onChange={setSelectedLoanType}
-                  className="w-full"
-                  placeholder="All Loan Types"
-                  allowClear
-                  showSearch
-                  size="middle"
-                >
-                  {loanTypes.map(type => (
-                    <Option key={type.code} value={type.code}>
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-700 fz-label">{type.name}</span>
-                        <span className="fz-label font-bold text-emerald-500 font-mono">{type.code}</span>
-                      </div>
-                    </Option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-
-            {/* Action Button */}
-            <Button
-              type="primary"
-              icon={<Activity size={16} />}
-              loading={loading}
-              className="w-full h-12 rounded-xl fz-label font-black uppercase tracking-wider shadow-lg bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
-              onClick={fetchLoanData}
-            >
-              Load Report
-            </Button>
-          </div>
-
-          {/* Summary Cards */}
-          <div className={`nld-summary-panel p-4 border-t space-y-3 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
-            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-3 text-white shadow-md">
-              <div className="fz-label font-bold uppercase tracking-wide opacity-90 mb-1">Total Amount</div>
-              <div className="fz-heading font-black font-mono">₹{formatCurrency(totalAmount)}</div>
-            </div>
-            
-            <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
-              <div className={`fz-label font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Total Loans</div>
-              <div className={`fz-heading font-black ${isDark ? 'text-slate-100' : 'text-slate-700'}`}>{totalLoans}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Report Panel with Legacy Format */}
-          <div className={`nld-report-panel flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden m-3 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-            <div className={`nld-card-header border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-emerald-50/50 border-slate-100'}`}>
-              <div className="flex items-center gap-2">
-                <div className={`p-1.5 rounded-lg shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-100'}`}>
-                  <TrendingUp size={14} className="text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className={`fz-label font-extrabold uppercase tracking-wide leading-none ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Loan Disbursement Register</h3>
-                  <p className="fz-label font-semibold text-slate-400 uppercase mt-0.5 tracking-tight">{fromDate?.format('DD MMM YYYY')} - {toDate?.format('DD MMM YYYY')}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className={`nld-preview-body flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
-              {loading ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
-                    <span className={`font-bold fz-body ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading loan data...</span>
-                  </div>
-                </div>
-              ) : data.length > 0 ? (
+          <div className="nld-page-preview-body" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+            <Spin spinning={loading} tip="Loading..." size="small">
+              {data.length > 0 ? (
                 <div className="legacy-report-compact font-mono fz-label">
                   {/* Company Header */}
                   <div className={`text-center mb-4 border-b border-dashed pb-3 ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
@@ -600,68 +462,25 @@ const NewLoanDisbursed: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center opacity-40">
-                  <Search size={60} className="text-slate-300 mb-4" />
-                  <h3 className="fz-body font-bold text-slate-400 uppercase tracking-wide">No Loan Disbursements</h3>
-                  <p className="fz-label font-medium text-slate-300 uppercase mt-2 text-center max-w-[200px]">
-                    No disbursements found for the selected period
-                  </p>
-                </div>
+                <ReportEmpty icon={<FileText size={34} />} title="No Data" hint="No disbursements found for the selected period" />
               )}
-            </div>
+            </Spin>
           </div>
-        </div>
-        </div>
-      </div>
+        </section>
+      )}
+      {view !== 'legacy' && !(data.length > 0) && (
+        <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Data'} hint="No disbursements found for the selected period" />
+      )}
 
-      {/* Print Styles */}
       <style>{`
-        /* Printing now goes through a hidden iframe (see handlePrint) that
-           renders a plain monospace layout built from the report's own data
-           — no @media print rule is needed on this live page anymore;
-           window.print() is no longer called on it. */
-
-        .ant-select-selector {
-          border-radius: 8px !important;
-          border-color: #e2e8f0 !important;
-          height: 36px !important;
-          display: flex !important;
-          align-items: center !important;
-        }
-        
-        .ant-picker {
-          border-radius: 8px !important;
-          border-color: #e2e8f0 !important;
-        }
-        
-        .legacy-report-compact table {
-          border-collapse: collapse;
-        }
-        
-        .legacy-report-compact th,
-        .legacy-report-compact td {
-          border-color: #cbd5e1;
-        }
-
-        /* ── New Loan Disbursed — dark mode ── */
-        html.dark .nld-page { background-color: #000000 !important; }
-        html.dark .nld-topbar { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .nld-sidebar,
-        html.dark .nld-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .nld-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .nld-card-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
-        html.dark .nld-preview-body { background-color: #1c1c1e !important; }
-        html.dark .nld-summary-panel { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .nld-page label,
-        html.dark .nld-page .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .nld-page .ant-select-selector,
-        html.dark .nld-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .nld-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
+        .nld-page .legacy-report-compact { max-width: 100%; margin: 0 auto; }
+        html.dark .nld-page .legacy-report-compact { color: #f5f5f7 !important; }
+        html.dark .nld-page .legacy-report-compact table,
         html.dark .nld-page .legacy-report-compact th,
         html.dark .nld-page .legacy-report-compact td,
-        html.dark .nld-page .legacy-report-compact tr { border-color: rgba(255,255,255,.15) !important; }
+        html.dark .nld-page .legacy-report-compact tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.15) !important; color: #f5f5f7 !important; }
       `}</style>
-    </ConfigProvider>
+    </ReportShell>
   );
 };
 

@@ -7,6 +7,9 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import { isFromAfterTo } from '@/utils/dates';
+import { ProBar, ProBody } from '../../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../../components/reports/views/reportViews';
+import { useDivPaidSpec } from '../views/divPaidPro';
 
 const { Option } = Select;
 
@@ -165,6 +168,9 @@ const DividendPaid: React.FC = () => {
     printInIframe(buildReportHtml(data));
   };
 
+  const { enabled, view, setView } = useReportViews('yearly.dividend-paid');
+  const spec = useDivPaidSpec(data, `${fromDate?.format('DD MMM YYYY')} to ${toDate?.format('DD MMM YYYY')}`);
+
   return (
     <ConfigProvider theme={{
       algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
@@ -305,6 +311,10 @@ const DividendPaid: React.FC = () => {
                 <span className={`font-bold ${muted}`}>Loading payment data...</span>
               </div>
             ) : data.length > 0 ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (data.length > 0 ? <ProBody view={view} spec={spec} title="Dividend Payment List" subtitle={`${fromDate?.format('DD MMM YYYY')} to ${toDate?.format('DD MMM YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No payments to show'}</p>)}
+                {view === 'legacy' && (
               <div className={`dividend-paid-report font-mono text-xs rounded-lg border p-5 overflow-x-auto ${rpBg}`}>
                 {/* Company Header */}
                 <div className={`text-center ${rpTxt} font-semibold`}>
@@ -364,6 +374,8 @@ const DividendPaid: React.FC = () => {
                   {`${' '.repeat(54)}${'─'.repeat(15)}`}
                 </div>
               </div>
+                )}
+                </>
             ) : (
               <div className="text-center py-16">
                 <CreditCard size={48} className="text-slate-300 mx-auto mb-3" />

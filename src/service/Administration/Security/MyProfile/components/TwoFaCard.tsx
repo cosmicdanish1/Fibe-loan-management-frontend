@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, RotateCcw, ShieldCheck, ShieldOff } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
+import PasswordInput from '../../../../../components/shared/PasswordInput';
 import { EnrolPanel, RecoveryCodesPanel } from '../../../../../auth/components/TwoFaStep';
 
 type View = 'home' | 'password' | 'enrol' | 'codes' | 'disable' | 'regen';
@@ -78,7 +79,7 @@ const TwoFaCard: React.FC = () => {
           run(async () => { setSetup(await apiService.twoFaEnrolBegin(password)); setView('enrol'); setPassword(''); });
         }}>
           <span className="aw-meta">Confirm your password to continue.</span>
-          <input className="aw-input" type="password" placeholder="Your password" aria-label="Your password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
+          <PasswordInput className="aw-input" placeholder="Your password" aria-label="Your password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
           {errBox}
           <div className="aw-btn-row">
             <button type="button" className="aw-btn aw-btn-secondary" onClick={home}>Cancel</button>
@@ -106,7 +107,7 @@ const TwoFaCard: React.FC = () => {
           });
         }}>
           <span className="aw-meta">{view === 'disable' ? 'Enter your password and a current code to turn two-factor authentication off.' : 'Enter a current 6-digit code. Your old recovery codes will stop working.'}</span>
-          {view === 'disable' && <input className="aw-input" type="password" placeholder="Your password" aria-label="Your password" value={password} onChange={(e) => setPassword(e.target.value)} />}
+          {view === 'disable' && <PasswordInput className="aw-input" placeholder="Your password" aria-label="Your password" value={password} onChange={(e) => setPassword(e.target.value)} />}
           <input className="aw-input" inputMode="numeric" autoComplete="one-time-code" maxLength={7} placeholder="6-digit code" aria-label="Authenticator code" value={code}
             onChange={(e) => setCode(e.target.value.replace(/[^\d ]/g, ''))} autoFocus />
           {errBox}

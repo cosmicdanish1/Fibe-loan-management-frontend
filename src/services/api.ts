@@ -368,6 +368,17 @@ class ApiService {
     return d;
   }
 
+  // Forgot password (ES-161). Public: used before any sign-in.
+  async forgotMethods(): Promise<{ authenticator: boolean; email: { available: boolean; comingSoon: boolean }; contactAdmin: boolean }> {
+    return this.req2fa('/auth/2fa/forgot/methods');
+  }
+  async forgotVerify(username: string, code: string): Promise<{ resetToken: string }> {
+    return this.req2fa('/auth/2fa/forgot/verify', { method: 'POST', body: JSON.stringify({ username, code }) });
+  }
+  async forgotReset(resetToken: string, newPassword: string): Promise<{ message: string }> {
+    return this.req2fa('/auth/2fa/forgot/reset', { method: 'POST', body: JSON.stringify({ resetToken, newPassword }) });
+  }
+
   async twoFaLoginEnrolBegin(challengeToken: string): Promise<{ secret: string; otpauthUrl: string; qrDataUrl: string }> {
     return this.req2fa('/auth/2fa/login/enroll/begin', { method: 'POST', body: JSON.stringify({ challengeToken }) });
   }
@@ -405,20 +416,31 @@ class ApiService {
   async twoFaGetGuards(): Promise<{
     actions: { key: string; label: string; hint: string }[];
     guards: Record<string, { enabled: boolean }>;
-    approvers: { userid: number; username: string; level: string; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }[];
+    approvers: { userid: number; username: string; level: string; admin: boolean; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }[];
   }> {
     return await this.req2fa('/auth/2fa/guards');
   }
   /** Switching a protection OFF needs { password, code } (logged-in password + an approver's code). */
   async twoFaSaveGuards(guards: Record<string, { enabled: boolean }>, confirm?: { password: string; code: string }): Promise<{
     guards: Record<string, { enabled: boolean }>;
-    approvers?: { userid: number; username: string; level: string; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }[];
+    approvers?: { userid: number; username: string; level: string; admin: boolean; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }[];
   }> {
     return await this.req2fa('/auth/2fa/guards', { method: 'PUT', body: JSON.stringify({ guards, ...(confirm || {}) }) });
   }
   /** Grant (add) or remove the Approver (OTP) right. */
-  async twoFaSetApprovers(add: number[], remove: number[]): Promise<{ approvers: { userid: number; username: string; level: string; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }[] }> {
+  async twoFaSetApprovers(add: number[], remove: number[]): Promise<{ approvers: { userid: number; username: string; level: string; admin: boolean; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }[] }> {
     return await this.req2fa('/auth/2fa/approvers', { method: 'PUT', body: JSON.stringify({ add, remove }) });
+  }
+  /** What this user may see in the Two-Factor & Approvals window. */
+  async twoFaAccess(): Promise<{ isAdmin: boolean; canManageUsers: boolean; isApprover: boolean }> {
+    return await this.req2fa('/auth/2fa/access');
+  }
+  /** Mark a user as "must use 2FA" (they scan their own QR at next sign-in) or clear it. */
+  async twoFaSetRequired(userid: number, required: boolean, signOutNow = false): Promise<void> {
+    await this.req2fa(`/auth/2fa/users/${userid}/require`, { method: 'PUT', body: JSON.stringify({ required, signOutNow }) });
+  }
+  async twoFaAudit(): Promise<{ id: number; at: string; event: string; actor: string | null; user: string | null; detail: string | null }[]> {
+    return await this.req2fa('/auth/2fa/audit');
   }
   async twoFaAdminUsers(): Promise<any[]> {
     return await this.req2fa('/auth/2fa/admin/users');

@@ -12,6 +12,10 @@ import { apiService } from '../../../../../services/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import { useBsSpec, ProBento, ProTerm, ProEd } from '../views/bsPro';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -60,6 +64,8 @@ const PLBalanceSheet: React.FC = () => {
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark';
+  const { enabled, view, setView } = useReportViews('yearly.pl-balance-sheet');
+  const bsSpec = useBsSpec(data ?? { liabilities: [], assets: [], totals: { totalLiabilities: 0, totalAssets: 0, difference: 0 } }, toDate?.format('DD MMM YYYY') ?? '');
 
   const fetchBalanceSheet = async () => {
     setLoading(true);
@@ -321,6 +327,19 @@ const PLBalanceSheet: React.FC = () => {
                         <span className="text-slate-500 font-bold fz-body">Loading balance sheet...</span>
                       </div>
                     ) : data ? (
+                      <>
+                      <div className="app-window aw-embed plbs-noprint">
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        {view !== 'legacy' && (
+                          <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => { setView('legacy'); setTimeout(() => window.print(), 250); }}>Print (legacy layout)</button>
+                        )}
+                        <ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />
+                      </div>
+                      {view === 'bento' && <ProBento spec={bsSpec} />}
+                      {view === 'terminal' && <div style={{ height: 'calc(100vh - 220px)', minHeight: 360 }}><ProTerm spec={bsSpec} /></div>}
+                      {view === 'editorial' && <ProEd spec={bsSpec} subtitle={`As on ${toDate?.format('DD MMMM YYYY')}`} />}
+                      </div>
+                      {view === 'legacy' && (
                       <div className="legacy-report-compact font-mono fz-label">
                         {/* Company Header */}
                         <div className="text-center mb-3 border-b border-dashed border-slate-300 pb-2">
@@ -431,6 +450,8 @@ const PLBalanceSheet: React.FC = () => {
                           </Button>
                         </div>
                       </div>
+                      )}
+                      </>
                     ) : (
                       <div className="text-center py-12">
                         <Search size={48} className="text-slate-300 mx-auto mb-3" />
@@ -456,6 +477,7 @@ const PLBalanceSheet: React.FC = () => {
           thead { display: table-header-group; }
           tfoot { display: table-footer-group; }
           .cr-dr-print-hide { display: none !important; }
+          .plbs-noprint { display: none !important; }
         }
         
         .legacy-report-compact table {

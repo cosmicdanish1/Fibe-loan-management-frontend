@@ -16,6 +16,9 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { csvCell } from '@/utils/csv';
 import { escapeHtml } from '@/utils/html';
+import { ProBar, ProBody, useProRows } from '../../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../../components/reports/views/reportViews';
+import { useVotersSpec } from '../views/votersPro';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -271,6 +274,10 @@ const VotersWithdrawalList: React.FC = () => {
     totalShares: data.reduce((acc, curr) => acc + (curr.shareBalance || 0), 0)
   }), [data]);
 
+  const { enabled, view, setView } = useReportViews('yearly.voters-list');
+  const pro = useProRows<MemberData>(view !== 'legacy', `${selectedDivision}|${selectedBranch}|${selectedMemberList}|${sortBy}|${searchText}|${totalRecords}`, fetchAllRows);
+  const spec = useVotersSpec(pro.rows, selectedMemberList.toLowerCase());
+
   return (
     <ConfigProvider
       theme={{
@@ -478,6 +485,10 @@ const VotersWithdrawalList: React.FC = () => {
                   <span className="text-slate-500 font-bold">Loading member data...</span>
                 </div>
               ) : data.length > 0 ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (pro.ready ? <ProBody view={view} spec={spec} title="Voters / Withdrawal List" subtitle={`${selectedMemberList.toLowerCase()} members`} /> : <p className="aw-meta" style={{ padding: 12 }}>{pro.loading ? 'Loading every member…' : 'No members to show'}</p>)}
+                {view === 'legacy' && (
                 <div className="legacy-report-compact font-mono fz-label">
                   {/* Company Header */}
                   <div className={`text-center mb-4 border-b border-dashed pb-3 p-4 ${isDark ? 'bg-slate-900/30 border-slate-700' : 'bg-slate-50 border-slate-300'}`}>
@@ -601,6 +612,8 @@ const VotersWithdrawalList: React.FC = () => {
                     </div>
                   )}
                 </div>
+                )}
+                </>
               ) : (
                 <div className="text-center py-12">
                   <Users size={48} className="text-slate-300 mx-auto mb-3" />

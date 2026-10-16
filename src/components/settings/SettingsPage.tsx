@@ -6,6 +6,7 @@ import {
 } from 'antd';
 import { FONT_OPTIONS } from '../../config/fontOptions';
 import { TopBarLookSettings } from './TopBarLookSettings';
+import { onboardingApi, type OnboardingMode, type OnboardingStatus } from '../../features/onboarding/onboardingApi';
 import LoadingAnimation from '../loaders/LoadingAnimation';
 import { LOADING_ANIMATIONS, saveLoadingAnimation, useLoadingAnimation } from '../../config/loadingAnimation';
 import { DEFAULT_TYPOGRAPHY_OFFSETS, normalizeTypographyOffsets, readTypographyOffsets, saveTypographyOffsets, TYPOGRAPHY_SYNC_CHANNEL, type TypographyOffsets } from '../../config/typographyPreferences';
@@ -35,6 +36,7 @@ import {
   Calendar,
   Zap,
   Bell,
+  Compass,
   Command,
   LayoutGrid,
   Layers,
@@ -61,6 +63,11 @@ import { useLicense } from '../license/LicenseContext';
 import { DEFAULT_WIDGET_CONFIG, clearLayout, type WidgetConfig } from '../../pages/dashboard/dashboardLayout';
 import { runThemeTransition } from '../../utils/themeTransition';
 import { flushSync } from 'react-dom';
+import {
+  ALL_VIEW_IDS, REPORT_VIEW_REGISTRY, VIEW_META,
+  getReportPref, setReportPref, resetReportPref, hasCustomPref,
+  type ReportViewId,
+} from '../reports/views/reportViews';
 
 // --- Types & Defaults ---
 
@@ -231,10 +238,13 @@ const recordPinFailure = (): number => {
 const TAB_META: Record<string, { title: string; subtitle: string; keywords: string }> = {
   appearance: { title: 'Appearance', subtitle: 'Colors, typography and canvas',      keywords: 'theme dark light accent colour color gradient font text size bold shadow shadows density corner radius background image' },
   dashboard:  { title: 'Dashboard',  subtitle: 'Widgets, quick actions and layout',  keywords: 'widgets quick actions shortcuts fy banner opacity transparency background notice board' },
+  reports:    { title: 'Reports',    subtitle: 'Which views each report offers, and which one it opens with', keywords: 'report views legacy pro bento terminal editorial ledger dense cash book layout switch default' },
   alerts:     { title: 'Notifications', subtitle: 'Telegram, Discord and Jira: what is sent and where', keywords: 'telegram discord jira alerts notifications webhook login logout errors crashes backup day-end licence digest mute turn off on ticket' },
   system:     { title: 'System & Window', subtitle: 'Notifications and global behavior', keywords: 'notifications toasts sound effects audio chatbot ai assistant' },
   developer:  { title: 'Developer',  subtitle: 'Root-level diagnostics',             keywords: 'analytics realtime monitor window geometry reset layouts console' },
-  approvers:  { title: 'Approvers',  subtitle: 'Who may approve sensitive actions with their phone code', keywords: 'approver otp authenticator two-factor 2fa approval code loan closure early closure pass reverse authorised authorized privilege' },
+  approvers:  { title: 'Approvers',  subtitle: 'Approver codes, in the Two-Factor & Approvals window', keywords: 'approver otp authenticator two-factor 2fa approval code loan closure early closure pass reverse authorised authorized privilege' },
+  forgot:      { title: 'Forgot Password', subtitle: 'How users may reset their own password', keywords: 'forgot password reset recover authenticator otp email code monthly periodic check two-factor 2fa sign in login' },
+  onboarding: { title: 'Welcome Tour', subtitle: 'When the first-login walkthrough starts', keywords: 'welcome tour walkthrough onboarding first login every login guide help replay' },
   license:    { title: 'License',    subtitle: 'Activation and renewal',             keywords: 'license key activate renew expiry grace customer' },
 };
 
@@ -425,105 +435,324 @@ const COMING_SOON: { id: string; name: string; Icon: LucideIcon; gradient: strin
   { id: 'teams', name: 'Microsoft Teams', Icon: Users, gradient: 'linear-gradient(135deg,#464eb8,#7b83eb)' },
 ];
 
-/** Approvers (ES-124): choose which existing users may approve sensitive actions with the code from their own phone. */
-const ApproversSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
-  type Row = { userid: number; username: string; level: string; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean };
-  const [rows, setRows] = useState<Row[] | null>(null);
-  const [guards, setGuards] = useState<Record<string, { enabled: boolean }>>({});
-  const [labels, setLabels] = useState<Record<string, string>>({});
-  const [pick, setPick] = useState('');
+/** Forgot password (ES-161): which methods the sign-in page offers, plus the periodic authenticator check. */
+const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  const [cfg, setCfg] = useState<{ policy: string; forgotAuthenticator: boolean; monthlyCheckDays: number } | null>(null);
+  const [days, setDays] = useState('30');
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const g = await apiService.twoFaGetGuards();
-      setRows(g.approvers); setGuards(g.guards);
-      setLabels(Object.fromEntries(g.actions.map((a) => [a.key, a.label])));
-    } catch (e) { setNote({ ok: false, text: e instanceof Error ? e.message : 'Could not load approvers' }); }
+      const r = await apiService.twoFaGetSettings();
+      setCfg(r.settings); setDays(String(r.settings.monthlyCheckDays));
+    } catch (e) { setNote({ ok: false, text: e instanceof Error ? e.message : 'Could not load settings' }); }
   }, []);
   useEffect(() => { if (isAdmin) void load(); }, [isAdmin, load]);
 
   if (!isAdmin) {
     return (
-      <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title="Approvers" subtitle="Administrators only">
-        <p className="fz-body" style={{ color: C.dim }}>Only an administrator can choose who may approve sensitive actions.</p>
+      <Panel icon={<KeyRound size={16} />} tint="#f59e0b" title="Forgot password" subtitle="Administrators only">
+        <p className="fz-body" style={{ color: C.dim }}>Only an administrator can choose how users may reset their password.</p>
       </Panel>
     );
   }
 
-  const change = async (id: number, add: boolean, name: string) => {
+  const save = async (patch: Partial<{ forgotAuthenticator: boolean; monthlyCheckDays: number }>, okText: string) => {
     try {
-      const r = await apiService.twoFaSetApprovers(add ? [id] : [], add ? [] : [id]);
-      setRows(r.approvers); setPick('');
-      setNote({ ok: true, text: add ? `${name} is now an approver. They must set up their authenticator in My Profile before their code counts.` : `${name} is no longer an approver. Their code stops working immediately.` });
-    } catch (e) { setNote({ ok: false, text: e instanceof Error ? e.message : 'Could not change approver' }); }
+      const r = await apiService.twoFaSaveSettings(patch);
+      setCfg(r.settings); setDays(String(r.settings.monthlyCheckDays));
+      setNote({ ok: true, text: okText });
+    } catch (e) { setNote({ ok: false, text: e instanceof Error ? e.message : 'Could not save' }); }
   };
 
-  const current = (rows ?? []).filter((r) => r.approver);
-  const candidates = (rows ?? []).filter((r) => !r.approver && r.enabled);
-  const activeCount = current.filter((r) => r.active).length;
+  const off = cfg?.policy === 'off';
   const btn: React.CSSProperties = { background: C.fill, border: `1px solid ${C.border}`, color: C.text };
-  const protectedOn = Object.entries(guards).filter(([, v]) => v.enabled).map(([k]) => labels[k] || k);
+  const daysNum = Number(days);
+  const daysValid = days !== '' && Number.isInteger(daysNum) && daysNum >= 0 && daysNum <= 365;
+  const row = 'flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl';
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title="Approvers (OTP)" subtitle="Existing users who can approve with the code from their own phone"
-        right={<Counter color={activeCount > 0 ? C.green : C.red}>{activeCount} active</Counter>}>
+      <Panel icon={<KeyRound size={16} />} tint="#f59e0b" title="Forgot password" subtitle="Ways a user can reset their own password from the sign-in page">
         <div className="flex flex-col gap-3">
           <p className="fz-body" style={{ color: C.dim }}>
-            An approver gives the current 6-digit code from their authenticator app to the person doing a protected action (for example an Early Loan Closure).
-            Each approver sets up their own authenticator in <strong>My Profile</strong>. You can also grant this as <strong>Approver (OTP)</strong> in the Access Privilege Matrix (Create / Modify Users).
+            Users who forget their password use <strong>Forgot password?</strong> on the sign-in page. They need the authenticator they already set up in <strong>My Profile</strong>, so there is no second QR code.
           </p>
-
           {note && <div className="px-3.5 py-2.5 rounded-xl fz-body" style={{ background: C.fill, color: note.ok ? C.green : C.red }}>{note.text}</div>}
+          {off && <div className="px-3.5 py-2.5 rounded-xl fz-body" style={{ background: C.fill, color: C.amber ?? C.dim }}>Two-factor authentication is switched off in the Two-Factor window, so authenticator codes are unavailable.</div>}
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <select aria-label="Add approver" value={pick} onChange={(e) => setPick(e.target.value)}
-              className="rounded-lg px-3 fz-body outline-none" style={{ height: 34, minWidth: 220, ...btn }}>
-              <option value="">Add an approver…</option>
-              {candidates.map((u) => <option key={u.userid} value={u.userid}>{u.username}{u.level ? ` (${u.level})` : ''}</option>)}
-            </select>
-            <button type="button" disabled={!pick} className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
-              style={{ height: 34, background: pick ? accent : C.fill, color: pick ? '#fff' : C.dim, border: 0, opacity: pick ? 1 : 0.6 }}
-              onClick={() => { const u = candidates.find((c) => String(c.userid) === pick); if (u) void change(u.userid, true, u.username); }}>
-              Add
-            </button>
+          <div className={row} style={{ background: C.fill }}>
+            <div className="min-w-0">
+              <span className="fz-body font-bold" style={{ color: C.textStrong }}>Authenticator code</span>
+              <p className="fz-small" style={{ color: C.dim }}>The 6-digit code (or a recovery code) from the user's phone app. Only users who have set up an authenticator can use it.</p>
+            </div>
+            <Toggle on={!!cfg?.forgotAuthenticator && !off} accent={accent} label="Allow password reset with authenticator code"
+              onChange={(v) => { if (!off && cfg) void save({ forgotAuthenticator: v }, v ? 'Authenticator reset switched on.' : 'Authenticator reset switched off. Users must ask an administrator.'); }} />
           </div>
 
-          {rows === null ? <p className="fz-body" style={{ color: C.dim }}>Loading…</p>
-            : current.length === 0 ? <p className="fz-body" style={{ color: C.dim }}>No approver yet.</p>
-            : (
-              <div className="flex flex-col gap-1.5">
-                {current.map((r) => (
-                  <div key={r.userid} className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl" style={{ background: C.fill }}>
-                    <div className="min-w-0">
-                      <span className="fz-body font-bold" style={{ color: C.textStrong }}>{r.username}</span>
-                      <span className="fz-small ml-2" style={{ color: C.dim }}>{r.level}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Counter color={!r.enabled ? C.red : r.enrolled ? C.green : C.amber ?? C.dim}>
-                        {!r.enabled ? 'Disabled' : r.enrolled ? 'Active' : 'Needs authenticator'}
-                      </Counter>
-                      <button type="button" className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={{ height: 30, ...btn }}
-                        onClick={() => void change(r.userid, false, r.username)}>Remove</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className={row} style={{ background: C.fill, opacity: 0.7 }}>
+            <div className="min-w-0">
+              <span className="fz-body font-bold" style={{ color: C.textStrong }}>Email OTP</span>
+              <p className="fz-small" style={{ color: C.dim }}>A one-time code sent to the user's email address. Needs email sending to be set up first.</p>
+            </div>
+            <Counter color={C.amber ?? C.dim}>Coming soon</Counter>
+          </div>
+
+          <div className={row} style={{ background: C.fill }}>
+            <div className="min-w-0">
+              <span className="fz-body font-bold" style={{ color: C.textStrong }}>Contact administrator</span>
+              <p className="fz-small" style={{ color: C.dim }}>Always shown. An administrator can reset a user's authenticator or password.</p>
+            </div>
+            <Counter>Always on</Counter>
+          </div>
         </div>
       </Panel>
 
-      <Panel icon={<KeyRound size={16} />} tint="#38bdf8" title="Protected actions" subtitle="Which windows ask for an approver's code"
-        right={<button type="button" className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={{ height: 30, ...btn }}
-          onClick={() => (window as any).electronAPI?.openNewWindow?.('/two-factor-settings')}>Manage…</button>}>
-        <p className="fz-body" style={{ color: C.dim }}>
-          {protectedOn.length > 0
-            ? <>Approver code required for: <strong style={{ color: C.textStrong }}>{protectedOn.join(', ')}</strong>.</>
-            : 'No window asks for an approver code at the moment.'}
-          {' '}Switching a protection on or off is done in <strong>Administration &gt; Security &gt; Two-Factor Authentication</strong>; switching one off needs your password and an approver's code.
-        </p>
+      <Panel icon={<ShieldCheck size={16} />} tint="#38bdf8" title="Periodic code check" subtitle="Keeps users in the habit of using their authenticator"
+        right={<Counter color={cfg && cfg.monthlyCheckDays > 0 ? C.green : C.dim}>{cfg && cfg.monthlyCheckDays > 0 ? `Every ${cfg.monthlyCheckDays} days` : 'Off'}</Counter>}>
+        <div className="flex flex-col gap-3">
+          <p className="fz-body" style={{ color: C.dim }}>
+            At least once in this many days, a user with an authenticator must enter their code when signing in, even on a remembered device.
+            Users without an authenticator are not affected. Set <strong>0</strong> to switch it off.
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input type="number" min={0} max={365} aria-label="Days between code checks" value={days} onChange={(e) => setDays(e.target.value)}
+              className="rounded-lg px-3 fz-body outline-none" style={{ height: 34, width: 110, ...btn }} />
+            <span className="fz-body" style={{ color: C.dim }}>days</span>
+            <button type="button" disabled={!daysValid || !cfg || daysNum === cfg.monthlyCheckDays}
+              className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
+              style={{ height: 34, background: accent, color: '#fff', border: 0, opacity: !daysValid || !cfg || daysNum === cfg.monthlyCheckDays ? 0.5 : 1 }}
+              onClick={() => void save({ monthlyCheckDays: daysNum }, daysNum === 0 ? 'Periodic check switched off.' : `Users are asked for their code at least every ${daysNum} days.`)}>
+              Save
+            </button>
+            <button type="button" className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={{ height: 34, ...btn }}
+              onClick={() => void save({ monthlyCheckDays: daysNum === 0 ? 30 : 0 }, daysNum === 0 ? 'Periodic check switched on (30 days).' : 'Periodic check switched off.')}>
+              {daysNum === 0 ? 'Switch on' : 'Switch off'}
+            </button>
+          </div>
+          <p className="fz-small" style={{ color: C.dim }}>Note: if "Remember this device" is off in the Two-Factor window, users are already asked for a code at every sign-in.</p>
+        </div>
       </Panel>
+    </div>
+  );
+};
+
+/** Welcome Tour (ES-147): when the first-login walkthrough starts. Each person sets their own; admins set the default. */
+const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  const [status, setStatus] = useState<OnboardingStatus | null>(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try { setStatus(await onboardingApi.status()); setError(''); }
+    catch (e: any) { setError(e?.message || 'Could not reach the server.'); }
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+
+  const run = async (fn: () => Promise<unknown>, okText: string) => {
+    setBusy(true);
+    try { await fn(); await load(); message.success(okText); }
+    catch (e: any) { message.error(e?.message || 'Could not save.'); }
+    finally { setBusy(false); }
+  };
+
+  const modeText = (m: OnboardingMode) => (m === 'always' ? 'Every login' : m === 'never' ? 'Off' : 'First login only');
+  const row = 'flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl';
+  const Row: React.FC<{ title: string; hint: string; on: boolean; disabled?: boolean; onChange: (v: boolean) => void }> = ({ title, hint, on, disabled, onChange }) => (
+    <div className={row} style={{ background: C.fill, opacity: disabled ? 0.5 : 1, pointerEvents: disabled || busy ? 'none' : 'auto' }}>
+      <div className="min-w-0">
+        <span className="fz-body font-bold" style={{ color: C.textStrong }}>{title}</span>
+        <p className="fz-small" style={{ color: C.dim }}>{hint}</p>
+      </div>
+      <Toggle on={on} accent={accent} label={title} onChange={onChange} />
+    </div>
+  );
+
+  if (error) {
+    return (
+      <Panel icon={<Compass size={16} />} tint="#f97316" title="Welcome Tour" subtitle="Could not load">
+        <p className="fz-body" style={{ color: C.red }}>{error}</p>
+        <p className="fz-small mt-2" style={{ color: C.dim }}>If you have just updated the app, restart the backend and open this tab again.</p>
+      </Panel>
+    );
+  }
+  if (!status) return null;
+
+  const usingDefault = status.userMode === 'default';
+  // What the two switches below show: the person's own choice, or the default while "use default" is on.
+  const shown: OnboardingMode = usingDefault ? status.globalMode : (status.userMode as OnboardingMode);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Panel icon={<Compass size={16} />} tint="#f97316" title="My welcome tour" subtitle="Run it any time from Help › Replay Tour"
+        right={<Counter color={shown === 'never' ? C.dim : C.green}>{modeText(shown)}</Counter>}>
+        <div className="flex flex-col gap-3">
+          <Row title="Use the administrator's default" hint={`Right now the default is: ${modeText(status.globalMode)}.`}
+            on={usingDefault}
+            onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'default' : status.globalMode), v ? 'Using the default.' : 'Using your own setting.')} />
+          <Row title="Start the tour automatically" hint="Show the welcome tour when you sign in."
+            on={shown !== 'never'} disabled={usingDefault}
+            onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'first' : 'never'), v ? 'The tour will start automatically.' : 'The tour will not start automatically.')} />
+          <Row title="Show it at every login" hint="Off means only the first time you sign in."
+            on={shown === 'always'} disabled={usingDefault || shown === 'never'}
+            onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'always' : 'first'), v ? 'The tour will show at every login.' : 'The tour will show only once.')} />
+        </div>
+      </Panel>
+
+      {isAdmin && (
+        <Panel icon={<Users size={16} />} tint="#6366f1" title="Default for everyone" subtitle="Applies to everyone who has not chosen their own setting"
+          right={<Counter color={status.globalMode === 'never' ? C.dim : C.green}>{modeText(status.globalMode)}</Counter>}>
+          <div className="flex flex-col gap-3">
+            <Row title="Start the tour automatically" hint="Turn off to stop the tour appearing for people on the default."
+              on={status.globalMode !== 'never'}
+              onChange={(v) => void run(() => onboardingApi.setGlobalMode(v ? 'first' : 'never'), 'Default saved for everyone.')} />
+            <Row title="Show it at every login" hint="Off means only the first time each person signs in."
+              on={status.globalMode === 'always'} disabled={status.globalMode === 'never'}
+              onChange={(v) => void run(() => onboardingApi.setGlobalMode(v ? 'always' : 'first'), 'Default saved for everyone.')} />
+          </div>
+        </Panel>
+      )}
+    </div>
+  );
+};
+
+/** Approvers: everything lives in the one Two-Factor & Approvals window (ES-178); this tab is a summary with a link. */
+const ApproversSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  const [info, setInfo] = useState<{ active: number; protectedOn: string[] } | null>(null);
+  useEffect(() => {
+    if (!isAdmin) return;
+    apiService.twoFaGetGuards().then((g) => {
+      const label = Object.fromEntries(g.actions.map((a) => [a.key, a.label]));
+      setInfo({ active: g.approvers.filter((r) => r.active).length, protectedOn: Object.entries(g.guards).filter(([, v]) => v.enabled).map(([k]) => label[k] || k) });
+    }).catch(() => setInfo(null));
+  }, [isAdmin]);
+
+  const openWindow = () => {
+    const api = (window as any).electronAPI;
+    if (api?.openNewWindow) api.openNewWindow('/two-factor-settings'); else window.location.hash = '#/two-factor-settings';
+  };
+
+  if (!isAdmin) {
+    return (
+      <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title="Approvers" subtitle="Administrators only">
+        <p className="fz-body" style={{ color: C.dim }}>Only an administrator manages approvers. Your own sign-in code is in My Profile.</p>
+      </Panel>
+    );
+  }
+  return (
+    <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title="Approvers & approval codes" subtitle="Managed in one window"
+      right={info ? <Counter color={info.active > 0 ? C.green : C.red}>{info.active} active approvers</Counter> : undefined}>
+      <div className="flex flex-col gap-3">
+        <p className="fz-body" style={{ color: C.dim }}>
+          Approvers, the protection switches, sign-in policy, users and activity are all in <strong>Two-Factor &amp; Approvals</strong>.
+          {info && (info.protectedOn.length > 0
+            ? <> Approver code is required for: <strong style={{ color: C.textStrong }}>{info.protectedOn.join(', ')}</strong>.</>
+            : ' No window asks for an approver code at the moment.')}
+        </p>
+        <div>
+          <button type="button" onClick={openWindow} className="rounded-lg px-4 fz-tiny font-black uppercase tracking-widest cursor-pointer"
+            style={{ height: 34, background: accent, color: '#fff', border: 0 }}>Open Two-Factor &amp; Approvals</button>
+        </div>
+      </div>
+    </Panel>
+  );
+};
+
+/** Settings → Reports: which views each report offers and which one it opens with. Saved as you click. */
+const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) => {
+  const [, setTick] = useState(0);
+  const refresh = () => setTick(t => t + 1);
+
+  const toggleView = (reportId: string, view: ReportViewId, on: boolean) => {
+    const pref = getReportPref(reportId);
+    const enabled = ALL_VIEW_IDS.filter(v => v === 'legacy' || (v === view ? on : pref.enabled.includes(v)));
+    setReportPref(reportId, { enabled, defaultView: enabled.includes(pref.defaultView) ? pref.defaultView : 'legacy' });
+    refresh();
+  };
+  const setDefault = (reportId: string, view: ReportViewId) => {
+    setReportPref(reportId, { ...getReportPref(reportId), defaultView: view });
+    refresh();
+  };
+
+  return (
+    <div className="space-y-5">
+      {REPORT_VIEW_REGISTRY.map(def => {
+        const pref = getReportPref(def.id);
+        const custom = hasCustomPref(def.id);
+        return (
+          <Panel
+            key={def.id}
+            icon={<FileText size={16} />}
+            tint="#ec4899"
+            title={def.title}
+            subtitle={`${def.group} · ${def.note ?? 'Choose the views this report offers'}`}
+            right={
+              <>
+                <Counter>{pref.enabled.length} / {def.available.length} views</Counter>
+                {custom && (
+                  <button
+                    type="button"
+                    onClick={() => { resetReportPref(def.id); refresh(); }}
+                    className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+                    style={{ height: 28, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
+                  >
+                    <RotateCcw size={12} /> Reset
+                  </button>
+                )}
+              </>
+            }
+          >
+            <div className="grid grid-cols-2 gap-2.5">
+              {def.available.map(view => {
+                const meta = VIEW_META[view];
+                const on = pref.enabled.includes(view);
+                const locked = view === 'legacy';
+                const isDefault = pref.defaultView === view;
+                return (
+                  <div
+                    key={view}
+                    className="rounded-xl p-3 flex items-center gap-3"
+                    style={on
+                      ? { border: `1px solid color-mix(in srgb, ${accent} 45%, transparent)`, background: `color-mix(in srgb, ${accent} 9%, transparent)` }
+                      : { border: `1px solid ${C.border}`, background: C.fillSoft, opacity: 0.75 }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="fz-tiny font-black uppercase tracking-wide leading-none" style={{ color: on ? C.textStrong : C.dim }}>
+                        {meta.label}{locked && <span style={{ color: C.dimmer, fontWeight: 700 }}> · always on</span>}
+                      </p>
+                      <p className="fz-tiny mt-1" style={{ color: C.dimmer }}>{meta.desc}</p>
+                      <button
+                        type="button"
+                        disabled={!on || isDefault}
+                        onClick={() => setDefault(def.id, view)}
+                        className="mt-2 rounded-md px-2 fz-tiny font-black uppercase tracking-widest cursor-pointer disabled:cursor-default"
+                        style={{
+                          height: 22,
+                          border: `1px solid ${isDefault ? accent : C.border}`,
+                          background: isDefault ? `color-mix(in srgb, ${accent} 18%, transparent)` : 'transparent',
+                          color: isDefault ? C.textStrong : C.dim,
+                          opacity: on ? 1 : 0.4,
+                        }}
+                      >
+                        {isDefault ? <><Check size={10} strokeWidth={3} style={{ display: 'inline', marginRight: 4 }} />Opens with</> : 'Open with this'}
+                      </button>
+                    </div>
+                    <div style={{ opacity: locked ? 0.45 : 1, pointerEvents: locked ? 'none' : 'auto' }}>
+                      <Toggle on={on} onChange={v => toggleView(def.id, view, v)} accent={accent} label={`${meta.label} view for ${def.title}`} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="fz-small mt-3" style={{ color: C.dim }}>
+              Turn a view off and it disappears from the switch at the top of the report. Printing always uses the Legacy layout.
+            </p>
+          </Panel>
+        );
+      })}
+      <p className="fz-small" style={{ color: C.dimmer }}>
+        More reports will appear here as they get Pro views. These choices are saved on this computer for your login and apply straight away.
+      </p>
     </div>
   );
 };
@@ -1481,11 +1710,14 @@ const SettingsPage: React.FC = () => {
   const NAV_ITEMS = useMemo(() => ([
     { key: 'appearance', label: 'Appearance',      Icon: Palette,   gradient: 'linear-gradient(135deg,#6366f1,#818cf8)' },
     { key: 'dashboard',  label: 'Dashboard',       Icon: BarChart2, gradient: 'linear-gradient(135deg,#10b981,#34d399)' },
+    { key: 'reports',    label: 'Reports',         Icon: FileText,  gradient: 'linear-gradient(135deg,#ec4899,#f472b6)' },
     { key: 'system',     label: 'System & Window', Icon: Monitor,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)' },
     { key: 'alerts',     label: 'Notifications',   Icon: Bell,      gradient: 'linear-gradient(135deg,#229ed9,#4fc3f7)', adminOnly: true },
     { key: 'approvers',  label: 'Approvers',       Icon: ShieldCheck, gradient: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', adminOnly: true },
-    { key: 'developer',  label: 'Developer',       Icon: Code,      gradient: 'linear-gradient(135deg,#3f3f46,#71717a)', devOnly: true },
-    { key: 'license',    label: 'License',         Icon: KeyRound,  gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)', afterDivider: true },
+    { key: 'forgot',     label: 'Forgot Password', Icon: KeyRound,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)', adminOnly: true },
+    { key: 'developer',  label: 'Developer',      Icon: Code,      gradient: 'linear-gradient(135deg,#3f3f46,#71717a)', devOnly: true },
+    { key: 'onboarding', label: 'Welcome Tour',    Icon: Compass,   gradient: 'linear-gradient(135deg,#f97316,#fb923c)' },
+    { key: 'license',    label: 'License',        Icon: KeyRound,  gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)', afterDivider: true },
   ]), []);
 
   // The search box narrows the section list by title and by the settings each
@@ -2594,10 +2826,13 @@ const SettingsPage: React.FC = () => {
             <div className="settings-main-body" style={{ maxWidth: 1080 }}>
               {activeTab === 'appearance' && renderAppearance()}
               {activeTab === 'dashboard' && renderDashboard()}
+              {activeTab === 'reports' && <ReportViewsSettingsSection accent={accent} />}
               {activeTab === 'system' && renderSystem()}
               {activeTab === 'alerts' && <AlertSettingsSection accent={accent} isAdmin={isAdmin} />}
               {activeTab === 'approvers' && <ApproversSettingsSection accent={accent} isAdmin={isAdmin} />}
+              {activeTab === 'forgot' && <ForgotPasswordSettingsSection accent={accent} isAdmin={isAdmin} />}
               {activeTab === 'developer' && renderDeveloper()}
+              {activeTab === 'onboarding' && <OnboardingSettingsSection accent={accent} isAdmin={isAdmin} />}
               {activeTab === 'license' && renderLicense()}
             </div>
           </div>

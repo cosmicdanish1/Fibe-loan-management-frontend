@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Search, Printer, FileDown, User, RotateCcw, BookOpen,
-  Calendar, List, ShieldCheck
+  Calendar, List, 
 } from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Spin, Select, Input, Modal, message, theme as antdTheme } from 'antd';
+import { DatePicker, Spin, Select, message } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
-import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '../../../../../components/shared/kit/MemberField';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import dayjs, { Dayjs } from 'dayjs';
+import { ReportShell, ParamCard, StatCards, ReportEmpty } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import { useMlrSpec, ProBento, ProTerm, ProEd } from '../views/mlrPro';
 
 interface LedgerEntry {
   transactionNo: number;
@@ -157,8 +162,9 @@ function buildMemberLedgerLines(data: LedgerData): string[] {
 }
 
 const MemberLedgerReport: React.FC = () => {
-  const { interfaceMode, cornerRadius } = useSelector((state: RootState) => state.theme);
+  const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark';
+  const { enabled, view, setView } = useReportViews('member-ledger-report');
 
   const [headCode, setHeadCode] = useState<string>('');
   const [memberNumber, setMemberNumber] = useState<string>('');
@@ -171,7 +177,6 @@ const MemberLedgerReport: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadingHeads, setLoadingHeads] = useState(false);
   const [validatingMember, setValidatingMember] = useState(false);
-  const [showLookupModal, setShowLookupModal] = useState(false);
   const loadedMemberNumber = useRef('');
   const memberContextRequest = useRef(0);
 
@@ -242,15 +247,10 @@ const MemberLedgerReport: React.FC = () => {
     setData(null);
   };
 
-  const handleMemberBlur = () => loadMemberContext(memberNumber);
-  const handleMemberKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') loadMemberContext(memberNumber);
-  };
 
   const handleMemberSelect = (member: { memberNo: string; memberName?: string; name?: string }) => {
     handleMemberNumberChange(member.memberNo);
     if (member.memberName || member.name) setMemberName(member.memberName || member.name || '');
-    setShowLookupModal(false);
     loadMemberContext(member.memberNo);
   };
 
@@ -363,190 +363,102 @@ const MemberLedgerReport: React.FC = () => {
 
 
   // Theme classes
-  const bg = isDark ? 'bg-[#0f172a]' : 'bg-slate-50';
-  const panel = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
   const text = isDark ? 'text-slate-100' : 'text-slate-800';
   const muted = isDark ? 'text-slate-400' : 'text-slate-500';
   const border = isDark ? 'border-slate-700' : 'border-slate-200';
 
-  return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      token: {
-        colorPrimary: '#0891b2',
-        borderRadius: cornerRadius,
-        colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-        colorBorder: isDark ? '#334155' : '#e2e8f0',
-      },
-    }}>
-      <div className={`mlr-page h-screen flex flex-col font-sans overflow-hidden ${text} ${bg}`}>
+  const entries = data?.entries ?? [];
+  const spec = useMlrSpec(entries, `${memberNumber} ${memberName}`.trim(), data?.openingBalance ?? 0, data?.closingBalance ?? 0, data?.totalDebits ?? 0, data?.totalCredits ?? 0);
+  const hasData = !!data && entries.length > 0;
+  const period = `${fromDate?.format('DD-MMM-YYYY') ?? ''} to ${toDate?.format('DD-MMM-YYYY') ?? ''}`;
 
-        {/* Header */}
-        <div className={`mlr-header border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-cyan-600 p-1.5 rounded-lg text-white shadow-md">
-              <BookOpen size={14} />
+  return (
+    <ReportShell
+      className="mlr-page"
+      title="Member Ledger"
+      desc="Ledger report (personal account)"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!data}><FileDown size={14} /> CSV</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!data}><Printer size={14} /> Print</button>
+        </>
+      }
+      asideWidth={250}
+      aside={
+        <>
+          <ParamCard title="Member" icon={<User size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="mlr-member">Member no</label>
+              <MemberField id="mlr-member" value={memberNumber} onChange={handleMemberNumberChange} onSelect={handleMemberSelect} onSubmit={v => loadMemberContext(v)} />
+              {validatingMember && <span className="aw-meta">Checking member…</span>}
+              {memberName && <span className="aw-meta">{memberName}</span>}
+            </div>
+          </ParamCard>
+          <ParamCard title="Account head" icon={<List size={14} />}>
+            <Select
+              className="aw-select" popupClassName="aw-select-popup"
+              placeholder="Select head"
+              aria-label="Account head"
+              {...(headCode ? { value: headCode } : {})}
+              onChange={setHeadCode}
+              loading={loadingHeads}
+              optionRender={(option) => {
+                const h = option.data as HeadOption;
+                const isInactive = h.hasData === false;
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, opacity: isInactive ? 0.5 : 1 }}>
+                    <span>{h.code} - {h.headName}</span>
+                    {h.hasData !== undefined && <span className="aw-meta">{isInactive ? 'No activity' : `${h.transactionCount} entries`}</span>}
+                  </div>
+                );
+              }}
+              showSearch
+              filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+              options={[...headOptions]
+                .sort((a, b) => Number(b.hasData === true) - Number(a.hasData === true))
+                .map(h => ({ ...h, value: h.code, label: `${h.code} - ${h.headName}` }))}
+            />
+          </ParamCard>
+          <ParamCard title="Date range" icon={<Calendar size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="mlr-from">From</label>
+              <DatePicker id="mlr-from" className="aw-picker" popupClassName="aw-select-popup" style={{ width: '100%' }} value={fromDate} onChange={v => setFromDate(v)} format="DD-MMM-YYYY" />
             </div>
             <div>
-              <h1 className={`text-xs font-black tracking-tight leading-none ${text}`}>Member Ledger</h1>
-              <div className={`flex items-center gap-1 mt-0.5 fz-tiny font-bold uppercase tracking-wider leading-none ${muted}`}>
-                <ShieldCheck size={8} className="text-cyan-500" /> Ledger Report (Personal)
-              </div>
+              <label className="aw-label" htmlFor="mlr-to">To</label>
+              <DatePicker id="mlr-to" className="aw-picker" popupClassName="aw-select-popup" style={{ width: '100%' }} value={toDate} onChange={v => setToDate(v)} format="DD-MMM-YYYY" />
             </div>
+            <button type="button" className="aw-btn aw-btn-primary" onClick={generateReport} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Generate'}
+            </button>
+          </ParamCard>
+          {data && <StatCards items={[
+            { label: 'Opening', value: balLabel(data.openingBalance), tone: 'muted' },
+            { label: 'Total payment', value: fmt(data.totalDebits), tone: 'danger' },
+            { label: 'Total receipt', value: fmt(data.totalCredits), tone: 'success' },
+            { label: 'Closing', value: balLabel(data.closingBalance), tone: 'info' },
+            { label: 'Entries', value: String(data.totalTransactions), tone: 'muted' },
+          ]} />}
+        </>
+      }
+      footerLeft="Member Ledger · Personal Account"
+      footerRight={hasData ? `${memberNumber} · ${period}` : 'Select member, head and period'}
+    >
+      {hasData && view === 'bento' && <ProBento spec={spec} />}
+      {hasData && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><ProTerm spec={spec} /></div>}
+      {hasData && view === 'editorial' && <ProEd spec={spec} subtitle={`${memberNumber} · ${data?.headName ?? ''} · ${period}`} />}
+
+      {view === 'legacy' && (
+        <section className="aw-card mlr-panel" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">Ledger Report (Personal)</span>
+            <span className="aw-meta">{period}{data ? ` · ${data.totalTransactions} entries` : ''}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Button icon={<RotateCcw size={11} />} size="small" onClick={handleReset}
-              className="h-7 px-2 rounded-lg fz-small font-bold uppercase">Reset</Button>
-            <Button icon={<Printer size={11} />} size="small" onClick={handlePrint}
-              disabled={!data} className="h-7 px-2 rounded-lg fz-small font-bold uppercase">Print</Button>
-            <Button type="primary" icon={<FileDown size={11} />} size="small" onClick={handleExportCSV}
-              disabled={!data} className="h-7 px-2 rounded-lg fz-small font-bold uppercase">CSV</Button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-2 flex gap-2">
-
-          {/* Left sidebar */}
-          <div className="w-[230px] flex flex-col gap-2 shrink-0 overflow-y-auto">
-
-            {/* Member */}
-            <div className={`mlr-card border rounded-lg overflow-hidden ${panel}`}>
-              <div className={`px-2 py-1 flex items-center gap-1 ${isDark ? 'bg-cyan-800/50' : 'bg-cyan-600'}`}>
-                <User size={10} className="text-white" />
-                <h3 className="fz-small font-black text-white uppercase tracking-wide">Member</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <div>
-                  <label className={`fz-tiny font-bold uppercase tracking-tight block mb-0.5 ${muted}`}>Member No</label>
-                  <Input.Group compact>
-                    <Input
-                      size="small"
-                      value={memberNumber}
-                      onChange={e => handleMemberNumberChange(e.target.value)}
-                      onBlur={handleMemberBlur}
-                      onKeyDown={handleMemberKeyDown}
-                      placeholder="e.g. 61002684"
-                      suffix={validatingMember ? <Spin size="small" /> : null}
-                      className="h-7 fz-small font-semibold"
-                      style={{ width: 'calc(100% - 28px)' }}
-                    />
-                    <Button
-                      size="small"
-                      icon={<Search size={11} />}
-                      onClick={() => setShowLookupModal(true)}
-                      title="Browse members (like Member Master)"
-                      className="h-7 w-7 flex items-center justify-center"
-                    />
-                  </Input.Group>
-                </div>
-                {memberName && (
-                  <div className={`fz-small font-bold px-2 py-1 rounded ${isDark ? 'bg-cyan-900/40 text-cyan-300' : 'bg-cyan-50 text-cyan-700'}`}>
-                    {memberName}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Head */}
-            <div className={`mlr-card border rounded-lg overflow-hidden ${panel}`}>
-              <div className={`px-2 py-1 flex items-center gap-1 ${isDark ? 'bg-cyan-800/50' : 'bg-cyan-600'}`}>
-                <List size={10} className="text-white" />
-                <h3 className="fz-small font-black text-white uppercase tracking-wide">Account Head</h3>
-              </div>
-              <div className="p-2">
-                <Select
-                  className="w-full"
-                  size="small"
-                  placeholder="Select Head"
-                  {...(headCode ? { value: headCode } : {})}
-                  onChange={setHeadCode}
-                  loading={loadingHeads}
-                  optionRender={(option) => {
-                    const head = option.data as HeadOption;
-                    const isInactive = head.hasData === false;
-                    return (
-                      <div className={`flex items-center justify-between gap-2 ${isInactive ? 'opacity-45' : ''}`}>
-                        <span>{head.code} - {head.headName}</span>
-                        {head.hasData !== undefined && (
-                          <span className={`shrink-0 text-[10px] ${isInactive ? 'text-slate-400' : 'text-emerald-700'}`}>
-                            {isInactive ? 'No activity' : `${head.transactionCount} entries`}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  }}
-                  showSearch
-                  filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                  }
-                  options={[...headOptions]
-                    // heads with data first; otherwise keep the server's Report Head Order (stable sort)
-                    .sort((a, b) => Number(b.hasData === true) - Number(a.hasData === true))
-                    .map(h => ({ ...h, value: h.code, label: `${h.code} - ${h.headName}` }))}
-                />
-              </div>
-            </div>
-
-            {/* Dates */}
-            <div className={`mlr-card border rounded-lg overflow-hidden ${panel}`}>
-              <div className={`px-2 py-1 flex items-center gap-1 ${isDark ? 'bg-cyan-800/50' : 'bg-cyan-600'}`}>
-                <Calendar size={10} className="text-white" />
-                <h3 className="fz-small font-black text-white uppercase tracking-wide">Date Range</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <div>
-                  <label className={`fz-tiny font-bold uppercase tracking-tight block mb-0.5 ${muted}`}>From</label>
-                  <DatePicker className="w-full h-7 fz-small font-semibold" value={fromDate}
-                    onChange={v => setFromDate(v)} format="DD-MMM-YYYY" />
-                </div>
-                <div>
-                  <label className={`fz-tiny font-bold uppercase tracking-tight block mb-0.5 ${muted}`}>To</label>
-                  <DatePicker className="w-full h-7 fz-small font-semibold" value={toDate}
-                    onChange={v => setToDate(v)} format="DD-MMM-YYYY" />
-                </div>
-                <Button type="primary" block size="small" icon={<Search size={11} />}
-                  onClick={generateReport} loading={loading}
-                  className="h-8 font-black uppercase tracking-wider fz-small mt-1">
-                  Generate
-                </Button>
-              </div>
-            </div>
-
-            {/* Stats */}
-            {data && (
-              <div className="flex flex-col gap-1.5">
-                {[
-                  { label: 'Opening', value: balLabel(data.openingBalance), cls: text },
-                  { label: 'Total Payment', value: fmt(data.totalDebits), cls: isDark ? 'text-rose-300' : 'text-rose-600' },
-                  { label: 'Total Receipt', value: fmt(data.totalCredits), cls: isDark ? 'text-emerald-300' : 'text-emerald-600' },
-                  { label: 'Closing', value: balLabel(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-cyan-300' : 'text-cyan-700') : (isDark ? 'text-rose-300' : 'text-rose-600') },
-                ].map(({ label, value, cls }) => (
-                  <div key={label} className={`mlr-card border rounded-lg px-3 py-1.5 ${panel}`}>
-                    <div className={`fz-tiny font-bold uppercase tracking-wide ${muted}`}>{label}</div>
-                    <div className={`fz-caption font-black font-mono ${cls}`}>{value}</div>
-                  </div>
-                ))}
-                <div className={`mlr-card border rounded-lg px-3 py-1.5 ${panel}`}>
-                  <div className={`fz-tiny font-bold uppercase tracking-wide ${muted}`}>Entries</div>
-                  <div className={`text-base font-black font-mono ${text}`}>{data.totalTransactions}</div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Report panel */}
-          <div className={`mlr-panel flex-1 border rounded-lg flex flex-col overflow-hidden ${panel}`}>
-            <div className={`border-b px-3 py-1.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-cyan-900/40 border-slate-700' : 'bg-cyan-600'}`}>
-              <span className="fz-caption font-black text-white uppercase tracking-wide">
-                Ledger Report (Personal) — {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}
-              </span>
-              {data && <span className="fz-small text-cyan-200 font-mono">{data.totalTransactions} entries</span>}
-            </div>
-
-            <div className={`mlr-preview-body flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
-              <Spin spinning={loading} tip="Loading...">
-                {data && data.entries.length > 0 ? (
+          <div className="mlr-preview-body" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+            <Spin spinning={loading} tip="Loading...">
+              {data && data.entries.length > 0 ? (
                   <div id="ledger-print-area" className="font-mono">
                     {/* Company header */}
                     <div className={`text-center mb-3 pb-2 border-b ${border}`}>
@@ -623,68 +535,17 @@ const MemberLedgerReport: React.FC = () => {
                       <div>* Note&nbsp;&nbsp; D-Demand&nbsp;&nbsp; R-Receipt&nbsp;&nbsp; P-Payment&nbsp;&nbsp; J-Jouneral Transfer Entry</div>
                     </div>
                   </div>
-                ) : !loading ? (
-                  <div className="flex flex-col items-center justify-center h-64 gap-3">
-                    <BookOpen size={48} className={isDark ? 'text-slate-700' : 'text-slate-300'} />
-                    <p className={`text-sm font-bold uppercase tracking-wide ${muted}`}>
-                      {!headCode || !memberNumber ? 'Select member, head code and date range' : 'No transactions found'}
-                    </p>
-                    {memberName && <p className={`text-xs font-semibold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>{memberName}</p>}
-                  </div>
-                ) : null}
-              </Spin>
-            </div>
+              ) : !loading ? (
+                <ReportEmpty icon={<BookOpen size={34} />} title={!headCode || !memberNumber ? 'Select member, head code and date range' : 'No transactions found'} {...(memberName ? { hint: memberName } : {})} />
+              ) : null}
+            </Spin>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className={`mlr-footer border-t px-3 py-1.5 flex items-center justify-between shrink-0 ${panel}`}>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" />
-            <span className={`fz-tiny font-bold uppercase tracking-wide ${muted}`}>Member Ledger · Personal Account</span>
-          </div>
-          <span className={`fz-tiny font-bold px-1.5 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
-            {isDark ? '◐ DARK' : '◑ LIGHT'}
-          </span>
-        </div>
-      </div>
-      {/* Member Lookup Modal — same as Member Master */}
-      <Modal
-        open={showLookupModal}
-        onCancel={() => setShowLookupModal(false)}
-        footer={null}
-        width={800}
-        styles={{ body: { padding: 0 } }}
-        closable={false}
-        destroyOnClose
-        title={null}
-      >
-        <MemberLookup
-          isModal={true}
-          onSelect={handleMemberSelect}
-          onClose={() => setShowLookupModal(false)}
-        />
-      </Modal>
-
-      <style>{`
-        /* ── Member Ledger Report — dark mode ── */
-        html.dark .mlr-page { background-color: #000000 !important; }
-        html.dark .mlr-header,
-        html.dark .mlr-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mlr-card,
-        html.dark .mlr-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mlr-preview-body { background-color: #1c1c1e !important; }
-        html.dark .mlr-page .ant-picker,
-        html.dark .mlr-page .ant-select-selector,
-        html.dark .mlr-page .ant-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mlr-page .ant-picker input,
-        html.dark .mlr-page .ant-select-selection-item,
-        html.dark .mlr-page .ant-input { color: #f5f5f7 !important; }
-        html.dark .mlr-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .ant-modal-content,
-        html.dark .ant-modal-header { background-color: #1c1c1e !important; }
-      `}</style>
-    </ConfigProvider>
+        </section>
+      )}
+      {view !== 'legacy' && !hasData && (
+        <ReportEmpty icon={<BookOpen size={34} />} title={loading ? 'Loading…' : !headCode || !memberNumber ? 'Select member, head code and date range' : 'No transactions found'} />
+      )}
+    </ReportShell>
   );
 };
 

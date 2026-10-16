@@ -14,7 +14,6 @@ import {
   Fingerprint,
   UserCheck,
   Settings2,
-  LockKeyhole,
   Search,
   X,
   CheckCircle2,
@@ -30,6 +29,7 @@ import type { UserLevel } from '../interface/types';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import { Select } from 'antd';
 import AwDialog from '@/components/shared/kit/AwDialog';
+import PasswordInput from '../../../../../components/shared/PasswordInput';
 import UserLookup from '@/components/shared/UserLookup/UserLookup';
 
 interface CreateModifyUsersProps {
@@ -62,6 +62,7 @@ const STATUS_ICONS = {
 // ── Animated Permission List ──────────────────────────────────────────────────
 // Friendly names for rights whose raw key is not self-explanatory.
 const PERM_LABELS: Record<string, { label: string; hint: string }> = {
+  manage_two_factor: { label: 'Manage Two-Factor (other users)', hint: 'May require 2FA for other users, reset their authenticator and unlock them in the Two-Factor & Approvals window. Cannot touch administrator accounts.' },
   approve_actions: { label: 'Approver (OTP)', hint: 'May give the authenticator code that authorises sensitive actions (loan closure, pass, reverse). They must also set up their authenticator in My Profile.' },
 };
 
@@ -392,17 +393,14 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   <div className="aw-two">
                     <div>
                       <label className="aw-label" htmlFor="cmu-pw">Password</label>
-                      <div className="aw-input-wrap has-icon">
-                        <LockKeyhole size={13} />
-                        <input id="cmu-pw" type="password" value={formData.password}
+                      <PasswordInput withIcon id="cmu-pw" value={formData.password}
                           onChange={(e) => updateFormData('password', e.target.value)}
                           className="aw-input" placeholder={isUpdating ? '(blank = keep)' : '••••••••'} />
-                      </div>
                       {!isUpdating && <p className="aw-meta" style={{ marginTop: 4 }}>Min 6 characters</p>}
                     </div>
                     <div>
                       <label className="aw-label" htmlFor="cmu-pw2">Confirm</label>
-                      <input id="cmu-pw2" type="password" value={formData.confirmPassword}
+                      <PasswordInput id="cmu-pw2" value={formData.confirmPassword}
                         onChange={(e) => updateFormData('confirmPassword', e.target.value)}
                         className={`aw-input ${formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword ? 'is-invalid' : ''}`}
                         placeholder="••••••••" />

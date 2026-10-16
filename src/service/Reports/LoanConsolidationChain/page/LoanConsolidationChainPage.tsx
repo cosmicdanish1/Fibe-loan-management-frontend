@@ -4,15 +4,7 @@ import LoanConsolidationChainView from '../components/LoanConsolidationChainView
 
 const LoanConsolidationChainPage: React.FC = () => {
     const props = useLoanConsolidationChain();
-
-    return (
-        <div className="loan-consolidation-chain-page h-screen bg-slate-50 overflow-hidden">
-            <LoanConsolidationChainView {...props} />
-            <style>{`
-              html.dark .loan-consolidation-chain-page { background-color: #000000 !important; }
-            `}</style>
-        </div>
-    );
+    return <LoanConsolidationChainView {...props} />;
 };
 
 export default LoanConsolidationChainPage;

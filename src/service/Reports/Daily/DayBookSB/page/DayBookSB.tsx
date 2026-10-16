@@ -1,39 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, RefreshCw, Printer, FileDown, Search, PiggyBank, ShieldCheck } from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Spin, Tooltip, message, theme as antdTheme } from 'antd';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Settings, RefreshCw, Printer, FileDown, Search, PiggyBank, Calendar } from 'lucide-react';
+import { DatePicker, Spin, message } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
+import { ReportShell, StatCards } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import SbBento from '../views/SbBento';
+import SbTerminal from '../views/SbTerminal';
+import { adaptFlatDayBook, isFlatDayBook, type SBData } from '../views/sbModel';
 import dayjs from 'dayjs';
 import { csvCell } from '@/utils/csv';
 import { escapeHtml } from '@/utils/html';
-
-interface SBEntry {
-  srNo: number;
-  accNo: string;
-  acName: string;
-  depositCash: number;
-  depositTransfer: number;
-  withdrawalCash: number;
-  withdrawalTransfer: number;
-}
-
-interface SBData {
-  date: string;
-  openingBalance: number;
-  totalDepositCash: number;
-  totalDepositTransfer: number;
-  totalDeposit: number;
-  totalWithdrawalCash: number;
-  totalWithdrawalTransfer: number;
-  totalWithdrawal: number;
-  totalCashInHand: number;
-  closingBalance: number;
-  totalTransactions: number;
-  entries: SBEntry[];
-}
 
 const fmt = (n: number) =>
   Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -66,6 +47,7 @@ function buildSBPrintLines(data: SBData, dateLabel: string, bookLabel = 'Saving'
   const lines: string[] = [];
   const prefixW = SB_COL_TR + SB_COL_ACC + SB_COL_NAME;
   const amtSpan = SB_COL_AMT * 3;
+  const tag = bookLabel === 'CD' ? 'CD' : 'SB';
 
   lines.push(centerIn('Espat Karmchari Co-Operative Credit Society Limited.', SB_LINE_W));
   lines.push(centerIn('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006', SB_LINE_W));
@@ -115,11 +97,11 @@ function buildSBPrintLines(data: SBData, dateLabel: string, bookLabel = 'Saving'
   const LBL_W = 24;
   const VAL_W = 12;
   ([
-    ['Opening Balance [SB]', plainSigned(data.openingBalance)],
-    ['Total Deposit [SB]', plain(data.totalDeposit)],
-    ['Total Cash In Hand [SB]', plain(data.totalCashInHand)],
-    ['Total Withdrawal [SB]', plain(data.totalWithdrawal)],
-    ['Closing Balance [SB]', plainSigned(data.closingBalance)],
+    [`Opening Balance [${tag}]`, plainSigned(data.openingBalance)],
+    [`Total Deposit [${tag}]`, plain(data.totalDeposit)],
+    [`Total Cash In Hand [${tag}]`, plain(data.totalCashInHand)],
+    [`Total Withdrawal [${tag}]`, plain(data.totalWithdrawal)],
+    [`Closing Balance [${tag}]`, plainSigned(data.closingBalance)],
   ] as [string, string][]).forEach(([label, value]) => {
     lines.push(`${IND}${label.padEnd(LBL_W)}${padL(value, VAL_W)}`);
   });
@@ -130,24 +112,22 @@ function buildSBPrintLines(data: SBData, dateLabel: string, bookLabel = 'Saving'
   return lines;
 }
 
-// filterType 'cd' reuses this flat-entries layout: the backend returns the same
-// {entries,...} shape for the CD and SB filters (only 'all' is grouped).
+// The savings (SB) and compulsory-deposit (CD) day books share this window. The CD report comes back as
+// a flat list, so it is turned into the savings shape (one row per transaction, deposit / withdrawal,
+// cash / transfer) before anything is drawn.
 const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }) => {
   const bookLabel = filterType === 'cd' ? 'CD' : 'Saving';
+  const shortLabel = filterType === 'cd' ? 'CD' : 'SB';
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs().subtract(1, 'day'));
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<SBData | null>(null);
+  const { enabled, view, setView } = useReportViews(filterType === 'cd' ? 'daily.day-book-cd' : 'daily.day-book-sb');
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
   const isDark = interfaceMode === 'dark';
 
-  // Theme variables
-  const bg        = isDark ? 'bg-[#0f172a]'                             : 'bg-slate-50';
-  const header    = isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5' : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
-  const panel     = isDark ? 'bg-slate-800 border border-slate-700'     : 'bg-white border border-slate-200';
-  const panelHd   = isDark ? 'bg-slate-900/50 border-b border-slate-700': 'bg-slate-50 border-b border-slate-100';
-  const panelHdTx = isDark ? 'text-slate-300'                           : 'text-slate-700';
+  // Legacy report-body colours (the body keeps its original look; only the shell uses the app kit)
   const text      = isDark ? 'text-slate-100'                           : 'text-slate-800';
   const muted     = isDark ? 'text-slate-400'                           : 'text-slate-500';
   const subtle    = isDark ? 'text-slate-500'                           : 'text-slate-400';
@@ -160,9 +140,7 @@ const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }
   const totalRow  = isDark ? 'border-t-2 border-slate-500 bg-slate-700/60': 'border-t-2 border-slate-300 bg-slate-100';
   const sumRowBg  = isDark ? 'bg-slate-800/60'                          : 'bg-white';
   const sumLbl    = isDark ? 'text-slate-400'                           : 'text-slate-600';
-  const contentBg = isDark ? 'bg-slate-900/40'                          : 'bg-white';
   const compBdr   = isDark ? 'border-b border-dashed border-slate-600'  : 'border-b border-dashed border-slate-300';
-  const ftrBg     = isDark ? 'bg-slate-800 border-t border-slate-700'   : 'bg-white/80 border-t border-slate-200';
 
   useEffect(() => { loadData(); }, [selectedDate, filterType]);
 
@@ -178,7 +156,7 @@ const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }
       if (requestId !== loadRequestId.current) return; // a newer date was requested meanwhile
       if (response.success && response.data) {
         const d = response.data?.data ?? response.data;
-        setData(d);
+        setData(isFlatDayBook(d) || filterType === 'cd' ? adaptFlatDayBook(d) : d);
       } else {
         setData(null);
         message.error(response.message || response.error || 'Failed to load report');
@@ -192,6 +170,7 @@ const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }
     }
   };
 
+  // Print always uses the legacy monospace letterhead, whichever view is on screen.
   const handlePrint = () => {
     if (!data) return;
     const lines = buildSBPrintLines(data, selectedDate.format('DD-MMM-YYYY'), bookLabel);
@@ -201,7 +180,7 @@ const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (doc) {
       doc.open();
-      doc.write(`<!DOCTYPE html><html><head><title>Day Book [SB]</title>
+      doc.write(`<!DOCTYPE html><html><head><title>Day Book [${shortLabel}]</title>
 <style>
   @page { size: A4 portrait; margin: 12mm; }
   body { margin: 0; }
@@ -224,259 +203,180 @@ const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }
     );
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    a.download = `DayBookSB_${selectedDate.format('YYYY-MM-DD')}.csv`;
+    a.download = `DayBook${shortLabel}_${selectedDate.format('YYYY-MM-DD')}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
-  const hasData = data && data.entries.length > 0;
+  const hasData = Boolean(data && data.entries.length > 0);
 
   return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      token: {
-        colorPrimary: '#0ea5e9',
-        borderRadius: 8,
-        colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-        colorBorder: isDark ? '#334155' : '#e2e8f0',
-      },
-    }}>
-      <div className={`dbsb-page h-screen flex flex-col font-sans overflow-hidden ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
-
-        {/* Header */}
-        <div className={`dbsb-header px-4 py-2.5 flex items-center justify-between shrink-0 ${header}`}>
-          <div className="flex items-center gap-3">
-            <div className="bg-sky-600 p-2 rounded-lg shadow-lg shadow-sky-500/30">
-              <PiggyBank size={18} className="text-white" />
+    <ReportShell
+      className="dbsb-page"
+      title={`Day Book [${bookLabel}]`}
+      desc={filterType === 'cd' ? 'Compulsory deposit ledger' : 'Savings bank ledger'}
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!hasData}><Printer size={14} /> Print</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!hasData}><FileDown size={14} /> CSV</button>
+        </>
+      }
+      aside={
+        <>
+          <section className="aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon"><Settings size={14} /></span>
+              <h2 className="aw-card-title">Parameters</h2>
+              <button type="button" className="aw-icon-btn" style={{ marginLeft: 'auto' }} onClick={loadData} data-tip="Reload" aria-label="Reload"><RefreshCw size={13} /></button>
             </div>
-            <div>
-              <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Day Book [{bookLabel}]</h1>
-              <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
-                <ShieldCheck size={10} className="text-sky-400" /> Savings Bank Ledger
+            <div className="aw-stack">
+              <div>
+                <label className="aw-label" htmlFor="dbsb-date">Date</label>
+                <DatePicker id="dbsb-date" value={selectedDate} allowClear={false} onChange={v => v && setSelectedDate(v)}
+                  format="DD-MMM-YYYY" className="aw-picker" popupClassName="aw-select-popup" suffixIcon={<Calendar size={13} />} />
               </div>
+              <button type="button" className="aw-btn aw-btn-primary" onClick={loadData} disabled={loading} style={{ width: '100%' }}>
+                <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Load report'}
+              </button>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button icon={<Printer size={13} />} size="small"
-              className="h-8 px-3 rounded-lg text-xs font-bold uppercase tracking-wide"
-              onClick={handlePrint} disabled={!hasData}>
-              Print
-            </Button>
-            <Button type="primary" icon={<FileDown size={13} />} size="small"
-              className="h-8 px-4 rounded-lg text-xs font-bold uppercase tracking-wide"
-              onClick={handleExportCSV} disabled={!hasData}>
-              CSV
-            </Button>
-          </div>
-        </div>
+          </section>
+          {data && <StatCards items={[
+            { label: `Opening [${shortLabel}]`, value: fmtSigned(data.openingBalance), tone: 'muted' },
+            { label: 'Total deposit', value: fmt(data.totalDeposit), tone: 'success' },
+            { label: 'Cash in hand', value: fmt(data.totalCashInHand), tone: 'muted' },
+            { label: 'Total withdrawal', value: fmt(data.totalWithdrawal), tone: 'danger' },
+            { label: `Closing [${shortLabel}]`, value: fmtSigned(data.closingBalance), tone: data.closingBalance >= 0 ? 'info' : 'danger' },
+            { label: 'Transactions', value: String(data.totalTransactions), tone: 'muted' },
+          ]} />}
+        </>
+      }
+      footerLeft={`Day Book [${shortLabel}] · ${filterType === 'cd' ? 'Compulsory deposit ledger' : 'Savings ledger'}`}
+      footerRight={selectedDate.format('YYYYMMDD')}
+    >
+      {/* Pro views draw the same transactions differently. Print is always the legacy letterhead. */}
+      {hasData && data && view === 'bento' && <SbBento data={data} bookLabel={shortLabel} />}
+      {hasData && data && view === 'terminal' && <div style={{ height: 'calc(100vh - 190px)', minHeight: 360 }}><SbTerminal data={data} bookLabel={shortLabel} /></div>}
 
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-3 flex gap-3">
+      {view === 'legacy' && (
+        <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">Day Book [{bookLabel}] — {selectedDate.format('DD-MMM-YYYY')}</span>
+            {data && <span className="aw-meta">{data.totalTransactions} entries</span>}
+          </div>
+          <div className="rpt-legacy-doc" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+            <Spin spinning={loading} tip="Loading...">
+              {hasData && data ? (
+                <div id="sb-print-area">
+                  {/* Company header */}
+                  <div className={`text-center mb-4 pb-3 ${compBdr}`}>
+                    <div className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
+                    <div className={`fz-caption ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
+                    <div className={`fz-small mt-0.5 ${subtle}`}>Day Book [{bookLabel}] for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
+                  </div>
 
-          {/* Left panel */}
-          <div className="w-[240px] flex flex-col gap-3 shrink-0">
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className={`dbsb-panel rounded-xl overflow-hidden ${panel}`}>
-              <div className={`dbsb-panel-header px-3 py-2 flex items-center justify-between ${panelHd}`}>
-                <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
-                  <Settings size={11} className="text-sky-400" /> Parameters
-                </h3>
-                <Tooltip title="Reload">
-                  <Button type="text" size="small" icon={<RefreshCw size={11} />} onClick={loadData} className="h-6 w-6" />
-                </Tooltip>
-              </div>
-              <div className="p-3 space-y-3">
-                <div className="space-y-1">
-                  <label className={`fz-small font-bold uppercase tracking-tight ${muted}`}>Date</label>
-                  <DatePicker className="w-full h-8 text-xs font-semibold" value={selectedDate}
-                    onChange={v => v && setSelectedDate(v)} format="DD-MMM-YYYY" />
+                  {/* Main table */}
+                  <div className="overflow-x-auto">
+                    <table className={`w-full fz-caption font-mono border-collapse border ${tblBdrFull}`}>
+                      <thead>
+                        <tr>
+                          <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left w-12 align-bottom ${tblHd}`}>Tr No</th>
+                          <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left w-20 align-bottom ${tblHd}`}>A/C No.</th>
+                          <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left align-bottom ${tblHd}`}>A/C Name</th>
+                          <th colSpan={3} className={`border ${tblBdrFull} px-2 py-1 text-center font-bold ${isDark ? 'bg-sky-900/60 text-sky-300' : 'bg-sky-100 text-sky-700'}`}>Deposit</th>
+                          <th colSpan={3} className={`border ${tblBdrFull} px-2 py-1 text-center font-bold ${isDark ? 'bg-rose-900/40 text-rose-300' : 'bg-rose-100 text-rose-700'}`}>Withdrawal</th>
+                        </tr>
+                        <tr>
+                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-sky-900/40 text-sky-300' : 'bg-sky-50 text-sky-600'}`}>Cash</th>
+                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-sky-900/40 text-sky-300' : 'bg-sky-50 text-sky-600'}`}>Transfer</th>
+                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-sky-900/40 text-sky-300' : 'bg-sky-50 text-sky-600'}`}>Total</th>
+                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-rose-900/30 text-rose-300' : 'bg-rose-50 text-rose-600'}`}>Cash</th>
+                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-rose-900/30 text-rose-300' : 'bg-rose-50 text-rose-600'}`}>Transfer</th>
+                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-rose-900/30 text-rose-300' : 'bg-rose-50 text-rose-600'}`}>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.entries.map((e, i) => (
+                          <tr key={i} className={`${tblBdr} border-b ${rowHov} transition-colors ${i % 2 === 0 ? rowEven : rowOdd}`}>
+                            <td className={`border ${tblBdr} px-2 py-0.5 ${muted}`}>{e.srNo}</td>
+                            <td className={`border ${tblBdr} px-2 py-0.5 text-amber-500 font-semibold`}>{e.accNo}</td>
+                            <td className={`border ${tblBdr} px-2 py-0.5 ${text}`}>{e.acName}</td>
+                            <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-sky-300' : 'text-sky-600'}`}>
+                              {e.depositCash > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash)}</>) : '0.00'}
+                            </td>
+                            <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-sky-400' : 'text-sky-500'}`}>
+                              {e.depositTransfer > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositTransfer)}</>) : '0.00'}
+                            </td>
+                            <td className={`border ${tblBdr} px-2 py-0.5 text-right font-semibold ${isDark ? 'text-sky-200' : 'text-sky-700'}`}>
+                              {(e.depositCash + e.depositTransfer) > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash + e.depositTransfer)}</>) : '0.00'}
+                            </td>
+                            <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>
+                              {e.withdrawalCash > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash)}</>) : '0.00'}
+                            </td>
+                            <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-rose-400' : 'text-rose-500'}`}>
+                              {e.withdrawalTransfer > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalTransfer)}</>) : '0.00'}
+                            </td>
+                            <td className={`border ${tblBdr} px-2 py-0.5 text-right font-semibold ${isDark ? 'text-rose-200' : 'text-rose-700'}`}>
+                              {(e.withdrawalCash + e.withdrawalTransfer) > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash + e.withdrawalTransfer)}</>) : '0.00'}
+                            </td>
+                          </tr>
+                        ))}
+
+                        {/* Grand total */}
+                        <tr className={totalRow}>
+                          <td colSpan={3} className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black uppercase text-xs ${text}`}>TOTAL :-</td>
+                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-300' : 'text-sky-600'}`}>{data.totalDepositCash > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositCash)}</td>
+                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-400' : 'text-sky-500'}`}>{data.totalDepositTransfer > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositTransfer)}</td>
+                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-200' : 'text-sky-700'}`}>{data.totalDeposit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDeposit)}</td>
+                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>{data.totalWithdrawalCash > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalCash)}</td>
+                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-400' : 'text-rose-500'}`}>{data.totalWithdrawalTransfer > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalTransfer)}</td>
+                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-200' : 'text-rose-700'}`}>{data.totalWithdrawal > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawal)}</td>
+                        </tr>
+
+                        {/* Summary rows */}
+                        {[
+                          { label: `Opening Balance [${shortLabel}]`, value: fmtSigned(data.openingBalance), cls: text, crdr: null },
+                          { label: `Total Deposit [${shortLabel}]`, value: fmt(data.totalDeposit), cls: isDark ? 'text-sky-300' : 'text-sky-600', crdr: 'credit' as const },
+                          { label: `Total Cash In Hand [${shortLabel}]`, value: fmt(data.totalCashInHand), cls: text, crdr: null },
+                          { label: `Total Withdrawal [${shortLabel}]`, value: fmt(data.totalWithdrawal), cls: isDark ? 'text-rose-300' : 'text-rose-600', crdr: 'debit' as const },
+                          { label: `Closing Balance [${shortLabel}]`, value: fmtSigned(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-sky-200' : 'text-sky-700') : (isDark ? 'text-rose-300' : 'text-rose-600'), crdr: null },
+                        ].map(({ label, value, cls, crdr }, i) => (
+                          <tr key={`sum-${i}`} className={`border-b ${tblBdr} ${sumRowBg}`}>
+                            <td colSpan={7} className={`border ${tblBdr} px-2 py-1 text-right text-xs font-bold ${sumLbl}`}>
+                              {label}
+                            </td>
+                            <td colSpan={2} className={`border ${tblBdr} px-2 py-1 text-right text-xs font-black ${cls}`}>{crdr && <CrDrIndicator type={crdr} className="mr-1" />}{value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className={`mt-3 fz-small italic ${subtle}`}>
+                    * Report As Per Data Available ..
+                  </div>
                 </div>
-                <Button type="primary" block size="small" icon={<Search size={13} />}
-                  onClick={loadData} loading={loading}
-                  className="h-9 font-bold uppercase tracking-wide text-xs">
-                  Load Report
-                </Button>
-              </div>
-            </motion.div>
-
-            {/* Stats */}
-            <AnimatePresence>
-              {data && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col gap-2">
-                  <div className={`dbsb-panel rounded-lg p-3 ${panel}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening [SB]</div>
-                    <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.openingBalance)}</div>
-                  </div>
-                  <div className={`rounded-lg p-3 ${isDark ? 'bg-sky-600/20 border border-sky-500/30' : 'bg-sky-50 border border-sky-200'}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-sky-400' : 'text-sky-600'}`}>Total Deposit</div>
-                    <div className={`text-sm font-black font-mono ${isDark ? 'text-sky-300' : 'text-sky-700'}`}>{fmt(data.totalDeposit)}</div>
-                    <div className={`fz-tiny mt-1 ${isDark ? 'text-sky-500' : 'text-sky-500'}`}>Cash: {fmt(data.totalDepositCash)} | Trf: {fmt(data.totalDepositTransfer)}</div>
-                  </div>
-                  <div className={`dbsb-panel rounded-lg p-3 ${panel}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${muted}`}>Cash In Hand</div>
-                    <div className={`text-sm font-black font-mono ${text}`}>{fmt(data.totalCashInHand)}</div>
-                  </div>
-                  <div className={`rounded-lg p-3 ${isDark ? 'bg-rose-600/20 border border-rose-500/30' : 'bg-rose-50 border border-rose-200'}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Total Withdrawal</div>
-                    <div className={`text-sm font-black font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalWithdrawal)}</div>
-                    <div className={`fz-tiny mt-1 ${isDark ? 'text-rose-500' : 'text-rose-500'}`}>Cash: {fmt(data.totalWithdrawalCash)} | Trf: {fmt(data.totalWithdrawalTransfer)}</div>
-                  </div>
-                  <div className={`border rounded-lg p-3 ${data.closingBalance >= 0
-                    ? (isDark ? 'bg-sky-600/20 border-sky-500/30' : 'bg-sky-50 border-sky-200')
-                    : (isDark ? 'bg-rose-900/30 border-rose-700/40' : 'bg-rose-50 border-rose-200')}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-sky-400' : 'text-sky-600'}`}>Closing [SB]</div>
-                    <div className={`text-sm font-black font-mono ${data.closingBalance >= 0
-                      ? (isDark ? 'text-sky-300' : 'text-sky-700')
-                      : (isDark ? 'text-rose-300' : 'text-rose-700')}`}>
-                      {fmtSigned(data.closingBalance)}
-                    </div>
-                  </div>
-                  <div className={`dbsb-panel rounded-lg p-3 ${panel}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Transactions</div>
-                    <div className={`text-lg font-black font-mono ${text}`}>{data.totalTransactions}</div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              ) : !loading ? (
+                <div className="aw-empty" style={{ padding: 32 }}>
+                  <PiggyBank size={34} />
+                  <p className="aw-strong">No {shortLabel} transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
+                  <span className="aw-meta">Try a date with {filterType === 'cd' ? 'compulsory deposit' : 'savings account'} activity</span>
+                </div>
+              ) : null}
+            </Spin>
           </div>
+        </section>
+      )}
 
-          {/* Report panel */}
-          <div className={`dbsb-panel flex-1 rounded-xl flex flex-col overflow-hidden ${panel}`}>
-            <div className={`dbsb-panel-header px-4 py-2 flex items-center justify-between shrink-0 ${panelHd}`}>
-              <span className={`text-xs font-extrabold uppercase tracking-wide ${panelHdTx}`}>
-                Day Book [{bookLabel}] — {selectedDate.format('DD-MMM-YYYY')}
-              </span>
-              {data && (
-                <span className={`fz-small font-mono ${subtle}`}>{data.totalTransactions} entries</span>
-              )}
-            </div>
-
-            <div className={`dbsb-preview-body flex-1 overflow-auto p-4 ${contentBg}`}>
-              <Spin spinning={loading} tip="Loading...">
-                {hasData ? (
-                  <div id="sb-print-area">
-                    {/* Company header */}
-                    <div className={`text-center mb-4 pb-3 ${compBdr}`}>
-                      <div className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className={`fz-caption ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                      <div className={`fz-small mt-0.5 ${subtle}`}>Day Book [{bookLabel}] for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
-                    </div>
-
-                    {/* Main table */}
-                    <div className="overflow-x-auto">
-                      <table className={`w-full fz-caption font-mono border-collapse border ${tblBdrFull}`}>
-                        <thead>
-                          <tr>
-                            <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left w-12 align-bottom ${tblHd}`}>Tr No</th>
-                            <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left w-20 align-bottom ${tblHd}`}>A/C No.</th>
-                            <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left align-bottom ${tblHd}`}>A/C Name</th>
-                            <th colSpan={3} className={`border ${tblBdrFull} px-2 py-1 text-center font-bold ${isDark ? 'bg-sky-900/60 text-sky-300' : 'bg-sky-100 text-sky-700'}`}>Deposit</th>
-                            <th colSpan={3} className={`border ${tblBdrFull} px-2 py-1 text-center font-bold ${isDark ? 'bg-rose-900/40 text-rose-300' : 'bg-rose-100 text-rose-700'}`}>Withdrawal</th>
-                          </tr>
-                          <tr>
-                            <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-sky-900/40 text-sky-300' : 'bg-sky-50 text-sky-600'}`}>Cash</th>
-                            <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-sky-900/40 text-sky-300' : 'bg-sky-50 text-sky-600'}`}>Transfer</th>
-                            <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-sky-900/40 text-sky-300' : 'bg-sky-50 text-sky-600'}`}>Total</th>
-                            <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-rose-900/30 text-rose-300' : 'bg-rose-50 text-rose-600'}`}>Cash</th>
-                            <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-rose-900/30 text-rose-300' : 'bg-rose-50 text-rose-600'}`}>Transfer</th>
-                            <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-rose-900/30 text-rose-300' : 'bg-rose-50 text-rose-600'}`}>Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.entries.map((e, i) => (
-                            <tr key={i} className={`${tblBdr} border-b ${rowHov} transition-colors ${i % 2 === 0 ? rowEven : rowOdd}`}>
-                              <td className={`border ${tblBdr} px-2 py-0.5 ${muted}`}>{e.srNo}</td>
-                              <td className={`border ${tblBdr} px-2 py-0.5 text-amber-500 font-semibold`}>{e.accNo}</td>
-                              <td className={`border ${tblBdr} px-2 py-0.5 ${text}`}>{e.acName}</td>
-                              <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-sky-300' : 'text-sky-600'}`}>
-                                {e.depositCash > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash)}</>) : '0.00'}
-                              </td>
-                              <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-sky-400' : 'text-sky-500'}`}>
-                                {e.depositTransfer > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositTransfer)}</>) : '0.00'}
-                              </td>
-                              <td className={`border ${tblBdr} px-2 py-0.5 text-right font-semibold ${isDark ? 'text-sky-200' : 'text-sky-700'}`}>
-                                {(e.depositCash + e.depositTransfer) > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash + e.depositTransfer)}</>) : '0.00'}
-                              </td>
-                              <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>
-                                {e.withdrawalCash > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash)}</>) : '0.00'}
-                              </td>
-                              <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-rose-400' : 'text-rose-500'}`}>
-                                {e.withdrawalTransfer > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalTransfer)}</>) : '0.00'}
-                              </td>
-                              <td className={`border ${tblBdr} px-2 py-0.5 text-right font-semibold ${isDark ? 'text-rose-200' : 'text-rose-700'}`}>
-                                {(e.withdrawalCash + e.withdrawalTransfer) > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash + e.withdrawalTransfer)}</>) : '0.00'}
-                              </td>
-                            </tr>
-                          ))}
-
-                          {/* Grand total */}
-                          <tr className={totalRow}>
-                            <td colSpan={3} className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black uppercase text-xs ${text}`}>TOTAL :-</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-300' : 'text-sky-600'}`}>{data.totalDepositCash > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositCash)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-400' : 'text-sky-500'}`}>{data.totalDepositTransfer > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositTransfer)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-200' : 'text-sky-700'}`}>{data.totalDeposit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDeposit)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>{data.totalWithdrawalCash > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalCash)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-400' : 'text-rose-500'}`}>{data.totalWithdrawalTransfer > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalTransfer)}</td>
-                            <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-200' : 'text-rose-700'}`}>{data.totalWithdrawal > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawal)}</td>
-                          </tr>
-
-                          {/* Summary rows */}
-                          {[
-                            { label: 'Opening Balance [SB]', value: fmtSigned(data.openingBalance), cls: text, crdr: null },
-                            { label: 'Total Deposit [SB]', value: fmt(data.totalDeposit), cls: isDark ? 'text-sky-300' : 'text-sky-600', crdr: 'credit' as const },
-                            { label: 'Total Cash In Hand [SB]', value: fmt(data.totalCashInHand), cls: text, crdr: null },
-                            { label: 'Total Withdrawal [SB]', value: fmt(data.totalWithdrawal), cls: isDark ? 'text-rose-300' : 'text-rose-600', crdr: 'debit' as const },
-                            { label: 'Closing Balance [SB]', value: fmtSigned(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-sky-200' : 'text-sky-700') : (isDark ? 'text-rose-300' : 'text-rose-600'), crdr: null },
-                          ].map(({ label, value, cls, crdr }, i) => (
-                            <tr key={`sum-${i}`} className={`border-b ${tblBdr} ${sumRowBg}`}>
-                              <td colSpan={7} className={`border ${tblBdr} px-2 py-1 text-right text-xs font-bold ${sumLbl}`}>
-                                {label}
-                              </td>
-                              <td colSpan={2} className={`border ${tblBdr} px-2 py-1 text-right text-xs font-black ${cls}`}>{crdr && <CrDrIndicator type={crdr} className="mr-1" />}{value}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className={`mt-3 fz-small italic ${subtle}`}>
-                      * Report As Per Data Available ..
-                    </div>
-                  </div>
-                ) : !loading ? (
-                  <div className="flex flex-col items-center justify-center h-64 gap-3">
-                    <PiggyBank size={48} className={isDark ? 'text-slate-700' : 'text-slate-300'} />
-                    <p className={`text-sm font-bold uppercase tracking-wide ${muted}`}>No SB transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
-                    <p className={`text-xs ${subtle}`}>Try a date with savings account activity</p>
-                  </div>
-                ) : null}
-              </Spin>
-            </div>
+      {view !== 'legacy' && !hasData && !loading && (
+        <section className="aw-card">
+          <div className="aw-empty" style={{ padding: 32 }}>
+            <PiggyBank size={34} />
+            <p className="aw-strong">No {shortLabel} transactions</p>
+            <span className="aw-meta">{selectedDate.format('DD MMM YYYY')}</span>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className={`dbsb-footer px-4 py-1.5 flex items-center justify-between shrink-0 ${ftrBg}`}>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse" />
-            <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Day Book [SB] · Savings Ledger</span>
-          </div>
-          <span className={`fz-small font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
-        </div>
-      </div>
-
-      <style>{`
-        /* ── Day Book [SB] — dark mode ── */
-        html.dark .dbsb-page { background-color: #000000 !important; }
-        html.dark .dbsb-header,
-        html.dark .dbsb-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .dbsb-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .dbsb-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .dbsb-preview-body { background-color: #1c1c1e !important; }
-        html.dark .dbsb-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .dbsb-page .ant-picker input { color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+        </section>
+      )}
+    </ReportShell>
   );
 };
 

@@ -1,21 +1,17 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { ConfigProvider, Button, Select, Spin, Radio, message, theme } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
-import { FileText, Printer, Search, RotateCcw, FolderX, Calendar, Monitor } from 'lucide-react';
+import { Select, message } from 'antd';
+import { FileText, Printer, Search, RotateCcw, Calendar } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
+import { ReportShell, ParamCard, StatCards, OutputChoice, ReportEmpty, LegacyDocument } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import ClosingBento from '../views/ClosingBento';
+import ClosingTerminal from '../views/ClosingTerminal';
+import { fmt, type ClosingItem } from '../views/closingModel';
 
-interface ClosingItem {
-  key: string;
-  memberCode: string;
-  memberName: string;
-  accountNo: string;
-  accountType: string;
-  closingDate: string;
-  finalAmount: number;
-  description: string;
-}
+const REPORT_ID = 'account.closing-register';
 
 // ── text-report helpers ───────────────────────────────────────────
 const W = 110;
@@ -118,9 +114,6 @@ const printReportText = (text: string) => {
 };
 
 const AccountClosingRegister: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
-
   const [month, setMonth]             = useState<number>(dayjs().month() + 1);
   const [year, setYear]               = useState<number>(dayjs().year());
   const [accountType, setAccountType] = useState<string>('ALL');
@@ -128,8 +121,11 @@ const AccountClosingRegister: React.FC = () => {
   const [loading, setLoading]         = useState(false);
   const [reportText, setReportText]   = useState<string>('');
   const [recordCount, setRecordCount] = useState<number>(0);
+  const [items, setItems]             = useState<ClosingItem[]>([]);
+  const { enabled, view, setView }    = useReportViews(REPORT_ID);
 
   const monthName = useMemo(() => MONTHS.find(m => m.value === month)?.label || '', [month]);
+  const periodLabel = `${monthName} ${year}`;
   const yearOptions = useMemo(() =>
     Array.from({ length: 10 }, (_, i) => {
       const y = dayjs().year() - i;
@@ -145,6 +141,7 @@ const AccountClosingRegister: React.FC = () => {
       if (!response.success) {
         setReportText('');
         setRecordCount(0);
+        setItems([]);
         message.error(response.message || response.error || 'Failed to load account closing register');
         return;
       }
@@ -155,6 +152,7 @@ const AccountClosingRegister: React.FC = () => {
       const text = buildReportText(data, monthName, year, accountType);
       setReportText(text);
       setRecordCount(data.length);
+      setItems(data);
 
       if (data.length === 0) message.info('No closed accounts found for this period');
       else if (outputType === 'printer') printReportText(text);
@@ -162,6 +160,7 @@ const AccountClosingRegister: React.FC = () => {
       message.error('Failed to load account closing register');
       setReportText('');
       setRecordCount(0);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -173,154 +172,70 @@ const AccountClosingRegister: React.FC = () => {
     setAccountType('ALL');
     setReportText('');
     setRecordCount(0);
+    setItems([]);
   }, []);
 
-  return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-      token: { colorPrimary: '#f59e0b', borderRadius: 6, fontSize: 12 },
-    }}>
-      <div className={`acr-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-50'}`}>
+  const total = items.reduce((s, r) => s + (Number(r.finalAmount) || 0), 0);
+  const hasData = items.length > 0;
 
-        {/* Header */}
-        <div className={`acr-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-amber-600 to-amber-700 p-1.5 rounded-lg text-white shadow-md">
-              <FolderX size={14} />
+  return (
+    <ReportShell
+      className="acr-page"
+      title="Account Closing Register"
+      desc="Closed accounts report"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={() => reportText && printReportText(reportText)} disabled={!reportText}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Period" icon={<Calendar size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="acr-month">Month</label>
+              <Select id="acr-month" value={month} onChange={setMonth} options={MONTHS} className="aw-select" popupClassName="aw-select-popup" />
             </div>
             <div>
-              <h1 className="fz-label font-black tracking-tight leading-none">Account Closing Register</h1>
-              <div className="fz-caption font-bold text-slate-400 uppercase tracking-wider leading-none mt-0.5">
-                <Calendar size={8} className="inline text-amber-500 mr-1" />Closed Accounts Report
-              </div>
+              <label className="aw-label" htmlFor="acr-year">Year</label>
+              <Select id="acr-year" value={year} onChange={setYear} options={yearOptions} className="aw-select" popupClassName="aw-select-popup" />
             </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button icon={<RotateCcw size={11} />} size="small" className="h-7 fz-caption font-bold" onClick={handleReset}>Reset</Button>
-            <Button
-              icon={<Printer size={11} />} size="small" className="h-7 fz-caption font-bold"
-              onClick={() => reportText && printReportText(reportText)}
-              disabled={!reportText}
-            >Print</Button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-2 flex gap-2">
-
-          {/* Sidebar */}
-          <div className="w-[220px] flex flex-col gap-2 shrink-0">
-
-            <div className={`acr-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
-              <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
-                <Calendar size={10} className="text-white" />
-                <span className="fz-caption font-black text-white uppercase">Period</span>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <div>
-                  <div className="fz-caption font-bold text-slate-500 mb-0.5">Month</div>
-                  <Select value={month} onChange={setMonth} options={MONTHS} size="small" className="w-full fz-caption" />
-                </div>
-                <div>
-                  <div className="fz-caption font-bold text-slate-500 mb-0.5">Year</div>
-                  <Select value={year} onChange={setYear} options={yearOptions} size="small" className="w-full fz-caption" />
-                </div>
-              </div>
+            <div>
+              <label className="aw-label" htmlFor="acr-type">Account type</label>
+              <Select id="acr-type" value={accountType} onChange={setAccountType} options={ACCOUNT_TYPES} className="aw-select" popupClassName="aw-select-popup" />
             </div>
+            <OutputChoice value={outputType} onChange={setOutputType} id="acr-output" />
+            <button type="button" className="aw-btn aw-btn-primary" onClick={handleGenerate} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Generate'}
+            </button>
+          </ParamCard>
+          {hasData && <StatCards items={[
+            { label: 'Accounts closed', value: String(recordCount), tone: 'muted' },
+            { label: 'Total paid out', value: fmt(total), tone: 'success' },
+          ]} />}
+        </>
+      }
+      footerLeft="Account Closing Register"
+      footerRight={periodLabel}
+    >
+      {/* Pro views draw the same records differently. Print is always the legacy text report. */}
+      {hasData && view === 'bento' && <ClosingBento items={items} periodLabel={periodLabel} />}
+      {hasData && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><ClosingTerminal items={items} periodLabel={periodLabel} /></div>}
 
-            <div className={`acr-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
-              <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-2 py-1 flex items-center gap-1">
-                <FolderX size={10} className="text-white" />
-                <span className="fz-caption font-black text-white uppercase">Account Type</span>
-              </div>
-              <div className="p-2">
-                <Select value={accountType} onChange={setAccountType} options={ACCOUNT_TYPES} size="small" className="w-full fz-caption" />
-              </div>
-            </div>
-
-            <div className={`acr-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
-              <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
-              <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
-                <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
-                <Radio value="printer" className="fz-caption"><Printer size={10} className="inline mr-1" />Printer</Radio>
-              </Radio.Group>
-            </div>
-
-            <Button
-              type="primary" block size="small" icon={<Search size={11} />}
-              onClick={handleGenerate} loading={loading}
-              className="h-8 bg-gradient-to-r from-amber-600 to-amber-700 font-black uppercase fz-caption shadow-lg"
-            >
-              Generate
-            </Button>
-
-            {recordCount > 0 && (
-              <div className={`text-center fz-caption font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                {recordCount} record{recordCount !== 1 ? 's' : ''} found
-              </div>
-            )}
-          </div>
-
-          {/* Report Area */}
-          <div className={`acr-report-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-amber-200/60'}`}>
-            <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-3 py-1.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1.5">
-                <FileText size={12} className="text-white" />
-                <span className="fz-caption font-black text-white uppercase">Account Closing Register</span>
-                <span className="fz-caption font-bold text-amber-100 ml-1">{monthName} {year}</span>
-              </div>
-              {recordCount > 0 && (
-                <span className="fz-caption font-black text-white bg-white/20 px-2 py-0.5 rounded">{recordCount} Records</span>
-              )}
-            </div>
-
-            <div className={`flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
-              <Spin spinning={loading} size="small">
-                {reportText ? (
-                  <pre className={`font-mono fz-caption leading-[1.5] whitespace-pre select-text ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
-                    {reportText}
-                  </pre>
-                ) : (
-                  <div className="py-32 text-center">
-                    <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                      <FileText size={40} className="text-amber-200" />
-                    </div>
-                    <p className="fz-label font-black text-slate-400 uppercase tracking-wider">No Data</p>
-                    <p className="fz-caption text-slate-300 mt-1">Select period and generate report</p>
-                  </div>
-                )}
-              </Spin>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        /* ── Account Closing Register — dark mode ── */
-        html.dark .acr-page { background-color: #000000 !important; color: #f5f5f7 !important; }
-        html.dark .acr-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .acr-header h1 { color: #f5f5f7 !important; }
-        html.dark .acr-header .text-slate-400 { color: #8e8e93 !important; }
-        html.dark .acr-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .acr-card .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .acr-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .acr-page .bg-slate-900\\/40 { background-color: rgba(255,255,255,.03) !important; }
-        html.dark .acr-page .bg-white { background-color: #1c1c1e !important; }
-        html.dark .acr-page .text-slate-900 { color: #f5f5f7 !important; }
-        html.dark .acr-page .text-slate-400 { color: #8e8e93 !important; }
-        html.dark .acr-page .text-slate-300 { color: #71717a !important; }
-        html.dark .acr-page pre { color: #f5f5f7 !important; }
-        /* Antd controls */
-        html.dark .acr-page .ant-select-selector {
-          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-        }
-        html.dark .acr-page .ant-select-selection-item { color: #f5f5f7 !important; }
-        html.dark .acr-page .ant-btn:not(.ant-btn-primary) {
-          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
-        }
-        html.dark .acr-page .ant-radio-wrapper { color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+      {view === 'legacy' && (
+        <LegacyDocument
+          title={`Account Closing Register · ${periodLabel}`}
+          meta={recordCount > 0 ? `${recordCount} Records` : undefined}
+          text={reportText}
+          loading={loading}
+          empty={<ReportEmpty icon={<FileText size={34} />} title="No Data" hint="Select period and generate report" />}
+        />
+      )}
+      {view !== 'legacy' && !hasData && (
+        <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Data'} hint="Select period and generate report" />
+      )}
+    </ReportShell>
   );
 };
 

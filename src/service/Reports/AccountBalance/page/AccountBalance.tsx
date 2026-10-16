@@ -23,6 +23,9 @@ import { RootState } from '../../../../store';
 import { apiService } from '../../../../services/api';
 import dayjs from 'dayjs';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import { ProBar, ProBody } from '../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../components/reports/views/reportViews';
+import { useBalanceSpec } from '../views/balancePro';
 
 // ── report layout ────────────────────────────────────────────────────────────
 const W_NO   = 14;
@@ -175,6 +178,7 @@ const AccountBalance: React.FC = () => {
   const [lookupTarget, setLookupTarget] = useState<'from' | 'to'>('from');
   const [reportText, setReportText] = useState('');
   const [isLoading,  setIsLoading]  = useState(false);
+  const [balanceRows, setBalanceRows] = useState<BalanceItem[]>([]);
   const reportTextRef = useRef('');
 
   const openLookup = useCallback((target: 'from' | 'to') => {
@@ -195,6 +199,7 @@ const AccountBalance: React.FC = () => {
     setToNo('');   setToName('');
     setOutputType('screen');
     setReportText('');
+    setBalanceRows([]);
     reportTextRef.current = '';
   }, []);
 
@@ -212,15 +217,18 @@ const AccountBalance: React.FC = () => {
         if (rows.length === 0) {
           message.info('No members found in this range');
           setReportText('');
+          setBalanceRows([]);
           reportTextRef.current = '';
           return;
         }
         const text = buildReportText(rows, fromNo, toNo);
         reportTextRef.current = text;
         setReportText(text);
+        setBalanceRows(rows);
         if (outputType === 'printer') printReportText(text);
       } else {
         setReportText('');
+        setBalanceRows([]);
         reportTextRef.current = '';
         message.error(response.error || response.message || 'Failed to generate report');
       }
@@ -228,6 +236,7 @@ const AccountBalance: React.FC = () => {
       console.error('[AccountBalance]', err);
       message.error('Failed to generate report');
       setReportText('');
+      setBalanceRows([]);
       reportTextRef.current = '';
     } finally {
       setIsLoading(false);
@@ -240,6 +249,9 @@ const AccountBalance: React.FC = () => {
   }, []);
 
   const labelCls = `fz-caption font-bold uppercase tracking-tight flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`;
+
+  const { enabled, view, setView } = useReportViews('account-balance');
+  const spec = useBalanceSpec(balanceRows, `${fromNo} to ${toNo}`);
 
   return (
     <ConfigProvider
@@ -371,6 +383,10 @@ const AccountBalance: React.FC = () => {
             <div className={`flex-1 overflow-auto p-2 custom-scrollbar-sky ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-sky-50/10'}`}>
               <Spin spinning={isLoading} tip="Loading..." size="small">
                 {reportText ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (balanceRows.length > 0 ? <ProBody view={view} spec={spec} title="Account Balance" subtitle={`Members ${fromNo} to ${toNo}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No balances to show'}</p>)}
+                {view === 'legacy' && (
                   <pre
                     className="font-mono"
                     style={{
@@ -385,6 +401,8 @@ const AccountBalance: React.FC = () => {
                   >
                     {reportText}
                   </pre>
+                )}
+                </>
                 ) : (
                   <div className="py-32 text-center">
                     <div className="w-20 h-20 bg-sky-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">

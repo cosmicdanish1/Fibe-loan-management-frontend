@@ -1,19 +1,17 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ConfigProvider, Button, Spin, Radio, message, theme } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
-import { Printer, Search, RotateCcw, Lock, Monitor } from 'lucide-react';
+import { message } from 'antd';
+import { Printer, Search, RotateCcw, Lock } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
+import { ReportShell, ParamCard, StatCards, OutputChoice, ReportEmpty, LegacyDocument } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import LienBento from '../views/LienBento';
+import LienTerminal from '../views/LienTerminal';
+import { fmt, type LienItem } from '../views/lienModel';
 
-interface LienItem {
-  key: string;
-  memberNo: string;
-  memberName: string;
-  loanCaseNo: string;
-  lienAmount: number;
-  lienFromDate: string;
-}
+const REPORT_ID = 'account.lien-information';
 
 // ── text helpers ──────────────────────────────────────────────────
 const W = 90;
@@ -93,13 +91,13 @@ const printReportText = (text: string) => {
 };
 
 const LienAccountInformation: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
-
   const [outputType, setOutputType] = useState<'screen' | 'printer'>('screen');
   const [loading, setLoading]       = useState(false);
   const [reportText, setReportText] = useState('');
   const [recordCount, setRecordCount] = useState(0);
+  const [items, setItems]           = useState<LienItem[]>([]);
+  const [loaded, setLoaded]         = useState(false);
+  const { enabled, view, setView }  = useReportViews(REPORT_ID);
 
   const handleGenerate = useCallback(async () => {
     setLoading(true);
@@ -108,23 +106,27 @@ const LienAccountInformation: React.FC = () => {
       if (!response.success) {
         setReportText('');
         setRecordCount(0);
+        setItems([]);
         message.error(response.message || response.error || 'Failed to load lien account information');
         return;
       }
-      const items: LienItem[] = Array.isArray((response as any)?.data)
+      const rows: LienItem[] = Array.isArray((response as any)?.data)
         ? (response as any).data
         : Array.isArray(response) ? (response as any) : [];
 
-      const text = buildReportText(items);
+      const text = buildReportText(rows);
       setReportText(text);
-      setRecordCount(items.length);
+      setRecordCount(rows.length);
+      setItems(rows);
+      setLoaded(true);
 
-      if (items.length === 0) message.info('No lien accounts found');
+      if (rows.length === 0) message.info('No lien accounts found');
       else if (outputType === 'printer') printReportText(text);
     } catch {
       message.error('Failed to load lien account information');
       setReportText('');
       setRecordCount(0);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -135,118 +137,58 @@ const LienAccountInformation: React.FC = () => {
   const handleReset = useCallback(() => {
     setReportText('');
     setRecordCount(0);
+    setItems([]);
+    setLoaded(false);
   }, []);
 
+  const hasData = items.length > 0;
+  const total = items.reduce((s, r) => s + (Number(r.lienAmount) || 0), 0);
+
   return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-      token: { colorPrimary: '#06b6d4', borderRadius: 6, fontSize: 12 },
-    }}>
-      <div className={`lai-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-cyan-50/20 to-slate-50'}`}>
+    <ReportShell
+      className="lai-page"
+      title="Lien Account Information"
+      desc="Secured accounts"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={() => reportText && printReportText(reportText)} disabled={!reportText}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard>
+            <OutputChoice value={outputType} onChange={setOutputType} id="lai-output" />
+            <button type="button" className="aw-btn aw-btn-primary" onClick={handleGenerate} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Generate'}
+            </button>
+          </ParamCard>
+          {hasData && <StatCards items={[
+            { label: 'Lien accounts', value: String(recordCount), tone: 'muted' },
+            { label: 'RD locked', value: fmt(total), tone: 'info' },
+          ]} />}
+        </>
+      }
+      footerLeft="Lien Account Information"
+      footerRight={loaded ? `${recordCount} lien account${recordCount === 1 ? '' : 's'}` : ''}
+    >
+      {hasData && view === 'bento' && <LienBento items={items} />}
+      {hasData && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 320 }}><LienTerminal items={items} /></div>}
 
-        {/* Header */}
-        <div className={`lai-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-cyan-600 to-cyan-700 p-1.5 rounded-lg text-white shadow-md">
-              <Lock size={14} />
-            </div>
-            <div>
-              <h1 className="fz-label font-black tracking-tight leading-none">Lien Account Information</h1>
-              <div className="fz-caption font-bold text-slate-400 uppercase tracking-wider leading-none mt-0.5">
-                <Lock size={8} className="inline text-cyan-500 mr-1" />Secured Accounts
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button icon={<RotateCcw size={11} />} size="small" className="h-7 fz-caption font-bold" onClick={handleReset}>Reset</Button>
-            <Button icon={<Printer size={11} />} size="small" className="h-7 fz-caption font-bold"
-              onClick={() => reportText && printReportText(reportText)} disabled={!reportText}>Print</Button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-2 flex gap-2">
-
-          {/* Sidebar LEFT */}
-          <div className="w-[220px] flex flex-col gap-2 shrink-0">
-
-            <div className={`lai-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-cyan-200/60'}`}>
-              <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
-              <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
-                <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
-                <Radio value="printer" className="fz-caption"><Printer size={10} className="inline mr-1" />Printer</Radio>
-              </Radio.Group>
-            </div>
-
-            <Button
-              type="primary" block size="small" icon={<Search size={11} />}
-              onClick={handleGenerate} loading={loading}
-              className="h-8 bg-gradient-to-r from-cyan-600 to-cyan-700 font-black uppercase fz-caption shadow-lg"
-            >
-              Generate
-            </Button>
-
-            {recordCount > 0 && (
-              <div className={`text-center fz-caption font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                {recordCount} lien account{recordCount !== 1 ? 's' : ''} found
-              </div>
-            )}
-          </div>
-
-          {/* Report Area RIGHT */}
-          <div className={`lai-report-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-cyan-200/60'}`}>
-            <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-3 py-1.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1.5">
-                <Lock size={12} className="text-white" />
-                <span className="fz-caption font-black text-white uppercase">Lien Account Information</span>
-              </div>
-              {recordCount > 0 && (
-                <span className="fz-caption font-black text-white bg-white/20 px-2 py-0.5 rounded">{recordCount} Records</span>
-              )}
-            </div>
-
-            <div className={`flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
-              <Spin spinning={loading} size="small">
-                {reportText ? (
-                  <pre className={`font-mono fz-caption leading-[1.5] whitespace-pre select-text ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
-                    {reportText}
-                  </pre>
-                ) : (
-                  <div className="py-32 text-center">
-                    <div className="w-20 h-20 bg-cyan-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                      <Lock size={40} className="text-cyan-200" />
-                    </div>
-                    <p className="fz-label font-black text-slate-400 uppercase tracking-wider">No Data</p>
-                    <p className="fz-caption text-slate-300 mt-1">Click Generate to load lien accounts</p>
-                  </div>
-                )}
-              </Spin>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        /* ── Lien Account Information — dark mode ── */
-        html.dark .lai-page { background-color: #000000 !important; color: #f5f5f7 !important; }
-        html.dark .lai-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .lai-header h1 { color: #f5f5f7 !important; }
-        html.dark .lai-header .text-slate-400 { color: #8e8e93 !important; }
-        html.dark .lai-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .lai-card .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .lai-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .lai-page .bg-slate-900\\/40 { background-color: rgba(255,255,255,.03) !important; }
-        html.dark .lai-page .bg-white { background-color: #1c1c1e !important; }
-        html.dark .lai-page .text-slate-900 { color: #f5f5f7 !important; }
-        html.dark .lai-page .text-slate-400 { color: #8e8e93 !important; }
-        html.dark .lai-page .text-slate-300 { color: #71717a !important; }
-        html.dark .lai-page pre { color: #f5f5f7 !important; }
-        html.dark .lai-page .ant-btn:not(.ant-btn-primary) {
-          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
-        }
-        html.dark .lai-page .ant-radio-wrapper { color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+      {view === 'legacy' && (
+        <LegacyDocument
+          title="Lien Account Information"
+          meta={recordCount > 0 ? `${recordCount} Records` : undefined}
+          text={reportText}
+          loading={loading}
+          empty={<ReportEmpty icon={<Lock size={34} />} title="No Data" hint="Click Generate to load lien accounts" />}
+        />
+      )}
+      {view !== 'legacy' && !hasData && (
+        <ReportEmpty icon={<Lock size={34} />} title={loading ? 'Loading…' : loaded ? 'No lien accounts' : 'No Data'} hint="Click Generate to load lien accounts" />
+      )}
+    </ReportShell>
   );
 };
 

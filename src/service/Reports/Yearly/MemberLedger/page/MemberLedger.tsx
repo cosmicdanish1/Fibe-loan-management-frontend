@@ -9,6 +9,9 @@ import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import { indianFinancialYearStart } from '@/utils/dates';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import { useColumnarSpec } from '../views/columnarPro';
 
 interface LedgerCell { dr: number; cr: number; bal: number | null; }
 interface LedgerRow { date: string; share: LedgerCell; ltl: LedgerCell; emer: LedgerCell; cd: LedgerCell; }
@@ -251,6 +254,9 @@ const MemberLedger: React.FC = () => {
 
   const reportText = report ? buildReportText(report) : '';
 
+  const { enabled, view, setView } = useReportViews('yearly.member-ledger');
+  const spec = useColumnarSpec(report);
+
   return (
     <ConfigProvider
       theme={{
@@ -442,9 +448,15 @@ const MemberLedger: React.FC = () => {
                   <span className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading ledger...</span>
                 </div>
               ) : report ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (report !== null ? <ProBody view={view} spec={spec} title="Member Detail Ledger" subtitle={`${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No ledger to show'}</p>)}
+                {view === 'legacy' && (
                 <div className={`member-ledger-preview font-mono rounded-lg border p-4 overflow-x-auto ${isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-[#fffff0] border-slate-300 text-slate-800'}`}>
                   <pre style={{ fontFamily: "'Courier New', Courier, monospace", lineHeight: '1.4', fontSize: '12px' }} className="whitespace-pre">{reportText}</pre>
                 </div>
+                )}
+                </>
               ) : (
                 <div className="py-32 text-center">
                   <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner ${isDark ? 'bg-slate-800' : 'bg-cyan-50'}`}>

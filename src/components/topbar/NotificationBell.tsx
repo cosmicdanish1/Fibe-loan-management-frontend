@@ -427,7 +427,7 @@ export const NotificationBell: React.FC = () => {
   );
 
   return (
-    <div className={`tb-root ${motionClass}`} data-shape={prefs.shape} ref={rootRef} style={{ position: 'relative' }}>
+    <div className={`tb-root ${motionClass}`} data-tour="notifications" data-shape={prefs.shape} ref={rootRef} style={{ position: 'relative' }}>
       <button
         className={`tb-bell${ring ? ' tb-ring' : ''}`}
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}

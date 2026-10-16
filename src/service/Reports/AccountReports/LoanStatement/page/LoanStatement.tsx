@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { ConfigProvider, Select, Button, Modal, Popover, Checkbox, theme as antdTheme } from 'antd';
-import { User, CreditCard, Printer, FileDown, Search, Landmark, Columns3 } from 'lucide-react';
+import { Select, Popover, Checkbox } from 'antd';
+import { User, Printer, FileDown, Search, Landmark, Columns3, RefreshCw, FileText } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { useLoanStatement } from '../hooks/useLoanStatement';
-import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '../../../../../components/shared/kit/MemberField';
+import { ReportShell, ParamCard, StatCards, ReportEmpty } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import { useStatementSpec, ProBento, ProTerm, ProEd } from '../views/statementPro';
 import { csvCell } from '@/utils/csv';
-
-const { Option } = Select;
 
 const LOAN_TYPE_LABEL: Record<string, string> = {
     RLN: 'Regular Loan', ALN: 'Emergency Loan', ELN: 'Loan Against RD',
@@ -133,11 +136,11 @@ const LoanStatement: React.FC = () => {
         fetchMemberLoans, selectLoanCase, reset,
     } = useLoanStatement();
     const [inputMbno, setInputMbno] = useState('');
-    const [showLookup, setShowLookup] = useState(false);
     const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>(loadVisibleColumns);
 
     const { interfaceMode } = useSelector((state: RootState) => state.theme);
     const isDark = interfaceMode === 'dark';
+    const { enabled, view, setView } = useReportViews('monthly.loan-statement');
 
     const selectedLoan = activeLoans.find(l => l.loancaseno === selectedLoanCase);
     const shownColumns = ALL_COLUMNS.filter(c => visibleCols[c.key] !== false);
@@ -147,7 +150,6 @@ const LoanStatement: React.FC = () => {
         const name = member.memberName || member.name || '';
         setInputMbno(no);
         fetchMemberLoans(no, name);
-        setShowLookup(false);
     };
 
     const handlePrint = () => {
@@ -238,190 +240,90 @@ const LoanStatement: React.FC = () => {
         link.click();
     };
 
+    const who = selectedLoan ? `${memberName || mbno} · #${selectedLoan.loancaseno}` : (memberName || mbno);
+    const spec = useStatementSpec(rows, summary, who);
+    const hasData = rows.length > 0;
+
     return (
-        <ConfigProvider
-            theme={{
-                algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-                token: { colorPrimary: '#4f46e5', borderRadius: 8, colorBgContainer: isDark ? '#1e293b' : '#ffffff', colorBorder: isDark ? '#334155' : '#e2e8f0' },
-            }}
-        >
-            <div className={`loan-stmt-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-                <div className="loan-stmt-header bg-gradient-to-r from-slate-900 to-slate-900 px-4 py-2 flex items-center justify-between shrink-0 shadow-lg border-b border-white/5 no-print">
-                    <div>
-                        <h1 className="fz-label font-black text-white tracking-tight uppercase">Loan Account Statement</h1>
-                        <p className="fz-caption text-slate-400">Installment-by-installment record for one loan at a time</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            icon={<Printer size={13} />}
-                            size="small"
-                            className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide"
-                            onClick={handlePrint}
-                            disabled={rows.length === 0}
-                        >
-                            Print
-                        </Button>
-                        <Button
-                            type="primary"
-                            icon={<FileDown size={13} />}
-                            size="small"
-                            className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide bg-gradient-to-r from-emerald-600 to-emerald-700"
-                            onClick={exportCsv}
-                            disabled={rows.length === 0}
-                        >
-                            CSV
-                        </Button>
-                        <button onClick={reset} className="fz-caption px-3 py-1.5 border border-white/20 rounded text-slate-200 hover:bg-white/10">Reset</button>
-                    </div>
-                </div>
-
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Sidebar */}
-                    <div className={`loan-stmt-sidebar w-[300px] border-r flex flex-col shrink-0 overflow-y-auto no-print ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-                        <div className="p-4 space-y-4">
-                            <div className={`loan-stmt-card rounded-xl overflow-hidden border shadow-sm ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-200'}`}>
-                                <div className={`px-3 py-2 flex items-center gap-2 border-b ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-slate-50 border-slate-100'}`}>
-                                    <User size={12} className="text-indigo-600" />
-                                    <span className="fz-caption font-black uppercase tracking-wider text-slate-600">Member</span>
-                                </div>
-                                <div className="p-3 space-y-2">
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Member No."
-                                            value={inputMbno}
-                                            onChange={e => setInputMbno(e.target.value)}
-                                            onKeyDown={e => e.key === 'Enter' && fetchMemberLoans(inputMbno, '')}
-                                            className="fz-body border border-slate-300 rounded px-2 py-1.5 w-full focus:outline-none focus:border-indigo-400"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowLookup(true)}
-                                            className="fz-button px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-indigo-600 hover:text-white transition-colors shrink-0"
-                                        >
-                                            <Search size={14} />
-                                        </button>
-                                    </div>
-                                    <button
-                                        onClick={() => fetchMemberLoans(inputMbno, '')}
-                                        disabled={loading || !inputMbno}
-                                        className="w-full fz-caption font-bold py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
-                                    >
-                                        Load Member's Loans
-                                    </button>
-                                    {memberName && <div className="fz-caption text-indigo-600 font-semibold">{memberName} — #{mbno}</div>}
-                                </div>
-                            </div>
-
-                            {activeLoans.length > 0 && (
-                                <div className={`loan-stmt-card rounded-xl overflow-hidden border shadow-sm ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-200'}`}>
-                                    <div className={`px-3 py-2 flex items-center gap-2 border-b ${isDark ? 'bg-slate-600/50 border-slate-600' : 'bg-slate-50 border-slate-100'}`}>
-                                        <Landmark size={12} className="text-indigo-600" />
-                                        <span className="fz-caption font-black uppercase tracking-wider text-slate-600">
-                                            Select Loan ({activeLoans.length})
-                                        </span>
-                                    </div>
-                                    <div className="p-3">
-                                        <Select
-                                            value={selectedLoanCase}
-                                            onChange={(v: string) => { selectLoanCase(v); }}
-                                            className="w-full"
-                                            placeholder="Choose a loan case..."
-                                            size="middle"
-                                        >
-                                            {activeLoans.map(loan => (
-                                                <Option key={loan.loancaseno} value={loan.loancaseno}>
-                                                    #{loan.loancaseno} — {LOAN_TYPE_LABEL[loan.loantype] || loan.loantype} (₹{fmt(loan.balance)})
-                                                </Option>
-                                            ))}
-                                        </Select>
-                                    </div>
-                                </div>
-                            )}
-
-                            {summary && (
-                                <div className="space-y-2">
-                                    <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg p-3 text-white shadow-md">
-                                        <div className="fz-caption font-bold uppercase tracking-wide opacity-90 mb-1">Current Balance</div>
-                                        <div className="fz-heading font-black font-mono">₹{fmt(summary.current_balance)}</div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className={`p-2 rounded-lg ${isDark ? 'bg-emerald-900/40' : 'bg-emerald-50'}`}>
-                                            <div className="fz-caption font-bold uppercase text-emerald-600">Principal Paid</div>
-                                            <div className="fz-body font-black text-emerald-700">₹{fmt(summary.total_principal_paid)}</div>
-                                        </div>
-                                        <div className={`p-2 rounded-lg ${isDark ? 'bg-amber-900/40' : 'bg-amber-50'}`}>
-                                            <div className="fz-caption font-bold uppercase text-amber-600">Interest Paid</div>
-                                            <div className="fz-body font-black text-amber-700">₹{fmt(summary.total_interest_paid)}</div>
-                                        </div>
-                                        <div className={`p-2 rounded-lg ${isDark ? 'bg-rose-900/40' : 'bg-rose-50'}`}>
-                                            <div className="fz-caption font-bold uppercase text-rose-600">Penal Paid</div>
-                                            <div className="fz-body font-black text-rose-700">₹{fmt(summary.total_penal_paid)}</div>
-                                        </div>
-                                        <div className={`p-2 rounded-lg ${isDark ? 'bg-slate-600' : 'bg-slate-100'}`}>
-                                            <div className="fz-caption font-bold uppercase text-slate-500">Payments</div>
-                                            <div className="fz-body font-black text-slate-700">{summary.payments_made}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {message && (
-                                <div className={`p-2 rounded text-sm ${message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                                    {message.text}
-                                </div>
-                            )}
+        <ReportShell
+            className="loan-stmt-page"
+            title="Loan Account Statement"
+            desc="Installment-by-installment record for one loan at a time"
+            asideWidth={280}
+            switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+            actions={
+                <>
+                    <button type="button" className="aw-btn aw-btn-ghost" onClick={() => { reset(); setInputMbno(''); }}><RefreshCw size={14} /> Reset</button>
+                    <button type="button" className="aw-btn aw-btn-secondary" onClick={exportCsv} disabled={!hasData}><FileDown size={14} /> CSV</button>
+                    <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!hasData}><Printer size={14} /> Print</button>
+                </>
+            }
+            aside={
+                <>
+                    <ParamCard title="Member" icon={<User size={14} />}>
+                        <div>
+                            <label className="aw-label" htmlFor="ls-member">Member no</label>
+                            <MemberField id="ls-member" value={inputMbno} onChange={setInputMbno} onSelect={onMemberSelected} onSubmit={v => fetchMemberLoans(v, '')} />
+                            {memberName && <span className="aw-meta">{memberName} — #{mbno}</span>}
                         </div>
-                    </div>
+                        <button type="button" className="aw-btn aw-btn-primary" onClick={() => fetchMemberLoans(inputMbno, '')} disabled={loading || !inputMbno} style={{ width: '100%' }}>
+                            <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : "Load member's loans"}
+                        </button>
+                    </ParamCard>
+                    {activeLoans.length > 0 && (
+                        <ParamCard title={`Select loan (${activeLoans.length})`} icon={<Landmark size={14} />}>
+                            <Select
+                                {...(selectedLoanCase ? { value: selectedLoanCase } : {})}
+                                onChange={(v: string) => { selectLoanCase(v); }}
+                                className="aw-select" popupClassName="aw-select-popup"
+                                placeholder="Choose a loan case..."
+                                aria-label="Loan case"
+                                options={activeLoans.map(l => ({ value: l.loancaseno, label: `#${l.loancaseno} — ${LOAN_TYPE_LABEL[l.loantype] || l.loantype} (₹${fmt(l.balance)})` }))}
+                            />
+                        </ParamCard>
+                    )}
+                    {summary && <StatCards items={[
+                        { label: 'Current balance', value: `₹${fmt(summary.current_balance)}`, tone: 'info' },
+                        { label: 'Principal paid', value: `₹${fmt(summary.total_principal_paid)}`, tone: 'success' },
+                        { label: 'Interest paid', value: `₹${fmt(summary.total_interest_paid)}`, tone: 'warning' },
+                        { label: 'Penal paid', value: `₹${fmt(summary.total_penal_paid)}`, tone: 'danger' },
+                        { label: 'Payments', value: String(summary.payments_made), tone: 'muted' },
+                    ]} />}
+                    {message && <div className={`aw-alert ${message.type === 'error' ? 'aw-alert-danger' : 'aw-alert-success'}`}>{message.text}</div>}
+                </>
+            }
+            footerLeft="Loan Account Statement"
+            footerRight={selectedLoanCase ? `Loan #${selectedLoanCase}` : 'Select a member and loan case'}
+        >
+            {hasData && view === 'bento' && <ProBento spec={spec} />}
+            {hasData && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><ProTerm spec={spec} /></div>}
+            {hasData && view === 'editorial' && <ProEd spec={spec} subtitle={who} />}
 
-                    {/* Main statement */}
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                        <div className={`loan-stmt-panel flex-1 rounded-xl shadow-sm flex flex-col overflow-hidden m-3 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-                            <div className={`border-b px-4 py-2.5 flex items-center justify-between shrink-0 no-print ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100'}`}>
-                                <div className="flex items-center gap-2">
-                                    <div className={`p-1.5 rounded-lg shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-100'}`}>
-                                        <CreditCard size={14} className="text-indigo-600" />
-                                    </div>
-                                    <div>
-                                        <h3 className="fz-caption font-extrabold uppercase tracking-wide text-slate-700">Statement</h3>
-                                        <p className="fz-caption font-semibold text-slate-400">
-                                            {selectedLoanCase ? `Loan #${selectedLoanCase}` : 'Select a member and loan case'}
-                                        </p>
-                                    </div>
+            {view === 'legacy' && (
+                <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div className="aw-main-head">
+                        <span className="aw-card-title">Statement</span>
+                        <span className="aw-meta">{selectedLoanCase ? `Loan #${selectedLoanCase}` : 'Select a member and loan case'}</span>
+                        <Popover
+                            trigger="click"
+                            placement="bottomRight"
+                            content={
+                                <div className="flex flex-col gap-1 w-40">
+                                    {ALL_COLUMNS.map(c => (
+                                        <Checkbox key={c.key} checked={visibleCols[c.key] !== false} onChange={() => toggleColumn(c.key)}>{c.label}</Checkbox>
+                                    ))}
                                 </div>
-                                <Popover
-                                    trigger="click"
-                                    placement="bottomRight"
-                                    content={
-                                        <div className="flex flex-col gap-1 w-40">
-                                            {ALL_COLUMNS.map(c => (
-                                                <Checkbox
-                                                    key={c.key}
-                                                    checked={visibleCols[c.key] !== false}
-                                                    onChange={() => toggleColumn(c.key)}
-                                                >
-                                                    {c.label}
-                                                </Checkbox>
-                                            ))}
-                                        </div>
-                                    }
-                                >
-                                    <Button size="small" icon={<Columns3 size={13} />}>Columns</Button>
-                                </Popover>
-                            </div>
-
-                            <div className={`flex-1 overflow-auto p-4 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
-                                {loading ? (
-                                    <div className="h-full flex items-center justify-center text-slate-400 fz-body">Loading...</div>
-                                ) : rows.length === 0 ? (
-                                    <div className="h-full flex flex-col items-center justify-center opacity-40">
-                                        <Search size={56} className="text-slate-300 mb-4" />
-                                        <h3 className="fz-body font-bold text-slate-400 uppercase tracking-wide">No Transactions</h3>
-                                        <p className="fz-caption text-slate-300 mt-1">
-                                            {selectedLoanCase ? 'No repayments recorded yet for this loan.' : 'Choose a member and loan case on the left.'}
-                                        </p>
-                                    </div>
-                                ) : (
+                            }
+                        >
+                            <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm"><Columns3 size={13} /> Columns</button>
+                        </Popover>
+                    </div>
+                    <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+                        {loading ? (
+                            <p className="aw-meta">Loading…</p>
+                        ) : rows.length === 0 ? (
+                            <ReportEmpty icon={<FileText size={34} />} title="No Transactions" hint={selectedLoanCase ? 'No repayments recorded yet for this loan.' : 'Choose a member and loan case on the left.'} />
+                        ) : (
                                     <div className="print-area">
                                         <div className="text-center mb-4 border-b border-dashed border-slate-300 pb-3">
                                             <div className="fz-body font-bold text-slate-800">Espat Karmchari Co-Operative Credit Society Limited</div>
@@ -471,48 +373,15 @@ const LoanStatement: React.FC = () => {
                                             * {rows.length} transaction(s) shown, oldest first is at the top of each installment's history
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        </div>
+                        )}
                     </div>
-                </div>
-            </div>
-
-            <Modal open={showLookup} onCancel={() => setShowLookup(false)} footer={null} width={800} styles={{ body: { padding: 0 } }} destroyOnClose>
-                <MemberLookup isModal onSelect={onMemberSelected} onClose={() => setShowLookup(false)} />
-            </Modal>
+                </section>
+            )}
+            {view !== 'legacy' && !hasData && (
+                <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Transactions'} hint={selectedLoanCase ? 'No repayments recorded yet for this loan.' : 'Choose a member and loan case on the left.'} />
+            )}
 
             <style>{`
-                /* Printing now goes through a hidden iframe (see handlePrint) that
-                   renders a plain monospace layout built from the report's own data
-                   — no @media print rule is needed on this live page anymore;
-                   window.print() is no longer called on it. */
-
-                /* ── Loan Account Statement — dark mode ── */
-                html.dark .loan-stmt-page { background-color: #000000 !important; color: #f5f5f7 !important; }
-                html.dark .loan-stmt-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .loan-stmt-sidebar { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .loan-stmt-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .loan-stmt-card .text-slate-600 { color: #8e8e93 !important; }
-                html.dark .loan-stmt-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .loan-stmt-page .bg-slate-900\\/40 { background-color: rgba(255,255,255,.03) !important; }
-                html.dark .loan-stmt-page .bg-white { background-color: #1c1c1e !important; }
-                html.dark .loan-stmt-page .text-slate-700 { color: #f5f5f7 !important; }
-                html.dark .loan-stmt-page .text-slate-800 { color: #f5f5f7 !important; }
-                html.dark .loan-stmt-page .text-slate-500 { color: #8e8e93 !important; }
-                html.dark .loan-stmt-page .text-slate-400 { color: #8e8e93 !important; }
-                html.dark .loan-stmt-page .text-slate-300 { color: #71717a !important; }
-                html.dark .loan-stmt-page input {
-                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-                }
-                html.dark .loan-stmt-page .ant-select-selector {
-                    background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-                }
-                html.dark .loan-stmt-page .ant-select-selection-item { color: #f5f5f7 !important; }
-                html.dark .loan-stmt-page .ant-btn:not(.ant-btn-primary) {
-                    background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
-                }
-                /* Statement table */
                 html.dark .loan-stmt-table thead tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.07) !important; }
                 html.dark .loan-stmt-table th { color: #8e8e93 !important; }
                 html.dark .loan-stmt-table td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
@@ -522,12 +391,13 @@ const LoanStatement: React.FC = () => {
                 html.dark .loan-stmt-table .text-slate-500,
                 html.dark .loan-stmt-table .text-slate-700 { color: #f5f5f7 !important; }
                 html.dark .loan-stmt-table .text-slate-800 { color: #ffffff !important; }
-                html.dark .loan-stmt-page .border-dashed { border-color: rgba(255,255,255,.07) !important; }
-                html.dark .ant-modal-content, html.dark .ant-modal-header {
-                    background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-                }
+                html.dark .loan-stmt-page .print-area .text-slate-700,
+                html.dark .loan-stmt-page .print-area .text-slate-800 { color: #f5f5f7 !important; }
+                html.dark .loan-stmt-page .print-area .text-slate-500,
+                html.dark .loan-stmt-page .print-area .text-slate-400 { color: #8e8e93 !important; }
+                html.dark .loan-stmt-page .print-area .border-dashed { border-color: rgba(255,255,255,.07) !important; }
             `}</style>
-        </ConfigProvider>
+        </ReportShell>
     );
 };
 

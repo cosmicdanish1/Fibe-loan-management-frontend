@@ -27,6 +27,9 @@ import dayjs, { Dayjs } from 'dayjs';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
 import { renderCrDrText } from '../../../../components/shared/CrDrIndicator';
 import { isFromAfterTo } from '@/utils/dates';
+import { ProBar, ProBody } from '../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../components/reports/views/reportViews';
+import { useDetailLedgerSpec } from '../views/detailPro';
 
 // ── layout constants ─────────────────────────────────────────────────────────
 const W_DATE    = 14;
@@ -203,6 +206,7 @@ const MemberDetailLedger: React.FC = () => {
   const [showLookup, setShowLookup] = useState(false);
   const [reportText, setReportText] = useState('');
   const [isLoading,  setIsLoading]  = useState(false);
+  const [detail,     setDetail]     = useState<DetailLedger | null>(null);
   const reportTextRef = useRef('');
 
   const handleMemberSelect = useCallback((member: any) => {
@@ -218,6 +222,7 @@ const MemberDetailLedger: React.FC = () => {
     setToDate(dayjs());
     setOutputType('screen');
     setReportText('');
+    setDetail(null);
     reportTextRef.current = '';
   }, []);
 
@@ -240,6 +245,7 @@ const MemberDetailLedger: React.FC = () => {
       if (response.success && response.data) {
         const data: DetailLedger = response.data;
         if (data.memberName) setMemberName(data.memberName);
+        setDetail(data);
 
         const text = buildReportText(data, new Date());
         reportTextRef.current = text;
@@ -253,6 +259,7 @@ const MemberDetailLedger: React.FC = () => {
         }
       } else {
         setReportText('');
+        setDetail(null);
         reportTextRef.current = '';
         message.error(response.error || response.message || 'Failed to generate report');
       }
@@ -260,6 +267,7 @@ const MemberDetailLedger: React.FC = () => {
       console.error('[MemberDetailLedger] Error:', err);
       message.error('Failed to generate report');
       setReportText('');
+      setDetail(null);
       reportTextRef.current = '';
     } finally {
       setIsLoading(false);
@@ -270,6 +278,9 @@ const MemberDetailLedger: React.FC = () => {
     if (!reportTextRef.current) return;
     printReportText(reportTextRef.current);
   }, []);
+
+  const { enabled, view, setView } = useReportViews('member-detail-ledger');
+  const spec = useDetailLedgerSpec(detail);
 
   return (
     <ConfigProvider
@@ -419,6 +430,10 @@ const MemberDetailLedger: React.FC = () => {
             <div className={`mdl-panel-body flex-1 overflow-auto p-2 custom-scrollbar-violet ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-violet-50/10'}`}>
               <Spin spinning={isLoading} tip="Loading..." size="small">
                 {reportText ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (detail !== null && detail.entries.length > 0 ? <ProBody view={view} spec={spec} title="Member Detail Ledger" subtitle={`${memberNo} · ${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No entries to show'}</p>)}
+                {view === 'legacy' && (
                   <pre
                     className="font-mono"
                     style={{
@@ -433,6 +448,8 @@ const MemberDetailLedger: React.FC = () => {
                   >
                     {renderCrDrText(reportText)}
                   </pre>
+                )}
+                </>
                 ) : (
                   <div className="py-32 text-center">
                     <div className="w-20 h-20 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">

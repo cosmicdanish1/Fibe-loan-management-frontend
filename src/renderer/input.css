@@ -401,7 +401,7 @@
    density (--ui-density), corner radius (--corner-radius), font (inherited),
    and Light/Dark. Windows use these classes instead of one-off CSS.
    ============================================================ */
-.app-window, .aw-select-popup {
+.app-window, .aw-select-popup, .ob-dialog, .ob-tour-card {
   --aw-bg: #f5f7fb;
   --aw-surface: #ffffff;
   --aw-surface-muted: #f8fafc;
@@ -424,7 +424,7 @@
   --aw-pad: calc(14px * var(--ui-density, 1));
   --aw-gap: calc(12px * var(--ui-density, 1));
 }
-html.dark .app-window, html.dark .aw-select-popup {
+html.dark .app-window, html.dark .aw-select-popup, html.dark .ob-dialog, html.dark .ob-tour-card {
   --aw-bg: #0e1116;
   --aw-surface: #151a21;
   --aw-surface-muted: #1c2530;
@@ -442,6 +442,8 @@ html.dark .app-window, html.dark .aw-select-popup {
 }
 
 .app-window { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--aw-bg); color: var(--aw-text); }
+/* A kit island inside a window that has not moved to the kit yet (report Pro views): no full-height frame. */
+.app-window.aw-embed { height: auto; overflow: visible; background: transparent; }
 .app-window .aw-header { display: flex; align-items: center; justify-content: space-between; gap: var(--aw-gap); flex: none; padding: var(--aw-pad) calc(var(--aw-pad) * 1.4); background: var(--aw-surface); border-bottom: 1px solid var(--aw-border); }
 .app-window .aw-title { margin: 0; color: var(--aw-text); font-size: var(--type-page-title); line-height: 1.2; font-weight: 700; letter-spacing: -.02em; }
 .app-window .aw-desc { margin: 3px 0 0; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); line-height: 1.35; }
@@ -803,6 +805,8 @@ html.dark .aw-select-popup.ant-picker-dropdown .ant-picker-panel-container { bac
 .app-window .aw-seg > button { position: relative; z-index: 1; padding: 8px 10px; border: 0; background: transparent; color: var(--aw-muted); font-size: var(--type-field-size); font-weight: 700; cursor: pointer; white-space: nowrap; }
 .app-window .aw-seg > button[aria-selected="true"] { color: var(--aw-text); }
 .app-window .aw-seg > button:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: -2px; border-radius: var(--aw-radius); }
+/* A switch in a window header sits at the very top, so its tooltips open downward instead of being clipped. */
+.app-window .aw-header .aw-seg > button[data-tip]::after { bottom: auto; top: calc(100% + 10px); transform-origin: top center; }
 
 .app-window .aw-list-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px var(--aw-pad); border-bottom: 1px solid var(--aw-border); transition: background-color .22s var(--aw-ease) !important; }
 .app-window .aw-list-row:last-child { border-bottom: 0; }

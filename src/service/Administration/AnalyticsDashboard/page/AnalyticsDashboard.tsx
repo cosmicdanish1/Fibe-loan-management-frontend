@@ -202,6 +202,7 @@ const AnalyticsDashboard: React.FC = () => {
               </div>
 
               <div>
+                <div style={{ position: 'relative' }}>
                 <svg viewBox="0 0 700 240" preserveAspectRatio="none" style={{ width: '100%', height: 244, display: 'block', overflow: 'visible' }} role="img" aria-label="Sessions and users trend">
                   <defs>
                     <linearGradient id="hubSess" x1="0" y1="0" x2="0" y2="1">
@@ -220,8 +221,17 @@ const AnalyticsDashboard: React.FC = () => {
                   <path d={chart.sessionsArea} fill="url(#hubSess)" />
                   <path d={chart.usersLine} fill="none" style={{ stroke: TONE_USERS }} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
                   <path d={chart.sessionsLine} fill="none" style={{ stroke: 'var(--aw-accent)' }} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-                  <circle cx={chart.peak[0]} cy={chart.peak[1]} r={4.5} style={{ fill: 'var(--aw-surface)', stroke: 'var(--aw-accent)' }} strokeWidth={2.6} vectorEffect="non-scaling-stroke" />
                 </svg>
+                {/* A real round dot: a circle inside the stretched SVG would be drawn as an oval. */}
+                <span
+                  aria-hidden
+                  style={{
+                    position: 'absolute', left: `calc(${(chart.peak[0] / 700) * 100}% - 6px)`, top: `calc(${(chart.peak[1] / 240) * 100}% - 6px)`,
+                    width: 12, height: 12, borderRadius: '50%', boxSizing: 'border-box',
+                    background: 'var(--aw-surface)', border: '2.6px solid var(--aw-accent)', pointerEvents: 'none',
+                  }}
+                />
+                </div>
                 <div className="aw-inline" style={{ justifyContent: 'space-between', paddingTop: 10 }}>
                   {chart.axisLabels.map((lbl, i) => (
                     <span key={i} className="aw-meta" style={{ fontVariantNumeric: 'tabular-nums' }}>{lbl}</span>

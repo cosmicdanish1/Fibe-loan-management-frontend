@@ -6,6 +6,9 @@ import { FileText, Printer, Search, RotateCcw, Calendar, Wallet, Monitor } from 
 import { apiService } from '../../../../services/api';
 import dayjs from 'dayjs';
 import { isFromAfterTo } from '@/utils/dates';
+import { ProBar, ProBody } from '../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../components/reports/views/reportViews';
+import { useDdrSpec } from '../views/ddrPro';
 
 interface DepositRecord {
   key: string;
@@ -170,6 +173,9 @@ const DepositDueDateRegister: React.FC = () => {
     totalMaturity: reportData.reduce((s, r) => s + r.maturityAmount, 0),
   }), [reportData]);
 
+  const { enabled, view, setView } = useReportViews('deposit-due-date-register');
+  const spec = useDdrSpec(reportData, `${fromDate.format('DD MMM')} - ${toDate.format('DD MMM YYYY')}`);
+
   return (
     <ConfigProvider theme={{
       algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
@@ -275,6 +281,10 @@ const DepositDueDateRegister: React.FC = () => {
             <div className={`ddr-report-body flex-1 overflow-auto p-2 ${isDark ? 'bg-slate-900/40' : ''}`}>
               <Spin spinning={loading} size="small">
                 {reportData.length > 0 ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (reportData.length > 0 ? <ProBody view={view} spec={spec} title="Deposit Due Date Register" subtitle={`${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No deposits to show'}</p>)}
+                {view === 'legacy' && (
                   <div style={{ fontFamily: "'Courier New', monospace", fontSize: 11 }}>
                     {/* Society Header */}
                     <div className={`text-center mb-3 p-2 border-2 border-amber-400 rounded ${isDark ? 'bg-amber-900/20' : 'bg-amber-50'}`}>
@@ -348,6 +358,8 @@ const DepositDueDateRegister: React.FC = () => {
                       Report As Per Data Available....
                     </div>
                   </div>
+                )}
+                </>
                 ) : (
                   <div className="py-32 text-center">
                     <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">

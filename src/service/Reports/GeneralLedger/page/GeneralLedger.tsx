@@ -3,17 +3,19 @@ import {
   FileText,
   Printer,
   FileDown,
-  BookOpen,
   RefreshCw,
-  ShieldCheck,
 } from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Spin, Select, theme as antdTheme, message } from 'antd';
-import { motion } from 'framer-motion';
+import { DatePicker, Spin, Select, message } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../store';
 import { apiService } from '../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { ReportShell, StatCards, ReportEmpty } from '../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../components/reports/views/reportViews';
+import '../../../../components/reports/views/proViews.css';
+import { useGlSpec, ProBento, ProTerm, ProEd } from '../views/glPro';
 
 const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -21,7 +23,6 @@ const showDialog = async (type: 'info' | 'warning' | 'error', title: string, det
   }
 };
 
-const { Option } = Select;
 
 interface GeneralLedgerEntry {
   transactionNo: number;
@@ -150,6 +151,7 @@ const currentFinancialYearStart = () => {
 const GeneralLedger: React.FC = () => {
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark';
+  const { enabled, view, setView } = useReportViews('general-ledger');
 
   const [headCode, setHeadCode]     = useState<string>('');
   const [fromDate, setFromDate]     = useState<Dayjs | null>(currentFinancialYearStart());
@@ -301,9 +303,6 @@ const GeneralLedger: React.FC = () => {
   const headName = selectedHead?.headName || '';
 
   /* ── theme tokens ── */
-  const bg       = isDark ? 'bg-[#0f172a]'  : 'bg-slate-50';
-  const panel    = isDark ? 'bg-[#1e293b]'  : 'bg-white';
-  const panelBdr = isDark ? 'border-[#334155]' : 'border-slate-200';
   const text     = isDark ? 'text-slate-100' : 'text-slate-800';
   const muted    = isDark ? 'text-slate-400' : 'text-slate-500';
   const tblHd    = isDark ? 'bg-[#263148] text-slate-300' : 'bg-slate-100 text-slate-700';
@@ -311,109 +310,81 @@ const GeneralLedger: React.FC = () => {
   const rowHover = isDark ? 'hover:bg-white/5' : 'hover:bg-emerald-50/40';
   const sumRow   = isDark ? 'bg-[#263148]'  : 'bg-slate-100';
 
+  const spec = useGlSpec(ledgerData?.entries ?? [], `${headCode} ${headName}`.trim(), ledgerData?.openingBalance ?? 0, ledgerData?.closingBalance ?? 0, ledgerData?.totalDebits ?? 0, ledgerData?.totalCredits ?? 0);
+  const hasData = !!ledgerData;
+  const period = `${fromDate?.format('DD-MMM-YYYY')} to ${toDate?.format('DD-MMM-YYYY')}`;
+
   return (
-    <ConfigProvider theme={{ algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm, token: { colorPrimary: '#10b981', borderRadius: 8 } }}>
-      <div className={`gl-page h-screen flex flex-col ${bg} font-sans overflow-hidden`}>
-
-        {/* ── Header ── */}
-        <div className={`gl-header ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'} border-b px-4 py-2 flex items-center justify-between shrink-0 shadow-sm`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-1.5 rounded-lg text-white shadow">
-              <BookOpen size={15} />
-            </div>
-            <div>
-              <h1 className={`text-sm font-black ${text} tracking-tight leading-none uppercase`}>General Ledger</h1>
-              <div className={`flex items-center gap-1 mt-0.5 fz-tiny font-bold ${muted} uppercase tracking-wide`}>
-                <ShieldCheck size={9} className="text-emerald-500" /> Head-wise Account Statement
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button size="small" icon={<Printer size={11} />} onClick={handlePrint} disabled={!ledgerData}
-              className="h-7 px-2 fz-small font-bold uppercase">Print</Button>
-            <Button size="small" type="primary" icon={<FileDown size={11} />} onClick={handleExportCSV} disabled={!ledgerData}
-              className="h-7 px-2 fz-small font-bold uppercase bg-emerald-600 border-0 hover:!bg-emerald-700">Export CSV</Button>
-          </div>
-        </div>
-
-        {/* ── Filter Bar ── */}
-        <div className={`gl-filter-bar ${panel} border-b ${panelBdr} px-4 py-2 flex items-end gap-3 shrink-0`}>
-          {/* Head */}
-          <div className="flex flex-col gap-0.5 min-w-[220px] max-w-[320px] flex-1">
-            <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>Head Name</label>
+    <ReportShell
+      className="gl-page"
+      title="General Ledger"
+      desc="Head-wise account statement"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={() => { setHeadCode(''); setFromDate(currentFinancialYearStart()); setToDate(dayjs()); invalidateReport(); }}><RefreshCw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!hasData}><FileDown size={14} /> CSV</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!hasData}><Printer size={14} /> Print</button>
+        </>
+      }
+      footerLeft="General Ledger"
+      footerRight={hasData ? `${headCode} · ${period}` : 'Select head and period'}
+    >
+      <section className="aw-card gl-filter-bar">
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 260px', minWidth: 220 }}>
+            <label className="aw-label" htmlFor="gl-head">Head name</label>
             <Select
-              value={headCode || undefined}
-              onChange={value => { setHeadCode(value ?? ''); invalidateReport(); }}
+              id="gl-head"
+              {...(headCode ? { value: headCode } : {})}
+              onChange={(value?: string) => { setHeadCode(value ?? ''); invalidateReport(); }}
               placeholder="Select head code"
               showSearch
-              size="small"
               loading={isLoadingHeads}
-              className="w-full"
-              filterOption={(input, option) => {
-                const code = option?.value?.toString().toLowerCase() || '';
-                const label = (option?.label as string)?.toLowerCase() || '';
-                const s = input.toLowerCase();
-                return code.includes(s) || label.includes(s);
-              }}
-            >
-              {headMasters.map(h => (
-                <Option key={h.code} value={h.code} label={`${h.code} ${h.headName}`}>
-                  <span className="fz-small font-black text-emerald-600 mr-2">{h.code}</span>
-                  <span className="fz-small text-slate-500">{h.headName}</span>
-                </Option>
-              ))}
-            </Select>
+              className="aw-select" popupClassName="aw-select-popup"
+              filterOption={(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+              options={headMasters.map(h => ({ value: h.code, label: `${h.code} ${h.headName}` }))}
+            />
           </div>
-
-          {/* From */}
-          <div className="flex flex-col gap-0.5">
-            <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>From</label>
-            <DatePicker size="small" value={fromDate} onChange={value => { setFromDate(value); invalidateReport(); }} format="DD-MMM-YYYY" className="w-32" />
+          <div>
+            <label className="aw-label" htmlFor="gl-from">From</label>
+            <DatePicker id="gl-from" className="aw-picker" popupClassName="aw-select-popup" value={fromDate} onChange={value => { setFromDate(value); invalidateReport(); }} format="DD-MMM-YYYY" allowClear={false} />
           </div>
-
-          {/* To */}
-          <div className="flex flex-col gap-0.5">
-            <label className={`fz-tiny font-bold ${muted} uppercase tracking-wide`}>To</label>
-            <DatePicker size="small" value={toDate} onChange={value => { setToDate(value); invalidateReport(); }} format="DD-MMM-YYYY" className="w-32" />
+          <div>
+            <label className="aw-label" htmlFor="gl-to">To</label>
+            <DatePicker id="gl-to" className="aw-picker" popupClassName="aw-select-popup" value={toDate} onChange={value => { setToDate(value); invalidateReport(); }} format="DD-MMM-YYYY" allowClear={false} />
           </div>
-
-          <Button type="primary" size="small" icon={<RefreshCw size={12} />} onClick={generateReport} loading={isLoading}
-            className="h-[30px] px-4 fz-small font-bold uppercase bg-emerald-600 border-0 hover:!bg-emerald-700 shrink-0">
-            Generate
-          </Button>
+          <button type="button" className="aw-btn aw-btn-primary" onClick={generateReport} disabled={isLoading}>
+            <RefreshCw size={14} className={isLoading ? 'aw-spin' : undefined} /> {isLoading ? 'Loading…' : 'Generate'}
+          </button>
         </div>
+      </section>
 
-        {/* ── Stats Bar (shown only when data loaded) ── */}
-        {ledgerData && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className={`gl-stats-bar ${panel} border-b ${panelBdr} px-4 py-1.5 flex items-center gap-6 shrink-0`}>
-            {[
-              { label: 'Opening',      value: ledgerData.openingBalance,  color: text },
-              { label: 'Total Payments', value: ledgerData.totalDebits,   color: 'text-rose-500' },
-              { label: 'Total Receipts',value: ledgerData.totalCredits,   color: 'text-emerald-500' },
-              { label: 'Closing',      value: ledgerData.closingBalance,  color: 'text-teal-400' },
-            ].map(s => (
-              <div key={s.label}>
-                <div className={`fz-tiny font-bold ${muted} uppercase tracking-wide leading-none`}>{s.label}</div>
-                <div className={`fz-caption font-black font-mono ${s.color} leading-tight`}>₹{fmt(s.value)}</div>
-              </div>
-            ))}
-            <div className="ml-auto">
-              <div className={`fz-tiny font-bold ${muted} uppercase tracking-wide leading-none`}>Transactions</div>
-              <div className={`fz-caption font-black font-mono ${text} leading-tight`}>{ledgerData.totalTransactions}</div>
-            </div>
-          </motion.div>
-        )}
+      {hasData && (
+        <StatCards items={[
+          { label: 'Opening', value: fmt(ledgerData.openingBalance), tone: 'muted' },
+          { label: 'Total payments', value: fmt(ledgerData.totalDebits), tone: 'danger' },
+          { label: 'Total receipts', value: fmt(ledgerData.totalCredits), tone: 'success' },
+          { label: 'Closing', value: fmt(ledgerData.closingBalance), tone: 'info' },
+          { label: 'Transactions', value: String(ledgerData.totalTransactions), tone: 'muted' },
+        ]} />
+      )}
 
-        {/* ── Report Table ── */}
-        <div className="gl-report-panel flex-1 overflow-auto p-3 custom-scrollbar-emerald">
-          {reportError && (
-            <div role="alert" className="mb-3 rounded border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800">
-              {reportError}
-            </div>
-          )}
-          <Spin spinning={isLoading} tip="Loading…" size="small">
-            {ledgerData ? (
+      {reportError && <div role="alert" className="aw-alert aw-alert-danger">{reportError}</div>}
+
+      {hasData && view === 'bento' && <ProBento spec={spec} />}
+      {hasData && view === 'terminal' && <div style={{ height: 'calc(100vh - 260px)', minHeight: 360 }}><ProTerm spec={spec} /></div>}
+      {hasData && view === 'editorial' && <ProEd spec={spec} subtitle={`${headCode} · ${period}`} />}
+
+      {view === 'legacy' && (
+        <section className="aw-card gl-report-panel" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">General Ledger Report</span>
+            <span className="aw-meta">{hasData ? `${headCode} – ${headName}` : 'No report yet'}</span>
+          </div>
+          <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+            <Spin spinning={isLoading} tip="Loading…" size="small">
+              {ledgerData ? (
               <div className="font-mono fz-small">
                 {/* Company header */}
                 <div className={`text-center mb-2 pb-2 border-b border-dashed ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
@@ -498,58 +469,24 @@ const GeneralLedger: React.FC = () => {
 
                 <div className={`text-center mt-2 fz-tiny ${muted}`}>* Report As Per Data Available</div>
               </div>
-            ) : !isLoading ? (
-              <div className="h-full flex flex-col items-center justify-center py-24 select-none opacity-40">
-                <FileText size={52} className="text-slate-400 mb-3" />
-                <h3 className={`text-xs font-black ${muted} uppercase tracking-widest`}>No Data</h3>
-                <p className={`fz-small font-bold ${muted} uppercase mt-1 text-center`}>Select head code and date range, then Generate</p>
-              </div>
-            ) : null}
-          </Spin>
-        </div>
-
-      </div>
+              ) : !isLoading ? (
+                <ReportEmpty icon={<FileText size={34} />} title="No Data" hint="Select head code and date range, then Generate" />
+              ) : null}
+            </Spin>
+          </div>
+        </section>
+      )}
+      {view !== 'legacy' && !hasData && !reportError && (
+        <ReportEmpty icon={<FileText size={34} />} title={isLoading ? 'Loading…' : 'No Data'} hint="Select head code and date range, then Generate" />
+      )}
 
       <style>{`
-        .custom-scrollbar-emerald::-webkit-scrollbar { width: 4px; height: 4px; }
-        .custom-scrollbar-emerald::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar-emerald::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
-        @media print {
-          @page { size: A4 portrait; margin: 12mm; }
-          html, body, #root { height: auto !important; min-height: 0 !important; overflow: visible !important; }
-          .gl-page { height: auto !important; min-height: 0 !important; overflow: visible !important; background: oklch(100% 0.004 200) !important; }
-          .gl-header, .gl-filter-bar, .gl-stats-bar { display: none !important; }
-          .gl-report-panel { height: auto !important; min-height: 0 !important; overflow: visible !important; padding: 0 !important; color: oklch(18% 0.01 200) !important; background: oklch(100% 0.004 200) !important; }
-          .gl-report-panel, .gl-report-panel * { color: oklch(18% 0.01 200) !important; background-color: oklch(100% 0.004 200) !important; border-color: oklch(75% 0.01 200) !important; }
-          .gl-table { width: 100% !important; table-layout: fixed; font-size: 9pt !important; }
-          .gl-table thead { display: table-header-group; }
-          .gl-table tr { break-inside: avoid; page-break-inside: avoid; }
-          .gl-report-panel .text-center { break-inside: avoid; }
-        }
-
-        /* ── General Ledger — dark mode ── */
-        html.dark .gl-page { background-color: #000000 !important; color: #f5f5f7 !important; }
-        html.dark .gl-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .gl-filter-bar { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .gl-stats-bar { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .gl-report-panel { background-color: #000000 !important; }
         html.dark .gl-table { border-color: rgba(255,255,255,.07) !important; }
         html.dark .gl-table td,
         html.dark .gl-table th { border-color: rgba(255,255,255,.07) !important; }
         html.dark .gl-table-head { background-color: #1c1c1e !important; color: #8e8e93 !important; }
-        html.dark .gl-page input,
-        html.dark .gl-page .ant-picker,
-        html.dark .gl-page .ant-select-selector {
-          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-        }
-        html.dark .gl-page .ant-picker-input > input,
-        html.dark .gl-page .ant-select-selection-item { color: #f5f5f7 !important; }
-        html.dark .gl-page label { color: #8e8e93 !important; }
-        html.dark .gl-page button:not(.ant-btn-primary):not(.bg-emerald-600) {
-          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
-        }
       `}</style>
-    </ConfigProvider>
+    </ReportShell>
   );
 };
 

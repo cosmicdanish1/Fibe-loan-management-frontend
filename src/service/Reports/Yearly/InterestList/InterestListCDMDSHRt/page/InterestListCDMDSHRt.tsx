@@ -15,6 +15,9 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import { csvCell } from '@/utils/csv';
+import { ProBar, ProBody } from '../../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../../components/reports/views/reportViews';
+import { useInterestSpec } from '../views/interestPro';
 
 const { Option } = Select;
 
@@ -225,6 +228,9 @@ const InterestListCDMDSHRt: React.FC = () => {
     link.click();
   };
 
+  const { enabled, view, setView } = useReportViews('yearly.interest-list');
+  const spec = useInterestSpec(filteredData, financialYear);
+
   return (
     <ConfigProvider theme={{
       algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
@@ -419,6 +425,10 @@ const InterestListCDMDSHRt: React.FC = () => {
                 </div>
               ) : paginatedData.length > 0 ? (
                 <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (filteredData.length > 0 ? <ProBody view={view} spec={spec} title="Interest Distribution List" subtitle={`FY ${financialYear}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No interest data to show'}</p>)}
+                {view === 'legacy' && (
+                <>
                   {/* Company Header */}
                   <div className={`text-center px-4 pt-4 pb-3 border-b border-dashed font-mono fz-label ${isDark ? 'bg-slate-900/30 border-slate-600' : 'bg-slate-50 border-slate-300'}`}>
                     <div className={`fz-body font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
@@ -503,6 +513,8 @@ const InterestListCDMDSHRt: React.FC = () => {
                       />
                     </div>
                   )}
+                </>
+                )}
                 </>
               ) : (
                 <div className="text-center py-12">

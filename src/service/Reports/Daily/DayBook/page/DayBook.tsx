@@ -1,39 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, RefreshCw, Printer, FileDown, Search, BookOpen, ShieldCheck } from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Spin, Tooltip, message, theme as antdTheme } from 'antd';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Settings, RefreshCw, Printer, FileDown, Search, BookOpen, Calendar } from 'lucide-react';
+import { DatePicker, Spin, message } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import DayBookBento from '../views/DayBookBento';
+import DayBookTerminal from '../views/DayBookTerminal';
+import type { DayBookData, HeadGroup } from '../views/dayBookModel';
 import dayjs from 'dayjs';
 import { csvCell } from '@/utils/csv';
 import { escapeHtml } from '@/utils/html';
 
-interface DayBookEntry {
-  mbNo: string;
-  memberName: string;
-  voucherNo: string;
-  amount: number;
-  username: string;
-}
-
-interface HeadGroup {
-  headCode: string;
-  headName: string;
-  entries: DayBookEntry[];
-  total: number;
-}
-
-interface DayBookData {
-  date: string;
-  openingBalance: number;
-  totalReceipts: number;
-  totalPayments: number;
-  closingBalance: number;
-  paymentGroups: HeadGroup[];
-  receiptGroups: HeadGroup[];
-  totalTransactions: number;
-}
+const REPORT_ID = 'daily.day-book';
 
 const fmt = (n: number) =>
   Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -120,22 +101,17 @@ const DayBook: React.FC<{ filterType?: 'all' | 'cd' | 'sb' }> = ({ filterType = 
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs().subtract(1, 'day'));
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DayBookData | null>(null);
+  const { enabled, view, setView } = useReportViews(REPORT_ID);
 
   const { interfaceMode } = useSelector((state: RootState) => state.theme);
   // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
   const isDark = interfaceMode === 'dark';
 
-  // Theme variables
-  const bg        = isDark ? 'bg-[#0f172a]'                                  : 'bg-slate-50';
-  const header    = isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-b border-white/5' : 'bg-white/80 backdrop-blur-sm border-b border-slate-200';
-  const panel     = isDark ? 'bg-slate-800 border border-slate-700'           : 'bg-white border border-slate-200';
-  const panelHd   = isDark ? 'bg-slate-900/50 border-b border-slate-700'      : 'bg-slate-50 border-b border-slate-100';
-  const panelHdTx = isDark ? 'text-slate-300'                                 : 'text-slate-700';
-  const text      = isDark ? 'text-slate-100'                                 : 'text-slate-800';
+  // Legacy report-body colours (the body keeps its original look; only the shell uses the app kit)
   const muted     = isDark ? 'text-slate-400'                                 : 'text-slate-500';
   const subtle    = isDark ? 'text-slate-500'                                 : 'text-slate-400';
+  const panelHdTx = isDark ? 'text-slate-300'                                 : 'text-slate-700';
   const contentBg = isDark ? 'bg-slate-900/40'                                : 'bg-white';
-  const ftrBg     = isDark ? 'bg-slate-800 border-t border-slate-700'         : 'bg-white/80 border-t border-slate-200';
 
   // Monospace line colors
   const lineDefault = isDark ? 'text-slate-300'               : 'text-slate-700';
@@ -174,9 +150,10 @@ const DayBook: React.FC<{ filterType?: 'all' | 'cd' | 'sb' }> = ({ filterType = 
     }
   };
 
-  const hasData = data && ((data.paymentGroups?.length ?? 0) > 0 || (data.receiptGroups?.length ?? 0) > 0);
+  const hasData = Boolean(data && ((data.paymentGroups?.length ?? 0) > 0 || (data.receiptGroups?.length ?? 0) > 0));
   const reportLines = data ? buildLines(data, selectedDate.format('DD-MMM-YYYY')) : [];
 
+  // Print always uses the legacy monospace letterhead, whichever view is on screen.
   const handlePrint = () => {
     if (!data) return;
     const lines = buildLines(data, selectedDate.format('DD-MMM-YYYY'));
@@ -221,186 +198,144 @@ const DayBook: React.FC<{ filterType?: 'all' | 'cd' | 'sb' }> = ({ filterType = 
   };
 
   return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      token: {
-        colorPrimary: '#6366f1',
-        borderRadius: 8,
-        colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-        colorBorder: isDark ? '#334155' : '#e2e8f0',
-      },
-    }}>
-      <div className={`db-page h-screen flex flex-col font-sans overflow-hidden ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
-
-        {/* Header */}
-        <div className={`db-header px-4 py-2.5 flex items-center justify-between shrink-0 ${header}`}>
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-500/30">
-              <BookOpen size={18} className="text-white" />
-            </div>
-            <div>
-              <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Day Book{titleSuffix}</h1>
-              <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
-                <ShieldCheck size={10} className="text-indigo-400" /> Daily Transaction Journal
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button icon={<Printer size={13} />} size="small"
-              className="h-8 px-3 rounded-lg text-xs font-bold uppercase tracking-wide"
-              onClick={handlePrint} disabled={!hasData}>
-              Print
-            </Button>
-            <Button type="primary" icon={<FileDown size={13} />} size="small"
-              className="h-8 px-4 rounded-lg text-xs font-bold uppercase tracking-wide"
-              onClick={handleExportCSV} disabled={!hasData}>
-              CSV
-            </Button>
-          </div>
+    <div className="app-window db-page">
+      <div className="aw-header aw-ambient">
+        <div className="min-w-0">
+          <h1 className="aw-title">Day Book{titleSuffix}</h1>
+          <p className="aw-desc">Daily transaction journal</p>
         </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-3 flex gap-3">
-
-          {/* Left panel */}
-          <div className="w-[240px] flex flex-col gap-3 shrink-0">
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className={`db-panel rounded-xl overflow-hidden ${panel}`}>
-              <div className={`db-panel-header px-3 py-2 flex items-center justify-between ${panelHd}`}>
-                <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${panelHdTx}`}>
-                  <Settings size={11} className="text-indigo-400" /> Parameters
-                </h3>
-                <Tooltip title="Reload">
-                  <Button type="text" size="small" icon={<RefreshCw size={11} />} onClick={loadData} className="h-6 w-6" />
-                </Tooltip>
-              </div>
-              <div className="p-3 space-y-3">
-                <div className="space-y-1">
-                  <label className={`fz-small font-bold uppercase tracking-tight ${muted}`}>Date</label>
-                  <DatePicker className="w-full h-8 text-xs font-semibold" value={selectedDate}
-                    onChange={v => v && setSelectedDate(v)} format="DD-MMM-YYYY" />
-                </div>
-                <Button type="primary" block size="small" icon={<Search size={13} />}
-                  onClick={loadData} loading={loading}
-                  className="h-9 font-bold uppercase tracking-wide text-xs">
-                  Load Report
-                </Button>
-              </div>
-            </motion.div>
-
-            {/* Stats */}
-            <AnimatePresence>
-              {data && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col gap-2">
-                  <div className={`db-panel rounded-lg p-3 ${panel}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Opening</div>
-                    <div className={`text-sm font-black font-mono ${text}`}>{fmtSigned(data.openingBalance)}</div>
-                  </div>
-                  <div className={`rounded-lg p-3 ${isDark ? 'bg-emerald-600/20 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200'}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Receipts</div>
-                    <div className={`text-sm font-black font-mono ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceipts)}</div>
-                  </div>
-                  <div className={`rounded-lg p-3 ${isDark ? 'bg-rose-600/20 border border-rose-500/30' : 'bg-rose-50 border border-rose-200'}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Payments</div>
-                    <div className={`text-sm font-black font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPayments)}</div>
-                  </div>
-                  <div className={`border rounded-lg p-3 ${data.closingBalance >= 0
-                    ? (isDark ? 'bg-indigo-600/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200')
-                    : (isDark ? 'bg-rose-900/30 border-rose-700/40' : 'bg-rose-50 border-rose-200')}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-0.5 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Closing</div>
-                    <div className={`text-sm font-black font-mono ${data.closingBalance >= 0
-                      ? (isDark ? 'text-indigo-300' : 'text-indigo-700')
-                      : (isDark ? 'text-rose-300' : 'text-rose-700')}`}>
-                      {fmtSigned(data.closingBalance)}
-                    </div>
-                  </div>
-                  <div className={`db-panel rounded-lg p-3 ${panel}`}>
-                    <div className={`fz-small font-bold uppercase tracking-wide mb-1 ${muted}`}>Transactions</div>
-                    <div className={`text-lg font-black font-mono ${text}`}>{data.totalTransactions}</div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Report panel — monospace document, mirrors the legacy print layout
-              exactly (same lines[] feeds both this preview and handlePrint,
-              same pattern as Cash-Book Receiptwise Rough). */}
-          <div className={`db-panel flex-1 rounded-xl flex flex-col overflow-hidden ${panel}`}>
-            <div className={`db-panel-header px-4 py-2 flex items-center justify-between shrink-0 ${panelHd}`}>
-              <span className={`text-xs font-extrabold uppercase tracking-wide ${panelHdTx}`}>
-                Day Book — {selectedDate.format('DD-MMM-YYYY')}
-              </span>
-              {data && (
-                <span className={`fz-small font-mono ${subtle}`}>
-                  {data.totalTransactions} entries · {reportLines.length} lines
-                </span>
-              )}
-            </div>
-
-            <div className={`db-preview-body flex-1 overflow-auto p-4 ${contentBg}`}>
-              <Spin spinning={loading} tip="Loading...">
-                {reportLines.length > 0 ? (
-                  <pre className={`font-mono text-[11.5px] leading-[1.55] whitespace-pre select-text w-fit mx-auto ${lineDefault}`}>
-                    {reportLines.map((line, i) => {
-                      const isDash = line.trim().startsWith('-');
-                      const isCompany = i <= 1;
-                      const isTitle = line.startsWith('Day Book For Date');
-                      const isSection = line === 'Payment' || line === 'Receipt';
-                      const isHeadRow = /^[A-Z]\w*\s{2,}\S/.test(line) && !isSection;
-                      const isColHeader = line.startsWith('Mem No.');
-                      const isSummary = line.includes('Opening Balance') || line.includes('Closing Balance') ||
-                        line.includes('Total Receipt') || line.includes('Total Payment') || line.trim().startsWith('Total');
-                      const isFooter = line.startsWith('*');
-
-                      let cls = lineDefault;
-                      if (isDash) cls = lineDash;
-                      else if (isCompany) cls = lineCompany;
-                      else if (isTitle) cls = lineTitle;
-                      else if (isSection) cls = lineSection;
-                      else if (isColHeader) cls = lineColHd;
-                      else if (isSummary) cls = lineSummary;
-                      else if (isFooter) cls = lineFooter;
-                      else if (isHeadRow) cls = lineHeadRow;
-
-                      return <span key={i} className={`block ${cls}`}>{line || ' '}</span>;
-                    })}
-                  </pre>
-                ) : !loading ? (
-                  <div className="flex flex-col items-center justify-center h-64 gap-3">
-                    <BookOpen size={48} className={isDark ? 'text-slate-700' : 'text-slate-300'} />
-                    <p className={`text-sm font-bold uppercase tracking-wide ${muted}`}>No transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
-                    <p className={`text-xs ${subtle}`}>Try a date that has vouchers</p>
-                  </div>
-                ) : null}
-              </Spin>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className={`db-footer px-4 py-1.5 flex items-center justify-between shrink-0 ${ftrBg}`}>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-            <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Day Book · Daily Journal</span>
-          </div>
-          <span className={`fz-small font-mono ${subtle}`}>{selectedDate.format('YYYYMMDD')}</span>
+        <div className="aw-actions">
+          <ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!hasData}><Printer size={14} /> Print</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!hasData}><FileDown size={14} /> CSV</button>
         </div>
       </div>
 
+      <div className="aw-content">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--aw-gap)' }}>
+          {/* Left column, as it always was: parameters, then the balances. */}
+          <aside className="aw-stack" style={{ width: 240, flex: 'none', position: 'sticky', top: 0 }}>
+            <section className="aw-card">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><Settings size={14} /></span>
+                <h2 className="aw-card-title">Parameters</h2>
+                <button type="button" className="aw-icon-btn" style={{ marginLeft: 'auto' }} onClick={loadData} data-tip="Reload" aria-label="Reload"><RefreshCw size={13} /></button>
+              </div>
+              <div className="aw-stack">
+                <div>
+                  <label className="aw-label" htmlFor="db-date">Date</label>
+                  <DatePicker
+                    id="db-date" value={selectedDate} allowClear={false}
+                    onChange={v => v && setSelectedDate(v)}
+                    format="DD-MMM-YYYY" className="aw-picker" popupClassName="aw-select-popup"
+                    suffixIcon={<Calendar size={13} />}
+                  />
+                </div>
+                <button type="button" className="aw-btn aw-btn-primary" onClick={loadData} disabled={loading} style={{ width: '100%' }}>
+                  <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Load report'}
+                </button>
+              </div>
+            </section>
+
+            {data && (
+              <>
+                {([
+                  { label: 'Opening',      v: fmtSigned(data.openingBalance),  tone: 'muted' },
+                  { label: 'Receipts',     v: fmt(data.totalReceipts),         tone: 'success' },
+                  { label: 'Payments',     v: fmt(data.totalPayments),         tone: 'danger' },
+                  { label: 'Closing',      v: fmtSigned(data.closingBalance),  tone: data.closingBalance >= 0 ? 'info' : 'danger' },
+                  { label: 'Transactions', v: String(data.totalTransactions),  tone: 'muted' },
+                ] as const).map(s => (
+                  <section key={s.label} className="aw-card" style={{ padding: 'calc(var(--aw-pad) * .8)' }}>
+                    <span className="aw-label" style={{ marginBottom: 2 }}>{s.label}</span>
+                    <span className={`aw-pill tone-${s.tone}`} style={{ alignSelf: 'flex-start', fontSize: 'var(--type-panel-title)', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{s.v}</span>
+                  </section>
+                ))}
+              </>
+            )}
+          </aside>
+
+          <div className="aw-stack" style={{ flex: 1, minWidth: 0 }}>
+            {/* Pro views draw the same data differently. Print is always the legacy letterhead. */}
+            {hasData && data && view === 'bento' && <DayBookBento data={data} />}
+            {hasData && data && view === 'terminal' && <div style={{ height: 'calc(100vh - 190px)', minHeight: 360 }}><DayBookTerminal data={data} /></div>}
+
+            {view === 'legacy' && (
+              /* Report panel — monospace document, mirrors the legacy print layout
+                 exactly (same lines[] feeds both this preview and handlePrint). */
+              <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="aw-main-head">
+                  <span className={`text-xs font-extrabold uppercase tracking-wide ${panelHdTx}`}>
+                    Day Book — {selectedDate.format('DD-MMM-YYYY')}
+                  </span>
+                  {data && (
+                    <span className={`fz-small font-mono ${subtle}`}>
+                      {data.totalTransactions} entries · {reportLines.length} lines
+                    </span>
+                  )}
+                </div>
+
+                <div className={`db-preview-body p-4 ${contentBg}`}>
+                  <Spin spinning={loading} tip="Loading...">
+                    {reportLines.length > 0 ? (
+                      <pre className={`font-mono text-[11.5px] leading-[1.55] whitespace-pre select-text w-fit mx-auto ${lineDefault}`}>
+                        {reportLines.map((line, i) => {
+                          const isDash = line.trim().startsWith('-');
+                          const isCompany = i <= 1;
+                          const isTitle = line.startsWith('Day Book For Date');
+                          const isSection = line === 'Payment' || line === 'Receipt';
+                          const isHeadRow = /^[A-Z]\w*\s{2,}\S/.test(line) && !isSection;
+                          const isColHeader = line.startsWith('Mem No.');
+                          const isSummary = line.includes('Opening Balance') || line.includes('Closing Balance') ||
+                            line.includes('Total Receipt') || line.includes('Total Payment') || line.trim().startsWith('Total');
+                          const isFooter = line.startsWith('*');
+
+                          let cls = lineDefault;
+                          if (isDash) cls = lineDash;
+                          else if (isCompany) cls = lineCompany;
+                          else if (isTitle) cls = lineTitle;
+                          else if (isSection) cls = lineSection;
+                          else if (isColHeader) cls = lineColHd;
+                          else if (isSummary) cls = lineSummary;
+                          else if (isFooter) cls = lineFooter;
+                          else if (isHeadRow) cls = lineHeadRow;
+
+                          return <span key={i} className={`block ${cls}`}>{line || ' '}</span>;
+                        })}
+                      </pre>
+                    ) : !loading ? (
+                      <div className="flex flex-col items-center justify-center h-64 gap-3">
+                        <BookOpen size={48} className={isDark ? 'text-slate-700' : 'text-slate-300'} />
+                        <p className={`text-sm font-bold uppercase tracking-wide ${muted}`}>No transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
+                        <p className={`text-xs ${subtle}`}>Try a date that has vouchers</p>
+                      </div>
+                    ) : null}
+                  </Spin>
+                </div>
+              </section>
+            )}
+
+            {view !== 'legacy' && !hasData && !loading && (
+              <div className="aw-empty">
+                <BookOpen size={34} />
+                <p className="aw-strong">No transactions</p>
+                <span className="aw-meta">{selectedDate.format('DD MMM YYYY')}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="aw-footer">
+        <span>Day Book · Daily Journal</span>
+        <span>{selectedDate.format('YYYYMMDD')}</span>
+      </div>
+
       <style>{`
-        /* ── Day Book — dark mode ── */
-        html.dark .db-page { background-color: #000000 !important; }
-        html.dark .db-header,
-        html.dark .db-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .db-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .db-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
+        /* ── Day Book — dark mode for the legacy body ── */
         html.dark .db-preview-body { background-color: #1c1c1e !important; }
-        html.dark .db-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .db-page .ant-picker input { color: #f5f5f7 !important; }
       `}</style>
-    </ConfigProvider>
+    </div>
   );
 };
 

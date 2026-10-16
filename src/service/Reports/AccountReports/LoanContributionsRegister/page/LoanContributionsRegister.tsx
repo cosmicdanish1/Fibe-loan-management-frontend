@@ -1,12 +1,19 @@
 import React, { useState, useCallback } from 'react';
-import { ConfigProvider, Button, Input, DatePicker, Spin, Radio, Modal, message, theme } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
-import { Printer, Search, RotateCcw, Briefcase, User, Users, Monitor, Calendar } from 'lucide-react';
+import { DatePicker, message } from 'antd';
+import { Printer, Search, RotateCcw, Briefcase, User, Calendar } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
-import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '../../../../../components/shared/kit/MemberField';
 import { isFromAfterTo } from '@/utils/dates';
+import { ReportShell, ParamCard, StatCards, OutputChoice, ReportEmpty, LegacyDocument } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import ContribBento from '../views/ContribBento';
+import ContribTerminal from '../views/ContribTerminal';
+import { fmt, type ContribData } from '../views/contribModel';
+
+const REPORT_ID = 'account.loan-contributions';
 
 // ── text helpers ──────────────────────────────────────────────────
 const W = 100;
@@ -99,9 +106,6 @@ const printReportText = (text: string) => {
 };
 
 const LoanContributionsRegister: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
-
   const [memberNo, setMemberNo]     = useState('');
   const [memberName, setMemberName] = useState('');
   const [fromDate, setFromDate]     = useState<dayjs.Dayjs>(dayjs().startOf('month'));
@@ -109,16 +113,17 @@ const LoanContributionsRegister: React.FC = () => {
   const [outputType, setOutputType] = useState<'screen' | 'printer'>('screen');
   const [loading, setLoading]       = useState(false);
   const [reportText, setReportText] = useState('');
-  const [showLookup, setShowLookup] = useState(false);
+  const [data, setData]             = useState<ContribData | null>(null);
+  const { enabled, view, setView }  = useReportViews(REPORT_ID);
 
   const handleMemberSelect = useCallback((member: any) => {
-    setMemberNo(member.memberNo || member.mbno || '');
+    setMemberNo(String(member.memberNo || member.mbno || ''));
     setMemberName(member.memberName || member.name || '');
-    setShowLookup(false);
   }, []);
 
-  const handleGenerate = useCallback(async () => {
-    if (!memberNo.trim()) {
+  const handleGenerate = useCallback(async (override?: string) => {
+    const no = (override ?? memberNo).trim();
+    if (!no) {
       message.warning('Please enter Member Number');
       return;
     }
@@ -129,26 +134,29 @@ const LoanContributionsRegister: React.FC = () => {
     setLoading(true);
     try {
       const response = await apiService.getLoanContributionsRegister({
-        memberNo: memberNo.trim(),
+        memberNo: no,
         fromDate: fromDate.format('YYYY-MM-DD'),
         toDate: toDate.format('YYYY-MM-DD'),
       });
-      const data = (response as any)?.data || response;
+      const rec = (response as any)?.data || response;
 
-      if (data && data.memberNo) {
-        setMemberName(data.memberName || '');
-        const text = buildReportText(data);
+      if (rec && rec.memberNo) {
+        setMemberName(rec.memberName || '');
+        const text = buildReportText(rec);
         setReportText(text);
-        if (data.totalTransactions > 0) message.success(`Found ${data.totalTransactions} transactions`);
+        setData(rec);
+        if (rec.totalTransactions > 0) message.success(`Found ${rec.totalTransactions} transactions`);
         else message.info('No transactions found in this period');
         if (outputType === 'printer') printReportText(text);
       } else {
         setReportText('');
+        setData(null);
         message.error('Member not found');
       }
     } catch {
       message.error('Failed to load loan contributions');
       setReportText('');
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -160,147 +168,72 @@ const LoanContributionsRegister: React.FC = () => {
     setFromDate(dayjs().startOf('month'));
     setToDate(dayjs());
     setReportText('');
+    setData(null);
   }, []);
 
-  return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-      token: { colorPrimary: '#0ea5e9', borderRadius: 6, fontSize: 12 },
-    }}>
-      <div className={`loan-contrib-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-sky-50/20 to-slate-50'}`}>
+  const hasData = Boolean(data && data.loanContributions?.length);
 
-        {/* Header */}
-        <div className={`loan-contrib-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-sky-600 to-sky-700 p-1.5 rounded-lg text-white shadow-md">
-              <Briefcase size={14} />
+  return (
+    <ReportShell
+      className="loan-contrib-page"
+      title="Loan Contributions Register"
+      desc="Loan transactions"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={() => reportText && printReportText(reportText)} disabled={!reportText}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Member" icon={<User size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="lc-member">Member No.</label>
+              <MemberField id="lc-member" value={memberNo} onChange={setMemberNo} onSelect={handleMemberSelect} onSubmit={v => handleGenerate(v)} />
+            </div>
+            <input className="aw-input" value={memberName} readOnly placeholder="Member name" aria-label="Member name" />
+          </ParamCard>
+          <ParamCard title="Date range" icon={<Calendar size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="lc-from">From date</label>
+              <DatePicker id="lc-from" value={fromDate} onChange={v => v && setFromDate(v)} allowClear={false} format="DD-MMM-YYYY" className="aw-picker" popupClassName="aw-select-popup" suffixIcon={<Calendar size={13} />} />
             </div>
             <div>
-              <h1 className="fz-label font-black tracking-tight leading-none">Loan Contributions Register</h1>
-              <div className="fz-caption font-bold text-slate-400 uppercase tracking-wider leading-none mt-0.5">
-                <Briefcase size={8} className="inline text-sky-500 mr-1" />Loan Transactions
-              </div>
+              <label className="aw-label" htmlFor="lc-to">To date</label>
+              <DatePicker id="lc-to" value={toDate} onChange={v => v && setToDate(v)} allowClear={false} format="DD-MMM-YYYY" className="aw-picker" popupClassName="aw-select-popup" suffixIcon={<Calendar size={13} />} />
             </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button icon={<RotateCcw size={11} />} size="small" className="h-7 fz-caption font-bold" onClick={handleReset}>Reset</Button>
-            <Button icon={<Printer size={11} />} size="small" className="h-7 fz-caption font-bold"
-              onClick={() => reportText && printReportText(reportText)} disabled={!reportText}>Print</Button>
-          </div>
-        </div>
+            <OutputChoice value={outputType} onChange={setOutputType} id="lc-output" />
+            <button type="button" className="aw-btn aw-btn-primary" onClick={() => handleGenerate()} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Generate'}
+            </button>
+          </ParamCard>
+          {data && <StatCards items={[
+            { label: 'Loans', value: String(data.loanContributions?.length ?? 0), tone: 'muted' },
+            { label: 'Transactions', value: String(data.totalTransactions ?? 0), tone: 'muted' },
+            { label: 'Credits', value: fmt(data.summary?.totalCredits ?? 0), tone: 'success' },
+          ]} />}
+        </>
+      }
+      footerLeft="Loan Contributions Register"
+      footerRight={`${fromDate.format('DD-MMM-YY')} – ${toDate.format('DD-MMM-YY')}`}
+    >
+      {hasData && data && view === 'bento' && <ContribBento data={data} />}
+      {hasData && data && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><ContribTerminal data={data} /></div>}
 
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-2 flex gap-2">
-
-          {/* Sidebar LEFT */}
-          <div className="w-[220px] flex flex-col gap-2 shrink-0">
-
-            <div className={`loan-contrib-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
-              <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
-                <User size={10} className="text-white" />
-                <span className="fz-caption font-black text-white uppercase">Member</span>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <Input.Search
-                  value={memberNo}
-                  onChange={e => setMemberNo(e.target.value)}
-                  onSearch={() => setShowLookup(true)}
-                  placeholder="Member No"
-                  size="small"
-                  className="h-8 fz-label font-semibold"
-                  onKeyDown={e => e.key === 'Enter' && handleGenerate()}
-                />
-                <Input value={memberName} readOnly placeholder="Member name" size="small" className="fz-caption" />
-              </div>
-            </div>
-
-            <div className={`loan-contrib-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
-              <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
-                <Calendar size={10} className="text-white" />
-                <span className="fz-caption font-black text-white uppercase">Date Range</span>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <div>
-                  <div className="fz-caption font-bold text-slate-500 mb-0.5">From Date</div>
-                  <DatePicker value={fromDate} onChange={v => v && setFromDate(v)} format="DD-MMM-YYYY" size="small" className="w-full fz-caption" />
-                </div>
-                <div>
-                  <div className="fz-caption font-bold text-slate-500 mb-0.5">To Date</div>
-                  <DatePicker value={toDate} onChange={v => v && setToDate(v)} format="DD-MMM-YYYY" size="small" className="w-full fz-caption" />
-                </div>
-              </div>
-            </div>
-
-            <div className={`loan-contrib-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
-              <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
-              <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
-                <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
-                <Radio value="printer" className="fz-caption"><Printer size={10} className="inline mr-1" />Printer</Radio>
-              </Radio.Group>
-            </div>
-
-            <Button
-              type="primary" block size="small" icon={<Search size={11} />}
-              onClick={handleGenerate} loading={loading}
-              className="h-8 bg-gradient-to-r from-sky-600 to-sky-700 font-black uppercase fz-caption shadow-lg"
-            >
-              Generate
-            </Button>
-          </div>
-
-          {/* Report Area RIGHT */}
-          <div className={`loan-contrib-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-sky-200/60'}`}>
-            <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-3 py-1.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1.5">
-                <Briefcase size={12} className="text-white" />
-                <span className="fz-caption font-black text-white uppercase">Loan Contributions Register</span>
-                {memberNo && <span className="fz-caption font-bold text-sky-100 ml-1">Member: {memberNo}</span>}
-              </div>
-              <span className="fz-caption font-bold text-sky-100">{fromDate.format('DD-MMM-YY')} – {toDate.format('DD-MMM-YY')}</span>
-            </div>
-
-            <div className={`flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
-              <Spin spinning={loading} size="small">
-                {reportText ? (
-                  <pre className={`font-mono fz-caption leading-[1.5] whitespace-pre select-text ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
-                    {reportText}
-                  </pre>
-                ) : (
-                  <div className="py-32 text-center">
-                    <div className="w-20 h-20 bg-sky-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                      <Briefcase size={40} className="text-sky-200" />
-                    </div>
-                    <p className="fz-label font-black text-slate-400 uppercase tracking-wider">No Data</p>
-                    <p className="fz-caption text-slate-300 mt-1">Enter member number, date range and generate</p>
-                  </div>
-                )}
-              </Spin>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <Modal
-        title={<div className="flex items-center gap-2 py-1"><div className="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center shadow-md"><Users size={16} className="text-white" /></div><div><div className="fz-body font-black text-slate-800">Member Lookup</div><div className="fz-caption text-slate-400 font-bold uppercase tracking-wide">Select Member</div></div></div>}
-        open={showLookup} onCancel={() => setShowLookup(false)} footer={null} width={1000} centered destroyOnClose
-      >
-        <div className="p-2"><MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} /></div>
-      </Modal>
-
-      <style>{`
-        /* ── Loan Contributions Register — dark mode (reinforces the page's own isDark styling) ── */
-        html.dark .loan-contrib-page { background-color: #000000 !important; }
-        html.dark .loan-contrib-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .loan-contrib-card,
-        html.dark .loan-contrib-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .loan-contrib-page .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .loan-contrib-page .ant-input,
-        html.dark .loan-contrib-page .ant-input-search .ant-input-group-addon .ant-btn,
-        html.dark .loan-contrib-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .loan-contrib-page .ant-picker input { color: #f5f5f7 !important; }
-        html.dark .loan-contrib-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+      {view === 'legacy' && (
+        <LegacyDocument
+          title={`Loan Contributions Register${memberNo ? ` · Member ${memberNo}` : ''}`}
+          meta={`${fromDate.format('DD-MMM-YY')} – ${toDate.format('DD-MMM-YY')}`}
+          text={reportText}
+          loading={loading}
+          empty={<ReportEmpty icon={<Briefcase size={34} />} title="No Data" hint="Enter member number, date range and generate" />}
+        />
+      )}
+      {view !== 'legacy' && !hasData && (
+        <ReportEmpty icon={<Briefcase size={34} />} title={loading ? 'Loading…' : data ? 'No loans for this member' : 'No Data'} hint="Enter member number, date range and generate" />
+      )}
+    </ReportShell>
   );
 };
 

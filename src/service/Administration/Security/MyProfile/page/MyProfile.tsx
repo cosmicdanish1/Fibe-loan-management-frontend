@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { User, Mail, Phone, Briefcase, MapPin, ShieldCheck, Clock, Lock, Zap, TrendingUp, IdCard } from 'lucide-react';
 import { useAuth } from '../../../../../auth/context/AuthContext';
 import AwDialog from '@/components/shared/kit/AwDialog';
-import TwoFaCard from '../components/TwoFaCard';
+import PasswordInput from '../../../../../components/shared/PasswordInput';
 
 const ACTIVITY = [
   { action: 'System Login', date: 'Today, 10:23 AM', details: 'Successful login from IP 192.168.1.45', type: 'login' },
@@ -123,7 +123,14 @@ const MyProfile: React.FC = () => {
                   <p className="aw-strong">Password management</p>
                   <span className="aw-meta" style={{ maxWidth: 320 }}>Update your password regularly to keep your account secure.</span>
                   <button type="button" onClick={() => setModal('password')} className="aw-btn aw-btn-secondary"><Zap size={13} /> Change password</button>
-                  <div style={{ width: '100%', maxWidth: 420, marginTop: 16 }}><TwoFaCard /></div>
+                  <div className="aw-panel" style={{ width: '100%', maxWidth: 420, marginTop: 16, textAlign: 'left' }}>
+                    <p className="aw-strong">Two-factor sign-in code</p>
+                    <span className="aw-meta">Turn on the authenticator-app code for your account, scan your QR and keep your recovery codes in the Two-Factor &amp; Approvals window.</span>
+                    <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" style={{ marginTop: 8 }}
+                      onClick={() => { const api = (window as any).electronAPI; if (api?.openNewWindow) api.openNewWindow('/two-factor-settings'); else window.location.hash = '#/two-factor-settings'; }}>
+                      <ShieldCheck size={12} /> Open Two-Factor &amp; Approvals
+                    </button>
+                  </div>
                 </div>
               )}
             </section>
@@ -195,9 +202,9 @@ const MyProfile: React.FC = () => {
 
       <AwDialog open={modal === 'password'} title="Change password" onClose={closeModal} icon={<Lock size={14} />} maxWidth="28rem" compact>
         <div className="aw-stack">
-          <input className="aw-input" type="password" placeholder="Current password" aria-label="Current password" value={curPwd} onChange={e => setCurPwd(e.target.value)} />
-          <input className="aw-input" type="password" placeholder="New password" aria-label="New password" value={newPwd} onChange={e => setNewPwd(e.target.value)} />
-          <input className="aw-input" type="password" placeholder="Confirm new password" aria-label="Confirm new password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} />
+          <PasswordInput className="aw-input" placeholder="Current password" aria-label="Current password" value={curPwd} onChange={e => setCurPwd(e.target.value)} />
+          <PasswordInput className="aw-input" placeholder="New password" aria-label="New password" value={newPwd} onChange={e => setNewPwd(e.target.value)} />
+          <PasswordInput className="aw-input" placeholder="Confirm new password" aria-label="Confirm new password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} />
           <button type="button" onClick={closeModal} className="aw-btn aw-btn-primary">Update password</button>
         </div>
       </AwDialog>

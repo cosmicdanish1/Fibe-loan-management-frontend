@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { ConfigProvider, Button, Input, Spin, Radio, Modal, message, theme } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
-import { Printer, Search, RotateCcw, Award, User, Users, Monitor } from 'lucide-react';
+import { message } from 'antd';
+import { Printer, Search, RotateCcw, Award, User } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
-import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '../../../../../components/shared/kit/MemberField';
+import { ReportShell, ParamCard, OutputChoice, ReportEmpty, LegacyDocument } from '../../../../../components/reports/views/ReportShell';
+import '../../../../../components/reports/views/proViews.css';
 
 interface ShareData {
   memberNo: string;
@@ -98,31 +98,28 @@ const printCertificate = (text: string) => {
   setTimeout(() => document.body.removeChild(iframe), 1500);
 };
 
+// A printed certificate is a fixed form, so this window has no Pro views: only the shell follows the app design.
 const ShareCertificate: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
-
   const [memberNo, setMemberNo]     = useState('');
   const [memberName, setMemberName] = useState('');
   const [outputType, setOutputType] = useState<'screen' | 'printer'>('screen');
   const [loading, setLoading]       = useState(false);
   const [certText, setCertText]     = useState('');
-  const [showLookup, setShowLookup] = useState(false);
 
   const handleMemberSelect = useCallback((member: any) => {
-    setMemberNo(member.memberNo || member.mbno || '');
+    setMemberNo(String(member.memberNo || member.mbno || ''));
     setMemberName(member.memberName || member.name || '');
-    setShowLookup(false);
   }, []);
 
-  const handleGenerate = useCallback(async () => {
-    if (!memberNo.trim()) {
+  const handleGenerate = useCallback(async (override?: string) => {
+    const no = (override ?? memberNo).trim();
+    if (!no) {
       message.warning('Please enter Member Number');
       return;
     }
     setLoading(true);
     try {
-      const response = await apiService.getShareCertificate({ memberNo: memberNo.trim() });
+      const response = await apiService.getShareCertificate({ memberNo: no });
       const data: ShareData = (response as any)?.data || response;
 
       if (data && data.memberNo) {
@@ -150,124 +147,39 @@ const ShareCertificate: React.FC = () => {
   }, []);
 
   return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-      token: { colorPrimary: '#10b981', borderRadius: 6, fontSize: 12 },
-    }}>
-      <div className={`share-cert-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-emerald-50/20 to-slate-50'}`}>
-
-        {/* Header */}
-        <div className={`share-cert-header px-3 py-1.5 flex items-center justify-between shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-1.5 rounded-lg text-white shadow-md">
-              <Award size={14} />
-            </div>
-            <div>
-              <h1 className="fz-label font-black tracking-tight leading-none">Share Certificate</h1>
-              <div className="fz-caption font-bold text-slate-400 uppercase tracking-wider leading-none mt-0.5">
-                <Award size={8} className="inline text-emerald-500 mr-1" />Membership Certificate
-              </div>
-            </div>
+    <ReportShell
+      className="share-cert-page"
+      title="Share Certificate"
+      desc="Membership certificate"
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={() => certText && printCertificate(certText)} disabled={!certText}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <ParamCard title="Member" icon={<User size={14} />}>
+          <div>
+            <label className="aw-label" htmlFor="sc-member">Member No.</label>
+            <MemberField id="sc-member" value={memberNo} onChange={setMemberNo} onSelect={handleMemberSelect} onSubmit={v => handleGenerate(v)} />
           </div>
-          <div className="flex items-center gap-1.5">
-            <Button icon={<RotateCcw size={11} />} size="small" className="h-7 fz-caption font-bold" onClick={handleReset}>Reset</Button>
-            <Button icon={<Printer size={11} />} size="small" className="h-7 fz-caption font-bold"
-              onClick={() => certText && printCertificate(certText)} disabled={!certText}>Print</Button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-2 flex gap-2">
-
-          {/* Sidebar LEFT */}
-          <div className="w-[220px] flex flex-col gap-2 shrink-0">
-
-            <div className={`share-cert-card border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-200/60'}`}>
-              <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-2 py-1 flex items-center gap-1">
-                <User size={10} className="text-white" />
-                <span className="fz-caption font-black text-white uppercase">Member</span>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <Input.Search
-                  value={memberNo}
-                  onChange={e => setMemberNo(e.target.value)}
-                  onSearch={() => setShowLookup(true)}
-                  placeholder="Member No"
-                  size="small"
-                  className="h-8 fz-label font-semibold"
-                  onKeyDown={e => e.key === 'Enter' && handleGenerate()}
-                />
-                <Input value={memberName} readOnly placeholder="Member name" size="small" className="fz-caption" />
-              </div>
-            </div>
-
-            <div className={`share-cert-card border rounded-lg p-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-200/60'}`}>
-              <div className="fz-caption font-bold text-slate-500 mb-1 uppercase">Output</div>
-              <Radio.Group value={outputType} onChange={e => setOutputType(e.target.value)} size="small">
-                <Radio value="screen" className="fz-caption"><Monitor size={10} className="inline mr-1" />Screen</Radio>
-                <Radio value="printer" className="fz-caption"><Printer size={10} className="inline mr-1" />Printer</Radio>
-              </Radio.Group>
-            </div>
-
-            <Button
-              type="primary" block size="small" icon={<Search size={11} />}
-              onClick={handleGenerate} loading={loading}
-              className="h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 font-black uppercase fz-caption shadow-lg"
-            >
-              Generate
-            </Button>
-          </div>
-
-          {/* Certificate Area RIGHT */}
-          <div className={`share-cert-panel flex-1 border rounded-lg shadow-sm flex flex-col overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-emerald-200/60'}`}>
-            <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-3 py-1.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1.5">
-                <Award size={12} className="text-white" />
-                <span className="fz-caption font-black text-white uppercase">Share Certificate</span>
-                {memberNo && <span className="fz-caption font-bold text-emerald-100 ml-1">Member: {memberNo}</span>}
-              </div>
-            </div>
-
-            <div className={`flex-1 overflow-auto p-3 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
-              <Spin spinning={loading} size="small">
-                {certText ? (
-                  <pre className={`font-mono fz-caption leading-[1.5] whitespace-pre select-text ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
-                    {certText}
-                  </pre>
-                ) : (
-                  <div className="py-32 text-center">
-                    <div className="w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                      <Award size={40} className="text-emerald-200" />
-                    </div>
-                    <p className="fz-label font-black text-slate-400 uppercase tracking-wider">No Certificate</p>
-                    <p className="fz-caption text-slate-300 mt-1">Enter member number and generate</p>
-                  </div>
-                )}
-              </Spin>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <Modal
-        title={<div className="flex items-center gap-2 py-1"><div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-md"><Users size={16} className="text-white" /></div><div><div className="fz-body font-black text-slate-800">Member Lookup</div><div className="fz-caption text-slate-400 font-bold uppercase tracking-wide">Select Member</div></div></div>}
-        open={showLookup} onCancel={() => setShowLookup(false)} footer={null} width={1000} centered destroyOnClose
-      >
-        <div className="p-2"><MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} /></div>
-      </Modal>
-
-      <style>{`
-        /* ── Share Certificate — dark mode (reinforces the page's own isDark styling) ── */
-        html.dark .share-cert-page { background-color: #000000 !important; }
-        html.dark .share-cert-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .share-cert-card,
-        html.dark .share-cert-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .share-cert-page .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .share-cert-page .ant-input,
-        html.dark .share-cert-page .ant-input-search .ant-input-group-addon .ant-btn { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .share-cert-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+          <input className="aw-input" value={memberName} readOnly placeholder="Member name" aria-label="Member name" />
+          <OutputChoice value={outputType} onChange={setOutputType} id="sc-output" />
+          <button type="button" className="aw-btn aw-btn-primary" onClick={() => handleGenerate()} disabled={loading} style={{ width: '100%' }}>
+            <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Generate'}
+          </button>
+        </ParamCard>
+      }
+      footerLeft="Share Certificate"
+      footerRight={memberNo ? `Member ${memberNo}` : ''}
+    >
+      <LegacyDocument
+        title={`Share Certificate${memberNo ? ` · Member ${memberNo}` : ''}`}
+        text={certText}
+        loading={loading}
+        empty={<ReportEmpty icon={<Award size={34} />} title="No Certificate" hint="Enter member number and generate" />}
+      />
+    </ReportShell>
   );
 };
 

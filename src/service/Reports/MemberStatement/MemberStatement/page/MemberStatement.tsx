@@ -13,6 +13,9 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { csvCell } from '@/utils/csv';
+import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import { useMemStmtSpec } from '../views/memStmtPro';
 
 // ── types ─────────────────────────────────────────────────────────────────────
 interface SummaryItem { headCode: string; headName: string; balance: number; }
@@ -246,6 +249,9 @@ const MemberStatement: React.FC = () => {
     message.success('CSV exported');
   }, [summaryData, memberNo]);
 
+  const { enabled, view, setView } = useReportViews('member-statement');
+  const spec = useMemStmtSpec(summaryData, `${memberNo} ${memberName}`.trim(), asOnDate.format('DD MMM YYYY'));
+
   return (
     <ConfigProvider
       theme={{
@@ -407,6 +413,10 @@ const MemberStatement: React.FC = () => {
             <div className={`memstmt-report-body flex-1 overflow-auto p-3 custom-scrollbar-amber ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-amber-50/10'}`}>
               <Spin spinning={loading} tip="Loading..." size="small">
                 {reportText ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (summaryData.length > 0 ? <ProBody view={view} spec={spec} title="Member Statement" subtitle={`${memberNo} · as on ${asOnDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No statement to show'}</p>)}
+                {view === 'legacy' && (
                   <div className={`memstmt-report-box rounded-lg border p-4 overflow-x-auto ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-[#fffff0] border-amber-200'}`}>
                     <pre style={{
                       fontFamily: "'Courier New', Courier, monospace",
@@ -419,6 +429,8 @@ const MemberStatement: React.FC = () => {
                       {reportText}
                     </pre>
                   </div>
+                )}
+                </>
                 ) : (
                   <div className="py-32 text-center">
                     <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner ${isDark ? 'bg-slate-800' : 'bg-amber-50'}`}>

@@ -36,6 +36,9 @@ import { csvCell } from '@/utils/csv';
 import { escapeHtml } from '@/utils/html';
 import { indianFinancialYearStart } from '@/utils/dates';
 import { isFromAfterTo } from '@/utils/dates';
+import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import { useYearlySpec } from '../views/yearlyPro';
 
 interface WingData {
     wingNo: string;
@@ -316,6 +319,9 @@ const YearlyMemberStatement: React.FC = () => {
             emergencyLoan: acc.emergencyLoan + parseFloat(item.emergencyLoan || '0')
         }), { shares: 0, cd: 0, regularLoan: 0, emergencyLoan: 0 });
     }, [statementData]);
+
+    const { enabled, view, setView } = useReportViews('yearly.yearly-member-statement');
+    const spec = useYearlySpec(statementData, `${fromDate.format('DD MMM YYYY')} to ${toDate.format('DD MMM YYYY')}`);
 
     return (
         <ConfigProvider
@@ -626,6 +632,10 @@ const YearlyMemberStatement: React.FC = () => {
                         <div className={`flex-1 overflow-auto p-2 custom-scrollbar-ultra ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-purple-50/10'}`}>
                             <Spin spinning={loading} tip="Loading..." size="small">
                                 {statementData && statementData.length > 0 ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (statementData.length > 0 ? <ProBody view={view} spec={spec} title="Yearly Member Statement" subtitle={`${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No statement data to show'}</p>)}
+                {view === 'legacy' && (
                                     <div className="legacy-report-ultra font-mono">
                                         {/* Print Header */}
                                         <div className="print-show text-center mb-2 border-b-2 border-purple-600 pb-2">
@@ -722,6 +732,8 @@ const YearlyMemberStatement: React.FC = () => {
                                             Generated: {dayjs().format('DD-MMM-YYYY HH:mm')} | System Report
                                         </div>
                                     </div>
+                )}
+                </>
                                 ) : (
                                     <div className="py-32 text-center">
                                         <div className="w-20 h-20 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">

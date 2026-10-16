@@ -15,6 +15,9 @@ import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { isFromAfterTo } from '@/utils/dates';
+import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import { useRdStmtSpec } from '../views/rdStmtPro';
 
 // ── types ────────────────────────────────────────────────────────────────────
 // One row per FINANCIAL YEAR the member has RD activity in — the real RD
@@ -155,6 +158,7 @@ const RDStatement: React.FC = () => {
   const [showLookup, setShowLookup] = useState(false);
   const [reportText, setReportText] = useState('');
   const [isLoading,  setIsLoading]  = useState(false);
+  const [rdYears, setRdYears] = useState<RDYearRecord[]>([]);
   const reportTextRef = useRef('');
 
   const handleMemberSelect = useCallback((member: any) => {
@@ -169,6 +173,7 @@ const RDStatement: React.FC = () => {
     setToDate(dayjs());
     setOutputType('screen');
     setReportText('');
+    setRdYears([]);
     reportTextRef.current = '';
   }, []);
 
@@ -192,6 +197,7 @@ const RDStatement: React.FC = () => {
         if (years.length === 0) {
           message.info('No RD activity found for this member in the selected range');
           setReportText('');
+          setRdYears([]);
           reportTextRef.current = '';
           return;
         }
@@ -204,9 +210,11 @@ const RDStatement: React.FC = () => {
         );
         reportTextRef.current = text;
         setReportText(text);
+        setRdYears(years);
         if (outputType === 'printer') printReportText(text);
       } else {
         setReportText('');
+        setRdYears([]);
         reportTextRef.current = '';
         message.error(response.error || response.message || 'Failed to generate report');
       }
@@ -214,6 +222,7 @@ const RDStatement: React.FC = () => {
       console.error('[RDStatement]', err);
       message.error('Failed to generate RD statement');
       setReportText('');
+      setRdYears([]);
       reportTextRef.current = '';
     } finally {
       setIsLoading(false);
@@ -226,6 +235,9 @@ const RDStatement: React.FC = () => {
   }, []);
 
   const labelCls = `fz-caption font-bold uppercase tracking-tight flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`;
+
+  const { enabled, view, setView } = useReportViews('member-statement.rd');
+  const spec = useRdStmtSpec(rdYears, `${memberNo} ${memberName}`.trim());
 
   return (
     <ConfigProvider
@@ -377,6 +389,10 @@ const RDStatement: React.FC = () => {
             <div className={`rdstmt-report-body flex-1 overflow-auto p-2 custom-scrollbar-amber ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-amber-50/10'}`}>
               <Spin spinning={isLoading} tip="Loading..." size="small">
                 {reportText ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (rdYears.length > 0 ? <ProBody view={view} spec={spec} title="RD Statement" subtitle={`${memberNo} · ${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No RD activity to show'}</p>)}
+                {view === 'legacy' && (
                   <pre
                     className="font-mono"
                     style={{
@@ -391,6 +407,8 @@ const RDStatement: React.FC = () => {
                   >
                     {reportText}
                   </pre>
+                )}
+                </>
                 ) : (
                   <div className="py-32 text-center">
                     <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">

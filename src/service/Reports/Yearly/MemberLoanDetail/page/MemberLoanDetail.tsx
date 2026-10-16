@@ -19,6 +19,9 @@ import dayjs from 'dayjs';
 import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
+import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import { useLoanDetailSpec } from '../views/loanDetailPro';
 
 interface LoanDetailItem {
   key: string;
@@ -206,6 +209,9 @@ const MemberLoanDetail: React.FC = () => {
   };
 
   const handlePrint = () => { if (tableData.length > 0) printWithData(tableData); };
+
+  const { enabled, view, setView } = useReportViews('yearly.member-loan-detail');
+  const spec = useLoanDetailSpec(tableData, selectedLoanType === 'ALL' ? 'all loan types' : selectedLoanType);
 
   return (
     <ConfigProvider
@@ -411,6 +417,10 @@ const MemberLoanDetail: React.FC = () => {
                   <span className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading loan data...</span>
                 </div>
               ) : tableData.length > 0 ? (
+                <>
+                <ProBar enabled={enabled} view={view} setView={setView} />
+                {view !== 'legacy' && (tableData.length > 0 ? <ProBody view={view} spec={spec} title="Member Loan Detail" subtitle={`${memberFrom || 'first'} to ${memberTo || 'last'} · ${selectedLoanType}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No loans to show'}</p>)}
+                {view === 'legacy' && (
                 <div className="legacy-loan-report">
                   {/* Horizontal Scroll Container */}
                   <div className="overflow-x-auto">
@@ -552,6 +562,8 @@ const MemberLoanDetail: React.FC = () => {
                     </div>
                   )}
                 </div>
+                )}
+                </>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center opacity-40">
                   <Landmark size={60} className="text-slate-300 mb-4" />

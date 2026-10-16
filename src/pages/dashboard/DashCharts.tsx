@@ -75,12 +75,24 @@ export const Sparkline: React.FC<{ values: number[]; height?: number; color?: st
   const pts = values.map((v, i): [number, number] => [(i / (values.length - 1)) * W, height - 6 - ((v - min) / span) * (height - 12)]);
   const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
   const last = pts[pts.length - 1]!;
+  const DOT = 9;
   return (
-    <svg viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" style={{ width: '100%', height, display: 'block', overflow: 'visible' }} role="img" aria-label={ariaLabel}>
-      <path d={`${line} L${W} ${height} L0 ${height} Z`} style={{ fill: color, opacity: 0.14 }} />
-      <path d={line} fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" style={{ stroke: color }} />
-      <circle cx={last[0]} cy={last[1]} r={3.5} vectorEffect="non-scaling-stroke" style={{ fill: 'var(--aw-surface)', stroke: color }} strokeWidth={2} />
-    </svg>
+    <div style={{ position: 'relative', width: '100%', height }}>
+      {/* The SVG is stretched to the card width, so it draws only the line and area. A circle drawn
+          inside it would be stretched into an oval, so the end dot is a real round element. */}
+      <svg viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" style={{ width: '100%', height, display: 'block', overflow: 'visible' }} role="img" aria-label={ariaLabel}>
+        <path d={`${line} L${W} ${height} L0 ${height} Z`} style={{ fill: color, opacity: 0.14 }} />
+        <path d={line} fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" style={{ stroke: color }} />
+      </svg>
+      <span
+        aria-hidden
+        style={{
+          position: 'absolute', left: `calc(${(last[0] / W) * 100}% - ${DOT / 2}px)`, top: last[1] - DOT / 2,
+          width: DOT, height: DOT, borderRadius: '50%', boxSizing: 'border-box',
+          background: 'var(--aw-surface)', border: `2px solid ${color}`, pointerEvents: 'none',
+        }}
+      />
+    </div>
   );
 };
 

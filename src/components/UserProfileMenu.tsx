@@ -46,7 +46,7 @@ export const UserProfileMenu: React.FC = () => {
       <NotificationBell />
 
       {/* ────── USER PROFILE DROPDOWN ────── */}
-      <div className="relative" ref={profileRef}>
+      <div className="relative" ref={profileRef} data-tour="profile-menu">
         <button
           onClick={() => setProfileOpen(v => !v)}
           className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"

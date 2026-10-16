@@ -1,38 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, RefreshCw, Printer, FileDown, Search, Layers, ShieldCheck } from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Spin, Tooltip, theme as antdTheme } from 'antd';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { Settings, RefreshCw, Printer, FileDown, Search, Layers, Calendar } from 'lucide-react';
+import { DatePicker, Spin } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
+import { ReportShell } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
+import ConsolBento from '../views/ConsolBento';
+import ConsolEditorial from '../views/ConsolEditorial';
+import type { HeadGroup, ConsolidationData } from '../views/consolModel';
+import { escapeHtml } from '@/utils/html';
 import dayjs from 'dayjs';
-
-interface SubEntry {
-  mbNo: string;
-  memberName: string;
-  amount: number;
-}
-
-interface HeadGroup {
-  headCode: string;
-  headName: string;
-  total: number;
-  subEntries: SubEntry[];
-}
-
-interface ConsolidationData {
-  date: string;
-  openingBalance: number | null;
-  totalReceipts: number;
-  totalPayments: number;
-  totalCash: number | null;
-  closingBalance: number | null;
-  netBalance: number;
-  receiptGroups: HeadGroup[];
-  paymentGroups: HeadGroup[];
-  totalHeads: number;
-}
 
 const asAmount = (value: unknown): number => {
   const amount = Number(value);
@@ -188,21 +169,26 @@ function buildConsolidationLines(data: ConsolidationData, dateLabel: string): st
 }
 
 const ConsolidationOfDailyAccount: React.FC = () => {
-  const { interfaceMode, accentColor, cornerRadius } = useSelector((state: RootState) => state.theme);
+  const { interfaceMode } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark';
 
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs().subtract(1, 'day'));
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ConsolidationData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const { enabled, view, setView } = useReportViews('daily.consolidation');
 
   useEffect(() => { loadData(); }, [selectedDate]);
 
+  const loadRequestId = useRef(0);
+
   const loadData = async () => {
+    const requestId = ++loadRequestId.current;
     setLoading(true);
     setLoadError(null);
     try {
       const response = await apiService.getConsolidationReport(selectedDate.format('YYYY-MM-DD'), 'screen');
+      if (requestId !== loadRequestId.current) return; // a newer date was requested meanwhile
       if (response.success && response.data) {
         setData(normalizeConsolidationData(response.data, selectedDate.format('YYYY-MM-DD')));
       } else {
@@ -210,25 +196,20 @@ const ConsolidationOfDailyAccount: React.FC = () => {
         setLoadError(response.message || response.error || 'The report could not be loaded. Please try again.');
       }
     } catch (error) {
+      if (requestId !== loadRequestId.current) return;
       setData(null);
       setLoadError(error instanceof Error ? error.message : 'The report could not be loaded. Please try again.');
     }
-    finally { setLoading(false); }
+    finally { if (requestId === loadRequestId.current) setLoading(false); }
   };
 
+  // Print always uses the legacy monospace letterhead, whichever view is on screen.
   const handlePrint = () => {
     if (!data) return;
-    // window.open() used to be used here, but this app's Electron main
-    // process globally intercepts every window.open() call
-    // (mainWindow.webContents.setWindowOpenHandler in main.ts) and denies
-    // it, redirecting to shell.openExternal(url) instead — with the empty
-    // URL this call passes, that meant Windows trying (and failing) to
-    // open "about:blank" as an external link ("Get an app to open this
-    // 'about' link"), confirmed live. Print silently did nothing. Switched
-    // to the same hidden-iframe + monospace lines[] technique already
-    // proven working for every other report's print this session — it
-    // never goes through window.open() at all, and matches the legacy
-    // report's exact printed layout (user-supplied reference screenshot).
+    // window.open() is not used here: this app's Electron main process globally intercepts
+    // window.open() and sends it to the external browser, so printing silently did nothing.
+    // A hidden iframe with the monospace lines[] is the technique every other report uses.
+    // Member and head names are escaped: a name containing "<" would otherwise break the page.
     const lines = buildConsolidationLines(data, selectedDate.format('DD-MMM-YYYY'));
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
@@ -241,7 +222,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
   @page { size: A4 portrait; margin: 12mm; }
   body { margin: 0; }
   pre { font-family: 'Courier New', Courier, monospace; font-size: 8.5pt; white-space: pre; width: fit-content; margin: 0 auto; }
-</style></head><body><pre>${lines.join('\n')}</pre></body></html>`);
+</style></head><body><pre>${escapeHtml(lines.join('\n'))}</pre></body></html>`);
       doc.close();
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -281,7 +262,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
     };
     appendGroups('Receipt', data.receiptGroups);
     appendGroups('Payment', data.paymentGroups);
-    const csv = `\uFEFF${rows.map(row => row.map(csvCell).join(',')).join('\r\n')}`;
+    const csv = `﻿${rows.map(row => row.map(csvCell).join(',')).join('\r\n')}`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     a.download = `Consolidation_${selectedDate.format('YYYY-MM-DD')}.csv`;
@@ -290,13 +271,11 @@ const ConsolidationOfDailyAccount: React.FC = () => {
 
   const hasData = !!data && (data.receiptGroups.length > 0 || data.paymentGroups.length > 0);
 
-  // Tailwind classes driven by isDark — adapts to theme toggle
-  const bg = isDark ? 'bg-[#0f172a]' : 'bg-slate-50';
-  const panel = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
-  const panelHead = isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-slate-50 border-slate-100';
+  // Legacy report-body colours (the body keeps its original look; only the shell uses the app kit)
   const text = isDark ? 'text-slate-100' : 'text-slate-800';
   const muted = isDark ? 'text-slate-400' : 'text-slate-500';
   const border = isDark ? 'border-slate-700' : 'border-slate-200';
+  const panelHead = isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-slate-50 border-slate-100';
   const rowAlt = isDark ? 'bg-slate-800/60' : 'bg-white';
   const rowAlt2 = isDark ? 'bg-slate-800/30' : 'bg-slate-50/60';
   const rowHover = isDark ? 'hover:bg-slate-700/30' : 'hover:bg-violet-50/30';
@@ -359,176 +338,131 @@ const ConsolidationOfDailyAccount: React.FC = () => {
   );
 
   return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      token: {
-        colorPrimary: accentColor,
-        borderRadius: cornerRadius,
-        colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-        colorBorder: isDark ? '#334155' : '#e2e8f0',
-      },
-    }}>
-      <div className={`cda-page h-screen flex flex-col font-sans overflow-hidden ${text} ${bg}`}>
-
-        {/* Header */}
-        <div className={`cda-header border-b px-4 py-2.5 flex items-center justify-between shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
-          <div className="flex items-center gap-3">
-            <div className="bg-violet-600 p-2 rounded-lg shadow-lg shadow-violet-500/30">
-              <Layers size={18} className="text-white" />
-            </div>
+    <ReportShell
+      className="cda-page"
+      title="Consolidation Of Daily A/c"
+      desc="Account head summary"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!hasData}><Printer size={14} /> Print</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!hasData}><FileDown size={14} /> CSV</button>
+        </>
+      }
+      aside={
+        <section className="aw-card">
+          <div className="aw-card-head">
+            <span className="aw-card-icon"><Settings size={14} /></span>
+            <h2 className="aw-card-title">Parameters</h2>
+            <button type="button" className="aw-icon-btn" style={{ marginLeft: 'auto' }} onClick={loadData} data-tip="Reload" aria-label="Reload"><RefreshCw size={13} /></button>
+          </div>
+          <div className="aw-stack">
             <div>
-              <h1 className={`text-sm font-extrabold tracking-tight leading-none ${text}`}>Consolidation Of Daily A/c</h1>
-              <div className={`flex items-center gap-1.5 mt-0.5 fz-small font-semibold uppercase tracking-wide ${muted}`}>
-                <ShieldCheck size={10} className="text-violet-400" /> Account Head Summary
-              </div>
+              <label className="aw-label" htmlFor="cda-date">Date</label>
+              <DatePicker id="cda-date" value={selectedDate} allowClear={false} onChange={v => v && setSelectedDate(v)}
+                format="DD-MMM-YYYY" className="aw-picker" popupClassName="aw-select-popup" suffixIcon={<Calendar size={13} />} />
+            </div>
+            <button type="button" className="aw-btn aw-btn-primary" onClick={loadData} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Load report'}
+            </button>
+          </div>
+        </section>
+      }
+      footerLeft="Consolidation · Daily A/c Summary"
+      footerRight={selectedDate.format('YYYYMMDD')}
+    >
+      {/* Pro views draw the same heads differently. Print is always the legacy letterhead. */}
+      {hasData && data && !loadError && view === 'bento' && <ConsolBento data={data} />}
+      {hasData && data && !loadError && view === 'editorial' && <ConsolEditorial data={data} date={selectedDate} />}
+
+      {loadError && (
+        <section className="aw-card">
+          <div role="alert" className="aw-alert aw-alert-danger">
+            <div>
+              <strong>Unable to load the consolidation report</strong>
+              <p>{loadError}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button icon={<Printer size={13} />} size="small"
-              className="h-8 px-3 rounded-lg text-xs font-bold uppercase tracking-wide"
-              onClick={handlePrint} disabled={!hasData}>Print</Button>
-            <Button type="primary" icon={<FileDown size={13} />} size="small"
-              className="h-8 px-4 rounded-lg text-xs font-bold uppercase tracking-wide"
-              onClick={handleExportCSV} disabled={!hasData}>CSV</Button>
+          <div className="aw-btn-row"><button type="button" className="aw-btn aw-btn-primary" onClick={loadData}>Try again</button></div>
+        </section>
+      )}
+
+      {view === 'legacy' && !loadError && (
+        <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">Consolidation — {selectedDate.format('DD-MMM-YYYY')}</span>
           </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-3 flex gap-3">
-
-          {/* Left panel */}
-          <div className="w-[240px] flex flex-col gap-3 shrink-0">
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className={`cda-panel border rounded-xl overflow-hidden ${panel}`}>
-              <div className={`cda-panel-header border-b px-3 py-2 flex items-center justify-between ${panelHead}`}>
-                <h3 className={`fz-caption font-extrabold tracking-wide uppercase flex items-center gap-1.5 ${muted}`}>
-                  <Settings size={11} className="text-violet-400" /> Parameters
-                </h3>
-                <Tooltip title="Reload">
-                  <Button type="text" size="small" icon={<RefreshCw size={11} />} onClick={loadData} className="h-6 w-6" />
-                </Tooltip>
-              </div>
-              <div className="p-3 space-y-3">
-                <div className="space-y-1">
-                  <label className={`fz-small font-bold uppercase tracking-tight ${muted}`}>Date</label>
-                  <DatePicker className="w-full h-8 text-xs font-semibold" value={selectedDate}
-                    onChange={v => v && setSelectedDate(v)} format="DD-MMM-YYYY" />
-                </div>
-                <Button type="primary" block size="small" icon={<Search size={13} />}
-                  onClick={loadData} loading={loading}
-                  className="h-9 font-bold uppercase tracking-wide text-xs">
-                  Load Report
-                </Button>
-              </div>
-            </motion.div>
-
-          </div>
-
-          {/* Report panel */}
-          <div className={`cda-panel flex-1 border rounded-xl flex flex-col overflow-hidden ${panel}`}>
-            <div className={`cda-panel-header border-b px-4 py-2 flex items-center justify-between shrink-0 ${panelHead}`}>
-              <span className={`text-xs font-extrabold uppercase tracking-wide ${text}`}>
-                Consolidation — {selectedDate.format('DD-MMM-YYYY')}
-              </span>
-            </div>
-
-            <div className={`cda-preview-body flex-1 overflow-auto p-4 ${isDark ? 'bg-slate-900/40' : 'bg-white'}`}>
-              <Spin spinning={loading} tip="Loading...">
-                {loadError ? (
-                  <div role="alert" className="flex h-64 flex-col items-center justify-center gap-3 text-center">
-                    <p className="text-sm font-bold text-red-600">Unable to load the consolidation report</p>
-                    <p className={`max-w-xl text-xs ${muted}`}>{loadError}</p>
-                    <Button type="primary" size="small" onClick={loadData}>Try Again</Button>
+          <div className="rpt-legacy-doc" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+            <Spin spinning={loading} tip="Loading...">
+              {hasData && data ? (
+                <div id="consol-print-area">
+                  {/* Company header */}
+                  <div className={`text-center mb-4 pb-3 border-b border-dashed ${border}`}>
+                    <div className={`text-sm font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
+                    <div className={`fz-caption ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
+                    <div className={`fz-small mt-0.5 ${muted}`}>Consolidation Of Daily Accounts for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
                   </div>
-                ) : hasData ? (
-                  <div id="consol-print-area">
-                    {/* Company header */}
-                    <div className={`text-center mb-4 pb-3 border-b border-dashed ${border}`}>
-                      <div className={`text-sm font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className={`fz-caption ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                      <div className={`fz-small mt-0.5 ${muted}`}>Consolidation Of Daily Accounts for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
+
+                  <dl className={`mb-3 grid grid-cols-2 xl:grid-cols-4 divide-x border rounded-lg ${border} ${panelHead}`} aria-label="Report totals">
+                    <div className="px-3 py-2">
+                      <dt className={`fz-small font-bold uppercase ${muted}`}>Receipts</dt>
+                      <dd className={`mt-1 text-sm font-bold font-mono ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceipts)}</dd>
                     </div>
+                    <div className="px-3 py-2">
+                      <dt className={`fz-small font-bold uppercase ${muted}`}>Payments</dt>
+                      <dd className={`mt-1 text-sm font-bold font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPayments)}</dd>
+                    </div>
+                    <div className="px-3 py-2">
+                      <dt className={`fz-small font-bold uppercase ${muted}`}>Net movement</dt>
+                      <dd className={`mt-1 text-sm font-bold font-mono ${text}`}>{fmtSigned(data.netBalance)}</dd>
+                    </div>
+                    <div className="px-3 py-2">
+                      <dt className={`fz-small font-bold uppercase ${muted}`}>Account heads</dt>
+                      <dd className={`mt-1 text-sm font-bold font-mono ${text}`}>{data.totalHeads}</dd>
+                    </div>
+                  </dl>
 
-                    <dl className={`mb-3 grid grid-cols-2 xl:grid-cols-4 divide-x border rounded-lg ${border} ${panelHead}`} aria-label="Report totals">
-                      <div className="px-3 py-2">
-                        <dt className={`fz-small font-bold uppercase ${muted}`}>Receipts</dt>
-                        <dd className={`mt-1 text-sm font-bold font-mono ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalReceipts)}</dd>
-                      </div>
-                      <div className="px-3 py-2">
-                        <dt className={`fz-small font-bold uppercase ${muted}`}>Payments</dt>
-                        <dd className={`mt-1 text-sm font-bold font-mono ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalPayments)}</dd>
-                      </div>
-                      <div className="px-3 py-2">
-                        <dt className={`fz-small font-bold uppercase ${muted}`}>Net movement</dt>
-                        <dd className={`mt-1 text-sm font-bold font-mono ${text}`}>{fmtSigned(data.netBalance)}</dd>
-                      </div>
-                      <div className="px-3 py-2">
-                        <dt className={`fz-small font-bold uppercase ${muted}`}>Account heads</dt>
-                        <dd className={`mt-1 text-sm font-bold font-mono ${text}`}>{data.totalHeads}</dd>
-                      </div>
-                    </dl>
+                  {/* Account-head totals */}
+                  <table className={`w-full fz-caption font-mono border-collapse border ${border} mb-0`}>
+                    <thead>
+                      <tr className={headRowBg}>
+                        <th className={`px-3 py-1.5 text-left font-black border-b ${border} w-24 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Code</th>
+                        <th className={`px-3 py-1.5 text-left font-black border-b ${border} ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Name</th>
+                        <th className={`px-3 py-1.5 text-right font-black border-b ${border} w-32 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Amount</th>
+                      </tr>
+                    </thead>
 
-                    {/* Account-head totals */}
-                    <table className={`w-full fz-caption font-mono border-collapse border ${border} mb-0`}>
-                      <thead>
-                        <tr className={headRowBg}>
-                          <th className={`px-3 py-1.5 text-left font-black border-b ${border} w-24 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Code</th>
-                          <th className={`px-3 py-1.5 text-left font-black border-b ${border} ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Name</th>
-                          <th className={`px-3 py-1.5 text-right font-black border-b ${border} w-32 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Amount</th>
-                        </tr>
-                      </thead>
+                    {data.receiptGroups.length > 0 && (
+                      <Section groups={data.receiptGroups} label="RECEIPT" />
+                    )}
+                    {data.paymentGroups.length > 0 && (
+                      <Section groups={data.paymentGroups} label="PAYMENT" />
+                    )}
 
-                      {data.receiptGroups.length > 0 && (
-                        <Section groups={data.receiptGroups} label="RECEIPT" />
-                      )}
-                      {data.paymentGroups.length > 0 && (
-                        <Section groups={data.paymentGroups} label="PAYMENT" />
-                      )}
+                  </table>
 
-                    </table>
-
-                    <div className={`mt-3 fz-small ${muted}`}>Amounts are consolidated by account head for the selected date.</div>
-                  </div>
-                ) : !loading ? (
-                  <div className="flex flex-col items-center justify-center h-64 gap-3">
-                    <Layers size={48} className={isDark ? 'text-slate-700' : 'text-slate-300'} />
-                    <p className={`text-sm font-bold uppercase tracking-wide ${muted}`}>
-                      No transactions on {selectedDate.format('DD-MMM-YYYY')}
-                    </p>
-                  </div>
-                ) : null}
-              </Spin>
-            </div>
+                  <div className={`mt-3 fz-small ${muted}`}>Amounts are consolidated by account head for the selected date.</div>
+                </div>
+              ) : !loading ? (
+                <div className="aw-empty" style={{ padding: 32 }}>
+                  <Layers size={34} />
+                  <p className="aw-strong">No transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
+                </div>
+              ) : null}
+            </Spin>
           </div>
-        </div>
+        </section>
+      )}
 
-        {/* Footer */}
-        <div className={`cda-footer border-t px-4 py-1.5 flex items-center justify-between shrink-0 ${panel}`}>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />
-            <span className={`fz-small font-bold uppercase tracking-wide ${muted}`}>Consolidation · Daily A/c Summary</span>
+      {view !== 'legacy' && !hasData && !loading && !loadError && (
+        <section className="aw-card">
+          <div className="aw-empty" style={{ padding: 32 }}>
+            <Layers size={34} />
+            <p className="aw-strong">No transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`fz-small font-mono ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{selectedDate.format('YYYYMMDD')}</span>
-            <span className={`fz-small font-bold px-1.5 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
-              {isDark ? '◐ DARK' : '◑ LIGHT'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        /* ── Consolidation Of Daily A/c — dark mode ── */
-        html.dark .cda-page { background-color: #000000 !important; }
-        html.dark .cda-header,
-        html.dark .cda-footer { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .cda-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .cda-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .cda-preview-body { background-color: #1c1c1e !important; }
-        html.dark .cda-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .cda-page .ant-picker input { color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+        </section>
+      )}
+    </ReportShell>
   );
 };
 
