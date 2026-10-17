@@ -401,7 +401,7 @@
    density (--ui-density), corner radius (--corner-radius), font (inherited),
    and Light/Dark. Windows use these classes instead of one-off CSS.
    ============================================================ */
-.app-window, .aw-select-popup, .ob-dialog, .ob-tour-card {
+.app-window, .aw-select-popup, .ob-dialog, .ob-tour-card, .ob-cl {
   --aw-bg: #f5f7fb;
   --aw-surface: #ffffff;
   --aw-surface-muted: #f8fafc;
@@ -424,7 +424,7 @@
   --aw-pad: calc(14px * var(--ui-density, 1));
   --aw-gap: calc(12px * var(--ui-density, 1));
 }
-html.dark .app-window, html.dark .aw-select-popup, html.dark .ob-dialog, html.dark .ob-tour-card {
+html.dark .app-window, html.dark .aw-select-popup, html.dark .ob-dialog, html.dark .ob-tour-card, html.dark .ob-cl {
   --aw-bg: #0e1116;
   --aw-surface: #151a21;
   --aw-surface-muted: #1c2530;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, Circle, Eye, EyeOff } from 'lucide-react';
 import type { User } from '../../auth/types/auth.types';
 import { apiService } from '../../services/api';
+import { markProgress } from './onboardingApi';
 
 // Same policy the server enforces (ChangePasswordDto): 8+ characters with upper, lower and a digit.
 const rulesFor = (current: string, next: string) => [
@@ -60,6 +61,7 @@ export const PasswordStep: React.FC<{ user: User; onDone: () => void; onChanged:
     // Drop the secrets from memory as soon as they are used.
     setCurrent(''); setNext(''); setConfirm('');
     setChanged(true);
+    markProgress('password');
     onChanged();
   };
 

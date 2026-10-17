@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { prefersCalm } from './calm';
 
 const COLORS = ['#f97316', '#6366f1', '#10b981', '#ec4899', '#eab308', '#0ea5e9', '#8b5cf6'];
 
@@ -10,7 +11,7 @@ export const Confetti: React.FC<{ durationMs?: number; count?: number }> = ({ du
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    if (prefersCalm()) return;
     const canvas = ref.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;

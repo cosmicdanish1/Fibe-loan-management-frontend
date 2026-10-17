@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { LANGUAGES, setLanguage } from '../../i18n';
 import {
   ConfigProvider,
   theme as antdTheme,
@@ -6,7 +8,9 @@ import {
 } from 'antd';
 import { FONT_OPTIONS } from '../../config/fontOptions';
 import { TopBarLookSettings } from './TopBarLookSettings';
-import { onboardingApi, type OnboardingMode, type OnboardingStatus } from '../../features/onboarding/onboardingApi';
+import { onboardingApi, type OnboardingMode, type OnboardingReport, type OnboardingStatus } from '../../features/onboarding/onboardingApi';
+import { getCalmPreference, setCalmPreference } from '../../features/onboarding/calm';
+import { TOUR_STEPS } from '../../features/onboarding/tourSteps';
 import LoadingAnimation from '../loaders/LoadingAnimation';
 import { LOADING_ANIMATIONS, saveLoadingAnimation, useLoadingAnimation } from '../../config/loadingAnimation';
 import { DEFAULT_TYPOGRAPHY_OFFSETS, normalizeTypographyOffsets, readTypographyOffsets, saveTypographyOffsets, TYPOGRAPHY_SYNC_CHANNEL, type TypographyOffsets } from '../../config/typographyPreferences';
@@ -16,6 +20,7 @@ import {
   X,
   Monitor,
   Palette,
+  Languages,
   Image as ImageIcon,
   Type,
   Lock,
@@ -236,6 +241,7 @@ const recordPinFailure = (): number => {
 
 // Sidebar / content header copy, keyed by tab.
 const TAB_META: Record<string, { title: string; subtitle: string; keywords: string }> = {
+  language:   { title: 'Language',   subtitle: 'Interface language',                 keywords: 'language hindi english marathi kannada translate translation regional bhasha' },
   appearance: { title: 'Appearance', subtitle: 'Colors, typography and canvas',      keywords: 'theme dark light accent colour color gradient font text size bold shadow shadows density corner radius background image' },
   dashboard:  { title: 'Dashboard',  subtitle: 'Widgets, quick actions and layout',  keywords: 'widgets quick actions shortcuts fy banner opacity transparency background notice board' },
   reports:    { title: 'Reports',    subtitle: 'Which views each report offers, and which one it opens with', keywords: 'report views legacy pro bento terminal editorial ledger dense cash book layout switch default' },
@@ -537,11 +543,158 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
   );
 };
 
+/** Welcome tour insights (ES-156): how far people get, where they skip, and who has accepted the terms. Administrators only. */
+const STEP_ORDER: { id: string; label: string }[] = [
+  { id: 'welcome', label: 'Welcome' },
+  { id: 'profile', label: 'Your profile' },
+  { id: 'password', label: 'Set your own password' },
+  ...TOUR_STEPS.map((t) => ({ id: t.id, label: `Tour: ${t.title}` })),
+];
+
+const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
+  const [report, setReport] = useState<OnboardingReport | null>(null);
+  const [error, setError] = useState('');
+  const load = useCallback(async () => {
+    try { setReport(await onboardingApi.report()); setError(''); }
+    catch (e: any) { setError(e?.message || 'Could not load the report.'); }
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+
+  if (error) return <Panel icon={<BarChart2 size={16} />} tint="#0ea5e9" title="Tour insights" subtitle="Could not load"><p className="fz-body" style={{ color: C.red }}>{error}</p></Panel>;
+  if (!report) return null;
+
+  const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0);
+  const byStep = new Map(report.steps.map((r) => [r.step, r]));
+  const rows = STEP_ORDER.map((o) => ({ ...o, reached: byStep.get(o.id)?.reached ?? 0, skipped: byStep.get(o.id)?.skipped ?? 0 }));
+  const top = Math.max(1, report.started, ...rows.map((r) => r.reached));
+  const stat = (label: string, value: string, sub?: string) => (
+    <div className="rounded-xl px-3.5 py-3 flex-1 min-w-[120px]" style={{ background: C.fill }}>
+      <div className="fz-tiny font-black uppercase tracking-widest" style={{ color: C.dim }}>{label}</div>
+      <div className="font-bold" style={{ color: C.textStrong, fontSize: '1.4em' }}>{value}</div>
+      {sub && <div className="fz-small" style={{ color: C.dim }}>{sub}</div>}
+    </div>
+  );
+  const t = report.terms;
+
+  return (
+    <>
+      <Panel icon={<BarChart2 size={16} />} tint="#0ea5e9" title="Tour insights" subtitle="How far people get through the welcome tour"
+        right={<button type="button" onClick={() => void load()} className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={{ height: 30, background: C.fill, border: `1px solid ${C.border}`, color: C.text }}>Refresh</button>}>
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-3 flex-wrap">
+            {stat('Users', String(report.totalUsers))}
+            {stat('Started', String(report.started), `${pct(report.started, report.totalUsers)}% of users`)}
+            {stat('Finished or skipped', String(report.completed), `${pct(report.completed, report.totalUsers)}% of users`)}
+            {stat('Tour finished', String(report.tourDone))}
+            {stat('Slides watched', String(report.slidesDone))}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {rows.map((r) => (
+              <div key={r.id} className="flex items-center gap-3">
+                <span className="fz-small shrink-0" style={{ color: C.text, width: 220 }}>{r.label}</span>
+                <div className="flex-1 rounded-full overflow-hidden" style={{ height: 8, background: C.fill }}>
+                  <div style={{ width: `${pct(r.reached, top)}%`, height: '100%', background: accent, borderRadius: 999, transition: 'width .4s' }} />
+                </div>
+                <span className="fz-small shrink-0 text-right" style={{ color: C.dim, width: 120 }}>{r.reached} reached{r.skipped ? `, ${r.skipped} skipped` : ''}</span>
+              </div>
+            ))}
+          </div>
+          <p className="fz-small" style={{ color: C.dim }}>"Reached" counts people who saw the step. "Skipped" counts people who left the tour on that step. Counting starts from the first walkthrough after this update.</p>
+        </div>
+      </Panel>
+
+      <Panel icon={<ShieldCheck size={16} />} tint="#10b981" title="Terms and Conditions" subtitle={`Version ${t.version}`}
+        right={<Counter color={t.pendingTotal === 0 ? C.green : C.amber}>{t.accepted} of {report.totalUsers} accepted</Counter>}>
+        <div className="flex flex-col gap-4">
+          <div className="rounded-full overflow-hidden" style={{ height: 8, background: C.fill }}>
+            <div style={{ width: `${pct(t.accepted, report.totalUsers)}%`, height: '100%', background: C.green, borderRadius: 999, transition: 'width .4s' }} />
+          </div>
+          <div>
+            <div className="fz-tiny font-black uppercase tracking-widest mb-1.5" style={{ color: C.dim }}>Not accepted yet ({t.pendingTotal})</div>
+            {t.pending.length === 0
+              ? <p className="fz-body" style={{ color: C.green }}>Everyone has accepted this version.</p>
+              : <div className="flex flex-wrap gap-1.5">
+                  {t.pending.map((p) => <span key={p.username} className="px-2.5 py-1 rounded-full fz-small" style={{ background: C.fill, color: C.text }}>{p.username}</span>)}
+                  {t.pendingTotal > t.pending.length && <span className="fz-small" style={{ color: C.dim }}>and {t.pendingTotal - t.pending.length} more</span>}
+                </div>}
+          </div>
+          <div>
+            <div className="fz-tiny font-black uppercase tracking-widest mb-1.5" style={{ color: C.dim }}>Recent acceptances</div>
+            {t.recent.length === 0
+              ? <p className="fz-body" style={{ color: C.dim }}>Nobody has accepted yet.</p>
+              : <div className="flex flex-col gap-1">
+                  {t.recent.slice(0, 10).map((r) => (
+                    <div key={r.username + r.acceptedAt} className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg" style={{ background: C.fill }}>
+                      <span className="fz-body font-bold" style={{ color: C.textStrong }}>{r.username}</span>
+                      <span className="fz-small" style={{ color: C.dim }}>version {r.version} · {new Date(r.acceptedAt).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>}
+          </div>
+        </div>
+      </Panel>
+    </>
+  );
+};
+
 /** Welcome Tour (ES-147): when the first-login walkthrough starts. Each person sets their own; admins set the default. */
+/** Interface language. English is the default; others load only when picked. */
+const LanguageSettingsSection: React.FC<{ accent: string }> = ({ accent }) => {
+  const { t, i18n } = useTranslation();
+  const [pending, setPending] = useState<string | null>(null);
+  const current = i18n.language;
+
+  const choose = async (code: string) => {
+    if (code === current || pending) return;
+    setPending(code);
+    try {
+      await setLanguage(code);
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <Panel icon={<Languages size={17} />} tint="#6366f1" title={t('Interface language')} subtitle={t('Menus, window titles and field labels')}>
+      <div className="space-y-4">
+        <p className="fz-body" style={{ color: C.dim }}>
+          {t('Choose the language for menus, window titles and field labels. Print reports, vouchers, ledgers and other transaction output always stay in English.')}
+        </p>
+        <div role="radiogroup" aria-label={t('Language')} className="flex flex-wrap gap-3">
+          {LANGUAGES.map(lang => {
+            const active = current === lang.code;
+            return (
+              <button
+                key={lang.code}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                disabled={!!pending}
+                onClick={() => void choose(lang.code)}
+                className="px-4 py-2.5 rounded-xl cursor-pointer text-left"
+                style={{
+                  background: active ? `color-mix(in srgb, ${accent} 16%, transparent)` : C.fillSoft,
+                  border: `1px solid ${active ? accent : C.border}`,
+                  color: C.textStrong,
+                  minWidth: 140,
+                }}
+              >
+                <span className="block fz-body font-bold">{lang.nativeName}</span>
+                <span className="block fz-small" style={{ color: C.dim }}>{lang.name}{pending === lang.code ? ' …' : ''}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </Panel>
+  );
+};
+
 const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [calm, setCalm] = useState(getCalmPreference);
 
   const load = useCallback(async () => {
     try { setStatus(await onboardingApi.status()); setError(''); }
@@ -596,6 +749,8 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
           <Row title="Show it at every login" hint="Off means only the first time you sign in."
             on={shown === 'always'} disabled={usingDefault || shown === 'never'}
             onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'always' : 'first'), v ? 'The tour will show at every login.' : 'The tour will show only once.')} />
+          <Row title="Calm mode: no motion" hint="Turns off animation, confetti and typing effects in the tour on this PC. The system reduce-motion setting is respected too."
+            on={calm} onChange={(v) => { setCalm(v); setCalmPreference(v); }} />
         </div>
       </Panel>
 
@@ -612,6 +767,8 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
           </div>
         </Panel>
       )}
+
+      {isAdmin && <OnboardingInsights accent={accent} />}
     </div>
   );
 };
@@ -1711,6 +1868,7 @@ const SettingsPage: React.FC = () => {
     { key: 'appearance', label: 'Appearance',      Icon: Palette,   gradient: 'linear-gradient(135deg,#6366f1,#818cf8)' },
     { key: 'dashboard',  label: 'Dashboard',       Icon: BarChart2, gradient: 'linear-gradient(135deg,#10b981,#34d399)' },
     { key: 'reports',    label: 'Reports',         Icon: FileText,  gradient: 'linear-gradient(135deg,#ec4899,#f472b6)' },
+    { key: 'language',   label: 'Language',        Icon: Languages, gradient: 'linear-gradient(135deg,#6366f1,#a5b4fc)' },
     { key: 'system',     label: 'System & Window', Icon: Monitor,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)' },
     { key: 'alerts',     label: 'Notifications',   Icon: Bell,      gradient: 'linear-gradient(135deg,#229ed9,#4fc3f7)', adminOnly: true },
     { key: 'approvers',  label: 'Approvers',       Icon: ShieldCheck, gradient: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', adminOnly: true },
@@ -2827,6 +2985,7 @@ const SettingsPage: React.FC = () => {
               {activeTab === 'appearance' && renderAppearance()}
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'reports' && <ReportViewsSettingsSection accent={accent} />}
+              {activeTab === 'language' && <LanguageSettingsSection accent={accent} />}
               {activeTab === 'system' && renderSystem()}
               {activeTab === 'alerts' && <AlertSettingsSection accent={accent} isAdmin={isAdmin} />}
               {activeTab === 'approvers' && <ApproversSettingsSection accent={accent} isAdmin={isAdmin} />}

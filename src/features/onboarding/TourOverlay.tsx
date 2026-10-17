@@ -3,17 +3,18 @@ import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
 import type { User } from '../../auth/types/auth.types';
 import { stepText, TourStep } from './tourSteps';
 import { Box, Pt, scribbleArrow, scribbleBox, scribbleCircle, scribbleUnderline } from './doodle';
+import { prefersCalm, useCalm } from './calm';
+import { useFocusTrap } from './useFocusTrap';
 import { useGlass } from './useGlass';
 import './onboarding.css';
 
 const CARD_W = 340;
-const prefersReducedMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /** Types the text out letter by letter (all at once when the OS asks for reduced motion). */
 const useTyped = (text: string, ms = 28) => {
   const [n, setN] = useState(0);
   useEffect(() => {
-    if (prefersReducedMotion()) { setN(text.length); return; }
+    if (prefersCalm()) { setN(text.length); return; }
     setN(0);
     const id = window.setInterval(() => setN((v) => (v >= text.length ? (window.clearInterval(id), v) : v + 1)), ms);
     return () => window.clearInterval(id);
@@ -53,8 +54,8 @@ export interface TourOverlayProps {
   startIndex?: number;
   /** Called with each step id as it is shown, so the tour can resume where it stopped. */
   onStep: (id: string) => void;
-  /** Skipped (X, Esc or the Skip link). */
-  onClose: () => void;
+  /** Skipped (X, Esc or the Skip link), with the step it was skipped on. */
+  onClose: (stepId?: string) => void;
   /** Went past the last step. Defaults to onClose. */
   onDone?: () => void;
 }
@@ -71,6 +72,8 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ steps, user, startInde
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const glass = useGlass();
+  const calm = useCalm();
+  const rootRef = useFocusTrap<HTMLDivElement>();
   const step = steps[index];
   const last = index === steps.length - 1;
 
@@ -103,6 +106,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ steps, user, startInde
     if (h && Math.abs(h - cardH) > 1) setCardH(h);
   });
 
+  const skip = useCallback(() => onClose(step?.id), [onClose, step]);
   const next = useCallback(() => (last ? (onDone ?? onClose)() : setIndex((i) => i + 1)), [last, onClose, onDone]);
   const back = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
 
@@ -110,11 +114,11 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ steps, user, startInde
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); next(); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); back(); }
-      else if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+      else if (e.key === 'Escape') { e.preventDefault(); skip(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [next, back, onClose]);
+  }, [next, back, skip]);
 
   useEffect(() => { nextRef.current?.focus(); }, [index]);
 
@@ -136,7 +140,8 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ steps, user, startInde
   }
 
   return (
-    <div className="ob-tour" style={glass} role="dialog" aria-modal="true" aria-label="Guided tour">
+    <div className={`ob-tour${calm ? ' ob-calm' : ''}`} style={glass} ref={rootRef} role="dialog" aria-modal="true" aria-label="Guided tour">
+      <span className="ob-sr" aria-live="polite">Step {index + 1} of {steps.length}: {step.title}. {stepText(step, user)}</span>
       <svg className="ob-tour-svg" width={vp.w} height={vp.h} aria-hidden="true">
         <defs>
           <mask id="ob-tour-mask">
@@ -159,7 +164,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ steps, user, startInde
       </svg>
 
       <div ref={cardRef} key={step.id} className="ob-dialog ob-tour-card" style={{ left: pos.x, top: pos.y, width: CARD_W }}>
-        <button type="button" className="ob-tour-x" onClick={onClose} aria-label="Skip tour"><X size={16} /></button>
+        <button type="button" className="ob-tour-x" onClick={skip} aria-label="Skip tour"><X size={16} /></button>
         <div className="ob-hand ob-tour-title" aria-label={step.title}>
           <span className="ob-tour-ghost">{step.title}</span>
           <span className="ob-tour-typed" aria-hidden="true">{typedTitle}</span>
@@ -174,7 +179,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ steps, user, startInde
             </button>
           </div>
         </div>
-        <button type="button" className="ob-tour-skip" onClick={onClose}>Skip tour</button>
+        <button type="button" className="ob-tour-skip" onClick={skip}>Skip tour</button>
       </div>
     </div>
   );

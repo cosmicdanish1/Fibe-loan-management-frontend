@@ -7,7 +7,9 @@ import type {
     PasswordRequirements
 } from '../interface/types';
 import { apiService } from '../../../../../services/api';
+import { markProgress } from '../../../../../features/onboarding/onboardingApi';
 import { useAuth } from '../../../../../auth/context/AuthContext';
+import i18n from '../../../../../i18n';
 
 const defaultPasswordRequirements: PasswordRequirements = {
   minLength: 8,
@@ -56,23 +58,23 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     const requirements = defaultPasswordRequirements;
 
     if (password.length < requirements.minLength) {
-      errors.push(`Password must be at least ${requirements.minLength} characters long`);
+      errors.push(i18n.t('Password must be at least {{count}} characters long', { count: requirements.minLength }));
     }
 
     if (requirements.requireUppercase && !/[A-Z]/.test(password)) {
-      errors.push('Password must contain at least one uppercase letter');
+      errors.push(i18n.t('Password must contain at least one uppercase letter'));
     }
 
     if (requirements.requireLowercase && !/[a-z]/.test(password)) {
-      errors.push('Password must contain at least one lowercase letter');
+      errors.push(i18n.t('Password must contain at least one lowercase letter'));
     }
 
     if (requirements.requireNumbers && !/\d/.test(password)) {
-      errors.push('Password must contain at least one number');
+      errors.push(i18n.t('Password must contain at least one number'));
     }
 
     if (requirements.requireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      errors.push('Password must contain at least one special character');
+      errors.push(i18n.t('Password must contain at least one special character'));
     }
 
     return {
@@ -87,23 +89,23 @@ export const useChangePassword = (): UseChangePasswordReturn => {
 
     // Check if all fields are filled
     if (!formData.userName.trim()) {
-      formErrors.push('User name is required');
-      newErrors.userName = 'User name is required';
+      formErrors.push(i18n.t('User name is required'));
+      newErrors.userName = i18n.t('User name is required');
     }
 
     if (!formData.currentPassword) {
-      formErrors.push('Current password is required');
-      newErrors.currentPassword = 'Current password is required';
+      formErrors.push(i18n.t('Current password is required'));
+      newErrors.currentPassword = i18n.t('Current password is required');
     }
 
     if (!formData.newPassword) {
-      formErrors.push('New password is required');
-      newErrors.newPassword = 'New password is required';
+      formErrors.push(i18n.t('New password is required'));
+      newErrors.newPassword = i18n.t('New password is required');
     }
 
     if (!formData.confirmPassword) {
-      formErrors.push('Confirm password is required');
-      newErrors.confirmPassword = 'Confirm password is required';
+      formErrors.push(i18n.t('Confirm password is required'));
+      newErrors.confirmPassword = i18n.t('Confirm password is required');
     }
 
     // Validate new password strength
@@ -120,16 +122,16 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     // Check if new password matches confirmation
     if (formData.newPassword && formData.confirmPassword) {
       if (formData.newPassword !== formData.confirmPassword) {
-        formErrors.push('New password and confirm password do not match');
-        newErrors.confirmPassword = 'Passwords do not match';
+        formErrors.push(i18n.t('New password and confirm password do not match'));
+        newErrors.confirmPassword = i18n.t('Passwords do not match');
       }
     }
 
     // Check if new password is different from current password
     if (formData.currentPassword && formData.newPassword) {
       if (formData.currentPassword === formData.newPassword) {
-        formErrors.push('New password must be different from current password');
-        newErrors.newPassword = 'New password must be different from current password';
+        formErrors.push(i18n.t('New password must be different from current password'));
+        newErrors.newPassword = i18n.t('New password must be different from current password');
       }
     }
 
@@ -149,7 +151,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     const validation = validateForm();
 
     if (!validation.isValid) {
-      return { success: false, error: 'Form validation failed' };
+      return { success: false, error: i18n.t('Form validation failed') };
     }
 
     setIsLoading(true);
@@ -163,17 +165,18 @@ export const useChangePassword = (): UseChangePasswordReturn => {
       });
 
       if (!response.success) {
-        const errorMessage = response.message || response.error || 'Failed to change password';
+        const errorMessage = response.message || response.error || i18n.t('Failed to change password');
         setErrors({ general: errorMessage });
         return { success: false, error: errorMessage };
       }
 
       resetForm();
+      markProgress('password');
       return { success: true };
 
     } catch (error) {
       console.error('Password change failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to change password';
+      const errorMessage = error instanceof Error ? error.message : i18n.t('Failed to change password');
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     } finally {

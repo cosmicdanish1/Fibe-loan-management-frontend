@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
 import type { User } from '../../../auth/types/auth.types';
+import { useCalm } from '../calm';
+import { useFocusTrap } from '../useFocusTrap';
 import { useGlass } from '../useGlass';
 import '../onboarding.css';
 
@@ -21,6 +23,8 @@ export interface SlideDeckProps {
   icon: React.ReactNode;
   slides: Slide[];
   onClose: () => void;
+  /** Called once, when the last slide has been reached. */
+  onComplete?: () => void;
   doneLabel?: string;
 }
 
@@ -28,10 +32,13 @@ export interface SlideDeckProps {
  * Full-screen slide presentation: Back/Next, dots, keyboard (arrows, Esc) and a Skip button.
  * Used for the "How it works" slides, and reusable for a What's New popup.
  */
-export const SlideDeck: React.FC<SlideDeckProps> = ({ heading, icon, slides, onClose, doneLabel = 'Done' }) => {
+export const SlideDeck: React.FC<SlideDeckProps> = ({ heading, icon, slides, onClose, onComplete, doneLabel = 'Done' }) => {
   const [index, setIndex] = useState(0);
   const nextRef = useRef<HTMLButtonElement>(null);
   const glass = useGlass();
+  const calm = useCalm();
+  const dialogRef = useFocusTrap<HTMLDivElement>();
+  const completed = useRef(false);
   const slide = slides[index];
   const last = index === slides.length - 1;
 
@@ -49,17 +56,20 @@ export const SlideDeck: React.FC<SlideDeckProps> = ({ heading, icon, slides, onC
   }, [next, back, onClose]);
 
   useEffect(() => { nextRef.current?.focus(); }, [index]);
+  useEffect(() => {
+    if (last && !completed.current) { completed.current = true; onComplete?.(); }
+  }, [last, onComplete]);
 
   if (!slide) return null;
 
   return (
-    <div className="ob-overlay ob-top" style={glass} role="dialog" aria-modal="true" aria-label={heading}>
-      <div className="ob-dialog ob-deck">
+    <div className={`ob-overlay ob-top${calm ? ' ob-calm' : ''}`} style={glass} role="dialog" aria-modal="true" aria-labelledby="ob-deck-title">
+      <div className="ob-dialog ob-deck" ref={dialogRef}>
         <div className="ob-hero">
           <div className="ob-icon">{icon}</div>
           <div>
             <p className="ob-eyebrow">{heading}</p>
-            <h2 className="ob-title">{slide.title}</h2>
+            <h2 className="ob-title" id="ob-deck-title" aria-live="polite">{slide.title}</h2>
             {slide.subtitle && <p className="ob-subtitle">{slide.subtitle}</p>}
           </div>
           <div className="ob-hero-end">

@@ -16,6 +16,34 @@ export interface OnboardingProfile {
   lastLogin: string | null;
 }
 
+export type ChecklistItemId = 'terms' | 'profile' | 'password' | 'twofa' | 'tour' | 'slides' | 'windows';
+export interface ChecklistStatus {
+  items: { id: ChecklistItemId; done: boolean }[];
+  doneCount: number;
+  total: number;
+  dismissed: boolean;
+  windowsOpened: number;
+  windowsNeeded: number;
+}
+
+export interface OnboardingReport {
+  totalUsers: number;
+  started: number;
+  completed: number;
+  tourDone: number;
+  slidesDone: number;
+  steps: { step: string; reached: number; skipped: number }[];
+  terms: {
+    version: string;
+    accepted: number;
+    pending: { username: string }[];
+    pendingTotal: number;
+    recent: { username: string; version: string; acceptedAt: string }[];
+  };
+}
+
+export type OnboardingEventName = 'start' | 'replay' | 'dialog_step' | 'skip' | 'tour_step' | 'tour_done' | 'slides_done';
+
 export interface OnboardingStatus {
   terms: TermsStatus;
   shouldShow: boolean;
@@ -28,6 +56,10 @@ export interface OnboardingStatus {
 
 /** Fired on window to start the walkthrough on demand (Help > Replay Tour). */
 export const ONBOARDING_REPLAY_EVENT = 'onboarding:replay';
+/** Fired on window when checklist progress changed, so the checklist can refresh. */
+export const ONBOARDING_PROGRESS_EVENT = 'onboarding:progress';
+/** Fired on window to open the getting-started checklist (Help > Getting Started). */
+export const ONBOARDING_CHECKLIST_EVENT = 'onboarding:checklist';
 /** Fired on window to open the "How it works" slides (Help > How It Works). */
 export const ONBOARDING_SLIDES_EVENT = 'onboarding:slides';
 
@@ -51,4 +83,30 @@ export const onboardingApi = {
     unwrap(await apiService.put('/onboarding/preference', { mode })),
   setGlobalMode: async (mode: OnboardingMode): Promise<{ globalMode: OnboardingMode }> =>
     unwrap(await apiService.put('/onboarding/global-mode', { mode })),
+  checklist: async (): Promise<ChecklistStatus> => unwrap(await apiService.get('/onboarding/checklist')),
+  showChecklist: async (): Promise<ChecklistStatus> => unwrap(await apiService.post('/onboarding/checklist/show')),
+  report: async (): Promise<OnboardingReport> => unwrap(await apiService.get('/onboarding/report')),
+};
+
+/**
+ * Ticks a checklist item (profile, password, tour, slides, dismissed, window:<ACTION>) and tells the
+ * checklist to refresh. Fire-and-forget: progress tracking must never get in the user's way.
+ */
+export const markProgress = (item: string): void => {
+  apiService.post('/onboarding/checklist', { item })
+    .then((res: any) => { if (res?.success !== false) window.dispatchEvent(new Event(ONBOARDING_PROGRESS_EVENT)); })
+    .catch(() => undefined);
+};
+
+const openedThisSession = new Set<string>();
+/** Counts a menu window towards "open three windows", once per window per app run. */
+export const markWindowOpened = (action: string): void => {
+  if (!/^[A-Z0-9_]{2,40}$/.test(action) || openedThisSession.has(action)) return;
+  openedThisSession.add(action);
+  markProgress(`window:${action}`);
+};
+
+/** Records a walkthrough event for the admin insights. Fire-and-forget. */
+export const trackEvent = (event: OnboardingEventName, step?: string): void => {
+  apiService.post('/onboarding/event', { event, step }).catch(() => undefined);
 };

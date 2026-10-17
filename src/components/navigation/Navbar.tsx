@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { UserProfileMenu } from '../UserProfileMenu';
-import { ONBOARDING_REPLAY_EVENT, ONBOARDING_SLIDES_EVENT } from '../../features/onboarding/onboardingApi';
+import { ONBOARDING_CHECKLIST_EVENT, ONBOARDING_REPLAY_EVENT, ONBOARDING_SLIDES_EVENT, markWindowOpened } from '../../features/onboarding/onboardingApi';
 import { AlertCircle, X, ShieldCheck, Users, ArrowLeftRight, FileText, Wrench, HelpCircle, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
 import { GlobalSearch, type SearchItem } from '../topbar/GlobalSearch';
 import { apiService } from '../../services/api';
@@ -274,6 +274,7 @@ const navConfig: NavItem[] = [
       { title: 'Contents ..', action: 'CONTENTS' },
       { title: 'Replay Tour', action: 'REPLAY_TOUR' },
       { title: 'How It Works', action: 'HOW_IT_WORKS' },
+      { title: 'Getting Started', action: 'GETTING_STARTED' },
     ]
   },
   {
@@ -514,6 +515,12 @@ const Navbar: React.FC = () => {
       return;
     }
 
+    if (action === 'GETTING_STARTED') {
+      window.dispatchEvent(new Event(ONBOARDING_CHECKLIST_EVENT));
+      setMenuState({ activeMenu: null, activeSubmenus: {} });
+      return;
+    }
+
     if (action === 'HOW_IT_WORKS') {
       window.dispatchEvent(new Event(ONBOARDING_SLIDES_EVENT));
       setMenuState({ activeMenu: null, activeSubmenus: {} });
@@ -524,6 +531,7 @@ const Navbar: React.FC = () => {
 
     const service = serviceMap[action];
     if (service) {
+      markWindowOpened(action); // counts towards the getting-started checklist
       const { route, electronMethod } = service;
       console.log(`[DEBUG] Found service mapping for ${action}:`, { route, electronMethod });
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CalendarDays, Clock, KeyRound, Mail, UserRound } from 'lucide-react';
 import type { User } from '../../auth/types/auth.types';
 import Confetti from './Confetti';
-import { onboardingApi, OnboardingProfile } from './onboardingApi';
+import { markProgress, onboardingApi, OnboardingProfile } from './onboardingApi';
 
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -29,7 +29,7 @@ export const ProfileStep: React.FC<{ user: User }> = ({ user }) => {
   useEffect(() => {
     let cancelled = false;
     onboardingApi.profile()
-      .then((p) => { if (!cancelled) { setProfile(p); setFailed(!p); } })
+      .then((p) => { if (!cancelled) { setProfile(p); setFailed(!p); if (p) markProgress('profile'); } })
       .catch(() => { if (!cancelled) setFailed(true); });
     return () => { cancelled = true; };
   }, []);

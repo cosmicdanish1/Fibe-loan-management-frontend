@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollText } from 'lucide-react';
 import { onboardingApi, TermsDocument } from './onboardingApi';
+import { useCalm } from './calm';
+import { useFocusTrap } from './useFocusTrap';
 import { useGlass } from './useGlass';
 import './onboarding.css';
 
@@ -29,6 +31,8 @@ export const TermsGate: React.FC<{ onAccepted: () => void; onDecline: () => void
   const [pct, setPct] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
   const glass = useGlass();
+  const calm = useCalm();
+  const dialogRef = useFocusTrap<HTMLDivElement>();
 
   useEffect(() => {
     onboardingApi.terms()
@@ -61,19 +65,19 @@ export const TermsGate: React.FC<{ onAccepted: () => void; onDecline: () => void
   };
 
   return (
-    <div className="ob-overlay ob-top" style={glass} role="dialog" aria-modal="true" aria-label="Terms and Conditions">
-      <div className="ob-dialog ob-wide">
+    <div className={`ob-overlay ob-top${calm ? ' ob-calm' : ''}`} style={glass} role="dialog" aria-modal="true" aria-labelledby="ob-terms-title">
+      <div className="ob-dialog ob-wide" ref={dialogRef}>
         <div className="ob-hero">
           <div className="ob-icon"><ScrollText size={22} /></div>
           <div>
-            <h2 className="ob-title">Terms and Conditions</h2>
+            <h2 className="ob-title" id="ob-terms-title">Terms and Conditions</h2>
             <p className="ob-subtitle">Please read and accept to continue</p>
           </div>
           {doc && <div className="ob-hero-end"><span className="ob-pill">Version {doc.version}</span></div>}
         </div>
 
         <div className="ob-progress" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
-        <div ref={bodyRef} onScroll={checkScrolled} className="ob-terms" tabIndex={0}>
+        <div ref={bodyRef} onScroll={checkScrolled} className="ob-terms" tabIndex={0} role="region" aria-label="Terms and Conditions text. Scroll to the end to enable the agreement checkbox.">
           {doc
             ? blocks.map((b, i) => (
                 <React.Fragment key={i}>

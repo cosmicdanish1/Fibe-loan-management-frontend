@@ -6,6 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -40,7 +41,8 @@
     "jsxImportSource": "react"
   },
   "include": [
-    "src"
+    "src",
+    "src/**/*.json"
   ],
   "exclude": [
     "dist",

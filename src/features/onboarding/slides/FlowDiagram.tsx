@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { prefersCalm } from '../calm';
 
 export interface FlowNode {
   title: string;
@@ -23,7 +24,7 @@ export const FlowDiagram: React.FC<{ nodes: FlowNode[]; columns?: number; label:
   // After everything has appeared, the stages light up one after another, like work moving through.
   const [active, setActive] = useState(-1);
   useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    if (prefersCalm()) return;
     let tick: number | undefined;
     const start = window.setTimeout(() => {
       setActive(0);

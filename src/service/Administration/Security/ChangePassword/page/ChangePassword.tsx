@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Eye, EyeOff, Lock, User, RotateCcw, Save, X, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useChangePassword } from '../hook/useChangePassword';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 
@@ -28,6 +29,7 @@ const closeWindow = () => {
 };
 
 const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
+  const { t } = useTranslation();
   const {
     formData, errors, isLoading,
     updateField, resetForm, submitPasswordChange,
@@ -43,7 +45,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
     setToast(null);
     const result = await submitPasswordChange();
     if (result.success) {
-      setToast({ type: 'success', msg: `Password updated for ${formData.userName}. New credentials are active immediately.` });
+      setToast({ type: 'success', msg: t('Password updated for {{name}}. New credentials are active immediately.', { name: formData.userName }) });
     } else if (result.error) {
       setToast({ type: 'error', msg: result.error });
     }
@@ -70,7 +72,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
 
   usePageToolbarActions({
     onSave: handleSubmit,
-    saveLabel: isLoading ? 'Saving...' : 'Change',
+    saveLabel: isLoading ? t('Saving...') : t('Change'),
     saveEnabled: isFormReady && !isLoading,
   });
 
@@ -83,22 +85,22 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
     invalid: boolean,
   ) => (
     <div>
-      <label className="aw-label" htmlFor={id}>{label}</label>
+      <label className="aw-label" htmlFor={id}>{t(label)}</label>
       <div className="aw-input-wrap has-action">
         <input
           id={id}
           type={showPassword[show] ? 'text' : 'password'}
           value={formData[field]}
           onChange={e => updateField(field, e.target.value)}
-          placeholder={placeholder}
+          placeholder={t(placeholder)}
           className={`aw-input ${invalid ? 'is-invalid' : ''}`}
         />
         <button
           type="button"
           className="aw-input-action"
           onClick={() => togglePw(show)}
-          aria-label={showPassword[show] ? 'Hide password' : 'Show password'}
-          data-tip={showPassword[show] ? 'Hide' : 'Show'}
+          aria-label={showPassword[show] ? t('Hide password') : t('Show password')}
+          data-tip={showPassword[show] ? t('Hide') : t('Show')}
           data-tip-pos="top-end"
           style={{ background: 'transparent', color: 'var(--aw-muted)' }}
         >
@@ -117,19 +119,19 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Change Password</h1>
-          <p className="aw-desc">Account security</p>
+          <h1 className="aw-title">{t('Change Password')}</h1>
+          <p className="aw-desc">{t('Account security')}</p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={handleReset} disabled={isLoading} className="aw-btn aw-btn-secondary">
-            <RotateCcw size={13} /> Reset
+            <RotateCcw size={13} /> {t('Reset')}
           </button>
           <button type="button" onClick={handleSubmit} disabled={!isFormReady || isLoading} className="aw-btn aw-btn-primary">
             {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <Save size={13} />}
-            {isLoading ? 'Saving...' : 'Change Password'}
+            {isLoading ? t('Saving...') : t('Change Password')}
           </button>
           <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -146,17 +148,17 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><User size={14} /></span>
-              <h2 className="aw-card-title">Account</h2>
+              <h2 className="aw-card-title">{t('Account')}</h2>
             </div>
             <div className="aw-stack">
               <div>
-                <label className="aw-label" htmlFor="cp-user">Username</label>
+                <label className="aw-label" htmlFor="cp-user">{t('Username')}</label>
                 <input
                   id="cp-user"
                   type="text"
                   readOnly
                   value={formData.userName}
-                  placeholder="Not signed in"
+                  placeholder={t('Not signed in')}
                   className={`aw-input ${errors.userName ? 'is-invalid' : ''}`}
                 />
                 {errLine(errors.userName)}
@@ -171,7 +173,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Lock size={14} /></span>
-              <h2 className="aw-card-title">New Password</h2>
+              <h2 className="aw-card-title">{t('New Password')}</h2>
             </div>
             <div className="aw-stack">
               <div>
@@ -190,7 +192,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
                         />
                       ))}
                     </div>
-                    <span className="aw-meta" style={{ color: STRENGTH_TONES[pwStrength], fontWeight: 700 }}>{STRENGTH_LABELS[pwStrength]}</span>
+                    <span className="aw-meta" style={{ color: STRENGTH_TONES[pwStrength], fontWeight: 700 }}>{t(STRENGTH_LABELS[pwStrength] ?? '')}</span>
                   </div>
                 )}
                 {errLine(errors.newPassword)}
@@ -200,12 +202,12 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
                 {pwField('cp-confirm', 'Confirm Password', 'confirmPassword', 'confirm', 'Re-enter new password', !!errors.confirmPassword || pwMatch === false)}
                 {(errors.confirmPassword || pwMatch !== null) && (
                   (errors.confirmPassword || pwMatch === false)
-                    ? errLine(errors.confirmPassword || 'Passwords do not match')
-                    : <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={12} />Passwords match</p>
+                    ? errLine(errors.confirmPassword || t('Passwords do not match'))
+                    : <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={12} />{t('Passwords match')}</p>
                 )}
               </div>
 
-              <p className="aw-meta">Min 8 chars · uppercase · lowercase · digit</p>
+              <p className="aw-meta">{t('Min 8 chars · uppercase · lowercase · digit')}</p>
             </div>
           </section>
         </div>
