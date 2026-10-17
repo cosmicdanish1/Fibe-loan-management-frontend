@@ -39,6 +39,23 @@ jobs:
           fi
           echo "VERSION=$PKG" >> "$GITHUB_ENV"
 
+      # Fail fast, with a clear reason, instead of after a 4 minute build.
+      - name: Check the releases token
+        shell: bash
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret RELEASES_TOKEN is empty or missing in THIS repo (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/cosmicdanish1/fibe-loan-releases)
+          if [ "$CODE" != "200" ]; then
+            echo "::error::RELEASES_TOKEN cannot read cosmicdanish1/fibe-loan-releases (HTTP $CODE). Check the token's repository access and expiry."
+            exit 1
+          fi
+          echo "Token can reach the releases repo."
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+
       - run: npm ci
 
       - name: Build app
