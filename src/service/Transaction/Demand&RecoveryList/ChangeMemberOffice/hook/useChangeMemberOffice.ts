@@ -7,24 +7,11 @@ import {
     ChangeMemberOfficeHookReturn,
     OfficeOption
 } from '../interface/ChangeMemberOfficeInterfaces';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 // BUG FIX: removed 'message' from antd — silently fails in Electron renderer windows.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).
-
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
 
 // BUG FIX: office transfer is irreversible — requires explicit user confirmation.
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
@@ -44,6 +31,7 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
 };
 
 export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
+  const { t } = useTranslation();
     const [formData, setFormData] = useState<ChangeMemberOfficeFormData>({
         month: 'APR',
         year: new Date().getFullYear().toString(),
@@ -119,23 +107,23 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
     const handleTransfer = useCallback(async () => {
         if (processingRef.current) return;
         if (!formData.memberNo || !formData.newBranchNo) {
-            await showDialog('warning', 'electron-react-ts', 'Required Fields Missing', 'Please enter both Member No and the New Branch/Office before transferring.');
+            await showDialog('warning', 'electron-react-ts', t('Required Fields Missing'), t('Please enter both Member No and the New Branch/Office before transferring.'));
             return;
         }
         // BUG FIX: validate memberNo as integer
         const mbNoInt = parseInt(formData.memberNo);
         if (isNaN(mbNoInt) || mbNoInt <= 0) {
-            await showDialog('warning', 'electron-react-ts', 'Invalid Member No', 'Please enter a valid numeric Member No.');
+            await showDialog('warning', 'electron-react-ts', t('Invalid Member No'), t('Please enter a valid numeric Member No.'));
             return;
         }
         // The current office must be a real, freshly looked-up office - not blank / a placeholder string
         if (!formData.currentBranchNo || formData.currentBranchNo === 'Member not found' || formData.currentBranchNo === 'Not Assigned') {
-            await showDialog('warning', 'electron-react-ts', 'Member Not Verified', 'The current office of this member could not be loaded (still loading, member not found, or no office assigned).\nEnter a valid Member No and wait for the Current Office to appear before transferring.');
+            await showDialog('warning', 'electron-react-ts', t('Member Not Verified'), t('The current office of this member could not be loaded (still loading, member not found, or no office assigned). Enter a valid Member No and wait for the Current Office to appear before transferring.'));
             return;
         }
         // BUG FIX: prevent same-office transfer — would silently succeed with no real change
         if (formData.newBranchNo === formData.currentBranchNo) {
-            await showDialog('warning', 'electron-react-ts', 'Same Office Selected', `Member ${formData.memberNo} is already assigned to office "${formData.currentBranchNo}".\nPlease select a different new office.`);
+            await showDialog('warning', 'electron-react-ts', t('Same Office Selected'), t('Member {{1}} is already assigned to office "{{2}}". Please select a different new office.', { 1: formData.memberNo, 2: formData.currentBranchNo }));
             return;
         }
 
@@ -161,7 +149,7 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    'Member Transferred Successfully!',
+                    t('Member Transferred Successfully!'),
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `MEMBER NO     : ${formData.memberNo}\n` +
                     `FROM OFFICE   : ${formData.currentBranchNo || '—'}\n` +
@@ -171,11 +159,11 @@ export const useChangeMemberOffice = (): ChangeMemberOfficeHookReturn => {
                 );
                 handleCancel();
             } else {
-                await showDialog('error', 'electron-react-ts', 'Transfer Failed', response.message || 'The server could not complete the transfer. Please try again.');
+                await showDialog('error', 'electron-react-ts', t('Transfer Failed'), response.message || t('The server could not complete the transfer. Please try again.'));
             }
         } catch (error: any) {
             console.error('Transfer error:', error);
-            await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: error.message }));
         } finally {
             processingRef.current = false;
             setIsProcessing(false);

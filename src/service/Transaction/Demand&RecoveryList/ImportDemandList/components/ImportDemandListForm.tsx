@@ -5,6 +5,7 @@ import { Select } from 'antd';
 import { Upload, Save, RotateCcw, X, FileSpreadsheet, CheckCircle2, AlertCircle } from 'lucide-react';
 import { ImportDemandListHookReturn } from '../interface/ImportDemandListInterfaces';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const YEARS = Array.from({ length: 30 }, (_, i) => (2020 + i).toString());
@@ -15,6 +16,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
     importConfig, previewData, branches, isImporting, isSaving, recordCount,
     updateConfig, handleImport, handleSave, handleClear, handleExit,
 }) => {
+  const { t } = useTranslation();
     const validCount = previewData.filter(r => r.status === 'Valid').length;
     const errorCount = previewData.filter(r => r.status === 'Error').length;
     const flaggedCount = previewData.filter(r => (r.flags?.length ?? 0) > 0).length;
@@ -29,15 +31,15 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Import Demand</h1>
-                    <p className="aw-desc">Demand &amp; Recovery List</p>
+                    <h1 className="aw-title">{t('Import Demand')}</h1>
+                    <p className="aw-desc">{t('Demand & Recovery List')}</p>
                 </div>
                 <div className="aw-actions">
                     <button type="button" onClick={handleSave} disabled={isSaving || previewData.length === 0} className="aw-btn aw-btn-primary">
-                        {isSaving ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />} {isSaving ? 'Saving...' : 'Save'}
+                        {isSaving ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />} {isSaving ? t('Saving...') : t('Save')}
                     </button>
-                    <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Clear</button>
-                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
+                    <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> {t('Clear')}</button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Exit')}</button>
                 </div>
             </div>
 
@@ -46,25 +48,25 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileSpreadsheet size={14} /></span>
-                            <h2 className="aw-card-title">Import Configuration</h2>
+                            <h2 className="aw-card-title">{t('Import Configuration')}</h2>
                             {recordCount > 0 && (
                                 <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
-                                    <span className="aw-pill">{recordCount} Record(s)</span>
-                                    {validCount > 0 && <span className="aw-pill tone-success"><CheckCircle2 size={11} /> {validCount} Valid</span>}
-                                    {errorCount > 0 && <span className="aw-pill tone-danger"><AlertCircle size={11} /> {errorCount} Error</span>}
-                                    {flaggedCount > 0 && <span className="aw-pill tone-warning"><AlertCircle size={11} /> {flaggedCount} Need Checking</span>}
+                                    <span className="aw-pill">{t('{{1}} Record(s)', { 1: recordCount })}</span>
+                                    {validCount > 0 && <span className="aw-pill tone-success"><CheckCircle2 size={11} /> {validCount} {t('Valid')}</span>}
+                                    {errorCount > 0 && <span className="aw-pill tone-danger"><AlertCircle size={11} /> {errorCount} {t('Error')}</span>}
+                                    {flaggedCount > 0 && <span className="aw-pill tone-warning"><AlertCircle size={11} /> {flaggedCount} {t('Need Checking')}</span>}
                                 </span>
                             )}
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 0.8fr) minmax(260px, 2fr) 110px 120px auto', gap: 'var(--aw-gap)', alignItems: 'end' }}>
                             <div>
-                                <label className="aw-label" htmlFor="idl-div">Division/RO</label>
+                                <label className="aw-label" htmlFor="idl-div">{t('Division/RO')}</label>
                                 <input id="idl-div" type="text" value={importConfig.divisionRO} readOnly className="aw-input" />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="idl-branch">Branch</label>
+                                <label className="aw-label" htmlFor="idl-branch">{t('Branch')}</label>
                                 <Select id="idl-branch" value={(importConfig.branch || undefined) as string} onChange={v => updateConfig('branch', v)}
-                                    placeholder="Select Branch" className="aw-select" popupClassName="aw-select-popup" showSearch
+                                    placeholder={t('Select Branch')} className="aw-select" popupClassName="aw-select-popup" showSearch
                                     optionFilterProp="label"
                                     options={branches.map(b => ({
                                         value: String(b.officeno),
@@ -72,18 +74,18 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                                     }))} />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="idl-month">Month</label>
+                                <label className="aw-label" htmlFor="idl-month">{t('Month')}</label>
                                 <Select id="idl-month" value={importConfig.monthStr} onChange={v => updateConfig('monthStr', v)}
                                     className="aw-select" popupClassName="aw-select-popup" options={MONTHS.map(m => ({ value: m, label: m }))} />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="idl-year">Year</label>
+                                <label className="aw-label" htmlFor="idl-year">{t('Year')}</label>
                                 <Select id="idl-year" value={importConfig.yearStr} onChange={v => updateConfig('yearStr', v)}
                                     className="aw-select" popupClassName="aw-select-popup" options={YEARS.map(y => ({ value: y, label: y }))} />
                             </div>
                             <button type="button" onClick={handleImport} disabled={isImporting} className="aw-btn aw-btn-secondary">
                                 {isImporting ? <RotateCcw size={13} className="aw-spin" /> : <Upload size={13} />}
-                                {isImporting ? 'Importing...' : 'Import Demand'}
+                                {isImporting ? t('Importing...') : t('Import Demand')}
                             </button>
                         </div>
                     </section>
@@ -91,21 +93,21 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileSpreadsheet size={14} /></span>
-                            <h2 className="aw-card-title">Demand Preview</h2>
+                            <h2 className="aw-card-title">{t('Demand Preview')}</h2>
                         </div>
                         {isImporting ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <span className="aw-spin" />
-                                <p className="aw-strong">Importing Records...</p>
-                                <span className="aw-meta">Reading Excel file, validating members, checking columns...</span>
+                                <p className="aw-strong">{t('Importing Records...')}</p>
+                                <span className="aw-meta">{t('Reading Excel file, validating members, checking columns...')}</span>
                             </div>
                         ) : previewData.length === 0 ? (
                             <div className="aw-empty" style={{ padding: 32 }}>
                                 <FileSpreadsheet size={32} />
-                                <p className="aw-strong">No Data Loaded</p>
-                                <span className="aw-meta">Select Branch, Month, Year and click "Import Demand" to load an Excel file</span>
+                                <p className="aw-strong">{t('No Data Loaded')}</p>
+                                <span className="aw-meta">{t('Select Branch, Month, Year and click "Import Demand" to load an Excel file')}</span>
                                 <div className="aw-panel aw-panel-dashed" style={{ textAlign: 'left', maxWidth: 520 }}>
-                                    <span className="aw-label">Expected Excel Format</span>
+                                    <span className="aw-label">{t('Expected Excel Format')}</span>
                                     <p className="aw-meta">S.NO. | YYMM | CODE | MS.NO. | PS.NO. | NAME | TOTAL | R/D | R/LOAN | E/LOAN | INTT.</p>
                                 </div>
                             </div>
@@ -148,7 +150,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                                                     {(row.flags?.length ?? 0) > 0 && (
                                                         <span className="aw-pill tone-warning" style={{ cursor: 'help' }}
                                                             title={row.flags!.map(f => `Loan #${f.loancaseno}: ${f.message}`).join('\n\n')}>
-                                                            <AlertCircle size={11} style={{ marginRight: 4 }} /> Check
+                                                            <AlertCircle size={11} style={{ marginRight: 4 }} /> {t('Check')}
                                                         </span>
                                                     )}
                                                 </td>
@@ -163,7 +165,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
             </div>
 
             <div className="aw-footer">
-                <span>Import Demand | {importConfig.divisionRO}</span>
+                <span>{t('Import Demand |')} {importConfig.divisionRO}</span>
                 <span>{importConfig.monthStr}-{importConfig.yearStr}</span>
             </div>
         </div>

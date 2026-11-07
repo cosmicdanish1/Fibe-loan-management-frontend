@@ -8,6 +8,7 @@ import { apiService } from '../../services/api';
 import { configureNotificationEffects } from '../../utils/notificationEffects';
 import { applyTypographyOffsets, fzBaseForScale, normalizeTypographyOffsets, readTypographyOffsets, TYPOGRAPHY_STORAGE_KEY, TYPOGRAPHY_SYNC_CHANNEL } from '../../config/typographyPreferences';
 import { FONT_OPTIONS, applyAppFont } from '../../config/fontOptions';
+import { useMotion } from '../../config/motion';
 
 interface ThemeProviderProps {
     children: React.ReactNode;
@@ -19,6 +20,10 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const { isAuthenticated } = useAuth();
     const isFirstMount = React.useRef(true);
     const isDark = theme.interfaceMode === 'dark';
+    // Pop-ups (dropdowns, selects, toasts, tooltips) use the same short, soft motion as the windows (Settings > Animations).
+    const { resolved: motionNow } = useMotion();
+    const popupMotion = motionNow.mode !== 'off';
+    const popupScale = motionNow.lite ? 0.6 : 1;
 
     // One-time carry-over: text size and font used to live only in localStorage.
     // Fold an existing choice into the theme state so nobody loses it.
@@ -192,9 +197,13 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                     borderRadius: theme.cornerRadius,
                     fontSize: 14 * theme.fontScale,
                     fontFamily: theme.fontFamily || "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                    motionDurationFast: '0ms',
-                    motionDurationMid: '0ms',
-                    motionDurationSlow: '0ms',
+                    // Apple-like: quick, with a soft landing. Off => antd motion is switched off entirely.
+                    motion: popupMotion,
+                    motionDurationFast: popupMotion ? `${(0.1 * popupScale).toFixed(2)}s` : '0s',
+                    motionDurationMid: popupMotion ? `${(0.16 * popupScale).toFixed(2)}s` : '0s',
+                    motionDurationSlow: popupMotion ? `${(0.22 * popupScale).toFixed(2)}s` : '0s',
+                    motionEaseOut: 'cubic-bezier(0.32, 0.72, 0, 1)',
+                    motionEaseInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
                     ...(isDark ? {
                         colorBgBase: '#0E1116',
                         colorBgContainer: '#151A21',

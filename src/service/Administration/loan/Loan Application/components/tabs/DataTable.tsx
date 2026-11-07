@@ -5,6 +5,7 @@ import { Select } from 'antd';
 import { Plus } from 'lucide-react';
 import { useTableData } from '../../hooks/useTableData';
 import type { TableColumn } from '../../types/table';
+import { useTranslation } from 'react-i18next';
 
 export interface DataTableProps<T> {
   data: T[];
@@ -21,6 +22,7 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
   className = '',
   showAddButton = true
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
   const { addRow, updateRow } = useTableData(data, onDataChange);
   const [editingCell, setEditingCell] = useState<{ id: number | null; field: keyof T | null }>({ id: null, field: null });
   const [editValue, setEditValue] = useState<any>('');
@@ -123,7 +125,7 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
             autoFocus
             defaultOpen
             aria-label={column.header}
-            placeholder="Select..."
+            placeholder={t('Select...')}
             className="aw-select"
             popupClassName="aw-select-popup"
             options={column.options.map((opt: any) => ({ value: opt.value, label: opt.label }))}
@@ -177,7 +179,7 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
         <table className="aw-table">
           <thead>
             <tr>
-              <th className="is-center" style={{ width: 70 }}>Sr. No.</th>
+              <th className="is-center" style={{ width: 70 }}>{t('Sr. No.')}</th>
               {columns.map((column) => (
                 <th key={String(column.key)} style={{ width: column.width }}>
                   {column.header}
@@ -212,7 +214,7 @@ function DataTable<T extends { id?: number } & Record<string, any>>({
       {showAddButton && (
         <div style={{ marginTop: 12 }}>
           <button type="button" onClick={() => addRow({} as any)} className="aw-btn aw-btn-secondary" style={{ width: '100%' }}>
-            <Plus size={14} /> Add New Row
+            <Plus size={14} /> {t('Add New Row')}
           </button>
         </div>
       )}

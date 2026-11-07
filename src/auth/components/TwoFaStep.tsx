@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Copy, Download, KeyRound, RotateCcw, ShieldCheck, Smartphone } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { TwoFaChallenge } from '../types/auth.types';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   challenge: TwoFaChallenge;
@@ -12,6 +13,7 @@ interface Props {
 
 /** Shared "save these codes" panel, also used from My Profile. */
 export const RecoveryCodesPanel: React.FC<{ codes: string[]; onAck?: () => void; ackLabel?: string }> = ({ codes, onAck, ackLabel }) => {
+  const { t } = useTranslation();
   const [saved, setSaved] = useState(false);
   const text = codes.join('\n');
   const copy = () => { try { navigator.clipboard?.writeText(text); } catch { /* clipboard blocked */ } };
@@ -27,22 +29,22 @@ export const RecoveryCodesPanel: React.FC<{ codes: string[]; onAck?: () => void;
     <div className="aw-stack" style={{ gap: 10 }}>
       <div className="aw-alert aw-alert-warning" role="status">
         <AlertCircle size={16} />
-        <div>Save these recovery codes now. They are shown only once. Each one works a single time if you lose your phone.</div>
+        <div>{t('Save these recovery codes now. They are shown only once. Each one works a single time if you lose your phone.')}</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 14, fontWeight: 600, letterSpacing: 1 }}>
         {codes.map((c) => <div key={c} className="aw-card" style={{ padding: '6px 10px', textAlign: 'center' }}>{c}</div>)}
       </div>
       <div className="aw-inline" style={{ gap: 8 }}>
-        <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={copy}><Copy size={13} /> Copy</button>
-        <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={download}><Download size={13} /> Download</button>
+        <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={copy}><Copy size={13} /> {t('Copy')}</button>
+        <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={download}><Download size={13} /> {t('Download')}</button>
       </div>
       {onAck && (
         <>
           <label className="aw-inline" style={{ gap: 8, cursor: 'pointer', alignItems: 'center', fontWeight: 600 }}>
             <input type="checkbox" checked={saved} onChange={() => setSaved((s) => !s)} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
-            I have saved my recovery codes
+            {t('I have saved my recovery codes')}
           </label>
-          <button type="button" className="aw-btn aw-btn-primary" disabled={!saved} onClick={onAck}>{ackLabel || 'Continue'}</button>
+          <button type="button" className="aw-btn aw-btn-primary" disabled={!saved} onClick={onAck}>{ackLabel || t('Continue')}</button>
         </>
       )}
     </div>
@@ -56,31 +58,33 @@ export const EnrolPanel: React.FC<{
   onSubmit: (code: string) => void;
   error?: string;
 }> = ({ setup, busy, onSubmit, error }) => {
+  const { t } = useTranslation();
   const [code, setCode] = useState('');
   return (
     <div className="aw-stack" style={{ gap: 10 }}>
-      <p className="aw-meta">1. Open your authenticator app (Google Authenticator, Microsoft Authenticator, Authy) and scan this QR code.</p>
+      <p className="aw-meta">1. {t('Open your authenticator app (Google Authenticator, Microsoft Authenticator, Authy) and scan this QR code.')}</p>
       <div style={{ display: 'grid', placeItems: 'center' }}>
-        <img src={setup.qrDataUrl} alt="Authenticator QR code" width={200} height={200} style={{ background: '#fff', borderRadius: 8, padding: 6 }} />
+        <img src={setup.qrDataUrl} alt={t('Authenticator QR code')} width={200} height={200} style={{ background: '#fff', borderRadius: 8, padding: 6 }} />
       </div>
       <details>
-        <summary className="aw-meta" style={{ cursor: 'pointer' }}>Can't scan? Enter the key manually</summary>
+        <summary className="aw-meta" style={{ cursor: 'pointer' }}>{t("Can't scan? Enter the key manually")}</summary>
         <code style={{ display: 'block', marginTop: 6, wordBreak: 'break-all', userSelect: 'all', fontWeight: 600 }}>{setup.secret}</code>
       </details>
-      <p className="aw-meta">2. Type the 6-digit code the app shows.</p>
+      <p className="aw-meta">2. {t('Type the 6-digit code the app shows.')}</p>
       <input className="aw-input" inputMode="numeric" autoComplete="one-time-code" maxLength={7} placeholder="123456" value={code} disabled={busy}
         onChange={(e) => setCode(e.target.value.replace(/[^\d ]/g, ''))}
         onKeyDown={(e) => { if (e.key === 'Enter' && code.replace(/\s/g, '').length === 6) onSubmit(code); }}
         style={{ textAlign: 'center', fontSize: 20, letterSpacing: 6 }} />
       {error && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><div>{error}</div></div>}
       <button type="button" className="aw-btn aw-btn-primary" disabled={busy || code.replace(/\s/g, '').length !== 6} onClick={() => onSubmit(code)}>
-        {busy && <RotateCcw size={14} className="aw-spin" />} Verify &amp; turn on
+        {busy && <RotateCcw size={14} className="aw-spin" />} {t('Verify & turn on')}
       </button>
     </div>
   );
 };
 
 const TwoFaStep: React.FC<Props> = ({ challenge, onComplete, onBack }) => {
+  const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [useRecovery, setUseRecovery] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -137,8 +141,8 @@ const TwoFaStep: React.FC<Props> = ({ challenge, onComplete, onBack }) => {
         <h2 className="aw-card-title">{title}</h2>
         <p className="aw-meta">
           {challenge.mode === 'enrol'
-            ? 'Your administrator requires two-factor authentication for your account.'
-            : useRecovery ? 'Enter one of your recovery codes.' : 'Enter the 6-digit code from your authenticator app.'}
+            ? t('Your administrator requires two-factor authentication for your account.')
+            : useRecovery ? t('Enter one of your recovery codes.') : t('Enter the 6-digit code from your authenticator app.')}
         </p>
       </div>
 
@@ -150,7 +154,7 @@ const TwoFaStep: React.FC<Props> = ({ challenge, onComplete, onBack }) => {
         ) : (
           <>
             {error ? <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><div>{error}</div></div>
-              : <p className="aw-meta" style={{ textAlign: 'center' }}>Preparing…</p>}
+              : <p className="aw-meta" style={{ textAlign: 'center' }}>{t('Preparing…')}</p>}
           </>
         )
       ) : (
@@ -166,22 +170,22 @@ const TwoFaStep: React.FC<Props> = ({ challenge, onComplete, onBack }) => {
           {challenge.rememberDays > 0 && !useRecovery && (
             <label className="aw-inline" style={{ gap: 8, cursor: 'pointer', alignItems: 'center', fontWeight: 600 }}>
               <input type="checkbox" checked={remember} onChange={() => setRemember((r) => !r)} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
-              Remember this device for {challenge.rememberDays} days
+              {t('Remember this device for')} {challenge.rememberDays} days
             </label>
           )}
           {error && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><div>{error}</div></div>}
           <button type="submit" className="aw-btn aw-btn-primary" disabled={busy || !code.trim()}>
-            {busy && <RotateCcw size={14} className="aw-spin" />} {busy ? 'Verifying…' : 'Verify'}
+            {busy && <RotateCcw size={14} className="aw-spin" />} {busy ? t('Verifying…') : t('Verify')}
           </button>
           <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" disabled={busy}
             onClick={() => { setUseRecovery((r) => !r); setCode(''); setError(''); }}>
-            {useRecovery ? 'Use my authenticator app instead' : 'Use a recovery code'}
+            {useRecovery ? t('Use my authenticator app instead') : t('Use a recovery code')}
           </button>
         </form>
       )}
 
       {!codes && (
-        <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" disabled={busy} onClick={onBack}>Back to sign in</button>
+        <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" disabled={busy} onClick={onBack}>{t('Back to sign in')}</button>
       )}
     </div>
   );

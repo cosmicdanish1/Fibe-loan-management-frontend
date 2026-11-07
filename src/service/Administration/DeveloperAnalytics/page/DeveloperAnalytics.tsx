@@ -5,6 +5,7 @@ import { apiService } from '../../../../services/api';
 import { useComponentAnalytics } from '../../../../hooks/useAnalytics';
 import { AnalyticsErrorBoundary } from '../../../../components/analytics/AnalyticsErrorBoundary';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -34,6 +35,7 @@ interface AnalyticsStatus {
 }
 
 const DeveloperAnalytics: React.FC = () => {
+  const { t } = useTranslation();
   const analytics = useComponentAnalytics('DeveloperAnalytics');
   
   const [analyticsConfig, setAnalyticsConfig] = useState<AnalyticsSettings>({
@@ -96,7 +98,7 @@ const DeveloperAnalytics: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load analytics settings:', error);
-      message.error('Failed to load analytics settings');
+      message.error(t('Failed to load analytics settings'));
     } finally {
       setLoading(false);
     }
@@ -128,7 +130,7 @@ const DeveloperAnalytics: React.FC = () => {
       });
 
       if (response.success) {
-        message.success('Analytics settings saved successfully');
+        message.success(t('Analytics settings saved successfully'));
         await loadStatus(); // Refresh status after saving
         
         analytics.trackFeatureUsage({
@@ -138,7 +140,7 @@ const DeveloperAnalytics: React.FC = () => {
           successStatus: true,
         });
       } else {
-        message.error('Failed to save analytics settings');
+        message.error(t('Failed to save analytics settings'));
         analytics.trackFeatureUsage({
           featureCategory: 'Analytics',
           featureName: 'Save Settings',
@@ -149,7 +151,7 @@ const DeveloperAnalytics: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to save analytics settings:', error);
-      message.error('Failed to save analytics settings');
+      message.error(t('Failed to save analytics settings'));
       analytics.trackError(error as Error, 'DeveloperAnalytics', 'Save Settings');
     } finally {
       setSaving(false);
@@ -188,7 +190,7 @@ const DeveloperAnalytics: React.FC = () => {
       anonymize_user_data: true,
       exclude_sensitive_data: true,
     });
-    message.info('Settings reset to defaults');
+    message.info(t('Settings reset to defaults'));
     
     analytics.trackButtonClick('Reset to Defaults', 'Analytics');
   };
@@ -210,28 +212,27 @@ const DeveloperAnalytics: React.FC = () => {
             <div>
               <Title level={3} className="mb-2 flex items-center">
                 <BarChartOutlined className="mr-3 text-blue-600" />
-                Developer Analytics & Tracking
+                {t('Developer Analytics & Tracking')}
               </Title>
               <Paragraph className="text-gray-600 mb-0">
-                Configure analytics tracking for development insights and user behavior analysis.
-                This system helps developers understand application usage patterns and identify issues.
+                {t('Configure analytics tracking for development insights and user behavior analysis. This system helps developers understand application usage patterns and identify issues.')}
               </Paragraph>
             </div>
             <div className="text-right">
-              <Text type="secondary">Status: </Text>
+              <Text type="secondary">{t('Status:')} </Text>
               <Text strong className={status.enabled ? 'text-green-600' : 'text-red-600'}>
-                {status.enabled ? 'Enabled' : 'Disabled'}
+                {status.enabled ? t('Enabled') : t('Disabled')}
               </Text>
             </div>
           </div>
         </Card>
 
         {/* Status Overview */}
-        <Card title="Analytics Status Overview" className="shadow-sm">
+        <Card title={t('Analytics Status Overview')} className="shadow-sm">
           <Row gutter={16}>
             <Col span={6}>
               <Statistic
-                title="Active Sessions"
+                title={t('Active Sessions')}
                 value={status.active_sessions}
                 prefix={<ClockCircleOutlined />}
                 valueStyle={{ color: '#1890ff' }}
@@ -239,7 +240,7 @@ const DeveloperAnalytics: React.FC = () => {
             </Col>
             <Col span={6}>
               <Statistic
-                title="Total Errors"
+                title={t('Total Errors')}
                 value={status.total_errors}
                 prefix={<BugOutlined />}
                 valueStyle={{ color: status.total_errors > 0 ? '#ff4d4f' : '#52c41a' }}
@@ -247,7 +248,7 @@ const DeveloperAnalytics: React.FC = () => {
             </Col>
             <Col span={6}>
               <Statistic
-                title="Unresolved Errors"
+                title={t('Unresolved Errors')}
                 value={status.unresolved_errors}
                 prefix={<BugOutlined />}
                 valueStyle={{ color: status.unresolved_errors > 0 ? '#ff4d4f' : '#52c41a' }}
@@ -255,7 +256,7 @@ const DeveloperAnalytics: React.FC = () => {
             </Col>
             <Col span={6}>
               <Statistic
-                title="Tracking Level"
+                title={t('Tracking Level')}
                 value={status.tracking_level}
                 prefix={<SettingOutlined />}
                 valueStyle={{ color: '#722ed1' }}
@@ -265,17 +266,16 @@ const DeveloperAnalytics: React.FC = () => {
         </Card>
 
         {/* Main Settings */}
-        <Card title="Analytics Configuration" className="shadow-sm">
+        <Card title={t('Analytics Configuration')} className="shadow-sm">
           
           {/* Enable/Disable Analytics */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <Text strong className="text-lg">Enable Analytics Tracking</Text>
+                <Text strong className="text-lg">{t('Enable Analytics Tracking')}</Text>
                 <br />
                 <Text type="secondary">
-                  Master switch to enable or disable all analytics tracking. 
-                  When disabled, no user data will be collected.
+                  {t('Master switch to enable or disable all analytics tracking. When disabled, no user data will be collected.')}
                 </Text>
               </div>
               <Switch
@@ -287,8 +287,8 @@ const DeveloperAnalytics: React.FC = () => {
             
             {!analyticsConfig.analytics_enabled && (
               <Alert
-                message="Analytics Disabled"
-                description="Analytics tracking is currently disabled. Enable it to start collecting usage data and error reports."
+                message={t('Analytics Disabled')}
+                description={t('Analytics tracking is currently disabled. Enable it to start collecting usage data and error reports.')}
                 type="warning"
                 showIcon
                 className="mb-4"
@@ -300,9 +300,9 @@ const DeveloperAnalytics: React.FC = () => {
 
           {/* Tracking Level */}
           <div className="mb-6">
-            <Text strong className="block mb-2">Tracking Level</Text>
+            <Text strong className="block mb-2">{t('Tracking Level')}</Text>
             <Text type="secondary" className="block mb-3">
-              Choose how much data to collect. Higher levels provide more insights but use more storage.
+              {t('Choose how much data to collect. Higher levels provide more insights but use more storage.')}
             </Text>
             <Select
               value={analyticsConfig.tracking_level}
@@ -312,26 +312,26 @@ const DeveloperAnalytics: React.FC = () => {
             >
               <Option value="minimal">
                 <div>
-                  <div>Minimal</div>
-                  <div className="text-xs text-gray-500">Only errors and critical events</div>
+                  <div>{t('Minimal')}</div>
+                  <div className="text-xs text-gray-500">{t('Only errors and critical events')}</div>
                 </div>
               </Option>
               <Option value="standard">
                 <div>
-                  <div>Standard</div>
-                  <div className="text-xs text-gray-500">Errors, page views, and basic interactions</div>
+                  <div>{t('Standard')}</div>
+                  <div className="text-xs text-gray-500">{t('Errors, page views, and basic interactions')}</div>
                 </div>
               </Option>
               <Option value="detailed">
                 <div>
-                  <div>Detailed</div>
-                  <div className="text-xs text-gray-500">All interactions, performance metrics</div>
+                  <div>{t('Detailed')}</div>
+                  <div className="text-xs text-gray-500">{t('All interactions, performance metrics')}</div>
                 </div>
               </Option>
               <Option value="debug">
                 <div>
-                  <div>Debug</div>
-                  <div className="text-xs text-gray-500">Everything including debug information</div>
+                  <div>{t('Debug')}</div>
+                  <div className="text-xs text-gray-500">{t('Everything including debug information')}</div>
                 </div>
               </Option>
             </Select>
@@ -341,15 +341,15 @@ const DeveloperAnalytics: React.FC = () => {
 
           {/* Privacy Settings */}
           <div className="mb-6">
-            <Text strong className="block mb-3">Privacy & Security Settings</Text>
+            <Text strong className="block mb-3">{t('Privacy & Security Settings')}</Text>
             
             <Space direction="vertical" className="w-full" size="middle">
               <div className="flex items-center justify-between">
                 <div>
-                  <Text>Anonymize User Data</Text>
+                  <Text>{t('Anonymize User Data')}</Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    Replace usernames and personal identifiers with anonymous tokens
+                    {t('Replace usernames and personal identifiers with anonymous tokens')}
                   </Text>
                 </div>
                 <Switch
@@ -361,10 +361,10 @@ const DeveloperAnalytics: React.FC = () => {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Text>Exclude Sensitive Data</Text>
+                  <Text>{t('Exclude Sensitive Data')}</Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    Automatically filter out passwords, tokens, and other sensitive information
+                    {t('Automatically filter out passwords, tokens, and other sensitive information')}
                   </Text>
                 </div>
                 <Switch
@@ -380,14 +380,14 @@ const DeveloperAnalytics: React.FC = () => {
 
           {/* Data Management */}
           <div className="mb-6">
-            <Text strong className="block mb-3">Data Management</Text>
+            <Text strong className="block mb-3">{t('Data Management')}</Text>
             
             <Row gutter={16}>
               <Col span={12}>
                 <div className="mb-4">
-                  <Text className="block mb-2">Data Retention (Days)</Text>
+                  <Text className="block mb-2">{t('Data Retention (Days)')}</Text>
                   <Text type="secondary" className="block mb-2 text-sm">
-                    How long to keep analytics data before automatic cleanup
+                    {t('How long to keep analytics data before automatic cleanup')}
                   </Text>
                   <InputNumber
                     value={analyticsConfig.data_retention_days}
@@ -402,9 +402,9 @@ const DeveloperAnalytics: React.FC = () => {
               
               <Col span={12}>
                 <div className="mb-4">
-                  <Text className="block mb-2">Error Alert Threshold</Text>
+                  <Text className="block mb-2">{t('Error Alert Threshold')}</Text>
                   <Text type="secondary" className="block mb-2 text-sm">
-                    Number of errors before triggering alerts
+                    {t('Number of errors before triggering alerts')}
                   </Text>
                   <InputNumber
                     value={analyticsConfig.error_threshold}
@@ -421,10 +421,10 @@ const DeveloperAnalytics: React.FC = () => {
             <Space direction="vertical" className="w-full" size="middle">
               <div className="flex items-center justify-between">
                 <div>
-                  <Text>Auto Cleanup</Text>
+                  <Text>{t('Auto Cleanup')}</Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    Automatically delete old data based on retention period
+                    {t('Automatically delete old data based on retention period')}
                   </Text>
                 </div>
                 <Switch
@@ -436,10 +436,10 @@ const DeveloperAnalytics: React.FC = () => {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Text>Data Compression</Text>
+                  <Text>{t('Data Compression')}</Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    Compress old data to save storage space
+                    {t('Compress old data to save storage space')}
                   </Text>
                 </div>
                 <Switch
@@ -455,14 +455,14 @@ const DeveloperAnalytics: React.FC = () => {
 
           {/* Performance Settings */}
           <div className="mb-6">
-            <Text strong className="block mb-3">Performance Settings</Text>
+            <Text strong className="block mb-3">{t('Performance Settings')}</Text>
             
             <Row gutter={16}>
               <Col span={8}>
                 <div className="mb-4">
-                  <Text className="block mb-2">Batch Size</Text>
+                  <Text className="block mb-2">{t('Batch Size')}</Text>
                   <Text type="secondary" className="block mb-2 text-sm">
-                    Number of events to process in each batch
+                    {t('Number of events to process in each batch')}
                   </Text>
                   <InputNumber
                     value={analyticsConfig.batch_size}
@@ -477,9 +477,9 @@ const DeveloperAnalytics: React.FC = () => {
               
               <Col span={8}>
                 <div className="mb-4">
-                  <Text className="block mb-2">Flush Interval (Seconds)</Text>
+                  <Text className="block mb-2">{t('Flush Interval (Seconds)')}</Text>
                   <Text type="secondary" className="block mb-2 text-sm">
-                    How often to send queued events to server
+                    {t('How often to send queued events to server')}
                   </Text>
                   <InputNumber
                     value={analyticsConfig.flush_interval_seconds}
@@ -494,9 +494,9 @@ const DeveloperAnalytics: React.FC = () => {
               
               <Col span={8}>
                 <div className="mb-4">
-                  <Text className="block mb-2">Max Queue Size</Text>
+                  <Text className="block mb-2">{t('Max Queue Size')}</Text>
                   <Text type="secondary" className="block mb-2 text-sm">
-                    Maximum events to queue before forced flush
+                    {t('Maximum events to queue before forced flush')}
                   </Text>
                   <InputNumber
                     value={analyticsConfig.max_queue_size}
@@ -515,14 +515,14 @@ const DeveloperAnalytics: React.FC = () => {
 
           {/* Alerts */}
           <div className="mb-6">
-            <Text strong className="block mb-3">Alert Settings</Text>
+            <Text strong className="block mb-3">{t('Alert Settings')}</Text>
             
             <Row gutter={16}>
               <Col span={12}>
                 <div className="mb-4">
-                  <Text className="block mb-2">Performance Threshold (ms)</Text>
+                  <Text className="block mb-2">{t('Performance Threshold (ms)')}</Text>
                   <Text type="secondary" className="block mb-2 text-sm">
-                    Alert when operations exceed this duration
+                    {t('Alert when operations exceed this duration')}
                   </Text>
                   <InputNumber
                     value={analyticsConfig.performance_threshold_ms}
@@ -538,10 +538,10 @@ const DeveloperAnalytics: React.FC = () => {
               <Col span={12}>
                 <div className="flex items-center justify-between h-full">
                   <div>
-                    <Text>Real-time Alerts</Text>
+                    <Text>{t('Real-time Alerts')}</Text>
                     <br />
                     <Text type="secondary" className="text-sm">
-                      Enable immediate notifications for critical issues
+                      {t('Enable immediate notifications for critical issues')}
                     </Text>
                   </div>
                   <Switch
@@ -557,12 +557,12 @@ const DeveloperAnalytics: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex justify-between items-center pt-4 border-t">
             <Button onClick={resetToDefaults} disabled={saving}>
-              Reset to Defaults
+              {t('Reset to Defaults')}
             </Button>
             
             <Space>
               <Button onClick={loadSettings} loading={loading}>
-                Reload Settings
+                {t('Reload Settings')}
               </Button>
               <Button 
                 type="primary" 
@@ -570,33 +570,33 @@ const DeveloperAnalytics: React.FC = () => {
                 loading={saving}
                 icon={<DatabaseOutlined />}
               >
-                Save Settings
+                {t('Save Settings')}
               </Button>
             </Space>
           </div>
         </Card>
 
         {/* Information Card */}
-        <Card title="Important Information" className="shadow-sm">
+        <Card title={t('Important Information')} className="shadow-sm">
           <Alert
-            message="Analytics Data Storage"
-            description="Analytics data is stored in a separate database (EMP_Analytics_DB) and does not affect your main application data. All tracking is optional and can be disabled at any time."
+            message={t('Analytics Data Storage')}
+            description={t('Analytics data is stored in a separate database (EMP_Analytics_DB) and does not affect your main application data. All tracking is optional and can be disabled at any time.')}
             type="info"
             showIcon
             className="mb-4"
           />
           
           <Alert
-            message="Privacy Compliance"
-            description="This analytics system is designed to be privacy-compliant. Personal data is anonymized by default, and sensitive information is automatically excluded from tracking."
+            message={t('Privacy Compliance')}
+            description={t('This analytics system is designed to be privacy-compliant. Personal data is anonymized by default, and sensitive information is automatically excluded from tracking.')}
             type="success"
             showIcon
             className="mb-4"
           />
           
           <Alert
-            message="Performance Impact"
-            description="Analytics tracking is designed to have minimal impact on application performance. Data is processed asynchronously and sent in batches to avoid blocking the user interface."
+            message={t('Performance Impact')}
+            description={t('Analytics tracking is designed to have minimal impact on application performance. Data is processed asynchronously and sent in batches to avoid blocking the user interface.')}
             type="warning"
             showIcon
           />

@@ -5,6 +5,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../i18n';
 
 interface SearchResult {
   id: string;
@@ -68,7 +70,7 @@ const showNotFoundDialog = async (term: string, typeLabel: string) => {
   const detail = `No record matches "${term}" for ${typeLabel}.`;
   if ((window as any).electronAPI?.showMessageBox) {
     await (window as any).electronAPI.showMessageBox({
-      type: 'info', title: 'Find', message, detail, buttons: ['OK'], defaultId: 0,
+      type: 'info', title: tLabel('Find'), message, detail, buttons: ['OK'], defaultId: 0,
     });
   } else {
     alert(`${message}\n\n${detail}`);
@@ -76,6 +78,7 @@ const showNotFoundDialog = async (term: string, typeLabel: string) => {
 };
 
 const Find: React.FC = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState('memberNo');
   const [isLoading, setIsLoading] = useState(false);
@@ -140,17 +143,17 @@ const Find: React.FC = () => {
       {/* Header */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Find</h1>
-          <p className="aw-desc">Global Member &amp; Account Search</p>
+          <h1 className="aw-title">{t('Find')}</h1>
+          <p className="aw-desc">{t('Global Member & Account Search')}</p>
         </div>
         <div className="aw-actions">
           {isLoading && (
             <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
-              <RefreshCw size={12} className="aw-spin" /> Searching...
+              <RefreshCw size={12} className="aw-spin" /> {t('Searching...')}
             </span>
           )}
           <button type="button" onClick={clearSearch} className="aw-btn aw-btn-secondary">
-            <RefreshCw size={13} /> Clear
+            <RefreshCw size={13} /> {t('Clear')}
           </button>
         </div>
       </div>
@@ -163,11 +166,11 @@ const Find: React.FC = () => {
           <section className="aw-card" style={{ flex: 'none' }}>
             <div className="aw-card-head">
               <span className="aw-card-icon"><Search size={14} /></span>
-              <h2 className="aw-card-title">Search Parameters</h2>
+              <h2 className="aw-card-title">{t('Search Parameters')}</h2>
             </div>
             <div className="aw-stack">
               <div>
-                <span className="aw-label" id="find-what-label">Find What</span>
+                <span className="aw-label" id="find-what-label">{t('Find What')}</span>
                 <div className="aw-chips" role="radiogroup" aria-labelledby="find-what-label">
                   {SEARCH_TYPES.map(opt => (
                     <button
@@ -189,8 +192,8 @@ const Find: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  placeholder="Enter search term..."
-                  aria-label="Search term"
+                  placeholder={t('Enter search term...')}
+                  aria-label={t('Search term')}
                   className="aw-input"
                 />
                 <button
@@ -198,7 +201,7 @@ const Find: React.FC = () => {
                   onClick={handleSearch}
                   disabled={!searchQuery.trim() || isLoading}
                   className="aw-btn aw-btn-primary">
-                  <Search size={13} /> {isLoading ? 'Searching...' : 'Find'}
+                  <Search size={13} /> {isLoading ? t('Searching...') : t('Find')}
                 </button>
               </div>
               {error && (
@@ -215,9 +218,9 @@ const Find: React.FC = () => {
               <div className="aw-main-head">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                   <span className="aw-card-icon"><FileText size={14} /></span>
-                  <h2 className="aw-card-title">Results</h2>
+                  <h2 className="aw-card-title">{t('Results')}</h2>
                 </div>
-                <span className="aw-pill">{results.length} record(s)</span>
+                <span className="aw-pill">{t('{{1}} record(s)', { 1: results.length })}</span>
               </div>
               <div className="aw-main-body" style={{ padding: 0 }}>
                 <table className="aw-table">
@@ -248,14 +251,14 @@ const Find: React.FC = () => {
               {searchQuery ? (
                 <div className="aw-empty">
                   <Search size={34} />
-                  <strong className="aw-strong">No Results Found</strong>
-                  <span>Try adjusting your search criteria</span>
+                  <strong className="aw-strong">{t('No Results Found')}</strong>
+                  <span>{t('Try adjusting your search criteria')}</span>
                 </div>
               ) : (
                 <div className="aw-empty">
                   <FileText size={34} />
-                  <strong className="aw-strong">Ready to Search</strong>
-                  <span>Select a search type and enter your query</span>
+                  <strong className="aw-strong">{t('Ready to Search')}</strong>
+                  <span>{t('Select a search type and enter your query')}</span>
                 </div>
               )}
             </section>

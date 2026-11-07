@@ -8,24 +8,11 @@ import {
     IncomeHead
 } from '../interface/CompulsoryDepositInterfaces';
 import { apiService } from '../../../../services/api';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 // BUG FIX: removed 'message' and 'Modal' from antd — both silently fail in Electron renderer windows.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).
-
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
 
 // BUG FIX: Modal.confirm is also broken in Electron — replaced with native question dialog.
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
@@ -45,6 +32,7 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
 };
 
 export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
+  const { t } = useTranslation();
     const [formData, setFormData] = useState<DepositTransaction>({
         amount: '',
         incomeHead: '',
@@ -71,7 +59,7 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
             }
         } catch (error: any) {
             console.error('Error fetching CD data', error);
-            await showDialog('error', 'electron-react-ts', 'Data Load Failed', `Failed to load members or income heads.\n\nTechnical: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Data Load Failed'), t('Failed to load members or income heads. Technical: {{1}}', { 1: error.message }));
         } finally {
             setIsLoading(false);
         }
@@ -94,7 +82,7 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
     const distributeEqually = useCallback(async () => {
         const total = parseFloat(formData.amount);
         if (isNaN(total) || total <= 0) {
-            await showDialog('warning', 'electron-react-ts', 'Invalid Total Amount', 'Please enter a valid total amount before distributing equally.');
+            await showDialog('warning', 'electron-react-ts', t('Invalid Total Amount'), t('Please enter a valid total amount before distributing equally.'));
             return;
         }
         if (members.length === 0) return;
@@ -109,7 +97,7 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
         await showDialog(
             'info',
             'electron-react-ts',
-            'Amount Distributed',
+            t('Amount Distributed'),
             `₹${(totalPaise / 100).toLocaleString('en-IN')} distributed among ${count} members.\nPer member: ₹${share(count - 1)}` +
             (remainder > 0 ? `  (first ${remainder} member(s): ₹${share(0)} - the remaining paise are added so the total matches)` : '')
         );
@@ -118,7 +106,7 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
     const handleSave = async () => {
         if (postingRef.current) return;
         if (!formData.incomeHead) {
-            await showDialog('error', 'electron-react-ts', 'Income Head Required', 'Please select an Income Head (Debit GL code) before posting.');
+            await showDialog('error', 'electron-react-ts', t('Income Head Required'), t('Please select an Income Head (Debit GL code) before posting.'));
             return;
         }
 
@@ -134,7 +122,7 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
             .filter(d => d.postAmount > 0);
 
         if (validDistributions.length === 0) {
-            await showDialog('error', 'electron-react-ts', 'No Amounts Entered', 'No valid credit amounts found in the members list. Please enter amounts before posting.');
+            await showDialog('error', 'electron-react-ts', t('No Amounts Entered'), t('No valid credit amounts found in the members list. Please enter amounts before posting.'));
             return;
         }
 
@@ -163,7 +151,7 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    'CD Transaction Posted Successfully!',
+                    t('CD Transaction Posted Successfully!'),
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `VOUCHER NO    : ${response.data?.voucherNo || '—'}\n` +
                     `DEBIT HEAD    : ${formData.incomeHead}\n` +
@@ -177,10 +165,10 @@ export const useCompulsoryDeposit = (): CompulsoryDepositHookReturn => {
                 fetchData(); // Refresh member list with updated balances
                 setFormData(prev => ({ ...prev, amount: '' }));
             } else {
-                await showDialog('error', 'electron-react-ts', 'CD Posting Failed', response.message || 'An unexpected error occurred. Please try again.');
+                await showDialog('error', 'electron-react-ts', t('CD Posting Failed'), response.message || t('An unexpected error occurred. Please try again.'));
             }
         } catch (error: any) {
-            await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: error.message }));
         } finally {
             postingRef.current = false;
             setIsPosting(false);

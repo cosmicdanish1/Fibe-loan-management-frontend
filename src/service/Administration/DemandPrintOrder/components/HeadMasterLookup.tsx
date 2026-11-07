@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, RefreshCw } from "lucide-react";
 import { apiService } from "../../../../services/api";
+import { useTranslation } from 'react-i18next';
 
 interface HeadMasterRow {
   code: string;
@@ -16,6 +17,7 @@ interface HeadMasterLookupProps {
 }
 
 const HeadMasterLookup: React.FC<HeadMasterLookupProps> = ({ onSelect }) => {
+  const { t } = useTranslation();
   const [heads, setHeads] = useState<HeadMasterRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -53,8 +55,8 @@ const HeadMasterLookup: React.FC<HeadMasterLookupProps> = ({ onSelect }) => {
           <Search size={13} />
           <input
             type="text"
-            placeholder="Search heads..."
-            aria-label="Search heads"
+            placeholder={t('Search heads...')}
+            aria-label={t('Search heads')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="aw-input"
@@ -67,16 +69,16 @@ const HeadMasterLookup: React.FC<HeadMasterLookupProps> = ({ onSelect }) => {
         {loading ? (
           <div className="aw-empty" style={{ padding: 32 }}>
             <RefreshCw size={22} className="aw-spin" />
-            <span className="aw-meta">Loading heads…</span>
+            <span className="aw-meta">{t('Loading heads…')}</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="aw-empty" style={{ padding: 32 }}>
-            <span className="aw-meta">No matching heads</span>
+            <span className="aw-meta">{t('No matching heads')}</span>
           </div>
         ) : (
           <table className="aw-table">
             <thead>
-              <tr><th>Code</th><th>Head Type</th><th>Interest</th><th>Head Name</th></tr>
+              <tr><th>{t('Code')}</th><th>{t('Head Type')}</th><th>{t('Interest')}</th><th>{t('Head Name')}</th></tr>
             </thead>
             <tbody>
               {filtered.map((h, idx) => (
@@ -98,8 +100,8 @@ const HeadMasterLookup: React.FC<HeadMasterLookupProps> = ({ onSelect }) => {
       </div>
 
       <div className="aw-main-foot">
-        <span>Head Count</span>
-        <span style={{ color: 'var(--aw-accent)', fontWeight: 700 }}>{filtered.length} Heads</span>
+        <span>{t('Head Count')}</span>
+        <span style={{ color: 'var(--aw-accent)', fontWeight: 700 }}>{filtered.length} {t('Heads')}</span>
       </div>
     </div>
   );

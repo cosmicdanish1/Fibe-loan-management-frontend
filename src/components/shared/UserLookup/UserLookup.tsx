@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Input, Table, Badge, Button, Empty, message, Typography } from 'antd';
 import { SearchOutlined, UserOutlined, LoadingOutlined } from '@ant-design/icons';
 import { apiService } from '../../../services/api';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 
@@ -23,6 +24,7 @@ interface UserLookupProps {
 }
 
 const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = false }) => {
+  const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +56,7 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
         } catch (err: any) {
             console.error('Fetch error:', err);
             setError(err.message || 'Failed to load users. Please try again.');
-            message.error('Failed to load users');
+            message.error(t('Failed to load users'));
         } finally {
             setIsLoading(false);
         }
@@ -118,7 +120,7 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
             render: (active: boolean) => (
                 <Badge
                     status={active ? 'success' : 'error'}
-                    text={active ? 'Active' : 'Inactive'}
+                    text={active ? t('Active') : t('Inactive')}
                     style={{ fontSize: '10px', fontWeight: 'bold' }}
                 />
             ),
@@ -135,10 +137,10 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
                             <UserOutlined className="text-indigo-600 text-xl" />
                         </div>
                         <div>
-                            <h1 className="text-base font-black text-slate-800 tracking-tight m-0 leading-none uppercase">Identity Directory</h1>
+                            <h1 className="text-base font-black text-slate-800 tracking-tight m-0 leading-none uppercase">{t('Identity Directory')}</h1>
                             <div className="flex items-center gap-2 mt-1">
                                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                                <span className="fz-small text-slate-400 font-bold uppercase tracking-widest">Secure Access Registry</span>
+                                <span className="fz-small text-slate-400 font-bold uppercase tracking-widest">{t('Secure Access Registry')}</span>
                             </div>
                         </div>
                     </div>
@@ -156,7 +158,7 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
                 <div className="relative group">
                     <Input
                         ref={inputRef}
-                        placeholder="Search identities by name, role or username..."
+                        placeholder={t('Search identities by name, role or username...')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         prefix={<SearchOutlined className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />}
@@ -185,7 +187,7 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
                                     <Text type="danger" className="font-medium">{error}</Text>
                                     <br />
                                     <Button type="primary" size="small" className="mt-4" onClick={() => fetchUsers(searchTerm)}>
-                                        Retry Connection
+                                        {t('Retry Connection')}
                                     </Button>
                                 </div>
                             }
@@ -206,7 +208,7 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
                         scroll={{ y: isModal ? '400px' : 'calc(100vh - 180px)', x: 'max-content' }}
                         className="user-lookup-table compact-table"
                         locale={{
-                            emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No identities matching your search" />
+                            emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('No identities matching your search')} />
                         }}
                     />
                 )}
@@ -216,11 +218,11 @@ const UserLookup: React.FC<UserLookupProps> = ({ onSelect, onClose, isModal = fa
             <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Text className="fz-caption text-slate-500">
-                        <span className="font-bold text-slate-700">{users.length}</span> Identities Found
+                        <span className="font-bold text-slate-700">{users.length}</span> {t('Identities Found')}
                     </Text>
                 </div>
                 <Text className="fz-small text-slate-400 font-medium italic uppercase tracking-tighter">
-                    Double-click row to load profile • ESC to exit
+                    {t('Double-click row to load profile • ESC to exit')}
                 </Text>
             </div>
 

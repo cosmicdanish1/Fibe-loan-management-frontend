@@ -1,0 +1,16 @@
+/* Indic and Arabic scripts use the system fonts (Nirmala UI, Segoe UI), which ship with Windows,
+   so nothing is downloaded on LAN PCs. These scripts have taller glyphs than Latin: give lines room. */
+html[lang]:not([lang="en"]) body {
+  line-height: 1.65;
+}
+
+/* Right-to-left (Urdu): flex rows, grids and tables mirror by themselves; keep numbers, codes and
+   inputs that hold Latin text reading left-to-right. */
+html[dir="rtl"] input[type="number"],
+html[dir="rtl"] input[type="tel"],
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] .tabular-nums,
+html[dir="rtl"] .font-mono {
+  direction: ltr;
+  text-align: right;
+}

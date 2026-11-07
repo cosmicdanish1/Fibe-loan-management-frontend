@@ -9,12 +9,14 @@ import { IS_LOGIN_WINDOW } from '../../utils/windowIdentity';
 import fibeLogo from '../../assets/fibe-logo.png';
 import { apiService } from '../../services/api';
 import LoadingAnimation from '../../components/loaders/LoadingAnimation';
+import { useTranslation } from 'react-i18next';
 
 const apiServiceAdopt = (authData: any) => apiService.adoptAuth(authData);
 
 const REMEMBERED_USERNAME_KEY = 'lms_remembered_username';
 
 const LoginForm: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, finishLogin, isAuthenticated, isLoading, error, clearError } = useAuth();
   const [challenge, setChallenge] = useState<TwoFaChallenge | null>(null);
@@ -104,11 +106,11 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
     if (isSubmitting || isLoading || success) return;
     if (!username.trim()) {
-      setFieldError('Please enter your username to continue.');
+      setFieldError(t('Please enter your username to continue.'));
       return;
     }
     if (!password) {
-      setFieldError('Please enter your password to continue.');
+      setFieldError(t('Please enter your password to continue.'));
       return;
     }
     setFieldError('');
@@ -145,8 +147,8 @@ const LoginForm: React.FC = () => {
       {IS_LOGIN_WINDOW && (
         <div className="login-bar" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
           <div className="aw-actions" style={noDrag}>
-            <button type="button" className="aw-icon-btn is-sm" onClick={handleMinimize} aria-label="Minimize" data-tip="Minimize" data-tip-pos="bottom-end"><Minus size={14} /></button>
-            <button type="button" className="aw-icon-btn is-sm is-danger" onClick={handleCancel} aria-label="Close" data-tip="Close" data-tip-pos="bottom-end"><X size={14} /></button>
+            <button type="button" className="aw-icon-btn is-sm" onClick={handleMinimize} aria-label={t('Minimize')} data-tip={t('Minimize')} data-tip-pos="bottom-end"><Minus size={14} /></button>
+            <button type="button" className="aw-icon-btn is-sm is-danger" onClick={handleCancel} aria-label={t('Close')} data-tip={t('Close')} data-tip-pos="bottom-end"><X size={14} /></button>
           </div>
         </div>
       )}
@@ -155,8 +157,8 @@ const LoginForm: React.FC = () => {
         <div className="login-brand aw-fade-in">
           <div className="login-mark"><img src={fibeLogo} alt="" /></div>
           <div>
-            <h1 className="login-name">Fibe <span>Loan Management</span></h1>
-            <p className="login-tag">Sign in to your loan management workspace</p>
+            <h1 className="login-name">{t('Fibe')} <span>{t('Loan Management')}</span></h1>
+            <p className="login-tag">{t('Sign in to your loan management workspace')}</p>
           </div>
         </div>
 
@@ -167,29 +169,29 @@ const LoginForm: React.FC = () => {
         ) : (
         <form onSubmit={handleSubmit} className="aw-card login-card aw-fade-in" noValidate>
           <div className="login-card-head">
-            <h2>Welcome back</h2>
-            <p className="aw-meta">Enter your credentials to continue</p>
+            <h2>{t('Welcome back')}</h2>
+            <p className="aw-meta">{t('Enter your credentials to continue')}</p>
           </div>
 
           <div>
-            <label className="aw-label" htmlFor="login-username">Username</label>
+            <label className="aw-label" htmlFor="login-username">{t('Username')}</label>
             <div className="aw-input-wrap has-icon">
               <User size={14} />
               <input id="login-username" className="aw-input" value={username} autoComplete="off" disabled={busy}
-                placeholder="Enter your username"
+                placeholder={t('Enter your username')}
                 onChange={(e) => { setUsername(e.target.value); setFieldError(''); clearError(); }} />
             </div>
           </div>
 
           <div>
-            <label className="aw-label" htmlFor="login-password">Password</label>
+            <label className="aw-label" htmlFor="login-password">{t('Password')}</label>
             <div className="aw-input-wrap has-icon has-action">
               <Lock size={14} />
               <input id="login-password" className="aw-input" value={password} disabled={busy}
-                type={reveal ? 'text' : 'password'} placeholder="Enter your password"
+                type={reveal ? 'text' : 'password'} placeholder={t('Enter your password')}
                 onChange={(e) => { setPassword(e.target.value); setFieldError(''); clearError(); }} />
               <button type="button" className="aw-input-action" onClick={() => setReveal((r) => !r)}
-                aria-label={reveal ? 'Hide password' : 'Show password'} data-tip={reveal ? 'Hide password' : 'Show password'} data-tip-pos="bottom-end">
+                aria-label={reveal ? t('Hide password') : t('Show password')} data-tip={reveal ? t('Hide password') : t('Show password')} data-tip-pos="bottom-end">
                 {reveal ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
@@ -198,11 +200,11 @@ const LoginForm: React.FC = () => {
           <div className="login-row">
             <label className="login-remember">
               <input type="checkbox" checked={remember} onChange={() => setRemember((r) => !r)} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
-              Remember me
+              {t('Remember me')}
             </label>
             <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm"
               onClick={() => { clearError(); setFieldError(''); setForgot(true); }}>
-              Forgot password?
+              {t('Forgot password?')}
             </button>
           </div>
 
@@ -215,34 +217,34 @@ const LoginForm: React.FC = () => {
 
           <button type="submit" disabled={busy} className="aw-btn aw-btn-primary login-submit">
             {busy && <RotateCcw size={14} className="aw-spin" />}
-            {busy ? 'Signing in…' : 'Sign In'}
+            {busy ? t('Signing in…') : t('Sign In')}
             {!busy && <ArrowRight size={16} className="login-arrow" />}
           </button>
 
           <div className="login-secondary">
-            <button type="button" onClick={handleClear} disabled={busy} className="aw-btn aw-btn-ghost aw-btn-sm"><RotateCcw size={13} /> Clear</button>
+            <button type="button" onClick={handleClear} disabled={busy} className="aw-btn aw-btn-ghost aw-btn-sm"><RotateCcw size={13} /> {t('Clear')}</button>
             <span className="login-sep" />
-            <button type="button" onClick={handleCancel} disabled={busy} className="aw-btn aw-btn-ghost aw-btn-sm aw-btn-danger-text"><X size={13} /> Cancel</button>
+            <button type="button" onClick={handleCancel} disabled={busy} className="aw-btn aw-btn-ghost aw-btn-sm aw-btn-danger-text"><X size={13} /> {t('Cancel')}</button>
           </div>
         </form>
         )}
 
         <div className="login-trust aw-fade-in">
-          <span className="login-chip"><ShieldCheck size={12} /> Secure connection</span>
-          <span className="login-chip"><Lock size={12} /> Encrypted session</span>
+          <span className="login-chip"><ShieldCheck size={12} /> {t('Secure connection')}</span>
+          <span className="login-chip"><Lock size={12} /> {t('Encrypted session')}</span>
         </div>
       </div>
 
       <div className="aw-footer">
-        <span>{appVersion ? `Version ${appVersion}` : ''}</span>
+        <span>{appVersion ? t('Version {{1}}', { 1: appVersion }) : ''}</span>
       </div>
 
       {success && (
         <div className="aw-modal-backdrop aw-fade-in" style={{ position: 'absolute', inset: 0 }}>
           <div className="aw-card" style={{ alignItems: 'center', textAlign: 'center', minWidth: 260 }}>
             <CheckCircle2 size={44} style={{ color: 'var(--aw-success)' }} />
-            <h2 className="aw-card-title">Signed in</h2>
-            <p className="aw-meta">Preparing your dashboard…</p>
+            <h2 className="aw-card-title">{t('Signed in')}</h2>
+            <p className="aw-meta">{t('Preparing your dashboard…')}</p>
             <LoadingAnimation height={84} />
           </div>
         </div>

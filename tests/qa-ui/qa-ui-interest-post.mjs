@@ -1,0 +1,17 @@
+import { start, go, sleep, text } from './lib.mjs';
+const { browser, page } = await start();
+const w = [];
+page.on('request', (r) => { if (r.method() !== 'GET' && r.url().includes('/api/') && !r.url().includes('client-logs')) w.push('REQ ' + r.method() + ' ' + r.url().replace(/https?:\/\/[^/]+/, '') + ' ' + (r.postData() || '').slice(0, 300)); });
+page.on('response', async (r) => { if (r.request().method() !== 'GET' && r.url().includes('/api/') && !r.url().includes('client-logs')) { let b = ''; try { b = (await r.text()).slice(0, 500); } catch {} w.push('RES ' + r.status() + ' ' + b); } });
+await page.evaluate(() => { window.__msgs = []; window.__h = {}; window.electronAPI = { showMessageBox: async (o) => { window.__msgs.push({ t: o.type, m: o.message, d: (o.detail || '').slice(0, 500) }); return { response: 0 }; }, openNewWindow() {}, ipcRenderer: { on: (c, f) => { window.__h[c] = f; }, removeListener() {}, send() {} } }; });
+await go(page, '#/interest-calculation-posting'); await sleep(2000);
+const di = page.getByPlaceholder(/select date/i); await di.first().click(); await page.keyboard.press('Control+A'); await page.keyboard.type('01-Nov-2026'); await page.keyboard.press('Enter'); await sleep(800); console.log('DATES', await di.first().inputValue(), await di.nth(1).inputValue());
+await page.getByRole('button', { name: /Preview Interest List/ }).click();
+await page.waitForFunction(() => /Preview loaded|records? loaded|No eligible/i.test(document.body.innerText), null, { timeout: 120000 }).catch(() => console.log('preview wait timeout'));
+await sleep(1500);
+const post = page.getByRole('button', { name: /Post Transaction/ });
+console.log('post enabled?', await post.isEnabled());
+await post.click(); await page.waitForResponse((r) => r.url().includes('/interest') && r.request().method() === 'POST', { timeout: 120000 }).catch(() => {}); await sleep(5000);
+console.log('MSGS', JSON.stringify(await page.evaluate(() => window.__msgs)));
+console.log('WRITES', JSON.stringify(w));
+await browser.close();

@@ -1,3 +1,4 @@
+import { tLabel } from '../i18n';
 // Font choices for Settings → Font Style.
 //
 // Every option is a font that ships with Windows. Client PCs run on a LAN with
@@ -27,23 +28,23 @@ export interface FontOption {
 export const FONT_OPTIONS: FontOption[] = [
   {
     value: "'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
-    label: 'Segoe UI',
-    hint: 'Windows standard',
+    label: tLabel('Segoe UI'),
+    hint: tLabel('Windows standard'),
   },
   {
     value: "Calibri, 'Segoe UI', Arial, sans-serif",
-    label: 'Calibri',
-    hint: 'MS Office default',
+    label: tLabel('Calibri'),
+    hint: tLabel('MS Office default'),
   },
   {
     value: "Verdana, Geneva, 'Segoe UI', sans-serif",
-    label: 'Verdana',
-    hint: 'Easiest to read',
+    label: tLabel('Verdana'),
+    hint: tLabel('Easiest to read'),
   },
   {
     value: "Tahoma, Geneva, 'Segoe UI', sans-serif",
-    label: 'Tahoma',
-    hint: 'Fits more columns',
+    label: tLabel('Tahoma'),
+    hint: tLabel('Fits more columns'),
   },
 ];
 

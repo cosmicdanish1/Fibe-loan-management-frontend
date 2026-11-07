@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, User, ChevronDown, RefreshCw } from 'lucide-react';
 import { apiService } from '../../../services/api';
+import { useTranslation } from 'react-i18next';
 
 export interface MemberLookupData {
   memberNo: string;
@@ -34,6 +35,7 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
   variant = 'legacy',
   ariaLabel = 'Member number'
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<MemberLookupData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -185,8 +187,8 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
               onClick={handleLookupClick}
               disabled={disabled || isLoading}
               className="aw-input-action"
-              aria-label="Search members"
-              data-tip="Search members (or press PageUp)"
+              aria-label={t('Search members')}
+              data-tip={t('Search members (or press PageUp)')}
               data-tip-pos="bottom-end"
             >
               {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <Search size={13} />}
@@ -197,8 +199,8 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
         {isOpen && searchResults.length > 0 && (
           <div className="aw-suggest" role="listbox">
             <div className="aw-suggest-head">
-              <span>{searchResults.length} member(s) found</span>
-              <span>Enter to select</span>
+              <span>{searchResults.length} {t('member(s) found')}</span>
+              <span>{t('Enter to select')}</span>
             </div>
             {searchResults.map((member, index) => (
               <button
@@ -211,7 +213,7 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
               >
                 <span className="aw-strong font-mono">{member.memberNo}</span>
                 <span className="aw-strong" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{member.memberName}</span>
-                <span className="aw-meta" style={{ whiteSpace: 'nowrap' }}>{member.officeName}{member.officeNo ? ` · Office ${member.officeNo}` : ''}</span>
+                <span className="aw-meta" style={{ whiteSpace: 'nowrap' }}>{member.officeName}{member.officeNo ? ' · ' + t('Office {{1}}', { 1: member.officeNo }) : ''}</span>
               </button>
             ))}
           </div>
@@ -220,7 +222,7 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
         {isOpen && searchResults.length === 0 && !isLoading && searchTerm && (
           <div className="aw-suggest">
             <div className="aw-empty" style={{ padding: '14px 10px' }}>
-              <span>No members found for "{searchTerm}"</span>
+              <span>{t('No members found for "')}{searchTerm}"</span>
             </div>
           </div>
         )}
@@ -248,7 +250,7 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
             onClick={handleLookupClick}
             disabled={disabled || isLoading}
             className="px-2 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white border border-blue-600 rounded-r transition-colors flex items-center gap-1"
-            title="Search members (or press PageUp)"
+            title={t('Search members (or press PageUp)')}
           >
             {isLoading ? (
               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
@@ -267,10 +269,10 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-64 overflow-y-auto">
           <div className="p-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
             <span className="text-xs font-medium text-gray-600">
-              {searchResults.length} member(s) found
+              {searchResults.length} {t('member(s) found')}
             </span>
             <span className="text-xs text-gray-500">
-              Use ↑↓ arrows, Enter to select
+              {t('Use ↑↓ arrows, Enter to select')}
             </span>
           </div>
           
@@ -293,7 +295,7 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
                     <span className="truncate">{member.officeName}</span>
-                    <span>Office: {member.officeNo}</span>
+                    <span>{t('Office:')} {member.officeNo}</span>
                   </div>
                 </div>
               </div>
@@ -303,7 +305,7 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
           {searchResults.length >= 10 && (
             <div className="p-2 bg-gray-50 border-t border-gray-200 text-center">
               <span className="text-xs text-gray-500">
-                Type to search for more specific results
+                {t('Type to search for more specific results')}
               </span>
             </div>
           )}
@@ -315,7 +317,7 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg p-2">
           <div className="flex items-center gap-2 text-blue-600">
             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-            <span className="text-xs">Searching members...</span>
+            <span className="text-xs">{t('Searching members...')}</span>
           </div>
         </div>
       )}
@@ -325,8 +327,8 @@ const MemberLookupInput: React.FC<MemberLookupInputProps> = ({
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg p-2">
           <div className="text-center text-gray-500">
             <User className="w-6 h-6 mx-auto mb-1 text-gray-300" />
-            <p className="text-xs">No members found for "{searchTerm}"</p>
-            <p className="text-xs text-gray-400 mt-0.5">Try different search term</p>
+            <p className="text-xs">{t('No members found for "')}{searchTerm}"</p>
+            <p className="text-xs text-gray-400 mt-0.5">{t('Try different search term')}</p>
           </div>
         </div>
       )}

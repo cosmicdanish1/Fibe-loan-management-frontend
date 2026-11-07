@@ -9,20 +9,8 @@ import { useDemandPrintOrder } from "../hook/useDemandPrintOrder";
 import MDAmountDetails from "../components/MDAmountDetails";
 import HeadMasterLookup from "../components/HeadMasterLookup";
 import AwDialog from '@/components/shared/kit/AwDialog';
-
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail = '',
-) => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${title}] ${msg}${detail ? '\n\n' + detail : ''}`);
-  }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const closeWindow = () => {
   const api = (window as any).electronAPI;
@@ -31,6 +19,7 @@ const closeWindow = () => {
 };
 
 const DemandPrintOrder: React.FC = () => {
+  const { t } = useTranslation();
   const { rows, setRows, loading, saveRows, refresh } = useDemandPrintOrder();
   const [showMDAmountModal, setShowMDAmountModal] = useState(false);
   const [showHeadLookup, setShowHeadLookup] = useState(false);
@@ -67,7 +56,7 @@ const DemandPrintOrder: React.FC = () => {
     const ok = await saveRows(updatedRows);
     setSaving(false);
     if (!ok) {
-      await showDialog('error', 'Save Failed', 'Could not save demand print order.', 'Check server connection and retry.');
+      await showDialog('error', t('Save Failed'), t('Could not save demand print order.'), t('Check server connection and retry.'));
     }
   };
 
@@ -97,7 +86,7 @@ const DemandPrintOrder: React.FC = () => {
     if (api?.showMessageBox) {
       const res = await api.showMessageBox({
         type: 'warning',
-        title: 'Delete Row',
+        title: t('Delete Row'),
         message: `Delete "${row?.description || row?.headCode || 'this row'}"?`,
         detail: 'This will permanently remove it from the demand print order.',
         buttons: ['Cancel', 'Delete'],
@@ -106,7 +95,7 @@ const DemandPrintOrder: React.FC = () => {
       });
       confirmed = res.response === 1;
     } else {
-      confirmed = window.confirm('Are you sure you want to delete this row?');
+      confirmed = window.confirm(t('Are you sure you want to delete this row?'));
     }
     if (!confirmed) return;
 
@@ -116,7 +105,7 @@ const DemandPrintOrder: React.FC = () => {
     const ok = await saveRows(updated);
     setSaving(false);
     if (!ok) {
-      await showDialog('error', 'Delete Failed', 'Could not save after deletion.', 'The row was removed locally but the server update failed.');
+      await showDialog('error', t('Delete Failed'), t('Could not save after deletion.'), t('The row was removed locally but the server update failed.'));
     }
   };
 
@@ -131,20 +120,20 @@ const DemandPrintOrder: React.FC = () => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Demand Print Matrix</h1>
+          <h1 className="aw-title">{t('Demand Print Matrix')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Database size={12} /> Administrative Logic Terminal
+            <Database size={12} /> {t('Administrative Logic Terminal')}
           </p>
         </div>
         <div className="aw-actions">
-          <button type="button" onClick={refresh} disabled={loading} className="aw-icon-btn" aria-label="Refresh" data-tip="Refresh" data-tip-pos="bottom-end">
+          <button type="button" onClick={refresh} disabled={loading} className="aw-icon-btn" aria-label={t('Refresh')} data-tip={t('Refresh')} data-tip-pos="bottom-end">
             <RefreshCw size={14} className={loading ? 'aw-spin' : ''} />
           </button>
           <button type="button" onClick={handleAddRow} disabled={saving} className="aw-btn aw-btn-primary">
-            <Plus size={13} /> Add
+            <Plus size={13} /> {t('Add')}
           </button>
           <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -155,8 +144,8 @@ const DemandPrintOrder: React.FC = () => {
             <Search size={13} />
             <input
               type="text"
-              placeholder="Search matrix..."
-              aria-label="Search matrix"
+              placeholder={t('Search matrix...')}
+              aria-label={t('Search matrix')}
               className="aw-input"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -167,13 +156,13 @@ const DemandPrintOrder: React.FC = () => {
             <table className="aw-table" style={{ minWidth: 900 }}>
               <thead>
                 <tr>
-                  <th>Head Code</th>
-                  <th>Head Type</th>
-                  <th>Description</th>
-                  <th>Intt Type</th>
-                  <th>Registry Column</th>
-                  <th className="is-center" style={{ width: 90 }}>Order</th>
-                  <th style={{ width: 120 }}>Commands</th>
+                  <th>{t('Head Code')}</th>
+                  <th>{t('Head Type')}</th>
+                  <th>{t('Description')}</th>
+                  <th>{t('Intt Type')}</th>
+                  <th>{t('Registry Column')}</th>
+                  <th className="is-center" style={{ width: 90 }}>{t('Order')}</th>
+                  <th style={{ width: 120 }}>{t('Commands')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -192,7 +181,7 @@ const DemandPrintOrder: React.FC = () => {
                     <td colSpan={7}>
                       <div className="aw-empty" style={{ padding: 32 }}>
                         <AlertCircle size={26} />
-                        <strong className="aw-strong">{searchTerm ? 'No matching rows' : 'No rows configured'}</strong>
+                        <strong className="aw-strong">{searchTerm ? t('No matching rows') : t('No rows configured')}</strong>
                       </div>
                     </td>
                   </tr>
@@ -203,33 +192,33 @@ const DemandPrintOrder: React.FC = () => {
                     <tr key={index} className="is-dirty">
                       <td className="has-input" style={{ minWidth: 150 }}>
                         <div className="aw-input-wrap has-action">
-                          <input className="aw-input" aria-label="Head code" value={editedData.headCode} onChange={e => handleInputChange('headCode', e.target.value)} />
-                          <button type="button" className="aw-input-action" onClick={() => setShowHeadLookup(true)} aria-label="List of heads" data-tip="List of heads" data-tip-pos="top-end">
+                          <input className="aw-input" aria-label={t('Head code')} value={editedData.headCode} onChange={e => handleInputChange('headCode', e.target.value)} />
+                          <button type="button" className="aw-input-action" onClick={() => setShowHeadLookup(true)} aria-label={t('List of heads')} data-tip={t('List of heads')} data-tip-pos="top-end">
                             <List size={13} />
                           </button>
                         </div>
                       </td>
-                      <td className="has-input"><input className="aw-input" aria-label="Head type" value={editedData.headType} onChange={e => handleInputChange('headType', e.target.value)} /></td>
-                      <td className="has-input"><input className="aw-input" aria-label="Description" value={editedData.description} onChange={e => handleInputChange('description', e.target.value)} /></td>
-                      <td className="has-input"><input className="aw-input" aria-label="Intt type" value={editedData.inttType} onChange={e => handleInputChange('inttType', e.target.value)} /></td>
+                      <td className="has-input"><input className="aw-input" aria-label={t('Head type')} value={editedData.headType} onChange={e => handleInputChange('headType', e.target.value)} /></td>
+                      <td className="has-input"><input className="aw-input" aria-label={t('Description')} value={editedData.description} onChange={e => handleInputChange('description', e.target.value)} /></td>
+                      <td className="has-input"><input className="aw-input" aria-label={t('Intt type')} value={editedData.inttType} onChange={e => handleInputChange('inttType', e.target.value)} /></td>
                       <td className="has-input" style={{ minWidth: 190 }}>
                         <div className="aw-input-wrap has-action">
-                          <input className="aw-input" aria-label="Registry column" value={editedData.mapColName} onChange={e => handleInputChange('mapColName', e.target.value)} />
-                          <button type="button" className="aw-input-action" onClick={() => setShowMDAmountModal(true)} aria-label="MD column registry" data-tip="MD column registry" data-tip-pos="top-end">
+                          <input className="aw-input" aria-label={t('Registry column')} value={editedData.mapColName} onChange={e => handleInputChange('mapColName', e.target.value)} />
+                          <button type="button" className="aw-input-action" onClick={() => setShowMDAmountModal(true)} aria-label={t('MD column registry')} data-tip={t('MD column registry')} data-tip-pos="top-end">
                             <Database size={13} />
                           </button>
                         </div>
                       </td>
                       <td className="has-input">
-                        <input type="number" aria-label="Print order" className="aw-input is-right" value={editedData.printOrder}
+                        <input type="number" aria-label={t('Print order')} className="aw-input is-right" value={editedData.printOrder}
                           onChange={e => handleInputChange('printOrder', parseInt(e.target.value) || 1)} />
                       </td>
                       <td>
                         <span style={{ display: 'inline-flex', gap: 6 }}>
                           <button type="button" onClick={() => handleSave(index)} disabled={saving} className="aw-btn aw-btn-primary aw-btn-sm">
-                            {saving ? <RefreshCw size={12} className="aw-spin" /> : <Save size={12} />} Save
+                            {saving ? <RefreshCw size={12} className="aw-spin" /> : <Save size={12} />} {t('Save')}
                           </button>
-                          <button type="button" onClick={handleCancel} className="aw-icon-btn is-sm" aria-label="Cancel (Esc)" data-tip="Cancel (Esc)" data-tip-pos="left">
+                          <button type="button" onClick={handleCancel} className="aw-icon-btn is-sm" aria-label={t('Cancel (Esc)')} data-tip={t('Cancel (Esc)')} data-tip-pos="left">
                             <X size={14} />
                           </button>
                         </span>
@@ -245,10 +234,10 @@ const DemandPrintOrder: React.FC = () => {
                       <td className="is-center is-muted">{row.printOrder}</td>
                       <td>
                         <span style={{ display: 'inline-flex', gap: 2 }}>
-                          <button type="button" onClick={() => handleEdit(index)} className="aw-icon-btn is-sm" aria-label={`Edit ${row.headCode}`} data-tip="Edit" data-tip-pos="left">
+                          <button type="button" onClick={() => handleEdit(index)} className="aw-icon-btn is-sm" aria-label={t('Edit {{1}}', { 1: row.headCode })} data-tip={t('Edit')} data-tip-pos="left">
                             <Edit3 size={14} />
                           </button>
-                          <button type="button" onClick={() => handleDeleteRow(index)} className="aw-icon-btn is-sm is-danger" aria-label={`Delete ${row.headCode}`} data-tip="Delete" data-tip-pos="left">
+                          <button type="button" onClick={() => handleDeleteRow(index)} className="aw-icon-btn is-sm is-danger" aria-label={t('Delete {{1}}', { 1: row.headCode })} data-tip={t('Delete')} data-tip-pos="left">
                             <Trash2 size={14} />
                           </button>
                         </span>
@@ -264,18 +253,18 @@ const DemandPrintOrder: React.FC = () => {
 
       <div className="aw-footer">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          <Building2 size={12} /> Ledger Matrix Control · {filteredRows.length} row{filteredRows.length !== 1 ? 's' : ''}
+          <Building2 size={12} /> {t('Ledger Matrix Control ·')} {filteredRows.length} row{filteredRows.length !== 1 ? 's' : ''}
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> Protocol v2.9.2</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Protocol v2.9.2')}</span>
       </div>
 
-      <AwDialog open={showMDAmountModal} title="MD Column Registry" icon={<Database size={14} />} onClose={() => setShowMDAmountModal(false)} maxWidth="26rem" flush>
+      <AwDialog open={showMDAmountModal} title={t('MD Column Registry')} icon={<Database size={14} />} onClose={() => setShowMDAmountModal(false)} maxWidth="26rem" flush>
         <div style={{ height: 380 }}>
           <MDAmountDetails onSelect={colName => { handleInputChange('mapColName', colName); setShowMDAmountModal(false); }} />
         </div>
       </AwDialog>
 
-      <AwDialog open={showHeadLookup} title="List of Heads" icon={<List size={14} />} onClose={() => setShowHeadLookup(false)} maxWidth="38rem" flush>
+      <AwDialog open={showHeadLookup} title={t('List of Heads')} icon={<List size={14} />} onClose={() => setShowHeadLookup(false)} maxWidth="38rem" flush>
         <div style={{ height: 420 }}>
           <HeadMasterLookup onSelect={code => { handleInputChange('headCode', code); setShowHeadLookup(false); }} />
         </div>

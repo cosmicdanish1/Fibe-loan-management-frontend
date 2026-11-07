@@ -13,19 +13,11 @@ import {
   ChevronsUp, ListOrdered, AlertCircle, Info,
 } from 'lucide-react';
 import { useReportHeadOrder, type HeadOrderRow } from '../hook/useReportHeadOrder';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const ROW_H = 44;
 const SLIDE = 'transform 170ms cubic-bezier(.2,.8,.2,1)';
 const COLS = '36px 84px 104px minmax(0,1fr) 72px 104px';
-
-const showDialog = async (type: 'info' | 'warning' | 'error', title: string, msg: string, detail = '') => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${title}] ${msg}${detail ? '\n\n' + detail : ''}`);
-  }
-};
 
 const confirmDialog = async (title: string, msg: string, detail: string, okLabel: string): Promise<boolean> => {
   const api = (window as any).electronAPI;

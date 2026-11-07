@@ -7,8 +7,10 @@ import SubNavbar from '../navigation/SubNavbar';
 import UpdateNotice from '../UpdateNotice';
 import { apiService } from '../../services/api';
 import OnboardingHost from '../../features/onboarding/OnboardingHost';
+import { useTranslation } from 'react-i18next';
 
 const MainLayout: React.FC = () => {
+  const { t } = useTranslation();
     const location = useLocation();
 
     // "Who is online": tell the server this PC's app is still open, once a minute. It lives here
@@ -67,7 +69,7 @@ const MainLayout: React.FC = () => {
             {/* Watermark */}
             <div className="absolute bottom-4 right-4 text-sm font-medium pointer-events-none"
                 style={{ color: textColor, opacity: 0.7 }}>
-                Paper White Technology
+                {t('Paper White Technology')}
             </div>
         </div>
     )

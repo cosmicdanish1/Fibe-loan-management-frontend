@@ -35,6 +35,7 @@ export const ROUTES = {
     CHANGE_PASSWORD: '/change-password',
     LOGOUT_USER: '/logout-user',
     TWOFA_SETTINGS: '/two-factor-settings',
+    MOBILE_CONTROL_CENTER: '/mobile-control-center',
 
     // Administration - Financial Year Management
     FINANCIAL_YEAR_TRANSFER_ENTRIES: '/financial-year/transfer-entries',
@@ -166,6 +167,7 @@ export const ROUTES = {
     UPDATE_SAVING_INTEREST: '/utility/update-saving-interest',
     INTEREST_RECEIVABLE_RECEIVED_STATEMENT: '/utility/interest-receivable-received-statement',
     SUPPORT_DESK: '/utility/support-desk',
+    SYSTEM_UPDATE: '/utility/system-update',
 
     // Help
     ABOUT: '/help/about',

@@ -19,12 +19,7 @@ import { csvCell } from '@/utils/csv';
 import { ProBar, ProBody } from '../../../../../../components/reports/views/ProIsland';
 import { useReportViews } from '../../../../../../components/reports/views/reportViews';
 import { useDivReportSpec } from '../views/divReportPro';
-
-const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: title, detail, buttons: ['OK'], defaultId: 0 });
-  }
-};
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
 const { Option } = Select;
 

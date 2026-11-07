@@ -8,26 +8,13 @@ import {
 import { apiService } from '../../../../services/api';
 import { csvCell } from '@/utils/csv';
 import { localISODate } from '../../../../utils/dates';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 // BUG FIX: removed 'message' and 'Modal' from antd — both silently fail in Electron renderer windows.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).
 // CRITICAL: Pass and Delete are irreversible — the Modal.confirm that was used here would
 // silently no-op in Electron, meaning the user had NO confirmation dialog before ledger posting.
-
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
 
 // BUG FIX: Modal.confirm is also broken in Electron — replaced with native question dialog.
 // Returns true if the user clicked the first button (confirmed).
@@ -51,6 +38,7 @@ const formatMoney = (value: unknown) =>
     `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const usePassTransactions = (): PassTransactionsHookReturn => {
+  const { t } = useTranslation();
     const [transactionData, setTransactionData] = useState<TransactionEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [reagreementResult, setReagreementResult] = useState<any | null>(null);
@@ -82,7 +70,7 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
             }
         } catch (error: any) {
             console.error('Error fetching pending vouchers:', error);
-            await showDialog('error', 'electron-react-ts', 'Failed to Load Vouchers', `Could not retrieve pending vouchers.\n\nTechnical: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Failed to Load Vouchers'), t('Could not retrieve pending vouchers. Technical: {{1}}', { 1: error.message }));
         } finally {
             setIsLoading(false);
         }
@@ -176,7 +164,7 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    'Voucher Passed Successfully!',
+                    t('Voucher Passed Successfully!'),
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `VOUCHER NO    : ${voucherNo}\n` +
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -188,11 +176,11 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
                 fetchPendingVouchers();
             } else {
                 // BUG FIX: was response.error || response.message — .error field doesn't exist on TransformInterceptor response
-                await showDialog('error', 'electron-react-ts', 'Pass Transaction Failed', response.message || `Failed to pass voucher: ${voucherNo}`);
+                await showDialog('error', 'electron-react-ts', t('Pass Transaction Failed'), response.message || t('Failed to pass voucher: {{1}}', { 1: voucherNo }));
             }
         } catch (error: any) {
             console.error('[PassTransaction] Error:', error);
-            await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: error.message }));
         }
     };
 
@@ -215,23 +203,23 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    'Voucher Deleted',
-                    `Voucher ${voucherNo} and all its transaction entries have been permanently removed.`
+                    t('Voucher Deleted'),
+                    t('Voucher {{1}} and all its transaction entries have been permanently removed.', { 1: voucherNo })
                 );
                 fetchPendingVouchers();
             } else {
                 // BUG FIX: was response.error || response.message — .error field doesn't exist
-                await showDialog('error', 'electron-react-ts', 'Delete Failed', response.message || `Failed to delete voucher: ${voucherNo}`);
+                await showDialog('error', 'electron-react-ts', t('Delete Failed'), response.message || t('Failed to delete voucher: {{1}}', { 1: voucherNo }));
             }
         } catch (error: any) {
             console.error('[PassTransaction] Delete Error:', error);
-            await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: error.message }));
         }
     };
 
     const handleExport = useCallback(() => {
         if (!transactionData || transactionData.length === 0) {
-            showDialog('warning', 'electron-react-ts', 'Nothing to Export', 'There are no pending vouchers to export.');
+            showDialog('warning', 'electron-react-ts', t('Nothing to Export'), t('There are no pending vouchers to export.'));
             return;
         }
         const headers = ['Tr No', 'Voucher No', 'Member No', 'Name', 'No. of Acc', 'Head', 'Trans Type', 'Amount', 'Vchr Type', 'Cheque No'];

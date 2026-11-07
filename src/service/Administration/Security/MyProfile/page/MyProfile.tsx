@@ -3,6 +3,7 @@ import { User, Mail, Phone, Briefcase, MapPin, ShieldCheck, Clock, Lock, Zap, Tr
 import { useAuth } from '../../../../../auth/context/AuthContext';
 import AwDialog from '@/components/shared/kit/AwDialog';
 import PasswordInput from '../../../../../components/shared/PasswordInput';
+import { useTranslation } from 'react-i18next';
 
 const ACTIVITY = [
   { action: 'System Login', date: 'Today, 10:23 AM', details: 'Successful login from IP 192.168.1.45', type: 'login' },
@@ -15,6 +16,7 @@ const activityIcon = (type: string) => type === 'login' ? <Zap size={12} /> : ty
 const activityTone = (type: string) => type === 'login' ? 'var(--aw-success)' : type === 'security' ? 'var(--aw-danger)' : 'var(--aw-muted)';
 
 const MyProfile: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   const [tab, setTab] = useState<'info' | 'security'>('info');
@@ -61,11 +63,11 @@ const MyProfile: React.FC = () => {
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">My Profile</h1>
-          <p className="aw-desc">Account &amp; security</p>
+          <h1 className="aw-title">{t('My Profile')}</h1>
+          <p className="aw-desc">{t('Account & security')}</p>
         </div>
         <div className="aw-actions">
-          <span className="aw-pill tone-success"><span className="aw-status-dot" /> Active session</span>
+          <span className="aw-pill tone-success"><span className="aw-status-dot" /> {t('Active session')}</span>
         </div>
       </div>
 
@@ -81,10 +83,10 @@ const MyProfile: React.FC = () => {
                 </div>
                 <p className="aw-meta" style={{ marginTop: 6, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Briefcase size={12} /> {profile.department}</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><MapPin size={12} /> Head Office</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><MapPin size={12} /> {t('Head Office')}</span>
                 </p>
               </div>
-              <button type="button" onClick={openEdit} className="aw-btn aw-btn-secondary">Edit Profile</button>
+              <button type="button" onClick={openEdit} className="aw-btn aw-btn-secondary">{t('Edit Profile')}</button>
             </div>
           </section>
 
@@ -101,17 +103,17 @@ const MyProfile: React.FC = () => {
               {tab === 'info' && (
                 <div className="aw-stack aw-fade-in">
                   <dl className="aw-facts">
-                    <div><dt>Full name</dt><dd>{profile.fullName}</dd></div>
-                    <div><dt>Email address</dt><dd style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Mail size={13} style={{ color: 'var(--aw-accent)' }} /> {profile.email}</dd></div>
-                    <div><dt>Phone</dt><dd style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Phone size={13} style={{ color: 'var(--aw-success)' }} /> {profile.phone}</dd></div>
-                    <div><dt>Department</dt><dd>{profile.department}</dd></div>
+                    <div><dt>{t('Full name')}</dt><dd>{profile.fullName}</dd></div>
+                    <div><dt>{t('Email address')}</dt><dd style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Mail size={13} style={{ color: 'var(--aw-accent)' }} /> {profile.email}</dd></div>
+                    <div><dt>{t('Phone')}</dt><dd style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Phone size={13} style={{ color: 'var(--aw-success)' }} /> {profile.phone}</dd></div>
+                    <div><dt>{t('Department')}</dt><dd>{profile.department}</dd></div>
                   </dl>
 
                   <div className="aw-panel">
-                    <span className="aw-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IdCard size={13} /> System identity</span>
+                    <span className="aw-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IdCard size={13} /> {t('System identity')}</span>
                     <dl className="aw-facts">
-                      <div><dt>Username</dt><dd style={{ fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 6 }}><User size={13} /> {profile.username}</dd></div>
-                      <div><dt>Role</dt><dd><span className="aw-pill tone-info" style={{ textTransform: 'uppercase' }}><Zap size={11} /> {profile.role}</span></dd></div>
+                      <div><dt>{t('Username')}</dt><dd style={{ fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 6 }}><User size={13} /> {profile.username}</dd></div>
+                      <div><dt>{t('Role')}</dt><dd><span className="aw-pill tone-info" style={{ textTransform: 'uppercase' }}><Zap size={11} /> {profile.role}</span></dd></div>
                     </dl>
                   </div>
                 </div>
@@ -120,15 +122,15 @@ const MyProfile: React.FC = () => {
               {tab === 'security' && (
                 <div className="aw-empty aw-fade-in" style={{ padding: '32px 16px' }}>
                   <span className="aw-card-icon" style={{ width: 64, height: 64, borderRadius: '50%' }}><Lock size={28} /></span>
-                  <p className="aw-strong">Password management</p>
-                  <span className="aw-meta" style={{ maxWidth: 320 }}>Update your password regularly to keep your account secure.</span>
-                  <button type="button" onClick={() => setModal('password')} className="aw-btn aw-btn-secondary"><Zap size={13} /> Change password</button>
+                  <p className="aw-strong">{t('Password management')}</p>
+                  <span className="aw-meta" style={{ maxWidth: 320 }}>{t('Update your password regularly to keep your account secure.')}</span>
+                  <button type="button" onClick={() => setModal('password')} className="aw-btn aw-btn-secondary"><Zap size={13} /> {t('Change password')}</button>
                   <div className="aw-panel" style={{ width: '100%', maxWidth: 420, marginTop: 16, textAlign: 'left' }}>
-                    <p className="aw-strong">Two-factor sign-in code</p>
-                    <span className="aw-meta">Turn on the authenticator-app code for your account, scan your QR and keep your recovery codes in the Two-Factor &amp; Approvals window.</span>
+                    <p className="aw-strong">{t('Two-factor sign-in code')}</p>
+                    <span className="aw-meta">{t('Turn on the authenticator-app code for your account, scan your QR and keep your recovery codes in the Two-Factor & Approvals window.')}</span>
                     <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" style={{ marginTop: 8 }}
                       onClick={() => { const api = (window as any).electronAPI; if (api?.openNewWindow) api.openNewWindow('/two-factor-settings'); else window.location.hash = '#/two-factor-settings'; }}>
-                      <ShieldCheck size={12} /> Open Two-Factor &amp; Approvals
+                      <ShieldCheck size={12} /> {t('Open Two-Factor & Approvals')}
                     </button>
                   </div>
                 </div>
@@ -139,7 +141,7 @@ const MyProfile: React.FC = () => {
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><Clock size={14} /></span>
-                  <h2 className="aw-card-title">Recent activity</h2>
+                  <h2 className="aw-card-title">{t('Recent activity')}</h2>
                 </div>
                 <div className="aw-rows">
                   {ACTIVITY.map((log, i) => (
@@ -160,14 +162,14 @@ const MyProfile: React.FC = () => {
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><Zap size={14} /></span>
-                  <h2 className="aw-card-title">Live session</h2>
+                  <h2 className="aw-card-title">{t('Live session')}</h2>
                 </div>
                 <dl className="aw-facts">
-                  <div><dt>Device ID</dt><dd style={{ fontFamily: 'monospace' }}>WIN-X86-22</dd></div>
-                  <div><dt>Location</dt><dd style={{ fontFamily: 'monospace' }}>India</dd></div>
+                  <div><dt>{t('Device ID')}</dt><dd style={{ fontFamily: 'monospace' }}>WIN-X86-22</dd></div>
+                  <div><dt>{t('Location')}</dt><dd style={{ fontFamily: 'monospace' }}>{t('India')}</dd></div>
                 </dl>
                 <div className="aw-panel">
-                  <span className="aw-label">Current IP address</span>
+                  <span className="aw-label">{t('Current IP address')}</span>
                   <p className="aw-strong" style={{ fontFamily: 'monospace', color: 'var(--aw-success)' }}>192.168.1.45</p>
                 </div>
               </section>
@@ -177,16 +179,16 @@ const MyProfile: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span>My Profile</span>
+        <span>{t('My Profile')}</span>
         <span>{profile.username}</span>
       </div>
 
-      <AwDialog open={modal === 'edit'} title="Edit profile" onClose={closeModal} icon={<User size={14} />} maxWidth="28rem" compact>
+      <AwDialog open={modal === 'edit'} title={t('Edit profile')} onClose={closeModal} icon={<User size={14} />} maxWidth="28rem" compact>
         <div className="aw-stack">
           {[
-            { id: 'mp-name', label: 'Full name', val: editName, set: setEditName },
-            { id: 'mp-email', label: 'Email address', val: editEmail, set: setEditEmail },
-            { id: 'mp-phone', label: 'Phone', val: editPhone, set: setEditPhone },
+            { id: 'mp-name', label: t('Full name'), val: editName, set: setEditName },
+            { id: 'mp-email', label: t('Email address'), val: editEmail, set: setEditEmail },
+            { id: 'mp-phone', label: t('Phone'), val: editPhone, set: setEditPhone },
           ].map(f => (
             <div key={f.id}>
               <label className="aw-label" htmlFor={f.id}>{f.label}</label>
@@ -194,18 +196,18 @@ const MyProfile: React.FC = () => {
             </div>
           ))}
           <div className="aw-btn-row">
-            <button type="button" onClick={closeModal} className="aw-btn aw-btn-secondary">Cancel</button>
-            <button type="button" onClick={saveEdit} className="aw-btn aw-btn-primary">Save changes</button>
+            <button type="button" onClick={closeModal} className="aw-btn aw-btn-secondary">{t('Cancel')}</button>
+            <button type="button" onClick={saveEdit} className="aw-btn aw-btn-primary">{t('Save changes')}</button>
           </div>
         </div>
       </AwDialog>
 
-      <AwDialog open={modal === 'password'} title="Change password" onClose={closeModal} icon={<Lock size={14} />} maxWidth="28rem" compact>
+      <AwDialog open={modal === 'password'} title={t('Change password')} onClose={closeModal} icon={<Lock size={14} />} maxWidth="28rem" compact>
         <div className="aw-stack">
-          <PasswordInput className="aw-input" placeholder="Current password" aria-label="Current password" value={curPwd} onChange={e => setCurPwd(e.target.value)} />
-          <PasswordInput className="aw-input" placeholder="New password" aria-label="New password" value={newPwd} onChange={e => setNewPwd(e.target.value)} />
-          <PasswordInput className="aw-input" placeholder="Confirm new password" aria-label="Confirm new password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} />
-          <button type="button" onClick={closeModal} className="aw-btn aw-btn-primary">Update password</button>
+          <PasswordInput className="aw-input" placeholder={t('Current password')} aria-label={t('Current password')} value={curPwd} onChange={e => setCurPwd(e.target.value)} />
+          <PasswordInput className="aw-input" placeholder={t('New password')} aria-label={t('New password')} value={newPwd} onChange={e => setNewPwd(e.target.value)} />
+          <PasswordInput className="aw-input" placeholder={t('Confirm new password')} aria-label={t('Confirm new password')} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} />
+          <button type="button" onClick={closeModal} className="aw-btn aw-btn-primary">{t('Update password')}</button>
         </div>
       </AwDialog>
     </div>

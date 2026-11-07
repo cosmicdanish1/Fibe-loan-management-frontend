@@ -3,6 +3,7 @@
 // members about to retire, group insurance, negative RD, failed / pending messages, day end. Read state is per user.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import apiService from '../../../../services/api';
+import { tLabel } from '../../../../i18n';
 
 export type Severity = 'error' | 'warning' | 'info';
 export type NotifStatus = 'open' | 'resolved';
@@ -44,9 +45,9 @@ export const KIND_LABEL: Record<string, string> = {
 };
 
 export const KIND_GROUPS: { label: string; kinds: string[] }[] = [
-  { label: 'Members', kinds: ['MEMBER_READY_INACTIVE', 'MEMBER_RETIRING_SOON', 'MEMBER_NO_RETIREMENT_DATE'] },
-  { label: 'Money', kinds: ['INSURANCE_DUE', 'NEGATIVE_RD'] },
-  { label: 'System', kinds: ['MESSAGES_FAILED', 'MESSAGES_PENDING', 'DAYEND_PENDING'] },
+  { label: tLabel('Members'), kinds: ['MEMBER_READY_INACTIVE', 'MEMBER_RETIRING_SOON', 'MEMBER_NO_RETIREMENT_DATE'] },
+  { label: tLabel('Money'), kinds: ['INSURANCE_DUE', 'NEGATIVE_RD'] },
+  { label: tLabel('System'), kinds: ['MESSAGES_FAILED', 'MESSAGES_PENDING', 'DAYEND_PENDING'] },
 ];
 
 export const PAGE_SIZE = 50;

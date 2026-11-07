@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Save, X, Trash2, RefreshCw, Printer, Search, LogOut, type LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface RemoteToolbarState {
   saveLabel?: string;
@@ -37,6 +38,7 @@ const SubNavbar: React.FC<SubNavbarProps> = ({
   onFind,
   onExit,
 }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   // Whichever tool window last had focus reports its Save state here via the
   // main process (see main.ts "TOOLBAR REMOTE CONTROL") — this window (the
@@ -120,12 +122,12 @@ const SubNavbar: React.FC<SubNavbarProps> = ({
   const navItems: NavItem[] = [
     // Delete stays disabled — no cross-window wiring for it yet.
     { icon: Save, label: saveLabel, onClick: onSave ?? handleTriggerSave, enabled: saveEnabled },
-    { icon: X, label: 'Cancel', onClick: onCancel ?? handleCancel, enabled: true },
-    { icon: Trash2, label: 'Delete', onClick: onDelete, enabled: !!onDelete },
-    { icon: RefreshCw, label: 'Refresh', onClick: onRefresh ?? handleRefresh, enabled: true },
-    { icon: Printer, label: 'Print', onClick: onPrint ?? handlePrint, enabled: true },
-    { icon: Search, label: 'Find', onClick: onFind ?? handleFind, enabled: true },
-    { icon: LogOut, label: 'Exit', onClick: onExit ?? handleGlobalExit, enabled: true },
+    { icon: X, label: t('Cancel'), onClick: onCancel ?? handleCancel, enabled: true },
+    { icon: Trash2, label: t('Delete'), onClick: onDelete, enabled: !!onDelete },
+    { icon: RefreshCw, label: t('Refresh'), onClick: onRefresh ?? handleRefresh, enabled: true },
+    { icon: Printer, label: t('Print'), onClick: onPrint ?? handlePrint, enabled: true },
+    { icon: Search, label: t('Find'), onClick: onFind ?? handleFind, enabled: true },
+    { icon: LogOut, label: t('Exit'), onClick: onExit ?? handleGlobalExit, enabled: true },
   ];
 
   return (

@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { analyticsService } from '../../services/analyticsService';
 import { rendererLogger } from '../../services/logger';
+import { tLabel } from '../../i18n';
 
 interface Props {
   children: ReactNode;
@@ -183,18 +184,15 @@ export class AnalyticsErrorBoundary extends Component<Props, State> {
           fontFamily: 'Arial, sans-serif'
         }}>
           <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 'bold' }}>
-            ⚠️ Something went wrong
+            ⚠️ {tLabel('Something went wrong')}
           </h2>
           
-          <p style={{ margin: '0 0 16px 0', fontSize: '14px', lineHeight: '1.4' }}>
-            An unexpected error occurred in the {this.props.componentName || 'application'}. 
-            The error has been logged and will be reviewed by our development team.
-          </p>
+          <p style={{ margin: '0 0 16px 0', fontSize: '14px', lineHeight: '1.4' }}>{tLabel('{{1}} {{2}}. The error has been logged and will be reviewed by our development team.', { 1: tLabel('An unexpected error occurred in the'), 2: this.props.componentName || 'application' })}</p>
           
           {process.env.NODE_ENV === 'development' && this.state.error && (
             <details style={{ marginBottom: '16px' }}>
               <summary style={{ cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
-                Error Details (Development Mode)
+                {tLabel('Error Details (Development Mode)')}
               </summary>
               <pre style={{
                 fontSize: '11px',
@@ -206,8 +204,8 @@ export class AnalyticsErrorBoundary extends Component<Props, State> {
                 marginTop: '8px'
               }}>
                 {this.state.error.message}
-                {this.state.error.stack && `\n\nStack Trace:\n${this.state.error.stack}`}
-                {this.state.errorInfo?.componentStack && `\n\nComponent Stack:${this.state.errorInfo.componentStack}`}
+                {this.state.error.stack && "\n\n" + tLabel('Stack Trace: {{1}}', { 1: this.state.error.stack })}
+                {this.state.errorInfo?.componentStack && "\n\n" + tLabel('Component Stack:{{1}}', { 1: this.state.errorInfo.componentStack })}
               </pre>
             </details>
           )}
@@ -225,7 +223,7 @@ export class AnalyticsErrorBoundary extends Component<Props, State> {
                 fontSize: '14px'
               }}
             >
-              Try Again
+              {tLabel('Try Again')}
             </button>
             
             <button
@@ -240,7 +238,7 @@ export class AnalyticsErrorBoundary extends Component<Props, State> {
                 fontSize: '14px'
               }}
             >
-              Reload Page
+              {tLabel('Reload Page')}
             </button>
           </div>
         </div>

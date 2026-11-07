@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { DayendData, UseDayendReturn } from '../interface/dayend';
 import { apiService } from '../../../../services/api';
 import { localISODate } from '../../../../utils/dates';
+import { useTranslation } from 'react-i18next';
 
 // Helper function to get current date in YYYY-MM-DD format
 const getCurrentDate = (): string => {
@@ -20,6 +21,7 @@ const initialDayendData: DayendData = {
 };
 
 export const useDayend = (): UseDayendReturn => {
+  const { t } = useTranslation();
   const [dayendData, setDayendData] = useState<DayendData>(initialDayendData);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -118,7 +120,7 @@ export const useDayend = (): UseDayendReturn => {
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
           type: 'error',
-          title: 'Initialization Failed',
+          title: t('Initialization Failed'),
           message: 'Could not set the initial working date',
           detail: errorMessage,
           buttons: ['OK'],
@@ -201,7 +203,7 @@ export const useDayend = (): UseDayendReturn => {
         if (window.electronAPI?.showMessageBox) {
           await window.electronAPI.showMessageBox({
             type: 'info',
-            title: 'Day-End Processing',
+            title: t('Day-End Processing'),
             message: '✅ Day-End Closed Successfully!',
             detail: `Date: ${dayendData.date}\nStatus: COMPLETED\n\nSystem date advanced to next business day.`,
             buttons: ['OK']
@@ -219,7 +221,7 @@ export const useDayend = (): UseDayendReturn => {
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
           type: 'info',
-          title: 'Day-End Processing',
+          title: t('Day-End Processing'),
           message: '✅ Day-End Closed Successfully!',
           detail: `Date: ${dayendData.date}\nStatus: COMPLETED\n\nSystem date advanced to next business day.`,
           buttons: ['OK']
@@ -233,7 +235,7 @@ export const useDayend = (): UseDayendReturn => {
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
           type: 'error',
-          title: 'Day-End Processing Error',
+          title: t('Day-End Processing Error'),
           message: 'Failed to Close Day-End',
           detail: errorMessage,
           buttons: ['OK']

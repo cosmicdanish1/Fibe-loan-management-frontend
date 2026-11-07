@@ -12,8 +12,10 @@ import {
 } from '../interface/LoanSanctionInterfaces';
 import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
 import { reagreementApi, ReagreementQuote } from '../../../../services/reagreementApi';
+import { useTranslation } from 'react-i18next';
 
 export const useLoanSanction = (): LoanSanctionHookReturn => {
+  const { t } = useTranslation();
     const [loanCases, setLoanCases] = useState<LoanCase[]>([]);
     const [selectedLoanCase, setSelectedLoanCase] = useState<string>("");
     const [isLoadingCases, setIsLoadingCases] = useState(false);
@@ -23,6 +25,9 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
     const [reagreement, setReagreement] = useState<any | null>(null);
     const [raQuote, setRaQuote] = useState<ReagreementQuote | null>(null);
     const [raQuoteLoading, setRaQuoteLoading] = useState(false);
+    // ES-506: Business Rules defaults for the selected loan type, and the real EMI preview
+    const [rateDefaults, setRateDefaults] = useState<{ rate: number; penalRate: number } | null>(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
 
     // Loan details state (read-only)
     const [loanDetails, setLoanDetails] = useState<LoanDetails>({
@@ -58,6 +63,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         noOfInstallments: "60",
         installmentAmount: "",
         interestAmount: "",
+        rateOverrideReason: "",
     });
 
     // Sanction recovery rules (legacy "Rules" panel) — operator acknowledgement
@@ -102,21 +108,43 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         return () => { cancelled = true; clearTimeout(t); };
     }, [reagreement, sanctionDetails.noOfInstallments, sanctionDetails.rate]);
 
-    // Auto-calculate installment amount
+    // ES-506: Installment Amt and Total Interest are the REAL figures (same calculation as the loan payout), not
+    // amount / installments. The server calculates them for the chosen amount, tenure and rate.
     useEffect(() => {
-        if (reagreement) return;
-        if (sanctionDetails.sanctionedAmount && sanctionDetails.noOfInstallments) {
-            const amount = parseFloat(sanctionDetails.sanctionedAmount);
-            const installments = parseInt(sanctionDetails.noOfInstallments);
-            if (amount > 0 && installments > 0) {
-                const installmentAmount = Math.round(amount / installments);
-                setSanctionDetails(prev => ({
-                    ...prev,
-                    installmentAmount: installmentAmount.toString()
-                }));
-            }
+        if (reagreement || !selectedLoanCase) return;
+        const amount = parseFloat(sanctionDetails.sanctionedAmount);
+        const installments = parseInt(sanctionDetails.noOfInstallments);
+        const rateNum = parseFloat(sanctionDetails.rate);
+        if (!(amount > 0) || !(installments > 0) || !(rateNum > 0)) {
+            setSanctionDetails(prev => ({ ...prev, installmentAmount: '', interestAmount: '' }));
+            return;
         }
-    }, [sanctionDetails.sanctionedAmount, sanctionDetails.noOfInstallments, reagreement]);
+        let cancelled = false;
+        setPreviewLoading(true);
+        const timer = setTimeout(async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                const res = await fetch(`${await getApiBaseUrl()}/loans/sanction-preview/${encodeURIComponent(selectedLoanCase)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                    body: JSON.stringify({ sanctionedAmount: amount, noOfInstallments: installments, rate: rateNum }),
+                });
+                const body = await res.json().catch(() => ({}));
+                if (cancelled) return;
+                const q = body?.data ?? body;
+                if (res.ok && q && q.monthlyInstallment !== undefined) {
+                    setSanctionDetails(prev => ({ ...prev, installmentAmount: String(q.monthlyInstallment), interestAmount: String(q.totalInterest) }));
+                } else {
+                    setSanctionDetails(prev => ({ ...prev, installmentAmount: '', interestAmount: '' }));
+                }
+            } catch {
+                if (!cancelled) setSanctionDetails(prev => ({ ...prev, installmentAmount: '', interestAmount: '' }));
+            } finally {
+                if (!cancelled) setPreviewLoading(false);
+            }
+        }, 350);
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [selectedLoanCase, sanctionDetails.sanctionedAmount, sanctionDetails.noOfInstallments, sanctionDetails.rate, reagreement]);
 
     const fetchPendingLoanCases = async () => {
         setIsLoadingCases(true);
@@ -142,7 +170,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
             }
         } catch (error) {
             console.error('❌ Error fetching loan cases:', error);
-            message.error('Failed to load loan cases');
+            message.error(t('Failed to load loan cases'));
             setLoanCases([]);
         } finally {
             setIsLoadingCases(false);
@@ -156,6 +184,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         setRules({ sharesBalance: false, tenPercentOfLoan: false });
         setReagreement(null);
         setRaQuote(null);
+        setRateDefaults(null);
 
         if (!caseNo) {
             // Reset
@@ -187,6 +216,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 sanctionedAmount: "",
                 installmentAmount: "",
                 interestAmount: "",
+                rateOverrideReason: "",
             }));
             return;
         }
@@ -210,7 +240,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 // DEBUG: specific check for structural issues
                 if (!details || (!details.loanCaseNo && !details.memberNo)) {
                     console.error('⚠️ Received data seems empty or malformed:', details);
-                    message.error('Received empty details from server');
+                    message.error(t('Received empty details from server'));
                 }
 
                 const mappedDetails: LoanDetails = {
@@ -241,8 +271,8 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 setLoanDetails(mappedDetails);
 
                 // Pre-fill sanction fields from the loan record where available.
-                // NOTE: loan_pending has no rate/penalRate columns, so those keep
-                // their editable defaults and are entered at sanction time.
+                // ES-506: rate and penalty start from the loan type's card in Business Rules (loaded below); they are
+                // only an exception for this one customer when the officer changes them (a reason is then required).
                 const recordInstallments = parseInt(String(details.noOfInstallments || ""));
                 const ra = details.applicationKind === 'REAGREEMENT' ? (details.reagreement || null) : null;
                 if (ra) {
@@ -270,11 +300,31 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
             }
         } catch (error) {
             console.error('❌ Error loading loan details:', error);
-            message.error('Failed to load loan details');
+            message.error(t('Failed to load loan details'));
         } finally {
             setIsLoadingDetails(false);
         }
     };
+
+    // ES-506: load the Business Rules rate / penalty for the chosen loan type and put them in the fields
+    useEffect(() => {
+        if (!selectedLoanCase || reagreement || !loanDetails.loanType) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                const res = await fetch(`${await getApiBaseUrl()}/loans/rate-defaults?loanType=${encodeURIComponent(loanDetails.loanType)}`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
+                const body = await res.json().catch(() => ({}));
+                const d = body?.data ?? body;
+                if (cancelled || !res.ok || !(Number(d?.rate) > 0)) return;
+                setRateDefaults({ rate: Number(d.rate), penalRate: Number(d.penalRate) });
+                setSanctionDetails(prev => ({ ...prev, rate: String(d.rate), penalRate: String(d.penalRate), rateOverrideReason: '' }));
+            } catch { /* the fields keep their last values */ }
+        })();
+        return () => { cancelled = true; };
+    }, [selectedLoanCase, loanDetails.loanType, reagreement]);
 
     const updateSanctionField = useCallback((field: keyof SanctionDetails, value: string) => {
         setSanctionDetails(prev => ({
@@ -286,17 +336,27 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
     const handleSanctionSave = async () => {
         // Validation
         if (!selectedLoanCase) {
-            message.error('Please select a loan case');
+            message.error(t('Please select a loan case'));
             return;
         }
 
         if (!sanctionDetails.sanctionedAmount || parseFloat(sanctionDetails.sanctionedAmount) <= 0) {
-            message.error('Please enter a valid sanctioned amount');
+            message.error(t('Please enter a valid sanctioned amount'));
             return;
         }
 
         if (!sanctionDetails.noOfInstallments || parseInt(sanctionDetails.noOfInstallments) <= 0) {
-            message.error('Please enter valid number of installments');
+            message.error(t('Please enter valid number of installments'));
+            return;
+        }
+
+        // ES-506: a rate / penalty different from Business Rules is an exception for this customer and needs a reason
+        const differsFromRules = !reagreement && !!rateDefaults && (
+            Math.abs(parseFloat(sanctionDetails.rate) - rateDefaults.rate) > 0.0001 ||
+            Math.abs(parseFloat(sanctionDetails.penalRate) - rateDefaults.penalRate) > 0.0001
+        );
+        if (differsFromRules && !sanctionDetails.rateOverrideReason.trim()) {
+            message.error(t('Give a reason for the rate / penalty that differs from Business Rules'));
             return;
         }
 
@@ -308,6 +368,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 noOfInstallments: parseInt(sanctionDetails.noOfInstallments),
                 rate: parseFloat(sanctionDetails.rate),
                 penalRate: parseFloat(sanctionDetails.penalRate),
+                ...(differsFromRules ? { rateOverrideReason: sanctionDetails.rateOverrideReason.trim() } : {}),
                 installmentAmount: parseFloat(sanctionDetails.installmentAmount),
                 sanctionedBy: (() => { try { return JSON.parse(localStorage.getItem('user') || '{}')?.username || undefined; } catch { return undefined; } })(),
             };
@@ -333,8 +394,8 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 console.log('✅ Sanction saved successfully:', result);
 
                 message.success(reagreement
-                    ? `✅ Re-agreement case ${selectedLoanCase} sanctioned: ${sanctionDetails.noOfInstallments} installments @ ${sanctionDetails.rate}%. Continue in Loan Payment.`
-                    : `✅ Loan Case ${selectedLoanCase} sanctioned successfully!`);
+                    ? '✅ ' + t('Re-agreement case {{1}} sanctioned: {{2}} installments @ {{3}}%. Continue in Loan Payment.', { 1: selectedLoanCase, 2: sanctionDetails.noOfInstallments, 3: sanctionDetails.rate })
+                    : '✅ ' + t('Loan Case {{1}} sanctioned successfully!', { 1: selectedLoanCase }));
 
                 // Send success message to parent window if opened from loan payment
                 if ((window as any).electronAPI) {
@@ -359,7 +420,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
             }
         } catch (error: any) {
             console.error('❌ Error saving sanction:', error);
-            message.error(`Failed to save sanction: ${error.message}`);
+            message.error(t('Failed to save sanction: {{1}}', { 1: error.message }));
         } finally {
             setIsSaving(false);
         }
@@ -380,6 +441,8 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         reagreement,
         raQuote,
         raQuoteLoading,
+        rateDefaults,
+        previewLoading,
         loanCases,
         selectedLoanCase,
         isLoadingCases,

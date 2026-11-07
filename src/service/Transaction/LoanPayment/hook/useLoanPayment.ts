@@ -11,24 +11,11 @@ import {
 } from '../interface/LoanPaymentInterfaces';
 import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
 import { useAuth } from '../../../../auth/context/AuthContext';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 // BUG FIX: removed 'message' and 'Modal' from antd — both silently fail in Electron renderer windows.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).
-
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
 
 // BUG FIX: Modal.confirm is also broken in Electron — replaced with native question dialog.
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
@@ -48,6 +35,7 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
 };
 
 export const useLoanPayment = (): LoanPaymentHookReturn => {
+  const { t } = useTranslation();
     // Logged-in user for the voucher's createdBy (hook must stay usable even if
     // rendered outside an AuthProvider, so the throw is swallowed).
     let authUsername = '';
@@ -448,7 +436,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                 sanctionListenerCleanupRef.current = (window as any).electronAPI.on('loan-sanctioned', (_event: any, data: any) => {
                     if (data.loanCaseNo === formData.loanCaseNo) {
                         updateField('sanctionLoanAmount', data.sanctionedAmount);
-                        showDialog('info', 'electron-react-ts', 'Loan Sanctioned', `Loan Case ${data.loanCaseNo} has been sanctioned for ₹${parseFloat(data.sanctionedAmount).toLocaleString('en-IN')}.`);
+                        showDialog('info', 'electron-react-ts', t('Loan Sanctioned'), t('Loan Case {{1}} has been sanctioned for ₹{{2}}.', { 1: data.loanCaseNo, 2: parseFloat(data.sanctionedAmount).toLocaleString('en-IN') }));
                         fetchPendingLoans();
                     }
                 });
@@ -487,7 +475,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
             if (response.ok) {
                 updateField('sanctionLoanAmount', modalData.sanctionedAmount);
                 updateField('noOfInstallments', modalData.noOfInstallments);
-                await showDialog('info', 'electron-react-ts', 'Loan Sanctioned', `Loan Case ${modalData.loanCaseNo} has been sanctioned for ₹${parseFloat(modalData.sanctionedAmount).toLocaleString('en-IN')}.`);
+                await showDialog('info', 'electron-react-ts', t('Loan Sanctioned'), t('Loan Case {{1}} has been sanctioned for ₹{{2}}.', { 1: modalData.loanCaseNo, 2: parseFloat(modalData.sanctionedAmount).toLocaleString('en-IN') }));
                 closeModal();
                 fetchPendingLoans();
             } else {
@@ -495,7 +483,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
             }
         } catch (error: any) {
             console.error('Error saving sanction:', error);
-            await showDialog('error', 'electron-react-ts', 'Sanction Failed', `Failed to save loan sanction.\n\nTechnical: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Sanction Failed'), t('Failed to save loan sanction. Technical: {{1}}', { 1: error.message }));
         }
     };
 
@@ -513,38 +501,38 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
 
     const doSave = async () => {
         if (!formData.loanCaseNo) {
-            await showDialog('warning', 'electron-react-ts', 'Loan Case Required', 'Please select a loan case before generating the voucher.');
+            await showDialog('warning', 'electron-react-ts', t('Loan Case Required'), t('Please select a loan case before generating the voucher.'));
             return;
         }
         if (!formData.sanctionLoanAmount || parseFloat(formData.sanctionLoanAmount) <= 0) {
-            await showDialog('warning', 'electron-react-ts', 'Loan Not Sanctioned', 'Please sanction the loan first before generating the payment voucher.');
+            await showDialog('warning', 'electron-react-ts', t('Loan Not Sanctioned'), t('Please sanction the loan first before generating the payment voucher.'));
             return;
         }
         if (loadedCaseRef.current !== formData.loanCaseNo) {
-            await showDialog('warning', 'electron-react-ts', 'Loan Case Not Loaded', 'The selected loan case is still loading or failed to load. Please wait or re-select the case.');
+            await showDialog('warning', 'electron-react-ts', t('Loan Case Not Loaded'), t('The selected loan case is still loading or failed to load. Please wait or re-select the case.'));
             return;
         }
         if (voucherEntries.some(e => !Number.isFinite(e.amount) || e.amount < 0)) {
-            await showDialog('warning', 'electron-react-ts', 'Invalid Amount', 'Deduction amounts must be zero or more.');
+            await showDialog('warning', 'electron-react-ts', t('Invalid Amount'), t('Deduction amounts must be zero or more.'));
             return;
         }
         if (!reagreement && actualAmount <= 0) {
-            await showDialog('warning', 'electron-react-ts', 'Invalid Payout', 'The deductions equal or exceed the sanctioned amount, so the payout would be zero or negative. Please correct the breakdown.');
+            await showDialog('warning', 'electron-react-ts', t('Invalid Payout'), t('The deductions equal or exceed the sanctioned amount, so the payout would be zero or negative. Please correct the breakdown.'));
             return;
         }
         const actor = authUsername || (() => { try { return JSON.parse(localStorage.getItem('user') || '{}')?.username || ''; } catch { return ''; } })();
         if (!actor) {
-            await showDialog('warning', 'electron-react-ts', 'Not Signed In', 'Could not determine the logged-in user. Please sign in again.');
+            await showDialog('warning', 'electron-react-ts', t('Not Signed In'), t('Could not determine the logged-in user. Please sign in again.'));
             return;
         }
         // BUG FIX: validate cheque fields for bank mode
         if (formData.paymentMode === 'bank' || formData.paymentMode === 'BANK') {
             if (!formData.chequeNo) {
-                await showDialog('warning', 'electron-react-ts', 'Cheque Number Required', 'Please enter the cheque number for bank/cheque payment mode.');
+                await showDialog('warning', 'electron-react-ts', t('Cheque Number Required'), t('Please enter the cheque number for bank/cheque payment mode.'));
                 return;
             }
             if (!formData.bankName) {
-                await showDialog('warning', 'electron-react-ts', 'Bank Name Required', 'Please enter the bank name for bank/cheque payment mode.');
+                await showDialog('warning', 'electron-react-ts', t('Bank Name Required'), t('Please enter the bank name for bank/cheque payment mode.'));
                 return;
             }
         }
@@ -596,7 +584,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
             await showDialog(
                 'info',
                 'electron-react-ts',
-                reagreement ? 'Re-agreement Voucher Generated!' : 'Loan Voucher Generated!',
+                reagreement ? t('Re-agreement Voucher Generated!') : t('Loan Voucher Generated!'),
                 `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `VOUCHER NO    : ${vNo || '—'}\n` +
                 `LOAN CASE     : ${formData.loanCaseNo}\n` +
@@ -615,7 +603,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
 
         } catch (error: any) {
             console.error('Error saving voucher:', error);
-            await showDialog('error', 'electron-react-ts', 'Voucher Generation Failed', `Failed to generate loan voucher.\n\nTechnical: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Voucher Generation Failed'), t('Failed to generate loan voucher. Technical: {{1}}', { 1: error.message }));
         }
     };
 

@@ -52,6 +52,8 @@ export interface OnboardingStatus {
   userMode: UserOnboardingMode;
   completedAt: string | null;
   lastStep: string | null;
+  /** Newest app version whose What's New this person has seen (null = never recorded). */
+  lastSeenVersion: string | null;
 }
 
 /** Fired on window to start the walkthrough on demand (Help > Replay Tour). */
@@ -60,6 +62,8 @@ export const ONBOARDING_REPLAY_EVENT = 'onboarding:replay';
 export const ONBOARDING_PROGRESS_EVENT = 'onboarding:progress';
 /** Fired on window to open the getting-started checklist (Help > Getting Started). */
 export const ONBOARDING_CHECKLIST_EVENT = 'onboarding:checklist';
+/** Fired on window to open What's New (Help > What's New). */
+export const ONBOARDING_WHATSNEW_EVENT = 'onboarding:whatsnew';
 /** Fired on window to open the "How it works" slides (Help > How It Works). */
 export const ONBOARDING_SLIDES_EVENT = 'onboarding:slides';
 
@@ -84,6 +88,8 @@ export const onboardingApi = {
   setGlobalMode: async (mode: OnboardingMode): Promise<{ globalMode: OnboardingMode }> =>
     unwrap(await apiService.put('/onboarding/global-mode', { mode })),
   checklist: async (): Promise<ChecklistStatus> => unwrap(await apiService.get('/onboarding/checklist')),
+  markWhatsNewSeen: async (version: string): Promise<OnboardingStatus> =>
+    unwrap(await apiService.post('/onboarding/whats-new/seen', { version })),
   showChecklist: async (): Promise<ChecklistStatus> => unwrap(await apiService.post('/onboarding/checklist/show')),
   report: async (): Promise<OnboardingReport> => unwrap(await apiService.get('/onboarding/report')),
 };

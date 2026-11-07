@@ -10,12 +10,7 @@ import ReportViewSwitcher from '../../../../../components/reports/views/ReportVi
 import { useReportViews } from '../../../../../components/reports/views/reportViews';
 import '../../../../../components/reports/views/proViews.css';
 import { useDefaulterSpec, ProBento, ProTerm, ProEd } from '../views/defaulterPro';
-
-const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: title, detail, buttons: ['OK'], defaultId: 0 });
-  }
-};
+import { showDialog3 as showDialog, notifyError } from '@/utils/dialog';
 
 interface DefaulterRecord {
   key: string;
@@ -33,7 +28,7 @@ interface DefaulterRecord {
 }
 
 interface DefaulterResponse {
-  metadata: { totalCount: number; limit: number; offset: number };
+  metadata: { totalCount: number; limit: number; offset: number; unresolvedLoans?: number };
   data: DefaulterRecord[];
 }
 
@@ -150,6 +145,7 @@ const DefaulterList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
+  const [unresolvedLoans, setUnresolvedLoans] = useState(0);
 
   const { enabled, view, setView } = useReportViews('monthly.defaulter-list');
 
@@ -190,10 +186,13 @@ const DefaulterList: React.FC = () => {
         const rd = response.data as DefaulterResponse;
         setData(rd.data || []);
         setTotalCount(rd.metadata?.totalCount || 0);
+        setUnresolvedLoans(rd.metadata?.unresolvedLoans || 0);
       } else {
         setData([]);
         setTotalCount(0);
-        await showDialog('warning', 'No Data', 'No defaulter data found');
+        // a failed load is not "no data": say why it failed (ES-467 / ES-472)
+        if (!response.success) await notifyError(response, 'load the defaulter list');
+        else await showDialog('warning', 'No Data', 'No defaulter data found');
       }
     } catch (error) {
       if (requestId !== requestIdRef.current) return;
@@ -333,7 +332,7 @@ const DefaulterList: React.FC = () => {
     <ReportShell
       className="dfl-page"
       title="Defaulter List"
-      desc="Loans with an outstanding balance, risk view"
+      desc="Loans with an installment past its due month or grace day, risk view"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
       actions={
         <>
@@ -348,7 +347,7 @@ const DefaulterList: React.FC = () => {
             <div>
               <label className="aw-label" htmlFor="dfl-min">Minimum balance (₹)</label>
               <input id="dfl-min" type="number" className="aw-input" value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') generateReport(); }} />
-              <span className="aw-meta">Higher values load faster</span>
+              <span className="aw-meta">Only loans with an overdue installment are listed</span>
             </div>
             <OutputChoice value={outputType} onChange={setOutputType} id="dfl-output" />
             <button type="button" className="aw-btn aw-btn-primary" onClick={generateReport} disabled={loading} style={{ width: '100%' }}>
@@ -364,7 +363,7 @@ const DefaulterList: React.FC = () => {
           ]} />
         </>
       }
-      footerLeft="Defaulter List"
+      footerLeft={unresolvedLoans > 0 ? `Defaulter List · ${unresolvedLoans} loans sharing a case number are not checked` : 'Defaulter List'}
       footerRight={`Filter: ₹${fmt(minBalance)}`}
     >
       {view === 'bento' && proReady && <ProBento spec={spec} />}

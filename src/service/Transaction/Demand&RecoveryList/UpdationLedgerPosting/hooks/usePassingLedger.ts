@@ -5,8 +5,10 @@ import {
   LedgerRecord,
   UsePassingLedgerHook 
 } from '../interfaces';
+import { useTranslation } from 'react-i18next';
 
 const usePassingLedger = (): UsePassingLedgerHook => {
+  const { t } = useTranslation();
   const [state, setState] = useState<PassingLedgerState>({
     formData: {
       month: 'AUG',
@@ -147,7 +149,7 @@ const usePassingLedger = (): UsePassingLedgerHook => {
   };
 
   const findMember = () => {
-    alert(`Finding member from ${state.formData.fromMember} to ${state.formData.toMember}`);
+    alert(t('Finding member from {{1}} to {{2}}', { 1: state.formData.fromMember, 2: state.formData.toMember }));
   };
 
   const resetForm = () => {
@@ -169,7 +171,7 @@ const usePassingLedger = (): UsePassingLedgerHook => {
 
   const processPosting = () => {
     console.log('Processing posting with data:', state.formData);
-    alert('Ledger posting processed successfully!');
+    alert(t('Ledger posting processed successfully!'));
   };
 
   // Close dropdowns when clicking outside

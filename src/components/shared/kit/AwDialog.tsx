@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface AwDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ interface AwDialogProps {
  * Closes on Escape and on a click outside the panel.
  */
 const AwDialog: React.FC<AwDialogProps> = ({ open, title, onClose, icon, maxWidth, compact, flush, children }) => {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -43,7 +45,7 @@ const AwDialog: React.FC<AwDialogProps> = ({ open, title, onClose, icon, maxWidt
             {icon && <span className="aw-card-icon">{icon}</span>}
             <h2 className="aw-card-title">{title}</h2>
           </div>
-          <button type="button" onClick={onClose} className="aw-icon-btn" aria-label="Close" data-tip="Close" data-tip-pos="bottom-end">
+          <button type="button" onClick={onClose} className="aw-icon-btn" aria-label={t('Close')} data-tip={t('Close')} data-tip-pos="bottom-end">
             <X size={15} />
           </button>
         </div>

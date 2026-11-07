@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { IncomeHead, CompulsoryDepositState, UseCompulsoryDepositHook } from '../interfaces';
+import { useTranslation } from 'react-i18next';
 
 const useCompulsoryDeposit = (): UseCompulsoryDepositHook => {
+  const { t } = useTranslation();
   const [state, setState] = useState<CompulsoryDepositState>({
     amount: '',
     selectedIncomeHead: null,
@@ -9,14 +11,14 @@ const useCompulsoryDeposit = (): UseCompulsoryDepositHook => {
   });
 
   const incomeHeads: IncomeHead[] = [
-    { code: 'L1001', label: 'SHARE VALUE', description: 'Share Value' },
-    { code: 'L1002', label: 'FAMILY RELIEF SEHCEME(FRS 1)', description: 'Family Relief Scheme (FRS 1)' },
-    { code: 'L1003', label: 'MEMBER GROUP ACCIDENTAL INSUR', description: 'Member Group Accidental Insurance' },
-    { code: 'L1004', label: 'COMPULSORY DEPOSIT', description: 'Compulsory Deposit' },
-    { code: 'L1006', label: 'RESERVE FUND', description: 'Reserve Fund' },
-    { code: 'L1007', label: 'BUILDING FUND', description: 'Building Fund' },
-    { code: 'L1008', label: 'BAD DEBTS RESERVE', description: 'Bad Debts Reserve' },
-    { code: 'L1009', label: 'COMMAN BENEFIT FUND', description: 'Common Benefit Fund' }
+    { code: 'L1001', label: 'SHARE VALUE', description: t('Share Value') },
+    { code: 'L1002', label: 'FAMILY RELIEF SEHCEME(FRS 1)', description: t('Family Relief Scheme (FRS 1)') },
+    { code: 'L1003', label: 'MEMBER GROUP ACCIDENTAL INSUR', description: t('Member Group Accidental Insurance') },
+    { code: 'L1004', label: 'COMPULSORY DEPOSIT', description: t('Compulsory Deposit') },
+    { code: 'L1006', label: 'RESERVE FUND', description: t('Reserve Fund') },
+    { code: 'L1007', label: 'BUILDING FUND', description: t('Building Fund') },
+    { code: 'L1008', label: 'BAD DEBTS RESERVE', description: t('Bad Debts Reserve') },
+    { code: 'L1009', label: 'COMMAN BENEFIT FUND', description: t('Common Benefit Fund') }
   ];
 
   const actions = {

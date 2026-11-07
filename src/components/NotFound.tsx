@@ -3,8 +3,10 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Result, Button, Typography } from 'antd';
 import { WarningOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 const NotFound: React.FC = () => {
+  const { t } = useTranslation();
     const location = useLocation();
 
     useEffect(() => {
@@ -20,20 +22,20 @@ const NotFound: React.FC = () => {
             <Result
                 status="404"
                 icon={<WarningOutlined className="text-red-500" />}
-                title="Page Not Found"
+                title={t('Page Not Found')}
                 subTitle={
                     <div className="text-left max-w-md mx-auto bg-gray-100 p-4 rounded mt-4">
-                        <Typography.Text type="danger" strong>Routing Error Details:</Typography.Text>
+                        <Typography.Text type="danger" strong>{t('Routing Error Details:')}</Typography.Text>
                         <div className="mt-2 text-xs font-mono text-gray-700">
-                            <p><strong>Path:</strong> {location.pathname}</p>
-                            <p><strong>Status:</strong> Route not defined in App.tsx</p>
-                            <p className="mt-2">Please check if the route exists in <code>App.tsx</code> and matches the menu configuration.</p>
+                            <p><strong>{t('Path:')}</strong> {location.pathname}</p>
+                            <p><strong>{t('Status:')}</strong> {t('Route not defined in App.tsx')}</p>
+                            <p className="mt-2">{t('Please check if the route exists in')} <code>{t('App.tsx')}</code> {t('and matches the menu configuration.')}</p>
                         </div>
                     </div>
                 }
                 extra={
                     <Button type="primary" onClick={() => window.close()}>
-                        Close Window
+                        {t('Close Window')}
                     </Button>
                 }
             />

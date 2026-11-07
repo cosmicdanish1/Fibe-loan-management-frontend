@@ -8,7 +8,6 @@ import {
   Printer,
   Filter,
   ChevronRight,
-  AlertCircle,
   Table as TableIcon,
   Layers,
   Activity,
@@ -23,15 +22,12 @@ import {
   message,
   Tag,
   Table,
-  DatePicker,
-  Tooltip
+  DatePicker
 } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../services/api';
 import { csvCell } from '@/utils/csv';
-
-const { TextArea } = Input;
 
 interface AdHocReportData {
   reportType: string;
@@ -45,7 +41,6 @@ const AdHocReports: React.FC = () => {
   const [memberNo, setMemberNo] = useState<string>('');
   const [fromDate, setFromDate] = useState(dayjs().subtract(1, 'month'));
   const [toDate, setToDate] = useState(dayjs());
-  const [customQuery, setCustomQuery] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<AdHocReportData | null>(null);
 
@@ -54,7 +49,7 @@ const AdHocReports: React.FC = () => {
     { value: 'account_wise', label: 'Account Summary', icon: <Layers size={14} />, desc: 'FD/RD account details' },
     { value: 'transaction_wise', label: 'Transaction Archive', icon: <Activity size={14} />, desc: 'Ledger transaction history' },
     { value: 'balance_summary', label: 'Balance Overview', icon: <Database size={14} />, desc: 'Category-wise balance summary' },
-    { value: 'custom', label: 'Advanced Explorer', icon: <Search size={14} />, desc: 'Execute secure custom SQL queries' }
+    // 'Advanced Explorer' (custom SQL) was removed: the backend no longer runs SQL typed by users (ES-361).
   ];
 
   useEffect(() => {
@@ -89,11 +84,6 @@ const AdHocReports: React.FC = () => {
       return;
     }
 
-    if (reportType === 'custom' && !customQuery.trim()) {
-      message.error('Please enter a custom query');
-      return;
-    }
-
     setLoading(true);
     try {
       const requestData: any = {
@@ -101,7 +91,6 @@ const AdHocReports: React.FC = () => {
         fromDate: fromDate.format('YYYY-MM-DD'),
         toDate: toDate.format('YYYY-MM-DD'),
         memberNo: memberNo.trim() || undefined,
-        customQuery: reportType === 'custom' ? customQuery : undefined
       };
 
       const response = await apiService.getAdHocReports(requestData);
@@ -308,23 +297,6 @@ const AdHocReports: React.FC = () => {
                       </div>
                     )}
 
-                    {reportType === 'custom' && (
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between ml-1">
-                          <label className="fz-small font-black text-slate-500 uppercase tracking-widest">SQL Pipeline</label>
-                          <Tooltip title="ReadOnly SELECT statements are mandatory. System enforcement active.">
-                            <AlertCircle size={10} className="text-slate-300" />
-                          </Tooltip>
-                        </div>
-                        <TextArea
-                          value={customQuery}
-                          onChange={e => setCustomQuery(e.target.value)}
-                          placeholder="SELECT * FROM main_ledger WHERE amount > 5000..."
-                          rows={6}
-                          className="rounded-xl border-slate-200 fz-caption font-mono bg-slate-900 text-indigo-300 selection:bg-indigo-500 selection:text-white p-4"
-                        />
-                      </div>
-                    )}
                   </motion.div>
                 </AnimatePresence>
 

@@ -8,6 +8,8 @@ import { Select as AntSelect } from 'antd';
 import MemberLookupDialog from '../../../../components/shared/kit/MemberLookupDialog';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import type { RootState } from '../../../../store';
+import { useTranslation } from 'react-i18next';
+import MobileAccessBadge from '../components/MobileAccessBadge';
 
 type MemberSelectProps = {
   value: string;
@@ -40,6 +42,7 @@ const MemberSelect: React.FC<MemberSelectProps> = ({ value, onChange, children, 
 };
 
 const MemberMaster: React.FC = () => {
+  const { t } = useTranslation();
   const { formData, handleInputChange, resetForm, setFormValues } = useMemberForm();
   const interfaceMode = useSelector((s: RootState) => s.theme.interfaceMode);
   const isDarkMode = interfaceMode === 'dark';
@@ -78,7 +81,7 @@ const MemberMaster: React.FC = () => {
     if (window.electronAPI?.showMessageBox) {
       await window.electronAPI.showMessageBox({
         type: 'warning',
-        title: 'Input Validation Error',
+        title: t('Input Validation Error'),
         message: title,
         detail,
         buttons: ['OK'],
@@ -466,7 +469,11 @@ const MemberMaster: React.FC = () => {
       const officeSource = formData.branch || formData.divisionRo;
       const [, ...divisionRest] = formData.divisionRo.split('-');
       const parsedOfficeNo = parseInt(officeSource.split('-')[0] || '', 10) || 0;
-      const parsedWingNo = divisionRest.join('-').substring(0, 6) || formData.divisionRo.substring(0, 6) || '';
+      // ES-492: member_master.wingno holds the wing CODE ("1"), not the wing name ("BHILAI") — every migrated member
+      // has wingno '1' and the wing/office joins match on it. The Division/RO option value is "<wing code>-<name>",
+      // so the code is the part before the first dash.
+      void divisionRest;
+      const parsedWingNo = (formData.divisionRo.split('-')[0] || '').trim();
 
       const memberPayload: any = {
         mbno: isNewMember ? 'auto' : formData.memberNumber,
@@ -756,6 +763,9 @@ const MemberMaster: React.FC = () => {
           divisionRo: (() => {
             const off = memberDetails.officeno;
             const wing = memberDetails.wingno;
+            // ES-492: wingno is the wing code ('1'); older rows saved by the screen hold the name ('BHILAI').
+            // The only Division/RO option is "1-BHILAI".
+            if (wing === '1' || String(wing).toUpperCase() === 'BHILAI') return '1-BHILAI';
             if (off && wing) return `${off}-${wing}`;
             return getVal(memberDetails, ['divisionRo', 'division_ro', 'office_name']) || '';
           })(),
@@ -791,10 +801,11 @@ const MemberMaster: React.FC = () => {
       {/* Header */}
       <div className="mm-page-header px-4 py-3 flex items-center justify-between gap-4 shrink-0">
         <div className="min-w-0">
-          <p className="mm-eyebrow">Member records</p>
-          <h1 className="mm-page-title">Member Master</h1>
-          <p className="mm-page-description">Create and manage member information.</p>
+          <p className="mm-eyebrow">{t('Member records')}</p>
+          <h1 className="mm-page-title">{t('Member Master')}</h1>
+          <p className="mm-page-description">{t('Create and manage member information.')}</p>
         </div>
+        {formData.memberNumber ? <MobileAccessBadge memberNo={String(formData.memberNumber)} /> : null}
       </div>
 
       {/* Notification */}
@@ -847,7 +858,7 @@ const MemberMaster: React.FC = () => {
           <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
             <div className="mm-section-heading">
               <span className="mm-section-number" aria-hidden="true">01</span>
-              <h2>Member identity</h2>
+              <h2>{t('Member identity')}</h2>
             </div>
             {/* Top Row: Avatar, Member Number, Search, Active */}
             <div className="mm-record-toolbar flex flex-row flex-wrap items-center gap-2 mb-2">
@@ -858,7 +869,7 @@ const MemberMaster: React.FC = () => {
                 {(mediaPreviews.profile || mediaSavedUrls.profile) ? (
                   <img
                     src={mediaPreviews.profile || mediaSavedUrls.profile}
-                    alt="Profile"
+                    alt={t('Profile')}
                     onClick={() => document.getElementById('photo-profile-header')?.click()}
                     onError={() => { if (!mediaQueue.profile) setMediaSavedUrls(p => { const n = { ...p }; delete n.profile; return n; }); }}
                     className="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-sm cursor-pointer transition-transform group-hover:scale-105"
@@ -874,17 +885,17 @@ const MemberMaster: React.FC = () => {
                 <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
                   <Camera size={13} className="text-white" />
                 </div>
-                {mediaQueue.profile && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 fz-nano font-black text-amber-600 bg-white px-1 rounded whitespace-nowrap shadow">on save</span>}
+                {mediaQueue.profile && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 fz-nano font-black text-amber-600 bg-white px-1 rounded whitespace-nowrap shadow">{t('on save')}</span>}
               </div>
 
               <div className="flex items-center gap-1.5">
-                <label className="text-slate-500 fz-tiny font-semibold whitespace-nowrap uppercase tracking-wide">Member No</label>
+                <label className="text-slate-500 fz-tiny font-semibold whitespace-nowrap uppercase tracking-wide">{t('Member No')}</label>
                 <input
                   type="text"
                   value={formData.memberNumber}
                   onChange={(e) => handleInputChange('memberNumber', e.target.value)}
                   className="px-2 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium w-24"
-                  placeholder="Auto"
+                  placeholder={t('Auto')}
                 />
                 <button
                   onClick={handleSearchClick}
@@ -896,14 +907,14 @@ const MemberMaster: React.FC = () => {
                   ) : (
                     <Search className="w-3 h-3" />
                   )}
-                  <span>{isLoadingMember ? 'Load' : 'Search'}</span>
+                  <span>{isLoadingMember ? t('Load') : t('Search')}</span>
                 </button>
                 <button
                   onClick={() => document.getElementById('kyc-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                   className="px-2 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md fz-caption font-semibold transition-colors flex items-center gap-1 uppercase tracking-wide"
-                  data-tip="Jump to KYC Documents" data-tip-pos="bottom"
+                  data-tip={t('Jump to KYC Documents')} data-tip-pos="bottom"
                 >
-                  <UploadIcon className="w-3 h-3" /> <span>KYC Docs</span>
+                  <UploadIcon className="w-3 h-3" /> <span>{t('KYC Docs')}</span>
                 </button>
               </div>
 
@@ -911,7 +922,7 @@ const MemberMaster: React.FC = () => {
                 ? 'bg-green-50 text-green-700 border border-green-200'
                 : 'bg-violet-50 text-violet-700 border border-violet-200'
                 }`}>
-                {formData.memberNumber ? 'Editing member' : 'New member'}
+                {formData.memberNumber ? t('Editing member') : t('New member')}
               </span>
 
               <div className="ml-auto flex items-center gap-1.5">
@@ -925,7 +936,7 @@ const MemberMaster: React.FC = () => {
                     }`}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full ${formData.isActive ? 'bg-green-600' : 'bg-slate-400'}`} />
-                  <span className="fz-caption font-bold uppercase tracking-wide">{formData.isActive ? 'Active' : 'Inactive'}</span>
+                  <span className="fz-caption font-bold uppercase tracking-wide">{formData.isActive ? t('Active') : t('Inactive')}</span>
                 </div>
                 <button
                   type="button"
@@ -933,7 +944,7 @@ const MemberMaster: React.FC = () => {
                   disabled={isSaving}
                   className="flex items-center gap-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-semibold rounded-md shadow-sm transition-colors fz-caption uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                 >
-                  <RotateCcw className="w-3 h-3" /> <span>Reset</span>
+                  <RotateCcw className="w-3 h-3" /> <span>{t('Reset')}</span>
                 </button>
                 <button
                   type="button"
@@ -942,7 +953,7 @@ const MemberMaster: React.FC = () => {
                   className="flex items-center gap-1 px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-md shadow-sm transition-colors fz-caption uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                 >
                   {isSaving ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-3 h-3" />}
-                  <span>{isSaving ? 'Saving…' : formData.memberNumber ? 'Update' : 'Create'}</span>
+                  <span>{isSaving ? t('Saving…') : formData.memberNumber ? t('Update') : t('Create')}</span>
                 </button>
               </div>
             </div>
@@ -950,60 +961,60 @@ const MemberMaster: React.FC = () => {
             {/* Name Fields Row */}
             <div className="grid grid-cols-12 gap-2">
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Title</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Title')}</label>
                 <MemberSelect
                   ariaLabel="Title"
                   value={formData.title}
                   onChange={(value) => handleInputChange('title', value)}
                 >
                   <option value="Mr">Mr</option>
-                  <option value="Mrs">Mrs</option>
+                  <option value="Mrs">{t('Mrs')}</option>
                   <option value="Ms">Ms</option>
-                  <option value="Smt.">Smt.</option>
+                  <option value="Smt.">{t('Smt.')}</option>
                   <option value="Dr">Dr</option>
                 </MemberSelect>
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">First Name *</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('First Name *')}</label>
                 <input
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="Enter first name"
+                  placeholder={t('Enter first name')}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Middle Name</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Middle Name')}</label>
                 <input
                   type="text"
                   value={formData.middleName}
                   onChange={(e) => handleInputChange('middleName', e.target.value)}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="Enter middle name"
+                  placeholder={t('Enter middle name')}
                 />
               </div>
               <div className="col-span-4">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Last Name *</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Last Name *')}</label>
                 <input
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="Enter last name"
+                  placeholder={t('Enter last name')}
                 />
               </div>
             </div>
             {/* Father's Name Row */}
             <div className="grid grid-cols-12 gap-2 mt-2">
               <div className="col-span-12">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Father's Name</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t("Father's Name")}</label>
                 <input
                   type="text"
                   value={formData.fatherName}
                   onChange={(e) => handleInputChange('fatherName', e.target.value)}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="Enter father's name"
+                  placeholder={t("Enter father's name")}
                 />
               </div>
             </div>
@@ -1013,13 +1024,13 @@ const MemberMaster: React.FC = () => {
           <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
             <div className="mm-section-heading">
               <span className="mm-section-number" aria-hidden="true">02</span>
-              <h2>Personal &amp; employment</h2>
+              <h2>{t('Personal & employment')}</h2>
             </div>
 
             {/* Row 1: Gender, DOB, Age, Monthly Contribution, Compulsary Deposit */}
             <div className="grid grid-cols-12 gap-2 mb-2">
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-1 uppercase tracking-wide">Gender</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-1 uppercase tracking-wide">{t('Gender')}</label>
                 <div className="flex gap-1.5">
                   <div
                     onClick={() => handleInputChange('gender', 'male')}
@@ -1028,7 +1039,7 @@ const MemberMaster: React.FC = () => {
                       : 'border-slate-300 bg-white text-slate-500'
                       }`}
                   >
-                    Male
+                    {t('Male')}
                   </div>
                   <div
                     onClick={() => handleInputChange('gender', 'female')}
@@ -1037,12 +1048,12 @@ const MemberMaster: React.FC = () => {
                       : 'border-slate-300 bg-white text-slate-500'
                       }`}
                   >
-                    Female
+                    {t('Female')}
                   </div>
                 </div>
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Date Of Birth</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Date Of Birth')}</label>
                 <input
                   type="date"
                   value={formData.dateOfBirth}
@@ -1068,18 +1079,18 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-1">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Age</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Age')}</label>
                 <input
                   type="number"
                   value={formData.age}
                   onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 0)}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-slate-50 text-slate-500 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="Auto"
-                  title="Age is auto-calculated from Date of Birth"
+                  placeholder={t('Auto')}
+                  title={t('Age is auto-calculated from Date of Birth')}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Monthly Contrib.</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Monthly Contrib.')}</label>
                 <input
                   type="number"
                   min="0"
@@ -1091,7 +1102,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-4">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Compulsary Dep.</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Compulsary Dep.')}</label>
                 <input
                   type="number"
                   min="0"
@@ -1112,7 +1123,7 @@ const MemberMaster: React.FC = () => {
                     onChange={(e) => handleInputChange('startRd', e.target.checked)}
                     className="accent-violet-600"
                   />
-                  <span className="text-slate-500 fz-tiny font-medium">Start RD for this member</span>
+                  <span className="text-slate-500 fz-tiny font-medium">{t('Start RD for this member')}</span>
                 </label>
               </div>
             </div>
@@ -1120,7 +1131,7 @@ const MemberMaster: React.FC = () => {
             {/* Row 2: Sr.No, Designation, Basic Pay, ShareAmt, Insurance */}
             <div className="grid grid-cols-12 gap-2 mb-2">
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Sr.No/EPF/P.NO</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Sr.No/EPF/P.NO')}</label>
                 <input
                   type="text"
                   value={formData.srNoEpfPfNo}
@@ -1129,14 +1140,14 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Designation</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Designation')}</label>
                 <MemberSelect
                   ariaLabel="Designation"
                   searchable
                   value={formData.designation}
                   onChange={(value) => handleInputChange('designation', value)}
                 >
-                  <option value="">Select...</option>
+                  <option value="">{t('Select...')}</option>
                   <option value="A./M.">A./M.</option>
                   <option value="A./ASST">A./ASST</option>
                   <option value="T.A.">T.A.</option>
@@ -1416,7 +1427,7 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Basic Pay</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Basic Pay')}</label>
                 <input
                   type="number"
                   min="0"
@@ -1428,7 +1439,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">ShareAmt</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('ShareAmt')}</label>
                 <input
                   type="number"
                   min="0"
@@ -1456,13 +1467,13 @@ const MemberMaster: React.FC = () => {
                     }`}>
                     {formData.isInsured && '✓'}
                   </div>
-                  <span className="text-slate-500 fz-tiny font-semibold uppercase tracking-wide">Insured</span>
+                  <span className="text-slate-500 fz-tiny font-semibold uppercase tracking-wide">{t('Insured')}</span>
                 </div>
               </div>
               <div className="col-span-2">
                 <label className={`fz-tiny font-semibold block mb-0.5 uppercase tracking-wide ${formData.isInsured ? 'text-slate-500' : 'text-slate-300'
                   }`}>
-                  Insurance Amt {formData.isInsured && <span className="text-red-500">*</span>}
+                  {t('Insurance Amt')} {formData.isInsured && <span className="text-red-500">*</span>}
                 </label>
                 <input
                   type="number"
@@ -1475,12 +1486,12 @@ const MemberMaster: React.FC = () => {
                     ? 'border-slate-300 bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20'
                     : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed'
                     }`}
-                  placeholder={formData.isInsured ? "0.00" : "Check 'Insured'"}
-                  title={formData.isInsured ? "Enter the insurance amount" : "Please check 'Insured' checkbox first"}
+                  placeholder={formData.isInsured ? "0.00" : t("Check 'Insured'")}
+                  title={formData.isInsured ? t('Enter the insurance amount') : t("Please check 'Insured' checkbox first")}
                 />
                 {!formData.isInsured && (
                   <p className="fz-mini text-slate-400 mt-0.5">
-                    💡 Check "Insured" to enable
+                    💡 {t('Check "Insured" to enable')}
                   </p>
                 )}
               </div>
@@ -1489,7 +1500,7 @@ const MemberMaster: React.FC = () => {
             {/* Row 3: Membership Date, Retirement Date, Department */}
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Membership Date</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Membership Date')}</label>
                 <input
                   type="date"
                   value={formData.membershipDate}
@@ -1498,7 +1509,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Retirement Date</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Retirement Date')}</label>
                 <input
                   type="date"
                   value={formData.retirementDate}
@@ -1507,7 +1518,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Department</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Department')}</label>
                 <input
                   type="text"
                   value={formData.department}
@@ -1520,7 +1531,7 @@ const MemberMaster: React.FC = () => {
             {/* Row 4: PanCard, Aadhar, Phone, FRS, BranchMS */}
             <div className="grid grid-cols-12 gap-2 mt-2">
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">PanCard No</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('PanCard No')}</label>
                 <input
                   type="text"
                   value={formData.panCardNo}
@@ -1531,13 +1542,13 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Aadhar No</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Aadhar No')}</label>
                 <input
                   type="text"
                   value={formData.aadharNo}
                   onChange={(e) => handleInputChange('aadharNo', e.target.value.replace(/\D/g, '').slice(0, 12))}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="12 digits"
+                  placeholder={'12 ' + t('digits')}
                   maxLength={12}
                 />
               </div>
@@ -1546,23 +1557,23 @@ const MemberMaster: React.FC = () => {
                   discarded on every save. No landline column exists to wire it to; adding one
                   needs a deliberate decision, not a silent schema change. */}
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">F.R.S. Number</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('F.R.S. Number')}</label>
                 <input
                   type="text"
                   value={formData.frsNumber}
                   onChange={(e) => handleInputChange('frsNumber', e.target.value)}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="FRS No"
+                  placeholder={t('FRS No')}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Branch MS No</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Branch MS No')}</label>
                 <input
                   type="text"
                   value={formData.branchMsNo}
                   onChange={(e) => handleInputChange('branchMsNo', e.target.value)}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="Branch MS"
+                  placeholder={t('Branch MS')}
                 />
               </div>
             </div>
@@ -1572,35 +1583,35 @@ const MemberMaster: React.FC = () => {
           <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
             <div className="mm-section-heading">
               <span className="mm-section-number" aria-hidden="true">03</span>
-              <h2>Address &amp; status</h2>
+              <h2>{t('Address & status')}</h2>
             </div>
 
             {/* Row 1: Home Address, Status, Date Withdrawl/Retire */}
             <div className="grid grid-cols-12 gap-2 mb-2">
               <div className="col-span-6">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Home Address</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Home Address')}</label>
                 <textarea
                   value={formData.homeAddress}
                   onChange={(e) => handleInputChange('homeAddress', e.target.value)}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium h-16 resize-none"
-                  placeholder="Enter complete home address..."
+                  placeholder={t('Enter complete home address...')}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Status</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Status')}</label>
                 <MemberSelect
                   ariaLabel="Status"
                   value={formData.status}
                   onChange={(value) => handleInputChange('status', value)}
                 >
-                  <option value="Regular">Regular</option>
-                  <option value="Retire">Retire</option>
-                  <option value="Withdrawl">Withdrawl</option>
-                  <option value="Expire">Expire</option>
+                  <option value="Regular">{t('Regular')}</option>
+                  <option value="Retire">{t('Retire')}</option>
+                  <option value="Withdrawl">{t('Withdrawl')}</option>
+                  <option value="Expire">{t('Expire')}</option>
                 </MemberSelect>
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Date Withdrawl/Retire</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Date Withdrawl/Retire')}</label>
                 <input
                   type="date"
                   value={formData.dateOfWithdrawRetire}
@@ -1613,7 +1624,7 @@ const MemberMaster: React.FC = () => {
             {/* Row 2: Cast Category and Member Type */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Cast Category</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Cast Category')}</label>
                 <MemberSelect
                   ariaLabel="Cast Category"
                   value={formData.castCategory}
@@ -1630,17 +1641,17 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Member Type</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Member Type')}</label>
                 <MemberSelect
                   ariaLabel="Member Type"
                   value={formData.memberType}
                   onChange={(value) => handleInputChange('memberType', value)}
                 >
-                  <option value="Regular">Regular</option>
-                  <option value="Other">Other</option>
-                  <option value="Nominal">Nominal</option>
-                  <option value="Co-Op Member">Co-Op Member</option>
-                  <option value="Well Wisher Member">Well Wisher Member</option>
+                  <option value="Regular">{t('Regular')}</option>
+                  <option value="Other">{t('Other')}</option>
+                  <option value="Nominal">{t('Nominal')}</option>
+                  <option value="Co-Op Member">{t('Co-Op Member')}</option>
+                  <option value="Well Wisher Member">{t('Well Wisher Member')}</option>
                 </MemberSelect>
               </div>
             </div>
@@ -1650,13 +1661,13 @@ const MemberMaster: React.FC = () => {
           <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
             <div className="mm-section-heading">
               <span className="mm-section-number" aria-hidden="true">04</span>
-              <h2>Organization &amp; nominee</h2>
+              <h2>{t('Organization & nominee')}</h2>
             </div>
 
             {/* Division/RO and Branch */}
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Division/RO *</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Division/RO *')}</label>
                 <MemberSelect
                   ariaLabel="Division/RO"
                   value={formData.divisionRo}
@@ -1666,13 +1677,13 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Branch</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Branch')}</label>
                 <MemberSelect
                   ariaLabel="Branch"
                   value={formData.branch}
                   onChange={(value) => handleInputChange('branch', value)}
                 >
-                  <option value="">Select...</option>
+                  <option value="">{t('Select...')}</option>
                   <option value="1-BHILAI-BHILAI-61">1-BHILAI-BHILAI-61</option>
                   <option value="2-POWER HOUSE-POWER HOUSE-94">2-POWER HOUSE-POWER HOUSE-94</option>
                   <option value="3-RISALI-RISALI-99">3-RISALI-RISALI-99</option>
@@ -1686,7 +1697,7 @@ const MemberMaster: React.FC = () => {
             {/* Nominee Section */}
             <div className="grid grid-cols-12 gap-2">
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Nominee's Name</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t("Nominee's Name")}</label>
                 <input
                   type="text"
                   value={formData.nomineeName}
@@ -1695,7 +1706,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Nominee Address</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Nominee Address')}</label>
                 <input
                   type="text"
                   value={formData.nomineeAddress}
@@ -1704,27 +1715,27 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Relation</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Relation')}</label>
                 <MemberSelect
                   ariaLabel="Relation"
                   value={formData.relationWithNominee}
                   onChange={(value) => handleInputChange('relationWithNominee', value)}
                 >
-                  <option value="">Select...</option>
-                  <option value="Wife">Wife</option>
-                  <option value="Husband">Husband</option>
-                  <option value="Spouse">Spouse</option>
-                  <option value="Son">Son</option>
-                  <option value="Daughter">Daughter</option>
-                  <option value="Father">Father</option>
-                  <option value="Mother">Mother</option>
-                  <option value="Brother">Brother</option>
-                  <option value="Sister">Sister</option>
-                  <option value="Nephew">Nephew</option>
+                  <option value="">{t('Select...')}</option>
+                  <option value="Wife">{t('Wife')}</option>
+                  <option value="Husband">{t('Husband')}</option>
+                  <option value="Spouse">{t('Spouse')}</option>
+                  <option value="Son">{t('Son')}</option>
+                  <option value="Daughter">{t('Daughter')}</option>
+                  <option value="Father">{t('Father')}</option>
+                  <option value="Mother">{t('Mother')}</option>
+                  <option value="Brother">{t('Brother')}</option>
+                  <option value="Sister">{t('Sister')}</option>
+                  <option value="Nephew">{t('Nephew')}</option>
                 </MemberSelect>
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Declaration Date</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Declaration Date')}</label>
                 <input
                   type="date"
                   value={formData.declarationDate}
@@ -1733,7 +1744,7 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Remarks</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Remarks')}</label>
                 <input
                   type="text"
                   value={formData.remarks}
@@ -1749,25 +1760,25 @@ const MemberMaster: React.FC = () => {
           <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
             <div className="mm-section-heading">
               <span className="mm-section-number" aria-hidden="true">05</span>
-              <h2>Documents &amp; media</h2>
+              <h2>{t('Documents & media')}</h2>
             </div>
 
             {/* Mobile + Email */}
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Mobile No</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Mobile No')}</label>
                 <input type="tel" value={formData.mobileNumber}
                   onChange={(e) => handleInputChange('mobileNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="10 digits (starts 6-9)"
+                  placeholder={'10 ' + t('digits (starts 6-9)')}
                   maxLength={10} />
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">Email Address</label>
+                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Email Address')}</label>
                 <input type="email" value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
-                  placeholder="member@example.com" />
+                  placeholder={t('member@example.com')} />
               </div>
             </div>
 
@@ -1798,16 +1809,16 @@ const MemberMaster: React.FC = () => {
                       <div className="w-20 h-20 border border-dashed border-slate-300 rounded-md flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:border-violet-400 hover:bg-violet-50"
                         onClick={() => document.getElementById(`photo-${type}`)?.click()}>
                         <UploadIcon size={16} />
-                        <span className="fz-micro mt-0.5">Click to upload</span>
+                        <span className="fz-micro mt-0.5">{t('Click to upload')}</span>
                       </div>
                     )}
                     <input id={`photo-${type}`} type="file" accept="image/jpeg,image/png" className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoSelect(type, f); e.target.value = ''; }} />
                     <button onClick={() => document.getElementById(`photo-${type}`)?.click()}
                       className="fz-micro font-bold text-violet-600 hover:text-violet-800 uppercase tracking-wide px-2 py-0.5 border border-slate-300 rounded-md hover:bg-violet-50">
-                      {preview ? 'Change' : 'Browse'}
+                      {preview ? t('Change') : t('Browse')}
                     </button>
-                    {mediaQueue[type] && <span className="fz-nano text-amber-600 font-black">⏳ Will upload on save</span>}
+                    {mediaQueue[type] && <span className="fz-nano text-amber-600 font-black">⏳ {t('Will upload on save')}</span>}
                   </div>
                 );
               })}
@@ -1817,7 +1828,7 @@ const MemberMaster: React.FC = () => {
             <div id="kyc-section" className="border border-slate-200 rounded-lg bg-white p-2 mb-2">
               <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
                 <span className="fz-tiny font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                  KYC Documents
+                  {t('KYC Documents')}
                   {kycDocuments.length > 0 && <span className="bg-violet-50 text-violet-700 px-1.5 rounded-full fz-mini">{kycDocuments.length}</span>}
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -1828,22 +1839,22 @@ const MemberMaster: React.FC = () => {
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleKycUpload(f); e.target.value = ''; }} />
                   <button onClick={() => document.getElementById('kyc-file')?.click()} disabled={kycUploading || !formData.memberNumber}
                     className="fz-tiny font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 disabled:cursor-not-allowed px-2.5 py-1 rounded-md uppercase tracking-wide flex items-center gap-1 transition-colors">
-                    <UploadIcon size={10} /> {kycUploading ? 'Uploading…' : 'Add Document'}
+                    <UploadIcon size={10} /> {kycUploading ? t('Uploading…') : t('Add Document')}
                   </button>
                 </div>
               </div>
               {!formData.memberNumber && (
-                <p className="fz-mini text-amber-600 font-semibold mb-1">💡 Save the member first to attach KYC documents.</p>
+                <p className="fz-mini text-amber-600 font-semibold mb-1">💡 {t('Save the member first to attach KYC documents.')}</p>
               )}
               {kycDocuments.length === 0 ? (
-                <p className="fz-mini text-slate-400 font-semibold text-center py-2 uppercase tracking-wide">No documents uploaded</p>
+                <p className="fz-mini text-slate-400 font-semibold text-center py-2 uppercase tracking-wide">{t('No documents uploaded')}</p>
               ) : (
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5">
                   {kycDocuments.map((doc) => (
                     <div key={doc.id} className="border border-violet-100 rounded-full bg-violet-50 px-2.5 py-1 flex items-center justify-between gap-1.5">
                       <a href={`${getApiBaseUrlSync()}/members/master/${formData.memberNumber}/document/${doc.id}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1">
                         <span className="block fz-mini font-bold text-violet-700 uppercase truncate">{doc.docType}</span>
-                        <span className="block fz-micro text-violet-400 truncate" title={doc.fileName}>{doc.fileName || 'View'}</span>
+                        <span className="block fz-micro text-violet-400 truncate" title={doc.fileName}>{doc.fileName || t('View')}</span>
                       </a>
                       <button onClick={() => handleKycDelete(doc.id)}
                         className="bg-white text-violet-400 rounded-full w-4 h-4 flex items-center justify-center hover:bg-red-500 hover:text-white shrink-0 transition-colors">
@@ -1858,12 +1869,12 @@ const MemberMaster: React.FC = () => {
             {/* Signature */}
             <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
               <div className="bg-violet-600 px-2 py-0.5 flex items-center justify-between">
-                <span className="fz-mini font-black text-white uppercase tracking-wide flex items-center gap-1"><PenTool size={9} /> Signature</span>
+                <span className="fz-mini font-black text-white uppercase tracking-wide flex items-center gap-1"><PenTool size={9} /> {t('Signature')}</span>
                 <div className="flex gap-1">
                   {(['draw', 'upload'] as const).map(m => (
                     <button key={m} onClick={() => setSigMode(m)}
                       className={`fz-micro font-black px-2 py-0.5 rounded uppercase tracking-wide transition-all ${sigMode === m ? 'bg-white text-violet-700' : 'text-violet-200 hover:text-white'}`}>
-                      {m === 'draw' ? '✏ Draw' : '⬆ Upload'}
+                      {m === 'draw' ? '✏ ' + t('Draw') : '⬆ ' + t('Upload')}
                     </button>
                   ))}
                 </div>
@@ -1879,23 +1890,23 @@ const MemberMaster: React.FC = () => {
                       onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={stopDrawing} onMouseLeave={stopDrawing} />
                     {!hasDrawing && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <span className="fz-mini font-black text-slate-300 uppercase tracking-widest">Sign here with mouse or touch</span>
+                        <span className="fz-mini font-black text-slate-300 uppercase tracking-widest">{t('Sign here with mouse or touch')}</span>
                       </div>
                     )}
                   </div>
                   <div className="px-2 py-1 bg-slate-50 flex items-center justify-between border-t border-slate-200">
                     <button onClick={clearCanvas} disabled={!hasDrawing}
                       className="fz-micro font-bold px-2 py-0.5 border border-slate-300 rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-30 uppercase">
-                      Clear
+                      {t('Clear')}
                     </button>
                     <div className="flex items-center gap-2">
-                      {sigQueue && <span className="fz-nano text-amber-600 font-black">⏳ Will upload on save</span>}
+                      {sigQueue && <span className="fz-nano text-amber-600 font-black">⏳ {t('Will upload on save')}</span>}
                       {savedSigUrl && !sigQueue && (
-                        <span className="fz-nano text-emerald-600 font-black flex items-center gap-0.5"><CheckCircle2 size={8} /> Saved</span>
+                        <span className="fz-nano text-emerald-600 font-black flex items-center gap-0.5"><CheckCircle2 size={8} /> {t('Saved')}</span>
                       )}
                       <button onClick={queueDrawing} disabled={!hasDrawing}
                         className="fz-micro font-bold px-3 py-0.5 bg-violet-600 hover:bg-violet-500 disabled:bg-slate-300 text-white rounded-md uppercase tracking-wide">
-                        Use This Signature
+                        {t('Use This Signature')}
                       </button>
                     </div>
                   </div>
@@ -1908,8 +1919,8 @@ const MemberMaster: React.FC = () => {
                   <div className="border border-dashed border-slate-300 rounded-md p-4 flex flex-col items-center gap-1 cursor-pointer hover:border-violet-500 hover:bg-violet-50"
                     onClick={() => document.getElementById('sig-upload')?.click()}>
                     <UploadIcon size={20} className="text-slate-300" />
-                    <span className="fz-mini font-bold text-slate-500 uppercase">Click to upload signature (JPG/PNG)</span>
-                    {sigQueue && <span className="fz-micro text-amber-600 font-black">⏳ {sigQueue.name} — will upload on save</span>}
+                    <span className="fz-mini font-bold text-slate-500 uppercase">{t('Click to upload signature (JPG/PNG)')}</span>
+                    {sigQueue && <span className="fz-micro text-amber-600 font-black">⏳ {t('{{1}} — will upload on save', { 1: sigQueue.name })}</span>}
                   </div>
                   <input id="sig-upload" type="file" accept="image/jpeg,image/png" className="hidden"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSigQueue(f); } e.target.value = ''; }} />
@@ -1920,8 +1931,8 @@ const MemberMaster: React.FC = () => {
               {savedSigUrl && !sigQueue && (
                 <div className="border-t border-slate-200 px-2 py-1 bg-emerald-50 flex items-center gap-2">
                   <CheckCircle2 size={10} className="text-emerald-600" />
-                  <span className="fz-micro font-black text-emerald-700 uppercase">Saved Signature:</span>
-                  <img src={savedSigUrl} alt="Saved signature"
+                  <span className="fz-micro font-black text-emerald-700 uppercase">{t('Saved Signature:')}</span>
+                  <img src={savedSigUrl} alt={t('Saved signature')}
                     className="max-h-10 max-w-32 object-contain bg-white border border-emerald-200 rounded p-0.5"
                     onError={() => setSavedSigUrl('')} />
                 </div>

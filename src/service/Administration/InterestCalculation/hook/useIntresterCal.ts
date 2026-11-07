@@ -14,6 +14,7 @@ import type {
 } from '../interface/interfaces';
 import apiService from '../../../../services/api';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 
 // Initial form data
 const initialFormData: CalculationData = {
@@ -145,6 +146,7 @@ export const useDropdownData = (): UseDropdownDataReturn => {
 
 // Main hook for interest calculator
 export const useInterestCalculator = (initialData?: Partial<CalculationData>): UseInterestCalculatorReturn => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<CalculationData>({
     ...initialFormData,
     ...initialData
@@ -218,7 +220,7 @@ export const useInterestCalculator = (initialData?: Partial<CalculationData>): U
       const transactions = (data.memberCalculations || []).map((calc: any, i: number) => ({
         id: String(i + 1),
         date: calc.memberNumber || String(i + 1),
-        description: calc.memberName || 'Member',
+        description: calc.memberName || t('Member'),
         amount: calc.openingBalance || 0,
         balance: calc.closingBalance || 0,
         interestEarned: calc.interestAmount || 0,

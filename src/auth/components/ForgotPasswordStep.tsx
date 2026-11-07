@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, ChevronRight, KeyRound, Mail, RotateCcw, ShieldCheck, Smartphone, User } from 'lucide-react';
 import { apiService } from '../../services/api';
 import PasswordInput from '../../components/shared/PasswordInput';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   initialUsername?: string;
@@ -15,6 +16,7 @@ const RULE = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
 
 /** "Forgot password?" on the sign-in page: pick a method, prove it with the authenticator code, set a new password. */
 const ForgotPasswordStep: React.FC<Props> = ({ initialUsername = '', onBack }) => {
+  const { t } = useTranslation();
   const [methods, setMethods] = useState<Methods | null>(null);
   const [stage, setStage] = useState<Stage>('choose');
   const [username, setUsername] = useState(initialUsername);
@@ -69,39 +71,39 @@ const ForgotPasswordStep: React.FC<Props> = ({ initialUsername = '', onBack }) =
         <div style={{ width: 52, height: 52, borderRadius: 16, display: 'grid', placeItems: 'center', border: '1px solid var(--aw-border)' }}>
           {stage === 'done' ? <CheckCircle2 size={26} /> : <KeyRound size={26} />}
         </div>
-        <h2 className="aw-card-title">{stage === 'done' ? 'Password changed' : 'Reset your password'}</h2>
+        <h2 className="aw-card-title">{stage === 'done' ? t('Password changed') : t('Reset your password')}</h2>
         <p className="aw-meta">
-          {stage === 'choose' && 'Choose how you want to verify it is you.'}
-          {stage === 'code' && (useRecovery ? 'Enter one of your recovery codes.' : 'Enter your username and the 6-digit code from your authenticator app.')}
-          {stage === 'password' && 'Code accepted. Choose a new password.'}
-          {stage === 'done' && 'You can now sign in with your new password.'}
+          {stage === 'choose' && t('Choose how you want to verify it is you.')}
+          {stage === 'code' && (useRecovery ? t('Enter one of your recovery codes.') : t('Enter your username and the 6-digit code from your authenticator app.'))}
+          {stage === 'password' && t('Code accepted. Choose a new password.')}
+          {stage === 'done' && t('You can now sign in with your new password.')}
         </p>
       </div>
 
       {stage === 'choose' && (
         <div className="aw-stack" style={{ gap: 8 }}>
-          {methods === null ? <p className="aw-meta" style={{ textAlign: 'center' }}>Loading…</p> : (
+          {methods === null ? <p className="aw-meta" style={{ textAlign: 'center' }}>{t('Loading…')}</p> : (
             <>
               <button type="button" className="aw-btn aw-btn-secondary" disabled={!methods.authenticator} style={optionStyle}
                 onClick={() => { setError(''); setStage('code'); }}>
                 <Smartphone size={16} />
                 <span style={{ flex: 1 }}>
-                  <strong>Authenticator code</strong>
-                  <span className="aw-meta" style={{ display: 'block' }}>{methods.authenticator ? 'Use the code from your phone app' : 'Switched off by your administrator'}</span>
+                  <strong>{t('Authenticator code')}</strong>
+                  <span className="aw-meta" style={{ display: 'block' }}>{methods.authenticator ? t('Use the code from your phone app') : t('Switched off by your administrator')}</span>
                 </span>
                 {methods.authenticator && <ChevronRight size={14} />}
               </button>
               <button type="button" className="aw-btn aw-btn-secondary" disabled style={optionStyle} aria-disabled="true">
                 <Mail size={16} />
                 <span style={{ flex: 1 }}>
-                  <strong>Email OTP</strong>
-                  <span className="aw-meta" style={{ display: 'block' }}>A code sent to your email address</span>
+                  <strong>{t('Email OTP')}</strong>
+                  <span className="aw-meta" style={{ display: 'block' }}>{t('A code sent to your email address')}</span>
                 </span>
-                <span className="aw-pill">Coming soon</span>
+                <span className="aw-pill">{t('Coming soon')}</span>
               </button>
               <div className="aw-alert" role="note" style={{ marginTop: 4 }}>
                 <ShieldCheck size={16} />
-                <div>Don't have an authenticator set up, or lost your phone? Ask your administrator to reset your password.</div>
+                <div>{t("Don't have an authenticator set up, or lost your phone? Ask your administrator to reset your password.")}</div>
               </div>
             </>
           )}
@@ -112,7 +114,7 @@ const ForgotPasswordStep: React.FC<Props> = ({ initialUsername = '', onBack }) =
         <form className="aw-stack" style={{ gap: 10 }} onSubmit={(e) => { e.preventDefault(); verify(); }}>
           <div className="aw-input-wrap has-icon">
             <User size={14} />
-            <input className="aw-input" value={username} disabled={busy} autoComplete="off" placeholder="Username"
+            <input className="aw-input" value={username} disabled={busy} autoComplete="off" placeholder={t('Username')}
               onChange={(e) => { setUsername(e.target.value); setError(''); }} />
           </div>
           <div className="aw-input-wrap has-icon">
@@ -125,35 +127,35 @@ const ForgotPasswordStep: React.FC<Props> = ({ initialUsername = '', onBack }) =
           </div>
           {err}
           <button type="submit" className="aw-btn aw-btn-primary" disabled={busy || !username.trim() || !code.trim()}>
-            {busy && <RotateCcw size={14} className="aw-spin" />} {busy ? 'Verifying…' : 'Verify'}
+            {busy && <RotateCcw size={14} className="aw-spin" />} {busy ? t('Verifying…') : t('Verify')}
           </button>
           <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" disabled={busy}
             onClick={() => { setUseRecovery((r) => !r); setCode(''); setError(''); }}>
-            {useRecovery ? 'Use my authenticator app instead' : 'Use a recovery code'}
+            {useRecovery ? t('Use my authenticator app instead') : t('Use a recovery code')}
           </button>
         </form>
       )}
 
       {stage === 'password' && (
         <form className="aw-stack" style={{ gap: 10 }} onSubmit={(e) => { e.preventDefault(); reset(); }}>
-          <PasswordInput withIcon className="aw-input" value={pw} disabled={busy} autoComplete="new-password" placeholder="New password"
+          <PasswordInput withIcon className="aw-input" value={pw} disabled={busy} autoComplete="new-password" placeholder={t('New password')}
               onChange={(e) => { setPw(e.target.value); setError(''); }} />
-          <PasswordInput withIcon className="aw-input" value={pw2} disabled={busy} autoComplete="new-password" placeholder="Confirm new password"
+          <PasswordInput withIcon className="aw-input" value={pw2} disabled={busy} autoComplete="new-password" placeholder={t('Confirm new password')}
               onChange={(e) => { setPw2(e.target.value); setError(''); }} />
-          <p className="aw-meta">At least 8 characters, with an uppercase letter, a lowercase letter and a number.</p>
+          <p className="aw-meta">{t('At least 8 characters, with an uppercase letter, a lowercase letter and a number.')}</p>
           {err}
           <button type="submit" className="aw-btn aw-btn-primary" disabled={busy || !pw || !pw2}>
-            {busy && <RotateCcw size={14} className="aw-spin" />} {busy ? 'Saving…' : 'Change password'}
+            {busy && <RotateCcw size={14} className="aw-spin" />} {busy ? t('Saving…') : t('Change password')}
           </button>
         </form>
       )}
 
       {stage === 'done' ? (
-        <button type="button" className="aw-btn aw-btn-primary" onClick={onBack}>Back to sign in</button>
+        <button type="button" className="aw-btn aw-btn-primary" onClick={onBack}>{t('Back to sign in')}</button>
       ) : (
         <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" disabled={busy}
           onClick={() => (stage === 'code' ? (setStage('choose'), setError('')) : onBack())}>
-          {stage === 'code' ? 'Choose another method' : 'Back to sign in'}
+          {stage === 'code' ? t('Choose another method') : t('Back to sign in')}
         </button>
       )}
     </div>

@@ -31,13 +31,15 @@ import { Select } from 'antd';
 import AwDialog from '@/components/shared/kit/AwDialog';
 import PasswordInput from '../../../../../components/shared/PasswordInput';
 import UserLookup from '@/components/shared/UserLookup/UserLookup';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../../i18n';
 
 interface CreateModifyUsersProps {
   className?: string;
 }
 
 const USER_LEVELS: { value: UserLevel | ''; label: string }[] = [
-  { value: '',               label: 'Select Level'   },
+  { value: '',               label: tLabel('Select Level')   },
   { value: 'system',        label: 'SYSTEM'          },
   { value: 'administrator', label: 'ADMINISTRATOR'   },
   { value: 'manager',       label: 'MANAGER'         },
@@ -62,8 +64,8 @@ const STATUS_ICONS = {
 // ── Animated Permission List ──────────────────────────────────────────────────
 // Friendly names for rights whose raw key is not self-explanatory.
 const PERM_LABELS: Record<string, { label: string; hint: string }> = {
-  manage_two_factor: { label: 'Manage Two-Factor (other users)', hint: 'May require 2FA for other users, reset their authenticator and unlock them in the Two-Factor & Approvals window. Cannot touch administrator accounts.' },
-  approve_actions: { label: 'Approver (OTP)', hint: 'May give the authenticator code that authorises sensitive actions (loan closure, pass, reverse). They must also set up their authenticator in My Profile.' },
+  manage_two_factor: { label: tLabel('Manage Two-Factor (other users)'), hint: tLabel('May require 2FA for other users, reset their authenticator and unlock them in the Two-Factor & Approvals window. Cannot touch administrator accounts.') },
+  approve_actions: { label: tLabel('Approver (OTP)'), hint: tLabel('May give the authenticator code that authorises sensitive actions (loan closure, pass, reverse). They must also set up their authenticator in My Profile.') },
 };
 
 interface PermListProps {
@@ -87,6 +89,7 @@ const PermList: React.FC<PermListProps> = ({
   items, selected, flyingOut, justArrived, onToggle, label, count, side,
   onDragStartItems, onDragEndItems, onDropHere, dropReady,
 }) => {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isOver, setIsOver] = useState(false);
   const [draggingItems, setDraggingItems] = useState<string[]>([]);
@@ -108,7 +111,7 @@ const PermList: React.FC<PermListProps> = ({
         {items.length === 0 && (
           <div className="aw-empty" style={{ height: '100%', justifyContent: 'center' }}>
             <ShieldCheck size={26} />
-            <span className="aw-meta">{side === 'right' ? 'No privileges yet' : 'Empty'}</span>
+            <span className="aw-meta">{side === 'right' ? t('No privileges yet') : t('Empty')}</span>
           </div>
         )}
         {items.map((item) => {
@@ -150,6 +153,7 @@ const PermList: React.FC<PermListProps> = ({
 
 // ── Main component ────────────────────────────────────────────────────────────
 const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' }) => {
+  const { t } = useTranslation();
   const {
     formData,
     selectedDefaultRights,
@@ -288,24 +292,24 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">{isUpdating ? 'Modify User' : 'Create User'}</h1>
+          <h1 className="aw-title">{isUpdating ? t('Modify User') : t('Create User')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Fingerprint size={12} /> User Access Management
+            <Fingerprint size={12} /> {t('User Access Management')}
           </p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={() => setIsLookupVisible(true)} className="aw-btn aw-btn-secondary">
-            <Search size={13} /> Search
+            <Search size={13} /> {t('Search')}
           </button>
           <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary">
-            <RotateCcw size={13} /> Reset
+            <RotateCcw size={13} /> {t('Reset')}
           </button>
           <button type="button" onClick={handleSave} disabled={isSaving} className="aw-btn aw-btn-primary">
             {isSaving ? <Loader2 size={13} className="aw-spin" /> : <Save size={13} />}
-            {isUpdating ? 'Update' : 'Save'}
+            {isUpdating ? t('Update') : t('Save')}
           </button>
           <button type="button" onClick={handleClose} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -316,7 +320,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
             <div className={`aw-alert aw-fade-in ${statusTone[statusMessage.type]}`} style={{ marginBottom: 0, alignItems: 'center' }} role="status">
               {STATUS_ICONS[statusMessage.type]}
               <span style={{ flex: 1 }}>{statusMessage.text}</span>
-              <button type="button" onClick={clearStatus} className="aw-icon-btn is-sm" aria-label="Dismiss" style={{ color: 'inherit' }}>
+              <button type="button" onClick={clearStatus} className="aw-icon-btn is-sm" aria-label={t('Dismiss')} style={{ color: 'inherit' }}>
                 <X size={13} />
               </button>
             </div>
@@ -329,7 +333,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><UserCheck size={14} /></span>
-                  <h2 className="aw-card-title">Identity Profile</h2>
+                  <h2 className="aw-card-title">{t('Identity Profile')}</h2>
                 </div>
                 <div className="aw-stack">
                   {/* Avatar */}
@@ -344,33 +348,33 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                         }
                         e.target.value = '';
                       }} />
-                    <button type="button" onClick={openAvatarPicker} className="aw-avatar" aria-label="Change photo" data-tip="Change photo" data-tip-pos="bottom">
+                    <button type="button" onClick={openAvatarPicker} className="aw-avatar" aria-label={t('Change photo')} data-tip={t('Change photo')} data-tip-pos="bottom">
                       {formData.avatar ? (
-                        <img src={formData.avatar} alt="Avatar" />
+                        <img src={formData.avatar} alt={t('Avatar')} />
                       ) : (
                         <span>{formData.username?.[0] || <User size={20} />}</span>
                       )}
                       <i className="aw-avatar-badge"><Camera size={10} /></i>
                     </button>
                     <div>
-                      <p className="aw-strong" style={{ textTransform: 'uppercase' }}>{formData.username || 'New User'}</p>
-                      <p className="aw-meta">Click photo to change</p>
+                      <p className="aw-strong" style={{ textTransform: 'uppercase' }}>{formData.username || t('New User')}</p>
+                      <p className="aw-meta">{t('Click photo to change')}</p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="aw-label" htmlFor="cmu-username">User Name</label>
+                    <label className="aw-label" htmlFor="cmu-username">{t('User Name')}</label>
                     <div className="aw-input-wrap has-icon has-action">
                       <User size={13} />
                       <input id="cmu-username" type="text" value={formData.username}
                         onChange={(e) => updateFormData('username', e.target.value)}
-                        className="aw-input" placeholder="e.g. admin_pro_01" />
+                        className="aw-input" placeholder={t('e.g. admin_pro_01')} />
                       <button
                         type="button"
                         className="aw-input-action"
                         onClick={() => formData.username ? fetchUser() : setIsLookupVisible(true)}
-                        aria-label="Find user"
-                        data-tip="Find user"
+                        aria-label={t('Find user')}
+                        data-tip={t('Find user')}
                         data-tip-pos="top-end"
                       >
                         <Search size={13} />
@@ -380,32 +384,32 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
 
                   <div>
                     <label className="aw-label" htmlFor="cmu-email">
-                      Email <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>(optional)</span>
+                      {t('Email')} <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>{t('(optional)')}</span>
                     </label>
                     <div className="aw-input-wrap has-icon">
                       <Mail size={13} />
                       <input id="cmu-email" type="email" value={formData.email}
                         onChange={(e) => updateFormData('email', e.target.value)}
-                        className="aw-input" placeholder="leave blank to auto-generate" />
+                        className="aw-input" placeholder={t('leave blank to auto-generate')} />
                     </div>
                   </div>
 
                   <div className="aw-two">
                     <div>
-                      <label className="aw-label" htmlFor="cmu-pw">Password</label>
+                      <label className="aw-label" htmlFor="cmu-pw">{t('Password')}</label>
                       <PasswordInput withIcon id="cmu-pw" value={formData.password}
                           onChange={(e) => updateFormData('password', e.target.value)}
-                          className="aw-input" placeholder={isUpdating ? '(blank = keep)' : '••••••••'} />
-                      {!isUpdating && <p className="aw-meta" style={{ marginTop: 4 }}>Min 6 characters</p>}
+                          className="aw-input" placeholder={isUpdating ? t('(blank = keep)') : '••••••••'} />
+                      {!isUpdating && <p className="aw-meta" style={{ marginTop: 4 }}>{t('Min 6 characters')}</p>}
                     </div>
                     <div>
-                      <label className="aw-label" htmlFor="cmu-pw2">Confirm</label>
+                      <label className="aw-label" htmlFor="cmu-pw2">{t('Confirm')}</label>
                       <PasswordInput id="cmu-pw2" value={formData.confirmPassword}
                         onChange={(e) => updateFormData('confirmPassword', e.target.value)}
                         className={`aw-input ${formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword ? 'is-invalid' : ''}`}
                         placeholder="••••••••" />
                       {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                        <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 700 }}>Passwords don't match</p>
+                        <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 700 }}>{t("Passwords don't match")}</p>
                       )}
                     </div>
                   </div>
@@ -415,18 +419,18 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><ShieldAlert size={14} /></span>
-                  <h2 className="aw-card-title">Level &amp; Authority</h2>
+                  <h2 className="aw-card-title">{t('Level & Authority')}</h2>
                 </div>
                 <div className="aw-stack">
                   <div>
-                    <label className="aw-label" htmlFor="cmu-level">User Level</label>
+                    <label className="aw-label" htmlFor="cmu-level">{t('User Level')}</label>
                     <Select
                       id="cmu-level"
                       className="aw-select"
                       popupClassName="aw-select-popup"
                       value={formData.userLevel || undefined}
                       onChange={(v) => updateFormData('userLevel', v ?? '')}
-                      placeholder="Select Level"
+                      placeholder={t('Select Level')}
                       options={USER_LEVELS.filter(l => l.value !== '').map(l => ({ value: l.value, label: l.label }))}
                     />
                   </div>
@@ -434,15 +438,15 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       <Fingerprint size={16} style={{ color: formData.allowPassTransactions ? 'var(--aw-accent)' : 'var(--aw-muted)' }} />
                       <span>
-                        <span className="aw-strong" style={{ display: 'block' }}>Transaction Auth</span>
-                        <span className="aw-meta">Allow this user to pass transactions</span>
+                        <span className="aw-strong" style={{ display: 'block' }}>{t('Transaction Auth')}</span>
+                        <span className="aw-meta">{t('Allow this user to pass transactions')}</span>
                       </span>
                     </span>
                     <button
                       type="button"
                       role="switch"
                       aria-checked={formData.allowPassTransactions}
-                      aria-label="Transaction Auth"
+                      aria-label={t('Transaction Auth')}
                       onClick={() => updateFormData('allowPassTransactions', !formData.allowPassTransactions)}
                       className={`aw-switch ${formData.allowPassTransactions ? 'is-on' : ''}`}
                     />
@@ -451,15 +455,15 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       <UserCheck size={16} style={{ color: formData.isActive ? 'var(--aw-accent)' : 'var(--aw-muted)' }} />
                       <span>
-                        <span className="aw-strong" style={{ display: 'block' }}>Account Active</span>
-                        <span className="aw-meta">Inactive users cannot log in</span>
+                        <span className="aw-strong" style={{ display: 'block' }}>{t('Account Active')}</span>
+                        <span className="aw-meta">{t('Inactive users cannot log in')}</span>
                       </span>
                     </span>
                     <button
                       type="button"
                       role="switch"
                       aria-checked={formData.isActive}
-                      aria-label="Account Active"
+                      aria-label={t('Account Active')}
                       onClick={() => updateFormData('isActive', !formData.isActive)}
                       className={`aw-switch ${formData.isActive ? 'is-on' : ''}`}
                     />
@@ -473,8 +477,8 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Settings2 size={14} /></span>
                 <div>
-                  <h2 className="aw-card-title">Access Privilege Matrix</h2>
-                  <p className="aw-meta">Click to select · Ctrl+Click multi-select · Drag and drop or use the arrow buttons to transfer</p>
+                  <h2 className="aw-card-title">{t('Access Privilege Matrix')}</h2>
+                  <p className="aw-meta">{t('Click to select · Ctrl+Click multi-select · Drag and drop or use the arrow buttons to transfer')}</p>
                 </div>
               </div>
 
@@ -485,7 +489,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   flyingOut={flyingToRight}
                   justArrived={arrivedLeft}
                   onToggle={toggleAvailable}
-                  label="Available Rights"
+                  label={t('Available Rights')}
                   count={`${formData.availablePermissions.length} pool`}
                   side="left"
                   onDragStartItems={handleDragStart}
@@ -497,23 +501,23 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
                   <button type="button" onClick={handleMoveSelectedRight}
                     disabled={selectedDefaultRights.length === 0 || isAnimating}
-                    className="aw-icon-btn" aria-label="Grant selected" data-tip="Grant selected" data-tip-pos="top-start">
+                    className="aw-icon-btn" aria-label={t('Grant selected')} data-tip={t('Grant selected')} data-tip-pos="top-start">
                     <ChevronRight size={15} />
                   </button>
                   <button type="button" onClick={handleMoveAllRight}
                     disabled={formData.availablePermissions.length === 0 || isAnimating}
-                    className="aw-icon-btn" aria-label="Grant all" data-tip="Grant all" data-tip-pos="top-start">
+                    className="aw-icon-btn" aria-label={t('Grant all')} data-tip={t('Grant all')} data-tip-pos="top-start">
                     <ChevronsRight size={15} />
                   </button>
                   <div style={{ height: 1, background: 'var(--aw-border)' }} />
                   <button type="button" onClick={handleMoveSelectedLeft}
                     disabled={selectedRightsAllot.length === 0 || isAnimating}
-                    className="aw-icon-btn" aria-label="Revoke selected" data-tip="Revoke selected" data-tip-pos="top-start">
+                    className="aw-icon-btn" aria-label={t('Revoke selected')} data-tip={t('Revoke selected')} data-tip-pos="top-start">
                     <ChevronLeft size={15} />
                   </button>
                   <button type="button" onClick={handleMoveAllLeft}
                     disabled={formData.assignedPermissions.length === 0 || isAnimating}
-                    className="aw-icon-btn" aria-label="Revoke all" data-tip="Revoke all" data-tip-pos="top-start">
+                    className="aw-icon-btn" aria-label={t('Revoke all')} data-tip={t('Revoke all')} data-tip-pos="top-start">
                     <ChevronsLeft size={15} />
                   </button>
                 </div>
@@ -524,7 +528,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   flyingOut={flyingToLeft}
                   justArrived={arrivedRight}
                   onToggle={toggleAssigned}
-                  label="Active Privileges"
+                  label={t('Active Privileges')}
                   count={`${formData.assignedPermissions.length} granted`}
                   side="right"
                   onDragStartItems={handleDragStart}
@@ -539,7 +543,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
       </div>
 
       {/* ── Lookup dialog ── */}
-      <AwDialog open={isLookupVisible} title="User Lookup" icon={<Search size={14} />} onClose={() => setIsLookupVisible(false)} maxWidth="56rem" flush>
+      <AwDialog open={isLookupVisible} title={t('User Lookup')} icon={<Search size={14} />} onClose={() => setIsLookupVisible(false)} maxWidth="56rem" flush>
         <UserLookup isModal={true}
           onSelect={(user) => { loadUser(user); setIsLookupVisible(false); }}
           onClose={() => setIsLookupVisible(false)} />

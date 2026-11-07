@@ -8,26 +8,14 @@ import {
     ImportDemandListHookReturn,
 } from '../interface/ImportDemandListInterfaces';
 import { getApiBaseUrl } from '../../../../../services/serverConfig';
-
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const currentMonth = MONTH_ABBR[new Date().getMonth()] as string;
 
 export const useImportDemandList = (): ImportDemandListHookReturn => {
+  const { t } = useTranslation();
     const [importConfig, setImportConfig] = useState<ImportConfig>({
         divisionRO: 'BHILAI',
         branch: '',
@@ -73,11 +61,11 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
 
     const handleImport = useCallback(() => {
         if (!importConfig.monthStr) {
-            showDialog('warning', 'electron-react-ts', 'Month Required', 'Please select a month.');
+            showDialog('warning', 'electron-react-ts', t('Month Required'), t('Please select a month.'));
             return;
         }
         if (!importConfig.yearStr) {
-            showDialog('warning', 'electron-react-ts', 'Year Required', 'Please select a year.');
+            showDialog('warning', 'electron-react-ts', t('Year Required'), t('Please select a year.'));
             return;
         }
 
@@ -120,7 +108,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
                 setPreviewData(rows);
 
                 if (rows.length === 0) {
-                    await showDialog('warning', 'electron-react-ts', 'No Records', 'The file did not contain any valid demand records.\n\nMake sure the sheet has column headers like S.NO., YYMM, CODE, MS.NO., PS.NO., NAME, TOTAL, R/D, R/LOAN, E/LOAN, INTT.');
+                    await showDialog('warning', 'electron-react-ts', t('No Records'), t('The file did not contain any valid demand records. Make sure the sheet has column headers like S.NO., YYMM, CODE, MS.NO., PS.NO., NAME, TOTAL, R/D, R/LOAN, E/LOAN, INTT.'));
                 } else {
                     const msg =
                         `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -139,7 +127,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
                     await showDialog(
                         (warnings.length > 0 || summary.flagged > 0) ? 'warning' : 'info',
                         'electron-react-ts',
-                        `Import Preview — ${rows.length} Records Loaded`,
+                        t('Import Preview — {{1}} Records Loaded', { 1: rows.length }),
                         msg
                     );
                 }
@@ -147,7 +135,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
                 console.error('Import failed:', err);
                 let msg = err.message || 'Unknown error';
                 try { msg = JSON.parse(msg)?.message || msg; } catch {}
-                await showDialog('error', 'electron-react-ts', 'Import Failed', msg);
+                await showDialog('error', 'electron-react-ts', t('Import Failed'), msg);
             } finally {
                 setIsImporting(false);
             }
@@ -158,13 +146,13 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
     const handleSave = useCallback(async () => {
         if (savingRef.current) return;
         if (previewData.length === 0) {
-            await showDialog('warning', 'electron-react-ts', 'No Data', 'Please import a file first before saving.');
+            await showDialog('warning', 'electron-react-ts', t('No Data'), t('Please import a file first before saving.'));
             return;
         }
 
         const validRows = previewData.filter(r => r.status === 'Valid');
         if (validRows.length === 0) {
-            await showDialog('warning', 'electron-react-ts', 'No Valid Records', 'All records have errors. Cannot save.');
+            await showDialog('warning', 'electron-react-ts', t('No Valid Records'), t('All records have errors. Cannot save.'));
             return;
         }
 
@@ -196,7 +184,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
             const data = result.data || result;
 
             if (data.success === false) {
-                await showDialog('warning', 'electron-react-ts', 'Import Warning', data.message || 'Records already exist.');
+                await showDialog('warning', 'electron-react-ts', t('Import Warning'), data.message || t('Records already exist.'));
                 return;
             }
 
@@ -206,7 +194,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
             await showDialog(
                 'info',
                 'electron-react-ts',
-                'Demand Saved Successfully!',
+                t('Demand Saved Successfully!'),
                 `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `MONTH         : ${importConfig.monthStr}\n` +
                 `YEAR          : ${importConfig.yearStr}\n` +
@@ -222,7 +210,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
             console.error('Save failed:', err);
             let msg = err.message || 'Unknown error';
             try { msg = JSON.parse(msg)?.message || msg; } catch {}
-            await showDialog('error', 'electron-react-ts', 'Save Failed', msg);
+            await showDialog('error', 'electron-react-ts', t('Save Failed'), msg);
         } finally {
             savingRef.current = false;
             setIsSaving(false);

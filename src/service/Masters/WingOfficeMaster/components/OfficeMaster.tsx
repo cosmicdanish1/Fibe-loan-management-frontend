@@ -5,6 +5,7 @@ import { Select } from 'antd';
 import { Hash, Building2, MapPin, Navigation, Search, Info } from 'lucide-react';
 import { OfficeMasterHookReturn } from '../interface/interface';
 import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { useTranslation } from 'react-i18next';
 
 const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
   data,
@@ -15,6 +16,7 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
   updateAddress,
   updateCity
 }) => {
+  const { t } = useTranslation();
   const [divisions, setDivisions] = useState<any[]>([]);
 
   useEffect(() => {
@@ -56,7 +58,7 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
       <section className="aw-card aw-fade-in">
         <div className="aw-card-head">
           <span className="aw-card-icon"><Building2 size={14} /></span>
-          <h2 className="aw-card-title">Office Details</h2>
+          <h2 className="aw-card-title">{t('Office Details')}</h2>
           {data.name && (
             <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-accent)' }}>{data.name}</span>
           )}
@@ -65,7 +67,7 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
           {/* Branch No + Name */}
           <div className="aw-form-3">
             <div>
-              <label className="aw-label" htmlFor="om-branch">Branch No</label>
+              <label className="aw-label" htmlFor="om-branch">{t('Branch No')}</label>
               <div className="aw-input-wrap has-icon has-action">
                 <Hash size={13} />
                 <input
@@ -73,25 +75,25 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
                   value={data.branchNo}
                   onChange={(e) => updateBranchNo(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleBranchSearch(); }}
-                  placeholder="New..."
+                  placeholder={t('New...')}
                   className="aw-input"
                 />
-                <button type="button" onClick={handleBranchSearch} className="aw-input-action" aria-label="Load this branch"
-                  data-tip="Load this branch" data-tip-pos="bottom-end">
+                <button type="button" onClick={handleBranchSearch} className="aw-input-action" aria-label={t('Load this branch')}
+                  data-tip={t('Load this branch')} data-tip-pos="bottom-end">
                   <Search size={13} />
                 </button>
               </div>
-              <p className="aw-meta" style={{ marginTop: 4, textTransform: 'uppercase' }}>Leave blank for new</p>
+              <p className="aw-meta" style={{ marginTop: 4, textTransform: 'uppercase' }}>{t('Leave blank for new')}</p>
             </div>
             <div className="aw-span-2">
-              <label className="aw-label" htmlFor="om-name">Office Name</label>
+              <label className="aw-label" htmlFor="om-name">{t('Office Name')}</label>
               <div className="aw-input-wrap has-icon">
                 <Building2 size={13} />
                 <input
                   id="om-name"
                   value={data.name}
                   onChange={(e) => updateName(e.target.value)}
-                  placeholder="Enter office name..."
+                  placeholder={t('Enter office name...')}
                   className="aw-input"
                 />
               </div>
@@ -100,12 +102,12 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
 
           {/* Division/RO */}
           <div>
-            <label className="aw-label" htmlFor="om-division">Division / RO</label>
+            <label className="aw-label" htmlFor="om-division">{t('Division / RO')}</label>
             <Select
               id="om-division"
               value={data.divisionRO || null}
               onChange={(value) => updateDivisionRO(value)}
-              placeholder="Select division..."
+              placeholder={t('Select division...')}
               className="aw-select"
               popupClassName="aw-select-popup"
               showSearch
@@ -120,29 +122,29 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
       <section className="aw-card aw-fade-in">
         <div className="aw-card-head">
           <span className="aw-card-icon"><MapPin size={14} /></span>
-          <h2 className="aw-card-title">Location</h2>
+          <h2 className="aw-card-title">{t('Location')}</h2>
         </div>
         <div className="aw-form-3">
           <div className="aw-span-2">
-            <label className="aw-label" htmlFor="om-address">Address</label>
+            <label className="aw-label" htmlFor="om-address">{t('Address')}</label>
             <textarea
               id="om-address"
               value={data.address}
               onChange={(e) => updateAddress(e.target.value)}
-              placeholder="Enter address..."
+              placeholder={t('Enter address...')}
               rows={3}
               className="aw-input"
             />
           </div>
           <div>
-            <label className="aw-label" htmlFor="om-city">City</label>
+            <label className="aw-label" htmlFor="om-city">{t('City')}</label>
             <div className="aw-input-wrap has-icon">
               <Navigation size={13} />
               <input
                 id="om-city"
                 value={data.city}
                 onChange={(e) => updateCity(e.target.value)}
-                placeholder="City..."
+                placeholder={t('City...')}
                 className="aw-input"
               />
             </div>
@@ -152,7 +154,7 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
 
       <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 4px' }}>
         <Info size={12} />
-        Enter Branch No and press Enter to load existing office — or fill in details for new
+        {t('Enter Branch No and press Enter to load existing office — or fill in details for new')}
       </p>
 
     </div>

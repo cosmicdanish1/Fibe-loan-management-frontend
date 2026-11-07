@@ -170,6 +170,16 @@ export const useChangePassword = (): UseChangePasswordReturn => {
         return { success: false, error: errorMessage };
       }
 
+      // Changing the password ends every other session of this user (ES-297); the backend hands this PC a fresh
+      // pair so the person keeps working here.
+      const fresh: any = (response as any).data;
+      if (fresh?.accessToken) {
+        try {
+          localStorage.setItem('accessToken', fresh.accessToken);
+          if (fresh.refreshToken) localStorage.setItem('refreshToken', fresh.refreshToken);
+        } catch { /* storage unavailable: the next 401 will send the person to the login screen */ }
+      }
+
       resetForm();
       markProgress('password');
       return { success: true };

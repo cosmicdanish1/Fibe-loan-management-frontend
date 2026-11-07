@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { animate, createTimeline, stagger, svg } from 'animejs';
 import { useLoadingAnimation, type LoadingAnimationId } from '../../config/loadingAnimation';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   /** Force one animation (Settings previews). Omit to use the user's choice. */
@@ -251,13 +252,14 @@ const VARIANTS: Record<LoadingAnimationId, React.FC> = {
 
 /** Animated loading indicator (Anime.js). Uses the animation chosen in Settings → Dashboard. */
 const LoadingAnimation: React.FC<Props> = ({ variant, height = 120, label }) => {
+  const { t } = useTranslation();
   const chosen = useLoadingAnimation();
   const Variant = VARIANTS[variant ?? chosen];
 
   return (
     <div
       role="status"
-      aria-label={label ?? 'Loading'}
+      aria-label={label ?? t('Loading')}
       style={{ height, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}
     >
       <Variant key={variant ?? chosen} />

@@ -4,6 +4,8 @@ import {
   TrendingUp, Calculator, AlertCircle, Mail, HelpCircle, Phone, ChevronRight, LifeBuoy,
 } from 'lucide-react';
 import AwDialog from '@/components/shared/kit/AwDialog';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../i18n';
 
 // ── data ─────────────────────────────────────────────────────────────────────
 type IconComp = React.ComponentType<{ size?: number }>;
@@ -24,57 +26,57 @@ interface HelpSection {
 
 const SECTIONS: HelpSection[] = [
   {
-    id: '1', title: 'Getting Started', icon: Rocket,
+    id: '1', title: tLabel('Getting Started'), icon: Rocket,
     items: [
-      { title: 'Introduction', description: 'Overview of Fibe Loan Management and its core features', icon: CheckCircle2, body: 'A tour of the ledger, member and voucher modules and how they connect in daily operation.' },
-      { title: 'System Requirements', description: 'Hardware and software requirements for optimal performance', icon: Settings, body: 'Windows 10/11, 8GB RAM minimum, 2GB free disk, and a stable network link to the branch server.' },
-      { title: 'Installation Guide', description: 'Step-by-step instructions for installing and configuring the system', icon: CheckCircle2, body: 'Run the signed installer, point it at your database, then complete the first-run setup wizard.' },
-      { title: 'First Login', description: 'How to access the system and navigate the main dashboard', icon: Zap, body: 'Sign in with the credentials issued by your administrator; the dashboard opens to today\'s activity.' },
+      { title: tLabel('Introduction'), description: tLabel('Overview of Fibe Loan Management and its core features'), icon: CheckCircle2, body: 'A tour of the ledger, member and voucher modules and how they connect in daily operation.' },
+      { title: tLabel('System Requirements'), description: tLabel('Hardware and software requirements for optimal performance'), icon: Settings, body: 'Windows 10/11, 8GB RAM minimum, 2GB free disk, and a stable network link to the branch server.' },
+      { title: tLabel('Installation Guide'), description: tLabel('Step-by-step instructions for installing and configuring the system'), icon: CheckCircle2, body: 'Run the signed installer, point it at your database, then complete the first-run setup wizard.' },
+      { title: tLabel('First Login'), description: tLabel('How to access the system and navigate the main dashboard'), icon: Zap, body: 'Sign in with the credentials issued by your administrator; the dashboard opens to today\'s activity.' },
     ],
   },
   {
-    id: '2', title: 'Member Management', icon: Users,
+    id: '2', title: tLabel('Member Management'), icon: Users,
     items: [
-      { title: 'Adding New Members', description: 'Create member profiles with personal and financial details', icon: Users, body: 'Capture KYC, nominee and share details in one guided form; duplicates are flagged automatically.' },
-      { title: 'Member Search', description: 'Find members by number, name, or other criteria', icon: Search, body: 'Search by member number, name, phone or account — results update as you type.' },
-      { title: 'Member Balance', description: 'View comprehensive balance information for any member', icon: IndianRupee, body: 'See every savings, loan and deposit balance for a member on one consolidated screen.' },
-      { title: 'Member Statements', description: 'Generate detailed transaction statements for members', icon: FileText, body: 'Export a dated statement of any account as PDF or Excel for the member\'s records.' },
+      { title: tLabel('Adding New Members'), description: tLabel('Create member profiles with personal and financial details'), icon: Users, body: 'Capture KYC, nominee and share details in one guided form; duplicates are flagged automatically.' },
+      { title: tLabel('Member Search'), description: tLabel('Find members by number, name, or other criteria'), icon: Search, body: 'Search by member number, name, phone or account — results update as you type.' },
+      { title: tLabel('Member Balance'), description: tLabel('View comprehensive balance information for any member'), icon: IndianRupee, body: 'See every savings, loan and deposit balance for a member on one consolidated screen.' },
+      { title: tLabel('Member Statements'), description: tLabel('Generate detailed transaction statements for members'), icon: FileText, body: 'Export a dated statement of any account as PDF or Excel for the member\'s records.' },
     ],
   },
   {
-    id: '3', title: 'Transactions & Vouchers', icon: FileText,
+    id: '3', title: tLabel('Transactions & Vouchers'), icon: FileText,
     items: [
-      { title: 'Creating Vouchers', description: 'Process deposits, withdrawals, and loan transactions', icon: FileText, body: 'Every voucher is double-entry and posts instantly to the relevant ledgers.' },
-      { title: 'Transaction Types', description: 'Understanding different transaction categories and codes', icon: Database, body: 'Standard codes cover deposits, withdrawals, disbursements, repayments and adjustments.' },
-      { title: 'Voucher Verification', description: 'Review and approve pending transactions', icon: CheckCircle2, body: 'A second approver reviews queued vouchers before they post — full audit trail kept.' },
-      { title: 'Transaction History', description: 'View and search historical transaction records', icon: TrendingUp, body: 'Filter historical postings by date, member, branch or voucher type.' },
+      { title: tLabel('Creating Vouchers'), description: tLabel('Process deposits, withdrawals, and loan transactions'), icon: FileText, body: 'Every voucher is double-entry and posts instantly to the relevant ledgers.' },
+      { title: tLabel('Transaction Types'), description: tLabel('Understanding different transaction categories and codes'), icon: Database, body: 'Standard codes cover deposits, withdrawals, disbursements, repayments and adjustments.' },
+      { title: tLabel('Voucher Verification'), description: tLabel('Review and approve pending transactions'), icon: CheckCircle2, body: 'A second approver reviews queued vouchers before they post — full audit trail kept.' },
+      { title: tLabel('Transaction History'), description: tLabel('View and search historical transaction records'), icon: TrendingUp, body: 'Filter historical postings by date, member, branch or voucher type.' },
     ],
   },
   {
-    id: '4', title: 'Reports & Analytics', icon: TrendingUp,
+    id: '4', title: tLabel('Reports & Analytics'), icon: TrendingUp,
     items: [
-      { title: 'EMI Charts', description: 'View loan EMI schedules and payment tracking', icon: Calculator, body: 'Amortization schedules recompute automatically after part-payments or rate changes.' },
-      { title: 'Interest Statements', description: 'Generate interest receivable and received reports', icon: IndianRupee, body: 'Compare interest receivable against interest actually received, by period or branch.' },
-      { title: 'Premature Information', description: 'Calculate premature withdrawal amounts for FD/RD/SB', icon: AlertCircle, body: 'Instantly quote the payable amount for an early closure, penalty included.' },
-      { title: 'Custom Reports', description: 'Create filtered reports based on date ranges and criteria', icon: FileText, body: 'Build ad-hoc reports with your own filters and save them as templates.' },
+      { title: tLabel('EMI Charts'), description: tLabel('View loan EMI schedules and payment tracking'), icon: Calculator, body: 'Amortization schedules recompute automatically after part-payments or rate changes.' },
+      { title: tLabel('Interest Statements'), description: tLabel('Generate interest receivable and received reports'), icon: IndianRupee, body: 'Compare interest receivable against interest actually received, by period or branch.' },
+      { title: tLabel('Premature Information'), description: tLabel('Calculate premature withdrawal amounts for FD/RD/SB'), icon: AlertCircle, body: 'Instantly quote the payable amount for an early closure, penalty included.' },
+      { title: tLabel('Custom Reports'), description: tLabel('Create filtered reports based on date ranges and criteria'), icon: FileText, body: 'Build ad-hoc reports with your own filters and save them as templates.' },
     ],
   },
   {
-    id: '5', title: 'Utilities & Tools', icon: Settings,
+    id: '5', title: tLabel('Utilities & Tools'), icon: Settings,
     items: [
-      { title: 'Calculator', description: 'Calculate loan EMI, interest rates, and maturity amounts', icon: Calculator, body: 'A built-in calculator for EMI, maturity value and effective interest rate.' },
-      { title: 'Database Backup', description: 'Create and restore database backups for data safety', icon: Database, body: 'Schedule automatic backups and restore from any saved snapshot in a few clicks.' },
-      { title: 'Communication Hub', description: 'Send SMS, WhatsApp, and email notifications to members', icon: Mail, body: 'Send due reminders and statements via SMS, WhatsApp or email in bulk or one-off.' },
-      { title: 'Update Saving Interest', description: 'Process and update interest for savings accounts', icon: IndianRupee, body: 'Run the periodic interest update across all savings accounts in one batch job.' },
+      { title: tLabel('Calculator'), description: tLabel('Calculate loan EMI, interest rates, and maturity amounts'), icon: Calculator, body: 'A built-in calculator for EMI, maturity value and effective interest rate.' },
+      { title: tLabel('Database Backup'), description: tLabel('Create and restore database backups for data safety'), icon: Database, body: 'Schedule automatic backups and restore from any saved snapshot in a few clicks.' },
+      { title: tLabel('Communication Hub'), description: tLabel('Send SMS, WhatsApp, and email notifications to members'), icon: Mail, body: 'Send due reminders and statements via SMS, WhatsApp or email in bulk or one-off.' },
+      { title: tLabel('Update Saving Interest'), description: tLabel('Process and update interest for savings accounts'), icon: IndianRupee, body: 'Run the periodic interest update across all savings accounts in one batch job.' },
     ],
   },
   {
-    id: '6', title: 'Troubleshooting', icon: AlertCircle,
+    id: '6', title: tLabel('Troubleshooting'), icon: AlertCircle,
     items: [
-      { title: 'Common Issues', description: 'Solutions to frequently encountered problems', icon: HelpCircle, body: 'The most frequent setup and login issues, with quick fixes for each.' },
-      { title: 'Error Messages', description: 'Understanding and resolving system error messages', icon: AlertCircle, body: 'A reference of error codes and what each one means for your data or connection.' },
-      { title: 'Performance Tips', description: 'Optimize system performance and speed', icon: Zap, body: 'Keep the database indexed and archive old vouchers periodically for best speed.' },
-      { title: 'Contact Support', description: 'Get help from our technical support team', icon: Phone, body: 'Reach the support desk at +91 7692829866 or thekovain@gmail.com, 24/7.' },
+      { title: tLabel('Common Issues'), description: tLabel('Solutions to frequently encountered problems'), icon: HelpCircle, body: 'The most frequent setup and login issues, with quick fixes for each.' },
+      { title: tLabel('Error Messages'), description: tLabel('Understanding and resolving system error messages'), icon: AlertCircle, body: 'A reference of error codes and what each one means for your data or connection.' },
+      { title: tLabel('Performance Tips'), description: tLabel('Optimize system performance and speed'), icon: Zap, body: 'Keep the database indexed and archive old vouchers periodically for best speed.' },
+      { title: tLabel('Contact Support'), description: tLabel('Get help from our technical support team'), icon: Phone, body: 'Reach the support desk at +91 7692829866 or thekovain@gmail.com, 24/7.' },
     ],
   },
 ];
@@ -85,6 +87,7 @@ const TOTAL_TOPICS = SECTIONS.reduce((a, s) => a + s.items.length, 0);
 interface ModalState { sectionId: string; index: number }
 
 const Contents: React.FC = () => {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({ '1': true });
   const [modal, setModal] = useState<ModalState | null>(null);
@@ -117,11 +120,11 @@ const Contents: React.FC = () => {
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Help Contents</h1>
-          <p className="aw-desc">Complete System Documentation &amp; Guides</p>
+          <h1 className="aw-title">{t('Help Contents')}</h1>
+          <p className="aw-desc">{t('Complete System Documentation & Guides')}</p>
         </div>
         <div className="aw-actions">
-          <span className="aw-pill tone-success"><span className="aw-status-dot" /> Support available</span>
+          <span className="aw-pill tone-success"><span className="aw-status-dot" /> {t('Support available')}</span>
         </div>
       </div>
 
@@ -132,18 +135,18 @@ const Contents: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Search size={14} /></span>
-                <h2 className="aw-card-title">Search help</h2>
+                <h2 className="aw-card-title">{t('Search help')}</h2>
               </div>
-              <input aria-label="Search help topics" className="aw-input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search topics…" />
+              <input aria-label={t('Search help topics')} className="aw-input" value={query} onChange={e => setQuery(e.target.value)} placeholder={t('Search topics…')} />
             </section>
 
             <div className="aw-two">
               <div className="aw-stat">
-                <div className="aw-stat-label">Total topics</div>
+                <div className="aw-stat-label">{t('Total topics')}</div>
                 <div className="aw-stat-value">{TOTAL_TOPICS}</div>
               </div>
               <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-success)' }}>
-                <div className="aw-stat-label">Categories</div>
+                <div className="aw-stat-label">{t('Categories')}</div>
                 <div className="aw-stat-value">{SECTIONS.length}</div>
               </div>
             </div>
@@ -151,12 +154,12 @@ const Contents: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><LifeBuoy size={14} /></span>
-                <h2 className="aw-card-title">Need help?</h2>
+                <h2 className="aw-card-title">{t('Need help?')}</h2>
               </div>
               <div className="aw-rows">
-                <div className="aw-row"><span className="aw-meta"><Mail size={12} /> Email</span><a href="mailto:thekovain@gmail.com" style={{ fontWeight: 700, color: 'var(--aw-accent)' }}>thekovain@gmail.com</a></div>
-                <div className="aw-row"><span className="aw-meta"><Phone size={12} /> Phone</span><strong>+91 7692829866</strong></div>
-                <div className="aw-row"><span className="aw-meta"><CheckCircle2 size={12} /> Support</span><strong>24/7 available</strong></div>
+                <div className="aw-row"><span className="aw-meta"><Mail size={12} /> {t('Email')}</span><a href="mailto:thekovain@gmail.com" style={{ fontWeight: 700, color: 'var(--aw-accent)' }}>thekovain@gmail.com</a></div>
+                <div className="aw-row"><span className="aw-meta"><Phone size={12} /> {t('Phone')}</span><strong>+91 7692829866</strong></div>
+                <div className="aw-row"><span className="aw-meta"><CheckCircle2 size={12} /> {t('Support')}</span><strong>{t('24/7 available')}</strong></div>
               </div>
             </section>
           </div>
@@ -166,8 +169,8 @@ const Contents: React.FC = () => {
             <div className="aw-card-head">
               <span className="aw-card-icon"><BookOpen size={14} /></span>
               <div>
-                <h2 className="aw-card-title">Documentation</h2>
-                <p className="aw-meta">Browse help topics by category</p>
+                <h2 className="aw-card-title">{t('Documentation')}</h2>
+                <p className="aw-meta">{t('Browse help topics by category')}</p>
               </div>
               {q && <span className="aw-pill tone-info" style={{ marginLeft: 'auto' }}>{filtered.reduce((a, s) => a + s.items.length, 0)} topics</span>}
             </div>
@@ -209,8 +212,8 @@ const Contents: React.FC = () => {
             }) : (
               <div className="aw-empty" style={{ padding: 40 }}>
                 <Search size={36} />
-                <p className="aw-strong">No results found</p>
-                <span className="aw-meta">Try a different search term</span>
+                <p className="aw-strong">{t('No results found')}</p>
+                <span className="aw-meta">{t('Try a different search term')}</span>
               </div>
             )}
           </section>
@@ -218,8 +221,8 @@ const Contents: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span><span className="aw-status-dot" /> Documentation: Up to date · Online help available</span>
-        <span>Help v2.0.0 · {today}</span>
+        <span><span className="aw-status-dot" /> {t('Documentation: Up to date · Online help available')}</span>
+        <span>{t('Help v2.0.0 ·')} {today}</span>
       </div>
 
       <AwDialog open={!!(modal && modalItem && modalSection)} title={modalItem?.title ?? ''} onClose={closeModal} icon={modalItem ? <modalItem.icon size={14} /> : undefined} maxWidth="28rem" compact>
@@ -227,7 +230,7 @@ const Contents: React.FC = () => {
           <div className="aw-stack">
             <span className="aw-label">{modalSection.title}</span>
             <p>{modalItem.body}</p>
-            <button type="button" onClick={closeModal} className="aw-btn aw-btn-primary">Got it</button>
+            <button type="button" onClick={closeModal} className="aw-btn aw-btn-primary">{t('Got it')}</button>
           </div>
         )}
       </AwDialog>

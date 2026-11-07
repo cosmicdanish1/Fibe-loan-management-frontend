@@ -1,0 +1,309 @@
+[
+  {
+    "pass": "first open",
+    "route": "/masters/saving-account-opening",
+    "created": 2440,
+    "visible": 16056,
+    "openFade": 102,
+    "content": 18060,
+    "close": 151,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.67,
+      0.33,
+      0.33,
+      0.17
+    ],
+    "openSamples": [
+      0,
+      0.6,
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/masters/member-master",
+    "created": 295,
+    "visible": 2448,
+    "openFade": 112,
+    "content": 2622,
+    "close": 140,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.67,
+      0.67,
+      0.5,
+      0.33,
+      0.33,
+      0.17
+    ],
+    "openSamples": [
+      0,
+      0.2,
+      0.4,
+      0.4,
+      0.6,
+      0.8,
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/transaction/loan-repayment",
+    "created": 218,
+    "visible": 2324,
+    "openFade": 109,
+    "content": 2478,
+    "close": 145,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.67,
+      0.67,
+      0.5,
+      0.33,
+      0.33,
+      0.17
+    ],
+    "openSamples": [
+      0,
+      0,
+      0.4,
+      0.4,
+      0.6,
+      0.8,
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/reports/daily/day-book",
+    "created": 5867,
+    "visible": 6500,
+    "openFade": 0,
+    "content": 8160,
+    "close": 149,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.67,
+      0.5,
+      0.33,
+      0.33,
+      0.17
+    ],
+    "openSamples": [
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/utility/emi-chart",
+    "created": 152,
+    "visible": 664,
+    "openFade": 0,
+    "content": 2318,
+    "close": 156,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.67,
+      0.5,
+      0.33,
+      0.33,
+      0.17,
+      0
+    ],
+    "openSamples": [
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/settings",
+    "created": 196,
+    "visible": 990,
+    "openFade": 152,
+    "content": 1594,
+    "close": 127,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.67,
+      0.5,
+      0.33,
+      0.33,
+      0.17
+    ],
+    "openSamples": [
+      0,
+      0,
+      0.4,
+      0.6,
+      0.8,
+      0.8,
+      1
+    ]
+  },
+  {
+    "pass": "second open (warm)",
+    "route": "/masters/saving-account-opening",
+    "created": 290,
+    "visible": 891,
+    "openFade": 133,
+    "content": 1243,
+    "close": 206,
+    "loadingSeen": true,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.67,
+      0.5,
+      0.17,
+      0,
+      0
+    ],
+    "openSamples": [
+      0,
+      0.2,
+      0.4,
+      0.8,
+      1
+    ]
+  },
+  {
+    "pass": "second open (warm)",
+    "route": "/masters/member-master",
+    "created": 268,
+    "visible": 1061,
+    "openFade": 122,
+    "content": 1917,
+    "close": 175,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.67,
+      0.33,
+      0.17,
+      0.17,
+      0
+    ],
+    "openSamples": [
+      0,
+      0.2,
+      0.4,
+      0.6,
+      1
+    ]
+  },
+  {
+    "pass": "second open (warm)",
+    "route": "/transaction/loan-repayment",
+    "created": 401,
+    "visible": 1393,
+    "openFade": 51,
+    "content": 1724,
+    "close": 214,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.67,
+      0.5,
+      0.33,
+      0.33,
+      0.17
+    ],
+    "openSamples": [
+      0,
+      1
+    ]
+  },
+  {
+    "pass": "second open (warm)",
+    "route": "/reports/daily/day-book",
+    "created": 184,
+    "visible": 636,
+    "openFade": 0,
+    "content": 1285,
+    "close": 216,
+    "loadingSeen": true,
+    "closeSeries": [
+      1,
+      0.83,
+      0.33,
+      0.17
+    ],
+    "openSamples": [
+      1
+    ]
+  },
+  {
+    "pass": "second open (warm)",
+    "route": "/utility/emi-chart",
+    "created": 193,
+    "visible": 800,
+    "openFade": 0,
+    "content": 1435,
+    "close": 191,
+    "loadingSeen": true,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.5,
+      0.17,
+      0
+    ],
+    "openSamples": [
+      1
+    ]
+  },
+  {
+    "pass": "second open (warm)",
+    "route": "/settings",
+    "created": 149,
+    "visible": 873,
+    "openFade": 131,
+    "content": 1131,
+    "close": 268,
+    "loadingSeen": true,
+    "closeSeries": [
+      1,
+      1,
+      0.83,
+      0.83,
+      0.5,
+      0.33,
+      0.17,
+      0.17,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "openSamples": [
+      0,
+      0.2,
+      0.4,
+      0.6,
+      0.8,
+      1
+    ]
+  }
+]

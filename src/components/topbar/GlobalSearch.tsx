@@ -4,6 +4,7 @@ import {
   useUiPrefs, glassVars, readSearchUsage, recordSearchPick, usageBoost, type UsageMap,
 } from '../../services/uiPrefs';
 import './topbar.css';
+import { useTranslation } from 'react-i18next';
 
 export interface SearchItem {
   id: string;
@@ -47,6 +48,7 @@ function highlight(title: string, q: string): React.ReactNode {
 }
 
 export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
+  const { t } = useTranslation();
   const prefs = useUiPrefs().search;
 
   const [query, setQuery] = useState('');
@@ -68,9 +70,9 @@ export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
           .filter(i => usage[i.id])
           .sort((a, b) => usageBoost(usage[b.id], '') - usageBoost(usage[a.id], ''))
           .slice(0, 6);
-        if (used.length) return { label: 'Frequently used', favourite: true, list: used };
+        if (used.length) return { label: t('Frequently used'), favourite: true, list: used };
       }
-      return { label: 'Suggestions', favourite: false, list: items.filter(i => i.suggest).slice(0, 6) };
+      return { label: t('Suggestions'), favourite: false, list: items.filter(i => i.suggest).slice(0, 6) };
     }
     const scored = items
       .map(item => {
@@ -81,7 +83,7 @@ export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
       .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title))
       .slice(0, MAX_RESULTS)
       .map(s => s.item);
-    return { label: 'Best matches', favourite: false, list: scored };
+    return { label: t('Best matches'), favourite: false, list: scored };
   }, [items, q, usage, prefs.learn]);
 
   useEffect(() => { setActive(0); }, [q, open]);
@@ -150,8 +152,8 @@ export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
         <input
           ref={inputRef}
           value={query}
-          placeholder="Search windows & features"
-          aria-label="Search windows and features"
+          placeholder={t('Search windows & features')}
+          aria-label={t('Search windows and features')}
           role="combobox"
           aria-expanded={open}
           aria-controls="tb-search-list"
@@ -161,7 +163,7 @@ export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
           onChange={e => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
         />
-        <span className="tb-kbd"><span>Ctrl</span><span>K</span></span>
+        <span className="tb-kbd"><span>{t('Ctrl')}</span><span>K</span></span>
       </div>
 
       {open && (
@@ -171,8 +173,8 @@ export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
             {results.list.length === 0 ? (
               <div className="tb-empty" style={{ padding: '22px 12px 26px' }}>
                 <div className="tb-empty-ico" style={{ color: 'var(--tb-faint)', background: 'var(--tb-hover)' }}><SearchX size={22} /></div>
-                <b>No match for “{query.trim()}”</b>
-                <span>Try part of a window name, like “loan” or “ledger”.</span>
+                <b>{t('No match for “')}{query.trim()}”</b>
+                <span>{t('Try part of a window name, like “loan” or “ledger”.')}</span>
               </div>
             ) : (
               results.list.map((item, i) => (
@@ -192,16 +194,16 @@ export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
                     <div className="tb-res-path">{item.path}</div>
                   </span>
                   {results.favourite && <Star size={13} className="tb-res-star" fill="currentColor" />}
-                  <span className="tb-res-go">Open <CornerDownLeft size={11} style={{ verticalAlign: '-1px' }} /></span>
+                  <span className="tb-res-go">{t('Open')} <CornerDownLeft size={11} style={{ verticalAlign: '-1px' }} /></span>
                 </button>
               ))
             )}
           </div>
           <div className="tb-sfoot">
             <span><b>↑↓</b> move</span>
-            <span><b>Enter</b> open</span>
-            <span><b>Esc</b> close</span>
-            {prefs.learn && <span style={{ marginLeft: 'auto' }}>Learns what you open</span>}
+            <span><b>{t('Enter')}</b> open</span>
+            <span><b>{t('Esc')}</b> close</span>
+            {prefs.learn && <span style={{ marginLeft: 'auto' }}>{t('Learns what you open')}</span>}
           </div>
         </div>
       )}

@@ -39,6 +39,12 @@ jobs:
           fi
           echo "VERSION=$PKG" >> "$GITHUB_ENV"
 
+      # Every release must say what is new: this fails in seconds (before the 4 minute build) when
+      # src/features/onboarding/whatsNew/releaseNotes.json has no entry for this version.
+      - name: Release notes must exist for this version
+        shell: bash
+        run: node scripts/build-update-info.cjs --check
+
       # The repo secret is named FIBE_RELISED (GitHub cannot rename secrets; this keeps the existing one).
       # Fail fast, with a clear reason, instead of after a 4 minute build.
       - name: Check the releases token
@@ -68,23 +74,9 @@ jobs:
           # Fine-grained token with Contents: read/write on the releases repo.
           GH_TOKEN: ${{ secrets.FIBE_RELISED }}
 
-      - name: Build update-info.json
+      - name: Build update-info.json (version, backend requirement, release notes)
         shell: bash
-        run: |
-          PREV=$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_REF_NAME}^" 2>/dev/null || true)
-          RANGE=${PREV:+$PREV..}HEAD
-          export NOTES=$(git log $RANGE --no-merges --pretty='- %s' | head -40)
-          node -e '
-            const fs = require("fs");
-            const req = JSON.parse(fs.readFileSync("backend-requirement.json", "utf8")).requiresBackend;
-            if (!req) throw new Error("backend-requirement.json has no requiresBackend");
-            fs.writeFileSync("update-info.json", JSON.stringify({
-              version: process.env.VERSION,
-              requiresBackend: req,
-              notes: process.env.NOTES,
-            }, null, 2));
-          '
-          cat update-info.json
+        run: node scripts/build-update-info.cjs
 
       - name: Attach update-info.json to the draft
         shell: bash

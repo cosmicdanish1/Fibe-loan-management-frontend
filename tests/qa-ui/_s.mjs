@@ -1,0 +1,15 @@
+import { start, go, sleep, text } from './lib.mjs';
+const CASE = process.env.QA_CASE;
+const { browser, page } = await start();
+const w = [];
+page.on('request', (r) => { if (r.method() !== 'GET' && r.url().includes('/api/') && !r.url().includes('client-logs')) w.push('REQ ' + r.method() + ' ' + r.url().replace(/https?:\/\/[^/]+/, '') + ' ' + (r.postData() || '').slice(0, 300)); });
+page.on('response', async (r) => { if (r.request().method() !== 'GET' && r.url().includes('/api/') && !r.url().includes('client-logs')) { let b = ''; try { b = (await r.text()).slice(0, 700); } catch {} w.push('RES ' + r.status() + ' ' + b); } });
+await page.evaluate(() => { window.__msgs = []; window.__h = {}; window.electronAPI = { showMessageBox: async (o) => { window.__msgs.push({ m: o.message, d: (o.detail || '').slice(0, 400) }); return { response: 0 }; }, openNewWindow() {}, ipcRenderer: { on: (c, f) => { window.__h[c] = f; }, removeListener() {}, send() {} } }; });
+await go(page, '#/loan-sanction'); await sleep(2500);
+await page.locator('#ls-case').click({ force: true }); await page.keyboard.type(CASE); await sleep(1200);
+await page.locator('.ant-select-item-option', { hasText: CASE }).first().click(); await sleep(4500);
+console.log('FORM', JSON.stringify(await page.evaluate(() => Object.fromEntries(['ls-amt','ls-inst','ls-rate','ls-pen','ls-emi','ls-int'].map(i => [i, document.getElementById(i)?.value])))));
+console.log((await text(page)).replace(/\s+/g, ' ').match(/Approval Parameters.{0,500}/)?.[0]);
+await page.getByRole('button', { name: /^Sanction$/ }).click(); await sleep(5000);
+console.log('MSGS', JSON.stringify(await page.evaluate(() => window.__msgs))); console.log('WRITES', JSON.stringify(w));
+await browser.close();

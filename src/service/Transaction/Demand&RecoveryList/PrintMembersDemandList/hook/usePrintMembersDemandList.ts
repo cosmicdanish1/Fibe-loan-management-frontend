@@ -8,26 +8,14 @@ import {
     DivisionOption,
     BranchOption
 } from '../interface/PrintMembersDemandListInterfaces';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 // BUG FIX: removed 'message' from antd — silently fails in Electron renderer windows.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).
 
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
-
 export const usePrintMembersDemandList = (): PrintMembersDemandListHookReturn => {
+  const { t } = useTranslation();
     const [formData, setFormData] = useState<DemandPrintFormData>({
         division: '',
         branch: '',
@@ -75,13 +63,13 @@ export const usePrintMembersDemandList = (): PrintMembersDemandListHookReturn =>
 
     const validateForm = async (): Promise<boolean> => {
         if (!formData.division) {
-            await showDialog('warning', 'electron-react-ts', 'Division Required', 'Please select a Division/RO before fetching the demand list.');
+            await showDialog('warning', 'electron-react-ts', t('Division Required'), t('Please select a Division/RO before fetching the demand list.'));
             return false;
         }
         // BUG FIX: validate year — empty year sends NaN to backend, silently returning no records
         const yearNum = parseInt(formData.year);
         if (!formData.year || isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-            await showDialog('warning', 'electron-react-ts', 'Invalid Year', 'Please enter a valid 4-digit year (e.g. 2025).');
+            await showDialog('warning', 'electron-react-ts', t('Invalid Year'), t('Please enter a valid 4-digit year (e.g. 2025).'));
             return false;
         }
         return true;
@@ -97,7 +85,7 @@ export const usePrintMembersDemandList = (): PrintMembersDemandListHookReturn =>
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    'Demand List Ready',
+                    t('Demand List Ready'),
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `DIVISION      : ${formData.division}\n` +
                     `MONTH / YEAR  : ${formData.month} ${formData.year}\n` +
@@ -106,11 +94,11 @@ export const usePrintMembersDemandList = (): PrintMembersDemandListHookReturn =>
                     `✓ Sending to printer service...`
                 );
             } else {
-                await showDialog('info', 'electron-react-ts', 'No Records Found', `No demand records found for ${formData.division} — ${formData.month} ${formData.year}.`);
+                await showDialog('info', 'electron-react-ts', t('No Records Found'), t('No demand records found for {{1}} — {{2}} {{3}}.', { 1: formData.division, 2: formData.month, 3: formData.year }));
             }
         } catch (error: any) {
             console.error(error);
-            await showDialog('error', 'electron-react-ts', 'Report Generation Failed', `Could not generate the demand list.\n\nTechnical: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Report Generation Failed'), t('Could not generate the demand list. Technical: {{1}}', { 1: error.message }));
         }
     }, [formData]);
 
@@ -124,15 +112,15 @@ export const usePrintMembersDemandList = (): PrintMembersDemandListHookReturn =>
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    'Export Ready',
-                    `${response.data.length} records processed for export.\n\nDivision: ${formData.division} | ${formData.month} ${formData.year}`
+                    t('Export Ready'),
+                    t('{{1}} records processed for export. Division: {{2}} | {{3}} {{4}}', { 1: response.data.length, 2: formData.division, 3: formData.month, 4: formData.year })
                 );
             } else {
-                await showDialog('info', 'electron-react-ts', 'No Data to Export', `No demand records found for ${formData.division} — ${formData.month} ${formData.year}.`);
+                await showDialog('info', 'electron-react-ts', t('No Data to Export'), t('No demand records found for {{1}} — {{2}} {{3}}.', { 1: formData.division, 2: formData.month, 3: formData.year }));
             }
         } catch (error: any) {
             console.error(error);
-            await showDialog('error', 'electron-react-ts', 'Export Failed', `Could not export the demand list.\n\nTechnical: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Export Failed'), t('Could not export the demand list. Technical: {{1}}', { 1: error.message }));
         }
     }, [formData]);
 

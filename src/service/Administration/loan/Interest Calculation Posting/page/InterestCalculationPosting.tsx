@@ -9,10 +9,12 @@ import DataTable from '../components/DataTable';
 import { useInterestCalculation } from '../hooks/useInterestCalculation';
 import { interestCalculationOptions, accountTypeOptions } from '../constants/options';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
 const InterestCalculationPosting: React.FC = () => {
+  const { t } = useTranslation();
   const {
     formData,
     memberRecords,
@@ -53,19 +55,19 @@ const InterestCalculationPosting: React.FC = () => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Interest Calculation &amp; Posting</h1>
+          <h1 className="aw-title">{t('Interest Calculation & Posting')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Calculator size={12} /> Daily Balance Method · Ledger Auto-Post
+            <Calculator size={12} /> {t('Daily Balance Method · Ledger Auto-Post')}
             <span className="aw-pill" style={{ marginLeft: 4 }}>v3.0</span>
           </p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary">
-            <RotateCcw size={13} /> Reset
+            <RotateCcw size={13} /> {t('Reset')}
           </button>
           <button type="button" onClick={handlePost} disabled={postDisabled} className="aw-btn aw-btn-primary">
             {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <Send size={13} />}
-            Post Transaction
+            {t('Post Transaction')}
           </button>
           <button
             type="button"
@@ -78,7 +80,7 @@ const InterestCalculationPosting: React.FC = () => {
             }}
             className="aw-btn aw-btn-ghost"
           >
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -90,11 +92,11 @@ const InterestCalculationPosting: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Calculator size={14} /></span>
-                <h2 className="aw-card-title">Calculation Scope</h2>
+                <h2 className="aw-card-title">{t('Calculation Scope')}</h2>
               </div>
               <div className="aw-form-3">
                 <div>
-                  <label className="aw-label" htmlFor="ic-type">Interest Type</label>
+                  <label className="aw-label" htmlFor="ic-type">{t('Interest Type')}</label>
                   <Select
                     id="ic-type"
                     className="aw-select"
@@ -106,7 +108,7 @@ const InterestCalculationPosting: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="aw-label" htmlFor="ic-acc">Account Type</label>
+                  <label className="aw-label" htmlFor="ic-acc">{t('Account Type')}</label>
                   <Select
                     id="ic-acc"
                     className="aw-select"
@@ -120,7 +122,7 @@ const InterestCalculationPosting: React.FC = () => {
                 {/* Interest Rate — hidden for yearly fund */}
                 {!isYearly ? (
                   <div>
-                    <label className="aw-label" htmlFor="ic-rate">Annual Rate (%)</label>
+                    <label className="aw-label" htmlFor="ic-rate">{t('Annual Rate (%)')}</label>
                     <input
                       id="ic-rate"
                       type="number"
@@ -134,16 +136,16 @@ const InterestCalculationPosting: React.FC = () => {
                   </div>
                 ) : (
                   <div>
-                    <span className="aw-label">Annual Rate</span>
+                    <span className="aw-label">{t('Annual Rate')}</span>
                     <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', gap: 6, height: 'var(--aw-control-h)', padding: '0 10px' }}>
                       <TrendingUp size={13} style={{ color: 'var(--aw-accent)' }} />
-                      <span className="aw-strong">Rate from Business Rules</span>
+                      <span className="aw-strong">{t('Rate from Business Rules')}</span>
                     </div>
                   </div>
                 )}
 
                 <div>
-                  <label className="aw-label" htmlFor="ic-from">{isYearly ? 'FY Start Date' : 'From Date'}</label>
+                  <label className="aw-label" htmlFor="ic-from">{isYearly ? t('FY Start Date') : t('From Date')}</label>
                   <DatePicker
                     id="ic-from"
                     value={dayjs(formData.fromDate)}
@@ -156,7 +158,7 @@ const InterestCalculationPosting: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="aw-label" htmlFor="ic-to">{isYearly ? 'FY End Date' : 'To Date'}</label>
+                  <label className="aw-label" htmlFor="ic-to">{isYearly ? t('FY End Date') : t('To Date')}</label>
                   <DatePicker
                     id="ic-to"
                     value={dayjs(formData.toDate)}
@@ -171,22 +173,22 @@ const InterestCalculationPosting: React.FC = () => {
                 {/* Member No — only for specific_member */}
                 {isSpecific ? (
                   <div>
-                    <label className="aw-label" htmlFor="ic-member">Member Number</label>
+                    <label className="aw-label" htmlFor="ic-member">{t('Member Number')}</label>
                     <div className="aw-input-wrap has-action">
                       <input
                         id="ic-member"
                         type="text"
                         value={formData.memberNo}
                         onChange={(e) => handleInputChange('memberNo', e.target.value)}
-                        placeholder="Enter MBNO"
+                        placeholder={t('Enter MBNO')}
                         className="aw-input"
                       />
                       <button
                         type="button"
                         className="aw-input-action"
                         onClick={handleMemberLookup}
-                        aria-label="Look up member"
-                        data-tip="Look up member"
+                        aria-label={t('Look up member')}
+                        data-tip={t('Look up member')}
                         data-tip-pos="top-end"
                       >
                         <Search size={13} />
@@ -198,13 +200,13 @@ const InterestCalculationPosting: React.FC = () => {
                   </div>
                 ) : isYearly ? (
                   <div>
-                    <span className="aw-label">Applies</span>
-                    <p className="aw-meta">Opening Balance Interest · Monthly Contribution · Dividend &amp; Group Insurance Deduction</p>
+                    <span className="aw-label">{t('Applies')}</span>
+                    <p className="aw-meta">{t('Opening Balance Interest · Monthly Contribution · Dividend & Group Insurance Deduction')}</p>
                   </div>
                 ) : (
                   <div>
-                    <span className="aw-label">Members</span>
-                    <span className="aw-pill tone-success">Processing all eligible members</span>
+                    <span className="aw-label">{t('Members')}</span>
+                    <span className="aw-pill tone-success">{t('Processing all eligible members')}</span>
                   </div>
                 )}
               </div>
@@ -214,17 +216,17 @@ const InterestCalculationPosting: React.FC = () => {
             <section className="aw-card" style={{ alignSelf: 'start' }}>
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Database size={14} /></span>
-                <h2 className="aw-card-title">Actions</h2>
+                <h2 className="aw-card-title">{t('Actions')}</h2>
               </div>
               <div className="aw-stack">
                 <dl className="aw-facts" style={{ gridTemplateColumns: '1fr' }}>
-                  <div><dt>GL Head</dt><dd style={{ color: 'var(--aw-success)' }}>{glHead}</dd></div>
+                  <div><dt>{t('GL Head')}</dt><dd style={{ color: 'var(--aw-success)' }}>{glHead}</dd></div>
                 </dl>
                 <button type="button" onClick={handlePrintList} disabled={isLoading} className="aw-btn aw-btn-secondary" style={{ width: '100%' }}>
                   {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <FileText size={13} />}
-                  Preview Interest List
+                  {t('Preview Interest List')}
                 </button>
-                <p className="aw-meta" style={{ textAlign: 'center' }}>Preview records · then click Post Transaction</p>
+                <p className="aw-meta" style={{ textAlign: 'center' }}>{t('Preview records · then click Post Transaction')}</p>
               </div>
             </section>
           </div>
@@ -233,21 +235,21 @@ const InterestCalculationPosting: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Database size={14} /></span>
-              <h2 className="aw-card-title">Interest Preview Records</h2>
-              {memberRecords.length > 0 && <span className="aw-pill">{memberRecords.length} Records</span>}
+              <h2 className="aw-card-title">{t('Interest Preview Records')}</h2>
+              {memberRecords.length > 0 && <span className="aw-pill">{memberRecords.length} {t('Records')}</span>}
               {isLoading && (
                 <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <RefreshCw size={12} className="aw-spin" /> Processing...
+                  <RefreshCw size={12} className="aw-spin" /> {t('Processing...')}
                 </span>
               )}
             </div>
 
             {memberRecords.length > 0 && (
               <div className="aw-stats aw-fade-in" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 'var(--aw-gap)' }}>
-                <div className="aw-stat"><div className="aw-stat-label">Principal</div><div className="aw-stat-value">{inr(totals.principal)}</div></div>
-                <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}><div className="aw-stat-label">Interest</div><div className="aw-stat-value">{inr(totals.interest)}</div></div>
-                <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-danger)' }}><div className="aw-stat-label">Debit</div><div className="aw-stat-value">{inr(totals.debit)}</div></div>
-                <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-success)' }}><div className="aw-stat-label">Credit</div><div className="aw-stat-value">{inr(totals.credit)}</div></div>
+                <div className="aw-stat"><div className="aw-stat-label">{t('Principal')}</div><div className="aw-stat-value">{inr(totals.principal)}</div></div>
+                <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}><div className="aw-stat-label">{t('Interest')}</div><div className="aw-stat-value">{inr(totals.interest)}</div></div>
+                <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-danger)' }}><div className="aw-stat-label">{t('Debit')}</div><div className="aw-stat-value">{inr(totals.debit)}</div></div>
+                <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-success)' }}><div className="aw-stat-label">{t('Credit')}</div><div className="aw-stat-value">{inr(totals.credit)}</div></div>
               </div>
             )}
 
@@ -256,8 +258,8 @@ const InterestCalculationPosting: React.FC = () => {
             ) : !isLoading ? (
               <div className="aw-empty" style={{ padding: 32 }}>
                 <Search size={26} />
-                <strong className="aw-strong">No records loaded</strong>
-                <span className="aw-meta">Set parameters and click Preview Interest List</span>
+                <strong className="aw-strong">{t('No records loaded')}</strong>
+                <span className="aw-meta">{t('Set parameters and click Preview Interest List')}</span>
               </div>
             ) : null}
           </section>

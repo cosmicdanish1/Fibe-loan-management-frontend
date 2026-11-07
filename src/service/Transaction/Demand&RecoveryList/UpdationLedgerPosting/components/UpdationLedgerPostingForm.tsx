@@ -5,6 +5,7 @@ import { Select } from 'antd';
 import { BookOpenCheck, RotateCcw, X, Send } from 'lucide-react';
 import { UpdationLedgerPostingHookReturn } from '../interface/UpdationLedgerPostingInterfaces';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const YEARS = Array.from({ length: 30 }, (_, i) => (2020 + i).toString());
@@ -15,6 +16,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
     grandTotalSend, grandTotalReceived, grandTotalShort,
     updateField, handleLoad, handlePosting, handleReset, handleExit,
 }) => {
+  const { t } = useTranslation();
     const totalsMatch = grandTotalSend > 0 && grandTotalSend === grandTotalReceived;
     const rowHead: React.CSSProperties = { fontWeight: 700 };
 
@@ -28,15 +30,15 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Updation / Ledger Posting</h1>
-                    <p className="aw-desc">Passing (Ledger Posting)</p>
+                    <h1 className="aw-title">{t('Updation / Ledger Posting')}</h1>
+                    <p className="aw-desc">{t('Passing (Ledger Posting)')}</p>
                 </div>
                 <div className="aw-actions">
                     <button type="button" onClick={handlePosting} disabled={isPosting || !totalsMatch} className="aw-btn aw-btn-primary">
-                        {isPosting ? <RotateCcw size={13} className="aw-spin" /> : <Send size={13} />} {isPosting ? 'Posting...' : 'Post'}
+                        {isPosting ? <RotateCcw size={13} className="aw-spin" /> : <Send size={13} />} {isPosting ? t('Posting...') : t('Post')}
                     </button>
-                    <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Reset</button>
-                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
+                    <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> {t('Reset')}</button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Exit')}</button>
                 </div>
             </div>
 
@@ -45,40 +47,40 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><BookOpenCheck size={14} /></span>
-                            <h2 className="aw-card-title">Posting Selection</h2>
+                            <h2 className="aw-card-title">{t('Posting Selection')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'end' }}>
                             <div>
-                                <label className="aw-label" htmlFor="ulp-month">Month</label>
+                                <label className="aw-label" htmlFor="ulp-month">{t('Month')}</label>
                                 <Select id="ulp-month" value={formData.month} onChange={v => updateField('month', v)}
                                     className="aw-select" popupClassName="aw-select-popup" options={MONTHS.map(m => ({ value: m, label: m }))} />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="ulp-year">Year</label>
+                                <label className="aw-label" htmlFor="ulp-year">{t('Year')}</label>
                                 <Select id="ulp-year" value={formData.year} onChange={v => updateField('year', v)}
                                     className="aw-select" popupClassName="aw-select-popup" options={YEARS.map(y => ({ value: y, label: y }))} />
                             </div>
                             <div style={{ gridColumn: 'span 2' }}>
-                                <label className="aw-label" htmlFor="ulp-branch">Branch</label>
+                                <label className="aw-label" htmlFor="ulp-branch">{t('Branch')}</label>
                                 <Select id="ulp-branch" value={(formData.branch || undefined) as string} onChange={v => updateField('branch', v)}
-                                    placeholder="Select" className="aw-select" popupClassName="aw-select-popup" showSearch allowClear
+                                    placeholder={t('Select')} className="aw-select" popupClassName="aw-select-popup" showSearch allowClear
                                     optionFilterProp="label"
                                     options={branches.map(b => ({ value: String(b.officeno), label: `${b.officeno}-${b.office_name}` }))} />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="ulp-from">From Member</label>
+                                <label className="aw-label" htmlFor="ulp-from">{t('From Member')}</label>
                                 <input id="ulp-from" type="text" value={formData.fromMember} onChange={e => updateField('fromMember', e.target.value)}
                                     className="aw-input" style={{ fontFamily: 'monospace' }} />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="ulp-to">To Member</label>
+                                <label className="aw-label" htmlFor="ulp-to">{t('To Member')}</label>
                                 <input id="ulp-to" type="text" value={formData.toMember} onChange={e => updateField('toMember', e.target.value)}
                                     className="aw-input" style={{ fontFamily: 'monospace' }} />
                             </div>
                         </div>
                         <div className="aw-inline" style={{ gap: 'var(--aw-gap)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                             <div>
-                                <span className="aw-label">Mode of Receipt</span>
+                                <span className="aw-label">{t('Mode of Receipt')}</span>
                                 <div className="aw-seg" role="tablist" style={{ width: 280, ['--seg-index' as any]: Math.max(0, MODES.indexOf(formData.modeOfReceipt)), ['--seg-count' as any]: MODES.length }}>
                                     {MODES.map(m => (
                                         <button key={m} type="button" role="tab" aria-selected={formData.modeOfReceipt === m} onClick={() => updateField('modeOfReceipt', m)}>{m}</button>
@@ -86,18 +88,18 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                                 </div>
                             </div>
                             <button type="button" onClick={handleLoad} disabled={isLoading} className="aw-btn aw-btn-secondary">
-                                {isLoading ? <RotateCcw size={13} className="aw-spin" /> : <BookOpenCheck size={13} />} {isLoading ? 'Loading...' : 'Load Data'}
+                                {isLoading ? <RotateCcw size={13} className="aw-spin" /> : <BookOpenCheck size={13} />} {isLoading ? t('Loading...') : t('Load Data')}
                             </button>
                         </div>
 
                         {memberGroups.length > 0 && (
                             <div className="aw-inline" style={{ gap: 8, flexWrap: 'wrap' }}>
-                                <span className="aw-pill">{memberGroups.length} Member(s)</span>
-                                <span className="aw-pill">Demand Send ₹{grandTotalSend.toLocaleString('en-IN')}</span>
-                                <span className={`aw-pill ${grandTotalReceived === grandTotalSend ? 'tone-success' : 'tone-danger'}`}>Demand Received ₹{grandTotalReceived.toLocaleString('en-IN')}</span>
-                                {grandTotalShort > 0 && <span className="aw-pill tone-danger">Short ₹{grandTotalShort.toLocaleString('en-IN')}</span>}
-                                {totalsMatch && <span className="aw-pill tone-success">✓ Totals Match — Ready to Post</span>}
-                                {grandTotalSend > 0 && !totalsMatch && <span className="aw-pill tone-danger">✗ Totals Do Not Match</span>}
+                                <span className="aw-pill">{t('{{1}} Member(s)', { 1: memberGroups.length })}</span>
+                                <span className="aw-pill">{t('Demand Send ₹{{1}}', { 1: grandTotalSend.toLocaleString('en-IN') })}</span>
+                                <span className={`aw-pill ${grandTotalReceived === grandTotalSend ? 'tone-success' : 'tone-danger'}`}>{t('Demand Received ₹{{1}}', { 1: grandTotalReceived.toLocaleString('en-IN') })}</span>
+                                {grandTotalShort > 0 && <span className="aw-pill tone-danger">{t('Short ₹{{1}}', { 1: grandTotalShort.toLocaleString('en-IN') })}</span>}
+                                {totalsMatch && <span className="aw-pill tone-success">✓ {t('Totals Match — Ready to Post')}</span>}
+                                {grandTotalSend > 0 && !totalsMatch && <span className="aw-pill tone-danger">✗ {t('Totals Do Not Match')}</span>}
                             </div>
                         )}
                     </section>
@@ -105,30 +107,30 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><BookOpenCheck size={14} /></span>
-                            <h2 className="aw-card-title">Demand Data</h2>
+                            <h2 className="aw-card-title">{t('Demand Data')}</h2>
                         </div>
                         {isLoading ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <span className="aw-spin" />
-                                <p className="aw-strong">Loading Demand Data...</p>
+                                <p className="aw-strong">{t('Loading Demand Data...')}</p>
                             </div>
                         ) : memberGroups.length === 0 ? (
                             <div className="aw-empty" style={{ padding: 32 }}>
                                 <BookOpenCheck size={32} />
-                                <p className="aw-strong">No Data Loaded</p>
-                                <span className="aw-meta">Select Month, Year, Branch and click "Load Data"</span>
+                                <p className="aw-strong">{t('No Data Loaded')}</p>
+                                <span className="aw-meta">{t('Select Month, Year, Branch and click "Load Data"')}</span>
                             </div>
                         ) : (
                             <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 470px)', minHeight: 200 }}>
                                 <table className="aw-table" style={{ minWidth: 760 }}>
                                     <thead>
                                         <tr>
-                                            <th style={{ width: 80 }}>Code</th>
-                                            <th>Head Name</th>
-                                            <th className="is-right" style={{ width: 120 }}>Balance</th>
-                                            <th className="is-right" style={{ width: 140 }}>Demand Send</th>
-                                            <th className="is-right is-accent" style={{ width: 150 }}>Demand Received</th>
-                                            <th className="is-right is-danger" style={{ width: 150 }}>Short Recovery</th>
+                                            <th style={{ width: 80 }}>{t('Code')}</th>
+                                            <th>{t('Head Name')}</th>
+                                            <th className="is-right" style={{ width: 120 }}>{t('Balance')}</th>
+                                            <th className="is-right" style={{ width: 140 }}>{t('Demand Send')}</th>
+                                            <th className="is-right is-accent" style={{ width: 150 }}>{t('Demand Received')}</th>
+                                            <th className="is-right is-danger" style={{ width: 150 }}>{t('Short Recovery')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -136,7 +138,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                                             <React.Fragment key={group.memberNo}>
                                                 <tr>
                                                     <td colSpan={6} style={{ ...rowHead, background: 'var(--aw-surface-muted)' }}>
-                                                        Member No : [{group.memberNo}] {group.memberName}
+                                                        {t('Member No : [')}{group.memberNo}] {group.memberName}
                                                     </td>
                                                 </tr>
                                                 {group.heads.map((head, idx) => (
@@ -150,7 +152,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                                                     </tr>
                                                 ))}
                                                 <tr>
-                                                    <td colSpan={3} className="is-right is-muted" style={rowHead}>Total</td>
+                                                    <td colSpan={3} className="is-right is-muted" style={rowHead}>{t('Total')}</td>
                                                     <td className="is-right" style={rowHead}>{group.totalSend.toFixed(2)}</td>
                                                     <td className="is-right is-accent" style={rowHead}>{group.totalReceived.toFixed(2)}</td>
                                                     <td className="is-right is-danger" style={rowHead}>{group.totalShort.toFixed(2)}</td>
@@ -160,7 +162,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colSpan={3} className="is-right">Grand Total</td>
+                                            <td colSpan={3} className="is-right">{t('Grand Total')}</td>
                                             <td className="is-right">{grandTotalSend.toFixed(2)}</td>
                                             <td className="is-right is-accent">{grandTotalReceived.toFixed(2)}</td>
                                             <td className="is-right is-danger">{grandTotalShort.toFixed(2)}</td>
@@ -174,7 +176,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
             </div>
 
             <div className="aw-footer">
-                <span>Demand Posting | {formData.modeOfReceipt}</span>
+                <span>{t('Demand Posting |')} {formData.modeOfReceipt}</span>
                 <span>{formData.month}-{formData.year}</span>
             </div>
         </div>

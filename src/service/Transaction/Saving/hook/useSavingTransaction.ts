@@ -9,21 +9,8 @@ import {
     SbAccountOption
 } from '../interface/SavingTransactionInterfaces';
 import { apiService } from '../../../../services/api';
-
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const emptyForm = (): SavingTransactionData => ({
     voucherNo: '',
@@ -50,6 +37,7 @@ const emptyForm = (): SavingTransactionData => ({
 });
 
 export const useSavingTransaction = (): SavingTransactionHookReturn => {
+  const { t } = useTranslation();
     const [formData, setFormData] = useState<SavingTransactionData>(emptyForm());
     const [transactionHistory, setTransactionHistory] = useState<TransactionHistoryRow[]>([]);
     const [bankAccounts, setBankAccounts] = useState<{ code: string; name: string }[]>([]);
@@ -144,12 +132,12 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
                 }));
                 setTransactionHistory(history);
             } else {
-                await showDialog('warning', 'electron-react-ts', 'Account Not Found', `No active savings account found for A/C No: ${accountNo}`);
+                await showDialog('warning', 'electron-react-ts', t('Account Not Found'), t('No active savings account found for A/C No: {{1}}', { 1: accountNo }));
                 setFormData(prev => ({ ...emptyForm(), accountNo, transDate: prev.transDate, transactionType: prev.transactionType }));
                 setTransactionHistory([]);
             }
         } catch (err: any) {
-            await showDialog('error', 'electron-react-ts', 'Failed to Fetch Account', `Could not retrieve account details.\n\nTechnical: ${err.message}`);
+            await showDialog('error', 'electron-react-ts', t('Failed to Fetch Account'), t('Could not retrieve account details. Technical: {{1}}', { 1: err.message }));
             setFormData(prev => ({ ...emptyForm(), accountNo, transDate: prev.transDate, transactionType: prev.transactionType }));
             setTransactionHistory([]);
         } finally {
@@ -159,25 +147,25 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
 
     const handleSave = useCallback(async () => {
         if (!formData.accountNo) {
-            await showDialog('warning', 'electron-react-ts', 'Account Required', 'Please enter a Savings Account No before saving.');
+            await showDialog('warning', 'electron-react-ts', t('Account Required'), t('Please enter a Savings Account No before saving.'));
             return;
         }
         if (!formData.amount || parseFloat(formData.amount) <= 0) {
-            await showDialog('warning', 'electron-react-ts', 'Invalid Amount', 'Please enter a valid transaction amount greater than zero.');
+            await showDialog('warning', 'electron-react-ts', t('Invalid Amount'), t('Please enter a valid transaction amount greater than zero.'));
             return;
         }
         if (!formData.narration) {
-            await showDialog('warning', 'electron-react-ts', 'Narration Required', 'Please enter a narration for this transaction.');
+            await showDialog('warning', 'electron-react-ts', t('Narration Required'), t('Please enter a narration for this transaction.'));
             return;
         }
         // BUG FIX: validate cheque fields for bank mode
         if (formData.paymentMode === 'bank') {
             if (!formData.chequeNo) {
-                await showDialog('warning', 'electron-react-ts', 'Cheque Number Required', 'Please enter the cheque number for bank/cheque payment mode.');
+                await showDialog('warning', 'electron-react-ts', t('Cheque Number Required'), t('Please enter the cheque number for bank/cheque payment mode.'));
                 return;
             }
             if (!formData.bankCode) {
-                await showDialog('warning', 'electron-react-ts', 'Bank Account Required', 'Please select the bank account for bank/cheque payment mode.');
+                await showDialog('warning', 'electron-react-ts', t('Bank Account Required'), t('Please select the bank account for bank/cheque payment mode.'));
                 return;
             }
         }
@@ -189,8 +177,8 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
                 await showDialog(
                     'error',
                     'electron-react-ts',
-                    'Insufficient Balance',
-                    `Withdrawable balance is ₹${formData.withdrawableBalance.toFixed(2)}.\nRequested amount ₹${amount.toFixed(2)} exceeds this limit.`
+                    t('Insufficient Balance'),
+                    t('Withdrawable balance is ₹{{1}}. Requested amount ₹{{2}} exceeds this limit.', { 1: formData.withdrawableBalance.toFixed(2), 2: amount.toFixed(2) })
                 );
                 return;
             }
@@ -220,7 +208,7 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    `${txnLabel} Saved Successfully!`,
+                    t('{{1}} Saved Successfully!', { 1: txnLabel }),
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `VOUCHER NO    : ${result?.voucherNo || '—'}\n` +
                     `ACCOUNT NO    : ${formData.accountNo}\n` +
@@ -264,10 +252,10 @@ export const useSavingTransaction = (): SavingTransactionHookReturn => {
                 }));
             } else {
                 // BUG FIX: was response.error — TransformInterceptor has no .error field; use response.message
-                await showDialog('error', 'electron-react-ts', 'Transaction Failed', response.message || 'An unexpected error occurred. Please try again.');
+                await showDialog('error', 'electron-react-ts', t('Transaction Failed'), response.message || t('An unexpected error occurred. Please try again.'));
             }
         } catch (err: any) {
-            await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${err.message}`);
+            await showDialog('error', 'electron-react-ts', t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: err.message }));
         } finally {
             setIsLoading(false);
         }

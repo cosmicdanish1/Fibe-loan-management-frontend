@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
 import { localISODate } from '../../../../utils/dates';
+import { useTranslation } from 'react-i18next';
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
 interface BalanceItem {
   code: string;
@@ -48,13 +50,8 @@ interface MemberBalanceData {
   balanceDate: string;
 }
 
-const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
-};
-
 const MemberBalance: React.FC = () => {
+  const { t } = useTranslation();
   const [memberNumber, setMemberNumber] = useState('');
   const [memberData, setMemberData] = useState<MemberBalanceData | null>(null);
   const [balances, setBalances] = useState<BalanceItem[]>([]);
@@ -141,7 +138,7 @@ const MemberBalance: React.FC = () => {
       setBalances(items);
     } catch (e: any) {
       setError(e.message || 'Failed to fetch member balance'); setMemberData(null); setBalances([]);
-      await showDialog('error', 'Lookup Failed', `Could not fetch balance for member ${mbNo}. The member may not exist, or the server is unreachable.`);
+      await showDialog('error', t('Lookup Failed'), t('Could not fetch balance for member {{1}}. The member may not exist, or the server is unreachable.', { 1: mbNo }));
     } finally { setIsLoading(false); }
   }, [memberNumber]);
 
@@ -163,19 +160,19 @@ const MemberBalance: React.FC = () => {
       {/* Header */}
       <div className="aw-header aw-ambient aw-noprint">
         <div className="min-w-0">
-          <h1 className="aw-title">Member Balance</h1>
-          <p className="aw-desc">Real-time Financial Position</p>
+          <h1 className="aw-title">{t('Member Balance')}</h1>
+          <p className="aw-desc">{t('Real-time Financial Position')}</p>
         </div>
         <div className="aw-actions">
           {isLoading && (
             <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
-              <RefreshCw size={12} className="aw-spin" /> Syncing Ledger...
+              <RefreshCw size={12} className="aw-spin" /> {t('Syncing Ledger...')}
             </span>
           )}
           <button type="button" onClick={clearSearch} className="aw-btn aw-btn-secondary">
-            <RefreshCw size={13} /> Reset
+            <RefreshCw size={13} /> {t('Reset')}
           </button>
-          <button type="button" onClick={() => window.close()} className="aw-icon-btn" aria-label="Close window" data-tip="Close window" data-tip-pos="bottom-end">
+          <button type="button" onClick={() => window.close()} className="aw-icon-btn" aria-label={t('Close window')} data-tip={t('Close window')} data-tip-pos="bottom-end">
             <X size={16} />
           </button>
         </div>
@@ -192,7 +189,7 @@ const MemberBalance: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Search size={14} /></span>
-                <h2 className="aw-card-title">Member Lookup</h2>
+                <h2 className="aw-card-title">{t('Member Lookup')}</h2>
               </div>
               <div className="aw-stack">
                 <div className="aw-input-wrap has-icon has-action">
@@ -200,17 +197,17 @@ const MemberBalance: React.FC = () => {
                   <input type="text" value={memberNumber}
                     onChange={(e) => { setMemberNumber(e.target.value.replace(/[^0-9]/g, '')); setMemberData(null); setBalances([]); setError(null); setIsSearched(false); }}
                     onKeyDown={handleMemberNoKeyDown}
-                    placeholder="Member ID..."
-                    aria-label="Member ID"
+                    placeholder={t('Member ID...')}
+                    aria-label={t('Member ID')}
                     className="aw-input"
                   />
-                  <button type="button" onClick={handleMemberLookup} className="aw-input-action" aria-label="Search members" data-tip="Search members" data-tip-pos="bottom-end">
+                  <button type="button" onClick={handleMemberLookup} className="aw-input-action" aria-label={t('Search members')} data-tip={t('Search members')} data-tip-pos="bottom-end">
                     <Search size={13} />
                   </button>
                 </div>
                 <button type="button" onClick={() => handleSearch()} disabled={!memberNumber.trim() || isLoading}
                   className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
-                  <Database size={13} /> Scan Balance
+                  <Database size={13} /> {t('Scan Balance')}
                 </button>
                 {error && <div className="aw-alert aw-alert-danger aw-fade-in" role="alert" style={{ marginBottom: 0 }}>{error}</div>}
               </div>
@@ -228,17 +225,17 @@ const MemberBalance: React.FC = () => {
                 </div>
                 <div className="aw-rows" style={{ marginTop: 6 }}>
                   <div className="aw-row">
-                    <span className="aw-row-label">Status</span>
+                    <span className="aw-row-label">{t('Status')}</span>
                     <span className={`aw-pill ${memberData.isActive ? 'tone-success' : 'tone-danger'}`}>
-                      {memberData.isActive ? 'Active' : 'Suspended'}
+                      {memberData.isActive ? t('Active') : t('Suspended')}
                     </span>
                   </div>
                   <div className="aw-row">
-                    <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={13} /> Office</span>
+                    <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={13} /> {t('Office')}</span>
                     <span className="aw-row-value" style={{ textTransform: 'uppercase', textAlign: 'right' }}>{memberData.officeName}</span>
                   </div>
                   <div className="aw-row">
-                    <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><IndianRupee size={13} /> Basic</span>
+                    <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><IndianRupee size={13} /> {t('Basic')}</span>
                     <span className="aw-row-value">₹{parseFloat(memberData.basicPay).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
@@ -250,31 +247,31 @@ const MemberBalance: React.FC = () => {
               <section className="aw-card aw-fade-in">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><PieChart size={14} /></span>
-                  <h2 className="aw-card-title">Position Summary</h2>
+                  <h2 className="aw-card-title">{t('Position Summary')}</h2>
                 </div>
                 <div className="aw-stack">
                   <div className="aw-stat aw-stat-left tone-success">
                     <div className="aw-stat-head" style={{ justifyContent: 'space-between' }}>
-                      <span className="aw-stat-label">Gross Assets</span>
+                      <span className="aw-stat-label">{t('Gross Assets')}</span>
                       <ArrowUpRight size={14} />
                     </div>
                     <div className="aw-stat-value">₹{totalAssets.toLocaleString('en-IN')}</div>
                   </div>
                   <div className="aw-stat aw-stat-left tone-danger">
                     <div className="aw-stat-head" style={{ justifyContent: 'space-between' }}>
-                      <span className="aw-stat-label">Gross Liabilities</span>
+                      <span className="aw-stat-label">{t('Gross Liabilities')}</span>
                       <ArrowDownRight size={14} />
                     </div>
                     <div className="aw-stat-value">₹{totalLiabilities.toLocaleString('en-IN')}</div>
                   </div>
                   <div className={`aw-stat aw-stat-left ${totalBalance >= 0 ? '' : 'tone-danger'}`}>
                     <div className="aw-stat-head" style={{ justifyContent: 'space-between' }}>
-                      <span className="aw-stat-label">Net Liquidity</span>
+                      <span className="aw-stat-label">{t('Net Liquidity')}</span>
                       <ShieldCheck size={14} />
                     </div>
                     <div className="aw-stat-value">
                       ₹{Math.abs(totalBalance).toLocaleString('en-IN')}
-                      <small>{totalBalance >= 0 ? 'Surplus' : 'Deficit'}</small>
+                      <small>{totalBalance >= 0 ? t('Surplus') : t('Deficit')}</small>
                     </div>
                   </div>
                 </div>
@@ -289,13 +286,13 @@ const MemberBalance: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <span className="aw-card-icon"><FileText size={14} /></span>
                 <div>
-                  <h2 className="aw-card-title">Global Ledger Stream</h2>
-                  {memberData && <p className="aw-meta">Snapshot: {memberData.balanceDate}</p>}
+                  <h2 className="aw-card-title">{t('Global Ledger Stream')}</h2>
+                  {memberData && <p className="aw-meta">{t('Snapshot:')} {memberData.balanceDate}</p>}
                 </div>
               </div>
               {balances.length > 0 && (
-                <button type="button" onClick={() => window.print()} className="aw-btn aw-btn-secondary" data-tip="Print this balance" data-tip-pos="bottom-end">
-                  <Printer size={13} /> Print
+                <button type="button" onClick={() => window.print()} className="aw-btn aw-btn-secondary" data-tip={t('Print this balance')} data-tip-pos="bottom-end">
+                  <Printer size={13} /> {t('Print')}
                 </button>
               )}
             </div>
@@ -317,7 +314,7 @@ const MemberBalance: React.FC = () => {
                           <td><span className="aw-code font-mono">{item.code}</span></td>
                           <td>
                             <span style={{ textTransform: 'uppercase' }}>{item.headName}</span>
-                            <span className="aw-meta" style={{ textTransform: 'uppercase' }}>Ref_{item.code}</span>
+                            <span className="aw-meta" style={{ textTransform: 'uppercase' }}>{t('Ref_')}{item.code}</span>
                           </td>
                           <td className="is-center">
                             <span className={`aw-pill ${item.type === 'asset' ? 'tone-success' : 'tone-danger'}`} style={{ textTransform: 'uppercase' }}>
@@ -335,11 +332,11 @@ const MemberBalance: React.FC = () => {
 
                   <div className="aw-totals">
                     <div>
-                      <span className="aw-label">Computation</span>
-                      <span className="aw-strong">Dynamic</span>
+                      <span className="aw-label">{t('Computation')}</span>
+                      <span className="aw-strong">{t('Dynamic')}</span>
                     </div>
                     <div>
-                      <span className="aw-label">Final Position</span>
+                      <span className="aw-label">{t('Final Position')}</span>
                       <span className={`aw-total-value ${totalBalance >= 0 ? '' : 'tone-danger'}`}>
                         ₹{Math.abs(totalBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         <small>{totalBalance >= 0 ? 'CR' : 'DR'}</small>
@@ -350,25 +347,25 @@ const MemberBalance: React.FC = () => {
               ) : isSearched && !isLoading ? (
                 <div className="aw-empty" style={{ minHeight: '100%' }}>
                   <Calculator size={40} />
-                  <strong className="aw-strong">Zero Balance</strong>
-                  <span>{error ? 'System error occurred.' : 'All accounts at zero.'}</span>
+                  <strong className="aw-strong">{t('Zero Balance')}</strong>
+                  <span>{error ? t('System error occurred.') : t('All accounts at zero.')}</span>
                   <button type="button" onClick={clearSearch} className="aw-btn aw-btn-primary" style={{ marginTop: 8 }}>
-                    Select Another
+                    {t('Select Another')}
                   </button>
                 </div>
               ) : (
                 <div className="aw-empty" style={{ minHeight: '100%' }}>
                   <Calculator size={48} />
-                  <strong className="aw-strong">Sync Member Ledger</strong>
-                  <span>Enter <strong style={{ color: 'var(--aw-accent)' }}>Member ID</strong> to initialize balance discovery</span>
+                  <strong className="aw-strong">{t('Sync Member Ledger')}</strong>
+                  <span>{t('Enter')} <strong style={{ color: 'var(--aw-accent)' }}>{t('Member ID')}</strong> {t('to initialize balance discovery')}</span>
                 </div>
               )}
             </div>
 
             <div className="aw-main-foot aw-noprint">
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <span><i className="aw-status-dot" />Recon Online</span>
-                <span>Integrity: <span style={{ color: 'var(--aw-success)' }}>Verified</span></span>
+                <span><i className="aw-status-dot" />{t('Recon Online')}</span>
+                <span>{t('Integrity:')} <span style={{ color: 'var(--aw-success)' }}>{t('Verified')}</span></span>
               </div>
               <span className="aw-pill">RECON_V12.1</span>
             </div>

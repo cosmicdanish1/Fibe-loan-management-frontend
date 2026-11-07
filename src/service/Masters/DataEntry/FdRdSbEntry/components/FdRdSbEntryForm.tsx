@@ -7,10 +7,12 @@ import dayjs from 'dayjs';
 import { FdRdSbEntryHookReturn } from '../interface/FdRdSbEntryInterfaces';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import MemberField from '@/components/shared/kit/MemberField';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../../i18n';
 
 const ENTRY_TYPES = [
-    { id: 'RD', label: 'Monthly Deposit (MD)',    accType: 'MD', code: 'L1002' },
-    { id: 'SB', label: 'Monthly Deposit 2 (MD1)', accType: 'MD1', code: 'L1045' },
+    { id: 'RD', label: tLabel('Monthly Deposit (MD)'),    accType: 'MD', code: 'L1002' },
+    { id: 'SB', label: tLabel('Monthly Deposit 2 (MD1)'), accType: 'MD1', code: 'L1045' },
 ];
 
 const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
@@ -22,6 +24,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
     handleExit,
     isLoading,
 }) => {
+  const { t } = useTranslation();
     useEffect(() => {
         // BUG FIX 19 (same as SavingAccountForm.tsx): window.electron.ipcRenderer.on strips the
         // raw Electron event before calling back — func(data), not func(event, data) — so the
@@ -59,8 +62,8 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">FD / RD / SB Entry</h1>
-                    <p className="aw-desc">Writes to ledger{formData.memberName ? ` · ${formData.memberName}` : ''}</p>
+                    <h1 className="aw-title">{t('FD / RD / SB Entry')}</h1>
+                    <p className="aw-desc">{t('Writes to ledger')}{formData.memberName ? ` · ${formData.memberName}` : ''}</p>
                 </div>
                 <div className="aw-actions">
                     <div className="aw-seg" role="tablist" style={{ ['--seg-index' as any]: typeIndex, ['--seg-count' as any]: ENTRY_TYPES.length }}>
@@ -70,12 +73,12 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                             </button>
                         ))}
                     </div>
-                    <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Clear</button>
+                    <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> {t('Clear')}</button>
                     <button type="button" onClick={handleSave} disabled={isLoading} className="aw-btn aw-btn-primary">
                         {isLoading ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />}
-                        {isLoading ? 'Saving…' : 'Save'}
+                        {isLoading ? t('Saving…') : t('Save')}
                     </button>
-                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Exit')}</button>
                 </div>
             </div>
 
@@ -84,17 +87,17 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Users size={14} /></span>
-                            <h2 className="aw-card-title">Member</h2>
+                            <h2 className="aw-card-title">{t('Member')}</h2>
                             {formData.memberName && <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-accent)' }}>{formData.memberName}</span>}
                         </div>
                         <div style={{ maxWidth: 420 }}>
-                            <span className="aw-label">Member No.</span>
+                            <span className="aw-label">{t('Member No.')}</span>
                             <MemberField
                                 value={formData.memberNo}
                                 onChange={v => { updateField('memberNo', v); updateField('memberName', ''); }}
                                 onSelect={onMemberPicked}
                                 onSubmit={v => { if (v) handleMemberSelect(v); }}
-                                placeholder="Click or press F2 to search…"
+                                placeholder={t('Click or press F2 to search…')}
                                 shortcuts
                                 openOnClick
                             />
@@ -104,18 +107,18 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Database size={14} /></span>
-                            <h2 className="aw-card-title">Transaction Details</h2>
+                            <h2 className="aw-card-title">{t('Transaction Details')}</h2>
                             <span className="aw-pill tone-info" style={{ marginLeft: 'auto' }}>{activeType.accType} / {activeType.code}</span>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 'var(--aw-gap)' }}>
                             <div>
-                                <label className="aw-label" htmlFor="fd-date">Transaction Date</label>
+                                <label className="aw-label" htmlFor="fd-date">{t('Transaction Date')}</label>
                                 <DatePicker id="fd-date" value={formData.transDate ? dayjs(formData.transDate) : null}
                                     onChange={d => updateField('transDate', d ? d.format('YYYY-MM-DD') : '')}
                                     format="DD-MMM-YY" className="aw-picker" popupClassName="aw-select-popup" />
                             </div>
                             <div>
-                                <span className="aw-label">Transaction Type</span>
+                                <span className="aw-label">{t('Transaction Type')}</span>
                                 <div className="aw-seg" role="tablist" style={{ ['--seg-index' as any]: formData.transType === 'DR' ? 1 : 0, ['--seg-count' as any]: 2 }}>
                                     <button type="button" role="tab" aria-selected={formData.transType === 'CR'} onClick={() => updateField('transType', 'CR')}>
                                         <ArrowDownCircle size={13} /> CR
@@ -126,42 +129,42 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                                 </div>
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="fd-amount">Amount</label>
+                                <label className="aw-label" htmlFor="fd-amount">{t('Amount')}</label>
                                 <input id="fd-amount" type="number" value={formData.amount} onChange={e => updateField('amount', e.target.value)}
                                     placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="fd-receipt">Receipt / Voucher No</label>
+                                <label className="aw-label" htmlFor="fd-receipt">{t('Receipt / Voucher No')}</label>
                                 <input id="fd-receipt" value={formData.receiptVchrNo} onChange={e => updateField('receiptVchrNo', e.target.value)}
                                     placeholder="R001" className="aw-input" />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="fd-vtype">Voucher Type</label>
+                                <label className="aw-label" htmlFor="fd-vtype">{t('Voucher Type')}</label>
                                 <Select id="fd-vtype" value={formData.vchrType} onChange={v => updateField('vchrType', v)}
                                     className="aw-select" popupClassName="aw-select-popup"
                                     options={[
-                                        { value: 'R', label: 'Receipt (R)' },
-                                        { value: 'P', label: 'Payment (P)' },
-                                        { value: 'J', label: 'Journal (J)' },
-                                        { value: 'C', label: 'Contra (C)' },
+                                        { value: 'R', label: t('Receipt (R)') },
+                                        { value: 'P', label: t('Payment (P)') },
+                                        { value: 'J', label: t('Journal (J)') },
+                                        { value: 'C', label: t('Contra (C)') },
                                     ]} />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="fd-mode">Mode of Payment</label>
+                                <label className="aw-label" htmlFor="fd-mode">{t('Mode of Payment')}</label>
                                 <Select id="fd-mode" value={formData.modeOfPay} onChange={v => updateField('modeOfPay', v)}
                                     className="aw-select" popupClassName="aw-select-popup"
                                     options={[
-                                        { value: 'C', label: 'Cash' },
-                                        { value: 'Q', label: 'Cheque' },
-                                        { value: 'T', label: 'Transfer' },
-                                        { value: 'O', label: 'Online' },
+                                        { value: 'C', label: t('Cash') },
+                                        { value: 'Q', label: t('Cheque') },
+                                        { value: 'T', label: t('Transfer') },
+                                        { value: 'O', label: t('Online') },
                                     ]} />
                             </div>
                         </div>
                         <div>
-                            <label className="aw-label" htmlFor="fd-narr">Narration</label>
+                            <label className="aw-label" htmlFor="fd-narr">{t('Narration')}</label>
                             <textarea id="fd-narr" value={formData.narration} onChange={e => updateField('narration', e.target.value)}
-                                placeholder="Enter narration / remarks…" rows={2}
+                                placeholder={t('Enter narration / remarks…')} rows={2}
                                 className="aw-input" style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
                         </div>
                     </section>

@@ -3,11 +3,13 @@ import { AlertCircle, CheckCircle2, RotateCcw, ShieldCheck, ShieldOff } from 'lu
 import { apiService } from '../../../../../services/api';
 import PasswordInput from '../../../../../components/shared/PasswordInput';
 import { EnrolPanel, RecoveryCodesPanel } from '../../../../../auth/components/TwoFaStep';
+import { useTranslation } from 'react-i18next';
 
 type View = 'home' | 'password' | 'enrol' | 'codes' | 'disable' | 'regen';
 
 /** "Authenticator app" block for My Profile > Security: turn 2FA on/off, regenerate recovery codes. */
 const TwoFaCard: React.FC = () => {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<any>(null);
   const [view, setView] = useState<View>('home');
   const [password, setPassword] = useState('');
@@ -32,8 +34,8 @@ const TwoFaCard: React.FC = () => {
   if (!status) return null;
   if (!status.available) {
     return (
-      <div className="aw-panel"><p className="aw-strong">Authenticator app</p>
-        <span className="aw-meta">Two-factor authentication is switched off by your administrator.</span></div>
+      <div className="aw-panel"><p className="aw-strong">{t('Authenticator app')}</p>
+        <span className="aw-meta">{t('Two-factor authentication is switched off by your administrator.')}</span></div>
     );
   }
 
@@ -42,32 +44,32 @@ const TwoFaCard: React.FC = () => {
   return (
     <div className="aw-panel aw-fade-in" style={{ textAlign: 'left' }}>
       <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <p className="aw-strong">Authenticator app (two-factor)</p>
+        <p className="aw-strong">{t('Authenticator app (two-factor)')}</p>
         {status.enrolled
-          ? <span className="aw-pill tone-success"><CheckCircle2 size={12} /> On</span>
-          : <span className="aw-pill">Off</span>}
+          ? <span className="aw-pill tone-success"><CheckCircle2 size={12} /> {t('On')}</span>
+          : <span className="aw-pill">{t('Off')}</span>}
       </div>
 
       {view === 'home' && (
         <div className="aw-stack" style={{ gap: 8 }}>
           {status.enrolled ? (
             <>
-              <span className="aw-meta">Sign-in asks for a 6-digit code from your phone. Recovery codes left: <strong>{status.recoveryCodesRemaining}</strong>
-                {status.recoveryCodesRemaining <= 2 && ' (running low: generate new ones)'}.</span>
+              <span className="aw-meta">{t('Sign-in asks for a 6-digit code from your phone. Recovery codes left:')} <strong>{status.recoveryCodesRemaining}</strong>
+                {status.recoveryCodesRemaining <= 2 && ' ' + t('(running low: generate new ones)')}.</span>
               <div className="aw-inline" style={{ gap: 8, flexWrap: 'wrap' }}>
-                <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => setView('regen')}>New recovery codes</button>
+                <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => setView('regen')}>{t('New recovery codes')}</button>
                 <button type="button" className="aw-btn aw-btn-danger aw-btn-sm" disabled={status.required} onClick={() => setView('disable')}
-                  title={status.required ? 'Your administrator requires two-factor authentication' : undefined}><ShieldOff size={12} /> Turn off</button>
+                  title={status.required ? t('Your administrator requires two-factor authentication') : undefined}><ShieldOff size={12} /> {t('Turn off')}</button>
               </div>
-              {status.required && <span className="aw-meta">Your administrator requires two-factor authentication, so it can't be turned off.</span>}
+              {status.required && <span className="aw-meta">{t("Your administrator requires two-factor authentication, so it can't be turned off.")}</span>}
             </>
           ) : (
             <>
               <span className="aw-meta">
-                Add a second step to sign-in using an authenticator app on your phone.
-                {status.required && status.graceDaysLeft ? ` Required: please set it up within ${status.graceDaysLeft} day(s).` : ''}
+                {t('Add a second step to sign-in using an authenticator app on your phone.')}
+                {status.required && status.graceDaysLeft ? ' ' + t('Required: please set it up within {{1}} day(s).', { 1: status.graceDaysLeft }) : ''}
               </span>
-              <button type="button" className="aw-btn aw-btn-primary aw-btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setView('password')}><ShieldCheck size={12} /> Set up</button>
+              <button type="button" className="aw-btn aw-btn-primary aw-btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setView('password')}><ShieldCheck size={12} /> {t('Set up')}</button>
             </>
           )}
         </div>
@@ -78,12 +80,12 @@ const TwoFaCard: React.FC = () => {
           e.preventDefault();
           run(async () => { setSetup(await apiService.twoFaEnrolBegin(password)); setView('enrol'); setPassword(''); });
         }}>
-          <span className="aw-meta">Confirm your password to continue.</span>
-          <PasswordInput className="aw-input" placeholder="Your password" aria-label="Your password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
+          <span className="aw-meta">{t('Confirm your password to continue.')}</span>
+          <PasswordInput className="aw-input" placeholder={t('Your password')} aria-label={t('Your password')} autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
           {errBox}
           <div className="aw-btn-row">
-            <button type="button" className="aw-btn aw-btn-secondary" onClick={home}>Cancel</button>
-            <button type="submit" className="aw-btn aw-btn-primary" disabled={busy || !password}>{busy && <RotateCcw size={13} className="aw-spin" />} Continue</button>
+            <button type="button" className="aw-btn aw-btn-secondary" onClick={home}>{t('Cancel')}</button>
+            <button type="submit" className="aw-btn aw-btn-primary" disabled={busy || !password}>{busy && <RotateCcw size={13} className="aw-spin" />} {t('Continue')}</button>
           </div>
         </form>
       )}
@@ -92,7 +94,7 @@ const TwoFaCard: React.FC = () => {
         <>
           <EnrolPanel setup={setup} busy={busy} error={error}
             onSubmit={(c) => run(async () => { const r = await apiService.twoFaEnrolConfirm(c); setCodes(r.recoveryCodes); setView('codes'); })} />
-          <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" onClick={home}>Cancel</button>
+          <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" onClick={home}>{t('Cancel')}</button>
         </>
       )}
 
@@ -106,16 +108,16 @@ const TwoFaCard: React.FC = () => {
             else { const r = await apiService.twoFaRegenerate(code); setCodes(r.recoveryCodes); setCode(''); setView('codes'); }
           });
         }}>
-          <span className="aw-meta">{view === 'disable' ? 'Enter your password and a current code to turn two-factor authentication off.' : 'Enter a current 6-digit code. Your old recovery codes will stop working.'}</span>
-          {view === 'disable' && <PasswordInput className="aw-input" placeholder="Your password" aria-label="Your password" value={password} onChange={(e) => setPassword(e.target.value)} />}
-          <input className="aw-input" inputMode="numeric" autoComplete="one-time-code" maxLength={7} placeholder="6-digit code" aria-label="Authenticator code" value={code}
+          <span className="aw-meta">{view === 'disable' ? t('Enter your password and a current code to turn two-factor authentication off.') : t('Enter a current 6-digit code. Your old recovery codes will stop working.')}</span>
+          {view === 'disable' && <PasswordInput className="aw-input" placeholder={t('Your password')} aria-label={t('Your password')} value={password} onChange={(e) => setPassword(e.target.value)} />}
+          <input className="aw-input" inputMode="numeric" autoComplete="one-time-code" maxLength={7} placeholder={t('6-digit code')} aria-label={t('Authenticator code')} value={code}
             onChange={(e) => setCode(e.target.value.replace(/[^\d ]/g, ''))} autoFocus />
           {errBox}
           <div className="aw-btn-row">
-            <button type="button" className="aw-btn aw-btn-secondary" onClick={home}>Cancel</button>
+            <button type="button" className="aw-btn aw-btn-secondary" onClick={home}>{t('Cancel')}</button>
             <button type="submit" className={`aw-btn ${view === 'disable' ? 'aw-btn-danger' : 'aw-btn-primary'}`}
               disabled={busy || code.replace(/\s/g, '').length !== 6 || (view === 'disable' && !password)}>
-              {busy && <RotateCcw size={13} className="aw-spin" />} {view === 'disable' ? 'Turn off' : 'Generate'}
+              {busy && <RotateCcw size={13} className="aw-spin" />} {view === 'disable' ? t('Turn off') : t('Generate')}
             </button>
           </div>
         </form>

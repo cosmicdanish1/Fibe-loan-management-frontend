@@ -2,17 +2,25 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { apiService } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   provider?: string;
   ts?: number;
+  logId?: number;
+  feedback?: 1 | -1;
+  sources?: Array<{ title: string; heading: string }>;
 }
+
+// Providers/states that are not a real answer: no "via ..." label and no thumbs up/down.
+const NON_ANSWER = ['system', 'error', 'none', 'unavailable'];
 
 const STORAGE_KEY = 'fibe-chat-pos';
 
 const FloatingChatBot: React.FC = () => {
+  const { t } = useTranslation();
   const { interfaceMode, showChatbot } = useSelector((state: RootState) => state.theme);
   const isDark = interfaceMode === 'dark';
 
@@ -67,26 +75,58 @@ const FloatingChatBot: React.FC = () => {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 350);
   }, [isOpen]);
 
+  const busyRef = useRef(false); // true from send until the answer has fully arrived (isLoading ends at the first word)
   const sendMessage = useCallback(async () => {
     const text = input.trim();
-    if (!text || isLoading) return;
+    if (!text || isLoading || busyRef.current) return;
+    busyRef.current = true;
     const userMsg: ChatMessage = { role: 'user', content: text, ts: Date.now() };
     const next = [...messages, userMsg];
     setMessages(next);
     setInput('');
     setIsLoading(true);
     try {
-      const response = await apiService.post('/ai-chat', {
-        messages: next.map(m => ({ role: m.role, content: m.content })),
-      });
-      const data = (response as any)?.data || response;
-      setMessages([...next, { role: 'assistant', content: data?.reply || 'Sorry, couldn\'t process that. Try again!', provider: data?.provider, ts: Date.now() }]);
-    } catch {
-      setMessages([...next, { role: 'assistant', content: 'Connection error — check if server is running. — Paper White Technology', provider: 'error', ts: Date.now() }]);
+      // The answer is streamed: the bubble appears with the first words and grows. The typing dots show until then.
+      let streamed = '';
+      const data = await apiService.aiChatStream(
+        {
+          messages: next.map(m => ({ role: m.role, content: m.content })),
+          route: window.location.hash || window.location.pathname,
+        },
+        (piece) => {
+          streamed += piece;
+          setIsLoading(false);
+          setMessages([...next, { role: 'assistant', content: streamed, provider: 'system', ts: Date.now() }]);
+        },
+      );
+      // the final event is authoritative (it also carries the log id, provider and sources)
+      setMessages([...next, { role: 'assistant', content: data?.reply || streamed || 'Sorry, couldn\'t process that. Try again!', provider: data?.provider, logId: data?.logId, sources: Array.isArray(data?.sources) ? data.sources : undefined, ts: Date.now() }]);
+    } catch (err: any) {
+      // 429 = the employee's own rate limit; the server message says which one. Anything else is a connection problem.
+      const status = err?.response?.status ?? err?.status;
+      const serverMsg = err?.response?.data?.message;
+      const content = status === 429 && typeof serverMsg === 'string'
+        ? `${serverMsg} — Paper White Technology`
+        : status === 401
+          ? 'Your session has expired. Please sign in again to use the assistant. — Paper White Technology'
+          : 'Connection error — check if server is running. — Paper White Technology';
+      setMessages([...next, { role: 'assistant', content, provider: 'error', ts: Date.now() }]);
     } finally {
+      busyRef.current = false;
       setIsLoading(false);
     }
   }, [input, messages, isLoading]);
+
+  const rate = useCallback(async (index: number, value: 1 | -1) => {
+    const msg = messages[index];
+    if (!msg?.logId || msg.feedback) return;
+    setMessages(prev => prev.map((m, i) => (i === index ? { ...m, feedback: value } : m)));
+    try {
+      await apiService.post('/ai-chat/feedback', { logId: msg.logId, value });
+    } catch {
+      // feedback is best-effort; nothing to tell the employee
+    }
+  }, [messages]);
 
   const clearChat = useCallback(() => {
     setMessages([{ role: 'assistant', content: 'Chat cleared! How can I help you with FIBE? — Paper White Technology', provider: 'system', ts: Date.now() }]);
@@ -204,22 +244,22 @@ const FloatingChatBot: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: c.text, letterSpacing: -0.3 }}>FIBE Assistant</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: c.text, letterSpacing: -0.3 }}>{t('FIBE Assistant')}</div>
                 <div style={{ fontSize: 10, color: '#34d399', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ width: 5, height: 5, background: '#34d399', borderRadius: '50%', display: 'inline-block' }} />
-                  Paper White Technology
+                  {t('Paper White Technology')}
                 </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              <div onClick={clearChat} title="Clear chat" style={{
+              <div onClick={clearChat} title={t('Clear chat')} style={{
                 width: 28, height: 28, borderRadius: 9,
                 background: c.inputBg, border: `0.5px solid ${c.borderLight}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
               }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={c.textSub} strokeWidth="2" strokeLinecap="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
               </div>
-              <div onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} title="Minimize" style={{
+              <div onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} title={t('Minimize')} style={{
                 width: 28, height: 28, borderRadius: 9,
                 background: c.inputBg, border: `0.5px solid ${c.borderLight}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
@@ -264,8 +304,35 @@ const FloatingChatBot: React.FC = () => {
                   boxShadow: msg.role === 'user' ? '0 2px 8px rgba(99,102,241,0.2)' : 'none',
                 }}>
                   {msg.content}
-                  {msg.role === 'assistant' && msg.provider && msg.provider !== 'system' && msg.provider !== 'error' && (
-                    <div style={{ fontSize: 9.5, color: c.textMuted, marginTop: 4, fontWeight: 500 }}>via {msg.provider}</div>
+                  {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                    <div style={{ fontSize: 10, color: c.textMuted, marginTop: 6, lineHeight: 1.4 }}>
+                      {t('Source')}: {msg.sources.map(s => (s.heading && s.heading !== s.title ? `${s.title} › ${s.heading}` : s.title)).join(' · ')}
+                    </div>
+                  )}
+                  {msg.role === 'assistant' && msg.provider && !NON_ANSWER.includes(msg.provider) && (
+                    <div style={{ fontSize: 9.5, color: c.textMuted, marginTop: 4, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>via {msg.provider}</span>
+                      {msg.logId && (
+                        <span style={{ display: 'inline-flex', gap: 4 }}>
+                          <button
+                            type="button"
+                            aria-label={t('Helpful')}
+                            title={t('Helpful')}
+                            disabled={!!msg.feedback}
+                            onClick={() => rate(i, 1)}
+                            style={{ border: 'none', background: 'transparent', cursor: msg.feedback ? 'default' : 'pointer', padding: 0, fontSize: 12, opacity: msg.feedback === -1 ? 0.25 : 1 }}
+                          >👍</button>
+                          <button
+                            type="button"
+                            aria-label={t('Not helpful')}
+                            title={t('Not helpful')}
+                            disabled={!!msg.feedback}
+                            onClick={() => rate(i, -1)}
+                            style={{ border: 'none', background: 'transparent', cursor: msg.feedback ? 'default' : 'pointer', padding: 0, fontSize: 12, opacity: msg.feedback === 1 ? 0.25 : 1 }}
+                          >👎</button>
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -312,7 +379,7 @@ const FloatingChatBot: React.FC = () => {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && sendMessage()}
-              placeholder="Ask about FIBE..."
+              placeholder={t('Ask about FIBE...')}
               disabled={isLoading}
               style={{
                 flex: 1, background: c.inputBg,
@@ -350,7 +417,7 @@ const FloatingChatBot: React.FC = () => {
             padding: '4px 14px 6px', textAlign: 'center',
             fontSize: 9, color: c.textMuted, fontWeight: 500, letterSpacing: 0.3,
           }}>
-            Powered by Paper White Technology
+            {t('Powered by Paper White Technology')}
           </div>
         </div>
       )}

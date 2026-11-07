@@ -7,6 +7,7 @@ import { handleEnterAsTab } from '../../utils/keyboardNav';
 import type { EmployeeDetail } from '../../types/employee';
 import { ShieldCheck, RefreshCw, User, Users, Wallet, MapPin, Search, FileText } from 'lucide-react';
 import { Select } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 interface LoanEligibilityStatus {
   isEligible: boolean;
@@ -70,6 +71,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
   eligibilityStatus,
   isCheckingEligibility = false,
 }) => {
+  const { t } = useTranslation();
   const isRegularLoan = loanDetails.loanType?.toUpperCase() === 'RLN';
   const isLoanAgainstRd = loanDetails.loanType?.toUpperCase() === 'ELN';
   // The RD panel only when the server actually answered with RD figures for this member.
@@ -174,11 +176,11 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Wallet size={14} /></span>
-              <h2 className="aw-card-title">Application</h2>
+              <h2 className="aw-card-title">{t('Application')}</h2>
             </div>
             <div className="aw-stack">
               <FormField
-                label="Appl Date"
+                label={t('Appl Date')}
                 name="applDate"
                 type="date"
                 value={loanDetails.applDate}
@@ -187,7 +189,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               />
 
               <FormField
-                label="Member No."
+                label={t('Member No.')}
                 name="memberNo"
                 type="text"
                 value={loanDetails.memberNo}
@@ -197,12 +199,12 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                   onLookup?.('memberNo');
                   handleMemberNoClick();
                 }}
-                placeholder="Search MBNo (Click or F2)"
+                placeholder={t('Search MBNo (Click or F2)')}
                 required
               />
 
               <FormField
-                label="Loan Type"
+                label={t('Loan Type')}
                 name="loanType"
                 type="select"
                 value={loanDetails.loanType}
@@ -214,7 +216,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               {/* Loan Case No. - Dropdown shows existing cases only */}
               <div>
                 <label className="aw-label" htmlFor="loanCaseNo">
-                  Loan Case No. <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>(optional — auto-generated)</span>
+                  {t('Loan Case No.')} <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>{t('(optional — auto-generated)')}</span>
                 </label>
                 <Select
                   id="loanCaseNo"
@@ -232,21 +234,21 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                 />
                 {isLoadingLoanCases && (
                   <p className="aw-meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <RefreshCw size={11} className="aw-spin" /> Loading...
+                    <RefreshCw size={11} className="aw-spin" /> {t('Loading...')}
                   </p>
                 )}
                 {selectedMember && !isLoadingLoanCases && memberLoanCases.length === 0 && (
-                  <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-success)' }}>✓ Auto-generated on save</p>
+                  <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-success)' }}>✓ {t('Auto-generated on save')}</p>
                 )}
                 {selectedMember && !isLoadingLoanCases && memberLoanCases.length > 0 && !loanDetails.loanCaseNo && (
-                  <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-warning)' }}>⚠ Select existing or auto-generate new</p>
+                  <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-warning)' }}>⚠ {t('Select existing or auto-generate new')}</p>
                 )}
               </div>
 
               {/* Loan Amount with formatting and helper text */}
               <div>
                 <FormField
-                  label="Loan Amount"
+                  label={t('Loan Amount')}
                   name="loanAmount"
                   type="text"
                   value={loanDetails.loanAmount}
@@ -264,11 +266,11 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                     </p>
                     {loanDetails.loanType && (
                       <p className="aw-meta">
-                        {loanDetails.loanType.toUpperCase() === 'ALN' && 'Emergency Loan - Max: ₹5,00,000'}
-                        {loanDetails.loanType.toUpperCase() === 'RLN' && 'Regular Loan - Default: ₹10,00,000'}
+                        {loanDetails.loanType.toUpperCase() === 'ALN' && t('Emergency Loan - Max: ₹5,00,000')}
+                        {loanDetails.loanType.toUpperCase() === 'RLN' && t('Regular Loan - Default: ₹10,00,000')}
                         {isLoanAgainstRd && (isRdPanel
-                          ? `Loan Against RD - up to ${inr(eligibilityStatus!.maxLoanAmount)} for this member`
-                          : 'Loan Against RD - limit depends on the member\'s RD')}
+                          ? t('Loan Against RD - up to {{1}} for this member', { 1: inr(eligibilityStatus!.maxLoanAmount) })
+                          : t("Loan Against RD - limit depends on the member's RD"))}
                       </p>
                     )}
                   </div>
@@ -276,7 +278,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               </div>
 
               <FormField
-                label="Form Number"
+                label={t('Form Number')}
                 name="formNumber"
                 type="text"
                 value={loanDetails.formNumber}
@@ -285,7 +287,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               />
 
               <FormField
-                label="Reason"
+                label={t('Reason')}
                 name="reason"
                 type="textarea"
                 value={loanDetails.reason}
@@ -311,29 +313,29 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                   <p className="aw-meta">{selectedMember.memberNo}</p>
                 </div>
                 <span className={`aw-pill tone-${selectedMember.isRetired ? 'warning' : 'success'}`}>
-                  {selectedMember.isRetired ? 'Retired' : 'Active'}
+                  {selectedMember.isRetired ? t('Retired') : t('Active')}
                 </span>
               </div>
 
               <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-                <div><dt>Office</dt><dd>{selectedMember.officeName || selectedMember.officeNo || '—'}</dd></div>
-                <div><dt>Basic Pay</dt><dd style={{ color: 'var(--aw-success)' }}>{selectedMember.basicPay ? inr(selectedMember.basicPay) : '—'}</dd></div>
-                <div><dt>Retire Date</dt><dd>{selectedMember.dateOfRetire || 'N/A'}</dd></div>
+                <div><dt>{t('Office')}</dt><dd>{selectedMember.officeName || selectedMember.officeNo || '—'}</dd></div>
+                <div><dt>{t('Basic Pay')}</dt><dd style={{ color: 'var(--aw-success)' }}>{selectedMember.basicPay ? inr(selectedMember.basicPay) : '—'}</dd></div>
+                <div><dt>{t('Retire Date')}</dt><dd>{selectedMember.dateOfRetire || 'N/A'}</dd></div>
               </dl>
 
               <div>
-                <p className="aw-label">Financial Summary</p>
+                <p className="aw-label">{t('Financial Summary')}</p>
                 <div className="aw-stats aw-stats-3">
                   <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-accent)' }}>
-                    <div className="aw-stat-label">Shares</div>
+                    <div className="aw-stat-label">{t('Shares')}</div>
                     <div className="aw-stat-value">{inr(selectedMember.shareBalance)}</div>
                   </div>
                   <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-warning)' }}>
-                    <div className="aw-stat-label">Regular Loan</div>
+                    <div className="aw-stat-label">{t('Regular Loan')}</div>
                     <div className="aw-stat-value">{inr(selectedMember.regularLoanBal)}</div>
                   </div>
                   <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-danger)' }}>
-                    <div className="aw-stat-label">Emergency Loan</div>
+                    <div className="aw-stat-label">{t('Emergency Loan')}</div>
                     <div className="aw-stat-value">{inr(selectedMember.emergencyLoanBal)}</div>
                   </div>
                 </div>
@@ -341,7 +343,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
 
               {(selectedMember.presentAddress || selectedMember.permanentAddress) && (
                 <div className="aw-panel">
-                  <p className="aw-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={12} /> Address</p>
+                  <p className="aw-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={12} /> {t('Address')}</p>
                   <p className="aw-strong" style={{ fontWeight: 500 }}>{selectedMember.presentAddress || selectedMember.permanentAddress}</p>
                 </div>
               )}
@@ -349,8 +351,8 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
           ) : (
             <div className="aw-empty" style={{ margin: 'auto', padding: 40 }}>
               <User size={30} />
-              <strong className="aw-strong">No Member Selected</strong>
-              <span className="aw-meta">Click Member No. to search</span>
+              <strong className="aw-strong">{t('No Member Selected')}</strong>
+              <span className="aw-meta">{t('Click Member No. to search')}</span>
             </div>
           )}
         </div>
@@ -366,15 +368,15 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                <h2 className="aw-card-title">Loan Against RD</h2>
+                <h2 className="aw-card-title">{t('Loan Against RD')}</h2>
                 <span style={{ marginLeft: 'auto' }}>
                   {isCheckingEligibility && !isRdPanel ? (
                     <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <RefreshCw size={11} className="aw-spin" /> Checking...
+                      <RefreshCw size={11} className="aw-spin" /> {t('Checking...')}
                     </span>
                   ) : isRdPanel ? (
                     <span className={`aw-pill tone-${eligibilityStatus!.isEligible ? 'success' : 'danger'}`}>
-                      {(eligibilityStatus!.maxLoanAmount ?? 0) <= 0 ? 'No RD Available' : eligibilityStatus!.isEligible ? 'Eligible' : 'Over Limit'}
+                      {(eligibilityStatus!.maxLoanAmount ?? 0) <= 0 ? t('No RD Available') : eligibilityStatus!.isEligible ? t('Eligible') : t('Over Limit')}
                     </span>
                   ) : null}
                 </span>
@@ -382,19 +384,19 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               {isRdPanel && (
                 <div className="aw-stack">
                   <div className="aw-panel">
-                    <p className="aw-label">Member's RD</p>
+                    <p className="aw-label">{t("Member's RD")}</p>
                     <div className="aw-rows">
-                      <div className="aw-row"><span className="aw-row-label">Total RD</span><span className="aw-row-value">{inr(eligibilityStatus!.totalRd)}</span></div>
-                      <div className="aw-row"><span className="aw-row-label">Locked for other loans</span><span className="aw-row-value">{inr(eligibilityStatus!.lockedRd)}</span></div>
-                      <div className="aw-row aw-row-total"><span className="aw-row-label">Free RD</span><span className="aw-row-value">{inr(eligibilityStatus!.freeRd)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">{t('Total RD')}</span><span className="aw-row-value">{inr(eligibilityStatus!.totalRd)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">{t('Locked for other loans')}</span><span className="aw-row-value">{inr(eligibilityStatus!.lockedRd)}</span></div>
+                      <div className="aw-row aw-row-total"><span className="aw-row-label">{t('Free RD')}</span><span className="aw-row-value">{inr(eligibilityStatus!.freeRd)}</span></div>
                     </div>
                   </div>
 
                   <div className="aw-panel">
-                    <p className="aw-label">Largest loan allowed</p>
+                    <p className="aw-label">{t('Largest loan allowed')}</p>
                     <div className="aw-rows">
                       <div className="aw-row aw-row-total">
-                        <span className="aw-row-label">Up to ({eligibilityStatus!.rdPct}% of RD, within the per-member maximum)</span>
+                        <span className="aw-row-label">{t('Up to ({{1}}% of RD, within the per-member maximum)', { 1: eligibilityStatus!.rdPct })}</span>
                         <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>{inr(eligibilityStatus!.maxLoanAmount)}</span>
                       </div>
                     </div>
@@ -405,7 +407,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                         style={{ marginTop: 8 }}
                         onClick={() => onLoanDetailsChange('loanAmount', String(eligibilityStatus!.maxLoanAmount))}
                       >
-                        Use maximum
+                        {t('Use maximum')}
                       </button>
                     )}
                   </div>
@@ -413,13 +415,13 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                   {parseInt(loanDetails.loanAmount || '0', 10) > 0 && eligibilityStatus!.isEligible && (
                     <div className="aw-alert aw-alert-success" style={{ marginBottom: 0, flexDirection: 'column', gap: 4 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <span>RD locked for this loan</span><span>{inr(parseInt(loanDetails.loanAmount, 10))}</span>
+                        <span>{t('RD locked for this loan')}</span><span>{inr(parseInt(loanDetails.loanAmount, 10))}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <span>RD left free</span>
+                        <span>{t('RD left free')}</span>
                         <span>{inr(Math.max(0, (eligibilityStatus!.freeRd ?? 0) - parseInt(loanDetails.loanAmount, 10)))}</span>
                       </div>
-                      <span className="aw-meta" style={{ fontWeight: 500 }}>Only the loan amount is locked, and the lock is released when the loan closes.</span>
+                      <span className="aw-meta" style={{ fontWeight: 500 }}>{t('Only the loan amount is locked, and the lock is released when the loan closes.')}</span>
                     </div>
                   )}
 
@@ -435,15 +437,15 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                <h2 className="aw-card-title">Regular Loan Eligibility</h2>
+                <h2 className="aw-card-title">{t('Regular Loan Eligibility')}</h2>
                 <span style={{ marginLeft: 'auto' }}>
                   {isCheckingEligibility ? (
                     <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <RefreshCw size={11} className="aw-spin" /> Checking...
+                      <RefreshCw size={11} className="aw-spin" /> {t('Checking...')}
                     </span>
                   ) : (
                     <span className={`aw-pill tone-${eligTone}`}>
-                      {blocked ? 'Over Limit' : hasShortfall ? 'Shortfall' : 'Eligible'}
+                      {blocked ? t('Over Limit') : hasShortfall ? t('Shortfall') : t('Eligible')}
                     </span>
                   )}
                 </span>
@@ -451,12 +453,12 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               {eligibilityStatus && (
                 <div className="aw-stack">
                   <div className="aw-panel">
-                    <p className="aw-label">Total Exposure</p>
+                    <p className="aw-label">{t('Total Exposure')}</p>
                     <div className="aw-rows">
-                      <div className="aw-row"><span className="aw-row-label">Existing Regular</span><span className="aw-row-value">{inr(eligibilityStatus.existingOutstanding)}</span></div>
-                      <div className="aw-row"><span className="aw-row-label">+ New Loan</span><span className="aw-row-value">{inr(eligibilityStatus.loanAmount)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">{t('Existing Regular')}</span><span className="aw-row-value">{inr(eligibilityStatus.existingOutstanding)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">+ {t('New Loan')}</span><span className="aw-row-value">{inr(eligibilityStatus.loanAmount)}</span></div>
                       <div className="aw-row aw-row-total">
-                        <span className="aw-row-label">Total / Max</span>
+                        <span className="aw-row-label">{t('Total / Max')}</span>
                         <span className="aw-row-value" style={eligibilityStatus.withinMaxLimit ? undefined : { color: 'var(--aw-danger)' }}>
                           {inr(eligibilityStatus.totalExposure)} / {inr(eligibilityStatus.maxLimit)}
                         </span>
@@ -465,32 +467,32 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                   </div>
 
                   <div className="aw-panel">
-                    <p className="aw-label">Share Value</p>
+                    <p className="aw-label">{t('Share Value')}</p>
                     <div className="aw-rows">
-                      <div className="aw-row"><span className="aw-row-label">Current</span><span className="aw-row-value">{inr(eligibilityStatus.currentShare)}</span></div>
-                      <div className="aw-row"><span className="aw-row-label">Required ({eligibilityStatus.sharePct}%)</span><span className="aw-row-value">{inr(eligibilityStatus.requiredShare)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">{t('Current')}</span><span className="aw-row-value">{inr(eligibilityStatus.currentShare)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">{t('Required ({{1}}%)', { 1: eligibilityStatus.sharePct })}</span><span className="aw-row-value">{inr(eligibilityStatus.requiredShare)}</span></div>
                       {eligibilityStatus.shareShortfall > 0 && (
-                        <div className="aw-row"><span className="aw-row-label" style={{ color: 'var(--aw-warning)' }}>Shortfall</span><span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>{inr(eligibilityStatus.shareShortfall)}</span></div>
+                        <div className="aw-row"><span className="aw-row-label" style={{ color: 'var(--aw-warning)' }}>{t('Shortfall')}</span><span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>{inr(eligibilityStatus.shareShortfall)}</span></div>
                       )}
                     </div>
                   </div>
 
                   <div className="aw-panel">
-                    <p className="aw-label">RD Balance</p>
+                    <p className="aw-label">{t('RD Balance')}</p>
                     <div className="aw-rows">
-                      <div className="aw-row"><span className="aw-row-label">Current</span><span className="aw-row-value">{inr(eligibilityStatus.currentRd)}</span></div>
-                      <div className="aw-row"><span className="aw-row-label">Required ({eligibilityStatus.rdPct}%)</span><span className="aw-row-value">{inr(eligibilityStatus.requiredRd)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">{t('Current')}</span><span className="aw-row-value">{inr(eligibilityStatus.currentRd)}</span></div>
+                      <div className="aw-row"><span className="aw-row-label">{t('Required ({{1}}%)', { 1: eligibilityStatus.rdPct })}</span><span className="aw-row-value">{inr(eligibilityStatus.requiredRd)}</span></div>
                       {eligibilityStatus.rdShortfall > 0 && (
-                        <div className="aw-row"><span className="aw-row-label" style={{ color: 'var(--aw-warning)' }}>Shortfall</span><span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>{inr(eligibilityStatus.rdShortfall)}</span></div>
+                        <div className="aw-row"><span className="aw-row-label" style={{ color: 'var(--aw-warning)' }}>{t('Shortfall')}</span><span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>{inr(eligibilityStatus.rdShortfall)}</span></div>
                       )}
                     </div>
                   </div>
 
                   {hasShortfall && eligibilityStatus.withinMaxLimit && (
                     <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0, flexDirection: 'column', gap: 4 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}><span>Withheld</span><span>− {inr(eligibilityStatus.totalShortfall)}</span></div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', color: 'var(--aw-success)' }}><span>Net Payable</span><span>{inr(eligibilityStatus.netDisbursement)}</span></div>
-                      <span className="aw-meta" style={{ fontWeight: 500 }}>Withheld towards RD/Share — not added to the loan.</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}><span>{t('Withheld')}</span><span>− {inr(eligibilityStatus.totalShortfall)}</span></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', color: 'var(--aw-success)' }}><span>{t('Net Payable')}</span><span>{inr(eligibilityStatus.netDisbursement)}</span></div>
+                      <span className="aw-meta" style={{ fontWeight: 500 }}>{t('Withheld towards RD/Share — not added to the loan.')}</span>
                     </div>
                   )}
                 </div>
@@ -503,16 +505,16 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><FileText size={14} /></span>
-                <h2 className="aw-card-title">Pending Applications</h2>
-                <span className="aw-meta" style={{ marginLeft: 'auto' }}>{memberLoanCases.length} open</span>
+                <h2 className="aw-card-title">{t('Pending Applications')}</h2>
+                <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('{{1}} open', { 1: memberLoanCases.length })}</span>
               </div>
               {memberLoanCases.length === 0 ? (
-                <p className="aw-meta">No open applications. A new case number is generated on save.</p>
+                <p className="aw-meta">{t('No open applications. A new case number is generated on save.')}</p>
               ) : (
                 <div className="aw-table-wrap" style={{ maxHeight: 220 }}>
                   <table className="aw-table">
                     <thead>
-                      <tr><th>Case No.</th><th>Type</th><th className="is-right">Amount</th><th>Purpose</th><th>Status</th></tr>
+                      <tr><th>{t('Case No.')}</th><th>{t('Type')}</th><th className="is-right">{t('Amount')}</th><th>{t('Purpose')}</th><th>{t('Status')}</th></tr>
                     </thead>
                     <tbody>
                       {memberLoanCases.map((c, i) => (
@@ -526,14 +528,14 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                           <td>{c.loanType}</td>
                           <td className="is-right">{inr(c.loanAmount)}</td>
                           <td className="is-muted">{c.purpose || '—'}</td>
-                          <td><span className={`aw-pill tone-${c.sanctioned ? 'success' : 'warning'}`}>{c.sanctioned ? 'Sanctioned' : 'Awaiting sanction'}</span></td>
+                          <td><span className={`aw-pill tone-${c.sanctioned ? 'success' : 'warning'}`}>{c.sanctioned ? t('Sanctioned') : t('Awaiting sanction')}</span></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               )}
-              {memberLoanCases.length > 0 && <p className="aw-meta" style={{ marginTop: 6 }}>Click a row to load that case into the form.</p>}
+              {memberLoanCases.length > 0 && <p className="aw-meta" style={{ marginTop: 6 }}>{t('Click a row to load that case into the form.')}</p>}
             </section>
           )}
         </div>
@@ -544,8 +546,8 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
         <section className="aw-card aw-fade-in" style={{ flex: 'none' }}>
           <div className="aw-card-head">
             <span className="aw-card-icon"><Users size={14} /></span>
-            <h2 className="aw-card-title">Surety Details</h2>
-            <span className="aw-meta">(max 2 sureties)</span>
+            <h2 className="aw-card-title">{t('Surety Details')}</h2>
+            <span className="aw-meta">{t('(max 2 sureties)')}</span>
           </div>
           <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
             <table className="aw-table">
@@ -569,8 +571,8 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                             type="text"
                             value={s.mbNo || ''}
                             readOnly
-                            placeholder="Click..."
-                            aria-label={`Surety ${idx + 1} member number`}
+                            placeholder={t('Click...')}
+                            aria-label={t('Surety {{1}} member number', { 1: idx + 1 })}
                             className="aw-input"
                             style={{ cursor: 'pointer' }}
                             onClick={() => onSuretyLookup?.(idx)}
@@ -579,8 +581,8 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                             type="button"
                             onClick={() => onSuretyLookup?.(idx)}
                             className="aw-input-action"
-                            aria-label={`Search surety ${idx + 1}`}
-                            data-tip="Search member"
+                            aria-label={t('Search surety {{1}}', { 1: idx + 1 })}
+                            data-tip={t('Search member')}
                             data-tip-pos="top-end"
                           >
                             <Search size={13} />

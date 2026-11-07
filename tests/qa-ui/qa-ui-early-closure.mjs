@@ -1,0 +1,12 @@
+import { start, go, sleep, text } from './lib.mjs';
+const MB = process.env.QA_MB || '610030311';
+const { browser, page } = await start();
+const calls = [];
+page.on('response', (r) => { if (r.url().includes('/api/') && !r.url().includes('client-logs')) calls.push(`${r.request().method()} ${r.url().replace(/https?:\/\/[^/]+/, '').slice(0, 90)} ${r.status()}`); });
+await page.evaluate(() => { window.__h = {}; window.electronAPI = { showMessageBox: async () => ({ response: 0 }), openNewWindow() {}, ipcRenderer: { on: (c, f) => { window.__h[c] = f; }, removeListener() {}, send() {} } }; });
+await go(page, '#/transaction/loan-early-closure'); await sleep(1500);
+const f = page.getByPlaceholder('Member No.'); await f.fill(MB); await f.press('Enter'); await sleep(800);
+const s = page.getByRole('button', { name: /^Search$/ }); if (await s.isEnabled().catch(() => false)) await s.click(); await sleep(5000);
+await page.getByText('#73827').first().click(); await sleep(5000); console.log((await text(page)).replace(/s+/g, ' ').slice(0, 2200));
+console.log(JSON.stringify(calls.slice(-6)));
+await browser.close();

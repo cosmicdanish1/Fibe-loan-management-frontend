@@ -16,12 +16,7 @@ import ReportViewSwitcher from '../../../../components/reports/views/ReportViewS
 import { useReportViews } from '../../../../components/reports/views/reportViews';
 import '../../../../components/reports/views/proViews.css';
 import { useGlSpec, ProBento, ProTerm, ProEd } from '../views/glPro';
-
-const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: title, detail, buttons: ['OK'], defaultId: 0 });
-  }
-};
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
 
 interface GeneralLedgerEntry {

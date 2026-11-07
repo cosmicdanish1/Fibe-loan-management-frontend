@@ -3,6 +3,7 @@ import { Select } from 'antd';
 import { Building2, CalendarDays, RotateCcw, Zap, X } from 'lucide-react';
 import { GenerateHookReturn } from '../interface/GenerateInterfaces';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const years = Array.from({ length: 8 }, (_, i) => (2023 + i).toString());
@@ -15,6 +16,7 @@ const branches = [
 const GenerateForm: React.FC<GenerateHookReturn> = ({
     formData, updateField, resetForm, generateDemand, handleExit,
 }) => {
+  const { t } = useTranslation();
     const divisionCode = divisions.find((d) => d.value === formData.divisionRO)?.code || '—';
     const fromCode = branches.find((d) => d.value === formData.from)?.code || '—';
     const toCode = branches.find((d) => d.value === formData.to)?.code || '—';
@@ -37,13 +39,13 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Demand Generation</h1>
-                    <p className="aw-desc">Demand &amp; Recovery</p>
+                    <h1 className="aw-title">{t('Demand Generation')}</h1>
+                    <p className="aw-desc">{t('Demand & Recovery')}</p>
                 </div>
                 <div className="aw-actions">
-                    <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Clear</button>
-                    <button type="button" onClick={generateDemand} className="aw-btn aw-btn-primary"><Zap size={13} /> Generate</button>
-                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
+                    <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> {t('Clear')}</button>
+                    <button type="button" onClick={generateDemand} className="aw-btn aw-btn-primary"><Zap size={13} /> {t('Generate')}</button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Exit')}</button>
                 </div>
             </div>
 
@@ -52,16 +54,16 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><CalendarDays size={14} /></span>
-                            <h2 className="aw-card-title">Period</h2>
+                            <h2 className="aw-card-title">{t('Period')}</h2>
                         </div>
                         <div className="aw-inline" style={{ gap: 'var(--aw-gap)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                             <div style={{ width: 150 }}>
-                                <label className="aw-label" htmlFor="gen-month">Month</label>
+                                <label className="aw-label" htmlFor="gen-month">{t('Month')}</label>
                                 <Select id="gen-month" value={formData.month} onChange={(v) => updateField('month', v)}
                                     className="aw-select" popupClassName="aw-select-popup" options={months.map(m => ({ value: m, label: m }))} />
                             </div>
                             <div style={{ width: 120 }}>
-                                <label className="aw-label" htmlFor="gen-year">Year</label>
+                                <label className="aw-label" htmlFor="gen-year">{t('Year')}</label>
                                 <Select id="gen-year" value={formData.year} onChange={(v) => updateField('year', v)}
                                     className="aw-select" popupClassName="aw-select-popup" options={years.map(y => ({ value: y, label: y }))} />
                             </div>
@@ -71,7 +73,7 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Building2 size={14} /></span>
-                            <h2 className="aw-card-title">Office</h2>
+                            <h2 className="aw-card-title">{t('Office')}</h2>
                         </div>
                         {officeRow('gen-division', 'Division / RO', formData.divisionRO, divisionCode, 'Select division', divisions, 'divisionRO')}
                         {officeRow('gen-from', 'From', formData.from, fromCode, 'Select from branch', branches, 'from')}
@@ -81,8 +83,8 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
             </div>
 
             <div className="aw-footer">
-                <span>{formData.month} {formData.year} · {formData.divisionRO || 'No division selected'}</span>
-                <span>Demand Generation</span>
+                <span>{formData.month} {formData.year} · {formData.divisionRO || t('No division selected')}</span>
+                <span>{t('Demand Generation')}</span>
             </div>
         </div>
     );

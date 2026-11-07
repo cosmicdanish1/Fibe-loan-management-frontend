@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../auth/context/AuthContext';
 import { Clock, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const SESSION_TIMEOUT = 100 * 365 * 24 * 60 * 60 * 1000; // 100 years (De-facto disabled)
 const WARNING_TIME = 0; // Disable warning
 
 export const SessionMonitor: React.FC = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, logout } = useAuth();
   const [timeRemaining, setTimeRemaining] = useState<number>(SESSION_TIMEOUT);
   const [showWarning, setShowWarning] = useState(false);
@@ -33,7 +35,7 @@ export const SessionMonitor: React.FC = () => {
 
       // Auto logout when time expires
       if (remaining <= 0) {
-        alert('Your session has expired. Please login again.');
+        alert(t('Your session has expired. Please login again.'));
         logout();
       }
     };
@@ -57,15 +59,13 @@ export const SessionMonitor: React.FC = () => {
       {showWarning ? (
         <div className="flex items-center gap-1 text-orange-600 bg-orange-50 px-3 py-1 rounded-md">
           <AlertCircle className="w-4 h-4" />
-          <span className="font-medium">
-            Session expires in {hours}h {minutes}m
-          </span>
+          <span className="font-medium">{t('{{1}} {{2}}h {{3}}m', { 1: t('Session expires in'), 2: hours, 3: minutes })}</span>
         </div>
       ) : (
         <div className="flex items-center gap-1 text-gray-600">
           <Clock className="w-4 h-4" />
           <span>
-            {hours}h {minutes}m remaining
+            {hours}h {minutes}{t('m remaining')}
           </span>
         </div>
       )}

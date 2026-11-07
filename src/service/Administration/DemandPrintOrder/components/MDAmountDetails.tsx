@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Search } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 interface ColumnItem {
   name: string;
@@ -12,6 +13,7 @@ interface MDAmountDetailsProps {
 }
 
 const MDAmountDetails: React.FC<MDAmountDetailsProps> = ({ onSelect }) => {
+  const { t } = useTranslation();
   const [columns] = useState<ColumnItem[]>([
     { name: "ALN_amount" },
     { name: "ALN_interest" },
@@ -47,8 +49,8 @@ const MDAmountDetails: React.FC<MDAmountDetailsProps> = ({ onSelect }) => {
           <Search size={13} />
           <input
             type="text"
-            placeholder="Search Registry..."
-            aria-label="Search registry"
+            placeholder={t('Search Registry...')}
+            aria-label={t('Search registry')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="aw-input"
@@ -61,7 +63,7 @@ const MDAmountDetails: React.FC<MDAmountDetailsProps> = ({ onSelect }) => {
         {filteredColumns.length > 0 ? (
           <table className="aw-table">
             <thead>
-              <tr><th>Field</th></tr>
+              <tr><th>{t('Field')}</th></tr>
             </thead>
             <tbody>
               {filteredColumns.map((col, index) => (
@@ -78,14 +80,14 @@ const MDAmountDetails: React.FC<MDAmountDetailsProps> = ({ onSelect }) => {
           </table>
         ) : (
           <div className="aw-empty" style={{ padding: 32 }}>
-            <span className="aw-meta">No matching fields</span>
+            <span className="aw-meta">{t('No matching fields')}</span>
           </div>
         )}
       </div>
 
       <div className="aw-main-foot">
-        <span>Registry Count</span>
-        <span style={{ color: 'var(--aw-accent)', fontWeight: 700 }}>{filteredColumns.length} Tokens</span>
+        <span>{t('Registry Count')}</span>
+        <span style={{ color: 'var(--aw-accent)', fontWeight: 700 }}>{filteredColumns.length} {t('Tokens')}</span>
       </div>
     </div>
   );

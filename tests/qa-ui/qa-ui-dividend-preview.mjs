@@ -1,0 +1,11 @@
+import { start, go, sleep, text } from './lib.mjs';
+const { browser, page } = await start();
+const calls = [];
+page.on('response', async (r) => { if (r.url().includes('/dividend/') && r.request().method() !== 'GET') { let b = ''; try { b = (await r.text()).slice(0, 900); } catch {} calls.push(`${r.request().method()} ${r.url().replace(/https?:\/\/[^/]+/, '')} ${r.status()} ${b}`); } });
+page.on('request', (r) => { if (r.url().includes('/dividend/') && r.method() !== 'GET') console.log('REQ', r.url().replace(/https?:\/\/[^/]+/, ''), r.postData()); });
+await page.evaluate(() => { window.__msgs = []; window.__h = {}; window.electronAPI = { showMessageBox: async (o) => { window.__msgs.push({ m: o.message, d: (o.detail || '').slice(0, 300) }); return { response: 0 }; }, openNewWindow() {}, ipcRenderer: { on: (c, f) => { window.__h[c] = f; }, removeListener() {}, send() {} } }; });
+await go(page, '#/administration/dividend-calculation'); await sleep(2000);
+await page.getByRole('button', { name: /^Preview$/ }).click(); await sleep(8000);
+console.log((await text(page)).replace(/\s+/g, ' ').slice(0, 1600));
+console.log('CALLS', JSON.stringify(calls)); console.log('MSGS', JSON.stringify(await page.evaluate(() => window.__msgs)));
+await browser.close();

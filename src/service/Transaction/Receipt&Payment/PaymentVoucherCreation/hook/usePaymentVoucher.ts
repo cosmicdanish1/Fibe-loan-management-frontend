@@ -2,21 +2,8 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { PaymentVoucherData, RowData, PaymentVoucherHookReturn } from '../interface/PaymentVoucherInterfaces';
-
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail: string,
-) => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({
-      type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-    });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-  }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const CASH_ACCOUNT = { code: 'A1001', name: 'CASH IN HAND' };
 
@@ -40,6 +27,7 @@ const newRow = (): RowData => ({
 });
 
 export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<PaymentVoucherData>(emptyForm());
   const [rows, setRows] = useState<RowData[]>([newRow()]);
   // "Pay From" options: Cash in hand + the real bank current accounts (from /reports/banks)
@@ -91,21 +79,21 @@ export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
 
   const handleSave = useCallback(async () => {
     if (!formData.memberNo) {
-      await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before saving.');
+      await showDialog('warning', t('Input Validation Error'), t('Member Required'), t('Please select a member before saving.'));
       return;
     }
     // BUG FIX: validate transDate — empty string → Invalid Date in DB
     if (!formData.transDate) {
-      await showDialog('warning', 'Input Validation Error', 'Date Required', 'Please select a transaction date.');
+      await showDialog('warning', t('Input Validation Error'), t('Date Required'), t('Please select a transaction date.'));
       return;
     }
     const validRows = rows.filter(r => r.code && parseFloat(r.amount) > 0);
     if (validRows.length === 0) {
-      await showDialog('warning', 'Input Validation Error', 'No Valid Rows', 'Please add at least one row with a head code and amount greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('No Valid Rows'), t('Please add at least one row with a head code and amount greater than zero.'));
       return;
     }
     if (totalAmount <= 0) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Total Amount', 'Total payment amount must be greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Total Amount'), t('Total payment amount must be greater than zero.'));
       return;
     }
 
@@ -134,7 +122,7 @@ export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
         await showDialog(
           'info',
           'electron-react-ts',
-          'Payment Voucher Saved Successfully!',
+          t('Payment Voucher Saved Successfully!'),
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `VOUCHER NO    : ${vchr}\n` +
           `MEMBER NO     : ${formData.memberNo} - ${formData.memberName || 'N/A'}\n` +
@@ -157,10 +145,10 @@ export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
         setRows([newRow()]);
       } else {
         // BUG FIX: was response.error — apiService returns response.message, not response.error
-        await showDialog('error', 'Payment Voucher Error', 'Failed to Save Payment Voucher', response.message || 'An unexpected error occurred. Please try again.');
+        await showDialog('error', t('Payment Voucher Error'), t('Failed to Save Payment Voucher'), response.message || t('An unexpected error occurred. Please try again.'));
       }
     } catch (err: any) {
-      await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${err.message}`);
+      await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: err.message }));
     } finally {
       setIsLoading(false);
     }

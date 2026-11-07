@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { DesignationData, DesignationHookReturn } from '../interfaces/interface';
 import { apiService } from '../../../../services/api';
+import { useTranslation } from 'react-i18next';
 
 const notify = async (type: 'info' | 'warning' | 'error', title: string, msg: string, detail: string) => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -11,6 +12,7 @@ const notify = async (type: 'info' | 'warning' | 'error', title: string, msg: st
 };
 
 export const useDesignationMaster = (): DesignationHookReturn => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<DesignationData>({ code: '', name: '', level: '' });
   const [designations, setDesignations] = useState<DesignationData[]>([]);
 
@@ -94,7 +96,7 @@ export const useDesignationMaster = (): DesignationHookReturn => {
     if (eAPI?.showMessageBox) {
       const res = await eAPI.showMessageBox({
         type: 'warning',
-        title: 'Confirm Delete',
+        title: t('Confirm Delete'),
         message: `Delete designation "${d?.name || code}"?`,
         detail: 'This permanently removes the designation from designation_master.',
         buttons: ['Cancel', 'Delete'],
@@ -102,7 +104,7 @@ export const useDesignationMaster = (): DesignationHookReturn => {
         cancelId: 0,
       });
       if (res?.response !== 1) return;
-    } else if (!window.confirm(`Delete designation "${d?.name || code}"?`)) {
+    } else if (!window.confirm(t('Delete designation "{{1}}"?', { 1: d?.name || code }))) {
       return;
     }
 

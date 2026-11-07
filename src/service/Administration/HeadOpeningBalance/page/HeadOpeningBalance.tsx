@@ -4,6 +4,7 @@ import { message, Select } from 'antd';
 import AwDialog from '@/components/shared/kit/AwDialog';
 import apiService from '../../../../services/api';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 const SOCIETY_NAME    = 'Espat Karmchari Co-Operative Credit Society Limited.';
 const SOCIETY_ADDRESS = 'Avenue A, Sahakari Sadan, Sector-6, AT Post:Bhilai Nagar, Dist:DURG-490006';
@@ -24,6 +25,7 @@ function fmt(n: number): string {
 }
 
 const HeadOpeningBalance: React.FC = () => {
+  const { t } = useTranslation();
   const [years, setYears]           = useState<FinancialYear[]>([]);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [entries, setEntries]       = useState<HeadEntry[]>([]);
@@ -55,7 +57,7 @@ const HeadOpeningBalance: React.FC = () => {
         return res.data;
       }
     } catch {
-      message.error('Error loading financial years');
+      message.error(t('Error loading financial years'));
     } finally {
       setLoadingYears(false);
     }
@@ -82,12 +84,12 @@ const HeadOpeningBalance: React.FC = () => {
         })));
       } else {
         setEntries([]);
-        message.error('Failed to load head opening balances');
+        message.error(t('Failed to load head opening balances'));
       }
     } catch {
       if (seq !== loadSeq.current) return;
       setEntries([]);
-      message.error('Error loading head opening balances');
+      message.error(t('Error loading head opening balances'));
     } finally {
       if (seq === loadSeq.current) setLoadingData(false);
     }
@@ -108,7 +110,7 @@ const HeadOpeningBalance: React.FC = () => {
 
   const confirmDiscardEdits = () =>
     !entries.some(e => e.edited) ||
-    window.confirm('You have unsaved edits. Discard them and reload?');
+    window.confirm(t('You have unsaved edits. Discard them and reload?'));
 
   const handleYearChange = (yearcode: number) => {
     if (!confirmDiscardEdits()) return;
@@ -126,13 +128,13 @@ const HeadOpeningBalance: React.FC = () => {
     if (!selectedYear || savingRef.current) return;
     // Only save rows for the year they were actually loaded for (never year A data into year B)
     if (loadingData || loadedYearRef.current !== selectedYear) {
-      message.warning('Balances for the selected year are not loaded yet. Please wait or press Refresh.');
+      message.warning(t('Balances for the selected year are not loaded yet. Please wait or press Refresh.'));
       return;
     }
     // Debit side = Assets + Expenditure, credit side = Liabilities + Income. Warn (do not block) if they differ.
     if (Math.round(debitTotal * 100) !== Math.round(creditTotal * 100)) {
       const ok = window.confirm(
-        `Opening balances do not balance.\n\nDebit (Assets + Expenditure): ${fmt(debitTotal)}\nCredit (Liabilities + Income): ${fmt(creditTotal)}\nDifference: ${fmt(Math.abs(debitTotal - creditTotal))}\n\nSave anyway?`,
+        t('Opening balances do not balance. Debit (Assets + Expenditure): {{1}} Credit (Liabilities + Income): {{2}} Difference: {{3}} Save anyway?', { 1: fmt(debitTotal), 2: fmt(creditTotal), 3: fmt(Math.abs(debitTotal - creditTotal)) }),
       );
       if (!ok) return;
     }
@@ -143,13 +145,13 @@ const HeadOpeningBalance: React.FC = () => {
       const balances = leafEntries.map(e => ({ headCode: e.code, closingBal: e.openingBal }));
       const res = await apiService.saveHeadOpeningBalances(saveYear, balances);
       if (res.success) {
-        message.success(res.message || 'Saved successfully');
+        message.success(res.message || t('Saved successfully'));
         setEntries(prev => prev.map(e => ({ ...e, edited: false, hasYearData: true })));
       } else {
-        message.error(res.message || 'Save failed');
+        message.error(res.message || t('Save failed'));
       }
     } catch (err: any) {
-      message.error(err.message || 'Save failed');
+      message.error(err.message || t('Save failed'));
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -161,10 +163,10 @@ const HeadOpeningBalance: React.FC = () => {
     setApplying(true);
     try {
       const res = await apiService.applyYearOpeningBalances(selectedYear);
-      if (res.success) message.success(res.message || 'Applied to headmaster');
-      else message.error(res.message || 'Apply failed');
+      if (res.success) message.success(res.message || t('Applied to headmaster'));
+      else message.error(res.message || t('Apply failed'));
     } catch (err: any) {
-      message.error(err.message || 'Apply failed');
+      message.error(err.message || t('Apply failed'));
     } finally {
       setApplying(false);
     }
@@ -181,17 +183,17 @@ const HeadOpeningBalance: React.FC = () => {
     try {
       const applyRes = await apiService.applyYearOpeningBalances(selectedYear);
       if (!applyRes.success) {
-        message.error(applyRes.message || 'Apply failed');
+        message.error(applyRes.message || t('Apply failed'));
         return;
       }
       const buildRes = await apiService.rebuildBalancesheet();
       if (buildRes.success) {
-        message.success(buildRes.data?.message || 'Balance sheet rebuilt');
+        message.success(buildRes.data?.message || t('Balance sheet rebuilt'));
       } else {
-        message.error(buildRes.message || 'Build Tree failed');
+        message.error(buildRes.message || t('Build Tree failed'));
       }
     } catch (err: any) {
-      message.error(err.message || 'Build Tree failed');
+      message.error(err.message || t('Build Tree failed'));
     } finally {
       setApplying(false);
     }
@@ -275,30 +277,30 @@ const HeadOpeningBalance: React.FC = () => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Head Opening Balance</h1>
-          <p className="aw-desc">{activeYear ? `${activeYear.label}` : 'Opening balances by financial year'}</p>
+          <h1 className="aw-title">{t('Head Opening Balance')}</h1>
+          <p className="aw-desc">{activeYear ? `${activeYear.label}` : t('Opening balances by financial year')}</p>
         </div>
         <div className="aw-actions">
-          {editedCount > 0 && <span className="aw-pill tone-warning aw-fade-in">{editedCount} unsaved</span>}
+          {editedCount > 0 && <span className="aw-pill tone-warning aw-fade-in">{t('{{1}} unsaved', { 1: editedCount })}</span>}
           <button
             type="button"
             onClick={() => { if (selectedYear && confirmDiscardEdits()) loadData(selectedYear); }}
             disabled={loadingData}
             className="aw-icon-btn"
-            aria-label="Refresh"
-            data-tip="Refresh"
+            aria-label={t('Refresh')}
+            data-tip={t('Refresh')}
             data-tip-pos="bottom-end"
           >
             <RefreshCw size={14} className={loadingData ? 'aw-spin' : ''} />
           </button>
           <button type="button" onClick={() => setConfirm('apply')} disabled={applying || !selectedYear} className="aw-btn aw-btn-secondary">
-            {applying ? <Loader2 size={13} className="aw-spin" /> : <CheckCircle2 size={13} />} Apply
+            {applying ? <Loader2 size={13} className="aw-spin" /> : <CheckCircle2 size={13} />} {t('Apply')}
           </button>
           <button type="button" onClick={() => setConfirm('build')} disabled={applying || !selectedYear} className="aw-btn aw-btn-secondary">
-            <GitBranch size={13} /> Build Tree
+            <GitBranch size={13} /> {t('Build Tree')}
           </button>
           <button type="button" onClick={handleSave} disabled={saving || !selectedYear} className="aw-btn aw-btn-primary">
-            {saving ? <Loader2 size={13} className="aw-spin" /> : <Save size={13} />} Save
+            {saving ? <Loader2 size={13} className="aw-spin" /> : <Save size={13} />} {t('Save')}
           </button>
         </div>
       </div>
@@ -312,10 +314,10 @@ const HeadOpeningBalance: React.FC = () => {
 
           <div className="aw-inline" style={{ flexWrap: 'wrap' }}>
             <div style={{ minWidth: 220 }}>
-              <label className="aw-label" htmlFor="hob-year">Financial Year</label>
+              <label className="aw-label" htmlFor="hob-year">{t('Financial Year')}</label>
               {loadingYears ? (
                 <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Loader2 size={12} className="aw-spin" /> Loading…
+                  <Loader2 size={12} className="aw-spin" /> {t('Loading…')}
                 </span>
               ) : (
                 <Select
@@ -330,13 +332,13 @@ const HeadOpeningBalance: React.FC = () => {
               )}
             </div>
             <div style={{ minWidth: 240, flex: 1, maxWidth: 320 }}>
-              <label className="aw-label" htmlFor="hob-search">Search</label>
+              <label className="aw-label" htmlFor="hob-search">{t('Search')}</label>
               <div className="aw-input-wrap has-icon">
                 <Search size={13} />
                 <input
                   id="hob-search"
                   type="text"
-                  placeholder="Search code / name…"
+                  placeholder={t('Search code / name…')}
                   className="aw-input"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
@@ -348,7 +350,7 @@ const HeadOpeningBalance: React.FC = () => {
           {loadingData ? (
             <div className="aw-empty" style={{ padding: 40 }}>
               <Loader2 size={28} className="aw-spin" />
-              <strong className="aw-strong">Loading balances…</strong>
+              <strong className="aw-strong">{t('Loading balances…')}</strong>
             </div>
           ) : (
             <div className="aw-table-wrap" style={{ maxHeight: '62vh' }}>
@@ -356,11 +358,11 @@ const HeadOpeningBalance: React.FC = () => {
                 <thead>
                   <tr>
                     <th className="is-center" style={{ width: 44 }}>#</th>
-                    <th>Code — Head Name</th>
-                    <th className="is-right" style={{ width: 170 }}>Opening</th>
-                    <th className="is-center" style={{ width: 120 }}>Start Year</th>
-                    <th className="is-center" style={{ width: 120 }}>End Year</th>
-                    <th className="is-center" style={{ width: 70 }}>Year</th>
+                    <th>{t('Code — Head Name')}</th>
+                    <th className="is-right" style={{ width: 170 }}>{t('Opening')}</th>
+                    <th className="is-center" style={{ width: 120 }}>{t('Start Year')}</th>
+                    <th className="is-center" style={{ width: 120 }}>{t('End Year')}</th>
+                    <th className="is-center" style={{ width: 70 }}>{t('Year')}</th>
                   </tr>
                 </thead>
 
@@ -370,7 +372,7 @@ const HeadOpeningBalance: React.FC = () => {
                       <td colSpan={6}>
                         <div className="aw-empty" style={{ padding: 32 }}>
                           <GitBranch size={26} />
-                          <strong className="aw-strong">No heads to show</strong>
+                          <strong className="aw-strong">{t('No heads to show')}</strong>
                         </div>
                       </td>
                     </tr>
@@ -408,7 +410,7 @@ const HeadOpeningBalance: React.FC = () => {
                           <input
                             type="number"
                             step="0.01"
-                            aria-label={`Opening balance ${e.code}`}
+                            aria-label={t('Opening balance {{1}}', { 1: e.code })}
                             className="aw-input is-right"
                             style={e.edited ? { color: 'var(--aw-warning)', fontWeight: 700 } : { fontWeight: 600 }}
                             value={e.openingBal}
@@ -426,12 +428,10 @@ const HeadOpeningBalance: React.FC = () => {
                 <tfoot>
                   <tr>
                     <td />
-                    <td>
-                      {leafEntries.length} accounts — Debit (A + E): {fmt(debitTotal)} | Credit (L + I): {fmt(creditTotal)}
-                    </td>
+                    <td>{t('{{1}} {{2}} {{3}} | Credit (L + I): {{4}}', { 1: leafEntries.length, 2: t('accounts — Debit (A + E):'), 3: fmt(debitTotal), 4: fmt(creditTotal) })}</td>
                     <td
                       className={`is-right ${Math.round(debitTotal * 100) === Math.round(creditTotal * 100) ? 'is-warning' : 'is-danger'}`}
-                      title="Debit minus Credit"
+                      title={t('Debit minus Credit')}
                     >
                       {fmt(debitTotal - creditTotal)}
                     </td>
@@ -448,7 +448,7 @@ const HeadOpeningBalance: React.FC = () => {
 
       <AwDialog
         open={confirm !== null}
-        title={confirm === 'build' ? 'Build Tree for this financial year?' : "Apply this year's opening balances?"}
+        title={confirm === 'build' ? t('Build Tree for this financial year?') : t("Apply this year's opening balances?")}
         icon={confirm === 'build' ? <GitBranch size={14} /> : <CheckCircle2 size={14} />}
         onClose={() => setConfirm(null)}
         maxWidth="26rem"
@@ -457,12 +457,12 @@ const HeadOpeningBalance: React.FC = () => {
         <div className="aw-stack">
           <p className="aw-meta" style={{ lineHeight: 1.5 }}>
             {confirm === 'build'
-              ? "Applies this year's balances to headmaster and rebuilds the balance sheet."
-              : 'This overwrites headmaster.op_bal for all matching accounts.'}
+              ? t("Applies this year's balances to headmaster and rebuilds the balance sheet.")
+              : t('This overwrites headmaster.op_bal for all matching accounts.')}
           </p>
           <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => setConfirm(null)} className="aw-btn aw-btn-secondary">Cancel</button>
-            <button type="button" onClick={runConfirm} className="aw-btn aw-btn-primary">{confirm === 'build' ? 'Build' : 'Apply'}</button>
+            <button type="button" onClick={() => setConfirm(null)} className="aw-btn aw-btn-secondary">{t('Cancel')}</button>
+            <button type="button" onClick={runConfirm} className="aw-btn aw-btn-primary">{confirm === 'build' ? t('Build') : t('Apply')}</button>
           </div>
         </div>
       </AwDialog>

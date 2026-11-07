@@ -18,24 +18,12 @@ import { useDefaultRights } from '../hook/useDefaultRights';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import { Select } from 'antd';
 import AwDialog from '@/components/shared/kit/AwDialog';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 interface RoleManagementProps {
   className?: string;
 }
-
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail = '',
-) => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}${detail ? '\n\n' + detail : ''}`);
-  }
-};
 
 const closeWindow = () => {
   const api = (window as any).electronAPI;
@@ -44,6 +32,7 @@ const closeWindow = () => {
 };
 
 const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
+  const { t } = useTranslation();
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [newRoleName, setNewRoleName] = React.useState('');
 
@@ -79,7 +68,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
 
   const handleSave = async () => {
     if (!selectedUserLevel) {
-      await showDialog('warning', 'Action Required', 'Please select a user level before authorizing rights.', '');
+      await showDialog('warning', t('Action Required'), t('Please select a user level before authorizing rights.'), '');
       return;
     }
     saveDefaultRights();
@@ -105,20 +94,20 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Role Governance</h1>
+          <h1 className="aw-title">{t('Role Governance')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Building2 size={12} /> Default Access Matrix
+            <Building2 size={12} /> {t('Default Access Matrix')}
           </p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary">
-            <RotateCcw size={13} /> Reset
+            <RotateCcw size={13} /> {t('Reset')}
           </button>
           <button type="button" onClick={handleSave} disabled={!selectedUserLevel} className="aw-btn aw-btn-primary">
-            <Save size={13} /> Authorize
+            <Save size={13} /> {t('Authorize')}
           </button>
           <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -129,7 +118,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
           <section className="aw-card">
             <div className="aw-inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12 }}>
               <div style={{ width: 240 }}>
-                <label className="aw-label" htmlFor="rm-level">User Level</label>
+                <label className="aw-label" htmlFor="rm-level">{t('User Level')}</label>
                 <div className="aw-inline">
                   <Select
                     id="rm-level"
@@ -145,8 +134,8 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
                     type="button"
                     onClick={() => setIsCreateModalOpen(true)}
                     className="aw-icon-btn"
-                    aria-label="New level"
-                    data-tip="New level"
+                    aria-label={t('New level')}
+                    data-tip={t('New level')}
                     data-tip-pos="top"
                   >
                     <Plus size={14} />
@@ -155,14 +144,14 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
               </div>
 
               <div style={{ flex: 1, minWidth: 200 }}>
-                <label className="aw-label" htmlFor="rm-search">Filter</label>
+                <label className="aw-label" htmlFor="rm-search">{t('Filter')}</label>
                 <div className="aw-input-wrap has-icon">
                   <Search size={13} />
                   <input
                     id="rm-search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Filter rights by name…"
+                    placeholder={t('Filter rights by name…')}
                     className="aw-input"
                   />
                 </div>
@@ -170,24 +159,24 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
 
               <div className="aw-inline" style={{ gap: 6 }}>
                 <button type="button" onClick={toggleOnlyGranted} aria-pressed={onlyGranted} className="aw-chip">
-                  Granted only
+                  {t('Granted only')}
                 </button>
-                <button type="button" onClick={expandAll} className="aw-btn aw-btn-secondary aw-btn-sm">Expand</button>
-                <button type="button" onClick={collapseAll} className="aw-btn aw-btn-secondary aw-btn-sm">Collapse</button>
-                <button type="button" onClick={() => toggleAllRights(true)} className="aw-icon-btn" aria-label="Select all" data-tip="Select all" data-tip-pos="top-end">
+                <button type="button" onClick={expandAll} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Expand')}</button>
+                <button type="button" onClick={collapseAll} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Collapse')}</button>
+                <button type="button" onClick={() => toggleAllRights(true)} className="aw-icon-btn" aria-label={t('Select all')} data-tip={t('Select all')} data-tip-pos="top-end">
                   <CheckSquare size={14} />
                 </button>
-                <button type="button" onClick={() => toggleAllRights(false)} className="aw-icon-btn" aria-label="Deselect all" data-tip="Deselect all" data-tip-pos="top-end">
+                <button type="button" onClick={() => toggleAllRights(false)} className="aw-icon-btn" aria-label={t('Deselect all')} data-tip={t('Deselect all')} data-tip-pos="top-end">
                   <Square size={14} />
                 </button>
               </div>
             </div>
 
             <div className="aw-inline" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <span className="aw-pill tone-muted">Total {total}</span>
-              <span className="aw-pill">On {selected}</span>
-              <span className="aw-pill tone-muted">Off {total - selected}</span>
-              {isFiltering && <span className="aw-meta">{shownCount} shown</span>}
+              <span className="aw-pill tone-muted">{t('Total')} {total}</span>
+              <span className="aw-pill">{t('On {{1}}', { 1: selected })}</span>
+              <span className="aw-pill tone-muted">{t('Off')} {total - selected}</span>
+              {isFiltering && <span className="aw-meta">{t('{{1}} shown', { 1: shownCount })}</span>}
             </div>
           </section>
 
@@ -210,8 +199,8 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
                   <span className="aw-meta">/ {section.total}</span>
                   <span className="aw-bar-track"><span style={{ width: `${pct}%` }} /></span>
                   <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); section.grant(); }} className="aw-btn aw-btn-secondary aw-btn-sm">All</button>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); section.revoke(); }} className="aw-btn aw-btn-secondary aw-btn-sm">None</button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); section.grant(); }} className="aw-btn aw-btn-secondary aw-btn-sm">{t('All')}</button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); section.revoke(); }} className="aw-btn aw-btn-secondary aw-btn-sm">{t('None')}</button>
                   </span>
                 </div>
 
@@ -239,7 +228,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
           {isEmpty && (
             <div className="aw-empty" style={{ padding: 40 }}>
               <Search size={26} />
-              <strong className="aw-strong">No rights match “{query}”.</strong>
+              <strong className="aw-strong">{t('No rights match “')}{query}”.</strong>
             </div>
           )}
         </div>
@@ -247,24 +236,24 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
 
       <div className="aw-footer">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <ShieldCheck size={12} /> Policy: <strong style={{ color: 'var(--aw-text)' }}>{selectedLabel}</strong>
+          <ShieldCheck size={12} /> {t('Policy:')} <strong style={{ color: 'var(--aw-text)' }}>{selectedLabel}</strong>
         </span>
-        <span>Granted <strong style={{ color: 'var(--aw-accent)' }}>{selected}</strong> · Total <strong style={{ color: 'var(--aw-text)' }}>{total}</strong></span>
+        <span>{t('Granted')} <strong style={{ color: 'var(--aw-accent)' }}>{selected}</strong> · {t('Total')} <strong style={{ color: 'var(--aw-text)' }}>{total}</strong></span>
       </div>
 
       {/* ── Create role dialog ── */}
       <AwDialog
         open={isCreateModalOpen}
-        title="New Role Level"
+        title={t('New Role Level')}
         icon={<ShieldCheck size={14} />}
         onClose={() => { setIsCreateModalOpen(false); setNewRoleName(''); }}
         maxWidth="24rem"
         compact
       >
         <div className="aw-stack">
-          <p className="aw-meta">Add to control hierarchy</p>
+          <p className="aw-meta">{t('Add to control hierarchy')}</p>
           <div>
-            <label className="aw-label" htmlFor="rm-new">Designation</label>
+            <label className="aw-label" htmlFor="rm-new">{t('Designation')}</label>
             <input
               id="rm-new"
               autoFocus
@@ -272,13 +261,13 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
               value={newRoleName}
               onChange={(e) => setNewRoleName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateRole()}
-              placeholder="e.g. Senior Auditor"
+              placeholder={t('e.g. Senior Auditor')}
               className="aw-input"
             />
           </div>
           <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => { setIsCreateModalOpen(false); setNewRoleName(''); }} className="aw-btn aw-btn-secondary">Cancel</button>
-            <button type="button" onClick={handleCreateRole} disabled={!newRoleName.trim()} className="aw-btn aw-btn-primary">Create</button>
+            <button type="button" onClick={() => { setIsCreateModalOpen(false); setNewRoleName(''); }} className="aw-btn aw-btn-secondary">{t('Cancel')}</button>
+            <button type="button" onClick={handleCreateRole} disabled={!newRoleName.trim()} className="aw-btn aw-btn-primary">{t('Create')}</button>
           </div>
         </div>
       </AwDialog>

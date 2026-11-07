@@ -4,21 +4,8 @@ import { useState, useCallback, useRef } from 'react';
 import dayjs from 'dayjs';
 import { FdRdSbEntryData, FdRdSbEntryHookReturn, EntryType } from '../interface/FdRdSbEntryInterfaces';
 import { apiService } from '../../../../../services/api';
-
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail: string,
-) => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({
-      type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-    });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-  }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const emptyForm = (entryType: EntryType = 'RD'): FdRdSbEntryData => ({
   entryType,
@@ -36,6 +23,7 @@ const emptyForm = (entryType: EntryType = 'RD'): FdRdSbEntryData => ({
 });
 
 export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<FdRdSbEntryData>(emptyForm('RD'));
   const [isLoading, setIsLoading] = useState(false);
 
@@ -99,19 +87,19 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
 
   const handleSave = useCallback(async () => {
     if (!formData.memberNo) {
-      await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before saving.');
+      await showDialog('warning', t('Input Validation Error'), t('Member Required'), t('Please select a member before saving.'));
       return;
     }
     if (formData.accounts.length > 0 && !formData.accountNo) {
-      await showDialog('warning', 'Input Validation Error', 'Account Required', 'Please select the account this entry belongs to.');
+      await showDialog('warning', t('Input Validation Error'), t('Account Required'), t('Please select the account this entry belongs to.'));
       return;
     }
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Amount', 'Please enter a valid amount greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Amount'), t('Please enter a valid amount greater than zero.'));
       return;
     }
     if (!formData.transDate) {
-      await showDialog('warning', 'Input Validation Error', 'Date Required', 'Please select a transaction date.');
+      await showDialog('warning', t('Input Validation Error'), t('Date Required'), t('Please select a transaction date.'));
       return;
     }
 
@@ -138,7 +126,7 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
         await showDialog(
           'info',
           'electron-react-ts',
-          `${formData.entryType} Entry Saved Successfully!`,
+          t('{{1}} Entry Saved Successfully!', { 1: formData.entryType }),
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `ENTRY TYPE  : ${formData.entryType}\n` +
           `MEMBER NO   : ${formData.memberNo} - ${formData.memberName || 'N/A'}\n` +
@@ -159,10 +147,10 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
         }));
       } else {
         // BUG FIX: was response.error — apiService returns response.message, not response.error
-        await showDialog('error', 'Entry Save Error', 'Failed to Save Entry', response.message || 'An unexpected error occurred. Please try again.');
+        await showDialog('error', t('Entry Save Error'), t('Failed to Save Entry'), response.message || t('An unexpected error occurred. Please try again.'));
       }
     } catch (err: any) {
-      await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${err.message}`);
+      await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: err.message }));
     } finally {
       setIsLoading(false);
     }

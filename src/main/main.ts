@@ -358,7 +358,7 @@ function createLoginWindow(): void {
   applySecurityHeaders(loginWindow);
 
   if (isDev) {
-    loginWindow.loadURL('http://localhost:5177/#/login')
+    loginWindow.loadURL(`${DEV_SERVER_URL}/#/login`)
       .catch(err => console.error('Failed to load login window from dev server:', err));
   } else {
     loginWindow.loadFile(path.join(__dirname, '../renderer/index.html'), { hash: '/login' })
@@ -518,7 +518,7 @@ function createWindow(): void {
     const window = getMainWindow();
     if (isDev) {
       // In development, load from Vite dev server
-      window.loadURL('http://localhost:5177')
+      window.loadURL(DEV_SERVER_URL)
         .catch(err => {
           console.error('Failed to load dev server:', err);
         });
@@ -753,6 +753,7 @@ const WINDOW_CONFIGS: Record<string, {
   '/change-password': { title: 'Change Password', frameless: false, width: 500, height: 400, modal: true, singleton: true },
   '/logout-user': { title: 'LogOut User', frameless: false, width: 600, height: 450, modal: true },
   '/two-factor-settings': { title: 'Two-Factor & Approvals', frameless: false, width: 1000, height: 760, modal: true, singleton: true },
+  '/mobile-control-center': { title: 'Mobile Control Center', frameless: false, width: 1240, height: 820, resizable: true, singleton: true },
 
   // Financial Year Management
   '/financial-year/transfer-entries': { title: 'Transfer Entries For Closing', frameless: false, width: 1100, height: 800 },
@@ -782,6 +783,7 @@ const WINDOW_CONFIGS: Record<string, {
   // ===== MASTERS SECTION =====
 
   '/masters/member': { title: 'Member Master', frameless: false, width: 1200, height: 850 },
+  '/masters/member-master': { title: 'Member Master', frameless: false, width: 1200, height: 850 },
   '/masters/member-status': { title: 'Member Status (Retired / Inactive)', frameless: false, width: 1180, height: 780, resizable: true, singleton: true },
   '/masters/signature-scanning': { title: 'Signature Scanning', frameless: false, width: 1000, height: 700 },
   '/masters/rd-account/opening': { title: 'RD A/c Opening', frameless: false, width: 1000, height: 750 },
@@ -900,6 +902,7 @@ const WINDOW_CONFIGS: Record<string, {
   '/utility/update-saving-interest': { title: 'Update Saving Intt.', frameless: false, width: 800, height: 600 },
   '/utility/interest-receivable-received-statement': { title: 'Interest Receivable/Received Statement', frameless: false, width: 1200, height: 850 },
   '/utility/support-desk': { title: 'Support Desk', frameless: false, width: 1100, height: 780, resizable: true, singleton: true },
+  '/utility/system-update': { title: 'System Update', frameless: false, width: 900, height: 720, resizable: true, singleton: true },
 
   // ===== HELP SECTION =====
 
@@ -921,7 +924,7 @@ const WINDOW_CONFIGS: Record<string, {
 };
 
 // Constants
-const DEV_SERVER_URL = 'http://localhost:5177';
+const DEV_SERVER_URL = process.env.FIBE_DEV_URL || 'http://localhost:5177'; // FIBE_DEV_URL lets tests point at a bundled build (vite preview)
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 
 // Window registry for all windows (singleton and duplicate prevention)
@@ -1179,6 +1182,46 @@ const getWindowConfig = (route: string) => {
   };
 };
 
+/**
+ * A short fade-out when a window closes (ES-436): about 100 ms, so it feels polished but never slows the user down.
+ * Windows have no per-window opacity on Linux, so nothing changes there. If another handler keeps the window open
+ * (event.defaultPrevented) or the window is still alive after the close attempt, it is made fully visible again.
+ */
+// Animation choice from Settings > Animations (off | fade | slide | zoom). The renderer reports it; it is kept in a small file
+// so the very first window of the next start already follows it.
+let motionMode: string = 'fade';
+const motionFile = () => path.join(app.getPath('userData'), 'motion.json');
+try { const j = JSON.parse(fs.readFileSync(motionFile(), 'utf8')); if (['off', 'fade', 'slide', 'zoom'].includes(j.mode)) motionMode = j.mode; } catch { /* first start */ }
+ipcMain.on('motion-preference', (_event, mode: string) => {
+  if (!['off', 'fade', 'slide', 'zoom'].includes(mode) || mode === motionMode) return;
+  motionMode = mode;
+  try { fs.writeFileSync(motionFile(), JSON.stringify({ mode })); } catch { /* ignore */ }
+});
+
+const attachFadeClose = (window: BrowserWindow) => {
+  if (process.platform === 'linux') return;
+  let closing = false;
+  window.on('close', (event) => {
+    if (closing || event.defaultPrevented || window.isDestroyed() || motionMode === 'off') return;
+    closing = true;
+    event.preventDefault();
+    const steps = 6;
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      if (window.isDestroyed()) { clearInterval(timer); return; }
+      try { window.setOpacity(Math.max(0, 1 - step / steps)); } catch { /* opacity not supported: just close */ }
+      if (step >= steps) {
+        clearInterval(timer);
+        window.close();
+        setTimeout(() => {
+          if (!window.isDestroyed()) { try { window.setOpacity(1); } catch { /* ignore */ } closing = false; }
+        }, 80);
+      }
+    }, 16);
+  });
+};
+
 const setupWindowEventHandlers = (window: BrowserWindow, route: string) => {
   // Handle external links
   window.webContents.setWindowOpenHandler(({ url }) => {
@@ -1198,11 +1241,30 @@ const setupWindowEventHandlers = (window: BrowserWindow, route: string) => {
   });
 
   // Ready to show
-  window.once('ready-to-show', () => {
+  // The window stays hidden until the page has drawn its real content (the renderer sends
+  // 'window-content-ready' once the screen's code is loaded), so the user never watches an empty
+  // frame with a loading bar. Safety net: show anyway 1.5 s after the first paint, or on a load failure.
+  let revealed = false;
+  const reveal = () => {
+    if (revealed || window.isDestroyed()) return;
+    revealed = true;
     if (DEBUG_LOGGING) console.log(`[DEBUG] Window ready to show for route: ${route}`);
 
+    // Very fast fade-in (~80 ms); no per-window opacity on Linux, so it just appears.
+    const canFade = process.platform !== 'linux' && motionMode !== 'off';
+    if (canFade) { try { window.setOpacity(0); } catch { /* ignore */ } }
     window.show();
     window.focus();
+    try { window.webContents.send('window-revealed'); } catch { /* page gone */ }
+    if (canFade) {
+      let step = 0;
+      const timer = setInterval(() => {
+        step++;
+        if (window.isDestroyed()) { clearInterval(timer); return; }
+        try { window.setOpacity(Math.min(1, step / 5)); } catch { /* ignore */ }
+        if (step >= 5) clearInterval(timer);
+      }, 16);
+    }
 
     // z-index management for different window types
     const windowConfig = getWindowConfig(route);
@@ -1226,7 +1288,10 @@ const setupWindowEventHandlers = (window: BrowserWindow, route: string) => {
     }
 
     if (DEBUG_LOGGING) console.log(`[DEBUG] Window shown for route: ${route}`);
-  });
+  };
+  window.webContents.ipc.once('window-content-ready', reveal);
+  window.webContents.once('did-fail-load', reveal);
+  window.once('ready-to-show', () => { setTimeout(reveal, 1500); });
 
   // Cleanup on close
   window.on('closed', () => {
@@ -1336,6 +1401,7 @@ const createWindowWithConfig = (route: string, config: any): BrowserWindow => {
       // "This app doesn't support print preview" instead of a real preview.
       // Printing itself still worked; only the preview rendering was affected.
       plugins: true,
+      backgroundThrottling: false, // the window is built hidden; do not slow its start-up
     }
   };
 
@@ -1411,6 +1477,7 @@ const createWindowWithConfig = (route: string, config: any): BrowserWindow => {
 
   // Setup event handlers
   setupWindowEventHandlers(newWindow, route);
+  attachFadeClose(newWindow);
 
   // Custom Closed Handler for Stack Management
   newWindow.on('closed', () => {
@@ -1447,7 +1514,7 @@ const createWindowWithConfig = (route: string, config: any): BrowserWindow => {
   });
 
   // Open DevTools in development
-  if (isDev && !config.modal) {
+  if (isDev && !config.modal && process.env.FIBE_DEVTOOLS === "1") { // opt-in: DevTools on every window made opening slow
     newWindow.webContents.openDevTools();
   }
 

@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import AwDialog from '@/components/shared/kit/AwDialog';
 import { apiService } from '../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 interface HeadOption { code: string; headName: string; }
 
@@ -54,6 +55,7 @@ const errLine = (msg?: string) => msg
   : null;
 
 const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => {
+  const { t } = useTranslation();
   const [transferData, setTransferData] = useState<TransferData>(EMPTY);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -190,16 +192,16 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
           <section className="aw-card aw-fade-in">
             <div className="aw-empty" style={{ padding: '12px 0 4px' }}>
               <span className="aw-card-icon" style={{ width: 52, height: 52, borderRadius: '50%', color: 'var(--aw-success)' }}><CheckCircle size={26} /></span>
-              <h2 className="aw-title">Transfer complete</h2>
-              <p className="aw-meta">Posted to the ledger on {dayjs(lastTransfer.transferDate).format('DD MMM YYYY')}</p>
+              <h2 className="aw-title">{t('Transfer complete')}</h2>
+              <p className="aw-meta">{t('Posted to the ledger on')} {dayjs(lastTransfer.transferDate).format('DD MMM YYYY')}</p>
               <p className="aw-stat-value" style={{ color: 'var(--aw-success)', fontSize: 28 }}>{fmtAmount(lastTransfer.amount)}</p>
             </div>
             <div className="aw-rows">
-              <div className="aw-row"><span className="aw-row-label">From</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{headLabel(lastTransfer.fromAccount)}</span></div>
-              <div className="aw-row"><span className="aw-row-label">To</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{headLabel(lastTransfer.toAccount)}</span></div>
-              <div className="aw-row"><span className="aw-row-label">Description</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{lastTransfer.description}</span></div>
+              <div className="aw-row"><span className="aw-row-label">{t('From')}</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{headLabel(lastTransfer.fromAccount)}</span></div>
+              <div className="aw-row"><span className="aw-row-label">{t('To')}</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{headLabel(lastTransfer.toAccount)}</span></div>
+              <div className="aw-row"><span className="aw-row-label">{t('Description')}</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{lastTransfer.description}</span></div>
             </div>
-            <button type="button" onClick={handleSuccessClose} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>Done</button>
+            <button type="button" onClick={handleSuccessClose} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>{t('Done')}</button>
           </section>
         </div>
       </div>
@@ -212,18 +214,18 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Balance Transfer</h1>
-          <p className="aw-desc">Move funds between general ledger heads. Entries post to the ledger immediately.</p>
+          <h1 className="aw-title">{t('Balance Transfer')}</h1>
+          <p className="aw-desc">{t('Move funds between general ledger heads. Entries post to the ledger immediately.')}</p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={handleReset} disabled={isLoading} className="aw-btn aw-btn-secondary">
-            <RotateCcw size={13} /> Reset
+            <RotateCcw size={13} /> {t('Reset')}
           </button>
           <button type="button" onClick={openConfirm} disabled={!isFormValid() || isLoading} className="aw-btn aw-btn-primary">
-            <Send size={13} /> Process transfer
+            <Send size={13} /> {t('Process transfer')}
           </button>
           <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -241,13 +243,13 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
             <section className="aw-card" style={{ minWidth: 0 }}>
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Database size={14} /></span>
-                <h2 className="aw-card-title">Transfer details</h2>
-                <span className="aw-meta" style={{ marginLeft: 'auto', textTransform: 'uppercase', letterSpacing: '.06em' }}>Step 1 of 2</span>
+                <h2 className="aw-card-title">{t('Transfer details')}</h2>
+                <span className="aw-meta" style={{ marginLeft: 'auto', textTransform: 'uppercase', letterSpacing: '.06em' }}>{t('Step 1 of 2')}</span>
               </div>
 
               <div className="aw-two">
                 <div>
-                  <label className="aw-label" htmlFor="bt-from">From account (GL head)</label>
+                  <label className="aw-label" htmlFor="bt-from">{t('From account (GL head)')}</label>
                   <Select
                     id="bt-from"
                     className={`aw-select ${errors.fromAccount ? 'is-invalid' : ''}`}
@@ -257,7 +259,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
                     loading={loadingHeads}
                     value={transferData.fromAccount || undefined}
                     onChange={(v) => updateField('fromAccount', v ?? '')}
-                    placeholder="Select source GL head"
+                    placeholder={t('Select source GL head')}
                     notFoundContent={loadingHeads ? 'Loading GL heads…' : 'No matching GL heads'}
                     options={headSelectOptions}
                   />
@@ -265,7 +267,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
                 </div>
 
                 <div>
-                  <label className="aw-label" htmlFor="bt-to">To account (GL head)</label>
+                  <label className="aw-label" htmlFor="bt-to">{t('To account (GL head)')}</label>
                   <Select
                     id="bt-to"
                     className={`aw-select ${errors.toAccount ? 'is-invalid' : ''}`}
@@ -275,7 +277,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
                     loading={loadingHeads}
                     value={transferData.toAccount || undefined}
                     onChange={(v) => updateField('toAccount', v ?? '')}
-                    placeholder="Select destination GL head"
+                    placeholder={t('Select destination GL head')}
                     notFoundContent={loadingHeads ? 'Loading GL heads…' : 'No matching GL heads'}
                     options={headSelectOptions}
                   />
@@ -283,7 +285,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
                 </div>
 
                 <div>
-                  <label className="aw-label" htmlFor="bt-amount">Amount</label>
+                  <label className="aw-label" htmlFor="bt-amount">{t('Amount')}</label>
                   <div className="aw-input-wrap has-icon">
                     <IndianRupee size={13} />
                     <input id="bt-amount" type="number" step="0.01" min="0" value={transferData.amount}
@@ -294,7 +296,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
                 </div>
 
                 <div>
-                  <label className="aw-label" htmlFor="bt-date">Transfer date</label>
+                  <label className="aw-label" htmlFor="bt-date">{t('Transfer date')}</label>
                   <input id="bt-date" type="date" value={transferData.transferDate} onChange={e => updateField('transferDate', e.target.value)}
                     className={`aw-input ${errors.transferDate ? 'is-invalid' : ''}`} />
                   {errLine(errors.transferDate)}
@@ -303,13 +305,13 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <label className="aw-label" htmlFor="bt-desc">Description</label>
+                  <label className="aw-label" htmlFor="bt-desc">{t('Description')}</label>
                   <span className="aw-meta">{transferData.description.length}/240</span>
                 </div>
                 <textarea id="bt-desc" value={transferData.description}
                   onChange={e => updateField('description', e.target.value.slice(0, 240))}
                   rows={3}
-                  placeholder="Purpose of transfer — e.g. reallocation of Q3 maintenance budget"
+                  placeholder={t('Purpose of transfer — e.g. reallocation of Q3 maintenance budget')}
                   className={`aw-input ${errors.description ? 'is-invalid' : ''}`}
                   style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
                 {errLine(errors.description)}
@@ -320,30 +322,30 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
             <div className="aw-stack">
               <section className="aw-card">
                 <div className="aw-card-head">
-                  <h2 className="aw-card-title">Review</h2>
+                  <h2 className="aw-card-title">{t('Review')}</h2>
                   <span className={`aw-pill tone-${isFormValid() ? 'success' : 'muted'}`} style={{ marginLeft: 'auto' }}>{statusLabel}</span>
                 </div>
 
                 <div className="aw-stack">
                   <div className="aw-panel">
-                    <span className="aw-label">Source</span>
-                    <p className="aw-strong" style={{ fontWeight: 600 }}>{transferData.fromAccount ? headLabel(transferData.fromAccount) : 'Select source GL head'}</p>
+                    <span className="aw-label">{t('Source')}</span>
+                    <p className="aw-strong" style={{ fontWeight: 600 }}>{transferData.fromAccount ? headLabel(transferData.fromAccount) : t('Select source GL head')}</p>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'center' }}><span className="aw-pill tone-muted">In transit ↓</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}><span className="aw-pill tone-muted">{t('In transit ↓')}</span></div>
                   <div className="aw-panel aw-panel-accent">
-                    <span className="aw-label">Destination</span>
-                    <p className="aw-strong" style={{ fontWeight: 600 }}>{transferData.toAccount ? headLabel(transferData.toAccount) : 'Select destination GL head'}</p>
+                    <span className="aw-label">{t('Destination')}</span>
+                    <p className="aw-strong" style={{ fontWeight: 600 }}>{transferData.toAccount ? headLabel(transferData.toAccount) : t('Select destination GL head')}</p>
                   </div>
 
                   <div className="aw-row aw-row-total" style={{ borderTop: '1px solid var(--aw-border)', paddingTop: 10 }}>
-                    <span className="aw-row-label">Amount</span>
+                    <span className="aw-row-label">{t('Amount')}</span>
                     <span className="aw-row-value">{transferData.amount && Number(transferData.amount) > 0 ? fmtAmount(transferData.amount) : '₹0.00'}</span>
                   </div>
 
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span className="aw-label" style={{ marginBottom: 4 }}>Verification status</span>
-                      <span className="aw-meta">{done} of 5 checks</span>
+                      <span className="aw-label" style={{ marginBottom: 4 }}>{t('Verification status')}</span>
+                      <span className="aw-meta">{done} {t('of 5 checks')}</span>
                     </div>
                     <span className="aw-bar-track" style={{ width: '100%' }}><span style={{ width: `${(done / 5) * 100}%` }} /></span>
                   </div>
@@ -352,7 +354,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
 
               <div className="aw-alert aw-alert-info" style={{ marginBottom: 0 }}>
                 <Info size={15} />
-                <span><strong>Note:</strong> Balance transfers are processed immediately and cannot be reversed from this screen. Verify both GL heads before proceeding.</span>
+                <span><strong>{t('Note:')}</strong> {t('Balance transfers are processed immediately and cannot be reversed from this screen. Verify both GL heads before proceeding.')}</span>
               </div>
             </div>
           </div>
@@ -360,34 +362,34 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> Financial Systems</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> Verified protocol · Session secured</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Financial Systems')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Verified protocol · Session secured')}</span>
       </div>
 
       {/* Confirm dialog */}
       <AwDialog
         open={showConfirm}
-        title="Confirm transfer"
+        title={t('Confirm transfer')}
         icon={<Send size={14} />}
         onClose={() => { if (!isLoading) setShowConfirm(false); }}
         maxWidth="26rem"
         compact
       >
         <div className="aw-stack">
-          <p className="aw-meta" style={{ lineHeight: 1.5 }}>This posts immediately to the ledger and cannot be undone here.</p>
+          <p className="aw-meta" style={{ lineHeight: 1.5 }}>{t('This posts immediately to the ledger and cannot be undone here.')}</p>
           <div className="aw-panel">
             <div className="aw-rows">
-              <div className="aw-row"><span className="aw-row-label">Amount</span><span className="aw-row-value">{fmtAmount(transferData.amount || 0)}</span></div>
-              <div className="aw-row"><span className="aw-row-label">From</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{headLabel(transferData.fromAccount)}</span></div>
-              <div className="aw-row"><span className="aw-row-label">To</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{headLabel(transferData.toAccount)}</span></div>
-              <div className="aw-row"><span className="aw-row-label">Date</span><span className="aw-row-value">{transferData.transferDate}</span></div>
+              <div className="aw-row"><span className="aw-row-label">{t('Amount')}</span><span className="aw-row-value">{fmtAmount(transferData.amount || 0)}</span></div>
+              <div className="aw-row"><span className="aw-row-label">{t('From')}</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{headLabel(transferData.fromAccount)}</span></div>
+              <div className="aw-row"><span className="aw-row-label">{t('To')}</span><span className="aw-row-value" style={{ textAlign: 'right' }}>{headLabel(transferData.toAccount)}</span></div>
+              <div className="aw-row"><span className="aw-row-label">{t('Date')}</span><span className="aw-row-value">{transferData.transferDate}</span></div>
             </div>
           </div>
           <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => setShowConfirm(false)} disabled={isLoading} className="aw-btn aw-btn-secondary">Cancel</button>
+            <button type="button" onClick={() => setShowConfirm(false)} disabled={isLoading} className="aw-btn aw-btn-secondary">{t('Cancel')}</button>
             <button type="button" onClick={handleConfirmTransfer} disabled={isLoading} className="aw-btn aw-btn-primary">
               {isLoading && <RefreshCw size={13} className="aw-spin" />}
-              {isLoading ? 'Processing…' : 'Process transfer'}
+              {isLoading ? t('Processing…') : t('Process transfer')}
             </button>
           </div>
         </div>

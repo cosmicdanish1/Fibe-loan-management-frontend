@@ -1,0 +1,92 @@
+{
+  "ES-471/474 loan-sanction": {
+    "totalInputsOnScreen": 1,
+    "sampled": 1,
+    "acceptWords": [
+      "ls-case"
+    ],
+    "acceptNegative": 0,
+    "acceptHugeNumber": 1,
+    "accept300Chars": [
+      "ls-case"
+    ],
+    "dateInputsWithoutMinMax": 0
+  },
+  "ES-471/474 saving-account-opening": {
+    "totalInputsOnScreen": 9,
+    "sampled": 9,
+    "acceptWords": [
+      "First",
+      "Middle",
+      "Last",
+      "sa-opening-date"
+    ],
+    "acceptNegative": 0,
+    "acceptHugeNumber": 7,
+    "accept300Chars": [
+      "First",
+      "Middle",
+      "Last",
+      "sa-opening-date"
+    ],
+    "dateInputsWithoutMinMax": 0
+  },
+  "ES-471/474 member-balance-transfer": {
+    "totalInputsOnScreen": 5,
+    "sampled": 5,
+    "acceptWords": [
+      "mbt-debit",
+      "mbt-credit",
+      "mbt-excess",
+      "mbt-date"
+    ],
+    "acceptNegative": 0,
+    "acceptHugeNumber": 5,
+    "accept300Chars": [
+      "mbt-debit",
+      "mbt-credit",
+      "mbt-excess",
+      "mbt-date"
+    ],
+    "dateInputsWithoutMinMax": 0
+  },
+  "ES-471/474 voucher-payment": {
+    "totalInputsOnScreen": 4,
+    "sampled": 4,
+    "acceptWords": [
+      "vp-no",
+      "vp-date",
+      "vp-member",
+      "vp-sub"
+    ],
+    "acceptNegative": 0,
+    "acceptHugeNumber": 4,
+    "accept300Chars": [
+      "vp-no",
+      "vp-date",
+      "vp-member",
+      "vp-sub"
+    ],
+    "dateInputsWithoutMinMax": 0
+  },
+  "ES-472 day-book (server unreachable)": {
+    "clickedButton": true,
+    "modalOrMessageShown": true,
+    "mentionsServerOrNetwork": true,
+    "hasRetry": true,
+    "rawTechnicalText": false,
+    "textSnippetAfter": "Day Book Daily transaction journal Legacy Bento Terminal Print CSV Parameters DATE Load report DAY BOOK — 06-NOV-2026 NO TRANSACTIONS ON 06-NOV-2026 Try a date that has vouchers Day Book · Daily Journal 20261106 Cannot reach the server. Check the network connection and that the server is running, th",
+    "pageChangedLength": 157
+  },
+  "ES-473 member-master lookup (server unreachable)": {
+    "anyMessageShown": false,
+    "mentionsServerOrNetwork": false,
+    "rawTechnicalText": false
+  },
+  "ES-471/474 compulsory-deposit": {
+    "inputsOnScreenAfterMemberChosen": 7495,
+    "msToTypeThreeLettersInOneBox": 60017,
+    "acceptedWords": false,
+    "valueKept": "n/a"
+  }
+}

@@ -3,6 +3,7 @@ import { CalendarDays, Clock, KeyRound, Mail, UserRound } from 'lucide-react';
 import type { User } from '../../auth/types/auth.types';
 import Confetti from './Confetti';
 import { markProgress, onboardingApi, OnboardingProfile } from './onboardingApi';
+import { useTranslation } from 'react-i18next';
 
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -23,6 +24,7 @@ const Tile: React.FC<{ icon: React.ReactNode; label: string; value: string; colo
 
 /** Walkthrough step: the user's own profile in a card, with a confetti burst when it appears. */
 export const ProfileStep: React.FC<{ user: User }> = ({ user }) => {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<OnboardingProfile | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -34,8 +36,8 @@ export const ProfileStep: React.FC<{ user: User }> = ({ user }) => {
     return () => { cancelled = true; };
   }, []);
 
-  if (failed) return <div className="ob-note">Your profile could not be loaded right now. You can continue.</div>;
-  if (!profile) return <p className="ob-lead">Loading your profile…</p>;
+  if (failed) return <div className="ob-note">{t('Your profile could not be loaded right now. You can continue.')}</div>;
+  if (!profile) return <p className="ob-lead">{t('Loading your profile…')}</p>;
 
   const access = user.allowedActions ? `${user.allowedActions.length} menu options` : 'Full access';
 
@@ -51,11 +53,11 @@ export const ProfileStep: React.FC<{ user: User }> = ({ user }) => {
         {profile.role && <span className="ob-pill">{profile.role}</span>}
       </div>
       <div className="ob-grid">
-        <Tile icon={<UserRound size={18} />} label="Username" value={profile.username} color="#6366f1" />
-        <Tile icon={<Mail size={18} />} label="Email" value={profile.email || '—'} color="#0ea5e9" />
-        <Tile icon={<CalendarDays size={18} />} label="Account created" value={fmtDate(profile.memberSince)} color="#f59e0b" />
-        <Tile icon={<Clock size={18} />} label="Last login" value={fmtDateTime(profile.lastLogin)} color="#10b981" />
-        <Tile icon={<KeyRound size={18} />} label="Access" value={access} color="#ec4899" />
+        <Tile icon={<UserRound size={18} />} label={t('Username')} value={profile.username} color="#6366f1" />
+        <Tile icon={<Mail size={18} />} label={t('Email')} value={profile.email || '—'} color="#0ea5e9" />
+        <Tile icon={<CalendarDays size={18} />} label={t('Account created')} value={fmtDate(profile.memberSince)} color="#f59e0b" />
+        <Tile icon={<Clock size={18} />} label={t('Last login')} value={fmtDateTime(profile.lastLogin)} color="#10b981" />
+        <Tile icon={<KeyRound size={18} />} label={t('Access')} value={access} color="#ec4899" />
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { apiService } from '../../../../services/api';
 import { useAuth } from '../../../../auth/context/AuthContext';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 interface HeadOption { code: string; name: string; }
 interface TransferEntry {
@@ -18,6 +19,7 @@ const fmt = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2,
 const NO_LIMIT = 999999999;
 
 const MemberBalanceTransfer: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [heads, setHeads] = useState<HeadOption[]>([]);
   const [debitHead, setDebitHead] = useState<string | undefined>();
@@ -42,7 +44,7 @@ const MemberBalanceTransfer: React.FC = () => {
   const resolveCreditLimit = (): number | null => {
     if (creditLimit.trim() === '') return NO_LIMIT;
     const n = Number(creditLimit);
-    if (!Number.isFinite(n) || n < 0) { message.warning('Credit Limit must be a non-negative number (leave blank for no limit)'); return null; }
+    if (!Number.isFinite(n) || n < 0) { message.warning(t('Credit Limit must be a non-negative number (leave blank for no limit)')); return null; }
     return n;
   };
 
@@ -57,10 +59,10 @@ const MemberBalanceTransfer: React.FC = () => {
   }, []);
 
   const handleGenerate = async () => {
-    if (!debitHead || !creditHead) { message.warning('Select both Debit Head and Credit Head'); return; }
+    if (!debitHead || !creditHead) { message.warning(t('Select both Debit Head and Credit Head')); return; }
     const limit = resolveCreditLimit();
     if (limit === null) return;
-    if (!balanceAsOn) { message.warning('Select Balance As On date'); return; }
+    if (!balanceAsOn) { message.warning(t('Select Balance As On date')); return; }
     const version = inputVersion.current;
     setLoading(true);
     try {
@@ -79,23 +81,23 @@ const MemberBalanceTransfer: React.FC = () => {
           totalCredit: result.totalCredit || 0,
           excCredit: result.excCredit || 0,
         });
-        message.success(`Generated ${(result.entries || []).length} entries`);
+        message.success(t('Generated {{1}} entries', { 1: (result.entries || []).length }));
       } else {
-        message.error(res.message || 'Failed to generate');
+        message.error(res.message || t('Failed to generate'));
       }
     } catch (e: any) {
-      message.error(e?.message || 'Generate failed');
+      message.error(e?.message || t('Generate failed'));
     } finally {
       setLoading(false);
     }
   };
 
   const handlePost = async () => {
-    if (entries.length === 0) { message.warning('Generate transactions first'); return; }
+    if (entries.length === 0) { message.warning(t('Generate transactions first')); return; }
     const limit = resolveCreditLimit();
     if (limit === null) return;
     const postedBy = user?.username;
-    if (!postedBy) { message.error('No logged-in user - please sign in again'); return; }
+    if (!postedBy) { message.error(t('No logged-in user - please sign in again')); return; }
     setPosting(true);
     try {
       const res = await apiService.post('/transactions/member-balance-transfer/post', {
@@ -109,7 +111,7 @@ const MemberBalanceTransfer: React.FC = () => {
         const result = res.data || {};
         if (window.electronAPI?.showMessageBox) {
           await window.electronAPI.showMessageBox({
-            type: 'info', title: 'Member Balance Transfer',
+            type: 'info', title: t('Member Balance Transfer'),
             message: 'Posted Successfully!',
             detail: `Voucher: ${result.voucherNo}\n${result.message}`,
             buttons: ['OK'],
@@ -120,10 +122,10 @@ const MemberBalanceTransfer: React.FC = () => {
         setEntries([]);
         setTotals({ totalDebit: 0, totalCredit: 0, excCredit: 0 });
       } else {
-        message.error(res.message || 'Post failed');
+        message.error(res.message || t('Post failed'));
       }
     } catch (e: any) {
-      message.error(e?.message || 'Post failed');
+      message.error(e?.message || t('Post failed'));
     } finally {
       setPosting(false);
     }
@@ -152,18 +154,18 @@ const MemberBalanceTransfer: React.FC = () => {
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Member Balance Transfer</h1>
-          <p className="aw-desc">Bulk Head-to-Head Transfer</p>
+          <h1 className="aw-title">{t('Member Balance Transfer')}</h1>
+          <p className="aw-desc">{t('Bulk Head-to-Head Transfer')}</p>
         </div>
         <div className="aw-actions">
-          <button type="button" onClick={handleCancel} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Cancel</button>
+          <button type="button" onClick={handleCancel} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> {t('Cancel')}</button>
           <button type="button" onClick={handleGenerate} disabled={loading} className="aw-btn aw-btn-secondary">
-            {loading ? <RotateCcw size={13} className="aw-spin" /> : <Zap size={13} />} {loading ? 'Generating...' : 'Generate Transaction'}
+            {loading ? <RotateCcw size={13} className="aw-spin" /> : <Zap size={13} />} {loading ? t('Generating...') : t('Generate Transaction')}
           </button>
           <button type="button" onClick={handlePost} disabled={posting || entries.length === 0} className="aw-btn aw-btn-primary">
-            {posting ? <RotateCcw size={13} className="aw-spin" /> : <Send size={13} />} {posting ? 'Posting...' : 'Post Transaction'}
+            {posting ? <RotateCcw size={13} className="aw-spin" /> : <Send size={13} />} {posting ? t('Posting...') : t('Post Transaction')}
           </button>
-          <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
+          <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Exit')}</button>
         </div>
       </div>
 
@@ -172,31 +174,31 @@ const MemberBalanceTransfer: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><ArrowRightLeft size={14} /></span>
-              <h2 className="aw-card-title">Transfer Heads</h2>
+              <h2 className="aw-card-title">{t('Transfer Heads')}</h2>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'end' }}>
               <div>
-                <label className="aw-label" htmlFor="mbt-debit">Debit Head</label>
-                <Select id="mbt-debit" showSearch value={debitHead} onChange={setDebitHead} placeholder="Select..."
+                <label className="aw-label" htmlFor="mbt-debit">{t('Debit Head')}</label>
+                <Select id="mbt-debit" showSearch value={debitHead} onChange={setDebitHead} placeholder={t('Select...')}
                   className="aw-select" popupClassName="aw-select-popup" optionFilterProp="label" options={headOptions} />
               </div>
               <div>
-                <label className="aw-label" htmlFor="mbt-credit">Credit Head</label>
-                <Select id="mbt-credit" showSearch value={creditHead} onChange={setCreditHead} placeholder="Select..."
+                <label className="aw-label" htmlFor="mbt-credit">{t('Credit Head')}</label>
+                <Select id="mbt-credit" showSearch value={creditHead} onChange={setCreditHead} placeholder={t('Select...')}
                   className="aw-select" popupClassName="aw-select-popup" optionFilterProp="label" options={headOptions} />
               </div>
               <div>
-                <label className="aw-label" htmlFor="mbt-limit">Credit Limit</label>
+                <label className="aw-label" htmlFor="mbt-limit">{t('Credit Limit')}</label>
                 <input id="mbt-limit" value={creditLimit} onChange={e => setCreditLimit(e.target.value.replace(/[^0-9.]/g, ''))}
                   placeholder="0" className="aw-input is-right" />
               </div>
               <div>
-                <label className="aw-label" htmlFor="mbt-excess">Excess Amt CR Head</label>
-                <Select id="mbt-excess" showSearch value={excessHead} onChange={setExcessHead} placeholder="Select..."
+                <label className="aw-label" htmlFor="mbt-excess">{t('Excess Amt CR Head')}</label>
+                <Select id="mbt-excess" showSearch value={excessHead} onChange={setExcessHead} placeholder={t('Select...')}
                   className="aw-select" popupClassName="aw-select-popup" optionFilterProp="label" options={headOptions} allowClear />
               </div>
               <div>
-                <label className="aw-label" htmlFor="mbt-date">Balance As On</label>
+                <label className="aw-label" htmlFor="mbt-date">{t('Balance As On')}</label>
                 <DatePicker id="mbt-date" value={balanceAsOn ? dayjs(balanceAsOn) : null}
                   onChange={d => setBalanceAsOn(d ? d.format('YYYY-MM-DD') : '')}
                   format="DD-MMM-YYYY" className="aw-picker" popupClassName="aw-select-popup" />
@@ -207,31 +209,31 @@ const MemberBalanceTransfer: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Users size={14} /></span>
-              <h2 className="aw-card-title">Member List</h2>
-              {entries.length > 0 && <span className="aw-meta">{entries.length} members</span>}
+              <h2 className="aw-card-title">{t('Member List')}</h2>
+              {entries.length > 0 && <span className="aw-meta">{t('{{1}} members', { 1: entries.length })}</span>}
               <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
-                <span className="aw-pill tone-danger">Total Debit {fmt(totals.totalDebit)}</span>
-                <span className="aw-pill tone-success">Total Credit {fmt(totals.totalCredit)}</span>
-                <span className="aw-pill tone-warning">Exc Credit {fmt(totals.excCredit)}</span>
+                <span className="aw-pill tone-danger">{t('Total Debit')} {fmt(totals.totalDebit)}</span>
+                <span className="aw-pill tone-success">{t('Total Credit')} {fmt(totals.totalCredit)}</span>
+                <span className="aw-pill tone-warning">{t('Exc Credit')} {fmt(totals.excCredit)}</span>
               </span>
             </div>
             <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: 180 }}>
               <table className="aw-table" style={{ minWidth: 860 }}>
                 <thead>
                   <tr>
-                    <th style={{ width: 60 }}>SrNo</th>
-                    <th style={{ width: 120 }}>MbNo</th>
-                    <th>Name</th>
-                    <th className="is-right">DB Head Bal</th>
-                    <th className="is-right">CR Head Bal</th>
-                    <th className="is-right">DB Amt</th>
-                    <th className="is-right">CR Amt</th>
-                    <th className="is-right">Ex.CR Amt</th>
+                    <th style={{ width: 60 }}>{t('SrNo')}</th>
+                    <th style={{ width: 120 }}>{t('MbNo')}</th>
+                    <th>{t('Name')}</th>
+                    <th className="is-right">{t('DB Head Bal')}</th>
+                    <th className="is-right">{t('CR Head Bal')}</th>
+                    <th className="is-right">{t('DB Amt')}</th>
+                    <th className="is-right">{t('CR Amt')}</th>
+                    <th className="is-right">{t('Ex.CR Amt')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {entries.length === 0 ? (
-                    <tr><td colSpan={8}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-meta">Select heads and click Generate Transaction</span></div></td></tr>
+                    <tr><td colSpan={8}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-meta">{t('Select heads and click Generate Transaction')}</span></div></td></tr>
                   ) : entries.map(e => (
                     <tr key={e.srNo}>
                       <td className="is-muted">{e.srNo}</td>
@@ -252,7 +254,7 @@ const MemberBalanceTransfer: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span>Member Balance Transfer</span>
+        <span>{t('Member Balance Transfer')}</span>
         <span>{dayjs().format('DD-MMM-YY')}</span>
       </div>
     </div>

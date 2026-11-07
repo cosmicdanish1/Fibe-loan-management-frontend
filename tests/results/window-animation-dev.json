@@ -1,0 +1,219 @@
+[
+  {
+    "pass": "first open",
+    "route": "/masters/saving-account-opening",
+    "created": 2016,
+    "visible": 11443,
+    "openFade": 105,
+    "content": 12180,
+    "close": 168,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.67,
+      0.67,
+      0.5,
+      0.33,
+      0.33,
+      0.17,
+      0
+    ],
+    "openSamples": [
+      0,
+      0.2,
+      0.2,
+      0.4,
+      0.6,
+      0.8,
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/masters/member-master",
+    "created": 250,
+    "visible": 1044,
+    "openFade": 86,
+    "content": -1,
+    "close": 148,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      1,
+      0.83,
+      0.67,
+      0.67,
+      0.5,
+      0.33,
+      0.17,
+      0
+    ],
+    "openSamples": [
+      0,
+      0.2,
+      0.4,
+      0.6,
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/transaction/loan-repayment",
+    "created": 241,
+    "visible": 1281,
+    "openFade": 102,
+    "content": 2500,
+    "close": 168,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.67,
+      0.5,
+      0.17,
+      0.17,
+      0
+    ],
+    "openSamples": [
+      0,
+      0,
+      0.2,
+      0.4,
+      0.6,
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/reports/daily/day-book",
+    "created": 329,
+    "visible": 985,
+    "openFade": 0,
+    "content": 3141,
+    "close": 186,
+    "loadingSeen": true,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.5,
+      0.5,
+      0.17,
+      0
+    ],
+    "openSamples": [
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/utility/emi-chart",
+    "created": 464,
+    "visible": 1235,
+    "openFade": 0,
+    "content": 3603,
+    "close": 151,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.67,
+      0.33,
+      0.33,
+      0.17
+    ],
+    "openSamples": [
+      1
+    ]
+  },
+  {
+    "pass": "first open",
+    "route": "/settings",
+    "created": 300,
+    "visible": 1379,
+    "openFade": 94,
+    "content": -1,
+    "close": 147,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.67,
+      0.5,
+      0.33,
+      0.17,
+      0.17
+    ],
+    "openSamples": [
+      0.2,
+      0.4,
+      0.4,
+      0.6,
+      0.8,
+      1
+    ]
+  },
+  {
+    "pass": "second open (warm)",
+    "route": "/masters/saving-account-opening",
+    "created": 330,
+    "visible": 1715,
+    "openFade": 142,
+    "content": 2864,
+    "close": 178,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.83,
+      0.67,
+      0.5,
+      0.5,
+      0.33,
+      0.17,
+      0
+    ],
+    "openSamples": [
+      0,
+      0.2,
+      0.2,
+      0.4,
+      0.6,
+      0.8,
+      0.8,
+      1
+    ]
+  },
+  {
+    "pass": "second open (warm)",
+    "route": "/masters/member-master",
+    "created": 854,
+    "visible": 2691,
+    "openFade": 138,
+    "content": -1,
+    "close": 186,
+    "loadingSeen": false,
+    "closeSeries": [
+      1,
+      0.83,
+      0.67,
+      0.67,
+      0.33,
+      0.33,
+      0
+    ],
+    "openSamples": [
+      0,
+      0.2,
+      0.4,
+      0.6,
+      0.6,
+      0.8,
+      1
+    ]
+  }
+]

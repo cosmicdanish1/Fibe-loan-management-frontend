@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle2, KeyRound, RotateCcw, ShieldOff, UserMinus, U
 import { apiService } from '../../../../../services/api';
 import PasswordInput from '../../../../../components/shared/PasswordInput';
 import AwDialog from '@/components/shared/kit/AwDialog';
+import { useTranslation } from 'react-i18next';
 
 interface GuardAction { key: string; label: string; hint: string }
 interface ApproverRow { userid: number; username: string; level: string; admin: boolean; enabled: boolean; enrolled: boolean; approver: boolean; active: boolean }
@@ -18,6 +19,7 @@ type Dlg = null | { key: string; label: string };
  * plus an approver's code.
  */
 const ApprovalGuardsCard: React.FC = () => {
+  const { t } = useTranslation();
   const [actions, setActions] = useState<GuardAction[]>([]);
   const [guards, setGuards] = useState<Record<string, { enabled: boolean }>>({});
   const [approvers, setApprovers] = useState<ApproverRow[]>([]);
@@ -92,12 +94,11 @@ const ApprovalGuardsCard: React.FC = () => {
     <section className="aw-card">
       <div className="aw-card-head">
         <span className="aw-card-icon"><KeyRound size={14} /></span>
-        <h2 className="aw-card-title">Approvers &amp; approval codes</h2>
+        <h2 className="aw-card-title">{t('Approvers & approval codes')}</h2>
       </div>
       <p className="aw-meta">
-        Choose existing users as <strong>approvers</strong> (you can also do this with the <em>Approver (OTP)</em> right in the Access Privilege Matrix).
-        Each approver uses <strong>their own</strong> authenticator, set up in My Profile. To perform a protected action, the person doing the work asks an approver for the current
-        6-digit code and types it in; each code works once and the audit log names the approver. Switch <strong>OFF</strong> and the window works exactly as before.
+        {t('Choose existing users as')} <strong>approvers</strong> (you can also do this with the <em>{t('Approver (OTP)')}</em> right in the Access Privilege Matrix).
+        Each approver uses <strong>{t('their own')}</strong> {t('authenticator, set up in My Profile. To perform a protected action, the person doing the work asks an approver for the current 6-digit code and types it in; each code works once and the audit log names the approver. Switch')} <strong>OFF</strong> {t('and the window works exactly as before.')}
       </p>
 
       {msg && (
@@ -109,12 +110,12 @@ const ApprovalGuardsCard: React.FC = () => {
       <div className="aw-panel" style={{ textAlign: 'left' }}>
         <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div>
-            <p className="aw-strong">Approvers ({activeCount} active)</p>
-            <span className="aw-meta">An approver counts once they hold the right <em>and</em> have set up their authenticator.</span>
+            <p className="aw-strong">{t('Approvers ({{1}} active)', { 1: activeCount })}</p>
+            <span className="aw-meta">{t('An approver counts once they hold the right')} <em>and</em> {t('have set up their authenticator.')}</span>
           </div>
           <div className="aw-inline" style={{ gap: 6, alignItems: 'center' }}>
-            <select className="aw-select" aria-label="Add approver" value={pick} onChange={(e) => setPick(e.target.value)} style={{ minWidth: 190 }}>
-              <option value="">Add an approver…</option>
+            <select className="aw-select" aria-label={t('Add approver')} value={pick} onChange={(e) => setPick(e.target.value)} style={{ minWidth: 190 }}>
+              <option value="">{t('Add an approver…')}</option>
               {candidates.map((u) => (
                 <option key={u.userid} value={u.userid} disabled={!u.enrolled} style={u.enrolled ? undefined : { color: '#9aa3b2' }}>
                   {u.username}{u.level ? ` (${u.level})` : ''}{u.enrolled ? '' : ' — set up authenticator in My Profile first'}
@@ -123,12 +124,12 @@ const ApprovalGuardsCard: React.FC = () => {
             </select>
             <button type="button" className="aw-btn aw-btn-primary aw-btn-sm" disabled={!pick}
               onClick={() => { const u = candidates.find((c) => String(c.userid) === pick); if (u) changeApprover(u.userid, true, u.username); }}>
-              <UserPlus size={12} /> Add
+              <UserPlus size={12} /> {t('Add')}
             </button>
           </div>
         </div>
         {current.length === 0 ? (
-          <p className="aw-meta" style={{ marginTop: 8 }}>No approver yet. Add at least one, then switch the protections on.</p>
+          <p className="aw-meta" style={{ marginTop: 8 }}>{t('No approver yet. Add at least one, then switch the protections on.')}</p>
         ) : (
           <div className="aw-rows" style={{ marginTop: 8 }}>
             {current.map((a) => (
@@ -137,11 +138,11 @@ const ApprovalGuardsCard: React.FC = () => {
                   <strong>{a.username}</strong> <span className="aw-meta">{a.level}</span>
                 </div>
                 <div className="aw-inline" style={{ gap: 8, alignItems: 'center' }}>
-                  {!a.enabled ? <span className="aw-pill tone-danger">Account disabled</span>
-                    : a.enrolled ? <span className="aw-pill tone-success">Active</span>
-                    : <span className="aw-pill">Needs authenticator (My Profile)</span>}
+                  {!a.enabled ? <span className="aw-pill tone-danger">{t('Account disabled')}</span>
+                    : a.enrolled ? <span className="aw-pill tone-success">{t('Active')}</span>
+                    : <span className="aw-pill">{t('Needs authenticator (My Profile)')}</span>}
                   <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => changeApprover(a.userid, false, a.username)}>
-                    <UserMinus size={12} /> Remove
+                    <UserMinus size={12} /> {t('Remove')}
                   </button>
                 </div>
               </div>
@@ -150,7 +151,7 @@ const ApprovalGuardsCard: React.FC = () => {
         )}
         <label className="aw-inline" style={{ gap: 8, cursor: 'pointer', alignItems: 'center', marginTop: 8 }}>
           <input type="checkbox" checked={ownApproval} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} onChange={() => saveOwn(!ownApproval)} />
-          An approver may approve an action they are performing themselves
+          {t('An approver may approve an action they are performing themselves')}
         </label>
       </div>
 
@@ -168,7 +169,7 @@ const ApprovalGuardsCard: React.FC = () => {
                   <input type="checkbox" role="switch" aria-label={'Require approver code for ' + a.label} checked={on}
                     disabled={activeCount === 0 && !on}
                     style={{ width: 18, height: 18, accentColor: 'var(--aw-accent)' }} onChange={() => toggle(a)} />
-                  {on ? 'Code required' : 'Off'}
+                  {on ? t('Code required') : t('Off')}
                 </label>
               </div>
             </div>
@@ -177,7 +178,7 @@ const ApprovalGuardsCard: React.FC = () => {
       </div>
 
       {/* Switching a protection OFF: password + an approver's code */}
-      <AwDialog open={!!dlg} title="Switch protection off" onClose={close} icon={<ShieldOff size={14} />} maxWidth="26rem" compact>
+      <AwDialog open={!!dlg} title={t('Switch protection off')} onClose={close} icon={<ShieldOff size={14} />} maxWidth="26rem" compact>
         {dlg && (
           <form className="aw-stack" style={{ gap: 8 }} onSubmit={(e) => {
             e.preventDefault();
@@ -188,19 +189,19 @@ const ApprovalGuardsCard: React.FC = () => {
               close();
             });
           }}>
-            <span className="aw-meta">Switching <strong>{dlg.label}</strong> off removes the approval step. Enter <strong>your password</strong> and a <strong>current code from an approver</strong> (not your own).</span>
-            <label className="aw-label" htmlFor="guard-off-pw">1. Your own login password</label>
-            <PasswordInput id="guard-off-pw" className="aw-input" placeholder="The password you sign in with" aria-label="Your login password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} />
-            <label className="aw-label" htmlFor="guard-off-code">2. Approver code</label>
-            <input id="guard-off-code" className="aw-input" inputMode="numeric" placeholder="6-digit code from an approver's authenticator app" aria-label="Approver code" value={code} onChange={(e) => setCode(e.target.value)} />
+            <span className="aw-meta">{t('Switching')} <strong>{dlg.label}</strong> {t('off removes the approval step. Enter')} <strong>{t('your password')}</strong> {t('and a')} <strong>{t('current code from an approver')}</strong> {t('(not your own).')}</span>
+            <label className="aw-label" htmlFor="guard-off-pw">1. {t('Your own login password')}</label>
+            <PasswordInput id="guard-off-pw" className="aw-input" placeholder={t('The password you sign in with')} aria-label={t('Your login password')} autoFocus value={pw} onChange={(e) => setPw(e.target.value)} />
+            <label className="aw-label" htmlFor="guard-off-code">2. {t('Approver code')}</label>
+            <input id="guard-off-code" className="aw-input" inputMode="numeric" placeholder={t("6-digit code from an approver's authenticator app")} aria-label={t('Approver code')} value={code} onChange={(e) => setCode(e.target.value)} />
             <span className="aw-meta">
-              The code comes from <strong>another approver's</strong> authenticator app, not yours
+              {t('The code comes from')} <strong>{t("another approver's")}</strong> {t('authenticator app, not yours')}
               {codeGivers.length ? <> (active approvers: {codeGivers.map((a) => a.username).join(', ')})</> : null}. A code works once and lasts about 30 seconds.
             </span>
             {err && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><div>{err}</div></div>}
             <div className="aw-btn-row">
-              <button type="button" className="aw-btn aw-btn-secondary" onClick={close}>Cancel</button>
-              <button type="submit" className="aw-btn aw-btn-danger" disabled={busy || !pw}>{busy && <RotateCcw size={13} className="aw-spin" />} Switch off</button>
+              <button type="button" className="aw-btn aw-btn-secondary" onClick={close}>{t('Cancel')}</button>
+              <button type="submit" className="aw-btn aw-btn-danger" disabled={busy || !pw}>{busy && <RotateCcw size={13} className="aw-spin" />} {t('Switch off')}</button>
             </div>
           </form>
         )}

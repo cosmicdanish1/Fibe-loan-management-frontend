@@ -4,22 +4,26 @@ import { useAuth } from '../context/AuthContext';
 import { Spin } from 'antd';
 import { IS_MAIN_WINDOW } from '../../utils/windowIdentity';
 import { ROUTE_TO_ACTION, isActionAllowed } from '../../config/menuActions';
+import { useTranslation } from 'react-i18next';
 
 interface ProtectedRouteProps {
   children?: ReactNode;
 }
 
-const AccessDenied: React.FC = () => (
+const AccessDenied: React.FC = () => {
+  const { t } = useTranslation();
+  return (
   <div className="flex flex-col items-center justify-center min-h-screen text-center gap-3 px-6">
-    <p className="text-lg font-semibold text-slate-700">Access Denied</p>
+    <p className="text-lg font-semibold text-slate-700">{t('Access Denied')}</p>
     <p className="text-sm text-slate-500 max-w-sm">
-      Your role does not have rights to this screen. Ask an administrator to grant
-      access via Configure UserLevel Default Rights.
+      {t('Your role does not have rights to this screen. Ask an administrator to grant access via Configure UserLevel Default Rights.')}
     </p>
   </div>
 );
+};
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -66,7 +70,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     console.log('[ProtectedRoute] Checking authentication status...');
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Spin size="large" tip="Verifying session...">
+        <Spin size="large" tip={t('Verifying session...')}>
           <div className="w-full h-32" />
         </Spin>
       </div>
@@ -80,7 +84,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     console.log('[ProtectedRoute] Not authenticated — tearing down, no login shown');
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-500">
-        <Spin size="large" tip="Signing out…">
+        <Spin size="large" tip={t('Signing out…')}>
           <div className="w-full h-32" />
         </Spin>
       </div>

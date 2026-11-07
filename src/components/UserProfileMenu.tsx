@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { useAuth } from '../auth/context/AuthContext';
 import { NotificationBell } from './topbar/NotificationBell';
+import { useTranslation } from 'react-i18next';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const UserProfileMenu: React.FC = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
 
   const [profileOpen, setProfileOpen] = useState(false);
@@ -31,7 +33,7 @@ export const UserProfileMenu: React.FC = () => {
       });
       ok = res?.response === 0;
     } else {
-      ok = window.confirm('Are you sure you want to logout?');
+      ok = window.confirm(t('Are you sure you want to logout?'));
     }
     if (ok) logout();
   };
@@ -62,8 +64,8 @@ export const UserProfileMenu: React.FC = () => {
           <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-[200]">
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="text-sm font-semibold text-gray-900">{user.username}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{user.email ?? `${user.username}@trust.in`}</p>
-              {user.role && <p className="text-xs text-blue-600 mt-1 font-medium">Role: {user.role}</p>}
+              <p className="text-xs text-gray-500 mt-0.5">{user.email ?? t('{{1}}@trust.in', { 1: user.username })}</p>
+              {user.role && <p className="text-xs text-blue-600 mt-1 font-medium">{t('Role:')} {user.role}</p>}
             </div>
 
             <div className="py-1">
@@ -78,13 +80,13 @@ export const UserProfileMenu: React.FC = () => {
                 }}
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                <User className="w-4 h-4" /> My Profile
+                <User className="w-4 h-4" /> {t('My Profile')}
               </button>
               <button
                 onClick={() => { setProfileOpen(false); window.electronAPI?.openNewWindow?.('/change-password'); }}
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                <Settings className="w-4 h-4" /> Change Password
+                <Settings className="w-4 h-4" /> {t('Change Password')}
               </button>
             </div>
 
@@ -93,7 +95,7 @@ export const UserProfileMenu: React.FC = () => {
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
               >
-                <LogOut className="w-4 h-4" /> Logout
+                <LogOut className="w-4 h-4" /> {t('Logout')}
               </button>
             </div>
           </div>

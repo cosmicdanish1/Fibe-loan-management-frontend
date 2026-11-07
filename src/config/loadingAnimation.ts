@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { tLabel } from '../i18n';
 
 /**
  * Which loading animation the app shows while data is being fetched.
@@ -7,14 +8,14 @@ import { useEffect, useState } from 'react';
  */
 
 export const LOADING_ANIMATIONS = [
-  { id: 'fluid',   name: 'Liquid',  description: 'Gooey blobs that merge and split' },
-  { id: 'ripple',  name: 'Ripple',  description: 'A grid of dots rippling outward' },
-  { id: 'orbit',   name: 'Orbit',   description: 'Comet of dots circling a core' },
-  { id: 'pulse',   name: 'Pulse',   description: 'Equalizer bars rising and falling' },
-  { id: 'trace',   name: 'Trace',   description: 'A glowing line drawing itself' },
-  { id: 'spinner', name: 'Simple Ring',  description: 'A plain spinning ring (lightest)' },
-  { id: 'dots',    name: 'Simple Dots',  description: 'Three softly fading dots (lightest)' },
-  { id: 'bar',     name: 'Simple Bar',   description: 'A thin sliding line (lightest)' },
+  { id: 'fluid',   name: 'Liquid',  description: tLabel('Gooey blobs that merge and split') },
+  { id: 'ripple',  name: 'Ripple',  description: tLabel('A grid of dots rippling outward') },
+  { id: 'orbit',   name: 'Orbit',   description: tLabel('Comet of dots circling a core') },
+  { id: 'pulse',   name: 'Pulse',   description: tLabel('Equalizer bars rising and falling') },
+  { id: 'trace',   name: 'Trace',   description: tLabel('A glowing line drawing itself') },
+  { id: 'spinner', name: 'Simple Ring',  description: tLabel('A plain spinning ring (lightest)') },
+  { id: 'dots',    name: 'Simple Dots',  description: tLabel('Three softly fading dots (lightest)') },
+  { id: 'bar',     name: 'Simple Bar',   description: tLabel('A thin sliding line (lightest)') },
 ] as const;
 
 export type LoadingAnimationId = typeof LOADING_ANIMATIONS[number]['id'];

@@ -7,6 +7,7 @@ import ReagreementDocumentActions from '@/components/shared/loan/ReagreementDocu
 import { fmtMoney, fmtMonth } from '../../../../services/reagreementApi';
 import { PassTransactionsHookReturn } from '../interface/PassTransactionsInterfaces';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 
 const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
     transactionData,
@@ -20,6 +21,7 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
     reagreementResult,
     clearReagreementResult,
 }) => {
+  const { t } = useTranslation();
     const [searchText, setSearchText] = useState('');
     const [detail, setDetail] = useState<any | null>(null);
 
@@ -57,15 +59,15 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Pass Transactions</h1>
-                    <p className="aw-desc">Voucher Authorization Portal</p>
+                    <h1 className="aw-title">{t('Pass Transactions')}</h1>
+                    <p className="aw-desc">{t('Voucher Authorization Portal')}</p>
                 </div>
                 <div className="aw-actions">
                     <button type="button" onClick={handleRefresh} className="aw-btn aw-btn-secondary">
-                        <RotateCcw size={13} className={isLoading ? 'aw-spin' : ''} /> Refresh
+                        <RotateCcw size={13} className={isLoading ? 'aw-spin' : ''} /> {t('Refresh')}
                     </button>
-                    <button type="button" onClick={handleExport} className="aw-btn aw-btn-secondary"><Download size={13} /> Export</button>
-                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
+                    <button type="button" onClick={handleExport} className="aw-btn aw-btn-secondary"><Download size={13} /> {t('Export')}</button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Exit')}</button>
                 </div>
             </div>
 
@@ -74,16 +76,16 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">Pending Voucher Registry</h2>
-                            {pendingCount > 0 && <span className="aw-pill tone-warning">{pendingCount} awaiting authorization</span>}
-                            <span className="aw-meta">{filteredData.length} record(s)</span>
+                            <h2 className="aw-card-title">{t('Pending Voucher Registry')}</h2>
+                            {pendingCount > 0 && <span className="aw-pill tone-warning">{pendingCount} {t('awaiting authorization')}</span>}
+                            <span className="aw-meta">{t('{{1}} record(s)', { 1: filteredData.length })}</span>
                             <div className="aw-input-wrap has-icon" style={{ marginLeft: 'auto', width: 280 }}>
                                 <Search size={13} />
                                 <input
-                                    aria-label="Search vouchers"
+                                    aria-label={t('Search vouchers')}
                                     value={searchText}
                                     onChange={e => setSearchText(e.target.value)}
-                                    placeholder="Search voucher, member, case..."
+                                    placeholder={t('Search voucher, member, case...')}
                                     className="aw-input"
                                 />
                             </div>
@@ -93,22 +95,22 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                             <table className="aw-table" style={{ minWidth: 1500 }}>
                                 <thead>
                                     <tr>
-                                        <th>Tr. No.</th>
-                                        <th>Vchr No.</th>
-                                        <th>MB No.</th>
-                                        <th>Name</th>
-                                        <th className="is-center">Acc</th>
-                                        <th>Head</th>
-                                        <th>Trans Type</th>
-                                        <th className="is-right">Trans Amount</th>
-                                        <th className="is-center">Vchr Typ</th>
-                                        <th>Cheque No.</th>
-                                        <th>Cheque Date</th>
-                                        <th className="is-right">Cheque Amt</th>
-                                        <th>Bank</th>
-                                        <th className="is-center">Pass Flag</th>
-                                        <th>Narration</th>
-                                        <th className="is-center">Action</th>
+                                        <th>{t('Tr. No.')}</th>
+                                        <th>{t('Vchr No.')}</th>
+                                        <th>{t('MB No.')}</th>
+                                        <th>{t('Name')}</th>
+                                        <th className="is-center">{t('Acc')}</th>
+                                        <th>{t('Head')}</th>
+                                        <th>{t('Trans Type')}</th>
+                                        <th className="is-right">{t('Trans Amount')}</th>
+                                        <th className="is-center">{t('Vchr Typ')}</th>
+                                        <th>{t('Cheque No.')}</th>
+                                        <th>{t('Cheque Date')}</th>
+                                        <th className="is-right">{t('Cheque Amt')}</th>
+                                        <th>{t('Bank')}</th>
+                                        <th className="is-center">{t('Pass Flag')}</th>
+                                        <th>{t('Narration')}</th>
+                                        <th className="is-center">{t('Action')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -118,7 +120,7 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                                         <tr><td colSpan={16}>
                                             <div className="aw-empty" style={{ padding: 32 }}>
                                                 <CheckCircle2 size={28} />
-                                                <span className="aw-meta">All caught up — no pending transactions</span>
+                                                <span className="aw-meta">{t('All caught up — no pending transactions')}</span>
                                             </div>
                                         </td></tr>
                                     ) : dataWithKeys.map((record: any) => {
@@ -145,14 +147,14 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                                                         <div className="aw-btn-row" style={{ justifyContent: 'center' }}>
                                                             {record.kind === 'REAGREEMENT' && (
                                                                 <button type="button" onClick={() => setDetail(record)} className="aw-btn aw-btn-secondary aw-btn-sm">
-                                                                    <Eye size={12} /> Details
+                                                                    <Eye size={12} /> {t('Details')}
                                                                 </button>
                                                             )}
                                                             <button type="button" onClick={() => handleDelete(record.voucherNo)} disabled={busyVouchers.includes(record.voucherNo)} className="aw-btn aw-btn-danger aw-btn-sm">
-                                                                <Trash2 size={12} /> Reject
+                                                                <Trash2 size={12} /> {t('Reject')}
                                                             </button>
                                                             <button type="button" onClick={() => handlePass(record.voucherNo)} disabled={busyVouchers.includes(record.voucherNo)} className="aw-btn aw-btn-primary aw-btn-sm">
-                                                                <CheckCircle2 size={12} /> Pass
+                                                                <CheckCircle2 size={12} /> {t('Pass')}
                                                             </button>
                                                         </div>
                                                     </td>
@@ -168,52 +170,52 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
             </div>
 
             <div className="aw-footer">
-                <span>Pass Transactions</span>
+                <span>{t('Pass Transactions')}</span>
                 <span>{dayjs().format('DD-MMM-YY')}</span>
             </div>
 
-            <AwDialog open={!!detail} title={`Loan Re-agreement ${detail?.reagreement?.reagreementNo || ''}`} icon={<FileText size={14} />} onClose={() => setDetail(null)} maxWidth="42rem">
+            <AwDialog open={!!detail} title={t('Loan Re-agreement {{1}}', { 1: detail?.reagreement?.reagreementNo || '' })} icon={<FileText size={14} />} onClose={() => setDetail(null)} maxWidth="42rem">
                 {detail?.reagreement && (() => { const r = detail.reagreement; return (
                     <div className="aw-stack">
-                        <p className="aw-meta">Member {r.mbno} · case #{r.oldLoanCaseNo} → new case <strong>#{r.newLoanCaseNo}</strong> · voucher {detail.voucherNo}. Passing makes the new case active and closes the old case; no principal moves.</p>
+                        <p className="aw-meta">{t('Member')} {r.mbno} · case #{r.oldLoanCaseNo} → {t('new case')} <strong>#{r.newLoanCaseNo}</strong> · voucher {detail.voucherNo}. Passing makes the new case active and closes the old case; no principal moves.</p>
                         <div className="aw-table-wrap"><table className="aw-table">
-                            <thead><tr><th>Terms</th><th className="is-right">Old</th><th className="is-right">New</th></tr></thead>
+                            <thead><tr><th>{t('Terms')}</th><th className="is-right">{t('Old')}</th><th className="is-right">{t('New')}</th></tr></thead>
                             <tbody>
-                                <tr><td>Rate (% p.a.)</td><td className="is-right">{Number(r.old.rate).toFixed(2)}</td><td className="is-right aw-strong">{Number(r.neu.rate).toFixed(2)}</td></tr>
-                                <tr><td>Installments</td><td className="is-right">{r.old.installments}</td><td className="is-right aw-strong">{r.neu.installments}</td></tr>
-                                <tr><td>Monthly principal</td><td className="is-right">{fmtMoney(r.old.monthlyPrincipal)}</td><td className="is-right">{fmtMoney(r.neu.monthlyPrincipal)}</td></tr>
-                                <tr><td>Monthly interest</td><td className="is-right">{fmtMoney(r.old.monthlyInterest)}</td><td className="is-right">{fmtMoney(r.neu.monthlyInterest)}</td></tr>
+                                <tr><td>{t('Rate (% p.a.)')}</td><td className="is-right">{Number(r.old.rate).toFixed(2)}</td><td className="is-right aw-strong">{Number(r.neu.rate).toFixed(2)}</td></tr>
+                                <tr><td>{t('Installments')}</td><td className="is-right">{r.old.installments}</td><td className="is-right aw-strong">{r.neu.installments}</td></tr>
+                                <tr><td>{t('Monthly principal')}</td><td className="is-right">{fmtMoney(r.old.monthlyPrincipal)}</td><td className="is-right">{fmtMoney(r.neu.monthlyPrincipal)}</td></tr>
+                                <tr><td>{t('Monthly interest')}</td><td className="is-right">{fmtMoney(r.old.monthlyInterest)}</td><td className="is-right">{fmtMoney(r.neu.monthlyInterest)}</td></tr>
                                 <tr><td className="aw-strong">EMI</td><td className="is-right aw-strong">{fmtMoney(r.old.monthlyInstallment)}</td><td className="is-right aw-strong">{fmtMoney(r.neu.monthlyInstallment)}</td></tr>
                             </tbody>
                         </table></div>
                         <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-                            <div><dt>Principal carried over</dt><dd>₹{fmtMoney(r.position.outstandingPrincipal)}</dd></div>
-                            <div><dt>NR interest collected</dt><dd>₹{fmtMoney(r.position.nrInterest)}</dd></div>
-                            <div><dt>Penalty collected</dt><dd>₹{fmtMoney(r.position.penaltyDue)}</dd></div>
-                            <div><dt>Closure interest carried</dt><dd>₹{fmtMoney(r.position.apInterest)}</dd></div>
-                            <div><dt>Total collected</dt><dd className="aw-strong">₹{fmtMoney(r.collect.total)}</dd></div>
-                            <div><dt>First installment</dt><dd>{fmtMonth(r.firstDueMonth)}</dd></div>
+                            <div><dt>{t('Principal carried over')}</dt><dd>₹{fmtMoney(r.position.outstandingPrincipal)}</dd></div>
+                            <div><dt>{t('NR interest collected')}</dt><dd>₹{fmtMoney(r.position.nrInterest)}</dd></div>
+                            <div><dt>{t('Penalty collected')}</dt><dd>₹{fmtMoney(r.position.penaltyDue)}</dd></div>
+                            <div><dt>{t('Closure interest carried')}</dt><dd>₹{fmtMoney(r.position.apInterest)}</dd></div>
+                            <div><dt>{t('Total collected')}</dt><dd className="aw-strong">₹{fmtMoney(r.collect.total)}</dd></div>
+                            <div><dt>{t('First installment')}</dt><dd>{fmtMonth(r.firstDueMonth)}</dd></div>
                         </dl>
-                        <div><span className="aw-meta">Draft agreement for signing:</span> <ReagreementDocumentActions id={r.id} draft baseName={r.reagreementNo} /></div>
+                        <div><span className="aw-meta">{t('Draft agreement for signing:')}</span> <ReagreementDocumentActions id={r.id} draft baseName={r.reagreementNo} /></div>
                     </div>
                 ); })()}
             </AwDialog>
 
-            <AwDialog open={!!reagreementResult} title="Re-agreement passed" icon={<CheckCircle2 size={14} />} onClose={clearReagreementResult} maxWidth="40rem">
+            <AwDialog open={!!reagreementResult} title={t('Re-agreement passed')} icon={<CheckCircle2 size={14} />} onClose={clearReagreementResult} maxWidth="40rem">
                 {reagreementResult && (
                     <div className="aw-stack">
-                        <p><strong>{reagreementResult.reagreementNo}</strong> is passed. Loan case <strong>#{reagreementResult.newLoanCaseNo}</strong> is now active and case #{reagreementResult.oldLoanCaseNo} is closed as re-agreed.</p>
+                        <p><strong>{reagreementResult.reagreementNo}</strong> {t('is passed. Loan case')} <strong>#{reagreementResult.newLoanCaseNo}</strong> is now active and case #{reagreementResult.oldLoanCaseNo} {t('is closed as re-agreed.')}</p>
                         <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-                            <div><dt>Principal carried</dt><dd>₹{fmtMoney(reagreementResult.outstandingPrincipal)}</dd></div>
-                            <div><dt>Collected now</dt><dd>₹{fmtMoney(reagreementResult.collected)}</dd></div>
-                            <div><dt>New EMI</dt><dd className="aw-strong">₹{fmtMoney(reagreementResult.neu?.monthlyInstallment)}</dd></div>
-                            <div><dt>Term</dt><dd>{reagreementResult.neu?.installments} @ {reagreementResult.neu?.rate}%</dd></div>
-                            <div><dt>First installment</dt><dd>{fmtMonth(reagreementResult.neu?.firstDueMonth)}</dd></div>
+                            <div><dt>{t('Principal carried')}</dt><dd>₹{fmtMoney(reagreementResult.outstandingPrincipal)}</dd></div>
+                            <div><dt>{t('Collected now')}</dt><dd>₹{fmtMoney(reagreementResult.collected)}</dd></div>
+                            <div><dt>{t('New EMI')}</dt><dd className="aw-strong">₹{fmtMoney(reagreementResult.neu?.monthlyInstallment)}</dd></div>
+                            <div><dt>{t('Term')}</dt><dd>{reagreementResult.neu?.installments} @ {reagreementResult.neu?.rate}%</dd></div>
+                            <div><dt>{t('First installment')}</dt><dd>{fmtMonth(reagreementResult.neu?.firstDueMonth)}</dd></div>
                         </dl>
                         {reagreementResult.documentIssued
-                            ? <div><span className="aw-meta">Saved agreement (with signatures):</span> <ReagreementDocumentActions id={reagreementResult.reagreementId} baseName={reagreementResult.reagreementNo} size="md" /></div>
-                            : <p className="aw-meta" style={{ color: 'var(--aw-danger)' }}>The agreement document could not be fully generated ({reagreementResult.documentError || 'unknown error'}). Open Loan Re-agreement History to retry the PDF / image.</p>}
-                        <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}><button type="button" className="aw-btn aw-btn-primary" onClick={clearReagreementResult}>Done</button></div>
+                            ? <div><span className="aw-meta">{t('Saved agreement (with signatures):')}</span> <ReagreementDocumentActions id={reagreementResult.reagreementId} baseName={reagreementResult.reagreementNo} size="md" /></div>
+                            : <p className="aw-meta" style={{ color: 'var(--aw-danger)' }}>{t('The agreement document could not be fully generated ({{1}}). Open Loan Re-agreement History to retry the PDF / image.', { 1: reagreementResult.documentError || t('unknown error') })}</p>}
+                        <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}><button type="button" className="aw-btn aw-btn-primary" onClick={clearReagreementResult}>{t('Done')}</button></div>
                     </div>
                 )}
             </AwDialog>

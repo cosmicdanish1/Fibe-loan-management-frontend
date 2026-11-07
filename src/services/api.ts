@@ -51,9 +51,16 @@ export interface ApiResponse<T = any> {
   message?: string;
   error?: string;
   metadata?: { totalCount?: number; [key: string]: any };
+  // Filled for failures (ES-467): what the server said, in a form the screen can turn into plain words
+  status?: number;
+  code?: string;
+  errors?: Array<{ field: string; label?: string; code?: string; message: string; params?: Record<string, string | number> }>;
+  requestId?: string;
+  network?: boolean;
 }
 
 import { retryWithAuthCode } from './authCodeGate';
+import { describeHttpFailure, NETWORK_MESSAGE } from '../utils/friendlyError';
 
 /** localStorage key holding the 'remember this device' token for a username. */
 export const deviceTokenKey = (username: string) => 'lms_2fa_device_' + String(username || '').toLowerCase();
@@ -207,7 +214,14 @@ class ApiService {
         const duration = Date.now() - startTime;
         rendererLogger.apiCall(options.method || 'GET', endpoint, response.status, duration, requestId, requestBody, errorData);
         const serverMessage = Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message;
-        throw new Error(serverMessage || `HTTP ${response.status}: ${response.statusText}`);
+        const httpError: any = new Error(serverMessage || describeHttpFailure(response.status));
+        httpError.apiFailure = {
+          status: response.status,
+          code: errorData.code,
+          errors: Array.isArray(errorData.errors) ? errorData.errors : undefined,
+          requestId: errorData.requestId || response.headers.get('X-Request-Id') || requestId,
+        };
+        throw httpError;
       }
 
       const data = await response.json();
@@ -235,14 +249,22 @@ class ApiService {
       const duration = Date.now() - startTime;
       rendererLogger.apiCall(options.method || 'GET', endpoint, 0, duration);
       const timedOut = !usesOwnSignal && (error as any)?.name === 'AbortError';
+      const failure = (error as any)?.apiFailure as Partial<ApiResponse> | undefined;
+      const rawMessage = error instanceof Error ? error.message : '';
+      // no HTTP answer at all = the server could not be reached (browser text like "Failed to fetch" is never shown)
+      const network = !failure && (timedOut || error instanceof TypeError || /Failed to fetch|NetworkError|Load failed/i.test(rawMessage));
       const message = timedOut
         ? `Request timed out after ${Math.round(timeoutMs / 1000)}s. Please check your connection and try again.`
-        : error instanceof Error ? error.message : 'Unknown error occurred';
+        : network ? NETWORK_MESSAGE
+        : rawMessage || 'Something went wrong. Please try again.';
       // Both fields carry the same text — callers vary on which one they read.
       return {
         success: false,
         error: message,
         message,
+        ...(failure ?? {}),
+        ...(network ? { network: true } : {}),
+        requestId: failure?.requestId ?? requestId,
       };
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
@@ -581,6 +603,54 @@ class ApiService {
       if (refreshed.success) response = await attempt();
     }
     return response;
+  }
+
+  /**
+   * AI assistant, streamed (ES-439): calls POST /ai-chat/stream and hands every piece of the answer to
+   * `onDelta` as it arrives. Resolves with the final result (reply, provider, status, logId, sources).
+   * Errors carry `status` and `response.data.message` like request() errors, so the caller can tell a
+   * rate limit (429) or an expired session (401) from a dead connection.
+   */
+  async aiChatStream(
+    body: { messages: Array<{ role: string; content: string }>; route?: string },
+    onDelta: (text: string) => void,
+  ): Promise<any> {
+    const baseURL = await this.getBaseURL();
+    const res = await this.authedFetch(
+      `${baseURL}/ai-chat/stream`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+      90000,
+    );
+    if (!res.ok || !res.body) {
+      let message = '';
+      try { message = (await res.json())?.message || ''; } catch { /* not JSON */ }
+      const err: any = new Error(message || `HTTP ${res.status}`);
+      err.status = res.status;
+      err.response = { status: res.status, data: { message } };
+      throw err;
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let final: any = null;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line.startsWith('data:')) continue;
+        let evt: any;
+        try { evt = JSON.parse(line.slice(5).trim()); } catch { continue; }
+        if (evt.type === 'delta' && typeof evt.text === 'string') onDelta(evt.text);
+        else if (evt.type === 'done') final = evt;
+        else if (evt.type === 'error') throw new Error(evt.message || 'The answer was interrupted.');
+      }
+    }
+    if (!final) throw new Error('The answer was interrupted.');
+    return final;
   }
 
   async changePassword(
@@ -1031,6 +1101,9 @@ class ApiService {
     message: string;
     type: 'info' | 'warning' | 'success';
     postedBy: string;
+    showOnMobile?: boolean;
+    audienceWing?: string | null;
+    audienceOffice?: number | null;
   }): Promise<ApiResponse> {
     return this.request('/dashboard-notices', {
       method: 'POST',
@@ -1439,6 +1512,10 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ month, year }),
     });
+  }
+
+  async getDividendRateRules(): Promise<ApiResponse<any>> {
+    return this.request('/dividend/calculation/rules');
   }
 
   async previewDividendCalculation(yearcode: number, dividendRate: number): Promise<ApiResponse<any>> {

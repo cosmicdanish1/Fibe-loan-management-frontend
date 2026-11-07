@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { IndianRupee, Calendar, History, AlertTriangle, User, ArrowDownLeft } from 'lucide-react';
 import MemberField from '../../../../components/shared/kit/MemberField';
 import { useRdWithdrawal } from '../hooks/useRdWithdrawal';
+import { useTranslation } from 'react-i18next';
 
 const fmt = (n: number) => Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -14,6 +15,7 @@ const EVENT_LABEL: Record<string, string> = {
 };
 
 const RdWithdrawal: React.FC = () => {
+  const { t } = useTranslation();
     const {
         mbno, memberName, yearLabel,
         balance, maxWithdrawable, amount, setAmount, narration, setNarration,
@@ -38,8 +40,8 @@ const RdWithdrawal: React.FC = () => {
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">RD Withdrawal</h1>
-                    <p className="aw-desc">Withdraw from a member's RD balance</p>
+                    <h1 className="aw-title">{t('RD Withdrawal')}</h1>
+                    <p className="aw-desc">{t("Withdraw from a member's RD balance")}</p>
                 </div>
                 {yearLabel && (
                     <span className="aw-pill" style={{ gap: 6 }}><Calendar size={12} /> {yearLabel}</span>
@@ -53,7 +55,7 @@ const RdWithdrawal: React.FC = () => {
                         <section className="aw-card">
                             <div className="aw-card-head">
                                 <span className="aw-card-icon"><User size={14} /></span>
-                                <h2 className="aw-card-title">Member</h2>
+                                <h2 className="aw-card-title">{t('Member')}</h2>
                             </div>
                             <div className="aw-stack">
                                 <div className="aw-inline">
@@ -62,10 +64,10 @@ const RdWithdrawal: React.FC = () => {
                                             onSubmit={v => loadMember(v, '')} />
                                     </div>
                                     <button type="button" onClick={() => loadMember(lookupInput, '')} disabled={loading || !lookupInput} className="aw-btn aw-btn-secondary">
-                                        Search
+                                        {t('Search')}
                                     </button>
                                 </div>
-                                <input type="text" placeholder="Member name" aria-label="Member name" value={memberName} readOnly className="aw-input" />
+                                <input type="text" placeholder={t('Member name')} aria-label={t('Member name')} value={memberName} readOnly className="aw-input" />
                             </div>
                         </section>
 
@@ -73,22 +75,22 @@ const RdWithdrawal: React.FC = () => {
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head">
                                     <span className="aw-card-icon"><ArrowDownLeft size={14} /></span>
-                                    <h2 className="aw-card-title">Withdraw</h2>
+                                    <h2 className="aw-card-title">{t('Withdraw')}</h2>
                                 </div>
                                 <div className="aw-stack">
                                     <div className="aw-rows">
                                         <div className="aw-row">
-                                            <span className="aw-row-label">Current Balance</span>
+                                            <span className="aw-row-label">{t('Current Balance')}</span>
                                             <span className="aw-row-value">₹{balance !== null ? fmt(balance) : '—'}</span>
                                         </div>
                                         <div className="aw-row">
-                                            <span className="aw-row-label">Max Withdrawable</span>
+                                            <span className="aw-row-label">{t('Max Withdrawable')}</span>
                                             <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>₹{maxWithdrawable !== null ? fmt(maxWithdrawable) : '—'}</span>
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="aw-label" htmlFor="rw-amount">Amount (₹)</label>
+                                        <label className="aw-label" htmlFor="rw-amount">{t('Amount (₹)')}</label>
                                         <div className="aw-input-wrap has-icon">
                                             <IndianRupee size={13} />
                                             <input id="rw-amount"
@@ -101,13 +103,13 @@ const RdWithdrawal: React.FC = () => {
                                         {overLimit && (
                                             <p className="aw-meta aw-fade-in" style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginTop: 6, color: 'var(--aw-danger)' }}>
                                                 <AlertTriangle size={13} style={{ flex: 'none', marginTop: 2 }} />
-                                                Exceeds the maximum withdrawable amount — the minimum balance requirement would be breached.
+                                                {t('Exceeds the maximum withdrawable amount — the minimum balance requirement would be breached.')}
                                             </p>
                                         )}
                                     </div>
 
                                     <div>
-                                        <label className="aw-label" htmlFor="rw-narration">Narration</label>
+                                        <label className="aw-label" htmlFor="rw-narration">{t('Narration')}</label>
                                         <input id="rw-narration" type="text" value={narration} onChange={e => setNarration(e.target.value)} className="aw-input" />
                                     </div>
 
@@ -118,7 +120,7 @@ const RdWithdrawal: React.FC = () => {
                                     )}
 
                                     <button type="button" onClick={withdraw} disabled={saving || loading || amount <= 0 || overLimit} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
-                                        {saving ? 'Processing…' : 'Withdraw'}
+                                        {saving ? t('Processing…') : t('Withdraw')}
                                     </button>
                                 </div>
                             </section>
@@ -130,14 +132,14 @@ const RdWithdrawal: React.FC = () => {
                             <div className="aw-main-head">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                                     <span className="aw-card-icon"><History size={14} /></span>
-                                    <h2 className="aw-card-title">Balance Timeline — {yearLabel}</h2>
+                                    <h2 className="aw-card-title">{t('Balance Timeline — {{1}}', { 1: yearLabel })}</h2>
                                 </div>
                             </div>
                             <div className="aw-main-body" style={{ padding: 0 }}>
                                 {timeline.length === 0 ? (
                                     <div className="aw-empty">
                                         <History size={32} />
-                                        <span>No balance events yet for this financial year.</span>
+                                        <span>{t('No balance events yet for this financial year.')}</span>
                                     </div>
                                 ) : (
                                     <table className="aw-table">

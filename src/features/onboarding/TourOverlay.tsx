@@ -7,6 +7,8 @@ import { prefersCalm, useCalm } from './calm';
 import { useFocusTrap } from './useFocusTrap';
 import { useGlass } from './useGlass';
 import './onboarding.css';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../i18n';
 
 const CARD_W = 340;
 
@@ -65,6 +67,7 @@ export interface TourOverlayProps {
  * scribble around it and a hand-drawn arrow from a handwritten caption card.
  */
 export const TourOverlay: React.FC<TourOverlayProps> = ({ steps, user, startIndex = 0, onStep, onClose, onDone }) => {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(clamp(startIndex, 0, steps.length - 1));
   const [rect, setRect] = useState<Box | null>(null);
   const [vp, setVp] = useState({ w: window.innerWidth, h: window.innerHeight });
@@ -140,8 +143,8 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ steps, user, startInde
   }
 
   return (
-    <div className={`ob-tour${calm ? ' ob-calm' : ''}`} style={glass} ref={rootRef} role="dialog" aria-modal="true" aria-label="Guided tour">
-      <span className="ob-sr" aria-live="polite">Step {index + 1} of {steps.length}: {step.title}. {stepText(step, user)}</span>
+    <div className={`ob-tour${calm ? ' ob-calm' : ''}`} style={glass} ref={rootRef} role="dialog" aria-modal="true" aria-label={t('Guided tour')}>
+      <span className="ob-sr" aria-live="polite">{t('Step {{1}} of {{2}}: {{3}}. {{4}}', { 1: index + 1, 2: steps.length, 3: step.title, 4: stepText(step, user) })}</span>
       <svg className="ob-tour-svg" width={vp.w} height={vp.h} aria-hidden="true">
         <defs>
           <mask id="ob-tour-mask">
@@ -164,22 +167,22 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ steps, user, startInde
       </svg>
 
       <div ref={cardRef} key={step.id} className="ob-dialog ob-tour-card" style={{ left: pos.x, top: pos.y, width: CARD_W }}>
-        <button type="button" className="ob-tour-x" onClick={skip} aria-label="Skip tour"><X size={16} /></button>
-        <div className="ob-hand ob-tour-title" aria-label={step.title}>
-          <span className="ob-tour-ghost">{step.title}</span>
+        <button type="button" className="ob-tour-x" onClick={skip} aria-label={t('Skip tour')}><X size={16} /></button>
+        <div className="ob-hand ob-tour-title" aria-label={tLabel(step.title)}>
+          <span className="ob-tour-ghost">{tLabel(step.title)}</span>
           <span className="ob-tour-typed" aria-hidden="true">{typedTitle}</span>
         </div>
         <p className="ob-hand ob-tour-text">{stepText(step, user)}</p>
         <div className="ob-tour-foot">
           <span className="ob-tour-count">{index + 1} / {steps.length}</span>
           <div className="ob-footer-actions">
-            {index > 0 && <button type="button" className="ob-btn ob-btn-secondary" onClick={back}><ArrowLeft size={14} /> Back</button>}
+            {index > 0 && <button type="button" className="ob-btn ob-btn-secondary" onClick={back}><ArrowLeft size={14} /> {t('Back')}</button>}
             <button type="button" ref={nextRef} className="ob-btn ob-btn-primary" onClick={next}>
-              {last ? <>Done <Check size={14} /></> : <>Next <ArrowRight size={14} /></>}
+              {last ? <>{t('Done')} <Check size={14} /></> : <>{t('Next')} <ArrowRight size={14} /></>}
             </button>
           </div>
         </div>
-        <button type="button" className="ob-tour-skip" onClick={skip}>Skip tour</button>
+        <button type="button" className="ob-tour-skip" onClick={skip}>{t('Skip tour')}</button>
       </div>
     </div>
   );

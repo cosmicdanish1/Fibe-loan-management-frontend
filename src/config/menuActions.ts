@@ -43,6 +43,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'MY_PROFILE': { route: '/my-profile', electronMethod: 'openNewWindow' },
   'LOGOUT_USER': { route: '/logout-user', electronMethod: 'openNewWindow' },
   'TWOFA_SETTINGS': { route: '/two-factor-settings', electronMethod: 'openNewWindow' },
+  'MOBILE_CONTROL_CENTER': { route: '/mobile-control-center', electronMethod: 'openNewWindow' },
 
   // Financial Year
   'FIN_YEAR_TRANSFER': { route: '/financial-year/transfer-entries', electronMethod: 'openNewWindow' },
@@ -150,6 +151,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'COMMUNICATION_HUB': { route: '/utility/communication-center', electronMethod: 'openNewWindow' },
   'NOTIFICATION_CENTRE': { route: '/utility/notification-centre', electronMethod: 'openNewWindow' },
   'SUPPORT_DESK': { route: '/utility/support-desk', electronMethod: 'openNewWindow' },
+  'SYSTEM_UPDATE': { route: '/utility/system-update', electronMethod: 'openNewWindow' },
   // Help Routes
   'ABOUT': { route: '/help/about', electronMethod: 'openNewWindow' },
   'CONTENTS': { route: '/help/contents', electronMethod: 'openNewWindow' },
@@ -169,7 +171,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
 // with no menu concept (File menu), and app-chrome every user must always
 // reach. Kept out of ACTION_ROUTE_MAP filtering below via this exclusion set
 // rather than by omission, so it's explicit and easy to audit.
-const NEVER_GATED = new Set(['SETTINGS', 'MY_PROFILE', 'TWOFA_SETTINGS', 'SAVE', 'CANCEL', 'DELETE', 'REFRESH', 'PRINT', 'EXIT', 'REPLAY_TOUR', 'HOW_IT_WORKS', 'GETTING_STARTED']);
+const NEVER_GATED = new Set(['SETTINGS', 'MY_PROFILE', 'TWOFA_SETTINGS', 'SAVE', 'CANCEL', 'DELETE', 'REFRESH', 'PRINT', 'EXIT', 'REPLAY_TOUR', 'HOW_IT_WORKS', 'GETTING_STARTED', 'WHATS_NEW']);
 
 /** route path -> action code, for enforcing access when a window is opened
  * directly (e.g. via IPC deep link) rather than clicked from the Navbar. */
@@ -188,6 +190,7 @@ export const ROUTE_TO_ACTION: Record<string, string> = {
   '/reports/member-statement/interest-certificate': 'INTEREST_CERTIFICATE',
   '/reports/member-statement/loan-nil-certificate': 'LOAN_NIL_CERTIFICATE',
   '/reports/daily/cash-book-old': 'CASH_BOOK',
+  '/masters/member-master': 'MEMBER_MASTER', // alias of /masters/member (same screen, same right)
   // Opened from the Loan Payment window (useLoanPayment.openSanctionWindow).
   '/loan-sanction': 'LOAN_PAYMENT',
 };

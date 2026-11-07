@@ -4,6 +4,7 @@ import type { User } from '../../auth/types/auth.types';
 import type { OnboardingStatus } from './onboardingApi';
 import ProfileStep from './ProfileStep';
 import PasswordStep from './PasswordStep';
+import { tLabel } from '../../i18n';
 
 export interface StepContext {
   user: User;
@@ -39,32 +40,32 @@ const Feature: React.FC<{ icon: React.ReactNode; title: string; text: string }> 
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome aboard',
-    subtitle: 'A quick start, about a minute',
+    title: tLabel('Welcome aboard'),
+    subtitle: tLabel('A quick start, about a minute'),
     icon: <Sparkles size={22} />,
     render: ({ user }) => (
       <>
-        <p className="ob-lead">Hello <strong>{user.username}</strong>, here is what happens next. You can skip at any time.</p>
+        <p className="ob-lead">{tLabel('Hello')} <strong>{user.username}</strong>, here is what happens next. You can skip at any time.</p>
         <ul className="ob-features">
-          <Feature icon={<UserRound size={18} />} title="Your profile" text="See how your account is set up." />
-          <Feature icon={<KeyRound size={18} />} title="Your own password" text="Optional: replace the one you were given." />
-          <Feature icon={<Compass size={18} />} title="A quick tour" text="Hand-drawn pointers, then slides on how loans and day-end work." />
-          <Feature icon={<RotateCcw size={18} />} title="Come back any time" text="Help › Replay Tour runs this again." />
+          <Feature icon={<UserRound size={18} />} title={tLabel('Your profile')} text={tLabel('See how your account is set up.')} />
+          <Feature icon={<KeyRound size={18} />} title={tLabel('Your own password')} text={tLabel('Optional: replace the one you were given.')} />
+          <Feature icon={<Compass size={18} />} title={tLabel('A quick tour')} text={tLabel('Hand-drawn pointers, then slides on how loans and day-end work.')} />
+          <Feature icon={<RotateCcw size={18} />} title={tLabel('Come back any time')} text={tLabel('Help › Replay Tour runs this again.')} />
         </ul>
       </>
     ),
   },
   {
     id: 'profile',
-    title: 'Your profile',
-    subtitle: 'This is how the system knows you',
+    title: tLabel('Your profile'),
+    subtitle: tLabel('This is how the system knows you'),
     icon: <UserRound size={22} />,
     render: ({ user }) => <ProfileStep user={user} />,
   },
   {
     id: 'password',
-    title: 'Set your own password',
-    subtitle: 'Optional, you can do it later in Change Password',
+    title: tLabel('Set your own password'),
+    subtitle: tLabel('Optional, you can do it later in Change Password'),
     icon: <KeyRound size={22} />,
     skipLabel: 'Skip for now',
     // Only for a first walkthrough: replaying the tour later should not ask again.

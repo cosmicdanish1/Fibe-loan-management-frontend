@@ -5,6 +5,7 @@ import { useCalm } from './calm';
 import { useFocusTrap } from './useFocusTrap';
 import { useGlass } from './useGlass';
 import './onboarding.css';
+import { useTranslation } from 'react-i18next';
 
 /** Splits the plain-text terms into a title-less list of {heading?, body} blocks ("1. Heading" lines become headings). */
 const toBlocks = (text: string) =>
@@ -23,6 +24,7 @@ const toBlocks = (text: string) =>
  * The checkbox unlocks once the text has been scrolled to the end.
  */
 export const TermsGate: React.FC<{ onAccepted: () => void; onDecline: () => void }> = ({ onAccepted, onDecline }) => {
+  const { t } = useTranslation();
   const [doc, setDoc] = useState<TermsDocument | null>(null);
   const [error, setError] = useState('');
   const [readAll, setReadAll] = useState(false);
@@ -70,14 +72,14 @@ export const TermsGate: React.FC<{ onAccepted: () => void; onDecline: () => void
         <div className="ob-hero">
           <div className="ob-icon"><ScrollText size={22} /></div>
           <div>
-            <h2 className="ob-title" id="ob-terms-title">Terms and Conditions</h2>
-            <p className="ob-subtitle">Please read and accept to continue</p>
+            <h2 className="ob-title" id="ob-terms-title">{t('Terms and Conditions')}</h2>
+            <p className="ob-subtitle">{t('Please read and accept to continue')}</p>
           </div>
-          {doc && <div className="ob-hero-end"><span className="ob-pill">Version {doc.version}</span></div>}
+          {doc && <div className="ob-hero-end"><span className="ob-pill">{t('Version')} {doc.version}</span></div>}
         </div>
 
         <div className="ob-progress" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
-        <div ref={bodyRef} onScroll={checkScrolled} className="ob-terms" tabIndex={0} role="region" aria-label="Terms and Conditions text. Scroll to the end to enable the agreement checkbox.">
+        <div ref={bodyRef} onScroll={checkScrolled} className="ob-terms" tabIndex={0} role="region" aria-label={t('Terms and Conditions text. Scroll to the end to enable the agreement checkbox.')}>
           {doc
             ? blocks.map((b, i) => (
                 <React.Fragment key={i}>
@@ -85,7 +87,7 @@ export const TermsGate: React.FC<{ onAccepted: () => void; onDecline: () => void
                   <p className={b.heading ? '' : 'is-strong'}>{b.body}</p>
                 </React.Fragment>
               ))
-            : <p>{error || 'Loading…'}</p>}
+            : <p>{error || t('Loading…')}</p>}
         </div>
 
         <div className="ob-footer">
@@ -94,14 +96,14 @@ export const TermsGate: React.FC<{ onAccepted: () => void; onDecline: () => void
             {!(error && doc) && (
               <label className={`ob-check ${readAll ? '' : 'is-disabled'}`}>
                 <input type="checkbox" disabled={!readAll} checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-                {readAll ? 'I have read and agree to these terms' : 'Scroll to the end to continue'}
+                {readAll ? t('I have read and agree to these terms') : t('Scroll to the end to continue')}
               </label>
             )}
           </div>
           <div className="ob-footer-actions">
-            <button type="button" className="ob-btn ob-btn-danger" onClick={onDecline}>Decline and log out</button>
+            <button type="button" className="ob-btn ob-btn-danger" onClick={onDecline}>{t('Decline and log out')}</button>
             <button type="button" className="ob-btn ob-btn-primary" onClick={accept} disabled={!doc || !agreed || saving}>
-              {saving ? 'Saving…' : 'Accept and continue'}
+              {saving ? t('Saving…') : t('Accept and continue')}
             </button>
           </div>
         </div>

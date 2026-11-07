@@ -15,8 +15,10 @@ import WingMaster from '../components/WingMaster';
 import { useOfficeMaster } from '../hook/useOfficeMaster';
 import { useWingMaster } from '../hook/useWingMaster';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 const WingOfficeMaster: React.FC = () => {
+  const { t } = useTranslation();
   const [showWingMaster, setShowWingMaster] = useState(false);
   const officeProps = useOfficeMaster();
   const wingProps = useWingMaster();
@@ -54,16 +56,16 @@ const WingOfficeMaster: React.FC = () => {
       {/* Header */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Registry Terminal</h1>
+          <h1 className="aw-title">{t('Registry Terminal')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ShieldCheck size={12} /> Organizational Core
+            <ShieldCheck size={12} /> {t('Organizational Core')}
           </p>
         </div>
 
         <div className="aw-seg" role="tablist" style={{ minWidth: 220, ['--seg-index' as any]: showWingMaster ? 1 : 0, ['--seg-count' as any]: 2 }}>
           {[
-            { id: 'office', label: 'Office', icon: Building2, active: !showWingMaster },
-            { id: 'wing', label: 'Wing', icon: Layout, active: showWingMaster }
+            { id: 'office', label: t('Office'), icon: Building2, active: !showWingMaster },
+            { id: 'wing', label: t('Wing'), icon: Layout, active: showWingMaster }
           ].map((tab) => (
             <button key={tab.id} type="button" role="tab" aria-selected={tab.active}
               onClick={() => setShowWingMaster(tab.id === 'wing')}
@@ -75,14 +77,14 @@ const WingOfficeMaster: React.FC = () => {
         </div>
 
         <div className="aw-actions">
-          <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary" data-tip="Clear the form" data-tip-pos="bottom-end">
-            <RotateCcw size={13} /> Purge
+          <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary" data-tip={t('Clear the form')} data-tip-pos="bottom-end">
+            <RotateCcw size={13} /> {t('Purge')}
           </button>
           <button type="button" onClick={handleSave} className="aw-btn aw-btn-primary">
-            <Save size={13} /> Save
+            <Save size={13} /> {t('Save')}
           </button>
-          <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost" data-tip="Close this window" data-tip-pos="bottom-end">
-            <X size={13} /> Exit
+          <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost" data-tip={t('Close this window')} data-tip-pos="bottom-end">
+            <X size={13} /> {t('Exit')}
           </button>
         </div>
       </div>
@@ -102,12 +104,12 @@ const WingOfficeMaster: React.FC = () => {
       <div className="aw-footer">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <MapPin size={12} />
-          {showWingMaster ? 'Wing' : 'Office'} Registry
+          {showWingMaster ? t('Wing') : t('Office')} {t('Registry')}
           <span style={{ opacity: .5 }}>·</span>
-          {showWingMaster ? 'Wing' : 'Office'} Mode
+          {showWingMaster ? t('Wing') : t('Office')} {t('Mode')}
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--aw-accent)' }}>
-          <ShieldCheck size={12} /> Secured
+          <ShieldCheck size={12} /> {t('Secured')}
         </span>
       </div>
     </div>

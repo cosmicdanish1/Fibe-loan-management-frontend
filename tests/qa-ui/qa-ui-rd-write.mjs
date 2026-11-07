@@ -1,0 +1,20 @@
+import { start, go, sleep, text } from './lib.mjs';
+const MB = '9999962666';
+const { browser, page } = await start();
+const w = [];
+page.on('request', (r) => { if (r.method() !== 'GET' && r.url().includes('/api/') && !r.url().includes('client-logs')) w.push('REQ ' + r.method() + ' ' + r.url().replace(/https?:\/\/[^/]+/, '') + ' ' + (r.postData() || '').slice(0, 300)); });
+page.on('response', async (r) => { if (r.request().method() !== 'GET' && r.url().includes('/api/') && !r.url().includes('client-logs')) { let b = ''; try { b = (await r.text()).slice(0, 400); } catch {} w.push('RES ' + r.status() + ' ' + b); } });
+await page.evaluate(() => { window.__msgs = []; window.__h = {}; window.electronAPI = { showMessageBox: async (o) => { window.__msgs.push({ m: o.message, d: (o.detail || '').slice(0, 300) }); return { response: 0 }; }, openNewWindow() {}, ipcRenderer: { on: (c, f) => { window.__h[c] = f; }, removeListener() {}, send() {} } }; });
+const open = async (route) => { await go(page, route); await sleep(1200); const f = page.getByPlaceholder('Member No.'); await f.fill(MB); await f.press('Enter'); await sleep(800); const s = page.getByRole('button', { name: /^Search$/ }); if (await s.isEnabled().catch(() => false)) await s.click(); await sleep(3000); };
+await open('#/masters/rd-repayment'); await page.getByRole('button', { name: 'Record Payment' }).nth(8).click(); await sleep(1500); await page.getByLabel(/AMOUNT PAID/i).fill('300'); await page.getByRole('button', { name: 'Record Payment' }).last().click(); await sleep(4000); console.log('PAID', (await text(page)).replace(/s+/g,' ').match(/Dec 2026.{0,80}/)?.[0]); console.log('WRITES', JSON.stringify(w)); await browser.close(); process.exit(0);
+await open('#/masters/rd-member-setup');
+await page.locator('#rms-amount').fill('300'); await page.getByRole('button', { name: /Save Monthly Amount/ }).click(); await sleep(3500);
+console.log('SETUP text', (await text(page)).replace(/\s+/g, ' ').slice(0, 700));
+await open('#/masters/rd-repayment');
+console.log('REPAY', (await text(page)).replace(/\s+/g, ' ').match(/Oct 2026.*?Feb 2027/)?.[0]);
+// Pay the Dec month
+await page.getByRole('button', { name: 'Record Payment' }).nth(8).click(); await sleep(2000);
+console.log('DIALOG', JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('.ant-modal,[role=dialog]')].map(e => e.innerText.replace(/\s+/g, ' ').slice(0, 400)))));
+console.log('MSGS', JSON.stringify(await page.evaluate(() => window.__msgs)));
+console.log('WRITES', JSON.stringify(w));
+await browser.close();

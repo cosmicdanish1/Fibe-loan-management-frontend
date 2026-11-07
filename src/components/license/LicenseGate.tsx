@@ -3,6 +3,7 @@ import { Spin } from 'antd';
 import { useLicense } from './LicenseContext';
 import LicenseActivation from './LicenseActivation';
 import LicenseExpired from './LicenseExpired';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ interface Props {
  * - If active or in grace → show the app normally
  */
 const LicenseGate: React.FC<Props> = ({ children }) => {
+  const { t } = useTranslation();
   const { status, refresh } = useLicense();
 
   if (status === 'checking') {
@@ -22,7 +24,7 @@ const LicenseGate: React.FC<Props> = ({ children }) => {
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-center space-y-4">
           <Spin size="large" />
-          <p className="text-slate-400 text-sm">Verifying license...</p>
+          <p className="text-slate-400 text-sm">{t('Verifying license...')}</p>
         </div>
       </div>
     );

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 interface ConnectionStatusProps {
   className?: string;
 }
 
 const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ className = '' }) => {
+  const { t } = useTranslation();
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [backendInfo, setBackendInfo] = useState<any>(null);
   const [isChecking, setIsChecking] = useState(false);
@@ -86,7 +88,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ className = '' }) =
     <div className={`flex items-center space-x-2 ${className}`}>
       <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor()}`}>
         {getStatusIcon()}
-        <span>Backend: {getStatusText()}</span>
+        <span>{t('Backend:')} {getStatusText()}</span>
       </div>
       
       {backendInfo && (
@@ -99,9 +101,9 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ className = '' }) =
         onClick={checkConnection}
         disabled={isChecking}
         className="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
-        title="Refresh connection status"
+        title={t('Refresh connection status')}
       >
-        Refresh
+        {t('Refresh')}
       </button>
     </div>
   );

@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { FormData } from '../type/types';
 import { API_ROUTES, getApiBaseUrl, logApiVersion } from '../../../../../services/apiVersionConfig';
+import { useTranslation } from 'react-i18next';
 
 export const useChangeLoanSuretyForm = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<FormData>({
     loanType: '',
     memberNumber: '',
@@ -123,7 +125,7 @@ export const useChangeLoanSuretyForm = () => {
           if (window.electronAPI?.showMessageBox) {
             window.electronAPI.showMessageBox({
               type: 'info',
-              title: 'Loan Search',
+              title: t('Loan Search'),
               message: 'No loan applications found for this member.',
               buttons: ['OK']
             });
@@ -268,13 +270,13 @@ ${dbUpdates}${suretyUpdate}
           if (window.electronAPI?.showMessageBox) {
             await window.electronAPI.showMessageBox({
               type: 'info',
-              title: 'Surety Update Successful',
+              title: t('Surety Update Successful'),
               message: 'Guarantor information synchronized successfully!',
               detail: fullMessage,
               buttons: ['OK']
             });
           } else {
-            alert(`✅ Surety Update Successful\n\n${fullMessage}`);
+            alert('✅ ' + t('Surety Update Successful {{1}}', { 1: fullMessage }));
           }
 
           console.log('✅ Modal.success called');
@@ -291,13 +293,13 @@ ${dbUpdates}${suretyUpdate}
           if (window.electronAPI?.showMessageBox) {
             window.electronAPI.showMessageBox({
               type: 'error',
-              title: 'Update Failed',
+              title: t('Update Failed'),
               message: 'Failed to update surety information.',
               detail: errorMsg,
               buttons: ['OK']
             });
           } else {
-            alert(`❌ Update Failed: ${errorMsg}`);
+            alert('❌ ' + t('Update Failed: {{1}}', { 1: errorMsg }));
           }
         }
       } catch (error: any) {
@@ -305,13 +307,13 @@ ${dbUpdates}${suretyUpdate}
         if (window.electronAPI?.showMessageBox) {
           window.electronAPI.showMessageBox({
             type: 'error',
-            title: 'Connection Error',
+            title: t('Connection Error'),
             message: 'Unable to connect to the server.',
             detail: error.message,
             buttons: ['OK']
           });
         } else {
-          alert(`❌ Connection Error: ${error.message}`);
+          alert('❌ ' + t('Connection Error: {{1}}', { 1: error.message }));
         }
       } finally {
         submittingRef.current = false;
@@ -322,7 +324,7 @@ ${dbUpdates}${suretyUpdate}
       if (window.electronAPI?.showMessageBox) {
         window.electronAPI.showMessageBox({
           type: 'warning',
-          title: 'Validation Error',
+          title: t('Validation Error'),
           message: 'Please correct the form',
           detail: validationDetail,
           buttons: ['OK']

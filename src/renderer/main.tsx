@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom/client';
 // NOTHING (React 19 removed ReactDOM.render), so every toast in the app was silently invisible.
 import '@ant-design/v5-patch-for-react-19';
 import { StyleProvider } from '@ant-design/cssinjs';
-import App from './App';
 import './input.css';
 import '../styles/antd.css';
 
@@ -14,6 +13,10 @@ import '../utils/suppressAntdWarnings';
 // Initialize global error handlers (logs to file)
 import { initGlobalErrorHandlers } from '../services/globalErrorHandlers';
 initGlobalErrorHandlers();
+
+// Animation settings (Settings > Animations): applied to <html> before the first screen is drawn.
+import { initMotion } from '../config/motion';
+initMotion();
 
 // Initialize analytics service
 import { analyticsService } from '../services/analyticsService';
@@ -39,22 +42,29 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from '../store';
 import { Spin } from 'antd';
+import { languageReady } from '../i18n';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <PersistGate
-        loading={
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            <Spin size="large" />
-          </div>
-        }
-        persistor={persistor}
-      >
-        <StyleProvider hashPriority="high">
-          <App />
-        </StyleProvider>
-      </PersistGate>
-    </Provider>
-  </React.StrictMode>
-)
+// The saved language is loaded first, then the app code is imported, so text
+// kept in module-level constants (menus, table headers) is already translated
+// when it is created.
+void languageReady.then(async () => {
+  const { default: App } = await import('./App');
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <Provider store={store}>
+        <PersistGate
+          loading={
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+              <Spin size="large" />
+            </div>
+          }
+          persistor={persistor}
+        >
+          <StyleProvider hashPriority="high">
+            <App />
+          </StyleProvider>
+        </PersistGate>
+      </Provider>
+    </React.StrictMode>
+  );
+});

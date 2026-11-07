@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, RotateCcw, Save, ShieldCheck } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
+import { useTranslation } from 'react-i18next';
 
 type Policy = 'off' | 'optional' | 'all';
 
@@ -24,6 +25,7 @@ const POLICY_HELP: Record<Policy, string> = {
 
 /** Policy & limits (administrators only). Kept deliberately short. */
 const PolicyPanel: React.FC = () => {
+  const { t } = useTranslation();
   const [s, setS] = useState<Settings | null>(null);
   const [saved, setSaved] = useState<Settings | null>(null);
   const [busy, setBusy] = useState(false);
@@ -47,7 +49,7 @@ const PolicyPanel: React.FC = () => {
   const save = async () => {
     if (!s) return;
     if (s.policy === 'all' && saved?.policy !== 'all'
-      && !window.confirm('Make two-factor authentication mandatory for EVERYONE?\n\nAnyone who has not set it up will be asked to scan their QR at their next sign-in.')) return;
+      && !window.confirm(t('Make two-factor authentication mandatory for EVERYONE? Anyone who has not set it up will be asked to scan their QR at their next sign-in.'))) return;
     setBusy(true);
     try {
       const patch = Object.fromEntries(keys.map((k) => [k, s[k]]));
@@ -58,15 +60,15 @@ const PolicyPanel: React.FC = () => {
     finally { setBusy(false); }
   };
 
-  if (!s) return <p className="aw-meta">{msg ? msg.text : 'Loading…'}</p>;
+  if (!s) return <p className="aw-meta">{msg ? msg.text : t('Loading…')}</p>;
 
   return (
     <section className="aw-card">
       <div className="aw-card-head">
         <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-        <h2 className="aw-card-title">Policy &amp; limits</h2>
+        <h2 className="aw-card-title">{t('Policy & limits')}</h2>
         <button type="button" className="aw-btn aw-btn-primary" style={{ marginLeft: 'auto' }} disabled={!dirty || busy} onClick={save}>
-          {busy ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />} Save
+          {busy ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />} {t('Save')}
         </button>
       </div>
 
@@ -78,55 +80,55 @@ const PolicyPanel: React.FC = () => {
 
       <div className="aw-two" style={{ gap: 12 }}>
         <div>
-          <label className="aw-label" htmlFor="tf-policy">Two-factor sign-in</label>
+          <label className="aw-label" htmlFor="tf-policy">{t('Two-factor sign-in')}</label>
           <select id="tf-policy" className="aw-select" value={s.policy} onChange={(e) => set('policy', e.target.value as Policy)}>
-            <option value="off">Off</option>
-            <option value="optional">Optional</option>
-            <option value="all">Required for everyone</option>
+            <option value="off">{t('Off')}</option>
+            <option value="optional">{t('Optional')}</option>
+            <option value="all">{t('Required for everyone')}</option>
           </select>
           <p className="aw-meta" style={{ marginTop: 6 }}>{POLICY_HELP[s.policy]}</p>
         </div>
         <div>
-          <label className="aw-label" htmlFor="tf-login">Sign-in code</label>
+          <label className="aw-label" htmlFor="tf-login">{t('Sign-in code')}</label>
           <label className="aw-inline" style={{ gap: 8, cursor: 'pointer', alignItems: 'center', height: 'var(--aw-control-h)' }}>
             <input id="tf-login" type="checkbox" checked={s.loginCode !== false} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }}
               onChange={() => set('loginCode', s.loginCode === false)} />
-            Ask for the authenticator code when signing in
+            {t('Ask for the authenticator code when signing in')}
           </label>
           <p className="aw-meta" style={{ marginTop: 6 }}>
-            Untick to sign in with username and password only. Forgot-password codes and approver codes keep working.
+            {t('Untick to sign in with username and password only. Forgot-password codes and approver codes keep working.')}
           </p>
         </div>
         <div>
-          <label className="aw-label" htmlFor="tf-forgot">Forgot password</label>
+          <label className="aw-label" htmlFor="tf-forgot">{t('Forgot password')}</label>
           <label className="aw-inline" style={{ gap: 8, cursor: 'pointer', alignItems: 'center', height: 'var(--aw-control-h)' }}>
             <input id="tf-forgot" type="checkbox" checked={!!s.forgotAuthenticator} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }}
               onChange={() => set('forgotAuthenticator', !s.forgotAuthenticator)} />
-            Allow resetting a password with the authenticator code
+            {t('Allow resetting a password with the authenticator code')}
           </label>
         </div>
         <div>
-          <label className="aw-label" htmlFor="tf-att">Wrong codes before lockout</label>
+          <label className="aw-label" htmlFor="tf-att">{t('Wrong codes before lockout')}</label>
           <input id="tf-att" className="aw-input" type="number" min={3} max={20} value={Number.isNaN(s.maxAttempts) ? '' : s.maxAttempts} onChange={(e) => set('maxAttempts', num(e.target.value))} />
         </div>
         <div>
-          <label className="aw-label" htmlFor="tf-lock">Lockout length (minutes)</label>
+          <label className="aw-label" htmlFor="tf-lock">{t('Lockout length (minutes)')}</label>
           <input id="tf-lock" className="aw-input" type="number" min={1} max={1440} value={Number.isNaN(s.lockoutMinutes) ? '' : s.lockoutMinutes} onChange={(e) => set('lockoutMinutes', num(e.target.value))} />
         </div>
       </div>
 
       <details style={{ marginTop: 10 }}>
-        <summary className="aw-meta" style={{ cursor: 'pointer' }}>Remembered devices (from the Forgot-password work, under review)</summary>
+        <summary className="aw-meta" style={{ cursor: 'pointer' }}>{t('Remembered devices (from the Forgot-password work, under review)')}</summary>
         <div className="aw-two" style={{ gap: 12, marginTop: 8 }}>
           <div>
-            <label className="aw-label" htmlFor="tf-remember">Remember this device (days)</label>
+            <label className="aw-label" htmlFor="tf-remember">{t('Remember this device (days)')}</label>
             <input id="tf-remember" className="aw-input" type="number" min={0} max={365} value={Number.isNaN(s.rememberDays) ? '' : s.rememberDays} onChange={(e) => set('rememberDays', num(e.target.value))} />
-            <p className="aw-meta" style={{ marginTop: 6 }}>0 = a code is asked at every sign-in.</p>
+            <p className="aw-meta" style={{ marginTop: 6 }}>{t('0 = a code is asked at every sign-in.')}</p>
           </div>
           <div>
-            <label className="aw-label" htmlFor="tf-monthly">Ask for a code at least every (days)</label>
+            <label className="aw-label" htmlFor="tf-monthly">{t('Ask for a code at least every (days)')}</label>
             <input id="tf-monthly" className="aw-input" type="number" min={0} max={365} value={Number.isNaN(s.monthlyCheckDays) ? '' : s.monthlyCheckDays} onChange={(e) => set('monthlyCheckDays', num(e.target.value))} />
-            <p className="aw-meta" style={{ marginTop: 6 }}>Even on a remembered device. 0 = never.</p>
+            <p className="aw-meta" style={{ marginTop: 6 }}>{t('Even on a remembered device. 0 = never.')}</p>
           </div>
         </div>
       </details>

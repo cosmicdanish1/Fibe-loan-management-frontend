@@ -8,6 +8,7 @@ import {
 import dayjs from 'dayjs';
 import { DesignationHookReturn } from '../interfaces/interface';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 const DesignationForm: React.FC<DesignationHookReturn> = ({
     formData,
@@ -20,6 +21,7 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
     handleCancel,
     handleExit
 }) => {
+  const { t } = useTranslation();
     const onExit = () => {
         if ((window as any).electron?.ipcRenderer) {
             (window as any).electron.ipcRenderer.send('window-close');
@@ -39,18 +41,18 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
             {/* Header */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Designation Master</h1>
-                    <p className="aw-desc">Organizational Hierarchy</p>
+                    <h1 className="aw-title">{t('Designation Master')}</h1>
+                    <p className="aw-desc">{t('Organizational Hierarchy')}</p>
                 </div>
                 <div className="aw-actions">
-                    <button type="button" onClick={handleCancel} className="aw-btn aw-btn-secondary" data-tip="Clear the form for a new entry" data-tip-pos="bottom-end">
-                        <RotateCcw size={13} /> Reset
+                    <button type="button" onClick={handleCancel} className="aw-btn aw-btn-secondary" data-tip={t('Clear the form for a new entry')} data-tip-pos="bottom-end">
+                        <RotateCcw size={13} /> {t('Reset')}
                     </button>
                     <button type="button" onClick={handleSave} className="aw-btn aw-btn-primary">
-                        <Save size={13} /> Save
+                        <Save size={13} /> {t('Save')}
                     </button>
-                    <button type="button" onClick={onExit} className="aw-btn aw-btn-ghost" data-tip="Close this window" data-tip-pos="bottom-end">
-                        <X size={13} /> Exit
+                    <button type="button" onClick={onExit} className="aw-btn aw-btn-ghost" data-tip={t('Close this window')} data-tip-pos="bottom-end">
+                        <X size={13} /> {t('Exit')}
                     </button>
                 </div>
             </div>
@@ -63,26 +65,26 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Briefcase size={14} /></span>
-                            <h2 className="aw-card-title">Designation Details</h2>
+                            <h2 className="aw-card-title">{t('Designation Details')}</h2>
                             <span className={`aw-pill ${isExisting ? 'tone-warning' : 'tone-success'}`} style={{ marginLeft: 'auto', textTransform: 'uppercase' }}>
-                                {isExisting ? `Editing ${formData.code}` : 'New Entry'}
+                                {isExisting ? t('Editing {{1}}', { 1: formData.code }) : t('New Entry')}
                             </span>
                         </div>
                         <div className="aw-stack">
 
                             <div className="aw-two">
                                 <div>
-                                    <label className="aw-label" htmlFor="dm-code">Designation Code</label>
+                                    <label className="aw-label" htmlFor="dm-code">{t('Designation Code')}</label>
                                     <div className="aw-input-wrap has-icon">
                                         <Hash size={13} />
                                         <input id="dm-code" value={formData.code}
                                             onChange={e => handleChange('code', e.target.value)}
-                                            placeholder="e.g. DES011"
+                                            placeholder={t('e.g. DES011')}
                                             className="aw-input font-mono" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="aw-label" htmlFor="dm-level">Hierarchical Level</label>
+                                    <label className="aw-label" htmlFor="dm-level">{t('Hierarchical Level')}</label>
                                     <div className="aw-input-wrap has-icon">
                                         <Layers size={13} />
                                         <input id="dm-level" value={formData.level}
@@ -95,12 +97,12 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                             </div>
 
                             <div>
-                                <label className="aw-label" htmlFor="dm-name">Designation Name</label>
+                                <label className="aw-label" htmlFor="dm-name">{t('Designation Name')}</label>
                                 <div className="aw-input-wrap has-icon">
                                     <Briefcase size={13} />
                                     <input id="dm-name" value={formData.name}
                                         onChange={e => handleChange('name', e.target.value)}
-                                        placeholder="e.g. Senior Executive Officer"
+                                        placeholder={t('e.g. Senior Executive Officer')}
                                         className="aw-input" />
                                 </div>
                             </div>
@@ -113,19 +115,19 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                         <div className="aw-main-head">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                                 <span className="aw-card-icon"><Building2 size={14} /></span>
-                                <h2 className="aw-card-title">Designations</h2>
+                                <h2 className="aw-card-title">{t('Designations')}</h2>
                             </div>
-                            {designations.length > 0 && <span className="aw-pill">{designations.length} entries</span>}
+                            {designations.length > 0 && <span className="aw-pill">{t('{{1}} entries', { 1: designations.length })}</span>}
                         </div>
                         <div className="aw-main-body" style={{ padding: 0, maxHeight: 360 }}>
                             {designations.length > 0 ? (
                                 <table className="aw-table">
                                     <thead>
                                         <tr>
-                                            <th style={{ width: 120 }}>Code</th>
-                                            <th>Designation Name</th>
-                                            <th className="is-center" style={{ width: 80 }}>Level</th>
-                                            <th className="is-center" style={{ width: 100 }}>Actions</th>
+                                            <th style={{ width: 120 }}>{t('Code')}</th>
+                                            <th>{t('Designation Name')}</th>
+                                            <th className="is-center" style={{ width: 80 }}>{t('Level')}</th>
+                                            <th className="is-center" style={{ width: 100 }}>{t('Actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -137,11 +139,11 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                                                 <td className="is-center">
                                                     <span style={{ display: 'inline-flex', gap: 4 }}>
                                                         <button type="button" onClick={() => editDesignation(record)} className="aw-icon-btn is-sm"
-                                                            aria-label={`Edit ${record.name || record.code}`} data-tip="Edit" data-tip-pos="left">
+                                                            aria-label={t('Edit {{1}}', { 1: record.name || record.code })} data-tip={t('Edit')} data-tip-pos="left">
                                                             <Edit size={14} />
                                                         </button>
                                                         <button type="button" onClick={() => deleteDesignation(record.code)} className="aw-icon-btn is-sm is-danger"
-                                                            aria-label={`Delete ${record.name || record.code}`} data-tip="Delete" data-tip-pos="left">
+                                                            aria-label={t('Delete {{1}}', { 1: record.name || record.code })} data-tip={t('Delete')} data-tip-pos="left">
                                                             <Trash2 size={14} />
                                                         </button>
                                                     </span>
@@ -153,7 +155,7 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                             ) : (
                                 <div className="aw-empty">
                                     <Briefcase size={32} />
-                                    <span>No designations yet</span>
+                                    <span>{t('No designations yet')}</span>
                                 </div>
                             )}
                         </div>
@@ -165,7 +167,7 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
             {/* Footer */}
             <div className="aw-footer">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <Building2 size={12} /> Designation Registry
+                    <Building2 size={12} /> {t('Designation Registry')}
                     {formData.name && <span style={{ color: 'var(--aw-accent)' }}>· {formData.name}</span>}
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>

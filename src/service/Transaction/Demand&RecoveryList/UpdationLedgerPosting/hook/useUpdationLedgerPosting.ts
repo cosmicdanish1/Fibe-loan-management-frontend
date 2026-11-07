@@ -8,21 +8,8 @@ import {
     UpdationLedgerPostingHookReturn,
 } from '../interface/UpdationLedgerPostingInterfaces';
 import { getApiBaseUrl } from '../../../../../services/serverConfig';
-
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
     if ((window as any).electronAPI?.showMessageBox) {
@@ -39,6 +26,7 @@ const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP
 const currentMonth = MONTH_ABBR[new Date().getMonth()] as string;
 
 export const useUpdationLedgerPosting = (): UpdationLedgerPostingHookReturn => {
+  const { t } = useTranslation();
     const [formData, setFormData] = useState<PostingFormData>({
         month: currentMonth,
         year: new Date().getFullYear().toString(),
@@ -91,7 +79,7 @@ export const useUpdationLedgerPosting = (): UpdationLedgerPostingHookReturn => {
 
     const handleLoad = useCallback(async () => {
         if (!formData.month || !formData.year) {
-            await showDialog('warning', 'electron-react-ts', 'Missing Fields', 'Please select Month and Year.');
+            await showDialog('warning', 'electron-react-ts', t('Missing Fields'), t('Please select Month and Year.'));
             return;
         }
 
@@ -120,12 +108,12 @@ export const useUpdationLedgerPosting = (): UpdationLedgerPostingHookReturn => {
             setMemberGroups(groups);
 
             if (groups.length === 0) {
-                await showDialog('info', 'electron-react-ts', 'No Pending Demands',
-                    'No unposted demand records found for this period/branch.\n\nMake sure you have imported and saved demand data first.');
+                await showDialog('info', 'electron-react-ts', t('No Pending Demands'),
+                    t('No unposted demand records found for this period/branch. Make sure you have imported and saved demand data first.'));
             }
         } catch (err: any) {
             console.error('Load failed:', err);
-            await showDialog('error', 'electron-react-ts', 'Load Failed', err.message || 'Unknown error');
+            await showDialog('error', 'electron-react-ts', t('Load Failed'), err.message || t('Unknown error'));
         } finally {
             setIsLoading(false);
         }
@@ -133,12 +121,12 @@ export const useUpdationLedgerPosting = (): UpdationLedgerPostingHookReturn => {
 
     const handlePosting = useCallback(async () => {
         if (memberGroups.length === 0) {
-            await showDialog('warning', 'electron-react-ts', 'No Data', 'Please load demand data first.');
+            await showDialog('warning', 'electron-react-ts', t('No Data'), t('Please load demand data first.'));
             return;
         }
 
         if (Math.round(grandTotalSend * 100) !== Math.round(grandTotalReceived * 100)) {
-            await showDialog('error', 'electron-react-ts', 'Totals Do Not Match',
+            await showDialog('error', 'electron-react-ts', t('Totals Do Not Match'),
                 `Demand Send (₹${grandTotalSend.toLocaleString('en-IN')}) ≠ Demand Received (₹${grandTotalReceived.toLocaleString('en-IN')}).\n\n` +
                 `Both totals must be equal before posting.`);
             return;
@@ -177,7 +165,7 @@ export const useUpdationLedgerPosting = (): UpdationLedgerPostingHookReturn => {
             const result = await resp.json();
             const data = result.data || result;
 
-            await showDialog('info', 'electron-react-ts', 'Ledger Posting Successful!',
+            await showDialog('info', 'electron-react-ts', t('Ledger Posting Successful!'),
                 `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `VOUCHER NO    : ${data.voucherNo || '—'}\n` +
                 `MEMBERS       : ${data.recordCount || memberGroups.length}\n` +
@@ -193,7 +181,7 @@ export const useUpdationLedgerPosting = (): UpdationLedgerPostingHookReturn => {
             console.error('Posting failed:', err);
             let msg = err.message || 'Unknown error';
             try { msg = JSON.parse(msg)?.message || msg; } catch {}
-            await showDialog('error', 'electron-react-ts', 'Posting Failed', msg);
+            await showDialog('error', 'electron-react-ts', t('Posting Failed'), msg);
         } finally {
             setIsPosting(false);
         }

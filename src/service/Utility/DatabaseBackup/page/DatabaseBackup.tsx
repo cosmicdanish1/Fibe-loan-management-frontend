@@ -6,12 +6,8 @@ import {
 } from 'lucide-react';
 import { apiService } from '../../../../services/api';
 import dayjs from 'dayjs';
-
-const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -26,6 +22,7 @@ interface DatabaseInfo { host: string; port: number; database: string; username:
 
 
 const DatabaseBackup: React.FC = () => {
+  const { t } = useTranslation();
   const [destinationPath, setDestinationPath] = useState('C:\\DatabaseBackups');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [backupProgress, setBackupProgress] = useState(0);
@@ -42,7 +39,7 @@ const DatabaseBackup: React.FC = () => {
   const initializeComponent = useCallback(async () => {
     setIsLoading(true);
     try { await Promise.all([testConnection(), loadDatabaseInfo(), loadBackupList()]); }
-    catch { await showDialog('error', 'Initialization Error', 'Failed to initialize backup utility.'); }
+    catch { await showDialog('error', t('Initialization Error'), t('Failed to initialize backup utility.')); }
     finally { setIsLoading(false); }
   }, []);
 
@@ -51,7 +48,7 @@ const DatabaseBackup: React.FC = () => {
       const response = await apiService.testDatabaseConnection();
       if (response.success && response.data) {
         setConnectionStatus(response.data.connected ? 'connected' : 'disconnected');
-        if (!response.data.connected) await showDialog('warning', 'Connection Warning', response.data.message || 'Database connection issue detected.');
+        if (!response.data.connected) await showDialog('warning', t('Connection Warning'), response.data.message || t('Database connection issue detected.'));
       } else setConnectionStatus('disconnected');
     } catch { setConnectionStatus('disconnected'); }
   }, []);
@@ -75,17 +72,17 @@ const DatabaseBackup: React.FC = () => {
   }, []);
 
   const handleBackup = useCallback(async () => {
-    if (connectionStatus !== 'connected') { await showDialog('error', 'Connection Unavailable', 'Database connection is not available.'); return; }
-    if (!backupOptions.includeSchema && !backupOptions.includeData) { await showDialog('warning', 'Nothing To Back Up', 'Select at least one of Include Schema or Include Data.'); return; }
+    if (connectionStatus !== 'connected') { await showDialog('error', t('Connection Unavailable'), t('Database connection is not available.')); return; }
+    if (!backupOptions.includeSchema && !backupOptions.includeData) { await showDialog('warning', t('Nothing To Back Up'), t('Select at least one of Include Schema or Include Data.')); return; }
     setIsBackingUp(true); setBackupProgress(0);
     let progressInterval: ReturnType<typeof setInterval> | undefined;
     try {
       progressInterval = setInterval(() => { setBackupProgress(prev => { if (prev >= 95) { clearInterval(progressInterval); return prev; } return prev + (prev < 30 ? 5 : prev < 70 ? 2 : 1); }); }, 500);
       const response = await apiService.createDatabaseBackup({ destinationPath, ...backupOptions });
       clearInterval(progressInterval); progressInterval = undefined; setBackupProgress(100);
-      if (response.success) { await showDialog('info', 'Backup Successful', 'Database backup completed!'); await loadBackupList(); }
+      if (response.success) { await showDialog('info', t('Backup Successful'), t('Database backup completed!')); await loadBackupList(); }
       else throw new Error(response.message || 'Backup failed');
-    } catch (e: any) { await showDialog('error', 'Backup Failed', e.message || 'Unknown error.'); }
+    } catch (e: any) { await showDialog('error', t('Backup Failed'), e.message || t('Unknown error.')); }
     finally { if (progressInterval) clearInterval(progressInterval); setTimeout(() => { setIsBackingUp(false); setBackupProgress(0); }, 1000); }
   }, [connectionStatus, destinationPath, backupOptions, loadBackupList]);
 
@@ -95,9 +92,9 @@ const DatabaseBackup: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await apiService.cleanupOldBackups();
-      if (response.success) { await showDialog('info', 'Cleanup Complete', 'Old backups removed.'); await loadBackupList(); }
-      else await showDialog('error', 'Cleanup Failed', response.message || 'Cleanup failed.');
-    } catch { await showDialog('error', 'Cleanup Error', 'Failed to cleanup.'); }
+      if (response.success) { await showDialog('info', t('Cleanup Complete'), t('Old backups removed.')); await loadBackupList(); }
+      else await showDialog('error', t('Cleanup Failed'), response.message || t('Cleanup failed.'));
+    } catch { await showDialog('error', t('Cleanup Error'), t('Failed to cleanup.')); }
     finally { setIsLoading(false); }
   }, [loadBackupList]);
 
@@ -110,10 +107,10 @@ const DatabaseBackup: React.FC = () => {
   const filteredBackups = useMemo(() => backupList.filter(b => b.fileName.toLowerCase().includes(searchQuery.toLowerCase())), [backupList, searchQuery]);
 
   const STATS = [
-    { label: 'Registered Backups', value: backupList.length, icon: FileText, tone: '' },
-    { label: 'Database Node', value: dbInfo?.host || 'N/A', icon: Server, tone: 'tone-info' },
-    { label: 'Port Protocol', value: dbInfo?.port || 'N/A', icon: Terminal, tone: 'tone-warning' },
-    { label: 'Backup Engine', value: 'pg_dump v14+', icon: Activity, tone: 'tone-success' },
+    { label: t('Registered Backups'), value: backupList.length, icon: FileText, tone: '' },
+    { label: t('Database Node'), value: dbInfo?.host || 'N/A', icon: Server, tone: 'tone-info' },
+    { label: t('Port Protocol'), value: dbInfo?.port || 'N/A', icon: Terminal, tone: 'tone-warning' },
+    { label: t('Backup Engine'), value: 'pg_dump v14+', icon: Activity, tone: 'tone-success' },
   ];
 
   return (
@@ -122,29 +119,29 @@ const DatabaseBackup: React.FC = () => {
       {/* Header */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Database Backup Registry</h1>
+          <h1 className="aw-title">{t('Database Backup Registry')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span className={`aw-pill ${connectionStatus === 'connected' ? 'tone-success' : 'tone-danger'}`}>
               <i className="aw-status-dot" style={{ background: 'var(--aw-tone)' }} />
-              {connectionStatus === 'connected' ? 'Live Connection' : 'Disconnected'}
+              {connectionStatus === 'connected' ? t('Live Connection') : t('Disconnected')}
             </span>
           </p>
         </div>
         <div className="aw-actions">
           {isLoading && (
             <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
-              <RefreshCw size={12} className="aw-spin" /> Syncing with database server...
+              <RefreshCw size={12} className="aw-spin" /> {t('Syncing with database server...')}
             </span>
           )}
           {lastBackupDate && (
             <div style={{ textAlign: 'right' }}>
-              <span className="aw-stat-label" style={{ display: 'block' }}>Last Activity</span>
+              <span className="aw-stat-label" style={{ display: 'block' }}>{t('Last Activity')}</span>
               <span className="aw-strong">{dayjs(lastBackupDate).format('DD MMM YY HH:mm')}</span>
             </div>
           )}
-          <button type="button" onClick={handleBackup} disabled={isBackingUp} className="aw-btn aw-btn-primary" data-tip="Create a new backup now" data-tip-pos="bottom-end">
+          <button type="button" onClick={handleBackup} disabled={isBackingUp} className="aw-btn aw-btn-primary" data-tip={t('Create a new backup now')} data-tip-pos="bottom-end">
             {isBackingUp ? <RefreshCw size={13} className="aw-spin" /> : <Download size={13} />}
-            {isBackingUp ? `${backupProgress}%` : 'Trigger Backup'}
+            {isBackingUp ? `${backupProgress}%` : t('Trigger Backup')}
           </button>
         </div>
       </div>
@@ -173,39 +170,39 @@ const DatabaseBackup: React.FC = () => {
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><Settings size={14} /></span>
-                  <h2 className="aw-card-title">Configuration</h2>
+                  <h2 className="aw-card-title">{t('Configuration')}</h2>
                 </div>
                 <div className="aw-stack">
                   <div>
-                    <label className="aw-label" htmlFor="dbb-path">Destination Path</label>
+                    <label className="aw-label" htmlFor="dbb-path">{t('Destination Path')}</label>
                     <div className="aw-input-wrap has-icon">
                       <Folder size={13} />
                       <input id="dbb-path" value={destinationPath} onChange={e => setDestinationPath(e.target.value)} className="aw-input" />
                     </div>
                   </div>
                   <div>
-                    <label className="aw-label" htmlFor="dbb-name">Custom Name (optional)</label>
+                    <label className="aw-label" htmlFor="dbb-name">{t('Custom Name (optional)')}</label>
                     <input id="dbb-name" value={backupOptions.customName} onChange={e => setBackupOptions(p => ({ ...p, customName: e.target.value }))}
-                      placeholder="Leave blank for auto..." className="aw-input" />
+                      placeholder={t('Leave blank for auto...')} className="aw-input" />
                   </div>
                   <div className="aw-stack" style={{ gap: 10 }}>
                     <div className="aw-switch-row">
                       <button type="button" role="switch" id="dbb-schema" aria-checked={backupOptions.includeSchema}
                         onClick={() => setBackupOptions(p => ({ ...p, includeSchema: !p.includeSchema }))} className="aw-switch" />
-                      <label htmlFor="dbb-schema" style={{ cursor: 'pointer' }}>Include Schema</label>
+                      <label htmlFor="dbb-schema" style={{ cursor: 'pointer' }}>{t('Include Schema')}</label>
                     </div>
                     <div className="aw-switch-row">
                       <button type="button" role="switch" id="dbb-data" aria-checked={backupOptions.includeData}
                         onClick={() => setBackupOptions(p => ({ ...p, includeData: !p.includeData }))} className="aw-switch" />
-                      <label htmlFor="dbb-data" style={{ cursor: 'pointer' }}>Include Data</label>
+                      <label htmlFor="dbb-data" style={{ cursor: 'pointer' }}>{t('Include Data')}</label>
                     </div>
                   </div>
                   <div className="aw-btn-row" style={{ paddingTop: 12, borderTop: '1px solid var(--aw-border)' }}>
-                    <button type="button" onClick={initializeComponent} className="aw-btn aw-btn-secondary" data-tip="Reload connection and backup list" data-tip-pos="top-start">
-                      <RefreshCw size={13} /> Refresh
+                    <button type="button" onClick={initializeComponent} className="aw-btn aw-btn-secondary" data-tip={t('Reload connection and backup list')} data-tip-pos="top-start">
+                      <RefreshCw size={13} /> {t('Refresh')}
                     </button>
-                    <button type="button" onClick={handleCleanup} className="aw-btn aw-btn-danger" data-tip="Delete backups older than 30 days" data-tip-pos="top-end">
-                      <Trash2 size={13} /> Purge Old
+                    <button type="button" onClick={handleCleanup} className="aw-btn aw-btn-danger" data-tip={t('Delete backups older than 30 days')} data-tip-pos="top-end">
+                      <Trash2 size={13} /> {t('Purge Old')}
                     </button>
                   </div>
                 </div>
@@ -216,7 +213,7 @@ const DatabaseBackup: React.FC = () => {
                 <section className="aw-card aw-fade-in">
                   <div className="aw-card-head">
                     <span className="aw-card-icon"><Server size={14} /></span>
-                    <h2 className="aw-card-title">DB Connection</h2>
+                    <h2 className="aw-card-title">{t('DB Connection')}</h2>
                   </div>
                   <div className="aw-rows">
                     {[{ l: 'Host', v: dbInfo.host }, { l: 'Port', v: dbInfo.port }, { l: 'Database', v: dbInfo.database }, { l: 'User', v: dbInfo.username }].map(r => (
@@ -235,12 +232,12 @@ const DatabaseBackup: React.FC = () => {
               <div className="aw-main-head">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                   <span className="aw-card-icon"><History size={14} /></span>
-                  <h2 className="aw-card-title">Backup History</h2>
-                  <span className="aw-pill">{filteredBackups.length} files</span>
+                  <h2 className="aw-card-title">{t('Backup History')}</h2>
+                  <span className="aw-pill">{t('{{1}} files', { 1: filteredBackups.length })}</span>
                 </div>
                 <div className="aw-input-wrap has-icon aw-search">
                   <Search size={13} />
-                  <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search..." aria-label="Search backups" className="aw-input" />
+                  <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={t('Search...')} aria-label={t('Search backups')} className="aw-input" />
                 </div>
               </div>
               <div className="aw-main-body" style={{ padding: 0, maxHeight: '60vh' }}>
@@ -277,7 +274,7 @@ const DatabaseBackup: React.FC = () => {
                 ) : (
                   <div className="aw-empty">
                     <FileText size={34} />
-                    <span>No backups found</span>
+                    <span>{t('No backups found')}</span>
                   </div>
                 )}
               </div>
@@ -290,10 +287,10 @@ const DatabaseBackup: React.FC = () => {
       {/* Progress Overlay */}
       {isBackingUp && (
         <div className="aw-modal-backdrop">
-          <div className="aw-modal" role="alertdialog" aria-modal="true" aria-label="Backup in progress" style={{ maxWidth: '20rem', height: 'auto', padding: 24, textAlign: 'center' }}>
+          <div className="aw-modal" role="alertdialog" aria-modal="true" aria-label={t('Backup in progress')} style={{ maxWidth: '20rem', height: 'auto', padding: 24, textAlign: 'center' }}>
             <Database size={32} style={{ color: 'var(--aw-accent)', margin: '0 auto 12px' }} />
-            <h3 className="aw-card-title" style={{ marginBottom: 4 }}>Backup in Progress</h3>
-            <p className="aw-muted" style={{ marginBottom: 16 }}>Please wait while the database is being backed up...</p>
+            <h3 className="aw-card-title" style={{ marginBottom: 4 }}>{t('Backup in Progress')}</h3>
+            <p className="aw-muted" style={{ marginBottom: 16 }}>{t('Please wait while the database is being backed up...')}</p>
             <div className="aw-bar" role="progressbar" aria-valuenow={backupProgress} aria-valuemin={0} aria-valuemax={100}>
               <span style={{ width: `${backupProgress}%` }} />
             </div>

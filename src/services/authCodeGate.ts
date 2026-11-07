@@ -1,4 +1,5 @@
-/**
+
+import { tLabel } from '../i18n';/**
  * Authenticator-code gate (ES-116).
  *
  * When an administrator switches on "needs authenticator code" for a window (Early Loan
@@ -37,7 +38,7 @@ export async function retryWithAuthCode(
 
   for (let i = 0; i < MAX_TRIES; i++) {
     const code = await prompter({
-      label: info.authLabel || 'this action',
+      label: info.authLabel || tLabel('this action'),
       note: info.code === 'AUTH_CODE_INVALID' ? String(info.message || '') : '',
     });
     if (!code) return res; // cancelled: the caller shows the original message

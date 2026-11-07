@@ -7,18 +7,15 @@ import { Select } from 'antd';
 import { apiService } from '../../../../services/api';
 import dayjs from 'dayjs';
 import { localISODate } from '../../../../utils/dates';
+import { useTranslation } from 'react-i18next';
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
-
-const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
-};
 
 interface StatementData { key: string; demandForMonth: string; balanceForMonth: number; interestReceived: number; interestReceivable: number; amount: number; month: number; year: number; }
 
 
 const InterestReceivableReceivedStatement: React.FC = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<StatementData[]>([]);
   const [wings, setWings] = useState<any[]>([]);
@@ -37,10 +34,10 @@ const InterestReceivableReceivedStatement: React.FC = () => {
   });
 
   const months = [
-    { label: 'January', value: 1 }, { label: 'February', value: 2 }, { label: 'March', value: 3 },
-    { label: 'April', value: 4 }, { label: 'May', value: 5 }, { label: 'June', value: 6 },
-    { label: 'July', value: 7 }, { label: 'August', value: 8 }, { label: 'September', value: 9 },
-    { label: 'October', value: 10 }, { label: 'November', value: 11 }, { label: 'December', value: 12 }
+    { label: t('January'), value: 1 }, { label: t('February'), value: 2 }, { label: t('March'), value: 3 },
+    { label: t('April'), value: 4 }, { label: t('May'), value: 5 }, { label: t('June'), value: 6 },
+    { label: t('July'), value: 7 }, { label: t('August'), value: 8 }, { label: t('September'), value: 9 },
+    { label: t('October'), value: 10 }, { label: t('November'), value: 11 }, { label: t('December'), value: 12 }
   ];
   const years = Array.from({ length: 11 }, (_, i) => dayjs().year() - 5 + i);
 
@@ -60,7 +57,7 @@ const InterestReceivableReceivedStatement: React.FC = () => {
       try {
         const officeRes = await apiService.getReportOffices(value);
         if (officeRes.success && officeRes.data) setOffices(officeRes.data);
-      } catch { await showDialog('error', 'Fetch Error', 'Failed to fetch offices.'); }
+      } catch { await showDialog('error', t('Fetch Error'), t('Failed to fetch offices.')); }
     }
   }, []);
 
@@ -75,16 +72,16 @@ const InterestReceivableReceivedStatement: React.FC = () => {
       });
       if (response.success && response.data) {
         setData(response.data);
-        if (response.data.length === 0) await showDialog('info', 'No Records', 'No records found. Adjust your criteria.');
-      } else await showDialog('error', 'Fetch Failed', response.message || 'Failed to fetch data.');
-    } catch { await showDialog('error', 'Connection Error', 'Error fetching statement.'); }
+        if (response.data.length === 0) await showDialog('info', t('No Records'), t('No records found. Adjust your criteria.'));
+      } else await showDialog('error', t('Fetch Failed'), response.message || t('Failed to fetch data.'));
+    } catch { await showDialog('error', t('Connection Error'), t('Error fetching statement.')); }
     finally { setLoading(false); }
   }, [filters]);
 
   const formatCurrency = useCallback((amount: number) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount), []);
 
   const handleExportCSV = useCallback(async () => {
-    if (data.length === 0) { await showDialog('warning', 'No Data', 'No data to export.'); return; }
+    if (data.length === 0) { await showDialog('warning', t('No Data'), t('No data to export.')); return; }
     const headers = ['Month/Demand Cycle', 'Interest Receivable', 'Interest Received', 'Variance'];
     const rows = data.map(r => [r.demandForMonth, r.interestReceivable.toFixed(2), r.interestReceived.toFixed(2), (r.interestReceived - r.interestReceivable).toFixed(2)]);
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
@@ -116,20 +113,20 @@ const InterestReceivableReceivedStatement: React.FC = () => {
       {/* Header */}
       <div className="aw-header aw-ambient aw-noprint">
         <div className="min-w-0">
-          <h1 className="aw-title">Interest Statement</h1>
-          <p className="aw-desc">Loan Asset Performance Monitoring</p>
+          <h1 className="aw-title">{t('Interest Statement')}</h1>
+          <p className="aw-desc">{t('Loan Asset Performance Monitoring')}</p>
         </div>
         <div className="aw-actions">
           {loading && (
             <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
-              <RefreshCw size={12} className="aw-spin" /> Generating statement...
+              <RefreshCw size={12} className="aw-spin" /> {t('Generating statement...')}
             </span>
           )}
-          <button type="button" onClick={() => window.print()} className="aw-btn aw-btn-secondary" data-tip="Print this statement" data-tip-pos="bottom-end">
-            <Printer size={13} /> Print Report
+          <button type="button" onClick={() => window.print()} className="aw-btn aw-btn-secondary" data-tip={t('Print this statement')} data-tip-pos="bottom-end">
+            <Printer size={13} /> {t('Print Report')}
           </button>
-          <button type="button" onClick={handleExportCSV} className="aw-btn aw-btn-primary" data-tip="Download as a spreadsheet file" data-tip-pos="bottom-end">
-            <FileDown size={13} /> Export CSV
+          <button type="button" onClick={handleExportCSV} className="aw-btn aw-btn-primary" data-tip={t('Download as a spreadsheet file')} data-tip-pos="bottom-end">
+            <FileDown size={13} /> {t('Export CSV')}
           </button>
         </div>
       </div>
@@ -143,9 +140,9 @@ const InterestReceivableReceivedStatement: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Settings size={14} /></span>
-                <h2 className="aw-card-title">Parameters</h2>
+                <h2 className="aw-card-title">{t('Parameters')}</h2>
                 <button type="button" onClick={() => setFilters({ fromMonth: 1, fromYear: 2020, toMonth: 12, toYear: 2025, branch: undefined, fromMember: '', toMember: '', wingNo: undefined })}
-                  className="aw-icon-btn" style={{ marginLeft: 'auto' }} aria-label="Reset filters" data-tip="Reset filters" data-tip-pos="bottom-end">
+                  className="aw-icon-btn" style={{ marginLeft: 'auto' }} aria-label={t('Reset filters')} data-tip={t('Reset filters')} data-tip-pos="bottom-end">
                   <RefreshCw size={14} />
                 </button>
               </div>
@@ -153,12 +150,12 @@ const InterestReceivableReceivedStatement: React.FC = () => {
 
                 <div className="aw-two" style={{ gap: 10 }}>
                   <div>
-                    <label className="aw-label" htmlFor="irr-from-month">From Month</label>
+                    <label className="aw-label" htmlFor="irr-from-month">{t('From Month')}</label>
                     <Select id="irr-from-month" className="aw-select" popupClassName="aw-select-popup" value={filters.fromMonth}
                       onChange={v => setFilters(f => ({ ...f, fromMonth: v }))} options={monthOptions} />
                   </div>
                   <div>
-                    <label className="aw-label" htmlFor="irr-from-year">Year</label>
+                    <label className="aw-label" htmlFor="irr-from-year">{t('Year')}</label>
                     <Select id="irr-from-year" className="aw-select" popupClassName="aw-select-popup" value={filters.fromYear}
                       onChange={v => setFilters(f => ({ ...f, fromYear: v }))} options={yearOptions} />
                   </div>
@@ -166,12 +163,12 @@ const InterestReceivableReceivedStatement: React.FC = () => {
 
                 <div className="aw-two" style={{ gap: 10 }}>
                   <div>
-                    <label className="aw-label" htmlFor="irr-to-month">To Month</label>
+                    <label className="aw-label" htmlFor="irr-to-month">{t('To Month')}</label>
                     <Select id="irr-to-month" className="aw-select" popupClassName="aw-select-popup" value={filters.toMonth}
                       onChange={v => setFilters(f => ({ ...f, toMonth: v }))} options={monthOptions} />
                   </div>
                   <div>
-                    <label className="aw-label" htmlFor="irr-to-year">Year</label>
+                    <label className="aw-label" htmlFor="irr-to-year">{t('Year')}</label>
                     <Select id="irr-to-year" className="aw-select" popupClassName="aw-select-popup" value={filters.toYear}
                       onChange={v => setFilters(f => ({ ...f, toYear: v }))} options={yearOptions} />
                   </div>
@@ -180,14 +177,14 @@ const InterestReceivableReceivedStatement: React.FC = () => {
                 <div style={{ height: 1, background: 'var(--aw-border)' }} />
 
                 <div>
-                  <label className="aw-label" htmlFor="irr-wing" data-tip="Filters the statement to members of this wing. Pick an Office to narrow further." data-tip-pos="bottom">Wing / Section</label>
-                  <Select id="irr-wing" className="aw-select" popupClassName="aw-select-popup" placeholder="Select Wing" allowClear
+                  <label className="aw-label" htmlFor="irr-wing" data-tip={t('Filters the statement to members of this wing. Pick an Office to narrow further.')} data-tip-pos="bottom">{t('Wing / Section')}</label>
+                  <Select id="irr-wing" className="aw-select" popupClassName="aw-select-popup" placeholder={t('Select Wing')} allowClear
                     value={filters.wingNo ?? null} onChange={v => handleWingChange(v as string)}
                     options={wings.map(w => ({ value: w.wingNo, label: w.name || w.wingName || w.wingNo }))} />
                 </div>
                 <div>
-                  <label className="aw-label" htmlFor="irr-office">Office / Branch</label>
-                  <Select id="irr-office" className="aw-select" popupClassName="aw-select-popup" placeholder="Select Office" allowClear
+                  <label className="aw-label" htmlFor="irr-office">{t('Office / Branch')}</label>
+                  <Select id="irr-office" className="aw-select" popupClassName="aw-select-popup" placeholder={t('Select Office')} allowClear
                     value={filters.branch ?? null} onChange={v => setFilters(f => ({ ...f, branch: v as string | undefined }))} disabled={!filters.wingNo}
                     options={offices.map(o => ({ value: o.officeNo, label: o.name || o.officeName }))} />
                 </div>
@@ -196,29 +193,29 @@ const InterestReceivableReceivedStatement: React.FC = () => {
 
                 <div className="aw-two" style={{ gap: 10 }}>
                   <div>
-                    <label className="aw-label" htmlFor="irr-from-member">From Member</label>
+                    <label className="aw-label" htmlFor="irr-from-member">{t('From Member')}</label>
                     <input id="irr-from-member" value={filters.fromMember} onChange={e => setFilters(f => ({ ...f, fromMember: e.target.value }))}
-                      placeholder="MB No..." className="aw-input" />
+                      placeholder={t('MB No...')} className="aw-input" />
                   </div>
                   <div>
-                    <label className="aw-label" htmlFor="irr-to-member">To Member</label>
+                    <label className="aw-label" htmlFor="irr-to-member">{t('To Member')}</label>
                     <input id="irr-to-member" value={filters.toMember} onChange={e => setFilters(f => ({ ...f, toMember: e.target.value }))}
-                      placeholder="MB No..." className="aw-input" />
+                      placeholder={t('MB No...')} className="aw-input" />
                   </div>
                 </div>
 
                 <button type="button" onClick={handleSearch} disabled={loading} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
-                  {loading ? <RefreshCw size={13} className="aw-spin" /> : <Search size={13} />} Generate Statement
+                  {loading ? <RefreshCw size={13} className="aw-spin" /> : <Search size={13} />} {t('Generate Statement')}
                 </button>
 
                 {data.length > 0 && (
                   <div className="aw-rows aw-fade-in" style={{ paddingTop: 4, borderTop: '1px solid var(--aw-border)' }}>
                     <div className="aw-row">
-                      <span className="aw-row-label">Total Receivable</span>
+                      <span className="aw-row-label">{t('Total Receivable')}</span>
                       <span className="aw-row-value" style={{ color: 'var(--aw-info)' }}>₹{formatCurrency(totals.receivable)}</span>
                     </div>
                     <div className="aw-row">
-                      <span className="aw-row-label">Total Received</span>
+                      <span className="aw-row-label">{t('Total Received')}</span>
                       <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>₹{formatCurrency(totals.received)}</span>
                     </div>
                   </div>
@@ -232,10 +229,10 @@ const InterestReceivableReceivedStatement: React.FC = () => {
             <div className="aw-main-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <span className="aw-card-icon"><FileText size={14} /></span>
-                <h2 className="aw-card-title">Interest Statement</h2>
-                {data.length > 0 && <span className="aw-pill">{data.length} rows</span>}
+                <h2 className="aw-card-title">{t('Interest Statement')}</h2>
+                {data.length > 0 && <span className="aw-pill">{t('{{1}} rows', { 1: data.length })}</span>}
               </div>
-              <span className="aw-meta" style={{ textTransform: 'uppercase' }}>Ref: {stableId.current}</span>
+              <span className="aw-meta" style={{ textTransform: 'uppercase' }}>{t('Ref:')} {stableId.current}</span>
             </div>
             <div className="aw-main-body" style={{ padding: 0 }}>
               {data.length > 0 ? (
@@ -262,7 +259,7 @@ const InterestReceivableReceivedStatement: React.FC = () => {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td style={{ textTransform: 'uppercase' }}>Grand Total</td>
+                      <td style={{ textTransform: 'uppercase' }}>{t('Grand Total')}</td>
                       <td className="is-right" style={{ color: 'var(--aw-info)' }}>₹{formatCurrency(totals.receivable)}</td>
                       <td className="is-right" style={{ color: 'var(--aw-success)' }}>₹{formatCurrency(totals.received)}</td>
                       <td className="is-right" style={{ color: variance >= 0 ? 'var(--aw-success)' : 'var(--aw-danger)' }}>₹{formatCurrency(variance)}</td>
@@ -272,23 +269,21 @@ const InterestReceivableReceivedStatement: React.FC = () => {
               ) : (
                 <div className="aw-empty" style={{ minHeight: '100%' }}>
                   <TrendingUp size={36} />
-                  <span>No statement data — configure filters and generate</span>
+                  <span>{t('No statement data — configure filters and generate')}</span>
                 </div>
               )}
             </div>
             {pages > 1 && (
               <div className="aw-main-foot aw-noprint">
-                <span>
-                  {((page - 1) * STATEMENT_PAGE_SIZE) + 1}–{Math.min(page * STATEMENT_PAGE_SIZE, data.length)} of {data.length}
-                </span>
+                <span>{t('{{1}}–{{2}} of {{3}}', { 1: ((page - 1) * STATEMENT_PAGE_SIZE) + 1, 2: Math.min(page * STATEMENT_PAGE_SIZE, data.length), 3: data.length })}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button type="button" onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
-                    className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label="Previous page" data-tip="Previous page" data-tip-pos="top-end">
+                    className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label={t('Previous page')} data-tip={t('Previous page')} data-tip-pos="top-end">
                     <ChevronLeft size={15} />
                   </button>
                   <span className="aw-strong" style={{ fontVariantNumeric: 'tabular-nums' }}>{page} / {pages}</span>
                   <button type="button" onClick={() => setPage(Math.min(pages, page + 1))} disabled={page === pages}
-                    className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label="Next page" data-tip="Next page" data-tip-pos="top-end">
+                    className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label={t('Next page')} data-tip={t('Next page')} data-tip-pos="top-end">
                     <ChevronRight size={15} />
                   </button>
                 </div>

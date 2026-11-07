@@ -6,6 +6,8 @@ import {
 import { apiService } from '../../services/api';
 import { useUiPrefs, glassVars } from '../../services/uiPrefs';
 import './topbar.css';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../i18n';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,7 +83,7 @@ async function buildNotifications(): Promise<NotificationItem[]> {
           id: 'notification-centre',
           type: errors > 0 ? 'error' : 'warning',
           icon: 'inbox',
-          title: `${c.unread} unread in Notification Centre`,
+          title: tLabel('{{1}} unread in Notification Centre', { 1: c.unread }),
           detail: errors > 0 ? `${errors} need action — open the centre to see them all.` : 'Members to inactivate, insurance and other items waiting for you.',
           time: new Date(),
           actionLabel: 'Open Centre',
@@ -96,7 +98,7 @@ async function buildNotifications(): Promise<NotificationItem[]> {
         id: 'pending-delivery',
         type: 'warning',
         icon: 'message',
-        title: `${stats.data!.pendingCount} messages pending delivery`,
+        title: tLabel('{{1}} messages pending delivery', { 1: stats.data!.pendingCount }),
         detail: 'Notifications queued but not yet delivered to members.',
         time: new Date(),
         actionLabel: 'View Hub',
@@ -114,7 +116,7 @@ async function buildNotifications(): Promise<NotificationItem[]> {
           id: 'failed-delivery',
           type: 'error',
           icon: 'fail',
-          title: `${failed.length} notification${failed.length > 1 ? 's' : ''} failed`,
+          title: tLabel('{{1}} notification{{2}} failed', { 1: failed.length, 2: failed.length > 1 ? 's' : '' }),
           detail: `Last failure — ${failed[0]?.channel ?? 'SMS'} to Member #${failed[0]?.memberNo ?? '—'}`,
           time: new Date(failed[0]?.createdAt ?? Date.now()),
           actionLabel: 'Investigate',
@@ -128,7 +130,7 @@ async function buildNotifications(): Promise<NotificationItem[]> {
           id: `pend-${h.id ?? idx}`,
           type: 'info',
           icon: 'clock',
-          title: `${h.channel ?? 'Message'} → Member #${h.memberNo ?? '—'}`,
+          title: tLabel('{{1}} → Member #{{2}}', { 1: h.channel ?? 'Message', 2: h.memberNo ?? '—' }),
           detail: msg.length > 90 ? msg.slice(0, 90) + '…' : msg || 'Awaiting delivery',
           time: new Date(h.createdAt ?? Date.now()),
         });
@@ -142,7 +144,7 @@ async function buildNotifications(): Promise<NotificationItem[]> {
       id: 'day-end',
       type: 'warning',
       icon: 'alert',
-      title: 'Day End is due',
+      title: tLabel('Day End is due'),
       detail: "It's past 5 PM — please make sure today's Day End has been completed.",
       time: new Date(),
       actionLabel: 'Go to Day End',
@@ -168,7 +170,7 @@ async function buildNotifications(): Promise<NotificationItem[]> {
         id: 'backup-overdue',
         type: 'warning',
         icon: 'database',
-        title: `Backup overdue — ${daysSince} day${daysSince > 1 ? 's' : ''}`,
+        title: tLabel('Backup overdue — {{1}} day{{2}}', { 1: daysSince, 2: daysSince > 1 ? 's' : '' }),
         detail: `Last backup was ${daysSince} days ago. Back up the database to prevent data loss.`,
         time: new Date(lastBackupRaw),
         actionLabel: 'Backup Now',
@@ -180,7 +182,7 @@ async function buildNotifications(): Promise<NotificationItem[]> {
       id: 'no-backup',
       type: 'warning',
       icon: 'database',
-      title: 'No backup on record',
+      title: tLabel('No backup on record'),
       detail: 'No database backup has been recorded. Create one now to safeguard your data.',
       time: new Date(),
       actionLabel: 'Backup Now',
@@ -197,6 +199,7 @@ interface Toast { key: string; item: NotificationItem; leaving: boolean }
 const TOAST_LIFE = 6000;
 
 export const NotificationBell: React.FC = () => {
+  const { t } = useTranslation();
   const prefs = useUiPrefs().notif;
 
   const [open, setOpen] = useState(false);
@@ -358,8 +361,8 @@ export const NotificationBell: React.FC = () => {
             </button>
           )}
         </div>
-        {!read && <span className="tb-dot" aria-label="Unread" />}
-        <button className="tb-x" title="Dismiss" aria-label="Dismiss notification" onClick={() => dismiss(n)}>
+        {!read && <span className="tb-dot" aria-label={t('Unread')} />}
+        <button className="tb-x" title={t('Dismiss')} aria-label={t('Dismiss notification')} onClick={() => dismiss(n)}>
           <X size={13} />
         </button>
       </div>
@@ -382,35 +385,35 @@ export const NotificationBell: React.FC = () => {
   ) : shown.length === 0 ? (
     <div className="tb-empty">
       <div className="tb-empty-ico"><Sparkles size={24} /></div>
-      <b>{filter === 'unread' ? 'Nothing unread' : "You're all caught up"}</b>
-      <span>{filter === 'unread' ? 'Every alert has been read.' : 'New alerts will show up here.'}</span>
+      <b>{filter === 'unread' ? t('Nothing unread') : t("You're all caught up")}</b>
+      <span>{filter === 'unread' ? t('Every alert has been read.') : t('New alerts will show up here.')}</span>
     </div>
   ) : (
     <div className="tb-list">
-      {fresh.length > 0 && earlier.length > 0 && <div className="tb-group">New</div>}
+      {fresh.length > 0 && earlier.length > 0 && <div className="tb-group">{t('New')}</div>}
       {fresh.map(n => renderItem(n, idx++))}
-      {earlier.length > 0 && fresh.length > 0 && <div className="tb-group">Earlier</div>}
+      {earlier.length > 0 && fresh.length > 0 && <div className="tb-group">{t('Earlier')}</div>}
       {earlier.map(n => renderItem(n, idx++))}
     </div>
   );
 
   const actions = (
     <>
-      <button className="tb-iconbtn" title="Refresh" aria-label="Refresh" onClick={refresh}>
+      <button className="tb-iconbtn" title={t('Refresh')} aria-label={t('Refresh')} onClick={refresh}>
         <RefreshCw size={15} className={loading ? 'tb-spin' : ''} />
       </button>
-      <button className="tb-iconbtn" title="Mark all as read" aria-label="Mark all as read" disabled={unreadCount === 0} onClick={markAll}>
+      <button className="tb-iconbtn" title={t('Mark all as read')} aria-label={t('Mark all as read')} disabled={unreadCount === 0} onClick={markAll}>
         <CheckCheck size={16} />
       </button>
     </>
   );
 
   const segment = (
-    <div className="tb-seg" role="group" aria-label="Filter">
+    <div className="tb-seg" role="group" aria-label={t('Filter')}>
       <span className="tb-seg-thumb" style={{ transform: `translateX(${filter === 'unread' ? '100%' : '0'})` }} />
-      <button aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All</button>
+      <button aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>{t('All')}</button>
       <button aria-pressed={filter === 'unread'} onClick={() => setFilter('unread')}>
-        Unread{unreadCount > 0 ? ` · ${unreadCount}` : ''}
+        {t('Unread')}{unreadCount > 0 ? ` · ${unreadCount}` : ''}
       </button>
     </div>
   );
@@ -418,10 +421,10 @@ export const NotificationBell: React.FC = () => {
   const footer = (
     <div className="tb-foot">
       <button onClick={() => { close(); openWindow('/utility/notification-centre'); }}>
-        <Bell size={14} /> Notification Centre
+        <Bell size={14} /> {t('Notification Centre')}
       </button>
       <button onClick={() => { close(); openWindow('/utility/communication-center'); }}>
-        <MessageSquare size={14} /> Communication Hub
+        <MessageSquare size={14} /> {t('Communication Hub')}
       </button>
     </div>
   );
@@ -430,10 +433,10 @@ export const NotificationBell: React.FC = () => {
     <div className={`tb-root ${motionClass}`} data-tour="notifications" data-shape={prefs.shape} ref={rootRef} style={{ position: 'relative' }}>
       <button
         className={`tb-bell${ring ? ' tb-ring' : ''}`}
-        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        aria-label={unreadCount > 0 ? t('Notifications, {{1}} unread', { 1: unreadCount }) : t('Notifications')}
         aria-expanded={open}
         aria-haspopup="dialog"
-        title="Notifications"
+        title={t('Notifications')}
         onClick={() => (open ? close() : setOpen(true))}
       >
         {unreadCount > 0 ? <BellRing size={19} /> : <Bell size={19} />}
@@ -446,20 +449,20 @@ export const NotificationBell: React.FC = () => {
           data-style={prefs.style}
           data-closing={closing}
           role="dialog"
-          aria-label="Notifications"
+          aria-label={t('Notifications')}
           style={surfaceVars}
         >
           {bubble ? (
             <div className="tb-bar tb-surface">
-              <span className="tb-title">Notifications</span>
-              {unreadCount > 0 && <span className="tb-count">{unreadCount} new</span>}
+              <span className="tb-title">{t('Notifications')}</span>
+              {unreadCount > 0 && <span className="tb-count">{t('{{1}} new', { 1: unreadCount })}</span>}
               <span className="tb-spacer" />
               {actions}
             </div>
           ) : (
             <div className="tb-head">
-              <span className="tb-title">Notifications</span>
-              {unreadCount > 0 && <span className="tb-count">{unreadCount} new</span>}
+              <span className="tb-title">{t('Notifications')}</span>
+              {unreadCount > 0 && <span className="tb-count">{t('{{1}} new', { 1: unreadCount })}</span>}
               <span className="tb-spacer" />
               {actions}
             </div>

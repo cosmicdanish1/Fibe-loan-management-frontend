@@ -547,8 +547,24 @@ html.dark .aw-select-popup.ant-select-dropdown { background-color: var(--aw-surf
 /* Narrower windows keep the same look; layout reflows only when fields would get too tight. */
 @media (max-width: 900px) { .app-window .aw-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .app-window .aw-grid { grid-template-columns: minmax(0, 1fr); } .app-window .aw-header { flex-wrap: wrap; } }
+/* Window open (ES-436): every redesigned window fades in and rises a few pixels. 160 ms, ease-out, plays once when the
+   window mounts; it never delays the window becoming usable (content is interactive from the first frame).
+   Calm mode / the system reduce-motion setting turn it off. */
+/* Chosen in Settings > Animations (src/config/motion.ts). The desktop shell adds html.aw-entering at the moment the window is
+   shown, so the animation is actually seen. data-motion = fade | slide | zoom | off. */
+html.aw-entering[data-motion="fade"]  .app-window:not(.aw-embed) { animation: awWinFade  .14s var(--aw-ease) both !important; animation-duration: .14s !important; animation-iteration-count: 1 !important; }
+html.aw-entering[data-motion="slide"] .app-window:not(.aw-embed) { animation: awWinSlide .22s var(--aw-ease) both !important; animation-duration: .22s !important; animation-iteration-count: 1 !important; }
+html.aw-entering[data-motion="zoom"]  .app-window:not(.aw-embed) { animation: awWinZoom  .22s var(--aw-ease) both !important; animation-duration: .22s !important; animation-iteration-count: 1 !important; }
+@keyframes awWinFade  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes awWinSlide { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes awWinZoom  { from { opacity: 0; transform: scale(.955); } to { opacity: 1; transform: none; } }
+@keyframes awWindowIn { from { opacity: 0; transform: translateY(6px) scale(.995); } to { opacity: 1; transform: none; } }
+/* Slow-ish PC (detected): every animation inside windows and pop-ups is kept very short. */
+html[data-motion-lite="1"] :where(.app-window, .app-window *, .ant-select-dropdown, .ant-select-dropdown *, .ant-dropdown, .ant-dropdown *, .ant-modal-root *, .ant-message *, .ant-notification *, .ant-popover *, .ant-tooltip *) { animation-duration: .1s !important; transition-duration: .1s !important; }
+/* Off: no motion anywhere except loading indicators, which must keep turning. */
+html[data-motion="off"] :where(.app-window, .app-window *, .app-window *::before, .app-window *::after, .aw-select-popup, .aw-select-popup *, .ant-select-dropdown, .ant-select-dropdown *, .ant-dropdown, .ant-dropdown *, .ant-modal-root, .ant-modal-root *, .ant-message, .ant-message *, .ant-notification, .ant-notification *, .ant-popover, .ant-popover *, .ant-tooltip, .ant-tooltip *):not(.ant-spin):not(.ant-spin *):not([class*="load"]):not([class*="load"] *) { animation-duration: .001ms !important; animation-delay: 0s !important; transition-duration: .001ms !important; transition-delay: 0s !important; }
 @media (prefers-reduced-motion: reduce) {
-  .app-window *, .aw-select-popup, .aw-select-popup * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  .app-window:not(.aw-embed), .app-window *, .aw-select-popup, .aw-select-popup * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
 
 /* ── App Window: two-pane layout, tabs, tables, modal, inputs with icons ── */

@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Presentation } from 'lucide-react';
+import { Presentation, Sparkles } from 'lucide-react';
 import { useAuth } from '../../auth/context/AuthContext';
 import {
-  markProgress, ONBOARDING_REPLAY_EVENT, ONBOARDING_SLIDES_EVENT, onboardingApi, OnboardingStatus, trackEvent,
+  markProgress, ONBOARDING_REPLAY_EVENT, ONBOARDING_SLIDES_EVENT, ONBOARDING_WHATSNEW_EVENT, onboardingApi, OnboardingStatus, trackEvent,
 } from './onboardingApi';
 import { ONBOARDING_STEPS, OnboardingStep } from './steps';
 import TermsGate from './TermsGate';
@@ -11,12 +11,15 @@ import ChecklistWidget from './ChecklistWidget';
 import SlideDeck from './slides/SlideDeck';
 import { HOW_IT_WORKS_SLIDES } from './slides/howItWorksSlides';
 import { availableTourSteps, TOUR_STEP_PREFIX, TourStep } from './tourSteps';
+import { buildWhatsNewSlides } from './whatsNew/WhatsNewSlides';
+import { compareVersions, getAppVersion, isUpgrade, Release, RELEASES, selectLatest, selectUnseen } from './whatsNew/whatsNew';
 import { useCalm } from './calm';
 import { useFocusTrap } from './useFocusTrap';
 import { useGlass } from './useGlass';
 import './onboarding.css';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../i18n';
 
-const APP_VERSION: string | undefined = (window as any).electronAPI?.appVersion;
 const SESSION_FLAG = 'onboarding.autostartSession';
 const isTyping = (t: EventTarget | null) => {
   const el = t as HTMLElement | null;
@@ -31,6 +34,7 @@ const isTyping = (t: EventTarget | null) => {
  * checklist (a small pill) lives here too, so it is shown only while no dialog is open.
  */
 export const OnboardingHost: React.FC = () => {
+  const { t } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
   const glass = useGlass();
   const calm = useCalm();
@@ -43,6 +47,8 @@ export const OnboardingHost: React.FC = () => {
   const [tour, setTour] = useState<{ steps: TourStep[]; index: number } | null>(null);
   // The slides: opened after the tour, or on demand from Help > How It Works. `inWalkthrough` decides what closing does.
   const [deck, setDeck] = useState<{ inWalkthrough: boolean } | null>(null);
+  // What's New after an update: `onDemand` = opened from the Help menu rather than because the app was updated.
+  const [whatsNew, setWhatsNew] = useState<{ releases: Release[]; current: string } | null>(null);
   const walkthroughWanted = useRef(false);
   const statusRef = useRef<OnboardingStatus | null>(null);
   const dialogRef = useFocusTrap<HTMLDivElement>(!!steps && !termsPending && !tour && !deck);
@@ -71,6 +77,29 @@ export const OnboardingHost: React.FC = () => {
     setTour({ steps: list, index: Math.max(0, at) });
     return true;
   }, [user]);
+
+  // What's New: shown once after the app was updated, to people who have used the app before (a first-time
+  // person gets the walkthrough instead, which records the version they started on).
+  // Also remembered on this PC: if the server is older than this app and cannot store it, the popup must still not repeat.
+  const seenKey = `onboarding.whatsNewSeen.${user?.username ?? ''}`;
+  const markWhatsNewSeen = useCallback((version: string) => {
+    if (statusRef.current) statusRef.current = { ...statusRef.current, lastSeenVersion: version };
+    try { localStorage.setItem(seenKey, version); } catch { /* storage unavailable */ }
+    onboardingApi.markWhatsNewSeen(version).catch(() => undefined);
+  }, [seenKey]);
+
+  const showWhatsNewIfDue = useCallback(async () => {
+    const s = statusRef.current;
+    const current = await getAppVersion();
+    if (!s || !current || !s.completedAt) return;
+    let local: string | null = null;
+    try { local = localStorage.getItem(seenKey); } catch { /* storage unavailable */ }
+    const lastSeen = local && (!s.lastSeenVersion || compareVersions(local, s.lastSeenVersion) > 0) ? local : s.lastSeenVersion;
+    if (!isUpgrade(current, lastSeen)) return;
+    const releases = selectUnseen(RELEASES, current, lastSeen);
+    if (releases.length === 0) { markWhatsNewSeen(current); return; } // this version has no notes: do not ask again
+    setWhatsNew({ releases, current });
+  }, [markWhatsNewSeen, seenKey]);
 
   // Walkthrough auto-start: once per login. sessionStartTime changes on every login, so a
   // reload of the same session does not show it again, but a new login does.
@@ -101,25 +130,36 @@ export const OnboardingHost: React.FC = () => {
         walkthroughWanted.current = !!s.shouldShow;
         setQuiet(s.effectiveMode === 'never');
         if (s.terms && !s.terms.accepted) setTermsPending(true);
-        else autostart(!!s.shouldShow, s.lastStep);
+        else {
+          autostart(!!s.shouldShow, s.lastStep);
+          if (!s.shouldShow) void showWhatsNewIfDue();
+        }
       })
       .catch(() => undefined); // a failed check must never block the dashboard
     return () => { cancelled = true; };
-  }, [isAuthenticated, user, autostart]);
+  }, [isAuthenticated, user, autostart, showWhatsNewIfDue]);
 
   const onTermsAccepted = () => {
     setTermsPending(false);
     autostart(walkthroughWanted.current, statusRef.current?.lastStep);
+    if (!walkthroughWanted.current) void showWhatsNewIfDue();
   };
 
   useEffect(() => {
     const replay = () => start('replay');
     const openSlides = () => setDeck({ inWalkthrough: false });
+    const openWhatsNew = async () => {
+      const current = await getAppVersion();
+      const releases = current ? selectLatest(RELEASES, current) : [];
+      if (current && releases.length > 0) setWhatsNew({ releases, current });
+    };
     window.addEventListener(ONBOARDING_REPLAY_EVENT, replay);
     window.addEventListener(ONBOARDING_SLIDES_EVENT, openSlides);
+    window.addEventListener(ONBOARDING_WHATSNEW_EVENT, openWhatsNew);
     return () => {
       window.removeEventListener(ONBOARDING_REPLAY_EVENT, replay);
       window.removeEventListener(ONBOARDING_SLIDES_EVENT, openSlides);
+      window.removeEventListener(ONBOARDING_WHATSNEW_EVENT, openWhatsNew);
     };
   }, [start]);
 
@@ -130,10 +170,13 @@ export const OnboardingHost: React.FC = () => {
     setDeck(null);
     if (statusRef.current) statusRef.current = { ...statusRef.current, completedAt: new Date().toISOString() };
     try {
-      await onboardingApi.complete(APP_VERSION);
+      const done = await onboardingApi.complete(await getAppVersion());
+      // The server records the version for a first-time person; keep our copy in step so they are not shown What's New.
+      if (statusRef.current && done) statusRef.current = { ...statusRef.current, ...done };
       if (dontShowAgain) { await onboardingApi.setPreference('never'); setQuiet(true); }
+      void showWhatsNewIfDue(); // a returning person who just replayed the tour may still have an update to hear about
     } catch { /* it will simply be offered again next time */ }
-  }, [dontShowAgain]);
+  }, [dontShowAgain, showWhatsNewIfDue]);
 
   const onTourStep = useCallback((id: string) => {
     trackEvent('tour_step', id);
@@ -161,9 +204,19 @@ export const OnboardingHost: React.FC = () => {
   } else if (deck && user) {
     // Opened on demand: just close. Opened by the walkthrough: closing ends it.
     content = (
-      <SlideDeck heading="How it works" icon={<Presentation size={22} />} slides={HOW_IT_WORKS_SLIDES.filter((s) => !s.enabled || s.enabled(user))}
+      <SlideDeck heading={t('How it works')} icon={<Presentation size={22} />} slides={HOW_IT_WORKS_SLIDES.filter((s) => !s.enabled || s.enabled(user))}
         onClose={deck.inWalkthrough ? finish : () => setDeck(null)} doneLabel={deck.inWalkthrough ? 'Finish' : 'Done'}
         onComplete={() => { trackEvent('slides_done'); markProgress('slides'); }} />
+    );
+  } else if (whatsNew && user) {
+    content = (
+      <SlideDeck heading={t("What's new")} icon={<Sparkles size={22} />}
+        slides={buildWhatsNewSlides(whatsNew.releases, (v) => t("What's new in {{1}}", { 1: v }))}
+        onClose={() => {
+          if (isUpgrade(whatsNew.current, statusRef.current?.lastSeenVersion ?? null)) markWhatsNewSeen(whatsNew.current);
+          setWhatsNew(null);
+        }}
+        doneLabel={t('Got it')} />
     );
   } else if (tour && user) {
     content = (
@@ -191,7 +244,7 @@ export const OnboardingHost: React.FC = () => {
           <div className="ob-hero">
             <div className="ob-icon">{step.icon}</div>
             <div>
-              <h2 className="ob-title" id="ob-dialog-title">{step.title}</h2>
+              <h2 className="ob-title" id="ob-dialog-title">{tLabel(step.title)}</h2>
               {step.subtitle && <p className="ob-subtitle">{step.subtitle}</p>}
             </div>
             <div className="ob-hero-end">
@@ -200,7 +253,7 @@ export const OnboardingHost: React.FC = () => {
                   <span key={s.id} className={`ob-dot ${i === index ? 'is-current' : i < index ? 'is-done' : ''}`} />
                 ))}
               </div>
-              <span className="ob-sr" aria-live="polite">Step {index + 1} of {steps.length}: {step.title}</span>
+              <span className="ob-sr" aria-live="polite">{t('Step {{1}} of {{2}}: {{3}}', { 1: index + 1, 2: steps.length, 3: step.title })}</span>
             </div>
           </div>
 
@@ -213,11 +266,11 @@ export const OnboardingHost: React.FC = () => {
           <div className="ob-footer">
             <label className="ob-check">
               <input type="checkbox" checked={dontShowAgain} onChange={(e) => setDontShowAgain(e.target.checked)} />
-              Don&apos;t show this again
+              {t("Don't show this again")}
             </label>
             <div className="ob-footer-actions">
-              <button type="button" className="ob-btn ob-btn-ghost" onClick={() => { trackEvent('skip', step.id); finish(); }}>Skip tour</button>
-              {index > 0 && <button type="button" className="ob-btn ob-btn-secondary" onClick={back}>Back</button>}
+              <button type="button" className="ob-btn ob-btn-ghost" onClick={() => { trackEvent('skip', step.id); finish(); }}>{t('Skip tour')}</button>
+              {index > 0 && <button type="button" className="ob-btn ob-btn-secondary" onClick={back}>{t('Back')}</button>}
               <button type="button" className="ob-btn ob-btn-primary" onClick={next}>{forwardLabel}</button>
             </div>
           </div>

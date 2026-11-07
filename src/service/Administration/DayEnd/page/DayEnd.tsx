@@ -17,6 +17,7 @@ import { useDayend, useDayendCalculations } from '../hooks/useDayend';
 import type { DayendDisplayProps } from '../interface/dayend';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import { localISODate } from '../../../../utils/dates';
+import { useTranslation } from 'react-i18next';
 
 const MetricCard: React.FC<DayendDisplayProps & { icon: React.ReactNode; tone?: string }> = ({
   label,
@@ -60,6 +61,7 @@ const closeWindow = () => {
 };
 
 const DayEnd: React.FC = () => {
+  const { t } = useTranslation();
   const { dayendData, isProcessing, isLoading, error, processDayend, refreshData, initializeWorkingDate, isInitializing } = useDayend();
   const { isBalanced, difference } = useDayendCalculations(dayendData);
 
@@ -106,7 +108,7 @@ const DayEnd: React.FC = () => {
       <div className="app-window">
         <div className="aw-empty" style={{ margin: 'auto' }}>
           <RefreshCw size={28} className="aw-spin" />
-          <span className="aw-meta">Loading...</span>
+          <span className="aw-meta">{t('Loading...')}</span>
         </div>
       </div>
     );
@@ -121,15 +123,14 @@ const DayEnd: React.FC = () => {
           <section className="aw-card aw-fade-in">
             <div className="aw-card-head">
               <span className="aw-card-icon" style={{ color: 'var(--aw-warning)' }}><Clock size={14} /></span>
-              <h2 className="aw-card-title">No Working Date Set</h2>
+              <h2 className="aw-card-title">{t('No Working Date Set')}</h2>
             </div>
             <div className="aw-stack">
               <p className="aw-meta" style={{ lineHeight: 1.5 }}>
-                Day-End has never been initialized on this system. Choose the current business date to get started —
-                this only needs to be done once.
+                {t('Day-End has never been initialized on this system. Choose the current business date to get started — this only needs to be done once.')}
               </p>
               <div>
-                <label className="aw-label" htmlFor="de-init">Current Working Date</label>
+                <label className="aw-label" htmlFor="de-init">{t('Current Working Date')}</label>
                 <input id="de-init" type="date" value={initDate} onChange={(e) => setInitDate(e.target.value)} className="aw-input" />
               </div>
               <button
@@ -140,7 +141,7 @@ const DayEnd: React.FC = () => {
                 style={{ width: '100%' }}
               >
                 {isInitializing ? <RefreshCw size={13} className="aw-spin" /> : <Play size={13} />}
-                {isInitializing ? 'Initializing...' : 'Set Working Date'}
+                {isInitializing ? t('Initializing...') : t('Set Working Date')}
               </button>
               {error && <p className="aw-meta" style={{ color: 'var(--aw-danger)', fontWeight: 700 }}>{error}</p>}
             </div>
@@ -164,7 +165,7 @@ const DayEnd: React.FC = () => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Day End Closing</h1>
+          <h1 className="aw-title">{t('Day End Closing')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Calendar size={12} /> {new Date(dayendData.date).toDateString()}
           </p>
@@ -175,8 +176,8 @@ const DayEnd: React.FC = () => {
             onClick={refreshData}
             disabled={isProcessing}
             className="aw-icon-btn"
-            aria-label="Refresh"
-            data-tip="Refresh"
+            aria-label={t('Refresh')}
+            data-tip={t('Refresh')}
             data-tip-pos="bottom-end"
           >
             <RefreshCw size={14} className={isLoading ? 'aw-spin' : ''} />
@@ -188,10 +189,10 @@ const DayEnd: React.FC = () => {
             className="aw-btn aw-btn-primary"
           >
             {isProcessing ? <RefreshCw size={13} className="aw-spin" /> : <Play size={13} />}
-            {isProcessing ? 'Closing...' : 'Close Day'}
+            {isProcessing ? t('Closing...') : t('Close Day')}
           </button>
           <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -203,9 +204,9 @@ const DayEnd: React.FC = () => {
           <div className={`aw-alert ${isBalanced ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0, alignItems: 'center' }} role="status">
             {isBalanced ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
             <div style={{ flex: 1 }}>
-              <div style={{ textTransform: 'uppercase', letterSpacing: '.04em' }}>{isBalanced ? 'Accounts Balanced' : 'Ledger Unbalanced'}</div>
+              <div style={{ textTransform: 'uppercase', letterSpacing: '.04em' }}>{isBalanced ? t('Accounts Balanced') : t('Ledger Unbalanced')}</div>
               <div style={{ fontWeight: 500, opacity: .85 }}>
-                {isBalanced ? 'System verified. Closing enabled.' : 'Day end restricted until resolved.'}
+                {isBalanced ? t('System verified. Closing enabled.') : t('Day end restricted until resolved.')}
               </div>
             </div>
             {!isBalanced && <span className="aw-pill tone-danger">₹{Math.abs(difference).toLocaleString('en-IN')}</span>}
@@ -213,10 +214,10 @@ const DayEnd: React.FC = () => {
 
           {/* Metrics */}
           <div className="aw-stats" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
-            <MetricCard label="Opening" value={dayendData.openingBalance} isAmount icon={<Wallet />} />
-            <MetricCard label="Receipts" value={dayendData.totalCredit} isAmount icon={<TrendingUp />} tone="var(--aw-success)" />
-            <MetricCard label="Payments" value={dayendData.totalDebit} isAmount icon={<TrendingDown />} tone="var(--aw-danger)" />
-            <MetricCard label="System Closing" value={dayendData.closingBalance} isAmount icon={<LayoutDashboard />} tone="var(--aw-info)" />
+            <MetricCard label={t('Opening')} value={dayendData.openingBalance} isAmount icon={<Wallet />} />
+            <MetricCard label={t('Receipts')} value={dayendData.totalCredit} isAmount icon={<TrendingUp />} tone="var(--aw-success)" />
+            <MetricCard label={t('Payments')} value={dayendData.totalDebit} isAmount icon={<TrendingDown />} tone="var(--aw-danger)" />
+            <MetricCard label={t('System Closing')} value={dayendData.closingBalance} isAmount icon={<LayoutDashboard />} tone="var(--aw-info)" />
           </div>
 
           <div className="aw-split aw-split-wide" style={{ height: 'auto', gridTemplateColumns: 'minmax(0, 7fr) minmax(0, 5fr)' }}>
@@ -224,14 +225,14 @@ const DayEnd: React.FC = () => {
             <section className="aw-card" style={{ alignSelf: 'start' }}>
               <div className="aw-card-head">
                 <span className="aw-card-icon"><CheckCircle2 size={14} /></span>
-                <h2 className="aw-card-title">System Verification</h2>
+                <h2 className="aw-card-title">{t('System Verification')}</h2>
               </div>
               <div className="aw-rows">
                 {[
-                  { label: 'Ledger Consistency', status: isBalanced },
-                  { label: 'Voucher Sync', status: voucherSyncOk },
-                  { label: 'Date Alignment', status: dateAlignmentOk },
-                  { label: 'Balance Reconciliation', status: isBalanced },
+                  { label: t('Ledger Consistency'), status: isBalanced },
+                  { label: t('Voucher Sync'), status: voucherSyncOk },
+                  { label: t('Date Alignment'), status: dateAlignmentOk },
+                  { label: t('Balance Reconciliation'), status: isBalanced },
                 ].map((check, i) => (
                   <div key={i} className="aw-row" style={{ alignItems: 'center' }}>
                     <span className="aw-row-label" style={{ color: 'var(--aw-text)' }}>{check.label}</span>
@@ -251,11 +252,11 @@ const DayEnd: React.FC = () => {
                 onClick={handleCloseDayClick}
                 className="aw-panel aw-panel-accent"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%', textAlign: 'left', cursor: 'pointer' }}
-                data-tip="Select the next working date"
+                data-tip={t('Select the next working date')}
                 data-tip-pos="top-start"
               >
                 <span>
-                  <span className="aw-label" style={{ marginBottom: 2 }}>Next Opening Date</span>
+                  <span className="aw-label" style={{ marginBottom: 2 }}>{t('Next Opening Date')}</span>
                   <span className="aw-strong">{nextOpening}</span>
                 </span>
                 <Calendar size={18} style={{ color: 'var(--aw-accent)' }} />
@@ -264,20 +265,20 @@ const DayEnd: React.FC = () => {
               {!isBalanced && (
                 <div className="aw-alert aw-alert-danger" style={{ marginBottom: 0 }}>
                   <AlertCircle size={15} />
-                  <span>Discrepancy Action — resolve variance in <strong>Daily Cash Book</strong> to proceed.</span>
+                  <span>{t('Discrepancy Action — resolve variance in')} <strong>{t('Daily Cash Book')}</strong> {t('to proceed.')}</span>
                 </div>
               )}
 
               {pendingLoans !== undefined && pendingLoans > 0 && (
                 <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0 }}>
                   <AlertCircle size={15} />
-                  <span>Pending Loan Approvals — <strong>{pendingLoans}</strong> loan application(s) awaiting approval. Day End blocked until resolved.</span>
+                  <span>Pending Loan Approvals — <strong>{pendingLoans}</strong> {t('loan application(s) awaiting approval. Day End blocked until resolved.')}</span>
                 </div>
               )}
 
               {(dayendData.paymentVouchers !== undefined || dayendData.receiptVouchers !== undefined) && (
                 <section className="aw-card">
-                  <p className="aw-label">Today's Vouchers</p>
+                  <p className="aw-label">{t("Today's Vouchers")}</p>
                   <div className="aw-stats" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
                     {[
                       { lbl: 'Receipts', val: dayendData.receiptVouchers ?? 0 },
@@ -299,7 +300,7 @@ const DayEnd: React.FC = () => {
             <div className="aw-alert aw-alert-danger aw-fade-in" style={{ marginBottom: 0, alignItems: 'center' }} role="alert">
               <AlertCircle size={15} />
               <span style={{ flex: 1 }}>{error}</span>
-              <button type="button" onClick={refreshData} className="aw-btn aw-btn-secondary aw-btn-sm">Retry</button>
+              <button type="button" onClick={refreshData} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Retry')}</button>
             </div>
           )}
         </div>
@@ -308,13 +309,13 @@ const DayEnd: React.FC = () => {
       {/* ── Processing overlay (cannot be dismissed) ── */}
       {isProcessing && (
         <div className="aw-modal-backdrop">
-          <div className="aw-modal" role="alertdialog" aria-modal="true" aria-label="Day-End Processing" style={{ height: 'auto', maxWidth: '24rem' }}>
+          <div className="aw-modal" role="alertdialog" aria-modal="true" aria-label={t('Day-End Processing')} style={{ height: 'auto', maxWidth: '24rem' }}>
             <div className="aw-stack" style={{ alignItems: 'center', textAlign: 'center', padding: 'calc(var(--aw-pad) * 1.6)' }}>
               <RefreshCw size={34} className="aw-spin" style={{ color: 'var(--aw-accent)' }} />
               <div>
-                <p className="aw-strong">Day-End Processing</p>
-                <p className="aw-meta" style={{ marginTop: 4 }}>Please wait — running interest calculation, backup &amp; cleanup...</p>
-                <p className="aw-meta" style={{ marginTop: 8 }}>This may take up to 2 minutes</p>
+                <p className="aw-strong">{t('Day-End Processing')}</p>
+                <p className="aw-meta" style={{ marginTop: 4 }}>{t('Please wait — running interest calculation, backup & cleanup...')}</p>
+                <p className="aw-meta" style={{ marginTop: 8 }}>{t('This may take up to 2 minutes')}</p>
               </div>
             </div>
           </div>
@@ -324,7 +325,7 @@ const DayEnd: React.FC = () => {
       {/* ── Select Next Working Date ── */}
       <AwDialog
         open={showNextDateModal}
-        title="Select Next Working Date"
+        title={t('Select Next Working Date')}
         icon={<Calendar size={14} />}
         onClose={() => setShowNextDateModal(false)}
         maxWidth="24rem"
@@ -332,7 +333,7 @@ const DayEnd: React.FC = () => {
       >
         <div className="aw-stack">
           <div>
-            <label className="aw-label" htmlFor="de-next">Date</label>
+            <label className="aw-label" htmlFor="de-next">{t('Date')}</label>
             <input
               id="de-next"
               type="date"
@@ -343,13 +344,13 @@ const DayEnd: React.FC = () => {
             />
           </div>
           <div>
-            <span className="aw-label">Day</span>
+            <span className="aw-label">{t('Day')}</span>
             <div className="aw-input" style={{ display: 'flex', alignItems: 'center', color: 'var(--aw-accent)', fontWeight: 700 }}>
               {getDayName(nextWorkingDate)}
             </div>
           </div>
           <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => setShowNextDateModal(false)} className="aw-btn aw-btn-secondary">Exit</button>
+            <button type="button" onClick={() => setShowNextDateModal(false)} className="aw-btn aw-btn-secondary">{t('Exit')}</button>
             <button type="button" onClick={handleConfirmNextDate} disabled={!nextWorkingDate} className="aw-btn aw-btn-primary">OK</button>
           </div>
         </div>

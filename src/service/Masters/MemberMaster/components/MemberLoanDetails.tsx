@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import memberLoanService, { LoanMasterDetails, MemberLoanDetails } from '../../../../services/memberLoanService';
+import { useTranslation } from 'react-i18next';
 
 interface MemberLoanDetailsProps {
   memberNumber?: string;
@@ -7,6 +8,7 @@ interface MemberLoanDetailsProps {
 }
 
 const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNumber, loanCaseNo }) => {
+  const { t } = useTranslation();
   const [activeLoans, setActiveLoans] = useState<LoanMasterDetails[]>([]);
   const [pendingLoans, setPendingLoans] = useState<MemberLoanDetails[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,7 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
   if (loading) {
     return (
       <div className="mld-root flex items-center justify-center p-8">
-        <div className="text-gray-600">Loading loan details...</div>
+        <div className="text-gray-600">{t('Loading loan details...')}</div>
         <style>{`html.dark .mld-root .text-gray-600 { color: #8e8e93 !important; }`}</style>
       </div>
     );
@@ -97,9 +99,7 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
               : 'text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => setSelectedTab('active')}
-        >
-          Active Loans ({activeLoans.length})
-        </button>
+        >{t('Active Loans ({{1}})', { 1: activeLoans.length })}</button>
         <button
           className={`px-4 py-2 font-medium ${
             selectedTab === 'pending'
@@ -107,16 +107,14 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
               : 'text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => setSelectedTab('pending')}
-        >
-          Pending Loans ({pendingLoans.length})
-        </button>
+        >{t('Pending Loans ({{1}})', { 1: pendingLoans.length })}</button>
       </div>
 
       {/* Active Loans */}
       {selectedTab === 'active' && (
         <div className="space-y-4">
           {activeLoans.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No active loans found</div>
+            <div className="text-center py-8 text-gray-500">{t('No active loans found')}</div>
           ) : (
             activeLoans.map((loan) => (
               <div key={loan.loanCaseNo} className="mld-card bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
@@ -124,7 +122,7 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
                   {/* Loan Information */}
                   <div className="col-span-2 md:col-span-3 border-b pb-2 mb-2">
                     <h3 className="fz-heading font-semibold text-gray-800">
-                      Loan Case No: {loan.loanCaseNo}
+                      {t('Loan Case No:')} {loan.loanCaseNo}
                     </h3>
                     <p className="fz-body text-gray-600">
                       {memberLoanService.formatLoanType(loan.loanType)}
@@ -133,49 +131,49 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
 
                   {/* Member Details */}
                   <div>
-                    <label className="fz-label text-gray-500">Member Name</label>
+                    <label className="fz-label text-gray-500">{t('Member Name')}</label>
                     <p className="font-medium">{loan.memberName}</p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Member Number</label>
+                    <label className="fz-label text-gray-500">{t('Member Number')}</label>
                     <p className="font-medium">{loan.memberNumber}</p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Office</label>
+                    <label className="fz-label text-gray-500">{t('Office')}</label>
                     <p className="font-medium">{loan.officeName}</p>
                   </div>
 
                   {/* Loan Details */}
                   <div>
-                    <label className="fz-label text-gray-500">Loan Amount</label>
+                    <label className="fz-label text-gray-500">{t('Loan Amount')}</label>
                     <p className="font-medium text-green-600">
                       {memberLoanService.formatCurrency(loan.loanAmount)}
                     </p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Sanction Date</label>
+                    <label className="fz-label text-gray-500">{t('Sanction Date')}</label>
                     <p className="font-medium">
                       {memberLoanService.formatDate(loan.paymentDate)}
                     </p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Rate of Interest</label>
+                    <label className="fz-label text-gray-500">{t('Rate of Interest')}</label>
                     <p className="font-medium">{loan.rate.toFixed(2)}%</p>
                   </div>
 
                   {/* Installment Details */}
                   <div>
-                    <label className="fz-label text-gray-500">No. of Installments</label>
+                    <label className="fz-label text-gray-500">{t('No. of Installments')}</label>
                     <p className="font-medium">{loan.noOfInstallments}</p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Installment Amount</label>
+                    <label className="fz-label text-gray-500">{t('Installment Amount')}</label>
                     <p className="font-medium">
                       {memberLoanService.formatCurrency(loan.installmentAmount)}
                     </p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Outstanding Balance</label>
+                    <label className="fz-label text-gray-500">{t('Outstanding Balance')}</label>
                     <p className="font-medium text-red-600">
                       {memberLoanService.formatCurrency(loan.balance)}
                     </p>
@@ -183,26 +181,26 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
 
                   {/* Additional Details */}
                   <div>
-                    <label className="fz-label text-gray-500">Basic Pay</label>
+                    <label className="fz-label text-gray-500">{t('Basic Pay')}</label>
                     <p className="font-medium">
                       {memberLoanService.formatCurrency(loan.basicPay)}
                     </p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Interest Amount</label>
+                    <label className="fz-label text-gray-500">{t('Interest Amount')}</label>
                     <p className="font-medium">
                       {memberLoanService.formatCurrency(loan.interestAmount)}
                     </p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Penal Rate</label>
+                    <label className="fz-label text-gray-500">{t('Penal Rate')}</label>
                     <p className="font-medium">{loan.penalRate.toFixed(2)}%</p>
                   </div>
 
                   {/* Purpose */}
                   {loan.purpose && (
                     <div className="col-span-2 md:col-span-3">
-                      <label className="fz-label text-gray-500">Purpose</label>
+                      <label className="fz-label text-gray-500">{t('Purpose')}</label>
                       <p className="font-medium">{loan.purpose}</p>
                     </div>
                   )}
@@ -217,7 +215,7 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
       {selectedTab === 'pending' && (
         <div className="space-y-4">
           {pendingLoans.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No pending loans found</div>
+            <div className="text-center py-8 text-gray-500">{t('No pending loans found')}</div>
           ) : (
             pendingLoans.map((loan) => (
               <div key={loan.loanCaseNo} className="mld-card bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
@@ -227,7 +225,7 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="fz-heading font-semibold text-gray-800">
-                          Loan Case No: {loan.loanCaseNo}
+                          {t('Loan Case No:')} {loan.loanCaseNo}
                         </h3>
                         <p className="fz-body text-gray-600">
                           {memberLoanService.formatLoanType(loan.loanType)}
@@ -249,33 +247,33 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
 
                   {/* Member Details */}
                   <div>
-                    <label className="fz-label text-gray-500">Member Name</label>
+                    <label className="fz-label text-gray-500">{t('Member Name')}</label>
                     <p className="font-medium">{loan.memberName}</p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Member Number</label>
+                    <label className="fz-label text-gray-500">{t('Member Number')}</label>
                     <p className="font-medium">{loan.memberNumber}</p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Office</label>
+                    <label className="fz-label text-gray-500">{t('Office')}</label>
                     <p className="font-medium">{loan.officeName}</p>
                   </div>
 
                   {/* Application Details */}
                   <div>
-                    <label className="fz-label text-gray-500">Applied Amount</label>
+                    <label className="fz-label text-gray-500">{t('Applied Amount')}</label>
                     <p className="font-medium text-blue-600">
                       {memberLoanService.formatCurrency(loan.appliedAmount)}
                     </p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">Application Date</label>
+                    <label className="fz-label text-gray-500">{t('Application Date')}</label>
                     <p className="font-medium">
                       {memberLoanService.formatDate(loan.applicationDate)}
                     </p>
                   </div>
                   <div>
-                    <label className="fz-label text-gray-500">No. of Installments</label>
+                    <label className="fz-label text-gray-500">{t('No. of Installments')}</label>
                     <p className="font-medium">{loan.noOfInstallments}</p>
                   </div>
 
@@ -283,13 +281,13 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
                   {loan.status === 'Sanctioned' && (
                     <>
                       <div>
-                        <label className="fz-label text-gray-500">Sanctioned Amount</label>
+                        <label className="fz-label text-gray-500">{t('Sanctioned Amount')}</label>
                         <p className="font-medium text-green-600">
                           {memberLoanService.formatCurrency(loan.sanctionedAmount)}
                         </p>
                       </div>
                       <div>
-                        <label className="fz-label text-gray-500">Sanction Date</label>
+                        <label className="fz-label text-gray-500">{t('Sanction Date')}</label>
                         <p className="font-medium">
                           {memberLoanService.formatDate(loan.sanctionDate)}
                         </p>
@@ -299,7 +297,7 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
 
                   {/* Additional Details */}
                   <div>
-                    <label className="fz-label text-gray-500">Basic Pay</label>
+                    <label className="fz-label text-gray-500">{t('Basic Pay')}</label>
                     <p className="font-medium">
                       {memberLoanService.formatCurrency(loan.basicPay)}
                     </p>
@@ -308,7 +306,7 @@ const MemberLoanDetailsComponent: React.FC<MemberLoanDetailsProps> = ({ memberNu
                   {/* Purpose */}
                   {loan.purpose && (
                     <div className="col-span-2 md:col-span-3">
-                      <label className="fz-label text-gray-500">Purpose</label>
+                      <label className="fz-label text-gray-500">{t('Purpose')}</label>
                       <p className="font-medium">{loan.purpose}</p>
                     </div>
                   )}

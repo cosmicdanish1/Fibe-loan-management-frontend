@@ -7,6 +7,7 @@ import { message, Select } from 'antd';
 import AwDialog from '@/components/shared/kit/AwDialog';
 import apiService from '../../../../services/api';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,7 @@ const SOCIETY_NAME    = 'Espat Karmchari Co-Operative Credit Society Limited.';
 const SOCIETY_ADDRESS = 'Avenue A, Sahakari Sadan, Sector-6, AT Post:Bhilai Nagar, Dist:DURG-490006';
 
 const HeadAdditionModification: React.FC = () => {
+  const { t } = useTranslation();
   const [flatData,   setFlatData]   = useState<FlatEntry[]>([]);
   const [loading,    setLoading]    = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
@@ -110,10 +112,10 @@ const HeadAdditionModification: React.FC = () => {
         setFlatData(res.data as FlatEntry[]);
       } else {
         setFlatData([]);
-        message.error('No data — click Build Tree to calculate balances');
+        message.error(t('No data — click Build Tree to calculate balances'));
       }
     } catch {
-      message.error('Failed to load account heads');
+      message.error(t('Failed to load account heads'));
       setFlatData([]);
     } finally {
       setLoading(false);
@@ -129,13 +131,13 @@ const HeadAdditionModification: React.FC = () => {
     try {
       const res = await apiService.rebuildBalancesheet();
       if (res.success) {
-        message.success(`Built — ${res.data?.leafCount ?? 0} accounts recalculated from ledger`);
+        message.success(t('Built — {{1}} accounts recalculated from ledger', { 1: res.data?.leafCount ?? 0 }));
         await load();
       } else {
-        message.warning('Build Tree returned no data');
+        message.warning(t('Build Tree returned no data'));
       }
     } catch {
-      message.error('Build Tree failed — check backend logs');
+      message.error(t('Build Tree failed — check backend logs'));
     } finally {
       setRebuilding(false);
     }
@@ -165,10 +167,10 @@ const HeadAdditionModification: React.FC = () => {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!formData.code.trim())       { message.error('Code is required');        return; }
-    if (!formData.parentCode.trim()) { message.error('Parent code is required'); return; }
-    if (!formData.headName.trim())   { message.error('Head name is required');   return; }
-    if (!formData.pflag.trim())      { message.error('P Flag is required');      return; }
+    if (!formData.code.trim())       { message.error(t('Code is required'));        return; }
+    if (!formData.parentCode.trim()) { message.error(t('Parent code is required')); return; }
+    if (!formData.headName.trim())   { message.error(t('Head name is required'));   return; }
+    if (!formData.pflag.trim())      { message.error(t('P Flag is required'));      return; }
     setSaving(true);
     try {
       const res = await apiService.saveHeadMaster({
@@ -183,15 +185,15 @@ const HeadAdditionModification: React.FC = () => {
       });
       if (res.success) {
         message.success(
-          `${formData.code.toUpperCase()} ${formMode === 'add' ? 'added' : 'updated'} successfully`
+          t('{{1}} {{2}} successfully', { 1: formData.code.toUpperCase(), 2: formMode === 'add' ? 'added' : 'updated' })
         );
         setFormOpen(false);
         await load();
       } else {
-        message.error(res.message || (res as any).error || 'Save failed');
+        message.error(res.message || (res as any).error || t('Save failed'));
       }
     } catch {
-      message.error('Save failed');
+      message.error(t('Save failed'));
     } finally {
       setSaving(false);
     }
@@ -204,14 +206,14 @@ const HeadAdditionModification: React.FC = () => {
     try {
       const res = await apiService.deleteHeadMaster(code);
       if (res.success) {
-        message.success(`${code} deleted`);
+        message.success(t('{{1}} deleted', { 1: code }));
         setSelected(prev => { const n = new Set(prev); n.delete(code); return n; });
         await load();
       } else {
-        message.error(res.message || (res as any).error || 'Delete failed');
+        message.error(res.message || (res as any).error || t('Delete failed'));
       }
     } catch (e: any) {
-      message.error(e?.message || 'Delete failed');
+      message.error(e?.message || t('Delete failed'));
     } finally {
       setDeleting(null);
     }
@@ -362,8 +364,8 @@ const HeadAdditionModification: React.FC = () => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Head Addition / Modification</h1>
-          <p className="aw-desc">Chart of accounts{flatData.length > 0 ? ` · ${flatData.length} heads` : ''}</p>
+          <h1 className="aw-title">{t('Head Addition / Modification')}</h1>
+          <p className="aw-desc">{t('Chart of accounts')}{flatData.length > 0 ? ' · ' + t('{{1}} heads', { 1: flatData.length }) : ''}</p>
         </div>
         <div className="aw-actions">
           {selected.size > 0 && (
@@ -373,18 +375,18 @@ const HeadAdditionModification: React.FC = () => {
           )}
           <button type="button" onClick={handleBuildTree} disabled={rebuilding || loading} className="aw-btn aw-btn-secondary">
             <TreePine size={13} className={rebuilding ? 'aw-spin' : ''} />
-            {rebuilding ? 'Building…' : 'Build Tree'}
+            {rebuilding ? t('Building…') : t('Build Tree')}
           </button>
           <button type="button" onClick={() => openAdd()} disabled={loading} className="aw-btn aw-btn-primary">
-            <Plus size={13} /> Add Head
+            <Plus size={13} /> {t('Add Head')}
           </button>
           <button
             type="button"
             onClick={load}
             disabled={loading}
             className="aw-icon-btn"
-            aria-label="Refresh"
-            data-tip="Refresh"
+            aria-label={t('Refresh')}
+            data-tip={t('Refresh')}
             data-tip-pos="bottom-end"
           >
             <RotateCcw size={14} className={loading ? 'aw-spin' : ''} />
@@ -403,8 +405,8 @@ const HeadAdditionModification: React.FC = () => {
             <Search size={13} />
             <input
               type="text"
-              placeholder="Search code / name…"
-              aria-label="Search heads"
+              placeholder={t('Search code / name…')}
+              aria-label={t('Search heads')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="aw-input"
@@ -414,7 +416,7 @@ const HeadAdditionModification: React.FC = () => {
           {loading ? (
             <div className="aw-empty" style={{ padding: 40 }}>
               <RotateCcw size={28} className="aw-spin" />
-              <strong className="aw-strong">Loading…</strong>
+              <strong className="aw-strong">{t('Loading…')}</strong>
             </div>
           ) : (
             <div className="aw-table-wrap" style={{ maxHeight: '64vh' }}>
@@ -426,15 +428,15 @@ const HeadAdditionModification: React.FC = () => {
                         type="checkbox"
                         checked={allChecked}
                         onChange={toggleAll}
-                        aria-label="Select all"
+                        aria-label={t('Select all')}
                         style={{ width: 15, height: 15, accentColor: 'var(--aw-accent)' }}
                       />
                     </th>
-                    <th>Code — Head Name</th>
-                    <th className="is-right" style={{ width: 130 }}>Opening</th>
-                    <th className="is-right" style={{ width: 130 }}>Debit</th>
-                    <th className="is-right" style={{ width: 130 }}>Credit</th>
-                    <th className="is-right" style={{ width: 130 }}>Balance</th>
+                    <th>{t('Code — Head Name')}</th>
+                    <th className="is-right" style={{ width: 130 }}>{t('Opening')}</th>
+                    <th className="is-right" style={{ width: 130 }}>{t('Debit')}</th>
+                    <th className="is-right" style={{ width: 130 }}>{t('Credit')}</th>
+                    <th className="is-right" style={{ width: 130 }}>{t('Balance')}</th>
                     <th style={{ width: 84 }} />
                   </tr>
                 </thead>
@@ -445,8 +447,8 @@ const HeadAdditionModification: React.FC = () => {
                       <td colSpan={7}>
                         <div className="aw-empty" style={{ padding: 32 }}>
                           <TreePine size={26} />
-                          <strong className="aw-strong">{search ? 'No matching accounts' : 'No data'}</strong>
-                          {!search && <span className="aw-meta">Click Build Tree to calculate balances</span>}
+                          <strong className="aw-strong">{search ? t('No matching accounts') : t('No data')}</strong>
+                          {!search && <span className="aw-meta">{t('Click Build Tree to calculate balances')}</span>}
                         </div>
                       </td>
                     </tr>
@@ -468,7 +470,7 @@ const HeadAdditionModification: React.FC = () => {
                               type="button"
                               onClick={() => toggleSection(e.code)}
                               className="aw-icon-btn is-sm"
-                              aria-label={open ? 'Collapse' : 'Expand'}
+                              aria-label={open ? t('Collapse') : t('Expand')}
                               aria-expanded={open}
                               style={{ color: 'inherit' }}
                             >
@@ -487,8 +489,8 @@ const HeadAdditionModification: React.FC = () => {
                               type="button"
                               onClick={() => openAdd(e.code)}
                               className="aw-icon-btn is-sm"
-                              aria-label={`Add child head under ${e.code}`}
-                              data-tip="Add child head"
+                              aria-label={t('Add child head under {{1}}', { 1: e.code })}
+                              data-tip={t('Add child head')}
                               data-tip-pos="left"
                               style={{ color: 'inherit' }}
                             >
@@ -508,7 +510,7 @@ const HeadAdditionModification: React.FC = () => {
                             checked={isSel}
                             onChange={() => toggleOne(e.code)}
                             onClick={ev => ev.stopPropagation()}
-                            aria-label={`Select ${e.code}`}
+                            aria-label={t('Select {{1}}', { 1: e.code })}
                             style={{ width: 15, height: 15, accentColor: 'var(--aw-accent)' }}
                           />
                         </td>
@@ -527,8 +529,8 @@ const HeadAdditionModification: React.FC = () => {
                               type="button"
                               onClick={() => openEdit(e)}
                               className="aw-icon-btn is-sm"
-                              aria-label={`Edit ${e.code}`}
-                              data-tip="Edit"
+                              aria-label={t('Edit {{1}}', { 1: e.code })}
+                              data-tip={t('Edit')}
                               data-tip-pos="left"
                             >
                               <Pencil size={14} />
@@ -538,8 +540,8 @@ const HeadAdditionModification: React.FC = () => {
                               onClick={() => setConfirmCodes([e.code])}
                               disabled={isDeleting}
                               className="aw-icon-btn is-sm is-danger"
-                              aria-label={`Delete ${e.code}`}
-                              data-tip="Delete"
+                              aria-label={t('Delete {{1}}', { 1: e.code })}
+                              data-tip={t('Delete')}
                               data-tip-pos="left"
                             >
                               {isDeleting ? <RotateCcw size={14} className="aw-spin" /> : <Trash2 size={14} />}
@@ -555,7 +557,7 @@ const HeadAdditionModification: React.FC = () => {
                   <tr>
                     <td />
                     <td>
-                      Grand Total <span className="aw-meta" style={{ marginLeft: 6 }}>{leafCount} accounts</span>
+                      {t('Grand Total')} <span className="aw-meta" style={{ marginLeft: 6 }}>{t('{{1}} accounts', { 1: leafCount })}</span>
                     </td>
                     <td className="is-right">{grandTotals.opening !== 0 ? fmt(grandTotals.opening) : '—'}</td>
                     <td className="is-right is-danger">{grandTotals.debit !== 0 ? fmt(grandTotals.debit) : '—'}</td>
@@ -575,7 +577,7 @@ const HeadAdditionModification: React.FC = () => {
       {/* ── Delete confirmation ── */}
       <AwDialog
         open={confirmCodes !== null}
-        title={confirmCodes && confirmCodes.length > 1 ? `Delete ${confirmCodes.length} accounts?` : `Delete ${confirmCodes?.[0] ?? ''}?`}
+        title={confirmCodes && confirmCodes.length > 1 ? t('Delete {{1}} accounts?', { 1: confirmCodes.length }) : t('Delete {{1}}?', { 1: confirmCodes?.[0] ?? '' })}
         icon={<Trash2 size={14} />}
         onClose={() => setConfirmCodes(null)}
         maxWidth="26rem"
@@ -584,13 +586,13 @@ const HeadAdditionModification: React.FC = () => {
         <div className="aw-stack">
           <p className="aw-meta" style={{ lineHeight: 1.5 }}>
             {confirmCodes && confirmCodes.length > 1
-              ? 'Parent accounts (with children) will be blocked.'
-              : 'Blocked if it has child accounts.'}
+              ? t('Parent accounts (with children) will be blocked.')
+              : t('Blocked if it has child accounts.')}
           </p>
           <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => setConfirmCodes(null)} className="aw-btn aw-btn-secondary">Cancel</button>
+            <button type="button" onClick={() => setConfirmCodes(null)} className="aw-btn aw-btn-secondary">{t('Cancel')}</button>
             <button type="button" onClick={runConfirmedDelete} className="aw-btn aw-btn-danger">
-              {confirmCodes && confirmCodes.length > 1 ? 'Delete All' : 'Delete'}
+              {confirmCodes && confirmCodes.length > 1 ? t('Delete All') : t('Delete')}
             </button>
           </div>
         </div>
@@ -600,7 +602,7 @@ const HeadAdditionModification: React.FC = () => {
       <AwDialog
         open={formOpen}
         onClose={() => { if (!saving) setFormOpen(false); }}
-        title={formMode === 'add' ? 'Add New Account Head' : `Edit — ${formData.code}`}
+        title={formMode === 'add' ? t('Add New Account Head') : t('Edit — {{1}}', { 1: formData.code })}
         icon={formMode === 'add' ? <Plus size={14} /> : <Pencil size={14} />}
         maxWidth="30rem"
         compact
@@ -608,18 +610,18 @@ const HeadAdditionModification: React.FC = () => {
         <div className="aw-stack">
           <div className="aw-two">
             <div>
-              <label className="aw-label" htmlFor="hm-code">Code *</label>
+              <label className="aw-label" htmlFor="hm-code">{t('Code *')}</label>
               <input
                 id="hm-code"
                 value={formData.code}
                 onChange={e => setField('code', e.target.value)}
                 readOnly={formMode === 'edit'}
-                placeholder="e.g. L1005"
+                placeholder={t('e.g. L1005')}
                 className="aw-input"
               />
             </div>
             <div>
-              <label className="aw-label" htmlFor="hm-parent">Parent Code *</label>
+              <label className="aw-label" htmlFor="hm-parent">{t('Parent Code *')}</label>
               <Select
                 id="hm-parent"
                 className="aw-select"
@@ -638,19 +640,19 @@ const HeadAdditionModification: React.FC = () => {
           </div>
 
           <div>
-            <label className="aw-label" htmlFor="hm-name">Head Name *</label>
+            <label className="aw-label" htmlFor="hm-name">{t('Head Name *')}</label>
             <input
               id="hm-name"
               value={formData.headName}
               onChange={e => setField('headName', e.target.value)}
-              placeholder="e.g. Share Capital"
+              placeholder={t('e.g. Share Capital')}
               className="aw-input"
             />
           </div>
 
           <div className="aw-two">
             <div>
-              <label className="aw-label" htmlFor="hm-pos">Position (Sort)</label>
+              <label className="aw-label" htmlFor="hm-pos">{t('Position (Sort)')}</label>
               <input
                 id="hm-pos"
                 type="number"
@@ -661,7 +663,7 @@ const HeadAdditionModification: React.FC = () => {
               />
             </div>
             <div>
-              <label className="aw-label" htmlFor="hm-op">Opening Balance</label>
+              <label className="aw-label" htmlFor="hm-op">{t('Opening Balance')}</label>
               <input
                 id="hm-op"
                 type="number"
@@ -675,18 +677,18 @@ const HeadAdditionModification: React.FC = () => {
 
           <div className="aw-two">
             <div>
-              <label className="aw-label" htmlFor="hm-int">Interest</label>
+              <label className="aw-label" htmlFor="hm-int">{t('Interest')}</label>
               <Select
                 id="hm-int"
                 className="aw-select"
                 popupClassName="aw-select-popup"
                 value={formData.interest}
                 onChange={(v) => setField('interest', v)}
-                options={[{ value: 'N', label: 'N — None' }, { value: 'Y', label: 'Y — Yes' }]}
+                options={[{ value: 'N', label: t('N — None') }, { value: 'Y', label: t('Y — Yes') }]}
               />
             </div>
             <div>
-              <label className="aw-label" htmlFor="hm-pflag">P Flag</label>
+              <label className="aw-label" htmlFor="hm-pflag">{t('P Flag')}</label>
               <Select
                 id="hm-pflag"
                 className="aw-select"
@@ -695,11 +697,11 @@ const HeadAdditionModification: React.FC = () => {
                 onChange={(v) => setField('pflag', v ?? '')}
                 placeholder="— select —"
                 options={[
-                  { value: 'A', label: 'A — Asset' },
-                  { value: 'L', label: 'L — Liability' },
-                  { value: 'I', label: 'I — Income' },
-                  { value: 'E', label: 'E — Expenditure' },
-                  { value: 'R', label: 'R — Root (section headers only)' },
+                  { value: 'A', label: t('A — Asset') },
+                  { value: 'L', label: t('L — Liability') },
+                  { value: 'I', label: t('I — Income') },
+                  { value: 'E', label: t('E — Expenditure') },
+                  { value: 'R', label: t('R — Root (section headers only)') },
                 ]}
               />
             </div>
@@ -707,15 +709,15 @@ const HeadAdditionModification: React.FC = () => {
 
           {formMode === 'add' && (
             <p className="aw-meta" style={{ lineHeight: 1.5 }}>
-              Code prefix must match the parent section: <strong>L</strong>iabilities · <strong>A</strong>ssets · <strong>E</strong>xpenditure · <strong>I</strong>ncome.
-              After adding, click <strong>Build Tree</strong> to recalculate balances.
+              {t('Code prefix must match the parent section:')} <strong>L</strong>iabilities · <strong>A</strong>ssets · <strong>E</strong>xpenditure · <strong>I</strong>ncome.
+              After adding, click <strong>{t('Build Tree')}</strong> {t('to recalculate balances.')}
             </p>
           )}
 
           <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => setFormOpen(false)} disabled={saving} className="aw-btn aw-btn-secondary">Cancel</button>
+            <button type="button" onClick={() => setFormOpen(false)} disabled={saving} className="aw-btn aw-btn-secondary">{t('Cancel')}</button>
             <button type="button" onClick={handleSave} disabled={saving} className="aw-btn aw-btn-primary">
-              {saving ? 'Saving…' : formMode === 'add' ? 'Add Head' : 'Save Changes'}
+              {saving ? t('Saving…') : formMode === 'add' ? t('Add Head') : t('Save Changes')}
             </button>
           </div>
         </div>

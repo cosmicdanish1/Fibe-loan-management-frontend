@@ -3,6 +3,7 @@ import React from 'react';
 import { Select } from 'antd';
 import { Search } from 'lucide-react';
 import type { FormFieldProps } from '../../types/loan';
+import { useTranslation } from 'react-i18next';
 
 const FormField: React.FC<FormFieldProps> = ({
   label,
@@ -18,6 +19,7 @@ const FormField: React.FC<FormFieldProps> = ({
   readOnly = false,
   maxLength,
 }) => {
+  const { t } = useTranslation();
   const renderInput = () => {
     switch (type) {
       case 'select':
@@ -28,7 +30,7 @@ const FormField: React.FC<FormFieldProps> = ({
             popupClassName="aw-select-popup"
             value={value || undefined}
             onChange={(v) => onChange(v ?? '')}
-            placeholder="Select..."
+            placeholder={t('Select...')}
             options={options.map((option: any) => ({ value: option.value, label: option.label }))}
           />
         );
@@ -82,8 +84,8 @@ const FormField: React.FC<FormFieldProps> = ({
               <button
                 type="button"
                 className="aw-input-action"
-                aria-label="Search member"
-                data-tip="Search member"
+                aria-label={t('Search member')}
+                data-tip={t('Search member')}
                 data-tip-pos="top-end"
                 onClick={(e) => {
                   e.stopPropagation();

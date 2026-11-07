@@ -8,6 +8,7 @@ import type { LoanDetails, NomineeDetail } from '../types';
 import { API_ROUTES, API_BASE_URL, getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import { localISODate } from '../../../../../utils/dates';
+import { useTranslation } from 'react-i18next';
 
 interface LoanEligibilityStatus {
   isEligible: boolean;
@@ -42,6 +43,7 @@ interface LoanEligibilityStatus {
 }
 
 const LoanApplication: React.FC = () => {
+  const { t } = useTranslation();
   const {
     state,
     setActiveTab,
@@ -423,7 +425,7 @@ const LoanApplication: React.FC = () => {
       if (window.electronAPI?.showMessageBox) {
         window.electronAPI.showMessageBox({
           type: 'warning',
-          title: 'Input Validation Error',
+          title: t('Input Validation Error'),
           message: 'Member Selection Required',
           detail: 'Please select a member before saving the application.',
           buttons: ['OK']
@@ -436,7 +438,7 @@ const LoanApplication: React.FC = () => {
       if (window.electronAPI?.showMessageBox) {
         window.electronAPI.showMessageBox({
           type: 'warning',
-          title: 'Input Validation Error',
+          title: t('Input Validation Error'),
           message: 'Loan Type Required',
           detail: 'Please select a valid loan type.',
           buttons: ['OK']
@@ -452,7 +454,7 @@ const LoanApplication: React.FC = () => {
       if (window.electronAPI?.showMessageBox) {
         window.electronAPI.showMessageBox({
           type: 'warning',
-          title: 'Input Validation Error',
+          title: t('Input Validation Error'),
           message: 'Loan Amount Required',
           detail: 'Please enter a valid loan amount greater than zero (digits and up to 2 decimals only).',
           buttons: ['OK']
@@ -465,7 +467,7 @@ const LoanApplication: React.FC = () => {
       if (window.electronAPI?.showMessageBox) {
         window.electronAPI.showMessageBox({
           type: 'warning',
-          title: 'Input Validation Error',
+          title: t('Input Validation Error'),
           message: 'Loan Purpose Required',
           detail: 'Please enter the reason for this loan application.',
           buttons: ['OK']
@@ -490,14 +492,14 @@ const LoanApplication: React.FC = () => {
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
           type: 'error',
-          title: 'Loan Eligibility Failed',
+          title: t('Loan Eligibility Failed'),
           message: isRd ? 'Cannot Save — Above The Loan Against RD Limit' : 'Cannot Save — Maximum Regular Loan Limit Exceeded',
           detail,
           buttons: ['OK'],
           defaultId: 0,
         });
       } else {
-        alert(`❌ Eligibility Failed\n\n${detail}`);
+        alert('❌ ' + t('Eligibility Failed {{1}}', { 1: detail }));
       }
       return;
     }
@@ -518,7 +520,7 @@ const LoanApplication: React.FC = () => {
       if (window.electronAPI?.showMessageBox) {
         const res = await window.electronAPI.showMessageBox({
           type: 'warning',
-          title: 'RD / Share Shortfall',
+          title: t('RD / Share Shortfall'),
           message: 'Shortfall Will Be Withheld From Disbursement',
           detail,
           buttons: ['Continue', 'Cancel'],
@@ -626,7 +628,7 @@ const LoanApplication: React.FC = () => {
         if (window.electronAPI?.showMessageBox) {
           await window.electronAPI.showMessageBox({
             type: 'error',
-            title: 'Loan Application Error',
+            title: t('Loan Application Error'),
             message: userMessage,
             detail: details,
             buttons: ['Try Again'],
@@ -694,14 +696,14 @@ const LoanApplication: React.FC = () => {
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
           type: 'error',
-          title: 'System Connection Error',
+          title: t('System Connection Error'),
           message: 'Unable to connect to the server.',
           detail: `Please check your network connection.\n\nTechnical details: ${error.message}`,
           buttons: ['Close'],
           defaultId: 0,
         });
       } else {
-        alert(`❌ Connection Error\n\nUnable to connect to the server. Technical details: ${error.message}`);
+        alert('❌ ' + t('Connection Error Unable to connect to the server. Technical details: {{1}}', { 1: error.message }));
       }
     } finally {
       setIsSaving(false);
@@ -771,8 +773,8 @@ const LoanApplication: React.FC = () => {
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Loan Application</h1>
-          <p className="aw-desc">Enter a new loan application for a member</p>
+          <h1 className="aw-title">{t('Loan Application')}</h1>
+          <p className="aw-desc">{t('Enter a new loan application for a member')}</p>
         </div>
         <div className="aw-actions">
           <button
@@ -786,7 +788,7 @@ const LoanApplication: React.FC = () => {
             }}
             className="aw-btn aw-btn-ghost"
           >
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="button" onClick={handleSave} disabled={saveDisabled} className="aw-btn aw-btn-primary">
             {saveLabel}

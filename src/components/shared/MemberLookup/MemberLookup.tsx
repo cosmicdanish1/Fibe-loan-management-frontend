@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { message } from 'antd';
 import { Search, Users, RotateCcw } from 'lucide-react';
 import { API_ROUTES, getApiBaseUrl } from '../../../services/apiVersionConfig';
+import { useTranslation } from 'react-i18next';
 
 interface Member {
     memberNo: string;
@@ -21,6 +22,7 @@ interface MemberLookupProps {
 }
 
 const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal = false }) => {
+  const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
     const [members, setMembers] = useState<Member[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -68,12 +70,12 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
             if (err?.name === 'AbortError' && abortRef.current !== controller) return;
             if (err?.name === 'AbortError') {
                 setError('Request timed out. Please check your connection and try again.');
-                message.error('Request timed out');
+                message.error(t('Request timed out'));
                 return;
             }
             console.error('Fetch error:', err);
             setError('Failed to load members. Please try again.');
-            message.error('Failed to load members');
+            message.error(t('Failed to load members'));
         } finally {
             clearTimeout(timeoutId);
             if (abortRef.current === controller) setIsLoading(false);
@@ -119,8 +121,8 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
                 <Search size={13} />
                 <input
                     ref={inputRef}
-                    aria-label="Search members"
-                    placeholder="Search by Member No, Name or Office..."
+                    aria-label={t('Search members')}
+                    placeholder={t('Search by Member No, Name or Office...')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="aw-input"
@@ -139,7 +141,7 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
                 <div className="aw-empty" style={{ padding: 32 }}>
                     <p className="aw-strong" style={{ color: 'var(--aw-danger)' }}>{error}</p>
                     <button type="button" className="aw-btn aw-btn-primary aw-btn-sm" onClick={() => fetchMembers(searchTerm)}>
-                        <RotateCcw size={12} /> Retry Connection
+                        <RotateCcw size={12} /> {t('Retry Connection')}
                     </button>
                 </div>
             ) : (
@@ -148,16 +150,16 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
                         <thead>
                             <tr>
                                 <th style={{ width: 130 }}>MB NO</th>
-                                <th>Member Name</th>
-                                <th style={{ width: 130 }}>Account No</th>
-                                <th style={{ width: 220 }}>Office / Unit</th>
+                                <th>{t('Member Name')}</th>
+                                <th style={{ width: 130 }}>{t('Account No')}</th>
+                                <th style={{ width: 220 }}>{t('Office / Unit')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading && members.length === 0 ? (
                                 <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-spin" /></div></td></tr>
                             ) : members.length === 0 ? (
-                                <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-meta">No members matching your search</span></div></td></tr>
+                                <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-meta">{t('No members matching your search')}</span></div></td></tr>
                             ) : members.map((record, idx) => (
                                 <tr key={`${record.memberNo}-${idx}`} className="is-clickable" onClick={() => handleSelect(record)}>
                                     <td className="is-accent" style={{ fontWeight: 700 }}>{record.memberNo}</td>
@@ -176,10 +178,10 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
 
             <div className="aw-inline" style={{ flex: 'none', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="aw-meta">
-                    <strong>{members.length}</strong> Records Found
-                    {searchTerm && <> · Searching: {searchTerm}</>}
+                    <strong>{members.length}</strong> {t('Records Found')}
+                    {searchTerm && <>· {t('Searching: {{1}}', { 1: searchTerm })}</>}
                 </span>
-                <span className="aw-meta" style={{ fontStyle: 'italic' }}>Tip: Double-click row to select • ESC to exit</span>
+                <span className="aw-meta" style={{ fontStyle: 'italic' }}>{t('Tip: Double-click row to select • ESC to exit')}</span>
             </div>
         </>
     );
@@ -198,11 +200,11 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Member Directory</h1>
-                    <p className="aw-desc">Live Lookup System</p>
+                    <h1 className="aw-title">{t('Member Directory')}</h1>
+                    <p className="aw-desc">{t('Live Lookup System')}</p>
                 </div>
                 <div className="aw-actions">
-                    <span className="aw-pill tone-info"><Users size={12} /> {members.length} Members</span>
+                    <span className="aw-pill tone-info"><Users size={12} /> {members.length} {t('Members')}</span>
                 </div>
             </div>
             <div className="aw-content" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--aw-gap)', overflow: 'hidden' }}>

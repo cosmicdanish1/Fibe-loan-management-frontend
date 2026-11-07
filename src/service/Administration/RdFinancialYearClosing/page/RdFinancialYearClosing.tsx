@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Calendar, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight, Lock, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../../../auth/context/AuthContext';
 import { useRdFinancialYearClosing } from '../hooks/useRdFinancialYearClosing';
+import { useTranslation } from 'react-i18next';
 
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -14,6 +15,7 @@ const PATTERN_LABEL: Record<string, string> = {
 };
 
 const RdFinancialYearClosing: React.FC = () => {
+  const { t } = useTranslation();
     const { user } = useAuth();
     const closedBy = user?.username || 'admin';
 
@@ -42,8 +44,8 @@ const RdFinancialYearClosing: React.FC = () => {
             {/* ── Header ── */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">RD Financial Year Closing</h1>
-                    <p className="aw-desc">Bulk review, override, and close the RD year</p>
+                    <h1 className="aw-title">{t('RD Financial Year Closing')}</h1>
+                    <p className="aw-desc">{t('Bulk review, override, and close the RD year')}</p>
                 </div>
                 <div className="aw-actions">
                     {yearLabel && (
@@ -53,7 +55,7 @@ const RdFinancialYearClosing: React.FC = () => {
                     )}
                     <button type="button" onClick={() => closeAll(closedBy)} disabled={closeDisabled} className="aw-btn aw-btn-danger">
                         {closing ? <RefreshCw size={13} className="aw-spin" /> : <Lock size={13} />}
-                        {closing ? 'Closing all…' : `Close Financial Year (${total} members)`}
+                        {closing ? t('Closing all…') : t('Close Financial Year ({{1}} members)', { 1: total })}
                     </button>
                 </div>
             </div>
@@ -63,15 +65,15 @@ const RdFinancialYearClosing: React.FC = () => {
                     {/* ── Summary ── */}
                     <div className="aw-stats aw-stats-3">
                         <div className="aw-stat aw-stat-left">
-                            <div className="aw-stat-label">Total members</div>
+                            <div className="aw-stat-label">{t('Total members')}</div>
                             <div className="aw-stat-value">{total}</div>
                         </div>
                         <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: needsReviewCount > 0 ? 'var(--aw-warning)' : 'var(--aw-success)' }}>
-                            <div className="aw-stat-label">Needs review (this page)</div>
+                            <div className="aw-stat-label">{t('Needs review (this page)')}</div>
                             <div className="aw-stat-value">{needsReviewCount}</div>
                         </div>
                         <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}>
-                            <div className="aw-stat-label">Overrides set</div>
+                            <div className="aw-stat-label">{t('Overrides set')}</div>
                             <div className="aw-stat-value">{Object.keys(overrides).length}</div>
                         </div>
                     </div>
@@ -86,9 +88,9 @@ const RdFinancialYearClosing: React.FC = () => {
                         <div className="aw-alert aw-alert-success aw-fade-in" style={{ marginBottom: 0 }} role="status">
                             <CheckCircle2 size={15} />
                             <span>
-                                Closed {closeResult.succeeded.length} member(s).
+                                {t('Closed')} {closeResult.succeeded.length} {t('member(s).')}
                                 {closeResult.failed.length > 0 && (
-                                    <> {closeResult.failed.length} failed: {closeResult.failed.map((f) => `${f.mbno} (${f.error})`).join('; ')}</>
+                                    <> {closeResult.failed.length} {t('failed:')} {closeResult.failed.map((f) => `${f.mbno} (${f.error})`).join('; ')}</>
                                 )}
                             </span>
                         </div>
@@ -99,27 +101,27 @@ const RdFinancialYearClosing: React.FC = () => {
                         {loading ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <RefreshCw size={28} className="aw-spin" />
-                                <strong className="aw-strong">Loading…</strong>
+                                <strong className="aw-strong">{t('Loading…')}</strong>
                             </div>
                         ) : members.length === 0 ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <Calendar size={28} />
-                                <strong className="aw-strong">No members with RD activity this financial year.</strong>
+                                <strong className="aw-strong">{t('No members with RD activity this financial year.')}</strong>
                             </div>
                         ) : (
                             <div className="aw-table-wrap" style={{ maxHeight: '58vh' }}>
                                 <table className="aw-table" style={{ minWidth: 1000 }}>
                                     <thead>
                                         <tr>
-                                            <th>Member</th>
-                                            <th>Pattern</th>
-                                            <th className="is-right">Paid/Due</th>
-                                            <th className="is-right">Installment Int.</th>
-                                            <th className="is-right">Opening-Bal. Int.</th>
-                                            <th className="is-right">Total Int.</th>
-                                            <th className="is-right">Balance</th>
-                                            <th style={{ minWidth: 230 }}>Decision</th>
-                                            <th style={{ width: 80 }}>Action</th>
+                                            <th>{t('Member')}</th>
+                                            <th>{t('Pattern')}</th>
+                                            <th className="is-right">{t('Paid/Due')}</th>
+                                            <th className="is-right">{t('Installment Int.')}</th>
+                                            <th className="is-right">{t('Opening-Bal. Int.')}</th>
+                                            <th className="is-right">{t('Total Int.')}</th>
+                                            <th className="is-right">{t('Balance')}</th>
+                                            <th style={{ minWidth: 230 }}>{t('Decision')}</th>
+                                            <th style={{ width: 80 }}>{t('Action')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -148,34 +150,34 @@ const RdFinancialYearClosing: React.FC = () => {
                                                     <td className="is-right">₹{fmt(m.currentBalance)}</td>
                                                     <td>
                                                         {auto && !override ? (
-                                                            <span className="aw-pill tone-success">Auto: Full Interest</span>
+                                                            <span className="aw-pill tone-success">{t('Auto: Full Interest')}</span>
                                                         ) : override ? (
                                                             <div>
                                                                 <span className={`aw-pill tone-${override.eligible ? 'success' : 'danger'}`}>
-                                                                    Override: {override.eligible ? 'Full Interest' : 'Reduced Interest'}
+                                                                    {t('Override:')} {override.eligible ? t('Full Interest') : t('Reduced Interest')}
                                                                 </span>
                                                                 <span className="aw-meta">{override.reason}</span>
-                                                                <button type="button" onClick={() => setOverride(m.mbno, null)} className="aw-btn aw-btn-ghost aw-btn-sm" style={{ padding: '0 6px' }}>Clear</button>
+                                                                <button type="button" onClick={() => setOverride(m.mbno, null)} className="aw-btn aw-btn-ghost aw-btn-sm" style={{ padding: '0 6px' }}>{t('Clear')}</button>
                                                             </div>
                                                         ) : (
                                                             <div className="aw-stack" style={{ gap: 6 }}>
                                                                 <input
                                                                     type="text"
-                                                                    placeholder="Reason for override…"
-                                                                    aria-label={`Override reason for ${m.mbno}`}
+                                                                    placeholder={t('Reason for override…')}
+                                                                    aria-label={t('Override reason for {{1}}', { 1: m.mbno })}
                                                                     value={reasonDrafts[m.mbno] || ''}
                                                                     onChange={(e) => setReasonDrafts((prev) => ({ ...prev, [m.mbno]: e.target.value }))}
                                                                     className="aw-input"
                                                                 />
                                                                 <div className="aw-btn-row" style={{ gap: 6 }}>
-                                                                    <button type="button" onClick={() => applyOverride(m.mbno, true)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">Grant Full</button>
-                                                                    <button type="button" onClick={() => applyOverride(m.mbno, false)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">Keep Reduced</button>
+                                                                    <button type="button" onClick={() => applyOverride(m.mbno, true)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Grant Full')}</button>
+                                                                    <button type="button" onClick={() => applyOverride(m.mbno, false)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Keep Reduced')}</button>
                                                                 </div>
                                                             </div>
                                                         )}
                                                     </td>
                                                     <td>
-                                                        <button type="button" onClick={() => closeOne(m.mbno, closedBy)} className="aw-btn aw-btn-primary aw-btn-sm">Close</button>
+                                                        <button type="button" onClick={() => closeOne(m.mbno, closedBy)} className="aw-btn aw-btn-primary aw-btn-sm">{t('Close')}</button>
                                                     </td>
                                                 </tr>
                                             );
@@ -189,13 +191,13 @@ const RdFinancialYearClosing: React.FC = () => {
             </div>
 
             <div className="aw-footer">
-                <span>Page {page + 1} of {totalPages}</span>
+                <span>{t('{{1}} {{2}} of {{3}}', { 1: t('Page'), 2: page + 1, 3: totalPages })}</span>
                 <span style={{ display: 'inline-flex', gap: 6 }}>
                     <button type="button" onClick={() => yearcode && loadPage(yearcode, page - 1)} disabled={page <= 0 || loading} className="aw-btn aw-btn-secondary aw-btn-sm">
-                        <ChevronLeft size={12} /> Prev
+                        <ChevronLeft size={12} /> {t('Prev')}
                     </button>
                     <button type="button" onClick={() => yearcode && loadPage(yearcode, page + 1)} disabled={page + 1 >= totalPages || loading} className="aw-btn aw-btn-secondary aw-btn-sm">
-                        Next <ChevronRight size={12} />
+                        {t('Next')} <ChevronRight size={12} />
                     </button>
                 </span>
             </div>

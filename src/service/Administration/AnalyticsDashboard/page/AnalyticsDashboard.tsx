@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { RefreshCw, ArrowUp, Download, Activity, AlertCircle, Zap } from 'lucide-react';
 import { useComponentAnalytics } from '../../../../hooks/useAnalytics';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../i18n';
 
 type Range = '7D' | '30D' | '90D';
 type Tab = 'pages' | 'features' | 'errors';
@@ -52,9 +54,9 @@ const ERRORS = [
 ];
 
 const MINI_DATA = [
-  { label: 'Page views', sub: '4.5 per session', value: '5,632', tone: 'var(--aw-accent)' },
-  { label: 'System errors', sub: '1.8% of requests', value: '23', tone: 'var(--aw-danger)' },
-  { label: 'Avg. session', sub: 'Up 1.2 min', value: '18.5m', tone: 'var(--aw-warning)' },
+  { label: tLabel('Page views'), sub: '4.5 per session', value: '5,632', tone: 'var(--aw-accent)' },
+  { label: tLabel('System errors'), sub: '1.8% of requests', value: '23', tone: 'var(--aw-danger)' },
+  { label: tLabel('Avg. session'), sub: 'Up 1.2 min', value: '18.5m', tone: 'var(--aw-warning)' },
 ];
 
 const LIVE_SEED = [38, 52, 44, 61, 48, 72, 55, 40, 66, 58, 47, 80, 62, 50, 44, 68, 74, 56, 42, 60, 70, 52, 46, 64];
@@ -62,9 +64,9 @@ const LIVE_SEED = [38, 52, 44, 61, 48, 72, 55, 40, 66, 58, 47, 80, 62, 50, 44, 6
 function trendData(range: Range): TrendRow[] {
   if (range === '7D') {
     return [
-      { label: 'Mon', s: 45, u: 23 }, { label: 'Tue', s: 52, u: 28 }, { label: 'Wed', s: 38, u: 19 },
-      { label: 'Thu', s: 61, u: 34 }, { label: 'Fri', s: 48, u: 26 }, { label: 'Sat', s: 35, u: 18 },
-      { label: 'Sun', s: 42, u: 22 },
+      { label: tLabel('Mon'), s: 45, u: 23 }, { label: tLabel('Tue'), s: 52, u: 28 }, { label: tLabel('Wed'), s: 38, u: 19 },
+      { label: tLabel('Thu'), s: 61, u: 34 }, { label: tLabel('Fri'), s: 48, u: 26 }, { label: tLabel('Sat'), s: 35, u: 18 },
+      { label: tLabel('Sun'), s: 42, u: 22 },
     ];
   }
   const n = range === '30D' ? 30 : 90;
@@ -97,6 +99,7 @@ function smoothPath(pts: Array<[number, number]>, close: boolean): string {
 const TONE_USERS = 'var(--aw-info, var(--aw-accent))';
 
 const AnalyticsDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const analytics = useComponentAnalytics('AnalyticsDashboard');
   const [range, setRange] = useState<Range>('7D');
   const [tab, setTab] = useState<Tab>('pages');
@@ -147,17 +150,17 @@ const AnalyticsDashboard: React.FC = () => {
   const rangeLabel = range === '7D' ? 'Last 7 days' : range === '30D' ? 'Last 30 days' : 'Last 90 days';
   const ranges: Range[] = ['7D', '30D', '90D'];
   const tabs: Array<{ key: Tab; label: string }> = [
-    { key: 'pages', label: 'Pages' },
-    { key: 'features', label: 'Features' },
-    { key: 'errors', label: 'Errors' },
+    { key: 'pages', label: t('Pages') },
+    { key: 'features', label: t('Features') },
+    { key: 'errors', label: t('Errors') },
   ];
 
   return (
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Analytics Hub — {section}</h1>
-          <p className="aw-desc">{rangeLabel} · updated a moment ago</p>
+          <h1 className="aw-title">{t('Analytics Hub — {{1}}', { 1: section })}</h1>
+          <p className="aw-desc">{t('{{1}} · updated a moment ago', { 1: rangeLabel })}</p>
         </div>
         <div className="aw-actions">
           <div className="aw-seg" role="tablist" style={{ ['--seg-index' as any]: ranges.indexOf(range), ['--seg-count' as any]: ranges.length }}>
@@ -165,17 +168,17 @@ const AnalyticsDashboard: React.FC = () => {
               <button key={r} type="button" role="tab" aria-selected={range === r} onClick={() => setRange(r)}>{r}</button>
             ))}
           </div>
-          <button type="button" className="aw-icon-btn" onClick={handleRefresh} aria-label="Refresh" data-tip="Refresh" data-tip-pos="bottom">
+          <button type="button" className="aw-icon-btn" onClick={handleRefresh} aria-label={t('Refresh')} data-tip={t('Refresh')} data-tip-pos="bottom">
             <RefreshCw size={15} className={spinning ? 'aw-spin' : ''} />
           </button>
-          <button type="button" className="aw-btn aw-btn-primary"><Download size={14} /> Export</button>
+          <button type="button" className="aw-btn aw-btn-primary"><Download size={14} /> {t('Export')}</button>
         </div>
       </div>
 
       <div className="aw-tabs" role="tablist">
         {NAV_ITEMS.map(n => (
           <button key={n.label} type="button" role="tab" className="aw-tab" aria-selected={section === n.label} onClick={() => setSection(n.label)}>
-            {n.label}
+            {tLabel(n.label)}
             {n.badge && <span className="aw-pill tone-danger">{n.badge}</span>}
           </button>
         ))}
@@ -188,7 +191,7 @@ const AnalyticsDashboard: React.FC = () => {
             <section className="aw-card">
               <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
                 <div>
-                  <p className="aw-label" style={{ margin: 0 }}>Total sessions</p>
+                  <p className="aw-label" style={{ margin: 0 }}>{t('Total sessions')}</p>
                   <div className="aw-inline" style={{ alignItems: 'flex-end', gap: 10, marginTop: 8 }}>
                     <span style={{ fontSize: 'calc(var(--type-body-size) + 28px)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>1,247</span>
                     <span className="aw-pill tone-success"><ArrowUp size={10} strokeWidth={3} /> 12%</span>
@@ -196,14 +199,14 @@ const AnalyticsDashboard: React.FC = () => {
                   <p className="aw-meta" style={{ marginTop: 6 }}>vs. 1,113 in the previous period</p>
                 </div>
                 <div className="aw-inline" style={{ gap: 16, paddingTop: 4 }}>
-                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--aw-accent)' }} />Sessions</span>
-                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: TONE_USERS }} />Users</span>
+                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--aw-accent)' }} />{t('Sessions')}</span>
+                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: TONE_USERS }} />{t('Users')}</span>
                 </div>
               </div>
 
               <div>
                 <div style={{ position: 'relative' }}>
-                <svg viewBox="0 0 700 240" preserveAspectRatio="none" style={{ width: '100%', height: 244, display: 'block', overflow: 'visible' }} role="img" aria-label="Sessions and users trend">
+                <svg viewBox="0 0 700 240" preserveAspectRatio="none" style={{ width: '100%', height: 244, display: 'block', overflow: 'visible' }} role="img" aria-label={t('Sessions and users trend')}>
                   <defs>
                     <linearGradient id="hubSess" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" style={{ stopColor: 'var(--aw-accent)', stopOpacity: 0.35 }} />
@@ -246,14 +249,14 @@ const AnalyticsDashboard: React.FC = () => {
                 <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="aw-inline" style={{ alignItems: 'center', gap: 10 }}>
                     <span className="aw-card-icon"><Activity size={15} /></span>
-                    <span className="aw-meta" style={{ fontWeight: 700 }}>Active now</span>
+                    <span className="aw-meta" style={{ fontWeight: 700 }}>{t('Active now')}</span>
                   </span>
                   <span className="aw-inline" style={{ alignItems: 'baseline', gap: 7 }}>
                     <span style={{ fontSize: 'calc(var(--type-body-size) + 12px)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>89</span>
                     <strong style={{ color: 'var(--aw-success)' }}>+5%</strong>
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 34 }} role="img" aria-label="Recent activity">
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 34 }} role="img" aria-label={t('Recent activity')}>
                   {LIVE_SEED.map((v, i) => (
                     <span key={i} style={{ flex: 1, borderRadius: '3px 3px 1px 1px', height: `${v}%`, background: i > 19 ? 'var(--aw-accent)' : `color-mix(in srgb, var(--aw-accent) ${Math.round(22 + (i / 24) * 40)}%, transparent)` }} />
                   ))}
@@ -285,10 +288,10 @@ const AnalyticsDashboard: React.FC = () => {
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Zap size={14} /></span>
                 <div>
-                  <h2 className="aw-card-title">Response times</h2>
-                  <p className="aw-meta">Average duration per operation</p>
+                  <h2 className="aw-card-title">{t('Response times')}</h2>
+                  <p className="aw-meta">{t('Average duration per operation')}</p>
                 </div>
-                <span className="aw-pill" style={{ marginLeft: 'auto' }}>Target under 2.0s</span>
+                <span className="aw-pill" style={{ marginLeft: 'auto' }}>{t('Target under 2.0s')}</span>
               </div>
               <div className="aw-stack">
                 {PERF_RAW.map(p => {
@@ -354,8 +357,8 @@ const AnalyticsDashboard: React.FC = () => {
               )}
 
               <div className="aw-row" style={{ borderBottom: 0, borderTop: '1px solid var(--aw-border)', paddingTop: 10 }}>
-                <span className="aw-meta">Avg. session 18.5 min</span>
-                <a href="#" onClick={(e) => e.preventDefault()} style={{ fontWeight: 700, color: 'var(--aw-accent)' }}>View report</a>
+                <span className="aw-meta">{t('Avg. session 18.5 min')}</span>
+                <a href="#" onClick={(e) => e.preventDefault()} style={{ fontWeight: 700, color: 'var(--aw-accent)' }}>{t('View report')}</a>
               </div>
             </section>
           </div>
@@ -363,8 +366,8 @@ const AnalyticsDashboard: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span><span className="aw-status-dot" /> All systems normal · Live telemetry · 12 nodes</span>
-        <span>Synced 2 min ago</span>
+        <span><span className="aw-status-dot" /> {t('All systems normal · Live telemetry · 12 nodes')}</span>
+        <span>{t('Synced 2 min ago')}</span>
       </div>
     </div>
   );

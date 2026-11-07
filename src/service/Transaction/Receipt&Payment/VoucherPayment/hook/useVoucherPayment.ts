@@ -2,23 +2,10 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import { VoucherPaymentData, VoucherPaymentHookReturn, ReceiptRow } from '../interface/VoucherPaymentInterfaces';
 import { apiService } from '../../../../../services/api';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const CASH_ACCOUNT = { code: 'A1001', name: 'CASH IN HAND' };
-
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail: string,
-) => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({
-      type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-    });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-  }
-};
 
 const emptyForm = (): VoucherPaymentData => ({
   memberNo: '',
@@ -45,6 +32,7 @@ const newRow = (): ReceiptRow => ({
 });
 
 export const useVoucherPayment = (): VoucherPaymentHookReturn => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<VoucherPaymentData>(emptyForm());
   const [isLoading, setIsLoading] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<{ code: string; name: string }[]>([CASH_ACCOUNT]);
@@ -117,26 +105,26 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
     // is only required for a member "Payment".
     const isGeneral = formData.paymentType === 'general';
     if (!isGeneral && !formData.memberNo) {
-      await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member, or switch to "General Payment".');
+      await showDialog('warning', t('Input Validation Error'), t('Member Required'), t('Please select a member, or switch to "General Payment".'));
       return;
     }
     const validRows = formData.rows.filter(r => r.code && parseFloat(r.amount) > 0);
     if (validRows.length === 0) {
-      await showDialog('warning', 'Input Validation Error', 'No Valid Rows', 'Please add at least one row with a head code and amount greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('No Valid Rows'), t('Please add at least one row with a head code and amount greater than zero.'));
       return;
     }
     // Only the rows that are actually posted count towards the total shown/validated
     const validTotal = Math.round(validRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0) * 100) / 100;
     if (validTotal <= 0) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Total Amount', 'Total voucher amount must be greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Total Amount'), t('Total voucher amount must be greater than zero.'));
       return;
     }
     if (!formData.transDate || !/^\d{4}-\d{2}-\d{2}$/.test(formData.transDate) || !dayjs(formData.transDate).isValid()) {
-      await showDialog('warning', 'Input Validation Error', 'Date Required', 'Please enter a valid transaction date.');
+      await showDialog('warning', t('Input Validation Error'), t('Date Required'), t('Please enter a valid transaction date.'));
       return;
     }
     if (formData.modeOfPay === 'bank' && !formData.chequeNo.trim()) {
-      await showDialog('warning', 'Input Validation Error', 'Cheque Number Required', 'Please enter the cheque number for bank/cheque payment mode.');
+      await showDialog('warning', t('Input Validation Error'), t('Cheque Number Required'), t('Please enter the cheque number for bank/cheque payment mode.'));
       return;
     }
 
@@ -169,7 +157,7 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
         await showDialog(
           'info',
           'electron-react-ts',
-          'Voucher Payment Staged Successfully!',
+          t('Voucher Payment Staged Successfully!'),
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `VOUCHER NO    : ${vchr}\n` +
           `MEMBER NO     : ${formData.memberNo} - ${formData.memberName || 'N/A'}\n` +
@@ -189,10 +177,10 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
         setFormData(emptyForm());
       } else {
         // BUG FIX: was response.error — apiService returns response.message, not response.error
-        await showDialog('error', 'Voucher Payment Error', 'Failed to Save Voucher Payment', response.message || 'An unexpected error occurred. Please try again.');
+        await showDialog('error', t('Voucher Payment Error'), t('Failed to Save Voucher Payment'), response.message || t('An unexpected error occurred. Please try again.'));
       }
     } catch (err: any) {
-      await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${err.message}`);
+      await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: err.message }));
     } finally {
       savingRef.current = false;
       setIsLoading(false);

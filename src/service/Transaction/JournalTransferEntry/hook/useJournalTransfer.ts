@@ -6,12 +6,8 @@ import {
     VoucherOption,
 } from '../interface/JournalTransferInterfaces';
 import { apiService } from '../../../../services/api';
-
-const showDialog = async (type: 'info' | 'warning' | 'error', title: string, msg: string, detail: string) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-    } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
     if ((window as any).electronAPI?.showMessageBox) {
@@ -33,6 +29,7 @@ const createEmptyRow = (): JournalEntry => ({
 });
 
 export const useJournalTransfer = (): JournalTransferHookReturn => {
+  const { t } = useTranslation();
     const [formData, setFormData] = useState<JournalTransferData>({
         voucherNo: '',
         transferType: 'headToHead',
@@ -196,35 +193,35 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
             return (d !== '' && !(parseFloat(d) >= 0)) || (c !== '' && !(parseFloat(c) >= 0));
         });
         if (hasBadAmount) {
-            await showDialog('warning', 'electron-react-ts', 'Invalid Amount', 'Debit and Credit amounts cannot be negative or non-numeric. Please correct the highlighted rows.');
+            await showDialog('warning', 'electron-react-ts', t('Invalid Amount'), t('Debit and Credit amounts cannot be negative or non-numeric. Please correct the highlighted rows.'));
             return;
         }
         if (Math.abs(totalDebit - totalCredit) > 0.01) {
-            await showDialog('error', 'electron-react-ts', 'Debit - Credit is not equal',
-                `Total Debit: ₹${totalDebit.toFixed(2)}\nTotal Credit: ₹${totalCredit.toFixed(2)}\nDifference: ₹${Math.abs(totalDebit - totalCredit).toFixed(2)}`);
+            await showDialog('error', 'electron-react-ts', t('Debit - Credit is not equal'),
+                t('Total Debit: ₹{{1}} Total Credit: ₹{{2}} Difference: ₹{{3}}', { 1: totalDebit.toFixed(2), 2: totalCredit.toFixed(2), 3: Math.abs(totalDebit - totalCredit).toFixed(2) }));
             return;
         }
         if (totalDebit <= 0) {
-            await showDialog('warning', 'electron-react-ts', 'Invalid Amount', 'Amount must be greater than zero.');
+            await showDialog('warning', 'electron-react-ts', t('Invalid Amount'), t('Amount must be greater than zero.'));
             return;
         }
 
         const validRows = data.filter(r => (parseFloat(r.debit as string) || 0) > 0 || (parseFloat(r.credit as string) || 0) > 0);
         if (validRows.length < 2) {
-            await showDialog('warning', 'electron-react-ts', 'Insufficient Rows', 'At least 2 rows with amounts required.');
+            await showDialog('warning', 'electron-react-ts', t('Insufficient Rows'), t('At least 2 rows with amounts required.'));
             return;
         }
 
         const rowsWithoutCode = validRows.filter(r => !r.code?.trim());
         if (rowsWithoutCode.length > 0) {
-            await showDialog('warning', 'electron-react-ts', 'Code Missing', 'All rows with amounts must have a Head Code.');
+            await showDialog('warning', 'electron-react-ts', t('Code Missing'), t('All rows with amounts must have a Head Code.'));
             return;
         }
 
         if (formData.transferType === 'memberToMember') {
             const rowsWithoutMember = validRows.filter(r => !r.mbno?.trim());
             if (rowsWithoutMember.length > 0) {
-                await showDialog('warning', 'electron-react-ts', 'Member No Missing', 'All rows must have a Member No for Member-to-Member transfers.');
+                await showDialog('warning', 'electron-react-ts', t('Member No Missing'), t('All rows must have a Member No for Member-to-Member transfers.'));
                 return;
             }
         }
@@ -250,15 +247,15 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
                 })),
             });
             if (res.success) {
-                await showDialog('info', 'electron-react-ts', 'Journal Voucher Created!',
-                    `Voucher No: ${res.data?.voucherNo || '—'}\nTotal: ₹${totalDebit.toLocaleString('en-IN')}\nRows: ${validRows.length}\n\n✓ Voucher staged (PENDING)\n➜ Go to Pass Transactions to post`);
+                await showDialog('info', 'electron-react-ts', t('Journal Voucher Created!'),
+                    t('Voucher No: {{1}} Total: ₹{{2}} Rows: {{3}} ✓ Voucher staged (PENDING) ➜ Go to Pass Transactions to post', { 1: res.data?.voucherNo || '—', 2: totalDebit.toLocaleString('en-IN'), 3: validRows.length }));
                 handleReset();
                 fetchVoucherList();
             } else {
-                await showDialog('error', 'electron-react-ts', 'Failed', res.error || res.message || 'Unknown error');
+                await showDialog('error', 'electron-react-ts', t('Failed'), res.error || res.message || t('Unknown error'));
             }
         } catch (error: any) {
-            await showDialog('error', 'electron-react-ts', 'Server Error', error.message);
+            await showDialog('error', 'electron-react-ts', t('Server Error'), error.message);
         } finally {
             savingRef.current = false;
             setIsLoading(false);

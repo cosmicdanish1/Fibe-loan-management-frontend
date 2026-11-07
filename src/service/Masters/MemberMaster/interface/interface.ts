@@ -1,3 +1,4 @@
+import { tLabel } from '../../../../i18n';
 // Types and Interfaces for Member Master Form
 export interface MemberFormData {
   memberNumber: string;
@@ -51,38 +52,38 @@ export interface SelectOption {
 // Form field options
 export const titleOptions: SelectOption[] = [
   { value: 'Mr', label: 'Mr' },
-  { value: 'Mrs', label: 'Mrs' },
+  { value: 'Mrs', label: tLabel('Mrs') },
   { value: 'Ms', label: 'Ms' },
   { value: 'Dr', label: 'Dr' }
 ];
 
 export const statusOptions: SelectOption[] = [
-  { value: 'Regular', label: 'Regular' },
-  { value: 'Inactive', label: 'Inactive' },
-  { value: 'Suspended', label: 'Suspended' }
+  { value: 'Regular', label: tLabel('Regular') },
+  { value: 'Inactive', label: tLabel('Inactive') },
+  { value: 'Suspended', label: tLabel('Suspended') }
 ];
 
 export const castCategoryOptions: SelectOption[] = [
   { value: 'OBC', label: 'OBC' },
-  { value: 'General', label: 'General' },
+  { value: 'General', label: tLabel('General') },
   { value: 'SC', label: 'SC' },
   { value: 'ST', label: 'ST' }
 ];
 
 export const memberTypeOptions: SelectOption[] = [
-  { value: 'Regular', label: 'Regular' },
-  { value: 'Associate', label: 'Associate' },
-  { value: 'Honorary', label: 'Honorary' }
+  { value: 'Regular', label: tLabel('Regular') },
+  { value: 'Associate', label: tLabel('Associate') },
+  { value: 'Honorary', label: tLabel('Honorary') }
 ];
 
 export const relationOptions: SelectOption[] = [
-  { value: 'Spouse', label: 'Spouse' },
-  { value: 'Son', label: 'Son' },
-  { value: 'Daughter', label: 'Daughter' },
-  { value: 'Father', label: 'Father' },
-  { value: 'Mother', label: 'Mother' },
-  { value: 'Brother', label: 'Brother' },
-  { value: 'Sister', label: 'Sister' }
+  { value: 'Spouse', label: tLabel('Spouse') },
+  { value: 'Son', label: tLabel('Son') },
+  { value: 'Daughter', label: tLabel('Daughter') },
+  { value: 'Father', label: tLabel('Father') },
+  { value: 'Mother', label: tLabel('Mother') },
+  { value: 'Brother', label: tLabel('Brother') },
+  { value: 'Sister', label: tLabel('Sister') }
 ];
 
 // Default form values

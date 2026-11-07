@@ -7,23 +7,12 @@ import type {
   UseUserManagementReturn,
   User
 } from '../interface/types';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 // ── Native Electron dialog helper (replaces antd message) ─────────────────────
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail = '',
-) => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}${detail ? '\n\n' + detail : ''}`);
-  }
-};
-
 export const useUserManagement = (): UseUserManagementReturn => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<UserFormData>({
     username: '',
     email: '',
@@ -146,7 +135,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
   const fetchUser = async (usernameToSearch?: string) => {
     const target = usernameToSearch || formData.username;
     if (!target) {
-      await showDialog('warning', 'Search', 'Please enter a username to search', '');
+      await showDialog('warning', t('Search'), t('Please enter a username to search'), '');
       return;
     }
 
@@ -167,7 +156,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
       }
     } catch (err: any) {
       console.error('Fetch user failed:', err);
-      await showDialog('error', 'Search Failed', 'Identity lookup failed', err.message || 'Check server connection.');
+      await showDialog('error', t('Search Failed'), t('Identity lookup failed'), err.message || t('Check server connection.'));
     }
   };
 
@@ -232,28 +221,28 @@ export const useUserManagement = (): UseUserManagementReturn => {
     const { username, password, confirmPassword, userLevel } = formData;
 
     if (!username.trim() || !userLevel) {
-      showDialog('warning', 'Validation', 'User Name and User Level are mandatory', '');
+      showDialog('warning', t('Validation'), t('User Name and User Level are mandatory'), '');
       return false;
     }
 
     if (!isUpdating && !password.trim()) {
-      showDialog('warning', 'Validation', 'Password is required for new users', '');
+      showDialog('warning', t('Validation'), t('Password is required for new users'), '');
       return false;
     }
 
     // Backend enforces @MinLength(6)
     if (!isUpdating && password.length < 6) {
-      showDialog('warning', 'Validation', 'Password must be at least 6 characters', '');
+      showDialog('warning', t('Validation'), t('Password must be at least 6 characters'), '');
       return false;
     }
 
     if (password && password !== confirmPassword) {
-      showDialog('warning', 'Validation', 'Passwords do not match', 'Re-enter the password in both fields.');
+      showDialog('warning', t('Validation'), t('Passwords do not match'), t('Re-enter the password in both fields.'));
       return false;
     }
 
     if (isUpdating && password && password.length < 6) {
-      showDialog('warning', 'Validation', 'New password must be at least 6 characters', '');
+      showDialog('warning', t('Validation'), t('New password must be at least 6 characters'), '');
       return false;
     }
 
@@ -263,7 +252,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
     // "email must be an email" error with no visible field to blame.
     const trimmedEmail = formData.email.trim();
     if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      showDialog('warning', 'Validation', 'Email address is not valid', 'Leave it blank to auto-generate one, or fix the format.');
+      showDialog('warning', t('Validation'), t('Email address is not valid'), t('Leave it blank to auto-generate one, or fix the format.'));
       return false;
     }
 
@@ -331,8 +320,8 @@ export const useUserManagement = (): UseUserManagementReturn => {
 
       await showDialog(
         'info',
-        'Identity Synchronization System',
-        isUpdating ? 'User Identity Updated Successfully!' : 'New User Identity Created Successfully!',
+        t('Identity Synchronization System'),
+        isUpdating ? t('User Identity Updated Successfully!') : t('New User Identity Created Successfully!'),
         `USERNAME   : ${formData.username}\n` +
         `LEVEL      : ${formData.userLevel.toUpperCase()}\n` +
         `EMAIL      : ${email}\n` +
@@ -347,8 +336,8 @@ export const useUserManagement = (): UseUserManagementReturn => {
     } catch (err: any) {
       await showDialog(
         'error',
-        'Identity Synchronization Error',
-        'Failed to process user identity',
+        t('Identity Synchronization Error'),
+        t('Failed to process user identity'),
         `Error: ${err.message || 'Matrix connection failed'}\n\n` +
         `Troubleshooting:\n` +
         `• Check if the username is already taken\n` +

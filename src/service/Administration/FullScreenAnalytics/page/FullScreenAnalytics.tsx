@@ -16,6 +16,7 @@ import {
 import { Select } from 'antd';
 import { useComponentAnalytics } from '../../../../hooks/useAnalytics';
 import apiService from '../../../../services/api';
+import { useTranslation } from 'react-i18next';
 
 // One tone per series, taken from the shared theme so Settings changes apply.
 const COLORS = ['var(--aw-danger)', 'var(--aw-success)', 'var(--aw-warning)', 'var(--aw-accent)', 'var(--aw-info, var(--aw-accent))', 'var(--aw-muted)'];
@@ -78,13 +79,16 @@ const ChartCard = ({ title, children, height = 300 }: any) => (
   </section>
 );
 
-const NoData: React.FC<{ note?: string | undefined }> = ({ note }) => (
+const NoData: React.FC<{ note?: string | undefined }> = ({ note }) => {
+  const { t } = useTranslation();
+  return (
   <div className="aw-empty" style={{ height: '100%', justifyContent: 'center' }}>
     <Activity size={26} />
-    <strong className="aw-strong">No data available</strong>
+    <strong className="aw-strong">{t('No data available')}</strong>
     {note && <span className="aw-meta">{note}</span>}
   </div>
 );
+};
 
 // Custom Recharts Tooltip
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -108,6 +112,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const FullScreenAnalytics: React.FC = () => {
+  const { t } = useTranslation();
   useComponentAnalytics('FullScreenAnalytics');
 
   const [status, setStatus] = useState<AnalyticsStatus | null>(null);
@@ -146,7 +151,7 @@ const FullScreenAnalytics: React.FC = () => {
       setUsers(usersRes.success && Array.isArray(u) ? u : []);
 
       if (!statusRes.success && !usersRes.success) {
-        setLoadError(statusRes.message || usersRes.message || 'Analytics service is not reachable.');
+        setLoadError(statusRes.message || usersRes.message || t('Analytics service is not reachable.'));
       } else {
         setLoadError('');
         setLastUpdated(new Date());
@@ -154,7 +159,7 @@ const FullScreenAnalytics: React.FC = () => {
     } catch (e: any) {
       if (seq !== loadSeq.current) return;
       console.error(e);
-      setLoadError(e?.message || 'Failed to load analytics.');
+      setLoadError(e?.message || t('Failed to load analytics.'));
     } finally {
       if (seq === loadSeq.current) setLoading(false);
     }
@@ -190,12 +195,12 @@ const FullScreenAnalytics: React.FC = () => {
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Live Ops Center</h1>
+          <h1 className="aw-title">{t('Live Ops Center')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Globe size={11} />
             {loadError
-              ? <span style={{ color: 'var(--aw-danger)' }}>Not connected - {loadError}</span>
-              : <>Connected · <span style={{ fontFamily: 'monospace', color: 'var(--aw-success)' }}>{lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}</span></>}
+              ? <span style={{ color: 'var(--aw-danger)' }}>{t('Not connected - {{1}}', { 1: loadError })}</span>
+              : <>{t('Connected ·')} <span style={{ fontFamily: 'monospace', color: 'var(--aw-success)' }}>{lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}</span></>}
           </p>
         </div>
         <div className="aw-actions">
@@ -207,19 +212,19 @@ const FullScreenAnalytics: React.FC = () => {
           <Select
             value={selectedTimeRange}
             onChange={setSelectedTimeRange}
-            aria-label="Time range"
+            aria-label={t('Time range')}
             className="aw-select" popupClassName="aw-select-popup" style={{ width: 130 }}
             options={[
-              { value: '1h', label: 'Last Hour' },
-              { value: '24h', label: '24 Hours' },
-              { value: '7d', label: '7 Days' },
+              { value: '1h', label: t('Last Hour') },
+              { value: '24h', label: '24 ' + t('Hours') },
+              { value: '7d', label: '7 ' + t('Days') },
             ]}
           />
-          <button type="button" className="aw-icon-btn" onClick={toggleFullscreen} aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'} data-tip={isFullscreen ? 'Exit full screen' : 'Full screen'} data-tip-pos="bottom-end">
+          <button type="button" className="aw-icon-btn" onClick={toggleFullscreen} aria-label={isFullscreen ? t('Exit full screen') : t('Full screen')} data-tip={isFullscreen ? t('Exit full screen') : t('Full screen')} data-tip-pos="bottom-end">
             {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
-          <button type="button" className="aw-btn aw-btn-primary" onClick={loadAnalyticsData} aria-label="Refresh">
-            <RefreshCw size={13} className={loading ? 'aw-spin' : ''} /> Refresh
+          <button type="button" className="aw-btn aw-btn-primary" onClick={loadAnalyticsData} aria-label={t('Refresh')}>
+            <RefreshCw size={13} className={loading ? 'aw-spin' : ''} /> {t('Refresh')}
           </button>
         </div>
       </div>
@@ -229,19 +234,19 @@ const FullScreenAnalytics: React.FC = () => {
           <div className="aw-stack aw-fade-in">
             {/* KPI Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--aw-gap)' }}>
-              <StatCard title="Active Sessions" value={fmt(status?.active_sessions)} icon={Users} tone="var(--aw-accent)" subtitle="Currently online" />
-              <StatCard title="Total Errors" value={fmt(status?.total_errors)} icon={AlertTriangle} tone="var(--aw-danger)" subtitle="All recorded errors" />
-              <StatCard title="Unresolved Errors" value={fmt(status?.unresolved_errors)} icon={ShieldAlert} tone="var(--aw-warning)" subtitle="Awaiting resolution" />
-              <StatCard title="Active Users" value={fmt(loadError ? undefined : users.length)} icon={UserCheck} tone="var(--aw-success)" subtitle={`With sessions in the last ${selectedTimeRange}`} />
+              <StatCard title={t('Active Sessions')} value={fmt(status?.active_sessions)} icon={Users} tone="var(--aw-accent)" subtitle="Currently online" />
+              <StatCard title={t('Total Errors')} value={fmt(status?.total_errors)} icon={AlertTriangle} tone="var(--aw-danger)" subtitle="All recorded errors" />
+              <StatCard title={t('Unresolved Errors')} value={fmt(status?.unresolved_errors)} icon={ShieldAlert} tone="var(--aw-warning)" subtitle="Awaiting resolution" />
+              <StatCard title={t('Active Users')} value={fmt(loadError ? undefined : users.length)} icon={UserCheck} tone="var(--aw-success)" subtitle={`With sessions in the last ${selectedTimeRange}`} />
             </div>
 
             {/* Charts Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(260px, 1fr)', gap: 'var(--aw-gap)' }}>
-              <ChartCard title="Traffic Volume & User Load" height={350}>
+              <ChartCard title={t('Traffic Volume & User Load')} height={350}>
                 <NoData note="The server does not provide a traffic time series yet." />
               </ChartCard>
 
-              <ChartCard title="Error Breakdown" height={350}>
+              <ChartCard title={t('Error Breakdown')} height={350}>
                 {errorBreakdown.length === 0 ? (
                   <NoData note={status ? 'No errors have been recorded.' : undefined} />
                 ) : (
@@ -266,7 +271,7 @@ const FullScreenAnalytics: React.FC = () => {
             </div>
 
             {/* Performance Strip */}
-            <ChartCard title="System Resources" height={250}>
+            <ChartCard title={t('System Resources')} height={250}>
               <NoData note="CPU, memory and network metrics are not collected by the server." />
             </ChartCard>
           </div>
@@ -274,10 +279,10 @@ const FullScreenAnalytics: React.FC = () => {
 
         {activeView === 'performance' && (
           <div className="aw-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'start' }}>
-            <ChartCard title="Feature Response Latency" height={400}>
+            <ChartCard title={t('Feature Response Latency')} height={400}>
               <NoData note="Per-feature latency is not recorded by the server yet." />
             </ChartCard>
-            <ChartCard title="Service Health" height={400}>
+            <ChartCard title={t('Service Health')} height={400}>
               <NoData note="Service uptime / health checks are not available." />
             </ChartCard>
           </div>
@@ -288,7 +293,7 @@ const FullScreenAnalytics: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Users size={14} /></span>
-                <h2 className="aw-card-title">User Activity ({selectedTimeRange})</h2>
+                <h2 className="aw-card-title">{t('User Activity ({{1}})', { 1: selectedTimeRange })}</h2>
               </div>
               {users.length === 0 ? (
                 <div style={{ height: 200 }}><NoData /></div>
@@ -297,12 +302,12 @@ const FullScreenAnalytics: React.FC = () => {
                   <table className="aw-table">
                     <thead>
                       <tr>
-                        <th>User</th>
-                        <th>Role</th>
-                        <th>Last Activity</th>
-                        <th className="is-right">Sessions</th>
-                        <th className="is-right">Features Used</th>
-                        <th className="is-right">Errors</th>
+                        <th>{t('User')}</th>
+                        <th>{t('Role')}</th>
+                        <th>{t('Last Activity')}</th>
+                        <th className="is-right">{t('Sessions')}</th>
+                        <th className="is-right">{t('Features Used')}</th>
+                        <th className="is-right">{t('Errors')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -326,7 +331,7 @@ const FullScreenAnalytics: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span><span className="aw-status-dot" /> Live Ops Center · refreshes every {Math.round(refreshInterval / 1000)}s</span>
+        <span><span className="aw-status-dot" /> {t('Live Ops Center · refreshes every')} {Math.round(refreshInterval / 1000)}s</span>
         <span>{selectedTimeRange}</span>
       </div>
     </div>

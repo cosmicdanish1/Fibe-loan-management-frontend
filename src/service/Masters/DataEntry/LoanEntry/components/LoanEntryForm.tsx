@@ -7,12 +7,14 @@ import dayjs from 'dayjs';
 import { LoanEntryHookReturn } from '../interface/LoanEntryInterfaces';
 import MemberField from '@/components/shared/kit/MemberField';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../../i18n';
 
 // Loan Against RD (ELN) is deliberately not offered: it must be entered through Loan Application so the
 // member's RD gets locked. The server refuses it here as well.
 const LOAN_TYPES = [
-    { id: 'ALN', label: 'Emergency Loan (ALN)' },
-    { id: 'RLN', label: 'Regular Loan (RLN)' },
+    { id: 'ALN', label: tLabel('Emergency Loan (ALN)') },
+    { id: 'RLN', label: tLabel('Regular Loan (RLN)') },
 ];
 
 const fmtInr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
@@ -23,6 +25,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
     handleSave, handleClear, handleExit,
     isLoading, eligibilityStatus, isCheckingEligibility,
 }) => {
+  const { t } = useTranslation();
     const pick = (fn: (no: string, d?: any) => void) => (member: any) => {
         const no = String(member.memberNo || member.mbno || '');
         const name = member.memberName || member.fullname || '';
@@ -44,16 +47,16 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Loan Entry</h1>
+                    <h1 className="aw-title">{t('Loan Entry')}</h1>
                     <p className="aw-desc">loan_master + suretymaster</p>
                 </div>
                 <div className="aw-actions">
-                    <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> Clear</button>
+                    <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> {t('Clear')}</button>
                     <button type="button" onClick={handleSave} disabled={saveBlocked} className="aw-btn aw-btn-primary">
                         {isLoading ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />}
-                        {isLoading ? 'Saving…' : 'Save'}
+                        {isLoading ? t('Saving…') : t('Save')}
                     </button>
-                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> Exit</button>
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Exit')}</button>
                 </div>
             </div>
 
@@ -62,19 +65,19 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Users size={14} /></span>
-                            <h2 className="aw-card-title">Member & Loan Type</h2>
+                            <h2 className="aw-card-title">{t('Member & Loan Type')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'start' }}>
                             <div>
-                                <span className="aw-label">Member No.</span>
+                                <span className="aw-label">{t('Member No.')}</span>
                                 <MemberField value={formData.memberNo} onChange={v => updateField('memberNo', v)}
-                                    onSelect={pick(handleMemberSelect)} placeholder="Member no…" ariaLabel="Member number" />
+                                    onSelect={pick(handleMemberSelect)} placeholder={t('Member no…')} ariaLabel="Member number" />
                                 {nameLine(formData.memberName)}
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="le-type">Loan Type</label>
+                                <label className="aw-label" htmlFor="le-type">{t('Loan Type')}</label>
                                 <Select id="le-type" value={(formData.loanType || undefined) as string} onChange={v => updateField('loanType', v)}
-                                    className="aw-select" popupClassName="aw-select-popup" placeholder="Select loan type"
+                                    className="aw-select" popupClassName="aw-select-popup" placeholder={t('Select loan type')}
                                     options={LOAN_TYPES.map(t => ({ value: t.id, label: t.label }))} />
                             </div>
                         </div>
@@ -84,34 +87,34 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                         <section className="aw-card aw-fade-in">
                             <div className="aw-card-head">
                                 <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                                <h2 className="aw-card-title">5% Eligibility Rules</h2>
+                                <h2 className="aw-card-title">{t('5% Eligibility Rules')}</h2>
                                 {isCheckingEligibility ? (
-                                    <span className="aw-pill" style={{ marginLeft: 'auto' }}><RotateCcw size={11} className="aw-spin" /> Checking...</span>
+                                    <span className="aw-pill" style={{ marginLeft: 'auto' }}><RotateCcw size={11} className="aw-spin" /> {t('Checking...')}</span>
                                 ) : eligibilityStatus?.isEligible ? (
-                                    <span className="aw-pill tone-success" style={{ marginLeft: 'auto' }}>Eligible</span>
+                                    <span className="aw-pill tone-success" style={{ marginLeft: 'auto' }}>{t('Eligible')}</span>
                                 ) : (
-                                    <span className="aw-pill tone-danger" style={{ marginLeft: 'auto' }}>Not Eligible</span>
+                                    <span className="aw-pill tone-danger" style={{ marginLeft: 'auto' }}>{t('Not Eligible')}</span>
                                 )}
                             </div>
                             {eligibilityStatus && (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--aw-gap)' }}>
                                     <div className="aw-panel">
-                                        <span className="aw-label">Share Requirements</span>
+                                        <span className="aw-label">{t('Share Requirements')}</span>
                                         <div className="aw-facts">
-                                            <div className="aw-inline" style={{ justifyContent: 'space-between' }}><span className="aw-meta">Current Share:</span><strong>{fmtInr(eligibilityStatus.currentShare)}</strong></div>
-                                            <div className="aw-inline" style={{ justifyContent: 'space-between' }}><span className="aw-meta">Required (5%):</span><strong style={{ color: 'var(--aw-accent)' }}>{fmtInr(eligibilityStatus.requiredShare)}</strong></div>
+                                            <div className="aw-inline" style={{ justifyContent: 'space-between' }}><span className="aw-meta">{t('Current Share:')}</span><strong>{fmtInr(eligibilityStatus.currentShare)}</strong></div>
+                                            <div className="aw-inline" style={{ justifyContent: 'space-between' }}><span className="aw-meta">{t('Required (5%):')}</span><strong style={{ color: 'var(--aw-accent)' }}>{fmtInr(eligibilityStatus.requiredShare)}</strong></div>
                                             {eligibilityStatus.additionalShareRequired > 0 && (
-                                                <div className="aw-inline" style={{ justifyContent: 'space-between' }}><strong style={{ color: 'var(--aw-danger)' }}>Shortfall:</strong><strong style={{ color: 'var(--aw-danger)' }}>{fmtInr(eligibilityStatus.additionalShareRequired)}</strong></div>
+                                                <div className="aw-inline" style={{ justifyContent: 'space-between' }}><strong style={{ color: 'var(--aw-danger)' }}>{t('Shortfall:')}</strong><strong style={{ color: 'var(--aw-danger)' }}>{fmtInr(eligibilityStatus.additionalShareRequired)}</strong></div>
                                             )}
                                         </div>
                                     </div>
                                     <div className="aw-panel">
-                                        <span className="aw-label">FD Requirements</span>
+                                        <span className="aw-label">{t('FD Requirements')}</span>
                                         <div className="aw-facts">
-                                            <div className="aw-inline" style={{ justifyContent: 'space-between' }}><span className="aw-meta">Current FD:</span><strong>{fmtInr(eligibilityStatus.currentFd)}</strong></div>
-                                            <div className="aw-inline" style={{ justifyContent: 'space-between' }}><span className="aw-meta">Required (5%):</span><strong style={{ color: 'var(--aw-accent)' }}>{fmtInr(eligibilityStatus.requiredFd)}</strong></div>
+                                            <div className="aw-inline" style={{ justifyContent: 'space-between' }}><span className="aw-meta">{t('Current FD:')}</span><strong>{fmtInr(eligibilityStatus.currentFd)}</strong></div>
+                                            <div className="aw-inline" style={{ justifyContent: 'space-between' }}><span className="aw-meta">{t('Required (5%):')}</span><strong style={{ color: 'var(--aw-accent)' }}>{fmtInr(eligibilityStatus.requiredFd)}</strong></div>
                                             {eligibilityStatus.additionalFdRequired > 0 && (
-                                                <div className="aw-inline" style={{ justifyContent: 'space-between' }}><strong style={{ color: 'var(--aw-danger)' }}>Shortfall:</strong><strong style={{ color: 'var(--aw-danger)' }}>{fmtInr(eligibilityStatus.additionalFdRequired)}</strong></div>
+                                                <div className="aw-inline" style={{ justifyContent: 'space-between' }}><strong style={{ color: 'var(--aw-danger)' }}>{t('Shortfall:')}</strong><strong style={{ color: 'var(--aw-danger)' }}>{fmtInr(eligibilityStatus.additionalFdRequired)}</strong></div>
                                             )}
                                         </div>
                                     </div>
@@ -123,11 +126,11 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><IndianRupee size={14} /></span>
-                            <h2 className="aw-card-title">Loan Details</h2>
+                            <h2 className="aw-card-title">{t('Loan Details')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--aw-gap)' }}>
                             <div>
-                                <label className="aw-label" htmlFor="le-amount">Loan Amount</label>
+                                <label className="aw-label" htmlFor="le-amount">{t('Loan Amount')}</label>
                                 <div className="aw-input-wrap has-icon">
                                     <IndianRupee size={13} />
                                     <input id="le-amount" type="number" value={formData.loanAmount} onChange={e => updateField('loanAmount', e.target.value)}
@@ -135,17 +138,17 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                                 </div>
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="le-rate">Interest Rate (%)</label>
+                                <label className="aw-label" htmlFor="le-rate">{t('Interest Rate (%)')}</label>
                                 <input id="le-rate" type="number" value={formData.rate} onChange={e => updateField('rate', e.target.value)}
                                     placeholder="12.00" className="aw-input is-right" />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="le-inst">No. of Installments</label>
+                                <label className="aw-label" htmlFor="le-inst">{t('No. of Installments')}</label>
                                 <input id="le-inst" type="number" value={formData.noOfInstal} onChange={e => updateField('noOfInstal', e.target.value)}
                                     placeholder="60" className="aw-input is-right" />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="le-instamt">Installment Amount</label>
+                                <label className="aw-label" htmlFor="le-instamt">{t('Installment Amount')}</label>
                                 <div className="aw-input-wrap has-icon">
                                     <IndianRupee size={13} />
                                     <input id="le-instamt" type="number" value={formData.instalAmt} onChange={e => updateField('instalAmt', e.target.value)}
@@ -153,21 +156,21 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                                 </div>
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="le-date">Payment Date</label>
+                                <label className="aw-label" htmlFor="le-date">{t('Payment Date')}</label>
                                 <DatePicker id="le-date" value={formData.paymentDate ? dayjs(formData.paymentDate) : null}
                                     onChange={d => updateField('paymentDate', d ? d.format('YYYY-MM-DD') : '')}
                                     format="DD-MMM-YY" className="aw-picker" popupClassName="aw-select-popup" />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="le-penal">Penal Rate (%)</label>
+                                <label className="aw-label" htmlFor="le-penal">{t('Penal Rate (%)')}</label>
                                 <input id="le-penal" type="number" value={formData.penalRate} onChange={e => updateField('penalRate', e.target.value)}
                                     placeholder="2.00" className="aw-input is-right" />
                             </div>
                         </div>
                         <div>
-                            <label className="aw-label" htmlFor="le-purpose">Purpose</label>
+                            <label className="aw-label" htmlFor="le-purpose">{t('Purpose')}</label>
                             <textarea id="le-purpose" value={formData.purpose} onChange={e => updateField('purpose', e.target.value)}
-                                placeholder="Enter loan purpose…" rows={2}
+                                placeholder={t('Enter loan purpose…')} rows={2}
                                 className="aw-input" style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
                         </div>
                     </section>
@@ -175,19 +178,19 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Users size={14} /></span>
-                            <h2 className="aw-card-title">Guarantors (Surety)</h2>
+                            <h2 className="aw-card-title">{t('Guarantors (Surety)')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'start' }}>
                             <div>
-                                <span className="aw-label">Guarantor 1 (G1)</span>
+                                <span className="aw-label">{t('Guarantor 1 (G1)')}</span>
                                 <MemberField value={formData.g1MbNo} onChange={v => updateField('g1MbNo', v)}
-                                    onSelect={pick(handleG1Select)} placeholder="Member no…" ariaLabel="Guarantor 1 member number" />
+                                    onSelect={pick(handleG1Select)} placeholder={t('Member no…')} ariaLabel="Guarantor 1 member number" />
                                 {nameLine(formData.g1Name)}
                             </div>
                             <div>
-                                <span className="aw-label">Guarantor 2 (G2)</span>
+                                <span className="aw-label">{t('Guarantor 2 (G2)')}</span>
                                 <MemberField value={formData.g2MbNo} onChange={v => updateField('g2MbNo', v)}
-                                    onSelect={pick(handleG2Select)} placeholder="Member no…" ariaLabel="Guarantor 2 member number" />
+                                    onSelect={pick(handleG2Select)} placeholder={t('Member no…')} ariaLabel="Guarantor 2 member number" />
                                 {nameLine(formData.g2Name)}
                             </div>
                         </div>
@@ -196,7 +199,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
             </div>
 
             <div className="aw-footer">
-                <span>{LOAN_TYPES.find(t => t.id === formData.loanType)?.label || 'Loan Entry'}{formData.memberName && <> · <strong style={{ color: 'var(--aw-accent)' }}>{formData.memberName}</strong></>}</span>
+                <span>{LOAN_TYPES.find(t => t.id === formData.loanType)?.label || t('Loan Entry')}{formData.memberName && <> · <strong style={{ color: 'var(--aw-accent)' }}>{formData.memberName}</strong></>}</span>
                 <span>{dayjs().format('DD-MMM-YY')}</span>
             </div>
         </div>

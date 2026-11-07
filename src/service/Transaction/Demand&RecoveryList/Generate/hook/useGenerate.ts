@@ -6,27 +6,15 @@ import {
     DemandGenerationData,
     GenerateHookReturn
 } from '../interface/GenerateInterfaces';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 // BUG FIX: removed 'message' from antd — silently fails in Electron renderer windows.
 // message.loading / message.success keyed API also requires App context absent in Electron.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).
 
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
-
 export const useGenerate = (): GenerateHookReturn => {
+  const { t } = useTranslation();
     const [formData, setFormData] = useState<DemandGenerationData>({
         month: 'APR',
         year: new Date().getFullYear().toString(),
@@ -52,13 +40,13 @@ export const useGenerate = (): GenerateHookReturn => {
 
     const generateDemand = useCallback(async () => {
         if (!formData.divisionRO) {
-            await showDialog('warning', 'electron-react-ts', 'Administrative Unit Required', 'Please select an Administrative Unit (Division/RO) before generating the demand list.');
+            await showDialog('warning', 'electron-react-ts', t('Administrative Unit Required'), t('Please select an Administrative Unit (Division/RO) before generating the demand list.'));
             return;
         }
         // BUG FIX: validate year — empty/invalid year causes the backend to silently generate for month=0, year=NaN
         const yearNum = parseInt(formData.year);
         if (!formData.year || isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-            await showDialog('warning', 'electron-react-ts', 'Invalid Year', 'Please enter a valid 4-digit year (e.g. 2025).');
+            await showDialog('warning', 'electron-react-ts', t('Invalid Year'), t('Please enter a valid 4-digit year (e.g. 2025).'));
             return;
         }
 
@@ -76,7 +64,7 @@ export const useGenerate = (): GenerateHookReturn => {
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    'Demand Generation Successful!',
+                    t('Demand Generation Successful!'),
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `MONTH         : ${formData.month}\n` +
                     `YEAR          : ${formData.year}\n` +
@@ -87,11 +75,11 @@ export const useGenerate = (): GenerateHookReturn => {
                     `${response.data?.message || response.message || 'Demand generated successfully.'}`
                 );
             } else {
-                await showDialog('error', 'electron-react-ts', 'Demand Generation Failed', response.message || 'An unexpected error occurred. Please try again.');
+                await showDialog('error', 'electron-react-ts', t('Demand Generation Failed'), response.message || t('An unexpected error occurred. Please try again.'));
             }
         } catch (error: any) {
             console.error(error);
-            await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: error.message }));
         } finally {
             setIsGenerating(false);
         }

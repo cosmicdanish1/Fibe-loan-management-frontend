@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react';
 import { Donut, LegendRow, type Slice } from './DashCharts';
 import apiService from '../../services/api';
 import LoadingAnimation from '../../components/loaders/LoadingAnimation';
+import { useTranslation } from 'react-i18next';
 
 // ─── Shared card shell — the kit card, with a small tone marker in the head ──
 export const WidgetCard: React.FC<{
@@ -59,6 +60,7 @@ export const bigNumber: React.CSSProperties = { fontSize: 'calc(var(--type-body-
 
 // ─── 1. Active Members — live register count ───────────────────────────────
 export const ActiveMembersWidget: React.FC = () => {
+  const { t } = useTranslation();
   const [count, setCount] = useState<number | null>(null);
   const [error, setError] = useState(false);
 
@@ -73,9 +75,9 @@ export const ActiveMembersWidget: React.FC = () => {
   }, []);
 
   return (
-    <WidgetCard title="Active Members" tone={TONE_ACCENT}>
+    <WidgetCard title={t('Active Members')} tone={TONE_ACCENT}>
       {error ? (
-        <ErrorNote message="Could not load member count" />
+        <ErrorNote message={t('Could not load member count')} />
       ) : count === null ? (
         <Loading />
       ) : (
@@ -83,12 +85,12 @@ export const ActiveMembersWidget: React.FC = () => {
           <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
               <p style={{ ...bigNumber, color: TONE_ACCENT }}>{count.toLocaleString('en-IN')}</p>
-              <p className="aw-label" style={{ marginTop: 6 }}>Currently Active</p>
+              <p className="aw-label" style={{ marginTop: 6 }}>{t('Currently Active')}</p>
             </div>
-            <span className="aw-pill tone-success">Live register</span>
+            <span className="aw-pill tone-success">{t('Live register')}</span>
           </div>
           <div className="aw-row" style={{ borderBottom: 0, borderTop: '1px solid var(--aw-border)' }}>
-            <span className="aw-meta">Active member records</span>
+            <span className="aw-meta">{t('Active member records')}</span>
             <strong>{count.toLocaleString('en-IN')}</strong>
           </div>
         </div>
@@ -99,6 +101,7 @@ export const ActiveMembersWidget: React.FC = () => {
 
 // ─── 2. Sanctioned Loans — headline count + total value, one call ─────────
 export const SanctionedLoansWidget: React.FC = () => {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState<{
     count: number;
     totalValue: number;
@@ -128,13 +131,13 @@ export const SanctionedLoansWidget: React.FC = () => {
   }, []);
 
   return (
-    <WidgetCard title="Sanctioned Loans (Pending Disbursal)" tone={TONE_WARNING}>
+    <WidgetCard title={t('Sanctioned Loans (Pending Disbursal)')} tone={TONE_WARNING}>
       {error ? (
-        <ErrorNote message="Could not load sanctioned loans" />
+        <ErrorNote message={t('Could not load sanctioned loans')} />
       ) : summary === null ? (
         <Loading />
       ) : summary.count === 0 ? (
-        <ErrorNote message="No sanctioned loans awaiting disbursal" />
+        <ErrorNote message={t('No sanctioned loans awaiting disbursal')} />
       ) : (
         <div className="aw-stack">
           <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -142,13 +145,13 @@ export const SanctionedLoansWidget: React.FC = () => {
               <p style={bigNumber}>
                 {summary.count} <span className="aw-meta" style={{ fontSize: 'var(--type-body-size)', fontWeight: 700 }}>loan{summary.count === 1 ? '' : 's'}</span>
               </p>
-              <p className="aw-meta" style={{ marginTop: 6, fontWeight: 700 }}>{money(summary.totalValue)} total value</p>
+              <p className="aw-meta" style={{ marginTop: 6, fontWeight: 700 }}>{money(summary.totalValue)} {t('total value')}</p>
             </div>
-            <span className="aw-pill tone-warning">Awaiting payout</span>
+            <span className="aw-pill tone-warning">{t('Awaiting payout')}</span>
           </div>
           <div className="aw-row" style={{ borderBottom: 0, borderTop: '1px solid var(--aw-border)' }}>
-            <span className="aw-meta">Regular {summary.regular} · Emergency {summary.emergency}</span>
-            <span className="aw-meta">Oldest {dateLabel(summary.oldestDate)}</span>
+            <span className="aw-meta">{t('Regular')} {summary.regular} · {t('Emergency')} {summary.emergency}</span>
+            <span className="aw-meta">{t('Oldest')} {dateLabel(summary.oldestDate)}</span>
           </div>
         </div>
       )}
@@ -158,6 +161,7 @@ export const SanctionedLoansWidget: React.FC = () => {
 
 // ─── 3. Month-End Outstanding — current month total + regular/emergency split
 export const MonthEndOutstandingWidget: React.FC = () => {
+  const { t } = useTranslation();
   const [totals, setTotals] = useState<{
     regular: number;
     emergency: number;
@@ -189,25 +193,25 @@ export const MonthEndOutstandingWidget: React.FC = () => {
   }, []);
 
   return (
-    <WidgetCard title="Loan Outstanding (This Month)" tone={TONE_INFO}>
+    <WidgetCard title={t('Loan Outstanding (This Month)')} tone={TONE_INFO}>
       {error ? (
-        <ErrorNote message="Could not load month-end totals" />
+        <ErrorNote message={t('Could not load month-end totals')} />
       ) : totals === null ? (
         <Loading />
       ) : totals.total === 0 ? (
-        <ErrorNote message="No month-end snapshot for this month yet" />
+        <ErrorNote message={t('No month-end snapshot for this month yet')} />
       ) : (
         <div className="aw-stack" style={{ gap: 8 }}>
           <p style={{ ...bigNumber, fontSize: 'calc(var(--type-body-size) + 10px)', color: TONE_INFO }}>{money(totals.total)}</p>
-          <div className="aw-bar" role="img" aria-label="Regular versus emergency loan outstanding">
+          <div className="aw-bar" role="img" aria-label={t('Regular versus emergency loan outstanding')}>
             <span style={{ width: `${(totals.regular / totals.total) * 100}%`, background: TONE_INFO }} />
             <span style={{ width: `${(totals.emergency / totals.total) * 100}%`, background: TONE_WARNING }} />
           </div>
           <div className="aw-inline" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <span className="aw-meta"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 5, background: TONE_INFO }} />Regular {money(totals.regular)} · {totals.regularCount}</span>
-            <span className="aw-meta"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 5, background: TONE_WARNING }} />Emergency {money(totals.emergency)} · {totals.emergencyCount}</span>
+            <span className="aw-meta"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 5, background: TONE_INFO }} />{t('Regular')} {money(totals.regular)} · {totals.regularCount}</span>
+            <span className="aw-meta"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 5, background: TONE_WARNING }} />{t('Emergency')} {money(totals.emergency)} · {totals.emergencyCount}</span>
           </div>
-          <p className="aw-meta">Snapshot {dateLabel(totals.snapshotDate)}</p>
+          <p className="aw-meta">{t('Snapshot')} {dateLabel(totals.snapshotDate)}</p>
         </div>
       )}
     </WidgetCard>
@@ -226,6 +230,7 @@ const BALANCE_BUCKETS = [
 ];
 
 export const MemberBalanceDistributionWidget: React.FC = () => {
+  const { t } = useTranslation();
   const [rows, setRows] = useState<{ label: string; count: number; balance: number; share: number }[] | null>(null);
   const [totalMembers, setTotalMembers] = useState(0);
   const [totalBalance, setTotalBalance] = useState(0);
@@ -258,9 +263,9 @@ export const MemberBalanceDistributionWidget: React.FC = () => {
   }, []);
 
   return (
-    <WidgetCard title="Member Balance Distribution" tone={TONE_SUCCESS}>
+    <WidgetCard title={t('Member Balance Distribution')} tone={TONE_SUCCESS}>
       {error ? (
-        <ErrorNote message="Could not load balance distribution" />
+        <ErrorNote message={t('Could not load balance distribution')} />
       ) : rows === null ? (
         <Loading height={128} />
       ) : (
@@ -268,9 +273,9 @@ export const MemberBalanceDistributionWidget: React.FC = () => {
           <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
               <p style={{ ...bigNumber, fontSize: 'calc(var(--type-body-size) + 10px)', color: TONE_SUCCESS }}>{totalMembers.toLocaleString('en-IN')}</p>
-              <p className="aw-label" style={{ marginTop: 6 }}>Members · {money(totalBalance)} total</p>
+              <p className="aw-label" style={{ marginTop: 6 }}>{t('{{1}} {{2}} total', { 1: t('Members ·'), 2: money(totalBalance) })}</p>
             </div>
-            <span className="aw-pill tone-success">By balance</span>
+            <span className="aw-pill tone-success">{t('By balance')}</span>
           </div>
           <div className="aw-inline" style={{ alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <Donut

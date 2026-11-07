@@ -13,10 +13,12 @@ import {
 } from '@ant-design/icons';
 import { useRealTimeDashboard } from '../../../../hooks/useRealTimeAnalytics';
 import { AnalyticsErrorBoundary } from '../../../../components/analytics/AnalyticsErrorBoundary';
+import { useTranslation } from 'react-i18next';
 
 const { TabPane } = Tabs;
 
 const RealTimeDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const {
     metrics,
     isConnected,
@@ -67,7 +69,7 @@ const RealTimeDashboard: React.FC = () => {
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading real-time analytics...</p>
+          <p className="text-gray-600">{t('Loading real-time analytics...')}</p>
         </div>
       </div>
     );
@@ -76,13 +78,13 @@ const RealTimeDashboard: React.FC = () => {
   if (!metrics) {
     return (
       <Alert
-        message="Real-time Data Unavailable"
-        description="Unable to load real-time analytics data. Please check your connection and try again."
+        message={t('Real-time Data Unavailable')}
+        description={t('Unable to load real-time analytics data. Please check your connection and try again.')}
         type="warning"
         showIcon
         action={
           <Button size="small" onClick={handleRefreshClick}>
-            Retry
+            {t('Retry')}
           </Button>
         }
       />
@@ -95,14 +97,14 @@ const RealTimeDashboard: React.FC = () => {
         {/* Header with Connection Status */}
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <h2 className="text-2xl font-bold text-gray-800">📊 Real-Time Analytics</h2>
+            <h2 className="text-2xl font-bold text-gray-800">📊 {t('Real-Time Analytics')}</h2>
             <Badge 
               status={isConnected ? "processing" : "error"} 
-              text={isConnected ? "Live" : "Disconnected"}
+              text={isConnected ? t('Live') : t('Disconnected')}
             />
             {dashboardState.lastRefresh && (
               <span className="text-sm text-gray-500">
-                Last updated: {dashboardState.lastRefresh.toLocaleTimeString()}
+                {t('Last updated:')} {dashboardState.lastRefresh.toLocaleTimeString()}
               </span>
             )}
           </div>
@@ -113,10 +115,10 @@ const RealTimeDashboard: React.FC = () => {
               onClick={() => setAutoRefresh(!autoRefresh)}
               type={autoRefresh ? "primary" : "default"}
             >
-              Auto-refresh: {autoRefresh ? "ON" : "OFF"}
+              {t('Auto-refresh:')} {autoRefresh ? "ON" : "OFF"}
             </Button>
             <Button onClick={handleRefreshClick} loading={dashboardState.isLoading}>
-              Refresh
+              {t('Refresh')}
             </Button>
           </div>
         </div>
@@ -124,7 +126,7 @@ const RealTimeDashboard: React.FC = () => {
         {/* Critical Alerts */}
         {criticalInsights.length > 0 && (
           <Alert
-            message="Critical Performance Issues Detected"
+            message={t('Critical Performance Issues Detected')}
             description={
               <div className="space-y-2">
                 {criticalInsights.slice(0, 3).map((insight, index) => (
@@ -145,12 +147,12 @@ const RealTimeDashboard: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card className="text-center">
               <Statistic
-                title="Active Users"
+                title={t('Active Users')}
                 value={metrics.activeUsers}
                 prefix={<UserOutlined />}
                 valueStyle={{ color: '#1890ff' }}
                 suffix={
-                  <Tooltip title="Users currently online">
+                  <Tooltip title={t('Users currently online')}>
                     <HeartOutlined className="text-red-500 animate-pulse" />
                   </Tooltip>
                 }
@@ -161,7 +163,7 @@ const RealTimeDashboard: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card className="text-center">
               <Statistic
-                title="Current Sessions"
+                title={t('Current Sessions')}
                 value={metrics.currentSessions}
                 prefix={<ClockCircleOutlined />}
                 valueStyle={{ color: '#52c41a' }}
@@ -172,7 +174,7 @@ const RealTimeDashboard: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card className="text-center">
               <Statistic
-                title="Page Views"
+                title={t('Page Views')}
                 value={metrics.pageViews}
                 prefix={<EyeOutlined />}
                 valueStyle={{ color: '#722ed1' }}
@@ -183,7 +185,7 @@ const RealTimeDashboard: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card className="text-center">
               <Statistic
-                title="Errors/Min"
+                title={t('Errors/Min')}
                 value={metrics.errorsPerMinute}
                 prefix={<BugOutlined />}
                 valueStyle={{ color: metrics.errorsPerMinute > 0 ? '#ff4d4f' : '#52c41a' }}
@@ -195,7 +197,7 @@ const RealTimeDashboard: React.FC = () => {
         {/* Performance Metrics */}
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
-            <Card title="Response Time" className="h-80">
+            <Card title={t('Response Time')} className="h-80">
               <div className="mb-4">
                 <Progress
                   percent={Math.min((metrics.averageResponseTime / 5000) * 100, 100)}
@@ -204,21 +206,21 @@ const RealTimeDashboard: React.FC = () => {
                 />
               </div>
               <div className="text-sm text-gray-600">
-                <p>Current: {Math.round(metrics.averageResponseTime)}ms</p>
-                <p>Target: &lt; 2000ms</p>
-                <p>Alert Threshold: 3000ms</p>
+                <p>{t('{{1}} {{2}}ms', { 1: t('Current:'), 2: Math.round(metrics.averageResponseTime) })}</p>
+                <p>{t('Target: < 2000ms')}</p>
+                <p>{t('Alert Threshold: 3000ms')}</p>
               </div>
             </Card>
           </Col>
           
           <Col xs={24} md={12}>
-            <Card title="Conversion Rate" className="h-80">
+            <Card title={t('Conversion Rate')} className="h-80">
               <div className="text-center">
                 <div className="text-4xl font-bold text-green-600 mb-2">
                   {conversionRate.toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-600 mb-4">
-                  {conversions.length} conversions tracked
+                  {conversions.length} {t('conversions tracked')}
                 </div>
                 <Progress
                   type="circle"
@@ -240,7 +242,7 @@ const RealTimeDashboard: React.FC = () => {
             <TabPane tab="Live Activity" key="activity">
               <Row gutter={[16, 16]}>
                 <Col xs={24} lg={12}>
-                  <Card title="Top Active Pages" size="small">
+                  <Card title={t('Top Active Pages')} size="small">
                     <div className="space-y-3">
                       {metrics.topActivePages.map((page, index) => (
                         <div key={index} className="flex justify-between items-center">
@@ -256,7 +258,7 @@ const RealTimeDashboard: React.FC = () => {
                 </Col>
                 
                 <Col xs={24} lg={12}>
-                  <Card title="Recent Errors" size="small">
+                  <Card title={t('Recent Errors')} size="small">
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {metrics.recentErrors.length > 0 ? (
                         metrics.recentErrors.map((error, index) => (
@@ -275,7 +277,7 @@ const RealTimeDashboard: React.FC = () => {
                       ) : (
                         <div className="text-center text-gray-500 py-4">
                           <BugOutlined className="text-2xl mb-2" />
-                          <p>No recent errors</p>
+                          <p>{t('No recent errors')}</p>
                         </div>
                       )}
                     </div>
@@ -286,16 +288,16 @@ const RealTimeDashboard: React.FC = () => {
 
             <TabPane tab={
               <span>
-                Alerts 
+                {t('Alerts')} 
                 {unreadAlerts > 0 && <Badge count={unreadAlerts} size="small" className="ml-1" />}
               </span>
             } key="alerts">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">System Alerts</h3>
+                  <h3 className="text-lg font-semibold">{t('System Alerts')}</h3>
                   {unreadAlerts > 0 && (
                     <Button size="small" onClick={markAlertsAsRead}>
-                      Mark all as read
+                      {t('Mark all as read')}
                     </Button>
                   )}
                 </div>
@@ -320,7 +322,7 @@ const RealTimeDashboard: React.FC = () => {
                   ) : (
                     <div className="text-center text-gray-500 py-8">
                       <AlertOutlined className="text-3xl mb-2" />
-                      <p>No active alerts</p>
+                      <p>{t('No active alerts')}</p>
                     </div>
                   )}
                 </div>
@@ -330,13 +332,13 @@ const RealTimeDashboard: React.FC = () => {
             <TabPane tab="User Journeys" key="journeys">
               <Row gutter={[16, 16]}>
                 <Col xs={24} lg={12}>
-                  <Card title="Current Session Journey" size="small">
+                  <Card title={t('Current Session Journey')} size="small">
                     {currentJourney ? (
                       <div>
                         <div className="mb-4">
-                          <p><strong>Session:</strong> {currentJourney.sessionId.slice(-8)}</p>
-                          <p><strong>Duration:</strong> {Math.round((Date.now() - new Date(currentJourney.startTime).getTime()) / 1000 / 60)} minutes</p>
-                          <p><strong>Current Page:</strong> {currentJourney.currentPage}</p>
+                          <p><strong>{t('Session:')}</strong> {currentJourney.sessionId.slice(-8)}</p>
+                          <p><strong>{t('Duration:')}</strong> {Math.round((Date.now() - new Date(currentJourney.startTime).getTime()) / 1000 / 60)} minutes</p>
+                          <p><strong>{t('Current Page:')}</strong> {currentJourney.currentPage}</p>
                         </div>
                         
                         <Timeline>
@@ -349,9 +351,7 @@ const RealTimeDashboard: React.FC = () => {
                                   {page.duration > 0 && ` • ${Math.round(page.duration / 1000)}s`}
                                 </div>
                                 {page.actions.length > 0 && (
-                                  <div className="text-xs text-blue-600 mt-1">
-                                    {page.actions.length} action(s)
-                                  </div>
+                                  <div className="text-xs text-blue-600 mt-1">{t('{{1}} action(s)', { 1: page.actions.length })}</div>
                                 )}
                               </div>
                             </Timeline.Item>
@@ -361,14 +361,14 @@ const RealTimeDashboard: React.FC = () => {
                     ) : (
                       <div className="text-center text-gray-500 py-4">
                         <UserOutlined className="text-2xl mb-2" />
-                        <p>No active journey</p>
+                        <p>{t('No active journey')}</p>
                       </div>
                     )}
                   </Card>
                 </Col>
                 
                 <Col xs={24} lg={12}>
-                  <Card title="Recent Conversions" size="small">
+                  <Card title={t('Recent Conversions')} size="small">
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {conversions.slice(0, 10).map((conversion, index) => (
                         <div key={index} className="border-l-4 border-green-400 pl-3 py-1">
@@ -379,7 +379,7 @@ const RealTimeDashboard: React.FC = () => {
                             )}
                           </div>
                           <div className="text-xs text-gray-500">
-                            Session: {conversion.sessionId.slice(-8)} • {new Date(conversion.timestamp).toLocaleTimeString()}
+                            {t('Session:')} {conversion.sessionId.slice(-8)} • {new Date(conversion.timestamp).toLocaleTimeString()}
                           </div>
                         </div>
                       ))}
@@ -387,7 +387,7 @@ const RealTimeDashboard: React.FC = () => {
                       {conversions.length === 0 && (
                         <div className="text-center text-gray-500 py-4">
                           <TrophyOutlined className="text-2xl mb-2" />
-                          <p>No conversions yet</p>
+                          <p>{t('No conversions yet')}</p>
                         </div>
                       )}
                     </div>
@@ -421,9 +421,7 @@ const RealTimeDashboard: React.FC = () => {
                             </Tag>
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{insight.recommendation}</p>
-                          <div className="text-xs text-gray-500">
-                            Current: {insight.currentValue} | Threshold: {insight.threshold}
-                          </div>
+                          <div className="text-xs text-gray-500">{t('{{1}} {{2}} | Threshold: {{3}}', { 1: t('Current:'), 2: insight.currentValue, 3: insight.threshold })}</div>
                         </div>
                         <div className="text-right">
                           {insight.impact === 'critical' ? <AlertOutlined className="text-red-500" /> :
@@ -436,8 +434,8 @@ const RealTimeDashboard: React.FC = () => {
                 ) : (
                   <div className="text-center text-gray-500 py-8">
                     <RocketOutlined className="text-3xl mb-2" />
-                    <p>No performance insights available</p>
-                    <p className="text-sm">System is performing optimally</p>
+                    <p>{t('No performance insights available')}</p>
+                    <p className="text-sm">{t('System is performing optimally')}</p>
                   </div>
                 )}
               </div>

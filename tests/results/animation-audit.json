@@ -1,0 +1,147 @@
+[
+  {
+    "route": "/masters/saving-account-opening",
+    "windowAnim": "awWinFade 0.14s",
+    "count": 1,
+    "longest": 140,
+    "idleLoops": [],
+    "reducedAnim": "1e-06s",
+    "calmAnim": "1e-06s",
+    "animations": [
+      {
+        "kind": "animation",
+        "name": "awWinFade",
+        "duration": 140,
+        "delay": 0,
+        "iterations": 1
+      }
+    ]
+  },
+  {
+    "route": "/masters/member-master",
+    "windowAnim": "awWinFade 0.14s",
+    "count": 1,
+    "longest": 140,
+    "idleLoops": [],
+    "reducedAnim": "1e-06s",
+    "calmAnim": "1e-06s",
+    "animations": [
+      {
+        "kind": "animation",
+        "name": "awWinFade",
+        "duration": 140,
+        "delay": 0,
+        "iterations": 1
+      }
+    ]
+  },
+  {
+    "route": "/transaction/loan-repayment",
+    "windowAnim": "awWinFade 0.14s",
+    "count": 1,
+    "longest": 140,
+    "idleLoops": [],
+    "reducedAnim": "1e-06s",
+    "calmAnim": "1e-06s",
+    "animations": [
+      {
+        "kind": "animation",
+        "name": "awWinFade",
+        "duration": 140,
+        "delay": 0,
+        "iterations": 1
+      }
+    ]
+  },
+  {
+    "route": "/reports/daily/day-book",
+    "windowAnim": "awWinFade 0.14s",
+    "count": 2,
+    "longest": 140,
+    "idleLoops": [
+      "awSpin"
+    ],
+    "reducedAnim": "1e-06s",
+    "calmAnim": "1e-06s",
+    "animations": [
+      {
+        "kind": "animation",
+        "name": "awWinFade",
+        "duration": 140,
+        "delay": 0,
+        "iterations": 1
+      },
+      {
+        "kind": "animation",
+        "name": "awSpin",
+        "duration": 800,
+        "delay": 0,
+        "iterations": "infinite"
+      }
+    ]
+  },
+  {
+    "route": "/utility/emi-chart",
+    "windowAnim": "awWinFade 0.14s",
+    "count": 1,
+    "longest": 140,
+    "idleLoops": [],
+    "reducedAnim": "1e-06s",
+    "calmAnim": "1e-06s",
+    "animations": [
+      {
+        "kind": "animation",
+        "name": "awWinFade",
+        "duration": 140,
+        "delay": 0,
+        "iterations": 1
+      }
+    ]
+  },
+  {
+    "route": "/settings",
+    "windowAnim": "none (not a redesigned window)",
+    "count": 5,
+    "longest": 220,
+    "idleLoops": [],
+    "reducedAnim": "n/a",
+    "calmAnim": "n/a",
+    "animations": [
+      {
+        "kind": "transition",
+        "name": "transform",
+        "duration": 220,
+        "delay": 0,
+        "iterations": 1
+      },
+      {
+        "kind": "transition",
+        "name": "background-color",
+        "duration": 220,
+        "delay": 0,
+        "iterations": 1
+      },
+      {
+        "kind": "transition",
+        "name": "box-shadow",
+        "duration": 220,
+        "delay": 0,
+        "iterations": 1
+      },
+      {
+        "kind": "transition",
+        "name": "color",
+        "duration": 220,
+        "delay": 0,
+        "iterations": 1
+      },
+      {
+        "kind": "animation",
+        "name": "tbItemIn",
+        "duration": 0,
+        "delay": 0,
+        "iterations": 1
+      }
+    ]
+  }
+]

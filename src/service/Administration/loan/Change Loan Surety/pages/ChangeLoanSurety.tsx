@@ -4,14 +4,17 @@ import { Save, Search, ShieldCheck, User, Users, RefreshCw, RotateCcw } from 'lu
 import MemberLookupDialog from '@/components/shared/kit/MemberLookupDialog';
 import { useChangeLoanSuretyForm } from '../hooks/useChangeLoanSuretyForm';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../../i18n';
 
 const LOAN_TYPE_OPTIONS = [
-  { value: 'RLN', label: 'RLN - Regular Loan' },
-  { value: 'ALN', label: 'ALN - Emergency Loan' },
-  { value: 'ELN', label: 'ELN - Loan Against RD' },
+  { value: 'RLN', label: tLabel('RLN - Regular Loan') },
+  { value: 'ALN', label: tLabel('ALN - Emergency Loan') },
+  { value: 'ELN', label: tLabel('ELN - Loan Against RD') },
 ];
 
 const ChangeLoanSuretyForm: React.FC = () => {
+  const { t } = useTranslation();
   const {
     formData,
     errors,
@@ -68,8 +71,8 @@ const ChangeLoanSuretyForm: React.FC = () => {
           type="button"
           className="aw-input-action"
           onClick={() => handleLookup(key)}
-          aria-label={`Look up ${title}`}
-          data-tip="Look up member"
+          aria-label={t('Look up {{1}}', { 1: title })}
+          data-tip={t('Look up member')}
           data-tip-pos="top-end"
         >
           <Search size={13} />
@@ -83,14 +86,14 @@ const ChangeLoanSuretyForm: React.FC = () => {
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Change Loan Surety</h1>
-          <p className="aw-desc">Administrative guarantor update</p>
+          <h1 className="aw-title">{t('Change Loan Surety')}</h1>
+          <p className="aw-desc">{t('Administrative guarantor update')}</p>
         </div>
         <div className="aw-actions">
-          <span className="aw-pill tone-success"><ShieldCheck size={12} style={{ marginRight: 5 }} />Session secure</span>
+          <span className="aw-pill tone-success"><ShieldCheck size={12} style={{ marginRight: 5 }} />{t('Session secure')}</span>
           <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="aw-btn aw-btn-primary">
             {isSubmitting ? <RefreshCw size={13} className="aw-spin" /> : <Save size={13} />}
-            {isSubmitting ? 'Processing...' : 'Commit Changes'}
+            {isSubmitting ? t('Processing...') : t('Commit Changes')}
           </button>
         </div>
       </div>
@@ -101,25 +104,25 @@ const ChangeLoanSuretyForm: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><User size={14} /></span>
-              <h2 className="aw-card-title">Borrower Identity &amp; Case Reference</h2>
+              <h2 className="aw-card-title">{t('Borrower Identity & Case Reference')}</h2>
             </div>
             <div className="aw-stack">
               <div>
-                <label className="aw-label" htmlFor="cls-type">Loan Type</label>
+                <label className="aw-label" htmlFor="cls-type">{t('Loan Type')}</label>
                 <Select
                   id="cls-type"
                   className="aw-select"
                   popupClassName="aw-select-popup"
                   value={formData.loanType || undefined}
                   onChange={(v) => handleInputChange('loanType', v ?? '')}
-                  placeholder="Select loan type..."
+                  placeholder={t('Select loan type...')}
                   options={LOAN_TYPE_OPTIONS}
                 />
               </div>
 
               <div className="aw-two">
                 <div>
-                  <label className="aw-label" htmlFor="cls-member">Member Reference</label>
+                  <label className="aw-label" htmlFor="cls-member">{t('Member Reference')}</label>
                   <div className="aw-input-wrap has-action">
                     <input
                       id="cls-member"
@@ -127,15 +130,15 @@ const ChangeLoanSuretyForm: React.FC = () => {
                       value={formData.memberNumber}
                       onChange={(e) => handleInputChange('memberNumber', e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter' && formData.memberNumber) fetchMemberLoans(formData.memberNumber); }}
-                      placeholder="Enter MBNO..."
+                      placeholder={t('Enter MBNO...')}
                       className={`aw-input ${errors.memberNumber ? 'is-invalid' : ''}`}
                     />
                     <button
                       type="button"
                       className="aw-input-action"
                       onClick={() => handleLookup('memberNumber')}
-                      aria-label="Look up member"
-                      data-tip="Look up member"
+                      aria-label={t('Look up member')}
+                      data-tip={t('Look up member')}
                       data-tip-pos="top-end"
                     >
                       <Search size={13} />
@@ -143,13 +146,13 @@ const ChangeLoanSuretyForm: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="aw-label" htmlFor="cls-name">Legal Signature Name</label>
-                  <input id="cls-name" type="text" value={formData.memberName} readOnly placeholder="Verified borrower name" className="aw-input" />
+                  <label className="aw-label" htmlFor="cls-name">{t('Legal Signature Name')}</label>
+                  <input id="cls-name" type="text" value={formData.memberName} readOnly placeholder={t('Verified borrower name')} className="aw-input" />
                 </div>
               </div>
 
               <div>
-                <label className="aw-label" htmlFor="cls-case">Loan Case Resolution</label>
+                <label className="aw-label" htmlFor="cls-case">{t('Loan Case Resolution')}</label>
                 <div className="aw-inline">
                   {loanCases.length > 0 ? (
                     <Select
@@ -163,7 +166,7 @@ const ChangeLoanSuretyForm: React.FC = () => {
                         handleInputChange('loanCaseNo', val ?? '');
                         if (val) fetchLoanDetails(val);
                       }}
-                      placeholder="Select Loan Case"
+                      placeholder={t('Select Loan Case')}
                       allowClear
                       options={caseOptions}
                     />
@@ -173,19 +176,19 @@ const ChangeLoanSuretyForm: React.FC = () => {
                       type="text"
                       value={formData.loanCaseNo}
                       readOnly
-                      placeholder={isLoadingCases ? 'Loading cases...' : 'Choose member to load cases'}
+                      placeholder={isLoadingCases ? t('Loading cases...') : t('Choose member to load cases')}
                       className="aw-input"
                       style={{ flex: 1, minWidth: 0 }}
                     />
                   )}
-                  {formData.loanCaseNo && <span className="aw-pill">Found: {formData.loanCaseNo}</span>}
+                  {formData.loanCaseNo && <span className="aw-pill">{t('Found:')} {formData.loanCaseNo}</span>}
                   {!formData.loanCaseNo && formData.memberNumber && (
                     <button
                       type="button"
                       onClick={() => fetchMemberLoans(formData.memberNumber)}
                       className="aw-icon-btn"
-                      aria-label="Refresh case list"
-                      data-tip="Refresh case list"
+                      aria-label={t('Refresh case list')}
+                      data-tip={t('Refresh case list')}
                       data-tip-pos="top-end"
                     >
                       <RefreshCw size={14} className={isLoadingCases ? 'aw-spin' : ''} />
@@ -196,11 +199,11 @@ const ChangeLoanSuretyForm: React.FC = () => {
 
               <div className="aw-two">
                 <div>
-                  <label className="aw-label" htmlFor="cls-sdate">Sanction Date</label>
+                  <label className="aw-label" htmlFor="cls-sdate">{t('Sanction Date')}</label>
                   <input id="cls-sdate" type="text" value={formData.sanctionDate} readOnly placeholder="YYYY-MM-DD" className="aw-input" />
                 </div>
                 <div>
-                  <label className="aw-label" htmlFor="cls-samt">Sanction Amount</label>
+                  <label className="aw-label" htmlFor="cls-samt">{t('Sanction Amount')}</label>
                   <input
                     id="cls-samt"
                     type="text"
@@ -213,8 +216,8 @@ const ChangeLoanSuretyForm: React.FC = () => {
               </div>
 
               <div>
-                <label className="aw-label" htmlFor="cls-office">Office / Unit Mapping</label>
-                <input id="cls-office" type="text" value={formData.office} readOnly placeholder="Organizational unit..." className="aw-input" />
+                <label className="aw-label" htmlFor="cls-office">{t('Office / Unit Mapping')}</label>
+                <input id="cls-office" type="text" value={formData.office} readOnly placeholder={t('Organizational unit...')} className="aw-input" />
               </div>
             </div>
           </section>
@@ -223,13 +226,13 @@ const ChangeLoanSuretyForm: React.FC = () => {
           <section className="aw-card" style={{ alignSelf: 'start' }}>
             <div className="aw-card-head">
               <span className="aw-card-icon"><Users size={14} /></span>
-              <h2 className="aw-card-title">Guarantor Protocol</h2>
+              <h2 className="aw-card-title">{t('Guarantor Protocol')}</h2>
             </div>
             <div className="aw-stack">
               {suretyBox('surety1', 'Guarantor 01', true, formData.surety1Name)}
               {suretyBox('surety2', 'Guarantor 02', false, formData.surety2Name)}
               <button type="button" onClick={resetForm} className="aw-btn aw-btn-danger" style={{ width: '100%' }}>
-                <RotateCcw size={13} /> Reset Ledger
+                <RotateCcw size={13} /> {t('Reset Ledger')}
               </button>
             </div>
           </section>
@@ -237,7 +240,7 @@ const ChangeLoanSuretyForm: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center' }}><i className="aw-status-dot" />Standard compliant</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center' }}><i className="aw-status-dot" />{t('Standard compliant')}</span>
         <span>SURETY_UPDATE_V1.1</span>
       </div>
 

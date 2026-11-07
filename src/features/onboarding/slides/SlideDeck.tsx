@@ -5,6 +5,8 @@ import { useCalm } from '../calm';
 import { useFocusTrap } from '../useFocusTrap';
 import { useGlass } from '../useGlass';
 import '../onboarding.css';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../i18n';
 
 export interface Slide {
   id: string;
@@ -33,6 +35,7 @@ export interface SlideDeckProps {
  * Used for the "How it works" slides, and reusable for a What's New popup.
  */
 export const SlideDeck: React.FC<SlideDeckProps> = ({ heading, icon, slides, onClose, onComplete, doneLabel = 'Done' }) => {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const nextRef = useRef<HTMLButtonElement>(null);
   const glass = useGlass();
@@ -69,12 +72,12 @@ export const SlideDeck: React.FC<SlideDeckProps> = ({ heading, icon, slides, onC
           <div className="ob-icon">{icon}</div>
           <div>
             <p className="ob-eyebrow">{heading}</p>
-            <h2 className="ob-title" id="ob-deck-title" aria-live="polite">{slide.title}</h2>
+            <h2 className="ob-title" id="ob-deck-title" aria-live="polite">{tLabel(slide.title)}</h2>
             {slide.subtitle && <p className="ob-subtitle">{slide.subtitle}</p>}
           </div>
           <div className="ob-hero-end">
             <span className="ob-pill">{index + 1} / {slides.length}</span>
-            <button type="button" className="ob-tour-x ob-deck-x" onClick={onClose} aria-label="Close slides"><X size={16} /></button>
+            <button type="button" className="ob-tour-x ob-deck-x" onClick={onClose} aria-label={t('Close slides')}><X size={16} /></button>
           </div>
         </div>
 
@@ -89,14 +92,14 @@ export const SlideDeck: React.FC<SlideDeckProps> = ({ heading, icon, slides, onC
           <div className="ob-dots" aria-hidden="true">
             {slides.map((s, i) => (
               <button key={s.id} type="button" tabIndex={-1} className={`ob-dot ${i === index ? 'is-current' : i < index ? 'is-done' : ''}`}
-                onClick={() => setIndex(i)} aria-label={`Go to slide ${i + 1}`} />
+                onClick={() => setIndex(i)} aria-label={t('Go to slide {{1}}', { 1: i + 1 })} />
             ))}
           </div>
           <div className="ob-footer-actions">
-            {!last && <button type="button" className="ob-btn ob-btn-ghost" onClick={onClose}>Skip</button>}
-            {index > 0 && <button type="button" className="ob-btn ob-btn-secondary" onClick={back}><ArrowLeft size={14} /> Back</button>}
+            {!last && <button type="button" className="ob-btn ob-btn-ghost" onClick={onClose}>{t('Skip')}</button>}
+            {index > 0 && <button type="button" className="ob-btn ob-btn-secondary" onClick={back}><ArrowLeft size={14} /> {t('Back')}</button>}
             <button type="button" ref={nextRef} className="ob-btn ob-btn-primary" onClick={next}>
-              {last ? <>{doneLabel} <Check size={14} /></> : <>Next <ArrowRight size={14} /></>}
+              {last ? <>{doneLabel} <Check size={14} /></> : <>{t('Next')} <ArrowRight size={14} /></>}
             </button>
           </div>
         </div>

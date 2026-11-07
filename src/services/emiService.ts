@@ -23,7 +23,7 @@ export interface EMIScheduleItem {
   principalAmount: number;
   interestAmount: number;
   balance: number;
-  status: 'Paid' | 'Pending' | 'Overdue';
+  status: 'Paid' | 'Pending' | 'Overdue' | 'Closed';
 }
 
 export interface EMIScheduleResponse {

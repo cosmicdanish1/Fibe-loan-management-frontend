@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Progress, theme } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 // Mirrors UpdateState in main/updater.ts (the main process owns the rules; this only renders them).
 interface UpdateState {
@@ -7,6 +8,7 @@ interface UpdateState {
   currentVersion: string;
   version?: string;
   notes?: string;
+  highlights?: string[];
   kind?: 'minor' | 'major' | 'unverified';
   requiresBackend?: string;
   backendVersion?: string;
@@ -34,6 +36,7 @@ const isDismissed = (version?: string) => {
 };
 
 const UpdateNotice: React.FC = () => {
+  const { t } = useTranslation();
   const { token } = theme.useToken();
   const [state, setState] = useState<UpdateState | null>(null);
   const [hidden, setHidden] = useState(false);
@@ -95,13 +98,22 @@ const UpdateNotice: React.FC = () => {
       }}
     >
       <div style={{ fontWeight: 600, marginBottom: 4 }}>
-        {installable ? `Update ${state.version} available` : `Major update ${state.version} available`}
+        {installable ? t('Update {{1}} available', { 1: state.version }) : t('Major update {{1}} available', { 1: state.version })}
       </div>
       <div style={{ fontSize: 12, color: token.colorTextSecondary, marginBottom: 8 }}>
-        You are on version {state.currentVersion}.
+        {t('You are on version')} {state.currentVersion}.
       </div>
 
-      {state.notes && state.status === 'available' && (
+      {state.highlights && state.highlights.length > 0 && state.status === 'available' && (
+        <div style={{ fontSize: 12, marginBottom: 8 }}>
+          <div style={{ fontWeight: 600, marginBottom: 2 }}>{t("What's new")}</div>
+          <ul style={{ margin: 0, paddingLeft: 16, maxHeight: 120, overflowY: 'auto' }}>
+            {state.highlights.map((h, i) => <li key={i}>{h}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {!(state.highlights && state.highlights.length > 0) && state.notes && state.status === 'available' && (
         <div style={{ fontSize: 12, maxHeight: 96, overflowY: 'auto', whiteSpace: 'pre-wrap', marginBottom: 8 }}>
           {state.notes}
         </div>
@@ -110,8 +122,8 @@ const UpdateNotice: React.FC = () => {
       {!installable && state.status === 'available' && (
         <div style={{ fontSize: 12, marginBottom: 12 }}>
           {state.kind === 'major'
-            ? 'This update needs a server update first. Please contact support before installing it.'
-            : 'We could not confirm this update is compatible with your server. Please contact support.'}
+            ? t('This update needs a server update first. Please contact support before installing it.')
+            : t('We could not confirm this update is compatible with your server. Please contact support.')}
         </div>
       )}
 
@@ -120,14 +132,14 @@ const UpdateNotice: React.FC = () => {
       {state.status === 'downloaded' && (
         <div style={{ fontSize: 12, marginBottom: 12 }}>
           {state.installOnQuit
-            ? 'Downloaded. It will install when you close the app.'
-            : 'Downloaded and ready to install.'}
+            ? t('Downloaded. It will install when you close the app.')
+            : t('Downloaded and ready to install.')}
         </div>
       )}
 
       {state.dayEndInProgress && installable && state.status === 'available' && (
         <div style={{ fontSize: 12, color: token.colorWarning, marginBottom: 12 }}>
-          Day-end is running. You can update once it finishes.
+          {t('Day-end is running. You can update once it finishes.')}
         </div>
       )}
 
@@ -142,26 +154,26 @@ const UpdateNotice: React.FC = () => {
             disabled={!!state.dayEndInProgress}
             onClick={() => run(() => bridge.download())}
           >
-            Download update
+            {t('Download update')}
           </Button>
         )}
         {state.status === 'available' && !installable && state.releaseUrl && (
-          <Button size="small" onClick={() => openExternal(state.releaseUrl!)}>View release</Button>
+          <Button size="small" onClick={() => openExternal(state.releaseUrl!)}>{t('View release')}</Button>
         )}
         {state.status === 'downloaded' && (
           <>
             {!state.installOnQuit && (
               <Button size="small" loading={busy} onClick={() => run(() => bridge.install('on-quit'))}>
-                Install when I close
+                {t('Install when I close')}
               </Button>
             )}
             <Button type="primary" size="small" loading={busy} onClick={() => run(() => bridge.install('now'))}>
-              Restart &amp; install
+              {t('Restart & install')}
             </Button>
           </>
         )}
         {state.status !== 'downloading' && (
-          <Button size="small" type="text" onClick={later}>Later</Button>
+          <Button size="small" type="text" onClick={later}>{t('Later')}</Button>
         )}
       </div>
     </div>

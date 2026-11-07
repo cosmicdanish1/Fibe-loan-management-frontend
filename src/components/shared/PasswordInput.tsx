@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> & {
   /** Show the little lock icon on the left (used where the surrounding form already has icons). */
@@ -11,13 +12,14 @@ type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> & {
  * Same look as the login form's password field; use it for every password input.
  */
 const PasswordInput = React.forwardRef<HTMLInputElement, Props>(({ withIcon, className, ...rest }, ref) => {
+  const { t } = useTranslation();
   const [reveal, setReveal] = useState(false);
   return (
     <div className={`aw-input-wrap ${withIcon ? 'has-icon' : ''} has-action`}>
       {withIcon && <Lock size={14} />}
       <input ref={ref} className={className ?? 'aw-input'} type={reveal ? 'text' : 'password'} {...rest} />
       <button type="button" className="aw-input-action" tabIndex={-1} onClick={() => setReveal((r) => !r)}
-        aria-label={reveal ? 'Hide password' : 'Show password'} data-tip={reveal ? 'Hide password' : 'Show password'} data-tip-pos="bottom-end">
+        aria-label={reveal ? t('Hide password') : t('Show password')} data-tip={reveal ? t('Hide password') : t('Show password')} data-tip-pos="bottom-end">
         {reveal ? <EyeOff size={14} /> : <Eye size={14} />}
       </button>
     </div>

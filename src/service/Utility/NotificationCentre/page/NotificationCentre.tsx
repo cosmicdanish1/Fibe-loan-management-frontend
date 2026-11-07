@@ -11,6 +11,8 @@ import {
   useNotificationCentre, KIND_LABEL, KIND_GROUPS, PAGE_SIZE,
   type NotificationRow, type Severity,
 } from '../hook/useNotificationCentre';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../i18n';
 
 const closeWindow = () => {
   const api = (window as any).electronAPI;
@@ -33,9 +35,9 @@ const timeAgo = (iso: string): string => {
 };
 
 const SEVERITY: Record<Severity, { label: string; color: string; Icon: React.ElementType }> = {
-  error: { label: 'Needs action', color: 'var(--aw-danger, #d64545)', Icon: AlertCircle },
-  warning: { label: 'Attention', color: 'var(--aw-warning, #c98a00)', Icon: AlertTriangle },
-  info: { label: 'For information', color: 'var(--aw-accent)', Icon: Info },
+  error: { label: tLabel('Needs action'), color: 'var(--aw-danger, #d64545)', Icon: AlertCircle },
+  warning: { label: tLabel('Attention'), color: 'var(--aw-warning, #c98a00)', Icon: AlertTriangle },
+  info: { label: tLabel('For information'), color: 'var(--aw-accent)', Icon: Info },
 };
 
 const KIND_ICON: Record<string, React.ElementType> = {
@@ -52,6 +54,7 @@ const KIND_ICON: Record<string, React.ElementType> = {
 const GROUP_ICON: Record<string, React.ElementType> = { Members: Users, Money: Wallet, System: CalendarClock };
 
 const NotificationCentre: React.FC = () => {
+  const { t } = useTranslation();
   const n = useNotificationCentre();
   const s = n.summary;
 
@@ -61,17 +64,17 @@ const NotificationCentre: React.FC = () => {
   };
 
   const sevChips: { id: Severity | ''; label: string; count?: number }[] = [
-    { id: '', label: 'All' },
-    { id: 'error', label: 'Needs action', ...(s ? { count: s.bySeverity.error } : {}) },
-    { id: 'warning', label: 'Attention', ...(s ? { count: s.bySeverity.warning } : {}) },
-    { id: 'info', label: 'For information', ...(s ? { count: s.bySeverity.info } : {}) },
+    { id: '', label: t('All') },
+    { id: 'error', label: t('Needs action'), ...(s ? { count: s.bySeverity.error } : {}) },
+    { id: 'warning', label: t('Attention'), ...(s ? { count: s.bySeverity.warning } : {}) },
+    { id: 'info', label: t('For information'), ...(s ? { count: s.bySeverity.info } : {}) },
   ];
 
   const kindButton = (id: string, label: string, Icon: React.ElementType, total?: number, unread?: number) => (
     <button key={id || 'all'} type="button" className="nc-kind" aria-pressed={n.kind === id} onClick={() => n.setKind(id)}>
       <Icon size={14} />
       <span className="nc-kind-label">{label}</span>
-      {unread ? <span className="nc-dot" aria-label={`${unread} unread`}>{unread > 999 ? '999+' : unread}</span> : null}
+      {unread ? <span className="nc-dot" aria-label={t('{{1}} unread', { 1: unread })}>{unread > 999 ? '999+' : unread}</span> : null}
       {total !== undefined && !unread ? <span className="nc-count">{total}</span> : null}
     </button>
   );
@@ -108,19 +111,19 @@ const NotificationCentre: React.FC = () => {
 
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Notification Centre</h1>
+          <h1 className="aw-title">{t('Notification Centre')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Bell size={12} /> Everything that needs a person's attention, in one place
+            <Bell size={12} /> {t("Everything that needs a person's attention, in one place")}
           </p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={n.markAllRead} disabled={!s || s.unread === 0} className="aw-btn aw-btn-ghost">
-            <CheckCheck size={13} /> Mark {n.kind ? 'these' : 'all'} read
+            <CheckCheck size={13} /> {t('Mark')} {n.kind ? 'these' : 'all'} read
           </button>
-          <button type="button" onClick={n.syncNow} disabled={n.syncing || n.loading} className="aw-icon-btn" aria-label="Check again now" data-tip="Check again now" data-tip-pos="bottom-end">
+          <button type="button" onClick={n.syncNow} disabled={n.syncing || n.loading} className="aw-icon-btn" aria-label={t('Check again now')} data-tip={t('Check again now')} data-tip-pos="bottom-end">
             <RefreshCw size={14} className={n.syncing || n.loading ? 'aw-spin' : ''} />
           </button>
-          <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost"><X size={13} /> Close</button>
+          <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Close')}</button>
         </div>
       </div>
 
@@ -128,7 +131,7 @@ const NotificationCentre: React.FC = () => {
         {n.error && <div className="aw-alert aw-alert-danger" role="alert" style={{ marginBottom: 12 }}><AlertCircle size={16} /><span>{n.error}</span></div>}
 
         <div className="nc-layout">
-          <nav className="nc-rail" aria-label="Notification types">
+          <nav className="nc-rail" aria-label={t('Notification types')}>
             {kindButton('', 'All notifications', Bell, s?.open, s?.unread)}
             {KIND_GROUPS.map(g => {
               const GIcon = GROUP_ICON[g.label] || Bell;
@@ -145,9 +148,9 @@ const NotificationCentre: React.FC = () => {
             <div className="nc-toolbar">
               <div className="aw-input-wrap has-icon" style={{ maxWidth: 300, flex: '1 1 200px' }}>
                 <Search size={13} />
-                <input className="aw-input" aria-label="Search notifications" placeholder="Search member no., name or text..." value={n.search} onChange={e => n.setSearch(e.target.value)} />
+                <input className="aw-input" aria-label={t('Search notifications')} placeholder={t('Search member no., name or text...')} value={n.search} onChange={e => n.setSearch(e.target.value)} />
               </div>
-              <div className="aw-chips" role="radiogroup" aria-label="Importance">
+              <div className="aw-chips" role="radiogroup" aria-label={t('Importance')}>
                 {sevChips.map(c => (
                   <button key={c.id || 'all'} type="button" role="radio" aria-checked={n.severity === c.id} className="aw-chip" onClick={() => n.setSeverity(c.id)}>
                     {c.label}{c.count ? ` (${c.count})` : ''}
@@ -155,11 +158,11 @@ const NotificationCentre: React.FC = () => {
                 ))}
               </div>
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, marginLeft: 'auto' }}>
-                <input type="checkbox" checked={n.unreadOnly} onChange={e => n.setUnreadOnly(e.target.checked)} /> Unread only
+                <input type="checkbox" checked={n.unreadOnly} onChange={e => n.setUnreadOnly(e.target.checked)} /> {t('Unread only')}
               </label>
-              <div className="aw-chips" role="radiogroup" aria-label="Show">
-                <button type="button" role="radio" aria-checked={n.status === 'open'} className="aw-chip" onClick={() => n.setStatus('open')}>Current</button>
-                <button type="button" role="radio" aria-checked={n.status === 'resolved'} className="aw-chip" onClick={() => n.setStatus('resolved')}>Resolved</button>
+              <div className="aw-chips" role="radiogroup" aria-label={t('Show')}>
+                <button type="button" role="radio" aria-checked={n.status === 'open'} className="aw-chip" onClick={() => n.setStatus('open')}>{t('Current')}</button>
+                <button type="button" role="radio" aria-checked={n.status === 'resolved'} className="aw-chip" onClick={() => n.setStatus('resolved')}>{t('Resolved')}</button>
               </div>
             </div>
 
@@ -181,9 +184,9 @@ const NotificationCentre: React.FC = () => {
               <div className="aw-empty" style={{ padding: 40 }}>
                 {n.unreadOnly || n.search || n.kind || n.severity ? <BellOff size={28} /> : <CheckCircle2 size={28} />}
                 <strong className="aw-strong">
-                  {n.unreadOnly || n.search || n.kind || n.severity ? 'Nothing matches these filters' : n.status === 'resolved' ? 'Nothing has been resolved yet' : 'All clear'}
+                  {n.unreadOnly || n.search || n.kind || n.severity ? t('Nothing matches these filters') : n.status === 'resolved' ? t('Nothing has been resolved yet') : t('All clear')}
                 </strong>
-                <span className="is-muted">{n.status === 'open' && !(n.unreadOnly || n.search || n.kind || n.severity) ? 'There is nothing that needs attention right now.' : ''}</span>
+                <span className="is-muted">{n.status === 'open' && !(n.unreadOnly || n.search || n.kind || n.severity) ? t('There is nothing that needs attention right now.') : ''}</span>
               </div>
             )}
 
@@ -203,19 +206,19 @@ const NotificationCentre: React.FC = () => {
                         <div className="nc-meta">
                           <span className="nc-chip">{KIND_LABEL[r.kind] || r.kind}</span>
                           {resolved
-                            ? <span>Resolved {r.resolvedAt ? timeAgo(r.resolvedAt) : ''}</span>
+                            ? <span>{t('Resolved')} {r.resolvedAt ? timeAgo(r.resolvedAt) : ''}</span>
                             : <span title={new Date(r.createdAt).toLocaleString('en-IN')}>{timeAgo(r.createdAt)}</span>}
-                          {r.memberNo && <span>Member {r.memberNo}</span>}
+                          {r.memberNo && <span>{t('Member')} {r.memberNo}</span>}
                         </div>
                       </div>
                       <div className="nc-actions">
-                        <button type="button" className="aw-icon-btn" aria-label={r.read ? 'Mark as unread' : 'Mark as read'}
-                          data-tip={r.read ? 'Mark as unread' : 'Mark as read'} data-tip-pos="bottom-end" onClick={() => n.setRead(r, !r.read)}>
+                        <button type="button" className="aw-icon-btn" aria-label={r.read ? t('Mark as unread') : t('Mark as read')}
+                          data-tip={r.read ? t('Mark as unread') : t('Mark as read')} data-tip-pos="bottom-end" onClick={() => n.setRead(r, !r.read)}>
                           {r.read ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
                         {r.actionPath && !resolved && (
                           <button type="button" className="aw-btn aw-btn-secondary" onClick={() => onOpen(r)}>
-                            {r.actionLabel || 'Open'} <ArrowRight size={12} />
+                            {r.actionLabel || t('Open')} <ArrowRight size={12} />
                           </button>
                         )}
                       </div>
@@ -237,8 +240,8 @@ const NotificationCentre: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span>{n.total.toLocaleString('en-IN')} notification{n.total === 1 ? '' : 's'} shown{s ? ` · ${s.unread.toLocaleString('en-IN')} unread for you` : ''}</span>
-        <span>{s?.lastSyncedAt ? `Checked ${timeAgo(s.lastSyncedAt)} · refreshes automatically` : 'Refreshes automatically'}</span>
+        <span>{t('{{1}} notification{{2}} shown{{3}}', { 1: n.total.toLocaleString('en-IN'), 2: n.total === 1 ? '' : 's', 3: s ? ` · ${s.unread.toLocaleString('en-IN')} unread for you` : '' })}</span>
+        <span>{s?.lastSyncedAt ? t('Checked {{1}} · refreshes automatically', { 1: timeAgo(s.lastSyncedAt) }) : t('Refreshes automatically')}</span>
       </div>
     </div>
   );

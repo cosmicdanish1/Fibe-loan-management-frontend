@@ -11,6 +11,7 @@ import {
   useMemberStatus, PAGE_SIZE,
   type StatusCategory, type StatusRow, type MemberCheck, type HistoryRow,
 } from '../hook/useMemberStatus';
+import { useTranslation } from 'react-i18next';
 
 type TabId = StatusCategory | 'find';
 
@@ -38,6 +39,7 @@ const fmtStamp = (s: string) => { const d = new Date(s); return isNaN(d.getTime(
 interface ActionDialog { kind: 'inactive' | 'reactivate'; info: MemberCheck }
 
 const MemberStatus: React.FC = () => {
+  const { t } = useTranslation();
   const s = useMemberStatus();
   const [tab, setTab] = useState<TabId>('ready');
   const [dialog, setDialog] = useState<ActionDialog | null>(null);
@@ -67,15 +69,15 @@ const MemberStatus: React.FC = () => {
   const confirmDialog = async () => {
     if (!dialog) return;
     const { kind, info } = dialog;
-    if (reason.trim().length < 3) { setDialogError('Please give a short reason.'); return; }
+    if (reason.trim().length < 3) { setDialogError(t('Please give a short reason.')); return; }
     const force = kind === 'inactive' && info.warnings.length > 0;
-    if (force && !understood) { setDialogError('Tick the box to confirm you want to go ahead despite the warnings.'); return; }
+    if (force && !understood) { setDialogError(t('Tick the box to confirm you want to go ahead despite the warnings.')); return; }
     setBusy(true); setDialogError('');
     const res = kind === 'inactive'
       ? await s.markInactive(info.memberNo, reason.trim(), force)
       : await s.reactivate(info.memberNo, reason.trim());
     setBusy(false);
-    if (!res.ok) { setDialogError(res.error || 'Failed'); return; }
+    if (!res.ok) { setDialogError(res.error || t('Failed')); return; }
     setDialog(null);
     setNotice(`${info.name || 'Member'} (${info.memberNo}) is now ${kind === 'inactive' ? 'inactive' : 'active again'}.`);
     if (found && found.memberNo === info.memberNo) await runFind(info.memberNo);
@@ -86,16 +88,16 @@ const MemberStatus: React.FC = () => {
     if (!n) return;
     setFinding(true); setFindError('');
     const r = await s.check(n);
-    if (!r.data) { setFound(null); setFoundHistory([]); setFindError(r.error || 'Member not found'); setFinding(false); return; }
+    if (!r.data) { setFound(null); setFoundHistory([]); setFindError(r.error || t('Member not found')); setFinding(false); return; }
     setFound(r.data);
     setFoundHistory(await s.history(r.data.memberNo));
     setFinding(false);
   };
 
   const tiles: { id: StatusCategory; label: string; hint: string; value: number | undefined; tone: string }[] = [
-    { id: 'ready', label: 'Ready to mark inactive', hint: 'Retired and RD is zero', value: s.summary?.ready, tone: 'var(--aw-danger, #d64545)' },
-    { id: 'retired-rd', label: 'Retired, RD remaining', hint: 'Waiting for RD to reach zero', value: s.summary?.retiredWithRd, tone: 'var(--aw-warning, #c98a00)' },
-    { id: 'upcoming', label: `Retiring in ${s.months} months`, hint: 'Will need a decision soon', value: s.summary?.upcoming, tone: 'var(--aw-accent)' },
+    { id: 'ready', label: t('Ready to mark inactive'), hint: t('Retired and RD is zero'), value: s.summary?.ready, tone: 'var(--aw-danger, #d64545)' },
+    { id: 'retired-rd', label: t('Retired, RD remaining'), hint: t('Waiting for RD to reach zero'), value: s.summary?.retiredWithRd, tone: 'var(--aw-warning, #c98a00)' },
+    { id: 'upcoming', label: t('Retiring in {{1}} months', { 1: s.months }), hint: t('Will need a decision soon'), value: s.summary?.upcoming, tone: 'var(--aw-accent)' },
   ];
 
   const lastPage = Math.max(0, Math.ceil(s.total / PAGE_SIZE) - 1);
@@ -127,16 +129,16 @@ const MemberStatus: React.FC = () => {
 
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Member Status</h1>
+          <h1 className="aw-title">{t('Member Status')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <UserX size={12} /> A member becomes inactive when retired and RD is zero — you mark them inactive by hand
+            <UserX size={12} /> {t('A member becomes inactive when retired and RD is zero — you mark them inactive by hand')}
           </p>
         </div>
         <div className="aw-actions">
-          <button type="button" onClick={s.reload} disabled={s.loading} className="aw-icon-btn" aria-label="Refresh" data-tip="Refresh" data-tip-pos="bottom-end">
+          <button type="button" onClick={s.reload} disabled={s.loading} className="aw-icon-btn" aria-label={t('Refresh')} data-tip={t('Refresh')} data-tip-pos="bottom-end">
             <RefreshCw size={14} className={s.loading ? 'aw-spin' : ''} />
           </button>
-          <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost"><X size={13} /> Close</button>
+          <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Close')}</button>
         </div>
       </div>
 
@@ -156,9 +158,9 @@ const MemberStatus: React.FC = () => {
             </button>
           ))}
           <button type="button" role="tab" className="ms-tile" aria-selected={tab === 'find'} onClick={() => setTab('find')}>
-            <strong>Find a member</strong>
+            <strong>{t('Find a member')}</strong>
             <b><Search size={22} /></b>
-            <span>Mark any member inactive, or re-activate one</span>
+            <span>{t('Mark any member inactive, or re-activate one')}</span>
           </button>
         </div>
 
@@ -168,22 +170,20 @@ const MemberStatus: React.FC = () => {
               <div className="aw-input-wrap has-icon" style={{ maxWidth: 320, flex: '1 1 220px' }}>
                 <Search size={13} />
                 <input
-                  type="text" className="aw-input" aria-label="Search members"
-                  placeholder="Search member no. or name..."
+                  type="text" className="aw-input" aria-label={t('Search members')}
+                  placeholder={t('Search member no. or name...')}
                   value={s.search} onChange={e => s.changeSearch(e.target.value)}
                 />
               </div>
               {showMonths && (
                 <label className="is-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                  Retiring within
+                  {t('Retiring within')}
                   <select className="aw-input" style={{ width: 'auto' }} value={s.months} onChange={e => s.changeMonths(Number(e.target.value))}>
-                    {[3, 6, 12, 18, 24, 36].map(m => <option key={m} value={m}>{m} months</option>)}
+                    {[3, 6, 12, 18, 24, 36].map(m => <option key={m} value={m}>{t('{{1}} months', { 1: m })}</option>)}
                   </select>
                 </label>
               )}
-              <span className="is-muted" style={{ fontSize: 12, marginLeft: 'auto' }}>
-                {s.total.toLocaleString('en-IN')} member{s.total === 1 ? '' : 's'}
-              </span>
+              <span className="is-muted" style={{ fontSize: 12, marginLeft: 'auto' }}>{t('{{1}} member{{2}}', { 1: s.total.toLocaleString('en-IN'), 2: s.total === 1 ? '' : 's' })}</span>
             </div>
 
             {s.error && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><span>{s.error}</span></div>}
@@ -191,16 +191,16 @@ const MemberStatus: React.FC = () => {
             {thisRows.length === 0 && !s.loading && !s.error ? (
               <div className="aw-empty" style={{ padding: 32 }}>
                 <CheckCircle2 size={26} />
-                <strong className="aw-strong">{s.search ? 'No matching members' : 'Nobody in this list'}</strong>
+                <strong className="aw-strong">{s.search ? t('No matching members') : t('Nobody in this list')}</strong>
               </div>
             ) : (
               <div className="aw-table-wrap">
                 <table className="aw-table" style={{ minWidth: 900 }}>
                   <thead>
                     <tr>
-                      <th>Member No</th><th>Name</th><th>Office</th><th>Retirement</th>
-                      <th className="ms-num">RD balance</th><th className="ms-num">Loan</th>
-                      <th>{tab === 'upcoming' ? 'Expected inactive' : 'Status'}</th><th />
+                      <th>{t('Member No')}</th><th>{t('Name')}</th><th>{t('Office')}</th><th>{t('Retirement')}</th>
+                      <th className="ms-num">{t('RD balance')}</th><th className="ms-num">{t('Loan')}</th>
+                      <th>{tab === 'upcoming' ? t('Expected inactive') : t('Status')}</th><th />
                     </tr>
                   </thead>
                   <tbody>
@@ -217,11 +217,11 @@ const MemberStatus: React.FC = () => {
                         <td>{fmtDate(r.retirementDate)}</td>
                         <td className="ms-num">{inr(r.rdBalance)}</td>
                         <td className="ms-num" style={r.loanBalance > 0 ? { color: 'var(--aw-warning, #c98a00)', fontWeight: 600 } : undefined}>{r.loanBalance > 0 ? inr(r.loanBalance) : '—'}</td>
-                        <td title={r.note}>{tab === 'upcoming' ? (r.expectedInactiveMonth ? fmtMonth(r.expectedInactiveMonth) : 'After RD is zero') : <span className="aw-pill">{tab === 'ready' ? 'Ready' : 'RD remaining'}</span>}</td>
+                        <td title={r.note}>{tab === 'upcoming' ? (r.expectedInactiveMonth ? fmtMonth(r.expectedInactiveMonth) : t('After RD is zero')) : <span className="aw-pill">{tab === 'ready' ? t('Ready') : t('RD remaining')}</span>}</td>
                         <td>
                           <div className="ms-row-actions">
                             <button type="button" className="aw-btn aw-btn-secondary" onClick={() => openDialog('inactive', r.memberNo)}>
-                              <UserX size={12} /> Mark inactive
+                              <UserX size={12} /> {t('Mark inactive')}
                             </button>
                           </div>
                         </td>
@@ -234,9 +234,9 @@ const MemberStatus: React.FC = () => {
 
             {s.total > PAGE_SIZE && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
-                <button type="button" className="aw-btn aw-btn-ghost" disabled={s.page === 0 || s.loading} onClick={() => s.setPage(s.page - 1)}><ChevronLeft size={13} /> Prev</button>
-                <span className="is-muted" style={{ fontSize: 12 }}>Page {s.page + 1} of {lastPage + 1}</span>
-                <button type="button" className="aw-btn aw-btn-ghost" disabled={s.page >= lastPage || s.loading} onClick={() => s.setPage(s.page + 1)}>Next <ChevronRight size={13} /></button>
+                <button type="button" className="aw-btn aw-btn-ghost" disabled={s.page === 0 || s.loading} onClick={() => s.setPage(s.page - 1)}><ChevronLeft size={13} /> {t('Prev')}</button>
+                <span className="is-muted" style={{ fontSize: 12 }}>{t('{{1}} {{2}} of {{3}}', { 1: t('Page'), 2: s.page + 1, 3: lastPage + 1 })}</span>
+                <button type="button" className="aw-btn aw-btn-ghost" disabled={s.page >= lastPage || s.loading} onClick={() => s.setPage(s.page + 1)}>{t('Next')} <ChevronRight size={13} /></button>
               </div>
             )}
           </section>
@@ -247,10 +247,10 @@ const MemberStatus: React.FC = () => {
             <form onSubmit={e => { e.preventDefault(); runFind(); }} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <div className="aw-input-wrap has-icon" style={{ maxWidth: 280, flex: '1 1 200px' }}>
                 <Search size={13} />
-                <input className="aw-input" aria-label="Member number" placeholder="Member number" value={findNo} onChange={e => setFindNo(e.target.value)} />
+                <input className="aw-input" aria-label={t('Member number')} placeholder={t('Member number')} value={findNo} onChange={e => setFindNo(e.target.value)} />
               </div>
               <button type="submit" className="aw-btn aw-btn-primary" disabled={finding || !findNo.trim()}>
-                {finding ? <RefreshCw size={13} className="aw-spin" /> : <Search size={13} />} Check
+                {finding ? <RefreshCw size={13} className="aw-spin" /> : <Search size={13} />} {t('Check')}
               </button>
             </form>
 
@@ -259,40 +259,40 @@ const MemberStatus: React.FC = () => {
             {found && (
               <div style={{ marginTop: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <strong style={{ fontSize: 16 }}>{found.name || 'Member'} ({found.memberNo})</strong>
-                  <span className="aw-pill">{found.active ? 'Active' : 'Inactive'}</span>
-                  {found.active && found.readyToInactivate && <span className="aw-pill">Ready to mark inactive</span>}
+                  <strong style={{ fontSize: 16 }}>{found.name || t('Member')} ({found.memberNo})</strong>
+                  <span className="aw-pill">{found.active ? t('Active') : t('Inactive')}</span>
+                  {found.active && found.readyToInactivate && <span className="aw-pill">{t('Ready to mark inactive')}</span>}
                 </div>
                 <dl className="ms-kv">
-                  <div><dt>Retirement date</dt><dd>{fmtDate(found.retirementDate)}{found.retired ? ' (passed)' : ''}</dd></div>
-                  <div><dt>RD balance</dt><dd>{inr(found.rdBalance)}</dd></div>
-                  <div><dt>Loan outstanding</dt><dd>{inr(found.loanBalance)}</dd></div>
+                  <div><dt>{t('Retirement date')}</dt><dd>{fmtDate(found.retirementDate)}{found.retired ? ' ' + t('(passed)') : ''}</dd></div>
+                  <div><dt>{t('RD balance')}</dt><dd>{inr(found.rdBalance)}</dd></div>
+                  <div><dt>{t('Loan outstanding')}</dt><dd>{inr(found.loanBalance)}</dd></div>
                 </dl>
                 {found.active && found.warnings.length > 0 && (
-                  <div className="ms-warn"><AlertTriangle size={14} style={{ verticalAlign: '-2px' }} /> Not all conditions are met:
+                  <div className="ms-warn"><AlertTriangle size={14} style={{ verticalAlign: '-2px' }} /> {t('Not all conditions are met:')}
                     <ul>{found.warnings.map(w => <li key={w}>{w}</li>)}</ul>
                   </div>
                 )}
                 <div className="aw-actions" style={{ marginTop: 10 }}>
                   {found.active ? (
-                    <button type="button" className="aw-btn aw-btn-secondary" onClick={() => openDialog('inactive', found.memberNo)}><UserX size={13} /> Mark inactive</button>
+                    <button type="button" className="aw-btn aw-btn-secondary" onClick={() => openDialog('inactive', found.memberNo)}><UserX size={13} /> {t('Mark inactive')}</button>
                   ) : (
-                    <button type="button" className="aw-btn aw-btn-secondary" onClick={() => openDialog('reactivate', found.memberNo)}><UserCheck size={13} /> Make active again</button>
+                    <button type="button" className="aw-btn aw-btn-secondary" onClick={() => openDialog('reactivate', found.memberNo)}><UserCheck size={13} /> {t('Make active again')}</button>
                   )}
                 </div>
 
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, margin: '18px 0 6px' }}><History size={13} /> History</h3>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, margin: '18px 0 6px' }}><History size={13} /> {t('History')}</h3>
                 {foundHistory.length === 0 ? (
-                  <p className="is-muted" style={{ fontSize: 12, margin: 0 }}>No status changes recorded for this member.</p>
+                  <p className="is-muted" style={{ fontSize: 12, margin: 0 }}>{t('No status changes recorded for this member.')}</p>
                 ) : (
                   <div className="aw-table-wrap">
                     <table className="aw-table" style={{ minWidth: 640 }}>
-                      <thead><tr><th>When</th><th>Action</th><th>By</th><th>Reason</th></tr></thead>
+                      <thead><tr><th>{t('When')}</th><th>{t('Action')}</th><th>{t('By')}</th><th>{t('Reason')}</th></tr></thead>
                       <tbody>
                         {foundHistory.map(h => (
                           <tr key={h.id}>
                             <td className="is-muted">{fmtStamp(h.done_at)}</td>
-                            <td>{h.action === 'MARK_INACTIVE' ? 'Marked inactive' : 'Made active'}{h.forced ? ' (with warnings)' : ''}</td>
+                            <td>{h.action === 'MARK_INACTIVE' ? t('Marked inactive') : t('Made active')}{h.forced ? ' ' + t('(with warnings)') : ''}</td>
                             <td>{h.done_by}</td>
                             <td>{h.reason}</td>
                           </tr>
@@ -308,39 +308,37 @@ const MemberStatus: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span>Inactive members disappear from member search, transactions and reports that list active members.</span>
-        <span>Only an administrator can change a member's status</span>
+        <span>{t('Inactive members disappear from member search, transactions and reports that list active members.')}</span>
+        <span>{t("Only an administrator can change a member's status")}</span>
       </div>
 
       {dialog && (
         <div className="ms-overlay" role="dialog" aria-modal="true" onMouseDown={e => { if (e.target === e.currentTarget && !busy) setDialog(null); }}>
           <div className="ms-dialog">
-            <h2>{dialog.kind === 'inactive' ? 'Mark member inactive' : 'Make member active again'}</h2>
-            <p className="is-muted" style={{ margin: '0 0 8px', fontSize: 13 }}>
-              {dialog.info.name || 'Member'} ({dialog.info.memberNo}) · retirement {fmtDate(dialog.info.retirementDate)} · RD {inr(dialog.info.rdBalance)}
-            </p>
+            <h2>{dialog.kind === 'inactive' ? t('Mark member inactive') : t('Make member active again')}</h2>
+            <p className="is-muted" style={{ margin: '0 0 8px', fontSize: 13 }}>{t('{{1}} ({{2}}) · retirement {{3}} · RD {{4}}', { 1: dialog.info.name || t('Member'), 2: dialog.info.memberNo, 3: fmtDate(dialog.info.retirementDate), 4: inr(dialog.info.rdBalance) })}</p>
             {dialog.kind === 'inactive' && dialog.info.warnings.length > 0 && (
               <div className="ms-warn">
-                <strong><AlertTriangle size={14} style={{ verticalAlign: '-2px' }} /> The inactive conditions are not all met</strong>
+                <strong><AlertTriangle size={14} style={{ verticalAlign: '-2px' }} /> {t('The inactive conditions are not all met')}</strong>
                 <ul>{dialog.info.warnings.map(w => <li key={w}>{w}</li>)}</ul>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
                   <input type="checkbox" checked={understood} onChange={e => setUnderstood(e.target.checked)} />
-                  I understand — mark inactive anyway
+                  {t('I understand — mark inactive anyway')}
                 </label>
               </div>
             )}
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, margin: '8px 0 4px' }}>Reason</label>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, margin: '8px 0 4px' }}>{t('Reason')}</label>
             <textarea
               className="aw-input" rows={3} style={{ width: '100%', resize: 'vertical' }}
               value={reason} onChange={e => setReason(e.target.value)} autoFocus
-              placeholder={dialog.kind === 'inactive' ? 'e.g. Retired on 31-03-2026, RD withdrawn' : 'e.g. Marked inactive by mistake'}
+              placeholder={dialog.kind === 'inactive' ? t('e.g. Retired on 31-03-2026, RD withdrawn') : t('e.g. Marked inactive by mistake')}
             />
             {dialogError && <div className="aw-alert aw-alert-danger" role="alert" style={{ marginTop: 10 }}><AlertCircle size={16} /><span>{dialogError}</span></div>}
             <div className="aw-actions" style={{ justifyContent: 'flex-end', marginTop: 14 }}>
-              <button type="button" className="aw-btn aw-btn-ghost" disabled={busy} onClick={() => setDialog(null)}>Cancel</button>
+              <button type="button" className="aw-btn aw-btn-ghost" disabled={busy} onClick={() => setDialog(null)}>{t('Cancel')}</button>
               <button type="button" className="aw-btn aw-btn-primary" disabled={busy} onClick={confirmDialog}>
                 {busy ? <RefreshCw size={13} className="aw-spin" /> : dialog.kind === 'inactive' ? <UserX size={13} /> : <UserCheck size={13} />}
-                {dialog.kind === 'inactive' ? ' Mark inactive' : ' Make active'}
+                {dialog.kind === 'inactive' ? ' ' + t('Mark inactive') : ' ' + t('Make active')}
               </button>
             </div>
           </div>

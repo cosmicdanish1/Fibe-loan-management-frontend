@@ -4,6 +4,7 @@ import MemberField from '../../../../components/shared/kit/MemberField';
 import AwDialog from '../../../../components/shared/kit/AwDialog';
 import { useAuth } from '../../../../auth/context/AuthContext';
 import { useRdRepayment, RdPendingInstallmentRow } from '../hooks/useRdRepayment';
+import { useTranslation } from 'react-i18next';
 
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -15,6 +16,7 @@ const STATUS_STYLE: Record<RdPendingInstallmentRow['status'], { tone: string; ic
 };
 
 const RdRepayment: React.FC = () => {
+  const { t } = useTranslation();
     const { user } = useAuth();
     const recordedBy = user?.username || ''; // always the logged-in user; no hardcoded fallback
 
@@ -55,8 +57,8 @@ const RdRepayment: React.FC = () => {
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">RD Repayment</h1>
-                    <p className="aw-desc">Record a member's monthly RD payment at the counter</p>
+                    <h1 className="aw-title">{t('RD Repayment')}</h1>
+                    <p className="aw-desc">{t("Record a member's monthly RD payment at the counter")}</p>
                 </div>
                 {yearLabel && (
                     <span className="aw-pill" style={{ gap: 6 }}><Calendar size={12} /> {yearLabel}</span>
@@ -69,9 +71,9 @@ const RdRepayment: React.FC = () => {
                         <MemberField value={lookupInput} onChange={setLookupInput} onSelect={onMemberSelected}
                             onSubmit={v => loadMember(v, '')} />
                     </div>
-                    <input type="text" placeholder="Member name" aria-label="Member name" value={memberName} readOnly className="aw-input" />
+                    <input type="text" placeholder={t('Member name')} aria-label={t('Member name')} value={memberName} readOnly className="aw-input" />
                     <button type="button" onClick={() => loadMember(lookupInput, '')} disabled={loading || !lookupInput} className="aw-btn aw-btn-secondary">
-                        <SearchIcon size={13} /> Search
+                        <SearchIcon size={13} /> {t('Search')}
                     </button>
                 </div>
             </div>
@@ -87,11 +89,11 @@ const RdRepayment: React.FC = () => {
                 {!mbno ? (
                     <div className="aw-empty" style={{ minHeight: 240 }}>
                         <Calendar size={34} />
-                        <span>Search for a member to see their RD months.</span>
+                        <span>{t('Search for a member to see their RD months.')}</span>
                     </div>
                 ) : loading ? (
                     <div className="aw-empty" style={{ minHeight: 240 }}>
-                        <span className="aw-meta">Loading…</span>
+                        <span className="aw-meta">{t('Loading…')}</span>
                     </div>
                 ) : (
                     <div className="aw-month-grid aw-fade-in">
@@ -103,12 +105,10 @@ const RdRepayment: React.FC = () => {
                                         <span className="aw-strong">{MONTH_NAMES[row.installmentMonth]} {row.installmentYear}</span>
                                         <span className={`aw-pill ${style.tone}`} style={{ gap: 4 }}>{style.icon} {row.status}</span>
                                     </div>
-                                    <div className="aw-meta">
-                                        Expected ₹{fmt(row.expectedAmount)} · Paid ₹{fmt(row.paidAmount)}
-                                    </div>
+                                    <div className="aw-meta">{t('Expected ₹{{1}} · Paid ₹{{2}}', { 1: fmt(row.expectedAmount), 2: fmt(row.paidAmount) })}</div>
                                     <button type="button" onClick={() => openPayment(row)} disabled={row.status === 'PAID'}
                                         className={`aw-btn aw-btn-sm ${row.status === 'PAID' ? 'aw-btn-secondary' : 'aw-btn-primary'}`} style={{ width: '100%' }}>
-                                        {row.status === 'UNPAID' ? 'Record Payment' : row.status === 'PARTIAL' ? 'Complete Payment' : 'Paid'}
+                                        {row.status === 'UNPAID' ? t('Record Payment') : row.status === 'PARTIAL' ? t('Complete Payment') : t('Paid')}
                                     </button>
                                 </div>
                             );
@@ -118,25 +118,23 @@ const RdRepayment: React.FC = () => {
             </div>
 
             <AwDialog open={!!selected} onClose={() => setSelected(null)} compact maxWidth="26rem"
-                title={selected ? `RD Payment — ${MONTH_NAMES[selected.installmentMonth]} ${selected.installmentYear}` : ''}>
+                title={selected ? t('RD Payment — {{1}} {{2}}', { 1: MONTH_NAMES[selected.installmentMonth], 2: selected.installmentYear }) : ''}>
                 {selected && (
                     <div className="aw-stack">
-                        <p className="aw-meta">Expected ₹{fmt(selected.expectedAmount)} · Already paid ₹{fmt(selected.paidAmount)}</p>
+                        <p className="aw-meta">{t('Expected ₹{{1}} · Already paid ₹{{2}}', { 1: fmt(selected.expectedAmount), 2: fmt(selected.paidAmount) })}</p>
                         {selected.paidAmount > 0 && selected.paidAmount < selected.expectedAmount && (
-                            <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0 }}>
-                                Remaining balance: ₹{fmt(selected.expectedAmount - selected.paidAmount)} — enter the full new total below, not just the top-up amount.
-                            </div>
+                            <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0 }}>{t('Remaining balance: ₹{{1}} — enter the full new total below, not just the top-up amount.', { 1: fmt(selected.expectedAmount - selected.paidAmount) })}</div>
                         )}
                         <div>
-                            <label className="aw-label" htmlFor="rr-amount">Amount Paid (₹) — entered exactly as given, not auto-calculated</label>
+                            <label className="aw-label" htmlFor="rr-amount">{t('Amount Paid (₹) — entered exactly as given, not auto-calculated')}</label>
                             <input id="rr-amount" type="number" value={amount || ''} onChange={e => setAmount(Number(e.target.value))} className="aw-input" />
                         </div>
                         <div>
-                            <label className="aw-label" htmlFor="rr-narration">Narration</label>
+                            <label className="aw-label" htmlFor="rr-narration">{t('Narration')}</label>
                             <input id="rr-narration" type="text" value={narration} onChange={e => setNarration(e.target.value)} className="aw-input" />
                         </div>
                         <button type="button" onClick={submitPayment} disabled={saving || amount <= 0} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
-                            {saving ? 'Recording…' : 'Record Payment'}
+                            {saving ? t('Recording…') : t('Record Payment')}
                         </button>
                     </div>
                 )}

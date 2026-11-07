@@ -25,12 +25,8 @@ import {
   EMIScheduleResponse
 } from '../../../../services/emiService';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
-
-const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
 interface MemberData {
   memberNo: string;
@@ -42,6 +38,7 @@ interface MemberData {
 }
 
 const EMIChart: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
   const [memberLoans, setMemberLoans] = useState<LoanData[]>([]);
   const [selectedLoan, setSelectedLoan] = useState<LoanData | null>(null);
@@ -77,11 +74,11 @@ const EMIChart: React.FC = () => {
       setMemberLoans(allLoans);
       if (allLoans.length === 0) {
         setError(`No active loans found for member ${memberNo}.`);
-        await showDialog('info', 'No Loans Found', `No active or pending loan cases were found for member ${memberNo}.`);
+        await showDialog('info', t('No Loans Found'), t('No active or pending loan cases were found for member {{1}}.', { 1: memberNo }));
       }
     } catch {
       setError('Failed to fetch member loans.'); setMemberLoans([]);
-      await showDialog('error', 'Lookup Failed', `Could not fetch loans for member ${memberNo}. Please check the connection and try again.`);
+      await showDialog('error', t('Lookup Failed'), t('Could not fetch loans for member {{1}}. Please check the connection and try again.', { 1: memberNo }));
     }
     finally { setLoading(false); }
   }, []);
@@ -143,18 +140,18 @@ const EMIChart: React.FC = () => {
       <div className="aw-header aw-ambient aw-noprint">
         <div className="min-w-0">
           <h1 className="aw-title">
-            EMI Intelligence <span className="aw-pill" style={{ verticalAlign: 'middle', marginLeft: 6 }}>PRO</span>
+            {t('EMI Intelligence')} <span className="aw-pill" style={{ verticalAlign: 'middle', marginLeft: 6 }}>PRO</span>
           </h1>
-          <p className="aw-desc">Amortization &amp; Recovery Protocol</p>
+          <p className="aw-desc">{t('Amortization & Recovery Protocol')}</p>
         </div>
         <div className="aw-actions">
           {loading && (
             <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
-              <RefreshCw size={12} className="aw-spin" /> Loading...
+              <RefreshCw size={12} className="aw-spin" /> {t('Loading...')}
             </span>
           )}
-          <span className="aw-pill tone-success"><i className="aw-status-dot" style={{ background: 'var(--aw-success)' }} />System Online</span>
-          <button type="button" onClick={() => window.close()} className="aw-icon-btn" aria-label="Close window" data-tip="Close window" data-tip-pos="bottom-end">
+          <span className="aw-pill tone-success"><i className="aw-status-dot" style={{ background: 'var(--aw-success)' }} />{t('System Online')}</span>
+          <button type="button" onClick={() => window.close()} className="aw-icon-btn" aria-label={t('Close window')} data-tip={t('Close window')} data-tip-pos="bottom-end">
             <X size={16} />
           </button>
         </div>
@@ -171,13 +168,13 @@ const EMIChart: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><User size={14} /></span>
-                <h2 className="aw-card-title">Member Terminal</h2>
+                <h2 className="aw-card-title">{t('Member Terminal')}</h2>
               </div>
               <div className="aw-stack">
                 <div className="aw-input-wrap has-action">
                   <input type="text" value={memberNumber} onChange={handleMemberNumberChange}
-                    placeholder="Enter MB No" aria-label="Member number" className="aw-input" />
-                  <button type="button" onClick={() => setShowMemberLookup(true)} className="aw-input-action" aria-label="Search members" data-tip="Search members" data-tip-pos="bottom-end">
+                    placeholder={t('Enter MB No')} aria-label={t('Member number')} className="aw-input" />
+                  <button type="button" onClick={() => setShowMemberLookup(true)} className="aw-input-action" aria-label={t('Search members')} data-tip={t('Search members')} data-tip-pos="bottom-end">
                     <Search size={13} />
                   </button>
                 </div>
@@ -185,18 +182,18 @@ const EMIChart: React.FC = () => {
                   <div className="aw-panel aw-panel-accent aw-fade-in">
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                       <div className="min-w-0">
-                        <span className="aw-stat-label">Identified Member</span>
+                        <span className="aw-stat-label">{t('Identified Member')}</span>
                         <p className="aw-strong" style={{ marginTop: 2 }}>{selectedMember.memberName}</p>
                       </div>
                       <ShieldCheck size={15} style={{ color: 'var(--aw-accent)', flex: 'none' }} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                       <span className="aw-meta">ID: {selectedMember.memberNo}</span>
-                      <span className="aw-pill tone-success">Active</span>
+                      <span className="aw-pill tone-success">{t('Active')}</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="aw-panel aw-panel-dashed">Awaiting member auth...</div>
+                  <div className="aw-panel aw-panel-dashed">{t('Awaiting member auth...')}</div>
                 )}
               </div>
             </section>
@@ -205,8 +202,8 @@ const EMIChart: React.FC = () => {
             {selectedMember && memberLoans.length > 0 && (
               <section className="aw-stack aw-fade-in">
                 <div className="aw-section-head">
-                  <h3 className="aw-section-title">Active Liabilities</h3>
-                  <span className="aw-pill tone-muted">{memberLoans.length} Cases</span>
+                  <h3 className="aw-section-title">{t('Active Liabilities')}</h3>
+                  <span className="aw-pill tone-muted">{memberLoans.length} {t('Cases')}</span>
                 </div>
                 <div className="aw-stack" style={{ maxHeight: '50vh', overflowY: 'auto', padding: '2px 4px 8px 2px' }}>
                   {memberLoans.map((loan) => (
@@ -218,16 +215,16 @@ const EMIChart: React.FC = () => {
                       </div>
                       <dl className="aw-facts">
                         <div>
-                          <dt>Liability</dt>
+                          <dt>{t('Liability')}</dt>
                           <dd>{formatCurrency(loan.loanAmount)}</dd>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <dt>Balance</dt>
+                          <dt>{t('Balance')}</dt>
                           <dd style={{ color: 'var(--aw-danger)' }}>{formatCurrency(loan.balance)}</dd>
                         </div>
                       </dl>
                       <div className="aw-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--aw-border)' }}>
-                        <span>Instal: {formatCurrency(loan.installmentAmount)}</span>
+                        <span>{t('Instal:')} {formatCurrency(loan.installmentAmount)}</span>
                         <ArrowRight size={13} />
                       </div>
                     </button>
@@ -245,11 +242,11 @@ const EMIChart: React.FC = () => {
               <div className="aw-alert aw-alert-danger aw-fade-in" role="alert" style={{ marginBottom: 0 }}>
                 <AlertCircle size={16} />
                 <div>
-                  <strong style={{ textTransform: 'uppercase' }}>Access Interrupted</strong>
+                  <strong style={{ textTransform: 'uppercase' }}>{t('Access Interrupted')}</strong>
                   <p style={{ marginTop: 2 }}>{error}</p>
                   <button type="button" onClick={() => selectedMember && fetchMemberLoans(selectedMember.memberNo)}
                     className="aw-btn aw-btn-ghost" style={{ marginTop: 6, padding: 0, color: 'inherit', minHeight: 0 }}>
-                    <RefreshCw size={12} /> Retry Protocol
+                    <RefreshCw size={12} /> {t('Retry Protocol')}
                   </button>
                 </div>
               </div>
@@ -263,32 +260,30 @@ const EMIChart: React.FC = () => {
                   <div className="aw-stat aw-stat-left">
                     <div className="aw-stat-head">
                       <PieChart size={14} />
-                      <span className="aw-stat-label">Debt Clearance</span>
+                      <span className="aw-stat-label">{t('Debt Clearance')}</span>
                     </div>
                     <div className="aw-stat-value">{summaryStats.completionPercentage.toFixed(1)}<small>%</small></div>
-                    <div className="aw-bar" style={{ marginTop: 10 }} role="img" aria-label="Debt cleared">
+                    <div className="aw-bar" style={{ marginTop: 10 }} role="img" aria-label={t('Debt cleared')}>
                       <span style={{ width: `${summaryStats.completionPercentage}%` }} />
                     </div>
                   </div>
                   <div className="aw-stat aw-stat-left tone-success">
                     <div className="aw-stat-head">
                       <TrendingUp size={14} />
-                      <span className="aw-stat-label">Cleared Principal</span>
+                      <span className="aw-stat-label">{t('Cleared Principal')}</span>
                     </div>
                     <div className="aw-stat-value">{formatCurrency(summaryStats.totalPrincipalPaid)}</div>
                     <div className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 10, color: 'var(--aw-success)' }}>
-                      <ArrowUpRight size={12} /><span>Reduction relative to gross</span>
+                      <ArrowUpRight size={12} /><span>{t('Reduction relative to gross')}</span>
                     </div>
                   </div>
                   <div className="aw-stat aw-stat-left tone-danger">
                     <div className="aw-stat-head">
                       <Clock size={14} />
-                      <span className="aw-stat-label">Residual Exposure</span>
+                      <span className="aw-stat-label">{t('Residual Exposure')}</span>
                     </div>
                     <div className="aw-stat-value">{formatCurrency(selectedLoan.balance)}</div>
-                    <div className="aw-meta" style={{ marginTop: 10 }}>
-                      Awaiting Recovery ({summaryStats.pendingInstallments} inst.)
-                    </div>
+                    <div className="aw-meta" style={{ marginTop: 10 }}>{t('Awaiting Recovery ({{1}} inst.)', { 1: summaryStats.pendingInstallments })}</div>
                   </div>
                 </div>
 
@@ -298,12 +293,12 @@ const EMIChart: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                       <span className="aw-card-icon"><FileText size={14} /></span>
                       <div>
-                        <h3 className="aw-card-title">Amortization Ledger</h3>
-                        <p className="aw-meta">Official Payment Manifest</p>
+                        <h3 className="aw-card-title">{t('Amortization Ledger')}</h3>
+                        <p className="aw-meta">{t('Official Payment Manifest')}</p>
                       </div>
                     </div>
-                    <button type="button" onClick={handleExportPDF} className="aw-btn aw-btn-secondary aw-noprint" data-tip="Print this schedule" data-tip-pos="bottom-end">
-                      <Printer size={13} /> Official Printout
+                    <button type="button" onClick={handleExportPDF} className="aw-btn aw-btn-secondary aw-noprint" data-tip={t('Print this schedule')} data-tip-pos="bottom-end">
+                      <Printer size={13} /> {t('Official Printout')}
                     </button>
                   </div>
 
@@ -338,17 +333,15 @@ const EMIChart: React.FC = () => {
 
                   {totalPages > 1 && (
                     <div className="aw-main-foot aw-noprint">
-                      <span>
-                        {((currentPage - 1) * itemsPerPage) + 1}–{Math.min(currentPage * itemsPerPage, emiSchedule.length)} of {emiSchedule.length}
-                      </span>
+                      <span>{t('{{1}}–{{2}} of {{3}}', { 1: ((currentPage - 1) * itemsPerPage) + 1, 2: Math.min(currentPage * itemsPerPage, emiSchedule.length), 3: emiSchedule.length })}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <button type="button" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}
-                          className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label="Previous page" data-tip="Previous page" data-tip-pos="top-end">
+                          className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label={t('Previous page')} data-tip={t('Previous page')} data-tip-pos="top-end">
                           <ChevronLeft size={15} />
                         </button>
                         <span className="aw-strong" style={{ fontVariantNumeric: 'tabular-nums' }}>{currentPage} / {totalPages}</span>
                         <button type="button" onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}
-                          className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label="Next page" data-tip="Next page" data-tip-pos="top-end">
+                          className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label={t('Next page')} data-tip={t('Next page')} data-tip-pos="top-end">
                           <ChevronRight size={15} />
                         </button>
                       </div>
@@ -361,10 +354,10 @@ const EMIChart: React.FC = () => {
               <section className="aw-card" style={{ flex: 1, justifyContent: 'center' }}>
                 <div className="aw-empty">
                   <Calculator size={40} />
-                  <strong className="aw-strong">Intelligence Module Idle</strong>
-                  <span style={{ maxWidth: '22rem' }}>Select member and liability case to generate amortization schedule</span>
+                  <strong className="aw-strong">{t('Intelligence Module Idle')}</strong>
+                  <span style={{ maxWidth: '22rem' }}>{t('Select member and liability case to generate amortization schedule')}</span>
                   <div className="aw-tiles">
-                    {[{ icon: User, label: 'Member Profile' }, { icon: Database, label: 'Master Sync' }, { icon: TrendingUp, label: 'Projection Logic' }, { icon: Printer, label: 'Secure Export' }].map(({ icon: Icon, label }) => (
+                    {[{ icon: User, label: t('Member Profile') }, { icon: Database, label: t('Master Sync') }, { icon: TrendingUp, label: t('Projection Logic') }, { icon: Printer, label: t('Secure Export') }].map(({ icon: Icon, label }) => (
                       <div key={label}>
                         <Icon size={15} />
                         {label}
@@ -381,23 +374,23 @@ const EMIChart: React.FC = () => {
 
       {/* Footer */}
       <div className="aw-footer aw-noprint">
-        <span>Matrix v4.2.0 • Secured Amortization Engine</span>
-        <span>Documentation • Support</span>
+        <span>{t('Matrix v4.2.0 • Secured Amortization Engine')}</span>
+        <span>{t('Documentation • Support')}</span>
       </div>
 
       {/* Member Lookup Modal */}
       {showMemberLookup && (
         <div className="aw-modal-backdrop" onClick={() => setShowMemberLookup(false)}>
-          <div className="aw-modal" role="dialog" aria-modal="true" aria-label="Select Member" onClick={(e) => e.stopPropagation()}>
+          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Select Member')} onClick={(e) => e.stopPropagation()}>
             <div className="aw-modal-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span className="aw-card-icon"><User size={14} /></span>
                 <div>
-                  <h3 className="aw-card-title">Select Member</h3>
-                  <p className="aw-meta">Cross-referencing Global Ledger</p>
+                  <h3 className="aw-card-title">{t('Select Member')}</h3>
+                  <p className="aw-meta">{t('Cross-referencing Global Ledger')}</p>
                 </div>
               </div>
-              <button type="button" onClick={() => setShowMemberLookup(false)} className="aw-icon-btn" aria-label="Close">
+              <button type="button" onClick={() => setShowMemberLookup(false)} className="aw-icon-btn" aria-label={t('Close')}>
                 <X size={15} />
               </button>
             </div>

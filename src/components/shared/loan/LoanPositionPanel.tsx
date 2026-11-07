@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Info, RefreshCw, Scale, ChevronDown, ChevronRight } from 'lucide-react';
 import { getApiBaseUrl } from '../../../services/serverConfig';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Loan Position — a read-only panel shared by the Loan Repayment and Loan Early Closure windows.
@@ -87,6 +88,7 @@ interface Props {
 }
 
 const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showClosure = true, refreshKey }) => {
+  const { t } = useTranslation();
     const [pos, setPos] = useState<Position | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -142,20 +144,20 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
     const s = pos?.schedule;
 
     return (
-        <section className="aw-card aw-fade-in" aria-label="Loan position">
+        <section className="aw-card aw-fade-in" aria-label={t('Loan position')}>
             <div className="aw-card-head">
                 <span className="aw-card-icon"><Scale size={14} /></span>
                 <div>
-                    <h2 className="aw-card-title">Loan Position</h2>
-                    <p className="aw-meta">Worked out now from the ledger and the loan terms. Nothing here is saved; correct anything that looks wrong with Journal/Transfer Entry.</p>
+                    <h2 className="aw-card-title">{t('Loan Position')}</h2>
+                    <p className="aw-meta">{t('Worked out now from the ledger and the loan terms. Nothing here is saved; correct anything that looks wrong with Journal/Transfer Entry.')}</p>
                 </div>
                 <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" style={{ marginLeft: 'auto' }} onClick={() => void load()} disabled={loading}>
-                    <RefreshCw size={13} className={loading ? 'aw-spin' : undefined} /> Refresh
+                    <RefreshCw size={13} className={loading ? 'aw-spin' : undefined} /> {t('Refresh')}
                 </button>
             </div>
 
             {error && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={14} /><span>{error}</span></div>}
-            {loading && !pos && <div className="aw-empty" style={{ padding: 24 }}><RefreshCw size={20} className="aw-spin" /><span className="aw-meta">Working it out…</span></div>}
+            {loading && !pos && <div className="aw-empty" style={{ padding: 24 }}><RefreshCw size={20} className="aw-spin" /><span className="aw-meta">{t('Working it out…')}</span></div>}
 
             {pos && (
                 <div className="aw-stack">
@@ -168,13 +170,13 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                                     <span style={{ display: 'flex', gap: 8, alignItems: 'flex-start', minWidth: 0 }}>
                                         {n.severity === 'check' ? <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} /> : <Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />}
                                         <span>
-                                            <strong>{n.source === 'DEMAND' ? `Demand ${monthYear(n.date)}` : n.date ? dmy(n.date) : 'Note'}
+                                            <strong>{n.source === 'DEMAND' ? t('Demand {{1}}', { 1: monthYear(n.date) }) : n.date ? dmy(n.date) : t('Note')}
                                                 {n.amount !== null && n.source !== 'LEDGER' ? ` — ${inr(n.amount)}` : ''}</strong>{' '}{n.message}
                                         </span>
                                     </span>
                                     {n.ackable && (
                                         <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" style={{ flexShrink: 0 }} onClick={() => void acknowledge(n)}>
-                                            <CheckCircle2 size={13} /> Mark as checked
+                                            <CheckCircle2 size={13} /> {t('Mark as checked')}
                                         </button>
                                     )}
                                 </div>
@@ -183,82 +185,82 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                     )}
                     {checkedNotices.length > 0 && (
                         <p className="aw-meta">
-                            <CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> {checkedNotices.length} notice{checkedNotices.length === 1 ? '' : 's'} already checked
-                            {checkedNotices[checkedNotices.length - 1]?.acknowledgedBy ? ` (last by ${checkedNotices[checkedNotices.length - 1]?.acknowledgedBy})` : ''}.
+                            <CheckCircle2 size={12} style={{ verticalAlign: -2 }} /> {checkedNotices.length} notice{checkedNotices.length === 1 ? '' : 's'} {t('already checked')}
+                            {checkedNotices[checkedNotices.length - 1]?.acknowledgedBy ? ' ' + t('(last by {{1}})', { 1: checkedNotices[checkedNotices.length - 1]?.acknowledgedBy }) : ''}.
                         </p>
                     )}
 
                     <div className="aw-table-wrap">
                         <table className="aw-table">
                             <tbody>
-                                <tr><td colSpan={3} className="aw-strong">This loan</td></tr>
-                                <Row label="Loan"
+                                <tr><td colSpan={3} className="aw-strong">{t('This loan')}</td></tr>
+                                <Row label={t('Loan')}
                                     value={`${LOAN_TYPE_LABEL[pos.loan.loantype] || pos.loan.loantype} #${pos.loan.loancaseno}`}
                                     hint={pos.loan.source} />
-                                <Row label="Amount / EMIs" value={`${inr(pos.loan.loanAmount)} · ${pos.loan.noOfInstalments}`}
-                                    hint={`${inr(pos.loan.monthlyPrincipal)} principal + ${inr(pos.loan.monthlyInterest)} interest`} />
-                                <Row label="Taken / first EMI month" value={`${dmy(pos.loan.startDate)} / ${monthYear(pos.loan.firstDueMonth)}`} />
+                                <Row label={t('Amount / EMIs')} value={`${inr(pos.loan.loanAmount)} · ${pos.loan.noOfInstalments}`}
+                                    hint={t('{{1}} principal + {{2}} interest', { 1: inr(pos.loan.monthlyPrincipal), 2: inr(pos.loan.monthlyInterest) })} />
+                                <Row label={t('Taken / first EMI month')} value={`${dmy(pos.loan.startDate)} / ${monthYear(pos.loan.firstDueMonth)}`} />
                                 {pos.loan.absorbedCases.map(a => (
-                                    <Row key={a.loancaseno} label={`Folded in: loan #${a.loancaseno}`}
+                                    <Row key={a.loancaseno} label={t('Folded in: loan #{{1}}', { 1: a.loancaseno })}
                                         value={a.closedBalance !== null ? inr(a.closedBalance) : '—'}
                                         hint={`${a.date ? dmy(a.date) : ''}${a.closureInterest !== null ? ` · interest cleared ${inr(a.closureInterest)}` : ''}`} />
                                 ))}
 
-                                <tr><td colSpan={3} className="aw-strong">What is owed</td></tr>
-                                <Row label="By the ledger" strong value={inr(pos.ledger.balance)} hint={`${pos.ledger.account} (${pos.ledger.headCode})`} />
-                                <Row label="By the loan record" value={inr(pos.record.balance)}
-                                    hint={pos.record.summaryBalance !== null ? `Member summary ${inr(pos.record.summaryBalance)}` : undefined} />
-                                <Row label="Difference" value={Math.abs(diff) <= 10 ? 'None' : `Ledger ${diff < 0 ? 'lower' : 'higher'} by ${inr(Math.abs(diff))}`}
+                                <tr><td colSpan={3} className="aw-strong">{t('What is owed')}</td></tr>
+                                <Row label={t('By the ledger')} strong value={inr(pos.ledger.balance)} hint={`${pos.ledger.account} (${pos.ledger.headCode})`} />
+                                <Row label={t('By the loan record')} value={inr(pos.record.balance)}
+                                    hint={pos.record.summaryBalance !== null ? t('Member summary {{1}}', { 1: inr(pos.record.summaryBalance) }) : undefined} />
+                                <Row label={t('Difference')} value={Math.abs(diff) <= 10 ? 'None' : `Ledger ${diff < 0 ? 'lower' : 'higher'} by ${inr(Math.abs(diff))}`}
                                     tone={Math.abs(diff) <= 10 ? 'success' : 'warning'}
                                     hint={Math.abs(diff) > 10 && pos.record.oldEmiDeductions.principal > 0
-                                        ? `Old-EMI deductions kept aside ${inr(pos.record.oldEmiDeductions.principal)}` : undefined} />
+                                        ? t('Old-EMI deductions kept aside {{1}}', { 1: inr(pos.record.oldEmiDeductions.principal) }) : undefined} />
 
-                                <tr><td colSpan={3} className="aw-strong">Paid in the ledger{pos.ledger.runStartedOn ? ` since ${dmy(pos.ledger.runStartedOn)}` : ''}</td></tr>
-                                <Row label="Demand (D vouchers)" value={inr(pos.ledger.paidByChannel.demand)} />
-                                <Row label="Cash receipts (R vouchers)" value={inr(pos.ledger.paidByChannel.cash)} />
-                                <Row label="Journal credits" value={inr(pos.ledger.paidByChannel.journal)} />
+                                <tr><td colSpan={3} className="aw-strong">{t('Paid in the ledger')}{pos.ledger.runStartedOn ? ' ' + t('since {{1}}', { 1: dmy(pos.ledger.runStartedOn) }) : ''}</td></tr>
+                                <Row label={t('Demand (D vouchers)')} value={inr(pos.ledger.paidByChannel.demand)} />
+                                <Row label={t('Cash receipts (R vouchers)')} value={inr(pos.ledger.paidByChannel.cash)} />
+                                <Row label={t('Journal credits')} value={inr(pos.ledger.paidByChannel.journal)} />
                                 {(pos.ledger.paidByChannel.paymentVoucher > 0 || pos.ledger.paidByChannel.other > 0) && (
-                                    <Row label="Other credits" value={inr(pos.ledger.paidByChannel.paymentVoucher + pos.ledger.paidByChannel.other)} />
+                                    <Row label={t('Other credits')} value={inr(pos.ledger.paidByChannel.paymentVoucher + pos.ledger.paidByChannel.other)} />
                                 )}
-                                <Row label="Total paid" strong value={inr(pos.ledger.paidByChannel.total)}
-                                    hint={`Loans taken / added: ${inr(pos.ledger.loansAddedTotal)} (${pos.ledger.loansAdded.length})`} />
+                                <Row label={t('Total paid')} strong value={inr(pos.ledger.paidByChannel.total)}
+                                    hint={t('Loans taken / added: {{1}} ({{2}})', { 1: inr(pos.ledger.loansAddedTotal), 2: pos.ledger.loansAdded.length })} />
 
-                                <tr><td colSpan={3} className="aw-strong">Paid on the loan record</td></tr>
-                                <Row label="Principal / interest" value={`${inr(pos.record.principalPaid)} / ${inr(pos.record.interestPaid)}`}
-                                    hint={pos.record.penalPaid > 0 ? `Penal ${inr(pos.record.penalPaid)}` : `${pos.record.paymentsRecorded} payments`} />
+                                <tr><td colSpan={3} className="aw-strong">{t('Paid on the loan record')}</td></tr>
+                                <Row label={t('Principal / interest')} value={`${inr(pos.record.principalPaid)} / ${inr(pos.record.interestPaid)}`}
+                                    hint={pos.record.penalPaid > 0 ? t('Penal {{1}}', { 1: inr(pos.record.penalPaid) }) : t('{{1}} payments', { 1: pos.record.paymentsRecorded })} />
                                 {pos.record.oldEmiDeductions.count > 0 && (
-                                    <Row label="Old-loan EMI deductions (kept aside)" value={`${inr(pos.record.oldEmiDeductions.principal)} + ${inr(pos.record.oldEmiDeductions.interest)}`}
-                                        hint={`${pos.record.oldEmiDeductions.count} deduction${pos.record.oldEmiDeductions.count === 1 ? '' : 's'}`} />
+                                    <Row label={t('Old-loan EMI deductions (kept aside)')} value={`${inr(pos.record.oldEmiDeductions.principal)} + ${inr(pos.record.oldEmiDeductions.interest)}`}
+                                        hint={t('{{1}} deduction{{2}}', { 1: pos.record.oldEmiDeductions.count, 2: pos.record.oldEmiDeductions.count === 1 ? '' : 's' })} />
                                 )}
 
                                 {s && (
                                     <>
-                                        <tr><td colSpan={3} className="aw-strong">Against the EMI schedule</td></tr>
-                                        <Row label="EMIs due so far" value={`${s.instalmentsDueSoFar} · ${inr(s.principalDueSoFar)}`} hint="principal" />
-                                        <Row label="Principal paid (loan record)" value={inr(s.principalPaidOnRecord)} />
-                                        <Row label={s.aheadOrBehind >= 0 ? 'Ahead of schedule' : 'Behind schedule'}
+                                        <tr><td colSpan={3} className="aw-strong">{t('Against the EMI schedule')}</td></tr>
+                                        <Row label={t('EMIs due so far')} value={`${s.instalmentsDueSoFar} · ${inr(s.principalDueSoFar)}`} hint="principal" />
+                                        <Row label={t('Principal paid (loan record)')} value={inr(s.principalPaidOnRecord)} />
+                                        <Row label={s.aheadOrBehind >= 0 ? t('Ahead of schedule') : t('Behind schedule')}
                                             value={inr(Math.abs(s.aheadOrBehind))} tone={s.aheadOrBehind >= 0 ? 'success' : 'danger'}
-                                            hint={s.aheadOrBehindInEmis !== null ? `${Math.abs(s.aheadOrBehindInEmis)} EMIs` : undefined} />
-                                        <Row label="Finish at the scheduled pace" value={monthYear(s.projectedFinish)}
-                                            hint={s.monthsLeftAtScheduledPace !== null ? `${s.monthsLeftAtScheduledPace} months left (ledger balance)` : undefined} />
+                                            hint={s.aheadOrBehindInEmis !== null ? t('{{1}} EMIs', { 1: Math.abs(s.aheadOrBehindInEmis) }) : undefined} />
+                                        <Row label={t('Finish at the scheduled pace')} value={monthYear(s.projectedFinish)}
+                                            hint={s.monthsLeftAtScheduledPace !== null ? t('{{1}} months left (ledger balance)', { 1: s.monthsLeftAtScheduledPace }) : undefined} />
                                     </>
                                 )}
 
                                 {showClosure && pos.closure && (
                                     <>
-                                        <tr><td colSpan={3} className="aw-strong">If closed today</td></tr>
+                                        <tr><td colSpan={3} className="aw-strong">{t('If closed today')}</td></tr>
                                         {pos.closure.error ? (
                                             <tr><td colSpan={3} className="aw-meta">{pos.closure.error}</td></tr>
                                         ) : (
                                             <>
-                                                <Row label="Outstanding principal" value={inr(pos.closure.outstandingPrincipal)}
-                                                    hint={pos.closure.payrollLagPrincipalOffset ? `after ${inr(pos.closure.payrollLagPrincipalOffset)} old-EMI deductions` : undefined} />
-                                                <Row label="Interest on due months" value={inr(pos.closure.nrInterest)} />
-                                                <Row label="Interest on future months" value={inr(pos.closure.apInterest)}
-                                                    hint={pos.closure.futureInstallmentCount !== undefined ? `${pos.closure.futureInstallmentCount} months` : undefined} />
-                                                {(pos.closure.penalInterest ?? 0) > 0 && <Row label="Penal interest" value={inr(pos.closure.penalInterest)} />}
-                                                <Row label="Closure amount" strong value={inr(pos.closure.finalClosureAmount)}
-                                                    hint={pos.closure.payableByMember !== pos.closure.finalClosureAmount ? `Member pays ${inr(pos.closure.payableByMember)}` : undefined} />
+                                                <Row label={t('Outstanding principal')} value={inr(pos.closure.outstandingPrincipal)}
+                                                    hint={pos.closure.payrollLagPrincipalOffset ? t('after {{1}} old-EMI deductions', { 1: inr(pos.closure.payrollLagPrincipalOffset) }) : undefined} />
+                                                <Row label={t('Interest on due months')} value={inr(pos.closure.nrInterest)} />
+                                                <Row label={t('Interest on future months')} value={inr(pos.closure.apInterest)}
+                                                    hint={pos.closure.futureInstallmentCount !== undefined ? t('{{1}} months', { 1: pos.closure.futureInstallmentCount }) : undefined} />
+                                                {(pos.closure.penalInterest ?? 0) > 0 && <Row label={t('Penal interest')} value={inr(pos.closure.penalInterest)} />}
+                                                <Row label={t('Closure amount')} strong value={inr(pos.closure.finalClosureAmount)}
+                                                    hint={pos.closure.payableByMember !== pos.closure.finalClosureAmount ? t('Member pays {{1}}', { 1: inr(pos.closure.payableByMember) }) : undefined} />
                                             </>
                                         )}
                                     </>
@@ -275,7 +277,7 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                             {showJournals && (
                                 <div className="aw-table-wrap" style={{ marginTop: 6 }}>
                                     <table className="aw-table">
-                                        <thead><tr><th>Date</th><th>Voucher</th><th>Type</th><th className="is-right">Amount</th><th>Narration</th></tr></thead>
+                                        <thead><tr><th>{t('Date')}</th><th>{t('Voucher')}</th><th>{t('Type')}</th><th className="is-right">{t('Amount')}</th><th>{t('Narration')}</th></tr></thead>
                                         <tbody>
                                             {pos.ledger.adjustments.map((a, i) => (
                                                 <tr key={i}><td>{dmy(a.date)}</td><td className="is-muted">{a.voucher}</td><td>{a.direction}</td>

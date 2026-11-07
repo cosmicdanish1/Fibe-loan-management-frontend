@@ -1,6 +1,6 @@
 {
   "name": "electron-react-ts",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "main": "dist/main/main.js",
   "scripts": {
     "predev": "node scripts/ensure-dist.js",
@@ -28,7 +28,10 @@
     "test:ui": "playwright test --ui",
     "test:all": "npm run test && npm run test:e2e && npm run test:stress",
     "jest": "jest",
-    "validate-routes": "ts-node scripts/validate-routes.ts"
+    "validate-routes": "ts-node scripts/validate-routes.ts",
+    "i18n:scan": "node scripts/i18n/scan.js",
+    "i18n:ci": "node scripts/i18n/scan.js --ci",
+    "i18n:check": "node scripts/i18n/check.js"
   },
   "keywords": [
     "electron",

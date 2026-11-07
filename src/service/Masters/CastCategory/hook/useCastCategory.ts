@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { CastCategoryData, CastCategoryHookReturn } from '../interface/CastCategoryInterfaces';
 import { apiService } from '../../../../services/api';
+import { useTranslation } from 'react-i18next';
 
 const notify = async (type: 'info' | 'warning' | 'error', title: string, msg: string, detail: string) => {
     if ((window as any).electronAPI?.showMessageBox) {
@@ -13,6 +14,7 @@ const notify = async (type: 'info' | 'warning' | 'error', title: string, msg: st
 };
 
 export const useCastCategory = (): CastCategoryHookReturn => {
+  const { t } = useTranslation();
     const [categories, setCategories] = useState<CastCategoryData[]>([]);
     const [data, setData] = useState<CastCategoryData>({
         categoryCode: '',
@@ -122,7 +124,7 @@ export const useCastCategory = (): CastCategoryHookReturn => {
         if (eAPI?.showMessageBox) {
             const res = await eAPI.showMessageBox({
                 type: 'warning',
-                title: 'Confirm Delete',
+                title: t('Confirm Delete'),
                 message: `Delete category "${cat?.categoryName || code}"?`,
                 detail: 'This permanently removes the category from cast_category. Members already assigned to it are not changed.',
                 buttons: ['Cancel', 'Delete'],
@@ -130,7 +132,7 @@ export const useCastCategory = (): CastCategoryHookReturn => {
                 cancelId: 0,
             });
             if (res?.response !== 1) return;
-        } else if (!window.confirm(`Delete category "${cat?.categoryName || code}"?`)) {
+        } else if (!window.confirm(t('Delete category "{{1}}"?', { 1: cat?.categoryName || code }))) {
             return;
         }
 

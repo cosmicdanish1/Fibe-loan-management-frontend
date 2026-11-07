@@ -19,12 +19,7 @@ import { escapeHtml } from '@/utils/html';
 import { ProBar, ProBody, useProRows } from '../../../../../../components/reports/views/ProIsland';
 import { useReportViews } from '../../../../../../components/reports/views/reportViews';
 import { useVotersSpec } from '../views/votersPro';
-
-const showDialog = async (type: 'info' | 'warning' | 'error', title: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: title, detail, buttons: ['OK'], defaultId: 0 });
-  }
-};
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
 const { Option } = Select;
 

@@ -1,0 +1,12 @@
+import { start, go, sleep, text } from './lib.mjs';
+const { browser, page, api } = await start();
+await go(page, '#/masters/member');
+await page.getByPlaceholder('Enter first name').fill('QAPW');
+await page.getByPlaceholder('Enter last name').fill('MEMBERONE');
+await page.getByRole('button', { name: /create/i }).first().click();
+await sleep(8000);
+console.log('API', JSON.stringify(api));
+console.log((await text(page)).slice(0, 600).replace(/\s+/g, ' '));
+const toasts = await page.evaluate(() => [...document.querySelectorAll('.ant-message-notice,.ant-modal-confirm,.ant-notification-notice')].map(e => e.innerText.replace(/\s+/g,' ')));
+console.log('DIALOGS', JSON.stringify(toasts));
+await browser.close();

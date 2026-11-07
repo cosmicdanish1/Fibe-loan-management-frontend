@@ -6,23 +6,11 @@ import {
     DividendEntry
 } from '../interface/DividendPaymentInterfaces';
 import { apiService } from '../../../../../services/api';
-
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 export const useDividendPayment = (): DividendPaymentHookReturn => {
+  const { t } = useTranslation();
     const [formData, setFormData] = useState<DividendPaymentData>({
         memberNo: '',
         subDivision: '',
@@ -122,7 +110,7 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
                 setLoadedFor(memberNo);
 
                 if (entries.length === 0) {
-                    await showDialog('info', 'electron-react-ts', 'No Pending Dividends', 'No pending dividends were found for this member.');
+                    await showDialog('info', 'electron-react-ts', t('No Pending Dividends'), t('No pending dividends were found for this member.'));
                 }
             } else {
                 setData([]);
@@ -135,7 +123,7 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
             setData([]);
             setActualAmount(0);
             setLoadedFor('');
-            await showDialog('error', 'Load Error', 'Failed to Fetch Dividends', `Could not retrieve pending dividends. Technical details: ${error.message}`);
+            await showDialog('error', t('Load Error'), t('Failed to Fetch Dividends'), t('Could not retrieve pending dividends. Technical details: {{1}}', { 1: error.message }));
         } finally {
             if (seq === fetchSeq.current) setIsLoading(false);
         }
@@ -153,32 +141,32 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
 
     const handleSave = useCallback(async () => {
         if (!formData.memberNo) {
-            await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before processing dividend payment.');
+            await showDialog('warning', t('Input Validation Error'), t('Member Required'), t('Please select a member before processing dividend payment.'));
             return;
         }
         // The loaded dividends must belong to the member currently shown
         // (they are cleared on member change and reloaded after a short debounce).
         if (loadedFor !== formData.memberNo) {
-            await showDialog('warning', 'Input Validation Error', 'Dividends Not Loaded', 'The pending dividends for this member are still loading. Please wait a moment and try again.');
+            await showDialog('warning', t('Input Validation Error'), t('Dividends Not Loaded'), t('The pending dividends for this member are still loading. Please wait a moment and try again.'));
             return;
         }
         if (data.length === 0) {
-            await showDialog('warning', 'Input Validation Error', 'No Pending Dividends', 'There are no pending dividends to pay for this member.');
+            await showDialog('warning', t('Input Validation Error'), t('No Pending Dividends'), t('There are no pending dividends to pay for this member.'));
             return;
         }
         // BUG FIX: validate amount > 0 to prevent saving ₹0 dividend records
         if (actualAmount <= 0) {
-            await showDialog('warning', 'Input Validation Error', 'Invalid Dividend Amount', 'Total dividend amount must be greater than zero.');
+            await showDialog('warning', t('Input Validation Error'), t('Invalid Dividend Amount'), t('Total dividend amount must be greater than zero.'));
             return;
         }
         // BUG FIX: validate cheque fields when bank mode selected
         if (formData.paymentMode === 'bank') {
             if (!formData.chequeNo) {
-                await showDialog('warning', 'Input Validation Error', 'Cheque Number Required', 'Please enter the cheque number for bank/cheque payment mode.');
+                await showDialog('warning', t('Input Validation Error'), t('Cheque Number Required'), t('Please enter the cheque number for bank/cheque payment mode.'));
                 return;
             }
             if (!formData.bankName) {
-                await showDialog('warning', 'Input Validation Error', 'Bank Name Required', 'Please enter the bank name for bank/cheque payment mode.');
+                await showDialog('warning', t('Input Validation Error'), t('Bank Name Required'), t('Please enter the bank name for bank/cheque payment mode.'));
                 return;
             }
         }
@@ -210,7 +198,7 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    'Dividend Payment Processed Successfully!',
+                    t('Dividend Payment Processed Successfully!'),
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `VOUCHER NO    : ${vchr}\n` +
                     `MEMBER NO     : ${formData.memberNo}\n` +
@@ -225,11 +213,11 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
                 handleReset();
             } else {
                 // BUG FIX: was response.error — apiService returns response.message, not response.error
-                await showDialog('error', 'Dividend Payment Error', 'Payment Processing Failed', response.message || 'An unexpected error occurred. Please try again.');
+                await showDialog('error', t('Dividend Payment Error'), t('Payment Processing Failed'), response.message || t('An unexpected error occurred. Please try again.'));
             }
         } catch (error: any) {
             console.error('Save error:', error);
-            await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${error.message}`);
+            await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: error.message }));
         } finally {
             setIsLoading(false);
         }

@@ -1,6 +1,7 @@
 // TabNavigation.tsx
 import React from 'react';
 import type { LoanApplicationState } from '../../types/loan';
+import { useTranslation } from 'react-i18next';
 
 interface TabNavigationProps {
   activeTab: LoanApplicationState['activeTab'];
@@ -8,10 +9,11 @@ interface TabNavigationProps {
 }
 
 const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange }) => {
+  const { t } = useTranslation();
   const tabs = [
-    { id: 'loan-details' as const, label: 'Loan Details' },
-    { id: 'nominee-details' as const, label: 'Nominee Details' },
-    { id: 'loan-against-deposit' as const, label: 'Loan Against RD' }
+    { id: 'loan-details' as const, label: t('Loan Details') },
+    { id: 'nominee-details' as const, label: t('Nominee Details') },
+    { id: 'loan-against-deposit' as const, label: t('Loan Against RD') }
   ];
 
   return (

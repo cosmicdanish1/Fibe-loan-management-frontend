@@ -14,6 +14,8 @@ import { AlertTriangle, Building2, Check, RefreshCw, ShieldCheck, X } from 'luci
 import { App } from 'antd';
 import { apiService } from '../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 interface ClosingRow {
   code: string;
@@ -55,15 +57,6 @@ const fmtDate = (raw: string | null | undefined): string => {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const showDialog = async (type: 'info' | 'warning' | 'error', title: string, msg: string, detail = '') => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}${detail ? '\n\n' + detail : ''}`);
-  }
-};
-
 const closeWindow = () => {
   const api = (window as any).electron;
   if (api?.ipcRenderer?.send) api.ipcRenderer.send('window-close');
@@ -71,6 +64,7 @@ const closeWindow = () => {
 };
 
 const PLYearEndProcessContent: React.FC = () => {
+  const { t } = useTranslation();
   const { message } = App.useApp();
 
   const [fy, setFy] = useState<FYInfo | null>(null);
@@ -123,13 +117,13 @@ const PLYearEndProcessContent: React.FC = () => {
     try {
       const res = await apiService.initiateYearTransfer(fy.yearCode);
       if (res.success) {
-        message.success((res.data as any)?.message || 'Closing entries generated.');
+        message.success((res.data as any)?.message || t('Closing entries generated.'));
         await fetchPreview(fy.yearCode);
       } else {
-        message.error(res.error || 'Failed to generate closing entries.');
+        message.error(res.error || t('Failed to generate closing entries.'));
       }
     } catch (e: any) {
-      message.error(e?.message || 'Unable to reach server.');
+      message.error(e?.message || t('Unable to reach server.'));
     } finally {
       setIsGenerating(false);
     }
@@ -149,7 +143,7 @@ const PLYearEndProcessContent: React.FC = () => {
     if (api?.showMessageBox) {
       const res = await api.showMessageBox({
         type: 'warning',
-        title: 'Post Year End',
+        title: t('Post Year End'),
         message: `Post P&L Year End for Financial Year ${fy.yearCode}?`,
         detail,
         buttons: ['Cancel', 'Post Year End'],
@@ -158,7 +152,7 @@ const PLYearEndProcessContent: React.FC = () => {
       });
       confirmed = res.response === 1;
     } else {
-      confirmed = window.confirm(`Post P&L Year End for FY ${fy.yearCode}?\n\n${detail}`);
+      confirmed = window.confirm(t('Post P&L Year End for FY {{1}}? {{2}}', { 1: fy.yearCode, 2: detail }));
     }
     if (!confirmed) return;
 
@@ -166,13 +160,13 @@ const PLYearEndProcessContent: React.FC = () => {
     try {
       const res = await apiService.initiatePLYearEndProcess();
       if (res.success) {
-        await showDialog('info', 'Year End Posted', (res.data as any)?.message || 'P&L Year End Process completed.');
+        await showDialog('info', t('Year End Posted'), (res.data as any)?.message || t('P&L Year End Process completed.'));
         await fetchFy();
       } else {
-        message.error(res.error || 'Post year end failed.');
+        message.error(res.error || t('Post year end failed.'));
       }
     } catch (e: any) {
-      message.error(e?.message || 'Unable to reach server.');
+      message.error(e?.message || t('Unable to reach server.'));
     } finally {
       setIsPosting(false);
     }
@@ -217,23 +211,23 @@ const PLYearEndProcessContent: React.FC = () => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <p className="aw-meta" style={{ textTransform: 'uppercase', letterSpacing: '.08em' }}>Administration / Financial Year</p>
-          <h1 className="aw-title">P&amp;L Year End Process</h1>
+          <p className="aw-meta" style={{ textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('Administration / Financial Year')}</p>
+          <h1 className="aw-title">{t('P&L Year End Process')}</h1>
         </div>
         <div className="aw-actions">
           <span className={`aw-pill tone-${isClosed ? 'success' : 'warning'}`}>
             <i className="aw-status-dot" style={{ marginRight: 5, background: isClosed ? 'var(--aw-success)' : 'var(--aw-warning)' }} />
-            Year end {isClosed ? 'posted' : 'not posted'}
+            {t('Year end')} {isClosed ? 'posted' : t('not posted')}
           </span>
           <button type="button" onClick={() => fy && fetchPreview(fy.yearCode)} disabled={!fy} className="aw-btn aw-btn-secondary">
-            <RefreshCw size={13} /> Refresh
+            <RefreshCw size={13} /> {t('Refresh')}
           </button>
           <button type="button" onClick={handlePost} disabled={!canPost} className="aw-btn aw-btn-primary">
             {isPosting ? <RefreshCw size={13} className="aw-spin" /> : <Check size={13} />}
-            {isPosting ? 'Posting…' : isClosed ? 'Posted' : 'Post year end'}
+            {isPosting ? t('Posting…') : isClosed ? t('Posted') : t('Post year end')}
           </button>
           <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Exit
+            <X size={13} /> {t('Exit')}
           </button>
         </div>
       </div>
@@ -244,16 +238,16 @@ const PLYearEndProcessContent: React.FC = () => {
           <section className="aw-card">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'end' }}>
               <div>
-                <span className="aw-label">Financial year from</span>
+                <span className="aw-label">{t('Financial year from')}</span>
                 <div className="aw-input" style={{ display: 'flex', alignItems: 'center' }}>{loadingFy ? '…' : fmtDate(fy?.startDate)}</div>
               </div>
               <div>
-                <span className="aw-label">Financial year to</span>
+                <span className="aw-label">{t('Financial year to')}</span>
                 <div className="aw-input" style={{ display: 'flex', alignItems: 'center' }}>{loadingFy ? '…' : fmtDate(fy?.endDate)}</div>
               </div>
               <button type="button" onClick={handleGenerate} disabled={!fy || isClosed || isGenerating} className="aw-btn aw-btn-secondary">
                 <RefreshCw size={13} className={isGenerating ? 'aw-spin' : ''} />
-                {isGenerating ? 'Generating…' : 'Generate transaction'}
+                {isGenerating ? t('Generating…') : t('Generate transaction')}
               </button>
             </div>
           </section>
@@ -261,15 +255,15 @@ const PLYearEndProcessContent: React.FC = () => {
           {/* ── Summary ── */}
           <div className="aw-stats aw-stats-3">
             <div className="aw-stat aw-stat-left">
-              <div className="aw-stat-label">Total income</div>
+              <div className="aw-stat-label">{t('Total income')}</div>
               <div className="aw-stat-value">{money(preview?.totalIncome || 0)}</div>
             </div>
             <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-warning)' }}>
-              <div className="aw-stat-label">Total expenditure</div>
+              <div className="aw-stat-label">{t('Total expenditure')}</div>
               <div className="aw-stat-value">{money(preview?.totalExpense || 0)}</div>
             </div>
             <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: (preview?.netProfit ?? 0) < 0 ? 'var(--aw-danger)' : 'var(--aw-success)' }}>
-              <div className="aw-stat-label">Net profit to {preview?.reserveHead?.name || 'reserve'}</div>
+              <div className="aw-stat-label">{t('Net profit to')} {preview?.reserveHead?.name || 'reserve'}</div>
               <div className="aw-stat-value">{money(preview?.netProfit || 0)}</div>
             </div>
           </div>
@@ -278,11 +272,11 @@ const PLYearEndProcessContent: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <div>
-                <h2 className="aw-card-title">Closing entries</h2>
-                <p className="aw-meta">{rows.length} accounts</p>
+                <h2 className="aw-card-title">{t('Closing entries')}</h2>
+                <p className="aw-meta">{t('{{1}} accounts', { 1: rows.length })}</p>
               </div>
               <span className={`aw-pill tone-${!hasEntries ? 'muted' : balanced ? 'success' : 'danger'}`} style={{ marginLeft: 'auto' }}>
-                {!hasEntries ? 'Not generated' : balanced ? 'Balanced' : 'Out of balance'}
+                {!hasEntries ? t('Not generated') : balanced ? t('Balanced') : t('Out of balance')}
               </span>
             </div>
 
@@ -290,20 +284,20 @@ const PLYearEndProcessContent: React.FC = () => {
               <table className="aw-table">
                 <thead>
                   <tr>
-                    <th>Account</th>
-                    <th>Description</th>
-                    <th>Type</th>
-                    <th className="is-right">Debit</th>
-                    <th className="is-right">Credit</th>
+                    <th>{t('Account')}</th>
+                    <th>{t('Description')}</th>
+                    <th>{t('Type')}</th>
+                    <th className="is-right">{t('Debit')}</th>
+                    <th className="is-right">{t('Credit')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loadingPreview || loadingFy ? (
-                    <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 24 }}><RefreshCw size={22} className="aw-spin" /><span className="aw-meta">Loading…</span></div></td></tr>
+                    <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 24 }}><RefreshCw size={22} className="aw-spin" /><span className="aw-meta">{t('Loading…')}</span></div></td></tr>
                   ) : !fy ? (
-                    <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">No active financial year found.</span></div></td></tr>
+                    <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">{t('No active financial year found.')}</span></div></td></tr>
                   ) : rows.length === 0 ? (
-                    <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">No closing entries yet — click "Generate transaction" to archive this year's head balances.</span></div></td></tr>
+                    <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">{t("No closing entries yet — click \"Generate transaction\" to archive this year's head balances.")}</span></div></td></tr>
                   ) : rows.map((r, i) => (
                     <tr key={i}>
                       <td className="is-muted">{r.code}</td>
@@ -317,7 +311,7 @@ const PLYearEndProcessContent: React.FC = () => {
                 {rows.length > 0 && (
                   <tfoot>
                     <tr>
-                      <td colSpan={3}>Totals</td>
+                      <td colSpan={3}>{t('Totals')}</td>
                       <td className="is-right">{money(debitTotal)}</td>
                       <td className="is-right">{money(creditTotal)}</td>
                     </tr>
@@ -331,16 +325,16 @@ const PLYearEndProcessContent: React.FC = () => {
             {!loadingPreview && preview && !preview.reserveHead ? <AlertTriangle size={15} /> : <ShieldCheck size={15} />}
             <span>
               {!loadingPreview && preview && !preview.reserveHead
-                ? 'Reserve Fund head (L1006) not found in Head Master — Post is disabled until it exists.'
-                : 'Posting closes the selected financial year. Entries cannot be reversed once posted.'}
+                ? t('Reserve Fund head (L1006) not found in Head Master — Post is disabled until it exists.')
+                : t('Posting closes the selected financial year. Entries cannot be reversed once posted.')}
             </span>
           </div>
         </div>
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> Financial Year Management</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> Verified Protocol</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Financial Year Management')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Verified Protocol')}</span>
       </div>
     </div>
   );

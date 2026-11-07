@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import type { FormFieldProps } from '../types/types';
+import { useTranslation } from 'react-i18next';
 
 const FormField: React.FC<FormFieldProps> = ({
   label,
@@ -14,6 +15,7 @@ const FormField: React.FC<FormFieldProps> = ({
   onLookup,
   className = ''
 }) => {
+  const { t } = useTranslation();
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
       <label className="text-slate-700 fz-label font-medium whitespace-nowrap min-w-fit">
@@ -39,7 +41,7 @@ const FormField: React.FC<FormFieldProps> = ({
             type="button"
             onClick={onLookup}
             className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all duration-200"
-            title="Search"
+            title={t('Search')}
           >
             <Search size={14} />
           </button>

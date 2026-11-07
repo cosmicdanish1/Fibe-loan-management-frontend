@@ -8,24 +8,11 @@ import {
     ModifyShortRecoveryHookReturn,
     WingOption
 } from '../interface/ModifyShortRecoveryInterfaces';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 // BUG FIX: removed 'message' from antd — silently fails in Electron renderer windows.
 // All notifications now use window.electronAPI?.showMessageBox (native OS dialog).
-
-const showDialog = async (
-    type: 'info' | 'warning' | 'error',
-    title: string,
-    msg: string,
-    detail: string,
-) => {
-    if ((window as any).electronAPI?.showMessageBox) {
-        await (window as any).electronAPI.showMessageBox({
-            type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-        });
-    } else {
-        alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-    }
-};
 
 // Adjustments reduce only the requested shortfall amount and require confirmation.
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
@@ -47,6 +34,7 @@ const showConfirm = async (title: string, detail: string): Promise<boolean> => {
 const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
 export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
+  const { t } = useTranslation();
     const [formData, setFormData] = useState<ModifyShortRecoveryFormData>({
         wing: '',
         month: MONTH_ABBR[new Date().getMonth()] as string,
@@ -94,7 +82,7 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
             if (seq !== fetchSeq.current) return;
             console.error(error);
             setShortRecoveryList([]);
-            await showDialog('error', 'electron-react-ts', 'Failed to Fetch Recoveries', `Could not retrieve short recovery records.\n\nTechnical: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Failed to Fetch Recoveries'), t('Could not retrieve short recovery records. Technical: {{1}}', { 1: error.message }));
         }
     }, [formData.month, formData.year, formData.wing]);
 
@@ -116,18 +104,18 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
 
     const runSaveAdjustment = useCallback(async () => {
         if (!selectedRecord) {
-            await showDialog('warning', 'electron-react-ts', 'No Record Selected', 'Please select a member record from the list before saving an adjustment.');
+            await showDialog('warning', 'electron-react-ts', t('No Record Selected'), t('Please select a member record from the list before saving an adjustment.'));
             return;
         }
         // BUG FIX: adjustmentReason is required — backend saves it but was never validated on frontend;
         // an empty reason creates an adjustment record with no audit trail.
         if (!formData.adjustmentReason || formData.adjustmentReason.trim() === '') {
-            await showDialog('warning', 'electron-react-ts', 'Reason Required', 'Please enter an adjustment reason before proceeding. This is required for the audit trail.');
+            await showDialog('warning', 'electron-react-ts', t('Reason Required'), t('Please enter an adjustment reason before proceeding. This is required for the audit trail.'));
             return;
         }
         const demandId = String(selectedRecord.id || '').trim();
         if (!/^\d{4}-\d{1,2}-\d+$/.test(demandId)) {
-            await showDialog('error', 'electron-react-ts', 'Invalid Record', 'The selected record has an invalid ID. Please refresh the list and try again.');
+            await showDialog('error', 'electron-react-ts', t('Invalid Record'), t('The selected record has an invalid ID. Please refresh the list and try again.'));
             return;
         }
 
@@ -153,7 +141,7 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
                 await showDialog(
                     'info',
                     'electron-react-ts',
-                    'Recovery Adjusted Successfully!',
+                    t('Recovery Adjusted Successfully!'),
                     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `MEMBER NO     : ${selectedRecord.memberNo}\n` +
                     `SHORTFALL AMT : ₹${Number(selectedRecord.shortfallAmount).toLocaleString('en-IN')}\n` +
@@ -167,10 +155,10 @@ export const useModifyShortRecovery = (): ModifyShortRecoveryHookReturn => {
                 setSelectedRecord(null);
                 setFormData(prev => ({ ...prev, adjustmentReason: '' }));
             } else {
-                await showDialog('error', 'electron-react-ts', 'Adjustment Failed', response.message || 'The server could not complete the adjustment. Please try again.');
+                await showDialog('error', 'electron-react-ts', t('Adjustment Failed'), response.message || t('The server could not complete the adjustment. Please try again.'));
             }
         } catch (error: any) {
-            await showDialog('error', 'electron-react-ts', 'Unable to Connect to Server', `Technical details: ${error.message}`);
+            await showDialog('error', 'electron-react-ts', t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: error.message }));
         }
     }, [selectedRecord, formData.adjustmentReason]);
 

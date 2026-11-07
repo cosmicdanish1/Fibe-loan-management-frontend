@@ -14,10 +14,12 @@ import {
 } from '@ant-design/icons';
 import { analyticsMonitoring, SystemHealth, PerformanceProfile, MonitoringConfig } from '../../../../services/analyticsMonitoring';
 import { AnalyticsErrorBoundary } from '../../../../components/analytics/AnalyticsErrorBoundary';
+import { useTranslation } from 'react-i18next';
 
 const { TabPane } = Tabs;
 
 const SystemMonitoringDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [performanceProfiles, setPerformanceProfiles] = useState<PerformanceProfile[]>([]);
   const [, setAlertHistory] = useState<Array<any>>([]);
@@ -93,7 +95,7 @@ const SystemMonitoringDashboard: React.FC = () => {
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading system monitoring...</p>
+          <p className="text-gray-600">{t('Loading system monitoring...')}</p>
         </div>
       </div>
     );
@@ -102,8 +104,8 @@ const SystemMonitoringDashboard: React.FC = () => {
   if (!systemHealth || !config) {
     return (
       <Alert
-        message="Monitoring Data Unavailable"
-        description="Unable to load system monitoring data. Please check the monitoring service."
+        message={t('Monitoring Data Unavailable')}
+        description={t('Unable to load system monitoring data. Please check the monitoring service.')}
         type="error"
         showIcon
       />
@@ -130,26 +132,24 @@ const SystemMonitoringDashboard: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <h2 className="text-2xl font-bold text-gray-800">🔧 System Monitoring</h2>
+            <h2 className="text-2xl font-bold text-gray-800">🔧 {t('System Monitoring')}</h2>
             <Badge 
               status={systemHealth.status === 'healthy' ? 'success' : 
                      systemHealth.status === 'warning' ? 'warning' : 'error'} 
               text={systemHealth.status.toUpperCase()}
             />
-            <span className="text-sm text-gray-500">
-              Uptime: {Math.floor(systemHealth.uptime / 1000 / 60)} minutes
-            </span>
+            <span className="text-sm text-gray-500">{t('{{1}} {{2}} minutes', { 1: t('Uptime:'), 2: Math.floor(systemHealth.uptime / 1000 / 60) })}</span>
           </div>
           
           <div className="flex items-center space-x-2">
             <Switch
               checked={autoRefresh}
               onChange={setAutoRefresh}
-              checkedChildren="Auto"
-              unCheckedChildren="Manual"
+              checkedChildren={t('Auto')}
+              unCheckedChildren={t('Manual')}
             />
             <Button onClick={loadMonitoringData} loading={loading}>
-              Refresh
+              {t('Refresh')}
             </Button>
           </div>
         </div>
@@ -157,7 +157,7 @@ const SystemMonitoringDashboard: React.FC = () => {
         {/* Critical Alerts */}
         {criticalAlerts.length > 0 && (
           <Alert
-            message={`${criticalAlerts.length} Critical Alert(s)`}
+            message={t('{{1}} Critical Alert(s)', { 1: criticalAlerts.length })}
             description={
               <div className="space-y-1">
                 {criticalAlerts.slice(0, 3).map(alert => (
@@ -178,7 +178,7 @@ const SystemMonitoringDashboard: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card className="text-center">
               <Statistic
-                title="System Status"
+                title={t('System Status')}
                 value={systemHealth.status}
                 prefix={getStatusIcon(systemHealth.status)}
                 valueStyle={{ color: getStatusColor(systemHealth.status) }}
@@ -189,7 +189,7 @@ const SystemMonitoringDashboard: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card className="text-center">
               <Statistic
-                title="Active Alerts"
+                title={t('Active Alerts')}
                 value={activeAlerts.length}
                 prefix={<AlertOutlined />}
                 valueStyle={{ color: activeAlerts.length > 0 ? '#ff4d4f' : '#52c41a' }}
@@ -200,7 +200,7 @@ const SystemMonitoringDashboard: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card className="text-center">
               <Statistic
-                title="Services Up"
+                title={t('Services Up')}
                 value={`${Object.values(systemHealth.services).filter(s => s === 'up').length}/4`}
                 prefix={<CloudServerOutlined />}
                 valueStyle={{ color: '#1890ff' }}
@@ -211,7 +211,7 @@ const SystemMonitoringDashboard: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card className="text-center">
               <Statistic
-                title="Memory Usage"
+                title={t('Memory Usage')}
                 value={`${Math.round(systemHealth.metrics.memory)}%`}
                 prefix={<ThunderboltOutlined />}
                 valueStyle={{ 
@@ -224,14 +224,14 @@ const SystemMonitoringDashboard: React.FC = () => {
         </Row>
 
         {/* Services Status */}
-        <Card title="Services Status">
+        <Card title={t('Services Status')}>
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} md={6}>
               <Card size="small" className="text-center">
                 <div className="flex flex-col items-center space-y-2">
                   <DatabaseOutlined className={`text-2xl text-${getStatusColor(systemHealth.services.database)}-500`} />
                   <div>
-                    <div className="font-semibold">Database</div>
+                    <div className="font-semibold">{t('Database')}</div>
                     <Tag color={getStatusColor(systemHealth.services.database)}>
                       {systemHealth.services.database}
                     </Tag>
@@ -259,7 +259,7 @@ const SystemMonitoringDashboard: React.FC = () => {
                 <div className="flex flex-col items-center space-y-2">
                   <ThunderboltOutlined className={`text-2xl text-${getStatusColor(systemHealth.services.websocket)}-500`} />
                   <div>
-                    <div className="font-semibold">WebSocket</div>
+                    <div className="font-semibold">{t('WebSocket')}</div>
                     <Tag color={getStatusColor(systemHealth.services.websocket)}>
                       {systemHealth.services.websocket}
                     </Tag>
@@ -273,7 +273,7 @@ const SystemMonitoringDashboard: React.FC = () => {
                 <div className="flex flex-col items-center space-y-2">
                   <CloudServerOutlined className={`text-2xl text-${getStatusColor(systemHealth.services.storage)}-500`} />
                   <div>
-                    <div className="font-semibold">Storage</div>
+                    <div className="font-semibold">{t('Storage')}</div>
                     <Tag color={getStatusColor(systemHealth.services.storage)}>
                       {systemHealth.services.storage}
                     </Tag>
@@ -290,7 +290,7 @@ const SystemMonitoringDashboard: React.FC = () => {
             <TabPane tab="System Metrics" key="metrics">
               <Row gutter={[16, 16]}>
                 <Col xs={24} lg={16}>
-                  <Card title="Resource Usage Trends" size="small">
+                  <Card title={t('Resource Usage Trends')} size="small">
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart data={metricsHistory}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -306,19 +306,19 @@ const SystemMonitoringDashboard: React.FC = () => {
                 
                 <Col xs={24} lg={8}>
                   <div className="space-y-4">
-                    <Card title="Current Usage" size="small">
+                    <Card title={t('Current Usage')} size="small">
                       <div className="space-y-3">
                         <div>
                           <div className="flex justify-between mb-1">
                             <span>CPU</span>
-                            <span>No data available</span>
+                            <span>{t('No data available')}</span>
                           </div>
                           <Progress percent={0} showInfo={false} size="small" />
                         </div>
                         
                         <div>
                           <div className="flex justify-between mb-1">
-                            <span>Memory</span>
+                            <span>{t('Memory')}</span>
                             <span>{Math.round(systemHealth.metrics.memory)}%</span>
                           </div>
                           <Progress 
@@ -330,16 +330,16 @@ const SystemMonitoringDashboard: React.FC = () => {
                         
                         <div>
                           <div className="flex justify-between mb-1">
-                            <span>Disk</span>
-                            <span>No data available</span>
+                            <span>{t('Disk')}</span>
+                            <span>{t('No data available')}</span>
                           </div>
                           <Progress percent={0} showInfo={false} size="small" />
                         </div>
                         
                         <div>
                           <div className="flex justify-between mb-1">
-                            <span>Network</span>
-                            <span>No data available</span>
+                            <span>{t('Network')}</span>
+                            <span>{t('No data available')}</span>
                           </div>
                           <Progress percent={0} showInfo={false} size="small" />
                         </div>
@@ -352,19 +352,19 @@ const SystemMonitoringDashboard: React.FC = () => {
 
             <TabPane tab={
               <span>
-                Alerts 
+                {t('Alerts')} 
                 {activeAlerts.length > 0 && <Badge count={activeAlerts.length} size="small" className="ml-1" />}
               </span>
             } key="alerts">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Active Alerts</h3>
+                  <h3 className="text-lg font-semibold">{t('Active Alerts')}</h3>
                   <Button 
                     size="small" 
                     onClick={() => activeAlerts.forEach(alert => handleResolveAlert(alert.id))}
                     disabled={activeAlerts.length === 0}
                   >
-                    Resolve All
+                    {t('Resolve All')}
                   </Button>
                 </div>
                 
@@ -392,14 +392,14 @@ const SystemMonitoringDashboard: React.FC = () => {
                             size="small" 
                             onClick={() => handleResolveAlert(alert.id)}
                           >
-                            Resolve
+                            {t('Resolve')}
                           </Button>
                         </div>
                       </Timeline.Item>
                     ))
                   ) : (
                     <Timeline.Item color="green" dot={<CheckCircleOutlined />}>
-                      <div className="text-green-600">No active alerts - System is healthy</div>
+                      <div className="text-green-600">{t('No active alerts - System is healthy')}</div>
                     </Timeline.Item>
                   )}
                 </Timeline>
@@ -409,7 +409,7 @@ const SystemMonitoringDashboard: React.FC = () => {
             <TabPane tab="Performance" key="performance">
               <Row gutter={[16, 16]}>
                 <Col xs={24}>
-                  <Card title="Performance Profiles" size="small">
+                  <Card title={t('Performance Profiles')} size="small">
                     {performanceProfiles.length > 0 ? (
                       <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={performanceChartData}>
@@ -425,8 +425,8 @@ const SystemMonitoringDashboard: React.FC = () => {
                     ) : (
                       <div className="text-center text-gray-500 py-8">
                         <ThunderboltOutlined className="text-3xl mb-2" />
-                        <p>No performance data available</p>
-                        <p className="text-sm">Enable performance profiling in configuration</p>
+                        <p>{t('No performance data available')}</p>
+                        <p className="text-sm">{t('Enable performance profiling in configuration')}</p>
                       </div>
                     )}
                   </Card>
@@ -437,9 +437,9 @@ const SystemMonitoringDashboard: React.FC = () => {
             <TabPane tab="Configuration" key="config">
               <Row gutter={[16, 16]}>
                 <Col xs={24} md={12}>
-                  <Card title="Alert Thresholds" size="small">
+                  <Card title={t('Alert Thresholds')} size="small">
                     <Form layout="vertical" size="small">
-                      <Form.Item label="Error Rate (per minute)">
+                      <Form.Item label={t('Error Rate (per minute)')}>
                         <InputNumber
                           value={config.alertThresholds.errorRate}
                           onChange={(value) => handleConfigUpdate({
@@ -450,7 +450,7 @@ const SystemMonitoringDashboard: React.FC = () => {
                         />
                       </Form.Item>
                       
-                      <Form.Item label="Response Time (ms)">
+                      <Form.Item label={t('Response Time (ms)')}>
                         <InputNumber
                           value={config.alertThresholds.responseTime}
                           onChange={(value) => handleConfigUpdate({
@@ -461,7 +461,7 @@ const SystemMonitoringDashboard: React.FC = () => {
                         />
                       </Form.Item>
                       
-                      <Form.Item label="Memory Usage (%)">
+                      <Form.Item label={t('Memory Usage (%)')}>
                         <InputNumber
                           value={config.alertThresholds.memoryUsage}
                           onChange={(value) => handleConfigUpdate({
@@ -476,10 +476,10 @@ const SystemMonitoringDashboard: React.FC = () => {
                 </Col>
                 
                 <Col xs={24} md={12}>
-                  <Card title="Monitoring Settings" size="small">
+                  <Card title={t('Monitoring Settings')} size="small">
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span>Enable Monitoring</span>
+                        <span>{t('Enable Monitoring')}</span>
                         <Switch
                           checked={config.enabled}
                           onChange={(enabled) => handleConfigUpdate({ enabled })}
@@ -487,7 +487,7 @@ const SystemMonitoringDashboard: React.FC = () => {
                       </div>
                       
                       <div className="flex justify-between items-center">
-                        <span>Browser Notifications</span>
+                        <span>{t('Browser Notifications')}</span>
                         <Switch
                           checked={config.notifications.browser}
                           onChange={(browser) => handleConfigUpdate({
@@ -497,7 +497,7 @@ const SystemMonitoringDashboard: React.FC = () => {
                       </div>
                       
                       <div className="flex justify-between items-center">
-                        <span>Performance Profiling</span>
+                        <span>{t('Performance Profiling')}</span>
                         <Switch
                           checked={config.performance.enableProfiling}
                           onChange={(enableProfiling) => handleConfigUpdate({
@@ -507,7 +507,7 @@ const SystemMonitoringDashboard: React.FC = () => {
                       </div>
                       
                       <div>
-                        <div className="mb-2">Health Check Interval (seconds)</div>
+                        <div className="mb-2">{t('Health Check Interval (seconds)')}</div>
                         <InputNumber
                           value={config.healthChecks.interval / 1000}
                           onChange={(value) => handleConfigUpdate({

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Eye, Printer, FileDown, Image as ImageIcon, FileText } from 'lucide-react';
 import AwDialog from '@/components/shared/kit/AwDialog';
 import { downloadBlob, fetchAgreementBlob, printImageBlob } from '../../../services/reagreementApi';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     /** loan_reagreements.id */
@@ -21,6 +22,7 @@ interface Props {
  * Must be rendered inside an `.app-window`. The saved copy is what was issued at Pass and never changes.
  */
 const ReagreementDocumentActions: React.FC<Props> = ({ id, draft, issue, baseName, size = 'sm' }) => {
+  const { t } = useTranslation();
     const [busy, setBusy] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [viewUrl, setViewUrl] = useState<string | null>(null);
@@ -40,26 +42,26 @@ const ReagreementDocumentActions: React.FC<Props> = ({ id, draft, issue, baseNam
                 <button type="button" className={cls} disabled={!!busy} onClick={() => run('view', async () => {
                     const blob = await fetchAgreementBlob(id, 'png', { draft, issue });
                     setViewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(blob); });
-                })}><Eye size={12} /> {busy === 'view' ? 'Loading…' : 'View'}</button>
+                })}><Eye size={12} /> {busy === 'view' ? t('Loading…') : t('View')}</button>
                 <button type="button" className={cls} disabled={!!busy} onClick={() => run('print', async () => {
                     printImageBlob(await fetchAgreementBlob(id, 'png', { draft, issue }));
-                })}><Printer size={12} /> {busy === 'print' ? 'Preparing…' : 'Print'}</button>
+                })}><Printer size={12} /> {busy === 'print' ? t('Preparing…') : t('Print')}</button>
                 <button type="button" className={cls} disabled={!!busy} onClick={() => run('pdf', async () => {
                     downloadBlob(await fetchAgreementBlob(id, 'pdf', { draft, issue }), `${label}.pdf`);
                 })}><FileDown size={12} /> {busy === 'pdf' ? '…' : 'PDF'}</button>
                 <button type="button" className={cls} disabled={!!busy} onClick={() => run('png', async () => {
                     downloadBlob(await fetchAgreementBlob(id, 'png', { draft, issue }), `${label}.png`);
-                })}><ImageIcon size={12} /> {busy === 'png' ? '…' : 'Image'}</button>
+                })}><ImageIcon size={12} /> {busy === 'png' ? '…' : t('Image')}</button>
                 <button type="button" className={cls} disabled={!!busy} onClick={() => run('text', async () => {
                     downloadBlob(await fetchAgreementBlob(id, 'text', { draft, issue }), `${label}.txt`);
-                })}><FileText size={12} /> {busy === 'text' ? '…' : 'Text'}</button>
+                })}><FileText size={12} /> {busy === 'text' ? '…' : t('Text')}</button>
             </span>
             {error && <p className="aw-meta" style={{ color: 'var(--aw-danger)', marginTop: 4 }}>{error}</p>}
             {viewUrl && createPortal(
                 (
-                <AwDialog open={!!viewUrl} title={draft ? 'Draft agreement' : 'Saved agreement'} icon={<Eye size={14} />}
+                <AwDialog open={!!viewUrl} title={draft ? t('Draft agreement') : t('Saved agreement')} icon={<Eye size={14} />}
                     onClose={() => setViewUrl(null)} maxWidth="58rem">
-                    {viewUrl && <img src={viewUrl} alt={`Re-agreement ${baseName}`} style={{ width: '100%', height: 'auto', background: '#fff', borderRadius: 4 }} />}
+                    {viewUrl && <img src={viewUrl} alt={t('Re-agreement {{1}}', { 1: baseName })} style={{ width: '100%', height: 'auto', background: '#fff', borderRadius: 4 }} />}
                 </AwDialog>
                 ),
                 // Rendered at the window root (not inside the caller): a parent with an animation/transform would otherwise

@@ -3,8 +3,10 @@ import dayjs from 'dayjs';
 import type { InterestCalculationData, MemberRecord } from '../types/types';
 import { getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 import { message } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 export const useInterestCalculation = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<InterestCalculationData>({
     calcInterestFor: 'all_members',
     accountType: 'SB',
@@ -110,7 +112,7 @@ export const useInterestCalculation = () => {
   // Preview — loads records into table without posting
   const handlePrintList = useCallback(async () => {
     if (!formData.calcInterestFor) {
-      message.warning('Please select an Interest Type first');
+      message.warning(t('Please select an Interest Type first'));
       return;
     }
     const rateErr = rateError(formData.interestRate);
@@ -147,12 +149,12 @@ export const useInterestCalculation = () => {
       setMemberRecords(records);
 
       if (records.length === 0) {
-        message.info('No eligible members found for the selected parameters');
+        message.info(t('No eligible members found for the selected parameters'));
       } else {
-        message.success(`Preview loaded — ${records.length} record(s)`);
+        message.success(t('Preview loaded — {{1}} record(s)', { 1: records.length }));
       }
     } catch (err: any) {
-      message.error(err.message || 'Error fetching interest preview');
+      message.error(err.message || t('Error fetching interest preview'));
       console.error('Preview error:', err);
     } finally {
       setIsLoading(false);
@@ -162,7 +164,7 @@ export const useInterestCalculation = () => {
   // Post — commits interest to ledger
   const handlePost = useCallback(async () => {
     if (memberRecords.length === 0) {
-      message.warning('Run Preview first to load records before posting');
+      message.warning(t('Run Preview first to load records before posting'));
       return;
     }
     const rateErr = rateError(formData.interestRate);
@@ -197,26 +199,26 @@ export const useInterestCalculation = () => {
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
           type: 'info',
-          title: 'Interest Posted Successfully',
+          title: t('Interest Posted Successfully'),
           message: 'Interest posting completed.',
           detail: `Posted ₹${postedAmt} for ${data.totalMembers} member(s)\nVoucher: ${data.voucherNumber}`,
           buttons: ['OK'],
         });
       } else {
-        alert(`✅ Interest Posted\n\n₹${postedAmt} for ${data.totalMembers} member(s)\nVoucher: ${data.voucherNumber}`);
+        alert('✅ ' + t('Interest Posted ₹{{1}} for {{2}} member(s) Voucher: {{3}}', { 1: postedAmt, 2: data.totalMembers, 3: data.voucherNumber }));
       }
       setMemberRecords([]);
     } catch (err: any) {
       if (window.electronAPI?.showMessageBox) {
         await window.electronAPI.showMessageBox({
           type: 'error',
-          title: 'Posting Failed',
+          title: t('Posting Failed'),
           message: 'Failed to post interest to ledger.',
           detail: err.message || 'Server error occurred.',
           buttons: ['OK'],
         });
       } else {
-        alert(`❌ Error posting interest: ${err.message}`);
+        alert('❌ ' + t('Error posting interest: {{1}}', { 1: err.message }));
       }
       console.error('Post error:', err);
     } finally {

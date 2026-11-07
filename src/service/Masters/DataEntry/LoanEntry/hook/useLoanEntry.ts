@@ -4,21 +4,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import { LoanEntryData, LoanEntryHookReturn, LoanEligibilityStatus } from '../interface/LoanEntryInterfaces';
 import { apiService } from '../../../../../services/api';
-
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail: string,
-) => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({
-      type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-    });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-  }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const emptyForm = (): LoanEntryData => ({
   memberNo: '', memberName: '',
@@ -31,6 +18,7 @@ const emptyForm = (): LoanEntryData => ({
 });
 
 export const useLoanEntry = (): LoanEntryHookReturn => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<LoanEntryData>(emptyForm());
   const [isLoading, setIsLoading] = useState(false);
   const [eligibilityStatus, setEligibilityStatus] = useState<LoanEligibilityStatus | null>(null);
@@ -109,42 +97,42 @@ export const useLoanEntry = (): LoanEntryHookReturn => {
   const handleSave = useCallback(async () => {
     if (savingRef.current) return;
     if (!formData.memberNo) {
-      await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before saving.');
+      await showDialog('warning', t('Input Validation Error'), t('Member Required'), t('Please select a member before saving.'));
       return;
     }
     if (!formData.loanType) {
-      await showDialog('warning', 'Input Validation Error', 'Loan Type Required', 'Please select a loan type before saving.');
+      await showDialog('warning', t('Input Validation Error'), t('Loan Type Required'), t('Please select a loan type before saving.'));
       return;
     }
     if (!formData.loanAmount || parseFloat(formData.loanAmount) <= 0) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Loan Amount', 'Please enter a valid loan amount greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Loan Amount'), t('Please enter a valid loan amount greater than zero.'));
       return;
     }
     if (!formData.rate || parseFloat(formData.rate) <= 0) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Interest Rate', 'Please enter a valid interest rate greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Interest Rate'), t('Please enter a valid interest rate greater than zero.'));
       return;
     }
     if (!formData.noOfInstal || parseInt(formData.noOfInstal) <= 0) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Installments', 'Please enter the number of installments greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Installments'), t('Please enter the number of installments greater than zero.'));
       return;
     }
     if (!formData.instalAmt || parseFloat(formData.instalAmt) <= 0) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Installment Amount', 'Please enter a valid installment amount greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Installment Amount'), t('Please enter a valid installment amount greater than zero.'));
       return;
     }
     const g1 = String(formData.g1MbNo || '').trim();
     const g2 = String(formData.g2MbNo || '').trim();
     const borrower = String(formData.memberNo).trim();
     if ((g1 && g1 === borrower) || (g2 && g2 === borrower)) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Surety', 'A surety cannot be the borrower. Please choose a different member.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Surety'), t('A surety cannot be the borrower. Please choose a different member.'));
       return;
     }
     if (g1 && g2 && g1 === g2) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Surety', 'Surety 1 and Surety 2 must be different members.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Surety'), t('Surety 1 and Surety 2 must be different members.'));
       return;
     }
     if (eligibilityStatus && !eligibilityStatus.isEligible) {
-      await showDialog('error', 'Eligibility Failed', 'Cannot Save Loan', eligibilityStatus.message || 'The member does not meet the 5% Share Value and 5% FD balance requirements.');
+      await showDialog('error', t('Eligibility Failed'), t('Cannot Save Loan'), eligibilityStatus.message || t('The member does not meet the 5% Share Value and 5% FD balance requirements.'));
       return;
     }
 
@@ -172,7 +160,7 @@ export const useLoanEntry = (): LoanEntryHookReturn => {
         await showDialog(
           'info',
           'electron-react-ts',
-          `${formData.loanType} Loan Entry Saved Successfully!`,
+          t('{{1}} Loan Entry Saved Successfully!', { 1: formData.loanType }),
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `LOAN CASE NO  : ${caseNo}\n` +
           `MEMBER NO     : ${formData.memberNo} - ${formData.memberName || 'N/A'}\n` +
@@ -188,10 +176,10 @@ export const useLoanEntry = (): LoanEntryHookReturn => {
         setFormData(emptyForm());
       } else {
         // BUG FIX: was response.error — apiService returns response.message, not response.error
-        await showDialog('error', 'Loan Entry Error', 'Failed to Save Loan Entry', response.message || 'An unexpected error occurred. Please try again.');
+        await showDialog('error', t('Loan Entry Error'), t('Failed to Save Loan Entry'), response.message || t('An unexpected error occurred. Please try again.'));
       }
     } catch (err: any) {
-      await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${err.message}`);
+      await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: err.message }));
     } finally {
       savingRef.current = false;
       setIsLoading(false);

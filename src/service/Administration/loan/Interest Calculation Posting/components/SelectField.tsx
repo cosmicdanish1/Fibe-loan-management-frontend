@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { SelectFieldProps } from '../types/types';
+import { useTranslation } from 'react-i18next';
 
 const SelectField: React.FC<SelectFieldProps> = ({
   label,
@@ -11,6 +12,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
   required = false,
   className = ''
 }) => {
+  const { t } = useTranslation();
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
       <label className="text-slate-700 fz-label font-medium whitespace-nowrap min-w-fit">
@@ -26,7 +28,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
           className="w-full px-3 py-2 border border-slate-300 rounded-lg fz-body bg-white shadow-sm appearance-none cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-400 pr-8"
           required={required}
         >
-          <option value="">Select an option...</option>
+          <option value="">{t('Select an option...')}</option>
           {options.map((option) => (
             <option key={option.id} value={option.id}>
               {option.name}

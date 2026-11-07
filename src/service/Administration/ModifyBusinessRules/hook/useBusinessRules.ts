@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import apiService from '../../../../services/api';
+import { useTranslation } from 'react-i18next';
 
 export interface LoanType {
   maxAmount: number;
@@ -233,6 +234,10 @@ export interface BusinessRulesData {
 export interface FundManagement {
   fundInterestRate: number;
   dividendPercent: number;
+  // Dividend rate rules (ES-476): each one counts only while its checkbox is on
+  dividendFixedActive: boolean; dividendFixedPercent: number;
+  dividendMinActive: boolean; dividendMinPercent: number;
+  dividendMaxActive: boolean; dividendMaxPercent: number;
   groupInsuranceAmount: number;
   interestChart: Array<{ monthlyContribution: number; yearlyInterest: number }>;
 }
@@ -286,6 +291,9 @@ const initialData: BusinessRulesData = {
   fundManagement: {
     fundInterestRate: 0,
     dividendPercent: 0,
+    dividendFixedActive: false, dividendFixedPercent: 0,
+    dividendMinActive: false, dividendMinPercent: 0,
+    dividendMaxActive: false, dividendMaxPercent: 0,
     groupInsuranceAmount: 0,
     interestChart: []
   },
@@ -336,6 +344,7 @@ const initialData: BusinessRulesData = {
 };
 
 export const useBusinessRules = () => {
+  const { t } = useTranslation();
   const [businessRules, setBusinessRules] = useState<BusinessRulesData>(initialData);
   const [loading, setLoading] = useState(true);
   // loaded = live rules were fetched successfully at least once; loadError = last load attempt failed.
@@ -472,6 +481,12 @@ export const useBusinessRules = () => {
           fundManagement: {
             fundInterestRate: num(d.RULE_FUND_INT_RATE, def.fundManagement.fundInterestRate),
             dividendPercent: num(d.RULE_DIVIDEND_PCT, def.fundManagement.dividendPercent),
+            dividendFixedActive: bool(d.RULE_DIVIDEND_FIXED_ACTIVE, def.fundManagement.dividendFixedActive),
+            dividendFixedPercent: num(d.RULE_DIVIDEND_FIXED_PCT, def.fundManagement.dividendFixedPercent),
+            dividendMinActive: bool(d.RULE_DIVIDEND_MIN_ACTIVE, def.fundManagement.dividendMinActive),
+            dividendMinPercent: num(d.RULE_DIVIDEND_MIN_PCT, def.fundManagement.dividendMinPercent),
+            dividendMaxActive: bool(d.RULE_DIVIDEND_MAX_ACTIVE, def.fundManagement.dividendMaxActive),
+            dividendMaxPercent: num(d.RULE_DIVIDEND_MAX_PCT, def.fundManagement.dividendMaxPercent),
             groupInsuranceAmount: num(d.RULE_GRP_INSURANCE_AMT, def.fundManagement.groupInsuranceAmount),
             interestChart: parsedInterestChart
           },
@@ -517,20 +532,24 @@ export const useBusinessRules = () => {
         setLoaded(true);
       } else {
         setLoaded(false);
-        setLoadError(response.message || response.error || 'Could not load the business rules from the server.');
+        setLoadError(response.message || response.error || t('Could not load the business rules from the server.'));
       }
     } catch (error) {
       console.error('Error fetching business rules:', error);
       setLoaded(false);
-      setLoadError(error instanceof Error ? error.message : 'Could not load the business rules from the server.');
+      setLoadError(error instanceof Error ? error.message : t('Could not load the business rules from the server.'));
     } finally {
       setLoading(false);
     }
   };
 
+  // what the server said when the last save failed, so the screen can explain it in plain words (ES-467)
+  const saveFailureRef = useRef<any>(null);
+
   const saveBusinessRules = async (currentData: BusinessRulesData) => {
     // Refuse to overwrite live rules with the hardcoded defaults after a failed load
     if (!loaded) return false;
+    saveFailureRef.current = null;
     try {
       const flatRules: Record<string, any> = {
         // Regular Loan eligibility (persisted to system_configs, where the
@@ -620,6 +639,12 @@ export const useBusinessRules = () => {
         // Fund Management — these were missing and never persisted
         RULE_FUND_INT_RATE: currentData.fundManagement.fundInterestRate,
         RULE_DIVIDEND_PCT: currentData.fundManagement.dividendPercent,
+        RULE_DIVIDEND_FIXED_ACTIVE: currentData.fundManagement.dividendFixedActive,
+        RULE_DIVIDEND_FIXED_PCT: currentData.fundManagement.dividendFixedPercent,
+        RULE_DIVIDEND_MIN_ACTIVE: currentData.fundManagement.dividendMinActive,
+        RULE_DIVIDEND_MIN_PCT: currentData.fundManagement.dividendMinPercent,
+        RULE_DIVIDEND_MAX_ACTIVE: currentData.fundManagement.dividendMaxActive,
+        RULE_DIVIDEND_MAX_PCT: currentData.fundManagement.dividendMaxPercent,
         RULE_GRP_INSURANCE_AMT: currentData.fundManagement.groupInsuranceAmount,
         RULE_CD_INTEREST_CHART: JSON.stringify(currentData.fundManagement.interestChart),
 
@@ -657,9 +682,11 @@ export const useBusinessRules = () => {
       };
 
       const response = await apiService.updateBusinessRules(flatRules);
+      if (!response.success) saveFailureRef.current = response;
       return response.success;
     } catch (error) {
       console.error('Error saving business rules:', error);
+      saveFailureRef.current = { error: error instanceof Error ? error.message : undefined };
       return false;
     }
   };
@@ -675,6 +702,7 @@ export const useBusinessRules = () => {
     loaded,
     loadError,
     saveBusinessRules,
+    getSaveFailure: () => saveFailureRef.current,
     refresh: fetchBusinessRules
   };
 };

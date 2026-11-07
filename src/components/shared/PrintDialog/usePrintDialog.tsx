@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Modal, Select, InputNumber, message } from 'antd';
 import { Printer } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PrinterInfo {
     name: string;
@@ -18,6 +19,7 @@ interface PrinterInfo {
  * showing that dialog avoids it entirely, for every printer.
  */
 export function usePrintDialog() {
+  const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [printers, setPrinters] = useState<PrinterInfo[]>([]);
     const [selectedPrinter, setSelectedPrinter] = useState<string | undefined>();
@@ -35,7 +37,7 @@ export function usePrintDialog() {
             const preferred = printerList.find(p => p.isDefault) || printerList[0];
             setSelectedPrinter(preferred?.name);
         } catch {
-            message.error('Could not load printers.');
+            message.error(t('Could not load printers.'));
         } finally {
             setLoading(false);
         }
@@ -45,7 +47,7 @@ export function usePrintDialog() {
 
     const confirmPrint = useCallback(async () => {
         if (!selectedPrinter) {
-            message.error('Please select a printer.');
+            message.error(t('Please select a printer.'));
             return;
         }
         setPrinting(true);
@@ -62,12 +64,12 @@ export function usePrintDialog() {
                 copies,
             });
             if (result?.success) {
-                message.success('Sent to printer.');
+                message.success(t('Sent to printer.'));
             } else {
-                message.error(result?.error || 'Print failed.');
+                message.error(result?.error || t('Print failed.'));
             }
         } catch (err: any) {
-            message.error(err?.message || 'Print failed.');
+            message.error(err?.message || t('Print failed.'));
         } finally {
             setPrinting(false);
         }
@@ -77,32 +79,32 @@ export function usePrintDialog() {
         <Modal
             title={
                 <span className="flex items-center gap-2">
-                    <Printer size={14} /> Print
+                    <Printer size={14} /> {t('Print')}
                 </span>
             }
             open={open}
             onCancel={closePrintDialog}
             onOk={confirmPrint}
-            okText="Print"
+            okText={t('Print')}
             confirmLoading={printing}
             okButtonProps={{ disabled: !selectedPrinter }}
             destroyOnClose
         >
             <div className="space-y-3 py-2">
                 <div>
-                    <label className="block fz-label font-medium mb-1">Printer</label>
+                    <label className="block fz-label font-medium mb-1">{t('Printer')}</label>
                     <Select
                         className="w-full"
                         loading={loading}
                         value={selectedPrinter}
                         onChange={setSelectedPrinter}
                         options={printers.map(p => ({ value: p.name, label: p.displayName || p.name }))}
-                        placeholder="Select a printer"
+                        placeholder={t('Select a printer')}
                         notFoundContent={loading ? 'Loading printers...' : 'No printers found'}
                     />
                 </div>
                 <div>
-                    <label className="block fz-label font-medium mb-1">Copies</label>
+                    <label className="block fz-label font-medium mb-1">{t('Copies')}</label>
                     <InputNumber
                         min={1}
                         max={99}

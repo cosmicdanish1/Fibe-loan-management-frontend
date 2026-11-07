@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import MemberField from '@/components/shared/kit/MemberField';
 import { useSaakhScore, type FactorScore } from '../hook/useSaakhScore';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../i18n';
 
 const closeWindow = () => {
   const api = (window as any).electronAPI;
@@ -21,11 +23,11 @@ const closeWindow = () => {
 
 // ── Tier config (colours come from the theme tokens) ─────────────────────────
 const TIER_CONFIG = {
-  Platinum: { color: 'var(--aw-info)', label: 'Platinum', emoji: '💎', tone: 'info' },
-  Gold: { color: 'var(--aw-warning)', label: 'Gold', emoji: '🥇', tone: 'warning' },
-  Silver: { color: 'var(--aw-muted)', label: 'Silver', emoji: '🥈', tone: 'muted' },
-  Bronze: { color: 'var(--aw-warning)', label: 'Bronze', emoji: '🥉', tone: 'warning' },
-  Critical: { color: 'var(--aw-danger)', label: 'Critical', emoji: '⚠️', tone: 'danger' },
+  Platinum: { color: 'var(--aw-info)', label: tLabel('Platinum'), emoji: '💎', tone: 'info' },
+  Gold: { color: 'var(--aw-warning)', label: tLabel('Gold'), emoji: '🥇', tone: 'warning' },
+  Silver: { color: 'var(--aw-muted)', label: tLabel('Silver'), emoji: '🥈', tone: 'muted' },
+  Bronze: { color: 'var(--aw-warning)', label: tLabel('Bronze'), emoji: '🥉', tone: 'warning' },
+  Critical: { color: 'var(--aw-danger)', label: tLabel('Critical'), emoji: '⚠️', tone: 'danger' },
 } as const;
 
 // ── Animated count-up number ─────────────────────────────────────────────────
@@ -53,6 +55,7 @@ const CountUp: React.FC<{ value: number; decimals?: number; duration?: number; p
 
 // ── Score gauge (SVG arc) ────────────────────────────────────────────────────
 const ScoreGauge: React.FC<{ score: number; tier: keyof typeof TIER_CONFIG }> = ({ score, tier }) => {
+  const { t } = useTranslation();
   const tc = TIER_CONFIG[tier];
   const r = 62;
   const circ = 2 * Math.PI * r;
@@ -61,7 +64,7 @@ const ScoreGauge: React.FC<{ score: number; tier: keyof typeof TIER_CONFIG }> = 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
       <div style={{ position: 'relative', width: 170, height: 170 }}>
-        <svg width="170" height="170" viewBox="0 0 170 170" role="img" aria-label={`Score ${score.toFixed(1)} out of 10`}>
+        <svg width="170" height="170" viewBox="0 0 170 170" role="img" aria-label={t('Score {{1}} out of 10', { 1: score.toFixed(1) })}>
           <circle cx="85" cy="85" r={r} fill="none" stroke="var(--aw-border)" strokeWidth="13" />
           {Array.from({ length: 10 }).map((_, i) => {
             const a = ((i + 1) / 10) * 2 * Math.PI - Math.PI / 2;
@@ -91,7 +94,7 @@ const ScoreGauge: React.FC<{ score: number; tier: keyof typeof TIER_CONFIG }> = 
           <span style={{ fontSize: 38, fontWeight: 800, lineHeight: 1, color: tc.color, fontVariantNumeric: 'tabular-nums' }}>
             <CountUp value={score} duration={1500} />
           </span>
-          <span className="aw-meta" style={{ textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 4 }}>out of 10</span>
+          <span className="aw-meta" style={{ textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 4 }}>{t('out of 10')}</span>
         </div>
       </div>
       <span className={`aw-pill tone-${tc.tone}`} style={{ padding: '4px 14px', fontSize: 'var(--type-body-size)', letterSpacing: '.12em', textTransform: 'uppercase' }}>
@@ -138,6 +141,7 @@ const EligibilityBadge: React.FC<{ eligible: 'YES' | 'CONDITIONAL' | 'NO' }> = (
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 const SaakhScore: React.FC = () => {
+  const { t } = useTranslation();
   const { data, loading, error, memberNo, setMemberNo, fetchScore, clear } = useSaakhScore();
   const [memberName, setMemberName] = useState('');
 
@@ -172,19 +176,19 @@ const SaakhScore: React.FC = () => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Saakh Score</h1>
+          <h1 className="aw-title">{t('Saakh Score')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Star size={12} /> Member Financial Health Index · 0–10
+            <Star size={12} /> {t('Member Financial Health Index · 0–10')}
           </p>
         </div>
         <div className="aw-actions">
           {data && (
             <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary aw-fade-in">
-              <RotateCcw size={13} /> Clear
+              <RotateCcw size={13} /> {t('Clear')}
             </button>
           )}
           <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -195,7 +199,7 @@ const SaakhScore: React.FC = () => {
           <section className="aw-card">
             <div className="aw-inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12 }}>
               <div style={{ flex: 1, minWidth: 260, maxWidth: 480 }}>
-                <label className="aw-label" htmlFor="ss-member">Member No.</label>
+                <label className="aw-label" htmlFor="ss-member">{t('Member No.')}</label>
                 <MemberField
                   id="ss-member"
                   value={memberNo}
@@ -208,14 +212,14 @@ const SaakhScore: React.FC = () => {
                     fetchScore(no);
                   }}
                   onSubmit={handleSearch}
-                  placeholder="Enter MBNo — F2 or double-space for Lookup"
+                  placeholder={t('Enter MBNo — F2 or double-space for Lookup')}
                   digitsOnly
                   shortcuts
                 />
               </div>
               <button type="button" onClick={handleSearch} disabled={loading || !memberNo.trim()} className="aw-btn aw-btn-primary">
                 {loading ? <RefreshCw size={13} className="aw-spin" /> : <Zap size={13} />}
-                {loading ? 'Scoring…' : 'Calculate'}
+                {loading ? t('Scoring…') : t('Calculate')}
               </button>
               {memberName && !data && <span className="aw-strong aw-fade-in" style={{ color: 'var(--aw-accent)' }}>{memberName}</span>}
             </div>
@@ -226,9 +230,9 @@ const SaakhScore: React.FC = () => {
             <section className="aw-card">
               <div className="aw-empty" style={{ padding: 48 }}>
                 <Sparkles size={32} />
-                <strong className="aw-strong">Search a member to begin</strong>
+                <strong className="aw-strong">{t('Search a member to begin')}</strong>
                 <span className="aw-meta" style={{ maxWidth: 380 }}>
-                  Saakh Score evaluates repayment punctuality, penalties, loan load, savings, tenure &amp; guarantor record
+                  {t('Saakh Score evaluates repayment punctuality, penalties, loan load, savings, tenure & guarantor record')}
                 </span>
               </div>
             </section>
@@ -246,7 +250,7 @@ const SaakhScore: React.FC = () => {
             <section className="aw-card">
               <div className="aw-empty" style={{ padding: 48 }}>
                 <RefreshCw size={30} className="aw-spin" style={{ color: 'var(--aw-accent)' }} />
-                <strong className="aw-strong">Analysing member profile…</strong>
+                <strong className="aw-strong">{t('Analysing member profile…')}</strong>
               </div>
             </section>
           )}
@@ -264,21 +268,21 @@ const SaakhScore: React.FC = () => {
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                           <h2 className="aw-title" style={{ fontSize: 'calc(var(--type-page-title) + 2px)' }}>{data.memberName || '—'}</h2>
-                          <span className={`aw-pill tone-${data.isActive ? 'success' : 'muted'}`}>{data.isActive ? '● Active' : 'Inactive'}</span>
+                          <span className={`aw-pill tone-${data.isActive ? 'success' : 'muted'}`}>{data.isActive ? '● ' + t('Active') : t('Inactive')}</span>
                         </div>
-                        <p className="aw-meta" style={{ marginTop: 2 }}>Member #{data.mbno}</p>
+                        <p className="aw-meta" style={{ marginTop: 2 }}>{t('Member #{{1}}', { 1: data.mbno })}</p>
                       </div>
                     </div>
 
                     <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 16 }}>
-                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={11} /> Member Since</dt><dd>{data.membershipDate || '—'}</dd></div>
-                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Award size={11} /> Tenure</dt><dd>{`${data.tenureYears} yr${data.tenureYears !== 1 ? 's' : ''}`}</dd></div>
-                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><CreditCard size={11} /> Active Loans</dt><dd>{data.totalActiveLoans}</dd></div>
+                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={11} /> {t('Member Since')}</dt><dd>{data.membershipDate || '—'}</dd></div>
+                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Award size={11} /> {t('Tenure')}</dt><dd>{t('{{1}} yr{{2}}', { 1: data.tenureYears, 2: data.tenureYears !== 1 ? 's' : '' })}</dd></div>
+                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><CreditCard size={11} /> {t('Active Loans')}</dt><dd>{data.totalActiveLoans}</dd></div>
                     </dl>
 
                     <p style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', color: data.totalScore >= 7 ? 'var(--aw-success)' : data.totalScore >= 5 ? 'var(--aw-warning)' : 'var(--aw-danger)' }}>
                       {data.totalScore >= 7 ? <TrendingUp size={14} /> : data.totalScore >= 5 ? <Minus size={14} /> : <TrendingDown size={14} />}
-                      {data.totalScore >= 7 ? 'Strong Profile' : data.totalScore >= 5 ? 'Moderate Risk' : 'High Risk'}
+                      {data.totalScore >= 7 ? t('Strong Profile') : data.totalScore >= 5 ? t('Moderate Risk') : t('High Risk')}
                     </p>
                   </div>
 
@@ -290,7 +294,7 @@ const SaakhScore: React.FC = () => {
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><Sparkles size={14} /></span>
-                  <h2 className="aw-card-title">Score Breakdown</h2>
+                  <h2 className="aw-card-title">{t('Score Breakdown')}</h2>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--aw-gap)' }}>
                   {data.factors.map((f) => <FactorCard key={f.name} f={f} />)}
@@ -302,7 +306,7 @@ const SaakhScore: React.FC = () => {
                 <section className="aw-card">
                   <div className="aw-card-head">
                     <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                    <h2 className="aw-card-title">Loan Eligibility Decision</h2>
+                    <h2 className="aw-card-title">{t('Loan Eligibility Decision')}</h2>
                   </div>
                   <div className="aw-stack">
                     <EligibilityBadge eligible={data.eligibility.eligible} />
@@ -310,12 +314,12 @@ const SaakhScore: React.FC = () => {
                     {data.eligibility.eligible !== 'NO' && data.eligibility.recommendedAmount > 0 && (
                       <div className="aw-two">
                         <div className="aw-stat">
-                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><IndianRupee size={11} /> Recommended Amt</div>
+                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><IndianRupee size={11} /> {t('Recommended Amt')}</div>
                           <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 5px)' }}>₹<CountUp value={data.eligibility.recommendedAmount} format duration={1300} /></div>
                         </div>
                         <div className="aw-stat">
-                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><Calendar size={11} /> Tenure</div>
-                          <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 5px)' }}>{data.eligibility.recommendedTenure} months</div>
+                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><Calendar size={11} /> {t('Tenure')}</div>
+                          <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 5px)' }}>{t('{{1}} months', { 1: data.eligibility.recommendedTenure })}</div>
                         </div>
                       </div>
                     )}
@@ -325,15 +329,15 @@ const SaakhScore: React.FC = () => {
                 <section className="aw-card">
                   <div className="aw-card-head">
                     <span className="aw-card-icon"><IndianRupee size={14} /></span>
-                    <h2 className="aw-card-title">Financial Snapshot</h2>
+                    <h2 className="aw-card-title">{t('Financial Snapshot')}</h2>
                   </div>
                   <div className="aw-rows">
                     {[
-                      { label: 'Share Capital', val: data.shareCapital, tone: '' },
-                      { label: 'CD Balance', val: data.cdBalance, tone: '' },
-                      { label: 'MD Balance', val: data.mdBalance, tone: '' },
-                      { label: 'Total Outstanding', val: data.totalOutstanding, tone: data.totalOutstanding > 0 ? 'var(--aw-danger)' : '' },
-                      { label: 'Suspense Balance', val: data.suspBal, tone: data.suspBal > 0 ? 'var(--aw-warning)' : '' },
+                      { label: t('Share Capital'), val: data.shareCapital, tone: '' },
+                      { label: t('CD Balance'), val: data.cdBalance, tone: '' },
+                      { label: t('MD Balance'), val: data.mdBalance, tone: '' },
+                      { label: t('Total Outstanding'), val: data.totalOutstanding, tone: data.totalOutstanding > 0 ? 'var(--aw-danger)' : '' },
+                      { label: t('Suspense Balance'), val: data.suspBal, tone: data.suspBal > 0 ? 'var(--aw-warning)' : '' },
                     ].map((row) => (
                       <div key={row.label} className="aw-row">
                         <span className="aw-row-label">{row.label}</span>
@@ -342,10 +346,8 @@ const SaakhScore: React.FC = () => {
                     ))}
                     {data.guarantorInfo.isGuarantorForCount > 0 && (
                       <div className="aw-row">
-                        <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> Guarantor for</span>
-                        <span className="aw-row-value" style={{ color: data.guarantorInfo.guarantorLoansHealthy ? 'var(--aw-success)' : 'var(--aw-warning)' }}>
-                          {data.guarantorInfo.isGuarantorForCount} member{data.guarantorInfo.isGuarantorForCount !== 1 ? 's' : ''}
-                        </span>
+                        <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Guarantor for')}</span>
+                        <span className="aw-row-value" style={{ color: data.guarantorInfo.guarantorLoansHealthy ? 'var(--aw-success)' : 'var(--aw-warning)' }}>{t('{{1}} member{{2}}', { 1: data.guarantorInfo.isGuarantorForCount, 2: data.guarantorInfo.isGuarantorForCount !== 1 ? 's' : '' })}</span>
                       </div>
                     )}
                   </div>
@@ -357,17 +359,17 @@ const SaakhScore: React.FC = () => {
                 <section className="aw-card">
                   <div className="aw-card-head">
                     <span className="aw-card-icon"><CreditCard size={14} /></span>
-                    <h2 className="aw-card-title">Active Loans ({data.activeLoans.length})</h2>
-                    <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-danger)' }}>₹{data.totalOutstanding.toLocaleString('en-IN')} outstanding</span>
+                    <h2 className="aw-card-title">{t('Active Loans ({{1}})', { 1: data.activeLoans.length })}</h2>
+                    <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-danger)' }}>{t('₹{{1}} outstanding', { 1: data.totalOutstanding.toLocaleString('en-IN') })}</span>
                   </div>
                   <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
                     <table className="aw-table">
                       <thead>
                         <tr>
-                          <th>Loan</th>
-                          <th>Details</th>
-                          <th className="is-right">Balance</th>
-                          <th style={{ width: 150 }}>Repaid</th>
+                          <th>{t('Loan')}</th>
+                          <th>{t('Details')}</th>
+                          <th className="is-right">{t('Balance')}</th>
+                          <th style={{ width: 150 }}>{t('Repaid')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -375,15 +377,13 @@ const SaakhScore: React.FC = () => {
                           <tr key={loan.loancaseno}>
                             <td>
                               <span className="is-accent" style={{ color: 'var(--aw-accent)', fontWeight: 700, textTransform: 'uppercase' }}>{loan.loantype}</span>
-                              {loan.penalrate > 0 && <span className="aw-pill tone-danger" style={{ marginLeft: 6 }}>Penalty {loan.penalrate}%</span>}
+                              {loan.penalrate > 0 && <span className="aw-pill tone-danger" style={{ marginLeft: 6 }}>{t('Penalty')} {loan.penalrate}%</span>}
                             </td>
-                            <td className="is-muted" style={{ fontWeight: 500 }}>
-                              Case #{loan.loancaseno} · {loan.noOfInstal} instals @ ₹{loan.instalAmt.toLocaleString('en-IN')}/mo · {loan.rate}% p.a.
-                            </td>
+                            <td className="is-muted" style={{ fontWeight: 500 }}>{t('Case #{{1}} · {{2}} instals @ ₹{{3}}/mo · {{4}}% p.a.', { 1: loan.loancaseno, 2: loan.noOfInstal, 3: loan.instalAmt.toLocaleString('en-IN'), 4: loan.rate })}</td>
                             <td className="is-right is-danger">₹{loan.balance.toLocaleString('en-IN')}</td>
                             <td>
                               <span className="aw-bar-track" style={{ width: '100%' }}><span style={{ width: `${loan.repaidPct}%` }} /></span>
-                              <span className="aw-meta">{loan.repaidPct}% repaid</span>
+                              <span className="aw-meta">{t('{{1}}% repaid', { 1: loan.repaidPct })}</span>
                             </td>
                           </tr>
                         ))}
@@ -397,7 +397,7 @@ const SaakhScore: React.FC = () => {
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><Lightbulb size={14} /></span>
-                  <h2 className="aw-card-title">Score Improvement Tips</h2>
+                  <h2 className="aw-card-title">{t('Score Improvement Tips')}</h2>
                 </div>
                 <div className="aw-stack" style={{ gap: 8 }}>
                   {data.improvementTips.map((tip, i) => (
@@ -414,8 +414,8 @@ const SaakhScore: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> Saakh Score Engine v1.0</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Info size={12} /> Score is indicative — committee decision is final</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Saakh Score Engine v1.0')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Info size={12} /> {t('Score is indicative — committee decision is final')}</span>
       </div>
     </div>
   );

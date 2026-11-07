@@ -36,6 +36,8 @@ const validSendChannels = [
   'member-selected',
   'loan-sanctioned',
   'update-license-cache',
+  'window-content-ready',
+  'motion-preference',
   'renderer-logs',
   'toolbar-register-state',
   'toolbar-trigger-save'
@@ -48,7 +50,8 @@ const validReceiveChannels = [
   'loan-sanctioned',
   'toolbar-state-changed',
   'toolbar-do-save',
-  'updater:state'
+  'updater:state',
+  'window-revealed'
 ];
 
 const validInvokeChannels = [
@@ -140,6 +143,8 @@ const secureIpcRenderer = {
 // Expose a minimal, secure API to the renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
   // Window management
+  signalContentReady: () => secureIpcRenderer.send('window-content-ready'),
+  setMotionPreference: (mode: string) => { if (['off', 'fade', 'slide', 'zoom'].includes(mode)) secureIpcRenderer.send('motion-preference', mode); },
   openLoanAppWindow: () => secureIpcRenderer.send('open-loan-app-window'),
   openNewWindow: (route: string) => {
     if (typeof route === 'string') {
@@ -231,7 +236,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => { }; // Return empty cleanup function for invalid callbacks
   },
 
-  // Toolbar remote control — lets a tool window report its Save button's
+  // Toolbar remote control â€” lets a tool window report its Save button's
   // label/enabled state to the Dashboard, and lets the Dashboard relay a
   // Save click back to whichever tool window last had focus.
   registerToolbarState: (state: { saveLabel?: string; saveEnabled?: boolean; hasSave: boolean }) => {
@@ -264,7 +269,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // login form on the dashboard to fall back to.
   authLogout: () => secureIpcRenderer.send('auth-logout'),
 
-  // Sent from the logon dialog once credentials are accepted — the main
+  // Sent from the logon dialog once credentials are accepted â€” the main
   // process then opens the dashboard and dismisses the dialog.
   loginSuccess: () => secureIpcRenderer.send('login-success'),
 
@@ -279,11 +284,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return Promise.reject(new Error('Invalid HTML content provided'));
   },
 
-  // Passbook printing — fixed physical page size, silent print to a chosen printer
+  // Passbook printing â€” fixed physical page size, silent print to a chosen printer
   getPrinters: () => secureIpcRenderer.invoke('get-printers'),
 
   // Silently prints the calling window's own current content (governed by
-  // its @media print CSS) to a chosen printer — skips Windows' native print
+  // its @media print CSS) to a chosen printer â€” skips Windows' native print
   // dialog, so its printer-driver-dependent preview bug never shows up.
   printWindowSilent: (options: { deviceName: string; copies?: number; landscape?: boolean }) => {
     if (options && typeof options.deviceName === 'string') {
@@ -309,12 +314,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return secureIpcRenderer.invoke('show-message-box', options);
   },
 
-  // License status — fetched once per day; cached on disk in main process
+  // License status â€” fetched once per day; cached on disk in main process
   getLicenseStatus: (): Promise<any> => {
     return secureIpcRenderer.invoke('get-license-status');
   },
 
-  // Server config — LAN deployment: get/save/clear the backend server IP
+  // Server config â€” LAN deployment: get/save/clear the backend server IP
   getServerUrl: (): Promise<{ url: string | null; configured: boolean }> => {
     return secureIpcRenderer.invoke('get-server-url');
   },
@@ -405,7 +410,7 @@ declare global {
   }
 }
 
-// Expose ipcRenderer for legacy code (window.electron) — restricted to the
+// Expose ipcRenderer for legacy code (window.electron) â€” restricted to the
 // channels the renderer actually uses.
 const legacySendChannels = ['window-close', 'close-latest-window', 'app-quit', 'app-quit-force'];
 const legacyReceiveChannels = ['member-selected'];

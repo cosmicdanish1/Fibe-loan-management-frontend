@@ -9,6 +9,8 @@ import {
 import { Select } from 'antd';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
+import { useTranslation } from 'react-i18next';
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
 interface MemberData {
   memberNo: string;
@@ -45,13 +47,8 @@ interface PrematureCalculation {
   penalty: number;
 }
 
-const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
-};
-
 const PrematureInformationSB: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
   const [sbAccounts, setSbAccounts] = useState<SBAccountData[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<SBAccountData | null>(null);
@@ -96,7 +93,7 @@ const PrematureInformationSB: React.FC = () => {
       } else {
         setSbAccounts([]);
         setError('No SB accounts found for this member.');
-        await showDialog('info', 'No SB Accounts', 'No SB accounts were found for this member.');
+        await showDialog('info', t('No SB Accounts'), t('No SB accounts were found for this member.'));
       }
     } catch { setError('Failed to fetch SB accounts.'); setSbAccounts([]); }
     finally { setLoading(false); }
@@ -155,12 +152,12 @@ const PrematureInformationSB: React.FC = () => {
       {/* Header */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">SB Premature Information</h1>
-          <p className="aw-desc">Saving Bank Early Closure Calculation</p>
+          <h1 className="aw-title">{t('SB Premature Information')}</h1>
+          <p className="aw-desc">{t('Saving Bank Early Closure Calculation')}</p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary">
-            <RefreshCw size={13} /> Reset
+            <RefreshCw size={13} /> {t('Reset')}
           </button>
         </div>
       </div>
@@ -181,18 +178,18 @@ const PrematureInformationSB: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><User size={14} /></span>
-              <h2 className="aw-card-title">Member Selection</h2>
+              <h2 className="aw-card-title">{t('Member Selection')}</h2>
             </div>
             <div className="aw-stack">
               <div>
-                <label className="aw-label" htmlFor="psb-holder">SB Account Holder</label>
+                <label className="aw-label" htmlFor="psb-holder">{t('SB Account Holder')}</label>
                 <Select
                   id="psb-holder"
                   showSearch
                   {...(selectedMember?.memberNo ? { value: selectedMember.memberNo } : {})}
                   onChange={handleMemberSelect}
                   loading={holdersLoading}
-                  placeholder={holdersLoading ? 'Loading account holders...' : 'Search member no. or name...'}
+                  placeholder={holdersLoading ? t('Loading account holders...') : t('Search member no. or name...')}
                   className="aw-select"
                   popupClassName="aw-select-popup"
                   filterOption={(input, option) =>
@@ -209,14 +206,14 @@ const PrematureInformationSB: React.FC = () => {
                 <div className="aw-panel aw-panel-accent aw-fade-in">
                   <p className="aw-strong" style={{ textTransform: 'uppercase' }}>{selectedMember.name}</p>
                   <div className="aw-meta" style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-                    <span>No: {selectedMember.memberNo}</span>
-                    <span>Pay: ₹{selectedMember.basicPay.toLocaleString('en-IN')}</span>
+                    <span>{t('No: {{1}}', { 1: selectedMember.memberNo })}</span>
+                    <span>{t('Pay: ₹{{1}}', { 1: selectedMember.basicPay.toLocaleString('en-IN') })}</span>
                   </div>
                 </div>
               )}
               {loading && (
                 <div className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <RefreshCw size={12} className="aw-spin" /> Loading...
+                  <RefreshCw size={12} className="aw-spin" /> {t('Loading...')}
                 </div>
               )}
             </div>
@@ -226,12 +223,12 @@ const PrematureInformationSB: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Calculator size={14} /></span>
-              <h2 className="aw-card-title">SB Account Information</h2>
+              <h2 className="aw-card-title">{t('SB Account Information')}</h2>
             </div>
             {selectedMember && sbAccounts.length > 0 ? (
               <div className="aw-stack">
                 <div>
-                  <label className="aw-label" htmlFor="psb-account">Select Account</label>
+                  <label className="aw-label" htmlFor="psb-account">{t('Select Account')}</label>
                   <Select
                     id="psb-account"
                     value={selectedAccount?.accountNumber ?? null}
@@ -248,19 +245,19 @@ const PrematureInformationSB: React.FC = () => {
                 {selectedAccount && (
                   <dl className="aw-panel aw-facts aw-fade-in">
                     <div>
-                      <dt>Opening Date</dt>
+                      <dt>{t('Opening Date')}</dt>
                       <dd>{dayjs(selectedAccount.openingDate).format('DD/MM/YY')}</dd>
                     </div>
                     <div>
-                      <dt>Interest Rate</dt>
+                      <dt>{t('Interest Rate')}</dt>
                       <dd>{selectedAccount.interestRate}%</dd>
                     </div>
                     <div>
-                      <dt>Balance</dt>
+                      <dt>{t('Balance')}</dt>
                       <dd>₹{selectedAccount.currentBalance.toLocaleString()}</dd>
                     </div>
                     <div>
-                      <dt>Min Balance</dt>
+                      <dt>{t('Min Balance')}</dt>
                       <dd>₹{selectedAccount.minimumBalance || 1000}</dd>
                     </div>
                   </dl>
@@ -269,7 +266,7 @@ const PrematureInformationSB: React.FC = () => {
             ) : (
               <div className="aw-empty">
                 <Calculator size={26} />
-                <span>{selectedMember ? 'No SB accounts found' : 'Select a member first'}</span>
+                <span>{selectedMember ? t('No SB accounts found') : t('Select a member first')}</span>
               </div>
             )}
           </section>
@@ -278,7 +275,7 @@ const PrematureInformationSB: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><CheckCircle size={14} /></span>
-              <h2 className="aw-card-title">Actions &amp; Results</h2>
+              <h2 className="aw-card-title">{t('Actions & Results')}</h2>
             </div>
             <div className="aw-stack">
               <button
@@ -288,51 +285,51 @@ const PrematureInformationSB: React.FC = () => {
                 className="aw-btn aw-btn-primary"
                 style={{ width: '100%' }}>
                 {loading ? <RefreshCw size={13} className="aw-spin" /> : <Calculator size={13} />}
-                Calculate
+                {t('Calculate')}
               </button>
 
               {calculationResult ? (
                 <div className="aw-stack aw-fade-in">
                   <div className="aw-stats">
                     <div className="aw-stat tone-info">
-                      <div className="aw-stat-label">Duration</div>
+                      <div className="aw-stat-label">{t('Duration')}</div>
                       <div className="aw-stat-value">{calculationResult.duration}<small>days</small></div>
                     </div>
                     <div className="aw-stat tone-danger">
-                      <div className="aw-stat-label">Penalty</div>
+                      <div className="aw-stat-label">{t('Penalty')}</div>
                       <div className="aw-stat-value">{calculationResult.penalty.toFixed(1)}<small>%</small></div>
                     </div>
                   </div>
                   <div className="aw-panel aw-rows">
                     <div className="aw-row">
-                      <span className="aw-row-label">Account Balance</span>
+                      <span className="aw-row-label">{t('Account Balance')}</span>
                       <span className="aw-row-value">{formatCurrency(calculationResult.balance)}</span>
                     </div>
                     <div className="aw-row">
-                      <span className="aw-row-label">Applied Rate</span>
+                      <span className="aw-row-label">{t('Applied Rate')}</span>
                       <span className="aw-row-value">{calculationResult.applicableInterestRate.toFixed(2)}%</span>
                     </div>
                     <div className="aw-row">
-                      <span className="aw-row-label">Interest Earned</span>
+                      <span className="aw-row-label">{t('Interest Earned')}</span>
                       <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>{formatCurrency(calculationResult.interest)}</span>
                     </div>
                     <div className="aw-row aw-row-total">
-                      <span className="aw-row-label">Net Payable</span>
+                      <span className="aw-row-label">{t('Net Payable')}</span>
                       <span className="aw-row-value">{formatCurrency(calculationResult.total)}</span>
                     </div>
                   </div>
                   <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0 }}>
                     <AlertCircle size={14} />
                     <span>
-                      <strong>Note: </strong>
-                      Rate reduced by {calculationResult.penalty}% for early closure.
+                      <strong>{t('Note:')} </strong>
+                      {t('Rate reduced by')} {calculationResult.penalty}% for early closure.
                     </span>
                   </div>
                 </div>
               ) : (
                 <div className="aw-empty">
                   <CheckCircle size={26} />
-                  <span>{selectedAccount ? 'Press Calculate to see the result' : 'Select an account to calculate'}</span>
+                  <span>{selectedAccount ? t('Press Calculate to see the result') : t('Select an account to calculate')}</span>
                 </div>
               )}
             </div>

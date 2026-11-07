@@ -7,22 +7,11 @@ import type {
   RightSectionView,
 } from '../interface/types';
 import { SECTION_ORDER, sectionForDescription } from '../config/sectionCatalog';
-
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail = '',
-) => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}${detail ? '\n\n' + detail : ''}`);
-  }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 export const useDefaultRights = (): UseDefaultRightsReturn => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<DefaultRightsFormData>({
     userLevel: '',
     menuRights: []
@@ -75,7 +64,7 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
         }
       } catch (err) {
         console.error('Failed to initialize Role Management data:', err);
-        await showDialog('error', 'Initialization Error', 'Failed to load role/menu matrix from database.', 'Check your connection and try reloading.');
+        await showDialog('error', t('Initialization Error'), t('Failed to load role/menu matrix from database.'), t('Check your connection and try reloading.'));
       }
     };
 
@@ -116,13 +105,13 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
           setLoadedLevel(level);
         } else {
           clearSelection();
-          await showDialog('error', 'Sync Error', 'Failed to load default rights for the selected level.', response.message || response.error || 'The policy matrix could not be retrieved. Saving is disabled for this level until it loads.');
+          await showDialog('error', t('Sync Error'), t('Failed to load default rights for the selected level.'), response.message || response.error || t('The policy matrix could not be retrieved. Saving is disabled for this level until it loads.'));
         }
       } catch (err) {
         if (seq !== fetchSeq.current) return;
         console.error('Failed to fetch default rights:', err);
         clearSelection();
-        await showDialog('error', 'Sync Error', 'Failed to load default rights for the selected level.', 'The policy matrix could not be retrieved. Saving is disabled for this level until it loads.');
+        await showDialog('error', t('Sync Error'), t('Failed to load default rights for the selected level.'), t('The policy matrix could not be retrieved. Saving is disabled for this level until it loads.'));
       }
     };
 
@@ -172,7 +161,7 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
     if (!selectedUserLevel) return;
 
     if (loadedLevel !== selectedUserLevel) {
-      await showDialog('error', 'Rights Not Loaded', 'Cannot save: the rights on screen are not the saved rights for this user level.', 'Re-select the user level and wait for its rights to load, then try again.');
+      await showDialog('error', t('Rights Not Loaded'), t('Cannot save: the rights on screen are not the saved rights for this user level.'), t('Re-select the user level and wait for its rights to load, then try again.'));
       return;
     }
 
@@ -190,8 +179,8 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
         const levelLabel = userLevels.find(l => l.value === selectedUserLevel)?.label || 'Selected Level';
         await showDialog(
           'info',
-          'Role Governance System',
-          'Default Access Matrix Synchronized!',
+          t('Role Governance System'),
+          t('Default Access Matrix Synchronized!'),
           `TARGET USER LEVEL : ${levelLabel.toUpperCase()}\n` +
           `GRANTED RIGHTS    : ${selectedMenuIds.length} Modules\n` +
           `REVOKED RIGHTS    : ${formData.menuRights.length - selectedMenuIds.length} Modules\n\n` +
@@ -203,9 +192,9 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
     } catch (err: any) {
       await showDialog(
         'error',
-        'Governance Synchronization Failure',
-        'Failed to update access matrix.',
-        `Error: ${err.message}\n\nPlease check your connection and try again.`
+        t('Governance Synchronization Failure'),
+        t('Failed to update access matrix.'),
+        t('Error: {{1}} Please check your connection and try again.', { 1: err.message })
       );
     }
   };
@@ -243,13 +232,13 @@ export const useDefaultRights = (): UseDefaultRightsReturn => {
             label: l.userlevel
           })));
         }
-        await showDialog('info', 'Role Governance System', 'New Control Level Established!', `Level "${roleName.toUpperCase()}" has been added to the hierarchy.`);
+        await showDialog('info', t('Role Governance System'), t('New Control Level Established!'), t('Level "{{1}}" has been added to the hierarchy.', { 1: roleName.toUpperCase() }));
       } else {
         throw new Error(response.message || response.error || 'Failed to create role');
       }
     } catch (err: any) {
       console.error('Create role error:', err);
-      await showDialog('error', 'Create Level Failed', err.message || 'Failed to create new role level', 'Ensure the level name is unique and try again.');
+      await showDialog('error', t('Create Level Failed'), err.message || t('Failed to create new role level'), t('Ensure the level name is unique and try again.'));
     }
   };
 

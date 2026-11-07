@@ -8,6 +8,8 @@ import {
 import { Select } from 'antd';
 import { apiService } from '../../../../../services/api';
 import { useAuth } from '../../../../../auth/context/AuthContext';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 interface LogoutUserProps {
   className?: string;
@@ -19,20 +21,6 @@ interface FormData {
   loginTime: string;
 }
 
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail = '',
-) => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}${detail ? '\n\n' + detail : ''}`);
-  }
-};
-
 const closeWindow = () => {
   const api = (window as any).electronAPI;
   if (api?.ipcRenderer?.send) api.ipcRenderer.send('window-close');
@@ -40,6 +28,7 @@ const closeWindow = () => {
 };
 
 const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>({ userName: '', loginDate: '', loginTime: '' });
   const [isLoading, setIsLoading] = useState(false);
@@ -69,7 +58,7 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
 
   const handleLogout = async () => {
     if (!formData.userName.trim()) {
-      await showDialog('warning', 'Required', 'Please select a user to log out.', '');
+      await showDialog('warning', t('Required'), t('Please select a user to log out.'), '');
       return;
     }
 
@@ -90,7 +79,7 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
       if (api?.showMessageBox) {
         const res = await api.showMessageBox({
           type: 'warning',
-          title: 'Confirm Logout',
+          title: t('Confirm Logout'),
           message,
           detail,
           buttons: ['Cancel', 'Logout'],
@@ -111,18 +100,18 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
       if (response.success) {
         await showDialog(
           'info',
-          'Session Terminated',
-          `"${formData.userName}" has been logged out.`,
-          'Their active session has been invalidated.'
+          t('Session Terminated'),
+          t('"{{1}}" has been logged out.', { 1: formData.userName }),
+          t('Their active session has been invalidated.')
         );
         handleClear();
         await loadLoggedInUsers();
         if (isMatrixVisible) await handleShowUsers();
       } else {
-        await showDialog('error', 'Logout Failed', response.error || 'Could not terminate session.', '');
+        await showDialog('error', t('Logout Failed'), response.error || t('Could not terminate session.'), '');
       }
     } catch (err: any) {
-      await showDialog('error', 'System Error', 'Session termination failed.', err?.message || 'Check server connection.');
+      await showDialog('error', t('System Error'), t('Session termination failed.'), err?.message || t('Check server connection.'));
     } finally {
       setIsLoading(false);
     }
@@ -136,10 +125,10 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
         setActiveSessions(response.data);
         setIsMatrixVisible(true);
       } else {
-        await showDialog('error', 'Peek Failed', 'Could not fetch active sessions.', '');
+        await showDialog('error', t('Peek Failed'), t('Could not fetch active sessions.'), '');
       }
     } catch {
-      await showDialog('error', 'Peek Failed', 'Server unreachable.', '');
+      await showDialog('error', t('Peek Failed'), t('Server unreachable.'), '');
     } finally {
       setIsLoading(false);
     }
@@ -152,21 +141,21 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Session Manager</h1>
+          <h1 className="aw-title">{t('Session Manager')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Building2 size={12} /> Administrative Override
+            <Building2 size={12} /> {t('Administrative Override')}
           </p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={handleClear} disabled={isLoading} className="aw-btn aw-btn-secondary">
-            <X size={13} /> Clear
+            <X size={13} /> {t('Clear')}
           </button>
           <button type="button" onClick={handleLogout} disabled={isLoading || !formData.userName} className="aw-btn aw-btn-danger">
             {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <LogOut size={13} />}
-            {isLoading ? 'Working...' : 'Logout'}
+            {isLoading ? t('Working...') : t('Logout')}
           </button>
           <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -178,14 +167,14 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><UserX size={14} /></span>
-              <h2 className="aw-card-title">Session Parameters</h2>
+              <h2 className="aw-card-title">{t('Session Parameters')}</h2>
               <button type="button" onClick={handleShowUsers} disabled={isLoading} className="aw-btn aw-btn-secondary aw-btn-sm" style={{ marginLeft: 'auto' }}>
-                <Search size={12} /> Peek Active
+                <Search size={12} /> {t('Peek Active')}
               </button>
             </div>
             <div className="aw-stack">
               <div>
-                <label className="aw-label" htmlFor="lo-user">Target Identity</label>
+                <label className="aw-label" htmlFor="lo-user">{t('Target Identity')}</label>
                 <Select
                   id="lo-user"
                   className="aw-select"
@@ -195,7 +184,7 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
                   optionFilterProp="label"
                   value={formData.userName || undefined}
                   onChange={(v) => updateField('userName', v ?? '')}
-                  placeholder="Select logged-in user..."
+                  placeholder={t('Select logged-in user...')}
                   notFoundContent="No active users found"
                   suffixIcon={<UserCircle2 size={14} />}
                   options={loggedInUsers.map(u => ({ value: u.susername, label: u.susername }))}
@@ -205,14 +194,14 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
               <div className="aw-two">
                 <div>
                   <label className="aw-label" htmlFor="lo-date" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Calendar size={11} /> Login Date
+                    <Calendar size={11} /> {t('Login Date')}
                   </label>
                   <input id="lo-date" type="date" value={formData.loginDate}
                     onChange={e => updateField('loginDate', e.target.value)} className="aw-input" />
                 </div>
                 <div>
                   <label className="aw-label" htmlFor="lo-time" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Clock size={11} /> Session Start
+                    <Clock size={11} /> {t('Session Start')}
                   </label>
                   <input id="lo-time" type="time" value={formData.loginTime}
                     onChange={e => updateField('loginTime', e.target.value)} className="aw-input" />
@@ -226,16 +215,16 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Activity size={14} /></span>
-                <h2 className="aw-card-title">Active Sessions</h2>
+                <h2 className="aw-card-title">{t('Active Sessions')}</h2>
                 <span className="aw-pill" style={{ marginLeft: 'auto' }}>{activeSessions.length}</span>
               </div>
               <div className="aw-table-wrap" style={{ maxHeight: '38vh' }}>
                 <table className="aw-table">
                   <thead>
                     <tr>
-                      <th>User name</th>
-                      <th>Login Date</th>
-                      <th>Login Time</th>
+                      <th>{t('User name')}</th>
+                      <th>{t('Login Date')}</th>
+                      <th>{t('Login Time')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -263,7 +252,7 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
                   </tbody>
                 </table>
               </div>
-              <p className="aw-meta" style={{ marginTop: 6 }}>Click a row to select that session.</p>
+              <p className="aw-meta" style={{ marginTop: 6 }}>{t('Click a row to select that session.')}</p>
             </section>
           )}
         </div>

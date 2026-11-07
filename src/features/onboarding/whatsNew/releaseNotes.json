@@ -1,0 +1,37 @@
+{
+  "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
+  "releases": [
+    {
+      "version": "1.9.0",
+      "date": "2026-11-07",
+      "title": "More languages, System Update and Mobile Control Center",
+      "new": [
+        "More languages: Bengali, Gujarati, Kannada, Malayalam, Marathi, Odia, Punjabi, Sanskrit, Tamil, Telugu, Urdu and Chhattisgarhi are now available in Settings, Language, alongside Hindi.",
+        "System Update screen under Utility: see the installed version and what is available.",
+        "Mobile Control Center for administrators: review member app activation requests, member access and phone quality in one place."
+      ],
+      "improved": [
+        "Error messages now say in plain words what went wrong and what to do next, instead of showing technical text.",
+        "The screens you open most were refreshed for consistency."
+      ],
+      "fixed": []
+    },
+    {
+      "version": "1.8.0",
+      "date": "2026-10-18",
+      "title": "Guided start and Hindi",
+      "new": [
+        "A welcome walkthrough for new users: terms and conditions, your profile, an optional password change, a hand-drawn tour of the screen and slides on how loans, recoveries and day-end work.",
+        "A getting-started checklist at the bottom of the dashboard that tracks your first steps.",
+        "Hindi language support: choose your language in Settings. The Settings and Change Password screens are translated so far.",
+        "Help now has Replay Tour, How It Works and Getting Started, so you can bring any guide back at any time.",
+        "Administrators choose in Settings, Welcome Tour, whether the tour shows on the first login or on every login, and can see who has accepted the terms."
+      ],
+      "improved": [
+        "The tour follows your role: you only see the menus and slides you can use.",
+        "Keyboard navigation for the tour, and a Calm mode in Settings that turns off the motion."
+      ],
+      "fixed": []
+    }
+  ]
+}

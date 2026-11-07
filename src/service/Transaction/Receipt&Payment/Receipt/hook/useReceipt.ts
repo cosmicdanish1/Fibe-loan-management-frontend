@@ -2,21 +2,8 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import { ReceiptData, ReceiptHookReturn, ReceiptRow } from '../interfaces/ReceiptInterfaces';
 import { apiService } from '../../../../../services/api';
-
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail: string,
-) => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({
-      type, title, message: msg, detail, buttons: ['OK'], defaultId: 0,
-    });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`);
-  }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 const emptyForm = (): ReceiptData => ({
   memberNo: '',
@@ -47,6 +34,7 @@ const newRow = (): ReceiptRow => ({
 });
 
 export const useReceipt = (): ReceiptHookReturn => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<ReceiptData>(emptyForm());
   const [bankHeads, setBankHeads] = useState<{ code: string; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -165,27 +153,27 @@ export const useReceipt = (): ReceiptHookReturn => {
   const handleSave = useCallback(async () => {
     if (savingRef.current) return;
     if (!formData.memberNo) {
-      await showDialog('warning', 'Input Validation Error', 'Member Required', 'Please select a member before saving.');
+      await showDialog('warning', t('Input Validation Error'), t('Member Required'), t('Please select a member before saving.'));
       return;
     }
     const validRows = formData.rows.filter(r => r.code && parseFloat(r.amount) > 0);
     if (validRows.length === 0) {
-      await showDialog('warning', 'Input Validation Error', 'No Valid Rows', 'Please add at least one row with a head code and amount greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('No Valid Rows'), t('Please add at least one row with a head code and amount greater than zero.'));
       return;
     }
     // Only the rows that are actually posted count towards the total shown/validated
     const validTotal = Math.round(validRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0) * 100) / 100;
     if (validTotal <= 0) {
-      await showDialog('warning', 'Input Validation Error', 'Invalid Total Amount', 'Total receipt amount must be greater than zero.');
+      await showDialog('warning', t('Input Validation Error'), t('Invalid Total Amount'), t('Total receipt amount must be greater than zero.'));
       return;
     }
     if (!formData.transDate || !/^\d{4}-\d{2}-\d{2}$/.test(formData.transDate) || !dayjs(formData.transDate).isValid()) {
-      await showDialog('warning', 'Input Validation Error', 'Date Required', 'Please enter a valid transaction date.');
+      await showDialog('warning', t('Input Validation Error'), t('Date Required'), t('Please enter a valid transaction date.'));
       return;
     }
     const isBank = formData.modeOfPay === 'bank';
     if (isBank && !formData.chequeNo.trim()) {
-      await showDialog('warning', 'Input Validation Error', 'Cheque Number Required', 'Please enter the cheque number for bank/cheque payment mode.');
+      await showDialog('warning', t('Input Validation Error'), t('Cheque Number Required'), t('Please enter the cheque number for bank/cheque payment mode.'));
       return;
     }
 
@@ -226,7 +214,7 @@ export const useReceipt = (): ReceiptHookReturn => {
         await showDialog(
           'info',
           'electron-react-ts',
-          'Receipt Saved Successfully!',
+          t('Receipt Saved Successfully!'),
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `VOUCHER NO    : ${vchr}\n` +
           `MEMBER NO     : ${formData.memberNo} - ${formData.memberName || 'N/A'}\n` +
@@ -247,10 +235,10 @@ export const useReceipt = (): ReceiptHookReturn => {
         setFormData(emptyForm());
       } else {
         // BUG FIX: was response.error — apiService returns response.message, not response.error
-        await showDialog('error', 'Receipt Error', 'Failed to Save Receipt', response.message || 'An unexpected error occurred. Please try again.');
+        await showDialog('error', t('Receipt Error'), t('Failed to Save Receipt'), response.message || t('An unexpected error occurred. Please try again.'));
       }
     } catch (err: any) {
-      await showDialog('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${err.message}`);
+      await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: err.message }));
     } finally {
       savingRef.current = false;
       setIsLoading(false);

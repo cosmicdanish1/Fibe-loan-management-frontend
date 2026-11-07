@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import MemberLookupDialog from './MemberLookupDialog';
+import { useTranslation } from 'react-i18next';
 
 interface MemberFieldProps {
   value: string;
@@ -29,6 +30,7 @@ interface MemberFieldProps {
 const MemberField: React.FC<MemberFieldProps> = ({
   value, onChange, onSelect, onSubmit, placeholder = 'Member No.', ariaLabel = 'Member number', id, disabled, digitsOnly, shortcuts, openOnClick,
 }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const lastSpace = useRef(0);
 
@@ -56,7 +58,7 @@ const MemberField: React.FC<MemberFieldProps> = ({
           }}
         />
         <button type="button" onClick={() => setOpen(true)} disabled={disabled} className="aw-input-action"
-          aria-label="Member lookup" data-tip="Member lookup" data-tip-pos="bottom-end">
+          aria-label={t('Member lookup')} data-tip={t('Member lookup')} data-tip-pos="bottom-end">
           <Search size={13} />
         </button>
       </div>

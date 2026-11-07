@@ -6,6 +6,7 @@ import ApprovalGuardsCard from '../components/ApprovalGuardsCard';
 import UsersPanel from '../components/UsersPanel';
 import PolicyPanel from '../components/PolicyPanel';
 import ActivityPanel from '../components/ActivityPanel';
+import { useTranslation } from 'react-i18next';
 
 type TabKey = 'mine' | 'users' | 'approvers' | 'policy' | 'activity';
 interface Access { isAdmin: boolean; canManageUsers: boolean; isApprover: boolean }
@@ -18,6 +19,7 @@ interface Access { isAdmin: boolean; canManageUsers: boolean; isApprover: boolea
  *   administrator     -> + Approvers & protections, Policy & limits, Activity
  */
 const TwoFactorSettings: React.FC = () => {
+  const { t } = useTranslation();
   const [access, setAccess] = useState<Access | null>(null);
   const [tab, setTab] = useState<TabKey>('mine');
   const [error, setError] = useState('');
@@ -45,11 +47,11 @@ const TwoFactorSettings: React.FC = () => {
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Two-Factor &amp; Approvals</h1>
-          <p className="aw-desc">Your sign-in code, and who may approve sensitive actions</p>
+          <h1 className="aw-title">{t('Two-Factor & Approvals')}</h1>
+          <p className="aw-desc">{t('Your sign-in code, and who may approve sensitive actions')}</p>
         </div>
         <div className="aw-actions">
-          {access?.isApprover && <span className="aw-pill tone-success"><ShieldCheck size={12} /> You are an approver</span>}
+          {access?.isApprover && <span className="aw-pill tone-success"><ShieldCheck size={12} /> {t('You are an approver')}</span>}
         </div>
       </div>
 
@@ -58,7 +60,7 @@ const TwoFactorSettings: React.FC = () => {
           {error && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><div>{error}</div></div>}
 
           {!access ? (
-            <p className="aw-meta">Loading…</p>
+            <p className="aw-meta">{t('Loading…')}</p>
           ) : (
             <>
               {tabs.length > 1 && (
@@ -73,11 +75,10 @@ const TwoFactorSettings: React.FC = () => {
                 <section className="aw-card" style={{ maxWidth: 560 }}>
                   <div className="aw-card-head">
                     <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                    <h2 className="aw-card-title">My sign-in code</h2>
+                    <h2 className="aw-card-title">{t('My sign-in code')}</h2>
                   </div>
                   <p className="aw-meta">
-                    A 6-digit code from the authenticator app on your phone, asked after your password when you sign in. The same code also lets you reset a forgotten password.
-                    Turn it on, scan your QR, and keep your recovery codes somewhere safe.
+                    {t('A 6-digit code from the authenticator app on your phone, asked after your password when you sign in. The same code also lets you reset a forgotten password. Turn it on, scan your QR, and keep your recovery codes somewhere safe.')}
                   </p>
                   <TwoFaCard />
                 </section>
@@ -91,7 +92,7 @@ const TwoFactorSettings: React.FC = () => {
         </div>
       </div>
 
-      <div className="aw-footer"><span>Two-Factor &amp; Approvals</span><span>{access?.isAdmin ? 'Administrator' : access?.canManageUsers ? 'Two-factor manager' : 'My account'}</span></div>
+      <div className="aw-footer"><span>{t('Two-Factor & Approvals')}</span><span>{access?.isAdmin ? t('Administrator') : access?.canManageUsers ? t('Two-factor manager') : t('My account')}</span></div>
     </div>
   );
 };

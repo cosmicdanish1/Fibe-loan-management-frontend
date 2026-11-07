@@ -33,6 +33,8 @@ import {
   RetiringMembersWidget, NewMembersWidget,
 } from './SummaryWidgets';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../i18n';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -43,6 +45,9 @@ interface Notice {
   type: 'info' | 'warning' | 'success';
   postedAt: string;
   postedBy: string;
+  showOnMobile?: boolean;
+  audienceWing?: string | null;
+  audienceOffice?: number | null;
 }
 
 
@@ -111,14 +116,14 @@ const ICON_MAP: Record<string, LucideIcon> = {
 // ─── Keyboard Shortcuts ──────────────────────────────────────────────────────
 
 const SHORTCUTS = [
-  { label: 'New Member',    keys: ['Ctrl', 'N'] },
-  { label: 'Save record',   keys: ['Ctrl', 'S'] },
-  { label: 'Find / Search', keys: ['Ctrl', 'F'] },
-  { label: 'Delete record', keys: ['Ctrl', 'D'] },
-  { label: 'Refresh data',  keys: ['F5'] },
-  { label: 'Print',         keys: ['Ctrl', 'P'] },
-  { label: 'Dashboard',     keys: ['Alt', 'H'] },
-  { label: 'Exit form',     keys: ['Esc'] },
+  { label: tLabel('New Member'),    keys: ['Ctrl', 'N'] },
+  { label: tLabel('Save record'),   keys: ['Ctrl', 'S'] },
+  { label: tLabel('Find / Search'), keys: ['Ctrl', 'F'] },
+  { label: tLabel('Delete record'), keys: ['Ctrl', 'D'] },
+  { label: tLabel('Refresh data'),  keys: ['F5'] },
+  { label: tLabel('Print'),         keys: ['Ctrl', 'P'] },
+  { label: tLabel('Dashboard'),     keys: ['Alt', 'H'] },
+  { label: tLabel('Exit form'),     keys: ['Esc'] },
 ];
 
 // ─── Notice style map (kit alert variants) ───────────────────────────────────
@@ -137,6 +142,7 @@ const kbdStyle: React.CSSProperties = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const fy = useMemo(() => getFYInfo(), []);
 
   // Optional custom background chosen in Settings (light mode only). Left empty
@@ -188,7 +194,10 @@ const Dashboard: React.FC = () => {
   const noticesRef = useRef<Notice[]>([]);
   noticesRef.current = notices;
   const [showAddForm, setShowAddForm] = useState(false);
-  const [form, setForm] = useState({ title: '', message: '', type: 'info' as Notice['type'] });
+  const EMPTY_FORM = { title: '', message: '', type: 'info' as Notice['type'], showOnMobile: false, audienceWing: '', audienceOffice: '' };
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [noticeWings, setNoticeWings] = useState<any[]>([]);
+  const [noticeOffices, setNoticeOffices] = useState<any[]>([]);
   // Ids currently animating out before removal — lets the delete fade play.
   const [removingIds, setRemovingIds] = useState<number[]>([]);
   // Dragged notice id, tracked outside state so drag-over doesn't re-render.
@@ -199,7 +208,8 @@ const Dashboard: React.FC = () => {
     if (res.success && Array.isArray(res.data)) {
       setNotices(res.data.map((n: any) => ({
         id: n.id, title: n.title, message: n.message, type: n.type,
-        postedAt: n.createdAt, postedBy: n.postedBy,
+        postedAt: n.createdAt, postedBy: n.postedBy, showOnMobile: !!n.showOnMobile,
+        audienceWing: n.audienceWing ?? null, audienceOffice: n.audienceOffice ?? null,
       })));
     }
   }, []);
@@ -219,14 +229,17 @@ const Dashboard: React.FC = () => {
     if (!form.title.trim() || !form.message.trim()) return;
     const res = await apiService.createDashboardNotice({
       title: form.title.trim(), message: form.message.trim(),
-      type: form.type, postedBy: getCurrentUserName(),
+      type: form.type, postedBy: getCurrentUserName(), showOnMobile: form.showOnMobile,
+      audienceWing: form.showOnMobile && form.audienceWing ? form.audienceWing : null,
+      audienceOffice: form.showOnMobile && form.audienceWing && form.audienceOffice !== '' ? Number(form.audienceOffice) : null,
     });
     if (!res.success) {
-      message.error('Could not post the notice — please try again.');
+      message.error(t('Could not post the notice — please try again.'));
       return;
     }
     await refreshNotices();
-    setForm({ title: '', message: '', type: 'info' });
+    setForm(EMPTY_FORM);
+    setNoticeOffices([]);
     setShowAddForm(false);
   }, [form, refreshNotices]);
 
@@ -238,7 +251,7 @@ const Dashboard: React.FC = () => {
       if (res.success) {
         setNotices(prev => prev.filter(n => n.id !== id));
       } else {
-        message.error('Could not delete the notice — please try again.');
+        message.error(t('Could not delete the notice — please try again.'));
       }
       setRemovingIds(prev => prev.filter(x => x !== id));
     }, 200);
@@ -246,7 +259,26 @@ const Dashboard: React.FC = () => {
 
   const closeForm = useCallback(() => {
     setShowAddForm(false);
-    setForm({ title: '', message: '', type: 'info' });
+    setForm(EMPTY_FORM);
+    setNoticeOffices([]);
+  }, []);
+
+  // Wing list loads the first time the mobile option is ticked; offices load per wing.
+  const onShowOnMobileChange = useCallback(async (checked: boolean) => {
+    setForm(p => ({ ...p, showOnMobile: checked, ...(checked ? {} : { audienceWing: '', audienceOffice: '' }) }));
+    if (checked && noticeWings.length === 0) {
+      const res: any = await apiService.getReportWings();
+      if (res.success && Array.isArray(res.data)) setNoticeWings(res.data);
+    }
+  }, [noticeWings.length]);
+
+  const onAudienceWingChange = useCallback(async (wingNo: string) => {
+    setForm(p => ({ ...p, audienceWing: wingNo, audienceOffice: '' }));
+    setNoticeOffices([]);
+    if (wingNo) {
+      const res: any = await apiService.getReportOffices(wingNo);
+      if (res.success && Array.isArray(res.data)) setNoticeOffices(res.data);
+    }
   }, []);
 
   // Drag-and-drop reorder — optimistic locally, persisted in the background
@@ -270,7 +302,7 @@ const Dashboard: React.FC = () => {
       if (res && res.success === false) throw new Error('reorder failed');
     }).catch(() => {
       setNotices(prev);
-      message.error('Could not save the new notice order — please try again.');
+      message.error(t('Could not save the new notice order — please try again.'));
     });
   }, []);
 
@@ -314,29 +346,29 @@ const Dashboard: React.FC = () => {
                 <div className="aw-inline" style={{ alignItems: 'center', gap: 12 }}>
                   <span className="aw-card-icon" style={{ width: 36, height: 36 }}><Calendar size={17} /></span>
                   <div>
-                    <p className="aw-label" style={{ margin: 0 }}>Current Financial Year</p>
+                    <p className="aw-label" style={{ margin: 0 }}>{t('Current Financial Year')}</p>
                     <p className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 4px)', marginTop: 2 }}>{fy.label}</p>
                   </div>
                 </div>
                 <div className="aw-inline" style={{ alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
                   <div style={{ textAlign: 'center' }}>
-                    <p className="aw-label" style={{ margin: 0 }}>Started</p>
+                    <p className="aw-label" style={{ margin: 0 }}>{t('Started')}</p>
                     <p className="aw-strong">{fy.startDate}</p>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <p className="aw-label" style={{ margin: 0 }}>Ends</p>
+                    <p className="aw-label" style={{ margin: 0 }}>{t('Ends')}</p>
                     <p className="aw-strong">{fy.endDate}</p>
                   </div>
                   <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-warning)', minWidth: 84 }}>
                     <div className="aw-stat-value">{fy.remaining}</div>
-                    <div className="aw-stat-label">days left</div>
+                    <div className="aw-stat-label">{t('days left')}</div>
                   </div>
                   <div style={{ width: 140 }}>
                     <div className="aw-inline" style={{ justifyContent: 'space-between' }}>
-                      <span className="aw-label" style={{ margin: 0 }}>Progress</span>
+                      <span className="aw-label" style={{ margin: 0 }}>{t('Progress')}</span>
                       <strong>{fy.progress}%</strong>
                     </div>
-                    <div className="aw-bar" role="progressbar" aria-valuenow={fy.progress} aria-valuemin={0} aria-valuemax={100} aria-label="Financial year progress" style={{ marginTop: 6 }}>
+                    <div className="aw-bar" role="progressbar" aria-valuenow={fy.progress} aria-valuemin={0} aria-valuemax={100} aria-label={t('Financial year progress')} style={{ marginTop: 6 }}>
                       <span style={{ width: `${fy.progress}%`, background: 'var(--aw-success)' }} />
                     </div>
                   </div>
@@ -348,15 +380,15 @@ const Dashboard: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><LayoutGrid size={14} /></span>
-                <h2 className="aw-card-title">Quick Actions</h2>
+                <h2 className="aw-card-title">{t('Quick Actions')}</h2>
                 <span className="aw-meta">— one click to open</span>
-                {visibleActions.length > 0 && <span className="aw-meta" style={{ marginLeft: 'auto' }}>{visibleActions.length} configured</span>}
+                {visibleActions.length > 0 && <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('{{1}} configured', { 1: visibleActions.length })}</span>}
               </div>
               {visibleActions.length === 0 ? (
                 <div className="aw-empty" style={{ padding: 24 }}>
                   <LayoutGrid size={26} />
-                  <p className="aw-strong">No quick actions configured</p>
-                  <span className="aw-meta">Go to Settings → Dashboard to add some</span>
+                  <p className="aw-strong">{t('No quick actions configured')}</p>
+                  <span className="aw-meta">{t('Go to Settings → Dashboard to add some')}</span>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(104px, 1fr))', gap: 'var(--aw-gap)' }}>
@@ -366,7 +398,7 @@ const Dashboard: React.FC = () => {
                       <button key={qa.id} type="button" onClick={() => openWindow(qa.route)} className="aw-panel"
                         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
                         <span className="aw-card-icon" style={{ width: 34, height: 34 }}><IconComp size={16} /></span>
-                        <span style={{ fontSize: 'calc(var(--type-body-size) - 2px)', fontWeight: 700, textAlign: 'center', lineHeight: 1.2, textTransform: 'uppercase', letterSpacing: '.02em' }}>{qa.label}</span>
+                        <span style={{ fontSize: 'calc(var(--type-body-size) - 2px)', fontWeight: 700, textAlign: 'center', lineHeight: 1.2, textTransform: 'uppercase', letterSpacing: '.02em' }}>{tLabel(qa.label)}</span>
                       </button>
                     );
                   })}
@@ -378,28 +410,45 @@ const Dashboard: React.FC = () => {
                 <section className="aw-card">
                   <div className="aw-card-head">
                     <span className="aw-card-icon"><Bell size={14} /></span>
-                    <h2 className="aw-card-title">Notice Board</h2>
+                    <h2 className="aw-card-title">{t('Notice Board')}</h2>
                     {notices.length > 0 && <span className="aw-pill">{notices.length}</span>}
                     <button type="button" onClick={() => setShowAddForm(v => !v)} className="aw-btn aw-btn-primary aw-btn-sm" style={{ marginLeft: 'auto' }}>
-                      <Plus size={12} /> Add Notice
+                      <Plus size={12} /> {t('Add Notice')}
                     </button>
                   </div>
 
                   {showAddForm && (
                     <div className="aw-panel aw-fade-in" onKeyDown={handleFormKeyDown}>
                       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--aw-gap)' }}>
-                        <input aria-label="Notice title" className="aw-input" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Notice title..." />
-                        <select aria-label="Notice type" className="aw-input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as Notice['type'] }))}>
-                          <option value="info">Info</option>
-                          <option value="warning">Warning</option>
-                          <option value="success">Success</option>
+                        <input aria-label={t('Notice title')} className="aw-input" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder={t('Notice title...')} />
+                        <select aria-label={t('Notice type')} className="aw-input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as Notice['type'] }))}>
+                          <option value="info">{t('Info')}</option>
+                          <option value="warning">{t('Warning')}</option>
+                          <option value="success">{t('Success')}</option>
                         </select>
                       </div>
-                      <textarea aria-label="Notice message" className="aw-input" value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
-                        placeholder="Notice message..." rows={2} style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
+                      <textarea aria-label={t('Notice message')} className="aw-input" value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
+                        placeholder={t('Notice message...')} rows={2} style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
+                      <label className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={form.showOnMobile} onChange={e => onShowOnMobileChange(e.target.checked)} />
+                        {t('Show on mobile app')}
+                      </label>
+                      {form.showOnMobile && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--aw-gap)' }}>
+                          <select aria-label={t('Audience wing')} className="aw-input" value={form.audienceWing} onChange={e => onAudienceWingChange(e.target.value)}>
+                            <option value="">{t('All members')}</option>
+                            {noticeWings.map(w => <option key={w.wingNo} value={w.wingNo}>{w.name || w.wingName || w.wingNo}</option>)}
+                          </select>
+                          <select aria-label={t('Audience office')} className="aw-input" value={form.audienceOffice} disabled={!form.audienceWing}
+                            onChange={e => setForm(p => ({ ...p, audienceOffice: e.target.value }))}>
+                            <option value="">{t('All offices of the wing')}</option>
+                            {noticeOffices.map(o => <option key={o.officeNo} value={o.officeNo}>{o.name || o.officeName || o.officeNo}</option>)}
+                          </select>
+                        </div>
+                      )}
                       <div className="aw-btn-row">
-                        <button type="button" onClick={addNotice} className="aw-btn aw-btn-primary aw-btn-sm">Post</button>
-                        <button type="button" onClick={closeForm} className="aw-btn aw-btn-secondary aw-btn-sm">Cancel</button>
+                        <button type="button" onClick={addNotice} className="aw-btn aw-btn-primary aw-btn-sm">{t('Post')}</button>
+                        <button type="button" onClick={closeForm} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Cancel')}</button>
                       </div>
                     </div>
                   )}
@@ -408,8 +457,8 @@ const Dashboard: React.FC = () => {
                     {notices.length === 0 ? (
                       <div className="aw-empty" style={{ padding: 24 }}>
                         <Bell size={28} />
-                        <p className="aw-strong">No notices posted yet</p>
-                        <span className="aw-meta">Click "Add Notice" to post one</span>
+                        <p className="aw-strong">{t('No notices posted yet')}</p>
+                        <span className="aw-meta">{t('Click "Add Notice" to post one')}</span>
                       </div>
                     ) : notices.map((n) => {
                       const s = NOTICE_STYLES[n.type];
@@ -426,9 +475,9 @@ const Dashboard: React.FC = () => {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <strong>{n.title}</strong>
                             <p>{n.message}</p>
-                            <p className="aw-meta" style={{ textTransform: 'uppercase', marginTop: 4 }}>{n.postedBy} · {dayjs(n.postedAt).format('D MMM, h:mm A')}</p>
+                            <p className="aw-meta" style={{ textTransform: 'uppercase', marginTop: 4 }}>{n.postedBy} · {dayjs(n.postedAt).format('D MMM, h:mm A')}{n.showOnMobile ? ` · ${t('Shown in mobile app')}${n.audienceWing ? ` (${t('Wing')} ${n.audienceWing}${n.audienceOffice != null ? `, ${t('Office')} ${n.audienceOffice}` : ''})` : ''}` : ''}</p>
                           </div>
-                          <button type="button" className="aw-icon-btn is-sm is-danger" onClick={() => deleteNotice(n.id)} aria-label="Delete notice" data-tip="Delete notice" data-tip-pos="left"><X size={13} /></button>
+                          <button type="button" className="aw-icon-btn is-sm is-danger" onClick={() => deleteNotice(n.id)} aria-label={t('Delete notice')} data-tip={t('Delete notice')} data-tip-pos="left"><X size={13} /></button>
                         </div>
                       );
                     })}
@@ -439,7 +488,7 @@ const Dashboard: React.FC = () => {
                 <section className="aw-card">
                   <div className="aw-card-head">
                     <span className="aw-card-icon"><Command size={14} /></span>
-                    <h2 className="aw-card-title">Keyboard Shortcuts</h2>
+                    <h2 className="aw-card-title">{t('Keyboard Shortcuts')}</h2>
                   </div>
                   <div className="aw-rows">
                     {SHORTCUTS.map(s => (
@@ -456,7 +505,7 @@ const Dashboard: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                  <p className="aw-meta" style={{ textTransform: 'uppercase' }}>Ctrl+N is wired · other shortcuts active in open forms</p>
+                  <p className="aw-meta" style={{ textTransform: 'uppercase' }}>{t('Ctrl+N is wired · other shortcuts active in open forms')}</p>
                 </section>
     ),
     activeMembers: <ActiveMembersWidget />,
@@ -488,8 +537,8 @@ const Dashboard: React.FC = () => {
           {!anyVisible && (
             <div className="aw-empty" style={{ padding: '80px 16px' }}>
               <EyeOff size={40} />
-              <p className="aw-strong">All widgets hidden</p>
-              <span className="aw-meta">Go to Settings → Dashboard to turn them back on</span>
+              <p className="aw-strong">{t('All widgets hidden')}</p>
+              <span className="aw-meta">{t('Go to Settings → Dashboard to turn them back on')}</span>
             </div>
           )}
 

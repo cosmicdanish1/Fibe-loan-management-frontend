@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { animate, createTimeline, stagger } from 'animejs';
 import fibeLogo from '../assets/fibe-logo.png';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   onDone: () => void;
@@ -13,6 +14,7 @@ const FADE_AT = 3200;
 const DONE_AT = 3900;
 
 const SplashScreen: React.FC<Props> = ({ onDone }) => {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState<'in' | 'out'>('in');
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -107,7 +109,7 @@ const SplashScreen: React.FC<Props> = ({ onDone }) => {
 
       {/* Logo */}
       <div className="sp-logo" style={{ position: 'relative', width: 230, zIndex: 1, opacity: 0 }}>
-        <img src={fibeLogo} alt="Fibe" style={{
+        <img src={fibeLogo} alt={t('Fibe')} style={{
           width: '100%', height: 'auto', display: 'block', userSelect: 'none', mixBlendMode: 'multiply',
           
           ...({ WebkitUserDrag: 'none' } as Record<string, string>),
@@ -118,7 +120,7 @@ const SplashScreen: React.FC<Props> = ({ onDone }) => {
       <div className="sp-sub" style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12, zIndex: 1, opacity: 0 }}>
         <div className="sp-sub-rule" style={{ width: 30, height: 1.5, transformOrigin: 'right', background: 'linear-gradient(to right, transparent, #22c55e)' }} />
         <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: '#475569', fontFamily: 'system-ui, sans-serif' }}>
-          Loan Management
+          {t('Loan Management')}
         </span>
         <div className="sp-sub-rule" style={{ width: 30, height: 1.5, transformOrigin: 'left', background: 'linear-gradient(to left, transparent, #3b82f6)' }} />
       </div>

@@ -6,6 +6,9 @@ import { DatePicker, Select } from 'antd';
 import dayjs from 'dayjs';
 import apiService from '../../../../services/api';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../i18n';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 // ── Type definitions ──────────────────────────────────────────────────────────
 
@@ -32,9 +35,9 @@ type DepositType = 'RD' | 'LN';
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PERIOD_UNITS = [
-  { value: 'D', label: 'Days'   },
-  { value: 'M', label: 'Months' },
-  { value: 'Y', label: 'Years'  },
+  { value: 'D', label: tLabel('Days')   },
+  { value: 'M', label: tLabel('Months') },
+  { value: 'Y', label: tLabel('Years')  },
 ];
 
 const TYPE_LABELS: Record<DepositType, string> = {
@@ -128,20 +131,6 @@ const toBackend = (row: SlabRow, type: DepositType) => ({
 
 // ── Electron native dialog helpers ────────────────────────────────────────────
 
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  message: string,
-  detail: string,
-) => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${type.toUpperCase()}] ${message}\n\n${detail}`);
-  }
-};
-
 // ── Inline editable cell components ──────────────────────────────────────────
 
 const NumCell: React.FC<{ value: number; onChange: (v: number) => void; step?: number; label: string }> = ({
@@ -160,6 +149,7 @@ const NumCell: React.FC<{ value: number; onChange: (v: number) => void; step?: n
 // ── Main component ────────────────────────────────────────────────────────────
 
 const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
+  const { t } = useTranslation();
   const [selectedType, setSelectedType] = useState<DepositType>('RD');
   const [rows, setRows] = useState<SlabRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -184,7 +174,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
       }
     } catch {
       if (seq !== loadSeq.current) return;
-      await showDialog('error', 'Load Error', 'Failed to load slab data', 'Check server connection and try again.');
+      await showDialog('error', t('Load Error'), t('Failed to load slab data'), t('Check server connection and try again.'));
       setRows([]);
       setLoadedType(null);
     } finally {
@@ -213,39 +203,39 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
 
   const handleSave = async () => {
     if (loading || loadedType === null || loadedType !== selectedType) {
-      await showDialog('warning', 'Please Wait', 'Slabs are still loading', 'Wait for the list to finish loading, then save.');
+      await showDialog('warning', t('Please Wait'), t('Slabs are still loading'), t('Wait for the list to finish loading, then save.'));
       return;
     }
     const saveType = loadedType;
     if (rows.length === 0) {
-      await showDialog('warning', 'Nothing to Save', 'No slabs to save', 'Add at least one row first.');
+      await showDialog('warning', t('Nothing to Save'), t('No slabs to save'), t('Add at least one row first.'));
       return;
     }
 
     // Validation
     for (const r of rows) {
       if (r.fromAmount < 0 || r.uptoAmount < 0) {
-        await showDialog('warning', 'Validation', `Row ${r.srNo}: Amounts must be ≥ 0`, '');
+        await showDialog('warning', t('Validation'), t('Row {{1}}: Amounts must be ≥ 0', { 1: r.srNo }), '');
         return;
       }
       if (r.fromAmount >= r.uptoAmount) {
-        await showDialog('warning', 'Validation', `Row ${r.srNo}: Amount From must be less than UpTo`, `Got: ${r.fromAmount} ≥ ${r.uptoAmount}`);
+        await showDialog('warning', t('Validation'), t('Row {{1}}: Amount From must be less than UpTo', { 1: r.srNo }), t('Got: {{1}} ≥ {{2}}', { 1: r.fromAmount, 2: r.uptoAmount }));
         return;
       }
       if (r.fromPeriod > r.uptoPeriod) {
-        await showDialog('warning', 'Validation', `Row ${r.srNo}: Period From must be ≤ UpTo`, `Got: ${r.fromPeriod} > ${r.uptoPeriod}`);
+        await showDialog('warning', t('Validation'), t('Row {{1}}: Period From must be ≤ UpTo', { 1: r.srNo }), t('Got: {{1}} > {{2}}', { 1: r.fromPeriod, 2: r.uptoPeriod }));
         return;
       }
       if (r.interestRate <= 0 || r.interestRate > 50) {
-        await showDialog('warning', 'Validation', `Row ${r.srNo}: Interest Rate must be between 0.01% and 50%`, `Got: ${r.interestRate}%`);
+        await showDialog('warning', t('Validation'), t('Row {{1}}: Interest Rate must be between 0.01% and 50%', { 1: r.srNo }), t('Got: {{1}}%', { 1: r.interestRate }));
         return;
       }
       if (!Number.isFinite(r.prematureRate) || r.prematureRate < 0) {
-        await showDialog('warning', 'Validation', `Row ${r.srNo}: Premature Rate must be a number ≥ 0`, `Got: ${r.prematureRate}`);
+        await showDialog('warning', t('Validation'), t('Row {{1}}: Premature Rate must be a number ≥ 0', { 1: r.srNo }), t('Got: {{1}}', { 1: r.prematureRate }));
         return;
       }
       if (!r.applicableFromDate) {
-        await showDialog('warning', 'Validation', `Row ${r.srNo}: Applicable From Date is required`, '');
+        await showDialog('warning', t('Validation'), t('Row {{1}}: Applicable From Date is required', { 1: r.srNo }), '');
         return;
       }
     }
@@ -266,7 +256,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
         const yEnd = y.applicableUptoDate || '9999-12-31';
         const dateOverlap = x.applicableFromDate <= yEnd && y.applicableFromDate <= xEnd;
         if (amountOverlap && tenureOverlap && dateOverlap) {
-          await showDialog('warning', 'Validation', `Rows ${x.srNo} and ${y.srNo} overlap`, 'Two slabs cover the same amount range, period range and dates. Adjust one of them.');
+          await showDialog('warning', t('Validation'), t('Rows {{1}} and {{2}} overlap', { 1: x.srNo, 2: y.srNo }), t('Two slabs cover the same amount range, period range and dates. Adjust one of them.'));
           return;
         }
       }
@@ -279,16 +269,16 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
       if (response.success) {
         await showDialog(
           'info',
-          'Saved',
-          `${TYPE_LABELS[saveType]} Slabs Saved`,
-          `${(response.data as any)?.saved ?? rows.length} slabs saved successfully.`
+          t('Saved'),
+          t('{{1}} Slabs Saved', { 1: TYPE_LABELS[saveType] }),
+          t('{{1}} slabs saved successfully.', { 1: (response.data as any)?.saved ?? rows.length })
         );
         await loadSlabs(saveType);
       } else {
-        await showDialog('error', 'Save Failed', 'Failed to save slabs', response.message || (response as any).error || 'Unknown error');
+        await showDialog('error', t('Save Failed'), t('Failed to save slabs'), response.message || (response as any).error || t('Unknown error'));
       }
     } catch (err: any) {
-      await showDialog('error', 'Connection Error', 'Unable to reach server', err.message || '');
+      await showDialog('error', t('Connection Error'), t('Unable to reach server'), err.message || '');
     } finally {
       setSaving(false);
     }
@@ -319,8 +309,8 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Deposit / Loan Interest Slab</h1>
-          <p className="aw-desc">Interest rate bracket configuration</p>
+          <h1 className="aw-title">{t('Deposit / Loan Interest Slab')}</h1>
+          <p className="aw-desc">{t('Interest rate bracket configuration')}</p>
         </div>
         <div className="aw-actions">
           <div className="aw-seg" role="tablist" style={{ ['--seg-index' as any]: selectedType === 'RD' ? 0 : 1, ['--seg-count' as any]: 2 }}>
@@ -337,17 +327,17 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
             ))}
           </div>
           <button type="button" onClick={() => loadSlabs(selectedType)} disabled={loading} className="aw-btn aw-btn-secondary">
-            <RefreshCcw size={13} className={loading ? 'aw-spin' : ''} /> Refresh
+            <RefreshCcw size={13} className={loading ? 'aw-spin' : ''} /> {t('Refresh')}
           </button>
           <button type="button" onClick={addRow} className="aw-btn aw-btn-secondary">
-            <Plus size={13} /> Add Row
+            <Plus size={13} /> {t('Add Row')}
           </button>
           <button type="button" onClick={handleSave} disabled={saving || loading || rows.length === 0} className="aw-btn aw-btn-primary">
             {saving ? <RefreshCcw size={13} className="aw-spin" /> : <Save size={13} />}
-            Save Slabs
+            {t('Save Slabs')}
           </button>
           <button type="button" onClick={handleClose} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -357,15 +347,15 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
           {/* ── Summary ── */}
           <div className="aw-stats aw-stats-3">
             <div className="aw-stat aw-stat-left">
-              <div className="aw-stat-head"><Layers size={14} /><span className="aw-stat-label">Type</span></div>
+              <div className="aw-stat-head"><Layers size={14} /><span className="aw-stat-label">{t('Type')}</span></div>
               <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 3px)' }}>{TYPE_LABELS[selectedType]}</div>
             </div>
             <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}>
-              <div className="aw-stat-head"><Database size={14} /><span className="aw-stat-label">Total Slabs</span></div>
+              <div className="aw-stat-head"><Database size={14} /><span className="aw-stat-label">{t('Total Slabs')}</span></div>
               <div className="aw-stat-value">{totalRows}</div>
             </div>
             <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-success)' }}>
-              <div className="aw-stat-head"><Percent size={14} /><span className="aw-stat-label">Avg Rate</span></div>
+              <div className="aw-stat-head"><Percent size={14} /><span className="aw-stat-label">{t('Avg Rate')}</span></div>
               <div className="aw-stat-value">{avgRate}{avgRate !== '—' ? '%' : ''}</div>
             </div>
           </div>
@@ -374,30 +364,30 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Layers size={14} /></span>
-              <h2 className="aw-card-title">Slabs</h2>
-              <span className="aw-meta" style={{ marginLeft: 'auto' }}>Edit any cell · Add Row to create · Save to persist</span>
+              <h2 className="aw-card-title">{t('Slabs')}</h2>
+              <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('Edit any cell · Add Row to create · Save to persist')}</span>
             </div>
 
             {loading ? (
               <div className="aw-empty" style={{ padding: 40 }}>
                 <RefreshCcw size={28} className="aw-spin" />
-                <strong className="aw-strong">Loading slabs...</strong>
+                <strong className="aw-strong">{t('Loading slabs...')}</strong>
               </div>
             ) : (
               <div className="aw-table-wrap" style={{ maxHeight: '58vh' }}>
                 <table className="aw-table" style={{ minWidth: 1180 }}>
                   <thead>
                     <tr>
-                      <th className="is-center" style={{ width: 44 }}>Sr.</th>
-                      <th className="is-right">Amount From (₹)</th>
-                      <th className="is-right">Amount UpTo (₹)</th>
-                      <th className="is-right">Period From</th>
-                      <th className="is-right">Period UpTo</th>
-                      <th style={{ width: 120 }}>Unit</th>
-                      <th className="is-right">Rate (%)</th>
-                      <th className="is-right">Premature (%)</th>
-                      <th style={{ width: 150 }}>Applicable From</th>
-                      <th style={{ width: 150 }}>Applicable UpTo</th>
+                      <th className="is-center" style={{ width: 44 }}>{t('Sr.')}</th>
+                      <th className="is-right">{t('Amount From (₹)')}</th>
+                      <th className="is-right">{t('Amount UpTo (₹)')}</th>
+                      <th className="is-right">{t('Period From')}</th>
+                      <th className="is-right">{t('Period UpTo')}</th>
+                      <th style={{ width: 120 }}>{t('Unit')}</th>
+                      <th className="is-right">{t('Rate (%)')}</th>
+                      <th className="is-right">{t('Premature (%)')}</th>
+                      <th style={{ width: 150 }}>{t('Applicable From')}</th>
+                      <th style={{ width: 150 }}>{t('Applicable UpTo')}</th>
                       <th style={{ width: 44 }} />
                     </tr>
                   </thead>
@@ -407,8 +397,8 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
                         <td colSpan={11}>
                           <div className="aw-empty" style={{ padding: 32 }}>
                             <Database size={28} />
-                            <strong className="aw-strong">No slabs configured</strong>
-                            <span className="aw-meta">Click <strong>Add Row</strong> to create the first slab</span>
+                            <strong className="aw-strong">{t('No slabs configured')}</strong>
+                            <span className="aw-meta">{t('Click')} <strong>{t('Add Row')}</strong> {t('to create the first slab')}</span>
                           </div>
                         </td>
                       </tr>
@@ -416,22 +406,22 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
                       rows.map((row, i) => (
                         <tr key={i} className={row._dirty ? 'is-dirty' : undefined}>
                           <td className="is-muted is-center">{row.srNo}</td>
-                          <td className="has-input"><NumCell label={`Row ${row.srNo} amount from`} value={row.fromAmount} onChange={(v) => updateRow(i, 'fromAmount', v)} /></td>
-                          <td className="has-input"><NumCell label={`Row ${row.srNo} amount upto`} value={row.uptoAmount} onChange={(v) => updateRow(i, 'uptoAmount', v)} /></td>
-                          <td className="has-input"><NumCell label={`Row ${row.srNo} period from`} value={row.fromPeriod} onChange={(v) => updateRow(i, 'fromPeriod', v)} /></td>
-                          <td className="has-input"><NumCell label={`Row ${row.srNo} period upto`} value={row.uptoPeriod} onChange={(v) => updateRow(i, 'uptoPeriod', v)} /></td>
+                          <td className="has-input"><NumCell label={t('Row {{1}} amount from', { 1: row.srNo })} value={row.fromAmount} onChange={(v) => updateRow(i, 'fromAmount', v)} /></td>
+                          <td className="has-input"><NumCell label={t('Row {{1}} amount upto', { 1: row.srNo })} value={row.uptoAmount} onChange={(v) => updateRow(i, 'uptoAmount', v)} /></td>
+                          <td className="has-input"><NumCell label={t('Row {{1}} period from', { 1: row.srNo })} value={row.fromPeriod} onChange={(v) => updateRow(i, 'fromPeriod', v)} /></td>
+                          <td className="has-input"><NumCell label={t('Row {{1}} period upto', { 1: row.srNo })} value={row.uptoPeriod} onChange={(v) => updateRow(i, 'uptoPeriod', v)} /></td>
                           <td className="has-input">
                             <Select
                               className="aw-select"
                               popupClassName="aw-select-popup"
-                              aria-label={`Row ${row.srNo} unit`}
+                              aria-label={t('Row {{1}} unit', { 1: row.srNo })}
                               value={row.periodUnit}
                               onChange={(v) => updateRow(i, 'periodUnit', v)}
                               options={PERIOD_UNITS}
                             />
                           </td>
-                          <td className="has-input"><NumCell label={`Row ${row.srNo} rate`} value={row.interestRate} step={0.01} onChange={(v) => updateRow(i, 'interestRate', v)} /></td>
-                          <td className="has-input"><NumCell label={`Row ${row.srNo} premature rate`} value={row.prematureRate} step={0.01} onChange={(v) => updateRow(i, 'prematureRate', v)} /></td>
+                          <td className="has-input"><NumCell label={t('Row {{1}} rate', { 1: row.srNo })} value={row.interestRate} step={0.01} onChange={(v) => updateRow(i, 'interestRate', v)} /></td>
+                          <td className="has-input"><NumCell label={t('Row {{1}} premature rate', { 1: row.srNo })} value={row.prematureRate} step={0.01} onChange={(v) => updateRow(i, 'prematureRate', v)} /></td>
                           <td className="has-input">
                             <DatePicker
                               value={row.applicableFromDate ? dayjs(row.applicableFromDate) : null}
@@ -439,7 +429,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
                               format="DD-MMM-YYYY"
                               className="aw-picker"
                               popupClassName="aw-select-popup"
-                              placeholder="From"
+                              placeholder={t('From')}
                             />
                           </td>
                           <td className="has-input">
@@ -449,7 +439,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
                               format="DD-MMM-YYYY"
                               className="aw-picker"
                               popupClassName="aw-select-popup"
-                              placeholder="UpTo (optional)"
+                              placeholder={t('UpTo (optional)')}
                             />
                           </td>
                           <td className="is-center">
@@ -457,8 +447,8 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
                               type="button"
                               onClick={() => deleteRow(i)}
                               className="aw-icon-btn is-sm is-danger"
-                              aria-label={`Delete row ${row.srNo}`}
-                              data-tip="Delete row"
+                              aria-label={t('Delete row {{1}}', { 1: row.srNo })}
+                              data-tip={t('Delete row')}
                               data-tip-pos="left"
                             >
                               <Trash2 size={14} />
@@ -477,8 +467,8 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
 
       <div className="aw-footer">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}><i className="aw-status-dot" style={{ background: 'var(--aw-warning)' }} />Unsaved changes</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}><i className="aw-status-dot" />Saved</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><i className="aw-status-dot" style={{ background: 'var(--aw-warning)' }} />{t('Unsaved changes')}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><i className="aw-status-dot" />{t('Saved')}</span>
         </span>
         <span>FDRD_SLAB_DETAILS</span>
       </div>

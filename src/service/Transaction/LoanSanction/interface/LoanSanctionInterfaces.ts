@@ -46,6 +46,8 @@ export interface SanctionDetails {
     noOfInstallments: string;
     installmentAmount: string;
     interestAmount: string;
+    /** ES-506: why this customer gets a rate different from Business Rules (required when it differs) */
+    rateOverrideReason: string;
 }
 
 export interface SanctionRules {
@@ -59,6 +61,9 @@ export interface LoanSanctionHookReturn {
     /** Live server quote for the re-agreement while tenure / rate are edited. */
     raQuote: import('../../../../services/reagreementApi').ReagreementQuote | null;
     raQuoteLoading: boolean;
+    /** ES-506: interest / penal rate the loan type gets from Business Rules (null until a case is chosen) */
+    rateDefaults: { rate: number; penalRate: number } | null;
+    previewLoading: boolean;
     loanCases: LoanCase[];
     selectedLoanCase: string;
     isLoadingCases: boolean;

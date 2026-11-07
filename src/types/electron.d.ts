@@ -13,6 +13,8 @@ declare global {
       // Window management
       openLoanAppWindow: () => void;
       openNewWindow: (route: string) => void;
+      signalContentReady?: () => void;
+      setMotionPreference?: (mode: string) => void;
       openSettingsWindow: () => void;
       openWindow?: (options: {
         url: string;

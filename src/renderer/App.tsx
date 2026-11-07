@@ -32,6 +32,17 @@ const HeadOpeningBalance = lazy(() => import('../service/Administration/HeadOpen
 
 const NotFound = lazy(() => import('../components/NotFound'));
 
+// Tells the desktop shell the screen's code has loaded and drawn, so the (hidden) window can be shown
+// at once with a very short fade instead of showing an empty frame with a loading bar.
+// It sits inside the same Suspense boundary as the routes, so its effect only runs after they resolve.
+const WindowReadySignal: React.FC = () => {
+  useEffect(() => {
+    // no requestAnimationFrame: a hidden window does not run animation frames
+    (window as any).electronAPI?.signalContentReady?.();
+  }, []);
+  return null;
+};
+
 // Loading component
 const Loading = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -44,6 +55,7 @@ const RoleManagement = lazy(() => import('../service/Administration/Security/Rol
 const ChangePassword = lazy(() => import('../service/Administration/Security/ChangePassword/page/ChangePassword'));
 const LogoutUser = lazy(() => import('../service/Administration/Security/LogoutUser/page/LogoutUser'));
 const TwoFactorSettings = lazy(() => import('../service/Administration/Security/TwoFactorSettings/page/TwoFactorSettings'));
+const MobileControlCenter = lazy(() => import('../service/Administration/MobileControlCenter/page/MobileControlCenter'));
 
 // Lazy load financial year components
 const TransferEntriesForClosing = lazy(() => import('../service/Administration/FinancialYear/TransferEntriesForClosing/page/TransferEntriesForClosing'));
@@ -166,6 +178,7 @@ const UpdateSavingInterest = lazy(() => import('../service/Utility/UpdateSavingI
 const InterestReceivableReceivedStatement = lazy(() => import('../service/Utility/InterestReceivableReceivedStatement/page/InterestReceivableReceivedStatement'));
 const CommunicationCenter = lazy(() => import('../service/Utility/CommunicationCenter/page/CommunicationCenter'));
 const SupportDesk = lazy(() => import('../service/Utility/SupportDesk/page/SupportDesk'));
+const SystemUpdate = lazy(() => import('../service/Utility/SystemUpdate/page/SystemUpdate'));
 
 // Lazy load Help components
 const About = lazy(() => import('../service/Help/About/page/About'));
@@ -318,6 +331,7 @@ const App: React.FC = () => {
                   <Route path="/change-password" element={<ChangePassword />} />
                   <Route path="/logout-user" element={<LogoutUser />} />
                   <Route path="/two-factor-settings" element={<TwoFactorSettings />} />
+                  <Route path="/mobile-control-center" element={<MobileControlCenter />} />
                   <Route path="/financial-year/transfer-entries" element={<TransferEntriesForClosing />} />
                   <Route path="/financial-year/closing" element={<FinancialYearClosing />} />
                   <Route path="/financial-year/balance-transfer" element={<BalanceTransfer />} />
@@ -416,6 +430,7 @@ const App: React.FC = () => {
                   <Route path="/utility/interest-receivable-received-statement" element={<InterestReceivableReceivedStatement />} />
                   <Route path="/utility/communication-center" element={<CommunicationCenter />} />
                   <Route path="/utility/support-desk" element={<SupportDesk />} />
+                  <Route path="/utility/system-update" element={<SystemUpdate />} />
 
                   {/* Help Routes */}
                   <Route path="/help/about" element={<About />} />
@@ -433,6 +448,7 @@ const App: React.FC = () => {
                   <Route path="/my-profile" element={<MyProfile />} />
                   {/* Masters Routes */}
                   <Route path="/masters/member" element={<MemberMaster />} />
+                  <Route path="/masters/member-master" element={<MemberMaster />} />
                   <Route path="/masters/signature-scanning" element={<SignatureScanning />} />
                   <Route path="/masters/saving-account-opening" element={<SavingAccountOpening />} />
                   <Route path="/masters/wing-office" element={<WingOfficeMaster />} />
@@ -483,6 +499,7 @@ const App: React.FC = () => {
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
+              <WindowReadySignal />
             </Suspense>
           </Router>
             </ThemeProvider>

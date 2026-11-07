@@ -8,6 +8,8 @@ import {
 import { Select } from 'antd';
 import { apiService } from '../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
+import { showDialog4 as showDialog } from '@/utils/dialog';
 
 interface FinancialYear {
   yearCode: number;
@@ -16,20 +18,6 @@ interface FinancialYear {
   closedAt?: string | null;
   label?: string;
 }
-
-const showDialog = async (
-  type: 'info' | 'warning' | 'error',
-  title: string,
-  msg: string,
-  detail = '',
-) => {
-  const api = (window as any).electronAPI;
-  if (api?.showMessageBox) {
-    await api.showMessageBox({ type, title, message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else {
-    alert(`[${type.toUpperCase()}] ${msg}${detail ? '\n\n' + detail : ''}`);
-  }
-};
 
 const closeWindow = () => {
   const api = (window as any).electronAPI;
@@ -54,6 +42,7 @@ const yearLabel = (fy: FinancialYear): string => {
 };
 
 const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className = '' }) => {
+  const { t } = useTranslation();
   const [years, setYears] = useState<FinancialYear[]>([]);
   const [selectedCode, setSelectedCode] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -86,26 +75,26 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
 
   const handleCreateYear = async () => {
     if (!newStart || !newEnd) {
-      await showDialog('warning', 'Required', 'Please enter both a start date and an end date.', '');
+      await showDialog('warning', t('Required'), t('Please enter both a start date and an end date.'), '');
       return;
     }
     if (newStart >= newEnd) {
-      await showDialog('warning', 'Invalid Range', 'Start date must be before end date.', '');
+      await showDialog('warning', t('Invalid Range'), t('Start date must be before end date.'), '');
       return;
     }
     setIsCreatingYear(true);
     try {
       const response = await apiService.createFinancialYear(newStart, newEnd);
       if (response.success) {
-        await showDialog('info', 'Financial Year Created', 'The financial year has been created.', `Period: ${newStart} → ${newEnd}`);
+        await showDialog('info', t('Financial Year Created'), t('The financial year has been created.'), t('Period: {{1}} → {{2}}', { 1: newStart, 2: newEnd }));
         setNewStart('');
         setNewEnd('');
         await loadYears();
       } else {
-        await showDialog('error', 'Create Failed', response.error || 'Failed to create financial year.', '');
+        await showDialog('error', t('Create Failed'), response.error || t('Failed to create financial year.'), '');
       }
     } catch (err: any) {
-      await showDialog('error', 'System Error', 'Unable to create financial year.', err?.message || 'Check server connection.');
+      await showDialog('error', t('System Error'), t('Unable to create financial year.'), err?.message || t('Check server connection.'));
     } finally {
       setIsCreatingYear(false);
     }
@@ -115,18 +104,18 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
 
   const handleSubmit = async () => {
     if (!selectedCode.trim()) {
-      await showDialog('warning', 'Required', 'Please select a Financial Year to proceed.', '');
+      await showDialog('warning', t('Required'), t('Please select a Financial Year to proceed.'), '');
       return;
     }
 
     const yearCodeNum = parseInt(selectedCode, 10);
     if (isNaN(yearCodeNum)) {
-      await showDialog('error', 'Invalid Input', 'Financial Year Code must be numeric.', '');
+      await showDialog('error', t('Invalid Input'), t('Financial Year Code must be numeric.'), '');
       return;
     }
 
     if (selectedYear?.closedAt) {
-      await showDialog('warning', 'Already Closed', `Financial Year ${yearLabel(selectedYear!)} is already closed.`, 'Select an open financial year.');
+      await showDialog('warning', t('Already Closed'), t('Financial Year {{1}} is already closed.', { 1: yearLabel(selectedYear!) }), t('Select an open financial year.'));
       return;
     }
 
@@ -136,7 +125,7 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
     if (api?.showMessageBox) {
       const res = await api.showMessageBox({
         type: 'warning',
-        title: 'Confirm Transfer',
+        title: t('Confirm Transfer'),
         message: `Initiate ledger transit for ${selectedYear ? yearLabel(selectedYear) : `FY ${yearCodeNum}`}?`,
         detail: 'This will post closing transfer entries for the selected financial year.\n\nThis operation cannot be easily undone. Proceed only if year-end accounts are verified.',
         buttons: ['Cancel', 'Initiate Transfer'],
@@ -145,7 +134,7 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
       });
       confirmed = res.response === 1;
     } else {
-      confirmed = window.confirm(`Initiate transfer entries for FY ${yearCodeNum}? This cannot be easily undone.`);
+      confirmed = window.confirm(t('Initiate transfer entries for FY {{1}}? This cannot be easily undone.', { 1: yearCodeNum }));
     }
 
     if (!confirmed) return;
@@ -158,20 +147,20 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
         setStatusMsg({ type: 'success', text: response.data?.message || `Transfer entries for ${yearLabel(selectedYear!)} posted successfully.` });
         await showDialog(
           'info',
-          'Transfer Complete',
-          `Ledger transit for ${selectedYear ? yearLabel(selectedYear) : `FY ${yearCodeNum}`} completed.`,
+          t('Transfer Complete'),
+          t('Ledger transit for {{1}} completed.', { 1: selectedYear ? yearLabel(selectedYear) : `FY ${yearCodeNum}` }),
           (response.data?.message || 'Transfer entries have been posted.') + '\n\n✓ Proceed with Financial Year Closing when ready.'
         );
         await loadYears();
       } else {
         const errMsg = response.error || 'System failed to finalize fiscal balances.';
         setStatusMsg({ type: 'error', text: errMsg });
-        await showDialog('error', 'Transfer Failed', errMsg, 'Check server logs or contact support.');
+        await showDialog('error', t('Transfer Failed'), errMsg, t('Check server logs or contact support.'));
       }
     } catch (err: any) {
       const errMsg = err?.message || 'Connection to ledger server lost during transit.';
       setStatusMsg({ type: 'error', text: errMsg });
-      await showDialog('error', 'System Error', errMsg, '');
+      await showDialog('error', t('System Error'), errMsg, '');
     } finally {
       setIsLoading(false);
     }
@@ -188,18 +177,18 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Transfer Entries For Closing</h1>
+          <h1 className="aw-title">{t('Transfer Entries For Closing')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Database size={12} /> Financial Year · Ledger Transit
+            <Database size={12} /> {t('Financial Year · Ledger Transit')}
           </p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={handleSubmit} disabled={!selectedCode || isLoading || isLoadingYears} className="aw-btn aw-btn-primary">
             {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <ChevronRight size={13} />}
-            {isLoading ? 'Processing...' : 'Initiate Transfer'}
+            {isLoading ? t('Processing...') : t('Initiate Transfer')}
           </button>
           <button type="button" onClick={closeWindow} disabled={isLoading} className="aw-btn aw-btn-ghost">
-            <X size={13} /> Close
+            <X size={13} /> {t('Close')}
           </button>
         </div>
       </div>
@@ -211,14 +200,14 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Lock size={14} /></span>
-              <h2 className="aw-card-title">Select Financial Year</h2>
+              <h2 className="aw-card-title">{t('Select Financial Year')}</h2>
               <button
                 type="button"
                 onClick={loadYears}
                 disabled={isLoadingYears}
                 className="aw-icon-btn is-sm"
-                aria-label="Refresh years"
-                data-tip="Refresh"
+                aria-label={t('Refresh years')}
+                data-tip={t('Refresh')}
                 data-tip-pos="bottom-end"
                 style={{ marginLeft: 'auto' }}
               >
@@ -228,7 +217,7 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
 
             <div className="aw-stack">
               <div>
-                <label className="aw-label" htmlFor="tefc-year">Financial Year</label>
+                <label className="aw-label" htmlFor="tefc-year">{t('Financial Year')}</label>
                 <Select
                   id="tefc-year"
                   className="aw-select"
@@ -240,18 +229,18 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
                   suffixIcon={<Calendar size={14} />}
                   options={years.map(fy => ({
                     value: String(fy.yearCode),
-                    label: `${yearLabel(fy)} (Code: ${fy.yearCode})${fy.closedAt ? ' ✓ Closed' : ''}`,
+                    label: t('{{1}} (Code: {{2}}){{3}}', { 1: yearLabel(fy), 2: fy.yearCode, 3: fy.closedAt ? ' ✓ Closed' : '' }),
                   }))}
                 />
               </div>
 
               {selectedYear && (
                 <dl className="aw-facts aw-fade-in" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-                  <div><dt>From</dt><dd>{fmtDate(selectedYear.startDate)}</dd></div>
-                  <div><dt>To</dt><dd>{fmtDate(selectedYear.endDate)}</dd></div>
+                  <div><dt>{t('From')}</dt><dd>{fmtDate(selectedYear.startDate)}</dd></div>
+                  <div><dt>{t('To')}</dt><dd>{fmtDate(selectedYear.endDate)}</dd></div>
                   <div>
-                    <dt>Status</dt>
-                    <dd><span className={`aw-pill tone-${selectedYear.closedAt ? 'success' : 'warning'}`}>{selectedYear.closedAt ? 'Closed' : 'Open'}</span></dd>
+                    <dt>{t('Status')}</dt>
+                    <dd><span className={`aw-pill tone-${selectedYear.closedAt ? 'success' : 'warning'}`}>{selectedYear.closedAt ? t('Closed') : t('Open')}</span></dd>
                   </div>
                 </dl>
               )}
@@ -262,7 +251,7 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
                   <span>{statusMsg.text}</span>
                 </div>
               ) : (
-                <p className="aw-meta" style={{ display: 'flex', alignItems: 'center' }}><i className="aw-status-dot" />System ready</p>
+                <p className="aw-meta" style={{ display: 'flex', alignItems: 'center' }}><i className="aw-status-dot" />{t('System ready')}</p>
               )}
             </div>
           </section>
@@ -272,25 +261,25 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Plus size={14} /></span>
-                <h2 className="aw-card-title">No Financial Year Set Up Yet</h2>
+                <h2 className="aw-card-title">{t('No Financial Year Set Up Yet')}</h2>
               </div>
               <div className="aw-stack">
                 <p className="aw-meta" style={{ lineHeight: 1.5 }}>
-                  No financial year exists yet. Create the first one to begin using Transfer Entries and Financial Year Closing.
+                  {t('No financial year exists yet. Create the first one to begin using Transfer Entries and Financial Year Closing.')}
                 </p>
                 <div className="aw-two">
                   <div>
-                    <label className="aw-label" htmlFor="tefc-start">Start Date</label>
+                    <label className="aw-label" htmlFor="tefc-start">{t('Start Date')}</label>
                     <input id="tefc-start" type="date" value={newStart} onChange={e => setNewStart(e.target.value)} disabled={isCreatingYear} className="aw-input" />
                   </div>
                   <div>
-                    <label className="aw-label" htmlFor="tefc-end">End Date</label>
+                    <label className="aw-label" htmlFor="tefc-end">{t('End Date')}</label>
                     <input id="tefc-end" type="date" value={newEnd} onChange={e => setNewEnd(e.target.value)} disabled={isCreatingYear} className="aw-input" />
                   </div>
                 </div>
                 <button type="button" onClick={handleCreateYear} disabled={isCreatingYear || !newStart || !newEnd} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
                   {isCreatingYear ? <RefreshCw size={13} className="aw-spin" /> : <Plus size={13} />}
-                  {isCreatingYear ? 'Creating...' : 'Create Financial Year'}
+                  {isCreatingYear ? t('Creating...') : t('Create Financial Year')}
                 </button>
               </div>
             </section>
@@ -299,8 +288,8 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> Financial Year Management</span>
-        <span>Ledger Transit System</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Financial Year Management')}</span>
+        <span>{t('Ledger Transit System')}</span>
       </div>
     </div>
   );

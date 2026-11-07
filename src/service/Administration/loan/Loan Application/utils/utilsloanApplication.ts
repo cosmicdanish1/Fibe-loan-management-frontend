@@ -1,3 +1,4 @@
+import { tLabel } from '../../../../../i18n';
 // utils.ts
 export const formatDate = (date: string): string => {
     if (!date) return '';
@@ -60,14 +61,14 @@ export const formatDate = (date: string): string => {
   };
   
   export const getRelationOptions = () => [
-    { value: 'spouse', label: 'Spouse' },
-    { value: 'son', label: 'Son' },
-    { value: 'daughter', label: 'Daughter' },
-    { value: 'father', label: 'Father' },
-    { value: 'mother', label: 'Mother' },
-    { value: 'brother', label: 'Brother' },
-    { value: 'sister', label: 'Sister' },
-    { value: 'other', label: 'Other' }
+    { value: 'spouse', label: tLabel('Spouse') },
+    { value: 'son', label: tLabel('Son') },
+    { value: 'daughter', label: tLabel('Daughter') },
+    { value: 'father', label: tLabel('Father') },
+    { value: 'mother', label: tLabel('Mother') },
+    { value: 'brother', label: tLabel('Brother') },
+    { value: 'sister', label: tLabel('Sister') },
+    { value: 'other', label: tLabel('Other') }
   ];
   
   export const getLoanTypeOptions = () => [
@@ -77,9 +78,9 @@ export const formatDate = (date: string): string => {
   ];
   
   export const getUnitOptions = () => [
-    { value: 'years', label: 'Years' },
-    { value: 'months', label: 'Months' },
-    { value: 'days', label: 'Days' }
+    { value: 'years', label: tLabel('Years') },
+    { value: 'months', label: tLabel('Months') },
+    { value: 'days', label: tLabel('Days') }
   ];
   
   export const classNames = (...classes: (string | undefined | null | false)[]): string => {

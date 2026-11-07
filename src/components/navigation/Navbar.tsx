@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { UserProfileMenu } from '../UserProfileMenu';
-import { ONBOARDING_CHECKLIST_EVENT, ONBOARDING_REPLAY_EVENT, ONBOARDING_SLIDES_EVENT, markWindowOpened } from '../../features/onboarding/onboardingApi';
+import { ONBOARDING_CHECKLIST_EVENT, ONBOARDING_REPLAY_EVENT, ONBOARDING_SLIDES_EVENT, ONBOARDING_WHATSNEW_EVENT, markWindowOpened } from '../../features/onboarding/onboardingApi';
 import { AlertCircle, X, ShieldCheck, Users, ArrowLeftRight, FileText, Wrench, HelpCircle, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
 import { GlobalSearch, type SearchItem } from '../topbar/GlobalSearch';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../auth/context/AuthContext';
 import { ACTION_ROUTE_MAP, isActionAllowed } from '../../config/menuActions';
+import { useTranslation } from 'react-i18next';
+import i18n, { tLabel } from '../../i18n';
 
 interface MenuItem {
   title: string;
@@ -24,86 +26,87 @@ interface NavItem {
 const navConfig: NavItem[] = [
   {
     id: 'file',
-    title: 'File',
+    title: tLabel('File'),
     items: [
-      { title: 'Save', shortcut: 'Ctrl+S', action: 'SAVE' },
-      { title: 'Cancel', shortcut: 'Ctrl+C', action: 'CANCEL' },
-      { title: 'Delete', shortcut: 'Ctrl+D', action: 'DELETE' },
-      { title: 'Refresh', shortcut: 'Ctrl+R', action: 'REFRESH' },
-      { title: 'Print', shortcut: 'Ctrl+P', action: 'PRINT' },
-      { title: 'Find', shortcut: 'Ctrl+F', action: 'FIND' },
-      { title: 'Exit', shortcut: 'Ctrl+X', action: 'EXIT' },
+      { title: tLabel('Save'), shortcut: 'Ctrl+S', action: 'SAVE' },
+      { title: tLabel('Cancel'), shortcut: 'Ctrl+C', action: 'CANCEL' },
+      { title: tLabel('Delete'), shortcut: 'Ctrl+D', action: 'DELETE' },
+      { title: tLabel('Refresh'), shortcut: 'Ctrl+R', action: 'REFRESH' },
+      { title: tLabel('Print'), shortcut: 'Ctrl+P', action: 'PRINT' },
+      { title: tLabel('Find'), shortcut: 'Ctrl+F', action: 'FIND' },
+      { title: tLabel('Exit'), shortcut: 'Ctrl+X', action: 'EXIT' },
     ],
   },
   {
     id: 'admin',
-    title: 'Administration',
+    title: tLabel('Administration'),
     items: [
       {
-        title: 'Loan',
+        title: tLabel('Loan'),
         submenu: [
-          { title: 'Loan Application', action: 'LOAN_APP' },
-          { title: 'Change Loan Surety', action: 'CHANGE_LOAN_SURETY' },
-          { title: 'Interest Calculation / Posting', action: 'INTEREST_CALC_POST' },
+          { title: tLabel('Loan Application'), action: 'LOAN_APP' },
+          { title: tLabel('Change Loan Surety'), action: 'CHANGE_LOAN_SURETY' },
+          { title: tLabel('Interest Calculation / Posting'), action: 'INTEREST_CALC_POST' },
         ]
       },
-      { title: 'DayEnd', action: 'DAY_END' },
-      { title: 'Interest Calculation', action: 'INTEREST_CALC' },
-      { title: 'Group Insurance', action: 'GROUP_INSURANCE' },
-      { title: 'Deposite/Loan Slab', action: 'DEPOSIT_LOAN_SLAB' },
-      { title: 'Head Addition / Modification', action: 'HEAD_ADD_MOD' },
-      { title: 'Head Opening Balance', action: 'HEAD_OPEN_BAL' },
+      { title: tLabel('DayEnd'), action: 'DAY_END' },
+      { title: tLabel('Interest Calculation'), action: 'INTEREST_CALC' },
+      { title: tLabel('Group Insurance'), action: 'GROUP_INSURANCE' },
+      { title: tLabel('Deposite/Loan Slab'), action: 'DEPOSIT_LOAN_SLAB' },
+      { title: tLabel('Head Addition / Modification'), action: 'HEAD_ADD_MOD' },
+      { title: tLabel('Head Opening Balance'), action: 'HEAD_OPEN_BAL' },
 
       {
-        title: 'Security',
+        title: tLabel('Security'),
         submenu: [
-          { title: 'Create / Modify Users', action: 'USER_MANAGEMENT' },
-          { title: 'Configure UserLevel Default Rights', action: 'ROLE_MANAGEMENT' },
-          { title: 'Change Password', action: 'CHANGE_PASSWORD' },
-          { title: 'LogOut User', action: 'LOGOUT_USER' },
-          { title: 'Two-Factor & Approvals', action: 'TWOFA_SETTINGS' },
+          { title: tLabel('Create / Modify Users'), action: 'USER_MANAGEMENT' },
+          { title: tLabel('Configure UserLevel Default Rights'), action: 'ROLE_MANAGEMENT' },
+          { title: tLabel('Change Password'), action: 'CHANGE_PASSWORD' },
+          { title: tLabel('LogOut User'), action: 'LOGOUT_USER' },
+          { title: tLabel('Two-Factor & Approvals'), action: 'TWOFA_SETTINGS' },
+          { title: tLabel('Mobile Control Center'), action: 'MOBILE_CONTROL_CENTER' },
         ]
       },
       {
-        title: 'Financial Year',
+        title: tLabel('Financial Year'),
         submenu: [
-          { title: '1 Transfer Entries For Closing', action: 'FIN_YEAR_TRANSFER' },
-          { title: '2 Financial Year Closing', action: 'FIN_YEAR_CLOSING' },
-          { title: '3 Balance Transfer', action: 'FIN_YEAR_BALANCE_TRANSFER' },
-          { title: '4 P and L Year End Process', action: 'FIN_YEAR_PL_PROCESS' },
+          { title: '1 ' + tLabel('Transfer Entries For Closing'), action: 'FIN_YEAR_TRANSFER' },
+          { title: '2 ' + tLabel('Financial Year Closing'), action: 'FIN_YEAR_CLOSING' },
+          { title: '3 ' + tLabel('Balance Transfer'), action: 'FIN_YEAR_BALANCE_TRANSFER' },
+          { title: '4 ' + tLabel('P and L Year End Process'), action: 'FIN_YEAR_PL_PROCESS' },
         ]
       },
-      { title: 'Saakh Score — Member Health', action: 'SAAKH_SCORE' },
-      { title: 'Modify Business Rules', action: 'MODIFY_BIZ_RULES' },
-      { title: 'RD Financial Year Closing', action: 'RD_FY_CLOSING' },
-      { title: 'Dividend Calculation', action: 'DIVIDEND_CALCULATION' },
-      { title: 'Dividend Credit', action: 'DIVIDEND_CREDIT' },
-      { title: 'Demand Print Order', action: 'DEMAND_PRINT_ORDER' },
+      { title: tLabel('Saakh Score — Member Health'), action: 'SAAKH_SCORE' },
+      { title: tLabel('Modify Business Rules'), action: 'MODIFY_BIZ_RULES' },
+      { title: tLabel('RD Financial Year Closing'), action: 'RD_FY_CLOSING' },
+      { title: tLabel('Dividend Calculation'), action: 'DIVIDEND_CALCULATION' },
+      { title: tLabel('Dividend Credit'), action: 'DIVIDEND_CREDIT' },
+      { title: tLabel('Demand Print Order'), action: 'DEMAND_PRINT_ORDER' },
       {
-        title: 'Certificate Setting and Printing',
+        title: tLabel('Certificate Setting and Printing'),
         submenu: [
-          { title: 'Certificate Parameter Setting', action: 'CERT_PARAM_SETTING' },
-          { title: 'Share Certificate Printing', action: 'SHARE_CERT_PRINT' },
-          { title: 'Passbook parameter setting', action: 'PASSBOOK_PARAM_SETTING' },
+          { title: tLabel('Certificate Parameter Setting'), action: 'CERT_PARAM_SETTING' },
+          { title: tLabel('Share Certificate Printing'), action: 'SHARE_CERT_PRINT' },
+          { title: tLabel('Passbook parameter setting'), action: 'PASSBOOK_PARAM_SETTING' },
         ]
       },
     ]
   },
   {
     id: 'masters',
-    title: 'Masters',
+    title: tLabel('Masters'),
     items: [
-      { title: 'Member Master', action: 'MEMBER_MASTER' },
-      { title: 'Member Status (Retired / Inactive)', action: 'MEMBER_STATUS' },
-      { title: 'Signature Scanning', action: 'SIGNATURE_SCANNING' },
-      { title: 'Saving A/c Opening', action: 'SAVING_AC_OPENING' },
-      { title: 'Wing / Office Master', action: 'WING_OFFICE_MASTER' },
-      { title: 'Modify Member Balance', action: 'MODIFY_MEMBER_BAL' },
-      { title: 'RD Member Setup', action: 'RD_MEMBER_SETUP' },
-      { title: 'RD Withdrawal', action: 'RD_WITHDRAWAL' },
-      { title: 'RD Repayment', action: 'RD_REPAYMENT' },
-      { title: 'Cast Category', action: 'CAST_CATEGORY' },
-      { title: 'Designation Master', action: 'DESIGNATION_MASTER' },
+      { title: tLabel('Member Master'), action: 'MEMBER_MASTER' },
+      { title: tLabel('Member Status (Retired / Inactive)'), action: 'MEMBER_STATUS' },
+      { title: tLabel('Signature Scanning'), action: 'SIGNATURE_SCANNING' },
+      { title: tLabel('Saving A/c Opening'), action: 'SAVING_AC_OPENING' },
+      { title: tLabel('Wing / Office Master'), action: 'WING_OFFICE_MASTER' },
+      { title: tLabel('Modify Member Balance'), action: 'MODIFY_MEMBER_BAL' },
+      { title: tLabel('RD Member Setup'), action: 'RD_MEMBER_SETUP' },
+      { title: tLabel('RD Withdrawal'), action: 'RD_WITHDRAWAL' },
+      { title: tLabel('RD Repayment'), action: 'RD_REPAYMENT' },
+      { title: tLabel('Cast Category'), action: 'CAST_CATEGORY' },
+      { title: tLabel('Designation Master'), action: 'DESIGNATION_MASTER' },
       // Hidden: legacy Data Entry windows not used in current app
       // {
       //   title: 'Data Entry',
@@ -116,176 +119,178 @@ const navConfig: NavItem[] = [
   },
   {
     id: 'transaction',
-    title: 'Transaction',
+    title: tLabel('Transaction'),
     items: [
       {
-        title: 'Receipt & Payment',
+        title: tLabel('Receipt & Payment'),
         submenu: [
-          { title: 'Payment Voucher Creation', action: 'RECEIPT_PAYMENT_VOUCHER_CREATION' },
-          { title: 'Voucher Payment', action: 'VOUCHER_PAYMENT' },
-          { title: 'Receipt', action: 'RECEIPT_PAYMENT' },
-          { title: 'Dividend Payment', action: 'RECEIPT_DIVIDEND_PAYMENT' },
+          { title: tLabel('Payment Voucher Creation'), action: 'RECEIPT_PAYMENT_VOUCHER_CREATION' },
+          { title: tLabel('Voucher Payment'), action: 'VOUCHER_PAYMENT' },
+          { title: tLabel('Receipt'), action: 'RECEIPT_PAYMENT' },
+          { title: tLabel('Dividend Payment'), action: 'RECEIPT_DIVIDEND_PAYMENT' },
         ]
       },
-      { title: 'Saving [Receipt -- Payment]', action: 'SAVING_RECEIPT_PAYMENT' },
-      { title: 'Journal / Transfer Entry', action: 'JOURNAL_TRANSFER_ENTRY' },
-      { title: 'Loan Payment', action: 'LOAN_PAYMENT' },
-      { title: 'Loan Repayment', action: 'LOAN_REPAYMENT' },
-      { title: 'Loan Early Closure', action: 'LOAN_EARLY_CLOSURE' },
-      { title: 'Loan Re-agreement', action: 'LOAN_REAGREEMENT' },
-      { title: 'Compulsory Deposit Transaction', action: 'COMPULSORY_DEPOSIT_TRANSACTION' },
-      { title: 'Member Balance Transfer', action: 'MEMBER_BALANCE_TRANSFER' },
-      { title: 'Pass Transactions', action: 'PASS_TRANSACTIONS' },
+      { title: tLabel('Saving [Receipt -- Payment]'), action: 'SAVING_RECEIPT_PAYMENT' },
+      { title: tLabel('Journal / Transfer Entry'), action: 'JOURNAL_TRANSFER_ENTRY' },
+      { title: tLabel('Loan Payment'), action: 'LOAN_PAYMENT' },
+      { title: tLabel('Loan Repayment'), action: 'LOAN_REPAYMENT' },
+      { title: tLabel('Loan Early Closure'), action: 'LOAN_EARLY_CLOSURE' },
+      { title: tLabel('Loan Re-agreement'), action: 'LOAN_REAGREEMENT' },
+      { title: tLabel('Compulsory Deposit Transaction'), action: 'COMPULSORY_DEPOSIT_TRANSACTION' },
+      { title: tLabel('Member Balance Transfer'), action: 'MEMBER_BALANCE_TRANSFER' },
+      { title: tLabel('Pass Transactions'), action: 'PASS_TRANSACTIONS' },
       {
-        title: 'Demand / Recovery List',
+        title: tLabel('Demand / Recovery List'),
         submenu: [
-          { title: 'Import Demand List', action: 'IMPORT_DEMAND_LIST' },
-          { title: 'Generate', action: 'GENERATE' },
-          { title: 'Updation / Ledger Posting', action: 'UPDATION_LEDGER_POSTING' },
-          { title: 'Print Members Demand List', action: 'PRINT_MEMBERS_DEMAND_LIST' },
-          { title: 'Change Member Office', action: 'CHANGE_MEMBER_OFFICE' },
-          { title: 'Modify Short Recovery', action: 'MODIFY_SHORT_RECOVERY' },
+          { title: tLabel('Import Demand List'), action: 'IMPORT_DEMAND_LIST' },
+          { title: tLabel('Generate'), action: 'GENERATE' },
+          { title: tLabel('Updation / Ledger Posting'), action: 'UPDATION_LEDGER_POSTING' },
+          { title: tLabel('Print Members Demand List'), action: 'PRINT_MEMBERS_DEMAND_LIST' },
+          { title: tLabel('Change Member Office'), action: 'CHANGE_MEMBER_OFFICE' },
+          { title: tLabel('Modify Short Recovery'), action: 'MODIFY_SHORT_RECOVERY' },
         ]
       },
     ]
   },
   {
     id: 'reports',
-    title: 'Reports',
+    title: tLabel('Reports'),
     items: [
       {
-        title: '1. Daily',
+        title: '1. ' + tLabel('Daily'),
         submenu: [
-          { title: '1.1 Cash-Book (Receiptwise Rough)', action: 'CASH_BOOK_RECEIPTWISE' },
-          { title: '1.2 Cash-Book', action: 'CASH_BOOK' },
-          { title: '1.3 Day-Book', action: 'DAY_BOOK' },
-          { title: '1.4 Day-Book [CD]', action: 'DAY_BOOK_CD' },
-          { title: '1.5 Consolidation Of Daily A/c', action: 'CONSOLIDATION_DAILY_AC' },
+          { title: '1.1 ' + tLabel('Cash-Book (Receiptwise Rough)'), action: 'CASH_BOOK_RECEIPTWISE' },
+          { title: '1.2 ' + tLabel('Cash-Book'), action: 'CASH_BOOK' },
+          { title: '1.3 ' + tLabel('Day-Book'), action: 'DAY_BOOK' },
+          { title: '1.4 ' + tLabel('Day-Book [CD]'), action: 'DAY_BOOK_CD' },
+          { title: '1.5 ' + tLabel('Consolidation Of Daily A/c'), action: 'CONSOLIDATION_DAILY_AC' },
         ]
       },
-      { title: '2. Member Ledger Report', action: 'MEMBER_LEDGER_REPORT' },
-      { title: '3. General Ledger', action: 'GENERAL_LEDGER' },
+      { title: '2. ' + tLabel('Member Ledger Report'), action: 'MEMBER_LEDGER_REPORT' },
+      { title: '3. ' + tLabel('General Ledger'), action: 'GENERAL_LEDGER' },
       {
-        title: '4. Monthly',
+        title: '4. ' + tLabel('Monthly'),
         submenu: [
           {
-            title: '4.1 Print Vouchers',
+            title: '4.1 ' + tLabel('Print Vouchers'),
             submenu: [
-              { title: '4.1.1 Receipt/Payment Voucher', action: 'RECEIPT_PAYMENT_VOUCHER' },
-              { title: '4.1.2. Journal/Transfer Voucher', action: 'JOURNAL_TRANSFER_VOUCHER' },
+              { title: '4.1.1 ' + tLabel('Receipt/Payment Voucher'), action: 'RECEIPT_PAYMENT_VOUCHER' },
+              { title: '4.1.2. ' + tLabel('Journal/Transfer Voucher'), action: 'JOURNAL_TRANSFER_VOUCHER' },
             ]
           },
-          { title: '4.2 Cash Book Monthly', action: 'CASH_BOOK_MONTHLY' },
-          { title: '4.3 Detail Ledger', action: 'DETAIL_LEDGER' },
-          { title: '4.4 Bank Detail Ledger', action: 'BANK_DETAIL_LEDGER' },
-          { title: '4.5 Defaulter List', action: 'DEFAULTER_LIST' },
-          { title: '4.6 New Loan Disbursed', action: 'NEW_LOAN_DISBURSED' },
-          { title: '4.7 Member Loan Ledger', action: 'MEMBER_LOAN_LEDGER' },
-          { title: '4.8 Loan Account Statement', action: 'LOAN_ACCOUNT_STATEMENT' },
+          { title: '4.2 ' + tLabel('Cash Book Monthly'), action: 'CASH_BOOK_MONTHLY' },
+          { title: '4.3 ' + tLabel('Detail Ledger'), action: 'DETAIL_LEDGER' },
+          { title: '4.4 ' + tLabel('Bank Detail Ledger'), action: 'BANK_DETAIL_LEDGER' },
+          { title: '4.5 ' + tLabel('Defaulter List'), action: 'DEFAULTER_LIST' },
+          { title: '4.6 ' + tLabel('New Loan Disbursed'), action: 'NEW_LOAN_DISBURSED' },
+          { title: '4.7 ' + tLabel('Member Loan Ledger'), action: 'MEMBER_LOAN_LEDGER' },
+          { title: '4.8 ' + tLabel('Loan Account Statement'), action: 'LOAN_ACCOUNT_STATEMENT' },
         ]
       },
       {
-        title: '5. Yearly',
+        title: '5. ' + tLabel('Yearly'),
         submenu: [
-          { title: '5.1 P & L/ Balance Sheet', action: 'P_L_BALANCE_SHEET' },
+          { title: '5.1 ' + tLabel('P & L/ Balance Sheet'), action: 'P_L_BALANCE_SHEET' },
           {
-            title: '5.2 Members List',
+            title: '5.2 ' + tLabel('Members List'),
             submenu: [
-              { title: '5.2.1 Voters/Withdrawl List', action: 'VOTERS_WITHDRAWL_LIST' },
+              { title: '5.2.1 ' + tLabel('Voters/Withdrawl List'), action: 'VOTERS_WITHDRAWL_LIST' },
             ]
           },
           {
-            title: '5.3 Interest List',
+            title: '5.3 ' + tLabel('Interest List'),
             submenu: [
-              { title: '5.3.1 Dividend Report', action: 'DIVIDEND_REPORT' },
-              { title: '5.3.2 Dividend Paid', action: 'DIVIDEND_PAID' },
-              { title: '5.3.3 Int. List CD/MD/SHRt', action: 'INT_LIST_CD_MD_SHRt' },
-              { title: '5.3.4 Dividend Warrant', action: 'DIVIDEND_WARRANT' },
+              { title: '5.3.1 ' + tLabel('Dividend Report'), action: 'DIVIDEND_REPORT' },
+              { title: '5.3.2 ' + tLabel('Dividend Paid'), action: 'DIVIDEND_PAID' },
+              { title: '5.3.3 ' + tLabel('Int. List CD/MD/SHRt'), action: 'INT_LIST_CD_MD_SHRt' },
+              { title: '5.3.4 ' + tLabel('Dividend Warrant'), action: 'DIVIDEND_WARRANT' },
             ]
           },
-          { title: '5.5 Member Loan Detail', action: 'MEMBER_LOAN_DETAIL' },
-          { title: '5.6 Share Warrent Printing', action: 'SHARE_WARRANT_PRINTING' },
-          { title: '5.7 Annual Member Statement', action: 'ANNUAL_MEMBER_STATEMENT' },
-          { title: '5.8 Yearly Member Statement', action: 'YEARLY_MEMBER_STATEMENT' },
-          { title: '5.9 Member Ledger', action: 'MEMBER_LEDGER' },
-          { title: '5.10 Member Statement', action: 'MEMBER_STATEMENT' },
+          { title: '5.5 ' + tLabel('Member Loan Detail'), action: 'MEMBER_LOAN_DETAIL' },
+          { title: '5.6 ' + tLabel('Share Warrent Printing'), action: 'SHARE_WARRANT_PRINTING' },
+          { title: '5.7 ' + tLabel('Annual Member Statement'), action: 'ANNUAL_MEMBER_STATEMENT' },
+          { title: '5.8 ' + tLabel('Yearly Member Statement'), action: 'YEARLY_MEMBER_STATEMENT' },
+          { title: '5.9 ' + tLabel('Member Ledger'), action: 'MEMBER_LEDGER' },
+          { title: '5.10 ' + tLabel('Member Statement'), action: 'MEMBER_STATEMENT' },
         ]
       },
-      { title: '6. Member Detail Ledger', action: 'MEMBER_DETAIL_LEDGER' },
-      { title: '8. Account Balance', action: 'ACCOUNT_BALANCE' },
+      { title: '6. ' + tLabel('Member Detail Ledger'), action: 'MEMBER_DETAIL_LEDGER' },
+      { title: '8. ' + tLabel('Account Balance'), action: 'ACCOUNT_BALANCE' },
       {
-        title: '9. Member Statement',
+        title: '9. ' + tLabel('Member Statement'),
         submenu: [
-          { title: '9.1 Saving Statement', action: 'SAVING_STATEMENT' },
-          { title: '9.2 RD Statement', action: 'RD_STATEMENT' },
-          { title: '9.4 Member Statement', action: 'MEMBER_STATEMENT' },
-          { title: '9.5 New Share Certificate', action: 'NEW_SHARE_CERTIFICATE' },
-          { title: '9.6 Interest Certificate', action: 'INTEREST_CERTIFICATE' },
-          { title: '9.7 Loan Nil Certificate', action: 'LOAN_NIL_CERTIFICATE' },
+          { title: '9.1 ' + tLabel('Saving Statement'), action: 'SAVING_STATEMENT' },
+          { title: '9.2 ' + tLabel('RD Statement'), action: 'RD_STATEMENT' },
+          { title: '9.4 ' + tLabel('Member Statement'), action: 'MEMBER_STATEMENT' },
+          { title: '9.5 ' + tLabel('New Share Certificate'), action: 'NEW_SHARE_CERTIFICATE' },
+          { title: '9.6 ' + tLabel('Interest Certificate'), action: 'INTEREST_CERTIFICATE' },
+          { title: '9.7 ' + tLabel('Loan Nil Certificate'), action: 'LOAN_NIL_CERTIFICATE' },
         ]
       },
-      { title: '10. Surety Register', action: 'SURETY_REGISTER' },
-      { title: '11. Deposit Due Date Register', action: 'DEPOSIT_DUE_DATE_REGISTER' },
+      { title: '10. ' + tLabel('Surety Register'), action: 'SURETY_REGISTER' },
+      { title: '11. ' + tLabel('Deposit Due Date Register'), action: 'DEPOSIT_DUE_DATE_REGISTER' },
       {
-        title: '12. Account Reports',
+        title: '12. ' + tLabel('Account Reports'),
         submenu: [
-          { title: '1. Account Closing Register', action: 'ACCOUNT_CLOSING_REGISTER' },
-          { title: '3. Share Certificate', action: 'SHARE_CERTIFICATE' },
-          { title: '4. Recurring Details', action: 'RECURRING_DETAILS' },
-          { title: '5. Recovery Details', action: 'RECOVERY_DETAILS' },
-          { title: '6. Loan Contributions Register', action: 'LOAN_CONTRIBUTIONS_REGISTER' },
-          { title: '7. Lien Account Information', action: 'LIEN_ACCOUNT_INFORMATION' },
-          { title: '8. Loan Consolidation Chain', action: 'LOAN_CONSOLIDATION_CHAIN' },
-          { title: '9. Loan Re-agreement History', action: 'LOAN_REAGREEMENT_HISTORY' },
+          { title: '1. ' + tLabel('Account Closing Register'), action: 'ACCOUNT_CLOSING_REGISTER' },
+          { title: '3. ' + tLabel('Share Certificate'), action: 'SHARE_CERTIFICATE' },
+          { title: '4. ' + tLabel('Recurring Details'), action: 'RECURRING_DETAILS' },
+          { title: '5. ' + tLabel('Recovery Details'), action: 'RECOVERY_DETAILS' },
+          { title: '6. ' + tLabel('Loan Contributions Register'), action: 'LOAN_CONTRIBUTIONS_REGISTER' },
+          { title: '7. ' + tLabel('Lien Account Information'), action: 'LIEN_ACCOUNT_INFORMATION' },
+          { title: '8. ' + tLabel('Loan Consolidation Chain'), action: 'LOAN_CONSOLIDATION_CHAIN' },
+          { title: '9. ' + tLabel('Loan Re-agreement History'), action: 'LOAN_REAGREEMENT_HISTORY' },
         ]
       },
-      { title: '13. Pass Book Printing', action: 'PASS_BOOK_PRINTING' },
-      { title: '14. Report Head Order', action: 'REPORT_HEAD_ORDER' },
+      { title: '13. ' + tLabel('Pass Book Printing'), action: 'PASS_BOOK_PRINTING' },
+      { title: '14. ' + tLabel('Report Head Order'), action: 'REPORT_HEAD_ORDER' },
       {
-        title: 'Report Pro',
+        title: tLabel('Report Pro'),
         submenu: [
-          { title: 'Legacy Report Workspace', action: 'REPORT_PRO' },
+          { title: tLabel('Legacy Report Workspace'), action: 'REPORT_PRO' },
         ]
       },
     ]
   },
   {
     id: 'utility',
-    title: 'Utility',
+    title: tLabel('Utility'),
     items: [
-      { title: 'Premature Information Of Intt. (SB A/c)', action: 'PREMATURE_SB_AC' },
-      { title: 'Calculator', action: 'CALCULATOR' },
-      { title: 'Find', action: 'FIND' },
-      { title: 'Member Balance', action: 'MEMBER_BALANCE' },
-      { title: 'EMI Chart', action: 'EMI_CHART' },
-      { title: 'Database BackUp', action: 'DATABASE_BACKUP' },
-      { title: 'Update Saving Intt.', action: 'UPDATE_SAVING_INTT' },
-      { title: 'Interest Receivable/Received Statement', action: 'INTEREST_RECEIVABLE_RECEIVED_STATEMENT' },
-      { title: 'Communication Hub', action: 'COMMUNICATION_HUB' },
-      { title: 'Notification Centre', action: 'NOTIFICATION_CENTRE' },
-      { title: 'Support Desk', action: 'SUPPORT_DESK' },
+      { title: tLabel('Premature Information Of Intt. (SB A/c)'), action: 'PREMATURE_SB_AC' },
+      { title: tLabel('Calculator'), action: 'CALCULATOR' },
+      { title: tLabel('Find'), action: 'FIND' },
+      { title: tLabel('Member Balance'), action: 'MEMBER_BALANCE' },
+      { title: tLabel('EMI Chart'), action: 'EMI_CHART' },
+      { title: tLabel('Database BackUp'), action: 'DATABASE_BACKUP' },
+      { title: tLabel('Update Saving Intt.'), action: 'UPDATE_SAVING_INTT' },
+      { title: tLabel('Interest Receivable/Received Statement'), action: 'INTEREST_RECEIVABLE_RECEIVED_STATEMENT' },
+      { title: tLabel('Communication Hub'), action: 'COMMUNICATION_HUB' },
+      { title: tLabel('Notification Centre'), action: 'NOTIFICATION_CENTRE' },
+      { title: tLabel('Support Desk'), action: 'SUPPORT_DESK' },
+      { title: tLabel('System Update'), action: 'SYSTEM_UPDATE' },
     ]
   },
   {
     id: 'help',
-    title: 'Help',
+    title: tLabel('Help'),
     items: [
-      { title: 'About', action: 'ABOUT' },
-      { title: 'Contents ..', action: 'CONTENTS' },
-      { title: 'Replay Tour', action: 'REPLAY_TOUR' },
-      { title: 'How It Works', action: 'HOW_IT_WORKS' },
-      { title: 'Getting Started', action: 'GETTING_STARTED' },
+      { title: tLabel('About'), action: 'ABOUT' },
+      { title: tLabel('Contents ..'), action: 'CONTENTS' },
+      { title: tLabel('Replay Tour'), action: 'REPLAY_TOUR' },
+      { title: tLabel('How It Works'), action: 'HOW_IT_WORKS' },
+      { title: tLabel('Getting Started'), action: 'GETTING_STARTED' },
+      { title: tLabel("What's New"), action: 'WHATS_NEW' },
     ]
   },
   {
     id: 'exit',
-    title: 'Exit',
+    title: tLabel('Exit'),
     items: [],
     action: 'EXIT'
   },
   {
     id: 'settings',
-    title: 'Settings',
+    title: tLabel('Settings'),
     items: [],
     action: 'SETTINGS'
   }
@@ -301,6 +306,7 @@ interface ExitConfirmationModalProps {
 }
 
 const ExitConfirmationModal: React.FC<ExitConfirmationModalProps> = ({ isOpen, onClose, onConfirm }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -312,7 +318,7 @@ const ExitConfirmationModal: React.FC<ExitConfirmationModalProps> = ({ isOpen, o
             <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center">
               <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
             </div>
-            Exit Application
+            {t('Exit Application')}
           </span>
           <div className="flex gap-2">
             <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
@@ -327,9 +333,9 @@ const ExitConfirmationModal: React.FC<ExitConfirmationModalProps> = ({ isOpen, o
             <AlertCircle size={32} className="text-red-500" />
           </div>
 
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Exit Application</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">{t('Exit Application')}</h3>
           <p className="text-gray-600 text-sm mb-8 max-w-[80%] leading-relaxed">
-            Are you sure you want to exit Paper White Technology - LMS?
+            {t('Are you sure you want to exit Paper White Technology - LMS?')}
           </p>
 
           <div className="flex gap-4 w-full justify-center">
@@ -337,13 +343,13 @@ const ExitConfirmationModal: React.FC<ExitConfirmationModalProps> = ({ isOpen, o
               onClick={onClose}
               className="px-6 py-2 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-medium text-sm transition-colors min-w-[100px]"
             >
-              Cancel
+              {t('Cancel')}
             </button>
             <button
               onClick={onConfirm}
               className="px-6 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-medium text-sm shadow-md shadow-red-200 transition-all hover:shadow-lg min-w-[100px]"
             >
-              Exit
+              {t('Exit')}
             </button>
           </div>
         </div>
@@ -414,12 +420,12 @@ function flattenForSearch(config: NavItem[], run: (action: string) => void): Sea
   const out: SearchItem[] = [];
   const walk = (items: MenuItem[], trail: string[], icon: React.ReactNode) => {
     items.forEach(item => {
-      if (item.submenu) { walk(item.submenu, [...trail, item.title], icon); return; }
+      if (item.submenu) { walk(item.submenu, [...trail, tLabel(item.title)], icon); return; }
       if (!item.action) return;
       const action = item.action;
       out.push({
         id: action,
-        title: item.title,
+        title: tLabel(item.title),
         path: trail.join(' › '),
         keywords: SEARCH_KEYWORDS[action],
         suggest: SEARCH_SUGGESTED.has(action),
@@ -434,15 +440,16 @@ function flattenForSearch(config: NavItem[], run: (action: string) => void): Sea
     const icon = SECTION_ICON[nav.id];
     if (nav.items.length === 0 && nav.action) {
       const action = nav.action;
-      out.push({ id: action, title: nav.title, path: 'Application', keywords: SEARCH_KEYWORDS[action], icon, run: () => run(action) });
+      out.push({ id: action, title: tLabel(nav.title), path: tLabel('Application'), keywords: SEARCH_KEYWORDS[action], icon, run: () => run(action) });
     } else {
-      walk(nav.items, [nav.title], icon);
+      walk(nav.items, [tLabel(nav.title)], icon);
     }
   });
   return out;
 }
 
 const Navbar: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const visibleNavConfig = useMemo(
     () => filterNavConfig(navConfig, user?.allowedActions),
@@ -515,6 +522,12 @@ const Navbar: React.FC = () => {
       return;
     }
 
+    if (action === 'WHATS_NEW') {
+      window.dispatchEvent(new Event(ONBOARDING_WHATSNEW_EVENT));
+      setMenuState({ activeMenu: null, activeSubmenus: {} });
+      return;
+    }
+
     if (action === 'GETTING_STARTED') {
       window.dispatchEvent(new Event(ONBOARDING_CHECKLIST_EVENT));
       setMenuState({ activeMenu: null, activeSubmenus: {} });
@@ -558,13 +571,13 @@ const Navbar: React.FC = () => {
   const searchItems = useMemo<SearchItem[]>(() => {
     const items = flattenForSearch(visibleNavConfig, handleMenuItemClick);
     items.push({
-      id: 'MY_PROFILE', title: 'My Profile', path: 'Account', keywords: 'account me profile details',
+      id: 'MY_PROFILE', title: tLabel('My Profile'), path: tLabel('Account'), keywords: 'account me profile details',
       icon: <UserIcon size={15} />,
       run: () => { if (window.electronAPI?.openNewWindow) window.electronAPI.openNewWindow('/my-profile'); else window.location.hash = '#/my-profile'; },
     });
     return items;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleNavConfig]);
+  }, [visibleNavConfig, i18n.language]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -594,7 +607,7 @@ const Navbar: React.FC = () => {
               onClick={(e) => handleSubmenuClick(e, item.title)}
               className="flex justify-between items-center w-full px-4 py-2 text-gray-800 whitespace-nowrap hover:bg-gray-50 no-underline"
             >
-              {item.title}
+              {tLabel(item.title)}
               <span className={`ml-4 transform transition-transform duration-200 ${isSubmenuOpen ? 'rotate-90' : ''}`}>›</span>
             </a>
             {isSubmenuOpen && (
@@ -615,7 +628,7 @@ const Navbar: React.FC = () => {
             }}
             className="flex justify-between items-center w-full px-4 py-2 text-gray-800 whitespace-nowrap hover:bg-gray-50 no-underline"
           >
-            {item.title}
+            {tLabel(item.title)}
             {item.shortcut && <span className='ml-8 text-gray-500 text-sm opacity-80'>{item.shortcut}</span>}
           </a>
         </li>
@@ -640,13 +653,13 @@ const Navbar: React.FC = () => {
         className="fz-caption font-black tracking-tight leading-none"
         style={{ color: 'rgba(15,23,42,0.18)' }}
       >
-        Fibe
+        {t('Fibe')}
       </p>
       <p
         className="fz-micro font-bold uppercase tracking-widest leading-none mt-0.5"
         style={{ color: 'rgba(15,23,42,0.12)' }}
       >
-        Loan Management
+        {t('Loan Management')}
       </p>
     </div>
 
@@ -670,7 +683,7 @@ const Navbar: React.FC = () => {
                     }
                   }}
                 >
-                  {navItem.title}
+                  {tLabel(navItem.title)}
                 </a>
                 {menuState.activeMenu === navItem.id && (
                   <ul className="absolute top-full left-0 min-w-52 bg-white border border-gray-200 rounded shadow-lg py-1 m-0 list-none z-[9999]">
@@ -690,7 +703,7 @@ const Navbar: React.FC = () => {
           {/* Compact connection dot with tooltip-style label */}
           <div
             data-tour="connection"
-            title={connStatus === 'connected' ? 'Backend: Connected' : connStatus === 'disconnected' ? 'Backend: Disconnected' : 'Checking connection…'}
+            title={connStatus === 'connected' ? t('Backend: Connected') : connStatus === 'disconnected' ? t('Backend: Disconnected') : t('Checking connection…')}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border fz-tiny font-bold transition-all cursor-default select-none"
             style={{
               backgroundColor: connStatus === 'connected' ? '#f0fdf4' : connStatus === 'disconnected' ? '#fef2f2' : '#fefce8',
@@ -698,7 +711,7 @@ const Navbar: React.FC = () => {
               color:           connStatus === 'connected' ? '#16a34a' : connStatus === 'disconnected' ? '#dc2626' : '#ca8a04',
             }}>
             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${connStatus === 'connected' ? 'bg-green-500 animate-pulse' : connStatus === 'disconnected' ? 'bg-red-500' : 'bg-yellow-400 animate-pulse'}`} />
-            <span className="hidden sm:inline">{connStatus === 'connected' ? 'OK' : connStatus === 'disconnected' ? 'Off' : '…'}</span>
+            <span className="hidden sm:inline">{connStatus === 'connected' ? 'OK' : connStatus === 'disconnected' ? t('Off') : '…'}</span>
           </div>
           <UserProfileMenu />
         </div>

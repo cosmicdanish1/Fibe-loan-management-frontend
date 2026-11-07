@@ -9,6 +9,7 @@ const notify = async (type: 'info' | 'warning' | 'error', title: string, msg: st
   }
 };
 import { apiService } from '../../../../services/api';
+import { useTranslation } from 'react-i18next';
 
 const emptyForm = (): MemberBalanceData => ({
   shareOpBal: '', shareAmt: '',
@@ -20,6 +21,7 @@ const emptyForm = (): MemberBalanceData => ({
 });
 
 export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
+  const { t } = useTranslation();
   const [wing, setWing] = useState<string>('');
   const [wings, setWings] = useState<Wing[]>([]);
   const [memberNo, setMemberNo] = useState<string>('');
@@ -186,7 +188,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     if (eAPI?.showMessageBox) {
       const res = await eAPI.showMessageBox({
         type: 'warning',
-        title: 'Confirm Balance Change',
+        title: t('Confirm Balance Change'),
         message: `Overwrite balances for member ${memberNo}?`,
         detail: `${memberName ? memberName + '\n\n' : ''}This directly updates the member's balances in fundsmaster and is recorded in the audit log.`,
         buttons: ['Cancel', 'Confirm & Save'],
@@ -194,7 +196,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
         cancelId: 0,
       });
       if (res?.response !== 1) return;
-    } else if (!window.confirm(`Overwrite balances for member ${memberNo}? This is logged.`)) {
+    } else if (!window.confirm(t('Overwrite balances for member {{1}}? This is logged.', { 1: memberNo }))) {
       return;
     }
 

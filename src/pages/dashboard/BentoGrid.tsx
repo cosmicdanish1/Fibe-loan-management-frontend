@@ -1,6 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { GripHorizontal } from 'lucide-react';
 import type { RowLayout, CardLayout } from './dashboardLayout';
+import { useTranslation } from 'react-i18next';
 
 const MIN_WEIGHT = 0.35;
 const MIN_ROW_HEIGHT = 110;
@@ -49,6 +50,7 @@ const applyMove = (rows: RowLayout[], id: string, dest: Dest): RowLayout[] => {
 const sameDest = (a: Dest | null, b: Dest | null) => JSON.stringify(a) === JSON.stringify(b);
 
 const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCard }) => {
+  const { t } = useTranslation();
   const gridEl = useRef<HTMLDivElement | null>(null);
   const rowEls = useRef<Record<string, HTMLDivElement | null>>({});
   const [dragId, setDragId] = useState<string | null>(null);
@@ -269,8 +271,8 @@ const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCar
                   tabIndex={0}
                   className="bento-grip"
                   onPointerDown={e => startMove(e, card.id)}
-                  aria-label="Drag to move this card"
-                  data-tip="Drag to move" data-tip-pos="bottom"
+                  aria-label={t('Drag to move this card')}
+                  data-tip={t('Drag to move')} data-tip-pos="bottom"
                   style={{
                     position: 'absolute', top: 3, left: '50%', transform: 'translateX(-50%)', zIndex: 3,
                     width: 34, height: 14, padding: 0, border: '1px solid var(--aw-border-strong)', borderRadius: 7,
@@ -284,7 +286,7 @@ const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCar
                 {next && !dragId && (
                   <div
                     className="bento-split"
-                    role="separator" aria-orientation="vertical" aria-label="Drag to resize"
+                    role="separator" aria-orientation="vertical" aria-label={t('Drag to resize')}
                     onPointerDown={e => startSplit(e, row.id, card.id, next.id)}
                     onDoubleClick={() => equalise(row.id)}
                     style={{ position: 'absolute', top: 0, bottom: 0, right: 'calc(var(--aw-gap) / -2 - 6px)', width: 12, zIndex: 4, cursor: 'col-resize', touchAction: 'none' }}
@@ -297,7 +299,7 @@ const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCar
           {!dragId && (
             <div
               className="bento-hgrip"
-              role="separator" aria-orientation="horizontal" aria-label="Drag to change the row height"
+              role="separator" aria-orientation="horizontal" aria-label={t('Drag to change the row height')}
               onPointerDown={e => startRowResize(e, row.id)}
               onDoubleClick={() => autoHeight(row.id)}
               style={{ position: 'absolute', left: 0, right: 0, bottom: 'calc(var(--aw-gap) / -2 - 6px)', height: 12, zIndex: 4, cursor: 'row-resize', touchAction: 'none' }}

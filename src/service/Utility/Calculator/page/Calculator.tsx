@@ -17,6 +17,8 @@ import {
 import { Select } from 'antd';
 import { apiService } from '../../../../services/api';
 import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import { useTranslation } from 'react-i18next';
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
 interface LoanCalculation {
   emi: number;
@@ -49,14 +51,9 @@ interface MemberData {
   eligibleAmount: number;
 }
 
-const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
-};
-
 
 const Calculator: React.FC = () => {
+  const { t } = useTranslation();
   const [principal, setPrincipal] = useState<string>('500000');
   const [annualRate, setAnnualRate] = useState<string>('12');
   const [tenure, setTenure] = useState<string>('24');
@@ -90,15 +87,15 @@ const Calculator: React.FC = () => {
           name: loan.name, code: loan.code, rate: parseFloat(loan.rate),
           maxAmount: parseFloat(loan.maxAmount || loan.max_amount || 0),
           maxTenure: parseInt(loan.maxTenure || loan.max_tenure || 60),
-          description: loan.description || `${loan.name} with ${loan.rate}% interest rate`
+          description: loan.description || t('{{1}} with {{2}}% interest rate', { 1: loan.name, 2: loan.rate })
         })));
       } else {
-        setRatesNotice('Could not load loan rates from the server - showing a default 12% Regular Loan only. Rates may be outdated.');
-        setLoanTypes([{ name: 'Regular Loan', code: 'RLN', rate: 12.0, maxAmount: 500000, maxTenure: 60, description: 'Standard loan' }]);
+        setRatesNotice(t('Could not load loan rates from the server - showing a default 12% Regular Loan only. Rates may be outdated.'));
+        setLoanTypes([{ name: 'Regular Loan', code: 'RLN', rate: 12.0, maxAmount: 500000, maxTenure: 60, description: t('Standard loan') }]);
       }
     } catch {
-      setRatesNotice('Could not load loan rates from the server - showing a default 12% Regular Loan only. Rates may be outdated.');
-      setLoanTypes([{ name: 'Regular Loan', code: 'RLN', rate: 12.0, maxAmount: 500000, maxTenure: 60, description: 'Standard loan' }]);
+      setRatesNotice(t('Could not load loan rates from the server - showing a default 12% Regular Loan only. Rates may be outdated.'));
+      setLoanTypes([{ name: 'Regular Loan', code: 'RLN', rate: 12.0, maxAmount: 500000, maxTenure: 60, description: t('Standard loan') }]);
     } finally { setLoading(false); }
   }, []);
 
@@ -127,7 +124,7 @@ const Calculator: React.FC = () => {
         const d = response.data;
         setSelectedMember(prev => prev ? { ...prev, basicPay: parseFloat(d.basicPay || 0), activeLoans: parseInt(d.activeLoans || 0), totalOutstanding: parseFloat(d.totalOutstanding || 0), eligibleAmount: parseFloat(d.availableEligibility || 0) } : null);
       }
-    } catch { setEligibilityUnavailable(true); await showDialog('error', 'Eligibility Error', 'Could not load eligibility details for this member.'); }
+    } catch { setEligibilityUnavailable(true); await showDialog('error', t('Eligibility Error'), t('Could not load eligibility details for this member.')); }
     finally { setLoading(false); }
   }, []);
 
@@ -184,9 +181,9 @@ const Calculator: React.FC = () => {
   }, []);
 
   const tabs = [
-    { id: 'calculator', label: 'Results', icon: CalcIcon },
-    { id: 'schedule', label: 'Schedule', icon: BarChart3 },
-    { id: 'comparison', label: 'Compare', icon: PieChart },
+    { id: 'calculator', label: t('Results'), icon: CalcIcon },
+    { id: 'schedule', label: t('Schedule'), icon: BarChart3 },
+    { id: 'comparison', label: t('Compare'), icon: PieChart },
   ];
 
   const principalValue = parseFloat(principal);
@@ -198,17 +195,17 @@ const Calculator: React.FC = () => {
       {/* Header */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Loan Calculator</h1>
-          <p className="aw-desc">Financial Analyzer</p>
+          <h1 className="aw-title">{t('Loan Calculator')}</h1>
+          <p className="aw-desc">{t('Financial Analyzer')}</p>
         </div>
         <div className="aw-actions">
           {loading && (
             <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
-              <RefreshCw size={12} className="aw-spin" /> Loading...
+              <RefreshCw size={12} className="aw-spin" /> {t('Loading...')}
             </span>
           )}
           <button type="button" onClick={resetForm} className="aw-btn aw-btn-secondary">
-            <RefreshCw size={13} /> Reset
+            <RefreshCw size={13} /> {t('Reset')}
           </button>
         </div>
       </div>
@@ -234,13 +231,13 @@ const Calculator: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><User size={14} /></span>
-                <h2 className="aw-card-title">Member</h2>
+                <h2 className="aw-card-title">{t('Member')}</h2>
               </div>
               <div className="aw-stack">
                 <div className="aw-input-wrap has-action">
                   <input type="text" value={memberNo} onChange={(e) => setMemberNo(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="Member ID..." aria-label="Member ID" className="aw-input" />
-                  <button type="button" onClick={() => setShowMemberLookup(true)} className="aw-input-action" aria-label="Search members" data-tip="Search members" data-tip-pos="bottom-end">
+                    placeholder={t('Member ID...')} aria-label={t('Member ID')} className="aw-input" />
+                  <button type="button" onClick={() => setShowMemberLookup(true)} className="aw-input-action" aria-label={t('Search members')} data-tip={t('Search members')} data-tip-pos="bottom-end">
                     <Search size={13} />
                   </button>
                 </div>
@@ -249,17 +246,17 @@ const Calculator: React.FC = () => {
                     <p className="aw-strong" style={{ textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedMember.name}</p>
                     <dl className="aw-facts" style={{ marginTop: 8 }}>
                       <div>
-                        <dt>Salary</dt>
+                        <dt>{t('Salary')}</dt>
                         <dd>{formatCurrency(selectedMember.basicPay)}</dd>
                       </div>
                       <div>
-                        <dt>Eligible</dt>
-                        <dd style={{ color: 'var(--aw-success)' }}>{eligibilityUnavailable ? 'Unavailable' : formatCurrency(selectedMember.eligibleAmount)}</dd>
+                        <dt>{t('Eligible')}</dt>
+                        <dd style={{ color: 'var(--aw-success)' }}>{eligibilityUnavailable ? t('Unavailable') : formatCurrency(selectedMember.eligibleAmount)}</dd>
                       </div>
                     </dl>
                   </div>
                 ) : (
-                  <p className="aw-muted" style={{ textAlign: 'center' }}>No member selected</p>
+                  <p className="aw-muted" style={{ textAlign: 'center' }}>{t('No member selected')}</p>
                 )}
               </div>
             </section>
@@ -268,11 +265,11 @@ const Calculator: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                <h2 className="aw-card-title">Loan Type</h2>
+                <h2 className="aw-card-title">{t('Loan Type')}</h2>
               </div>
               <div className="aw-stack">
                 <div>
-                  <label className="aw-label" htmlFor="calc-type">Type</label>
+                  <label className="aw-label" htmlFor="calc-type">{t('Type')}</label>
                   <Select
                     id="calc-type"
                     value={selectedLoanType}
@@ -280,7 +277,7 @@ const Calculator: React.FC = () => {
                     className="aw-select"
                     popupClassName="aw-select-popup"
                     options={[
-                      { value: 'custom', label: 'Custom' },
+                      { value: 'custom', label: t('Custom') },
                       ...loanTypes.map(lt => ({ value: lt.code, label: lt.name })),
                     ]}
                   />
@@ -290,7 +287,7 @@ const Calculator: React.FC = () => {
                   <div className="aw-panel aw-fade-in">
                     <p className="aw-muted" style={{ marginBottom: 6 }}>{selectedType.description}</p>
                     <div className="aw-row-value" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--aw-accent)' }}>
-                      <span>Max: {formatCurrency(selectedType.maxAmount)}</span>
+                      <span>{t('Max:')} {formatCurrency(selectedType.maxAmount)}</span>
                       <span>{selectedType.maxTenure}M</span>
                     </div>
                   </div>
@@ -302,13 +299,13 @@ const Calculator: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Settings size={14} /></span>
-                <h2 className="aw-card-title">Parameters</h2>
+                <h2 className="aw-card-title">{t('Parameters')}</h2>
               </div>
               <div className="aw-stack">
                 {[
-                  { id: 'calc-principal', label: 'Principal (₹)', value: principal, setter: setPrincipal, icon: IndianRupee, disabled: false },
-                  { id: 'calc-rate', label: 'Rate (%)', value: annualRate, setter: setAnnualRate, icon: Percent, disabled: selectedLoanType !== 'custom' },
-                  { id: 'calc-months', label: 'Months', value: tenure, setter: setTenure, icon: Calendar, disabled: false },
+                  { id: 'calc-principal', label: t('Principal (₹)'), value: principal, setter: setPrincipal, icon: IndianRupee, disabled: false },
+                  { id: 'calc-rate', label: t('Rate (%)'), value: annualRate, setter: setAnnualRate, icon: Percent, disabled: selectedLoanType !== 'custom' },
+                  { id: 'calc-months', label: t('Months'), value: tenure, setter: setTenure, icon: Calendar, disabled: false },
                 ].map(({ id, label, value, setter, icon: Icon, disabled }) => (
                   <div key={id}>
                     <label className="aw-label" htmlFor={id}>{label}</label>
@@ -333,9 +330,9 @@ const Calculator: React.FC = () => {
                   <div className="aw-stack aw-narrow aw-fade-in">
                     <div className="aw-stats aw-stats-3">
                       {[
-                        { label: 'Monthly EMI', value: formatCurrency(calculation.emi), tone: 'tone-info', icon: TrendingUp },
-                        { label: 'Total Amount', value: formatCurrency(calculation.totalAmount), tone: 'tone-success', icon: ShieldCheck },
-                        { label: 'Interest', value: formatCurrency(calculation.totalInterest), tone: 'tone-warning', icon: Percent },
+                        { label: t('Monthly EMI'), value: formatCurrency(calculation.emi), tone: 'tone-info', icon: TrendingUp },
+                        { label: t('Total Amount'), value: formatCurrency(calculation.totalAmount), tone: 'tone-success', icon: ShieldCheck },
+                        { label: t('Interest'), value: formatCurrency(calculation.totalInterest), tone: 'tone-warning', icon: Percent },
                       ].map(m => (
                         <div key={m.label} className={`aw-stat aw-stat-left ${m.tone}`}>
                           <div className="aw-stat-head">
@@ -350,14 +347,14 @@ const Calculator: React.FC = () => {
                     <div className="aw-panel">
                       <div className="aw-stat-head">
                         <PieChart size={14} style={{ color: 'var(--aw-accent)' }} />
-                        <span className="aw-stat-label">Breakdown</span>
+                        <span className="aw-stat-label">{t('Breakdown')}</span>
                       </div>
-                      <div className="aw-bar" role="img" aria-label="Principal versus interest">
+                      <div className="aw-bar" role="img" aria-label={t('Principal versus interest')}>
                         <span style={{ width: `${(principalValue / calculation.totalAmount) * 100}%` }} />
                       </div>
                       <div className="aw-legend">
-                        <span><i className="aw-dot" />Principal</span>
-                        <span><i className="aw-dot aw-dot-soft" />Interest</span>
+                        <span><i className="aw-dot" />{t('Principal')}</span>
+                        <span><i className="aw-dot aw-dot-soft" />{t('Interest')}</span>
                       </div>
                       <dl className="aw-facts aw-facts-4" style={{ marginTop: 12 }}>
                         {[
@@ -377,8 +374,8 @@ const Calculator: React.FC = () => {
                     <div className="aw-alert aw-alert-info" style={{ marginBottom: 0 }}>
                       <ShieldCheck size={14} />
                       <p>
-                        <strong>Note: </strong>
-                        For {formatCurrency(principalValue)} over {tenure} months at {annualRate}%, your monthly EMI is <strong>{formatCurrency(calculation.emi)}</strong>.
+                        <strong>{t('Note:')} </strong>
+                        {t('For')} {formatCurrency(principalValue)} over {tenure} {t('months at')} {annualRate}%, your monthly EMI is <strong>{formatCurrency(calculation.emi)}</strong>.
                       </p>
                     </div>
                   </div>
@@ -389,9 +386,9 @@ const Calculator: React.FC = () => {
                     <div className="aw-stat-head" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         <BarChart3 size={14} style={{ color: 'var(--aw-accent)' }} />
-                        <span className="aw-stat-label">Amortization Schedule</span>
+                        <span className="aw-stat-label">{t('Amortization Schedule')}</span>
                       </span>
-                      <span className="aw-pill">{tenure} installments</span>
+                      <span className="aw-pill">{t('{{1}} installments', { 1: tenure })}</span>
                     </div>
                     <div className="aw-table-wrap">
                       <table className="aw-table">
@@ -441,20 +438,20 @@ const Calculator: React.FC = () => {
                               <span className="aw-row-value" style={{ color: 'var(--aw-accent)' }}>{formatCurrency(loan.emi)}</span>
                             </div>
                             <div className="aw-row">
-                              <span className="aw-row-label">Interest</span>
+                              <span className="aw-row-label">{t('Interest')}</span>
                               <span className="aw-row-value">{formatCurrency(loan.totalInterest)}</span>
                             </div>
                           </div>
                         </div>
                         <div className="aw-compare-total">
-                          <span>Total</span>
+                          <span>{t('Total')}</span>
                           <span>{formatCurrency(loan.totalAmount)}</span>
                         </div>
                       </div>
                     )) : (
                       <div className="aw-empty" style={{ gridColumn: '1 / -1' }}>
                         <PieChart size={36} />
-                        <span>No comparison data</span>
+                        <span>{t('No comparison data')}</span>
                       </div>
                     )}
                   </div>
@@ -464,15 +461,15 @@ const Calculator: React.FC = () => {
             ) : (
               <div className="aw-empty" style={{ flex: 1 }}>
                 <CalcIcon size={44} />
-                <span>Enter parameters to calculate</span>
+                <span>{t('Enter parameters to calculate')}</span>
               </div>
             )}
 
             {/* Footer bar inside workspace */}
             <div className="aw-main-foot">
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <span>Computation: <span style={{ color: 'var(--aw-text)' }}>Dynamic</span></span>
-                <span>Audit: <span style={{ color: 'var(--aw-success)' }}>Verified</span></span>
+                <span>{t('Computation:')} <span style={{ color: 'var(--aw-text)' }}>{t('Dynamic')}</span></span>
+                <span>{t('Audit:')} <span style={{ color: 'var(--aw-success)' }}>{t('Verified')}</span></span>
               </div>
               <span className="aw-pill">V4.2 ENGINE</span>
             </div>
@@ -484,13 +481,13 @@ const Calculator: React.FC = () => {
       {/* Member Lookup Modal */}
       {showMemberLookup && (
         <div className="aw-modal-backdrop" onClick={() => setShowMemberLookup(false)}>
-          <div className="aw-modal" role="dialog" aria-modal="true" aria-label="Select Member" onClick={(e) => e.stopPropagation()}>
+          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Select Member')} onClick={(e) => e.stopPropagation()}>
             <div className="aw-modal-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="aw-card-icon"><User size={14} /></span>
-                <h2 className="aw-card-title">Select Member</h2>
+                <h2 className="aw-card-title">{t('Select Member')}</h2>
               </div>
-              <button type="button" onClick={() => setShowMemberLookup(false)} className="aw-icon-btn" aria-label="Close">
+              <button type="button" onClick={() => setShowMemberLookup(false)} className="aw-icon-btn" aria-label={t('Close')}>
                 <X size={15} />
               </button>
             </div>

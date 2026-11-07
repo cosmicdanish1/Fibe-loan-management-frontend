@@ -8,12 +8,8 @@ import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 import { DatePicker, Select } from 'antd';
 import { isFromAfterTo } from '@/utils/dates';
-
-const showDialog = async (type: 'info' | 'warning' | 'error', msg: string, detail: string): Promise<void> => {
-  if ((window as any).electronAPI?.showMessageBox) {
-    await (window as any).electronAPI.showMessageBox({ type, title: 'electron-react-ts', message: msg, detail, buttons: ['OK'], defaultId: 0 });
-  } else { alert(`[${type.toUpperCase()}] ${msg}\n\n${detail}`); }
-};
+import { useTranslation } from 'react-i18next';
+import { showDialog3 as showDialog } from '@/utils/dialog';
 
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -29,6 +25,7 @@ interface InterestHistory { id: number; intType: string; fromDate: string; toDat
 
 
 const UpdateSavingInterest: React.FC = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({ fromDate: '', toDate: '', interestRate: 4.0, accountHead: 'A1001', voucherNumber: '', narration: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -45,7 +42,7 @@ const UpdateSavingInterest: React.FC = () => {
   const initializeComponent = useCallback(async () => {
     setIsLoading(true);
     try { await Promise.all([loadCurrentRate(), loadHistory(), loadHeads()]); setDefaultDates(); }
-    catch { await showDialog('error', 'Initialization Error', 'Failed to initialize component.'); }
+    catch { await showDialog('error', t('Initialization Error'), t('Failed to initialize component.')); }
     finally { setIsLoading(false); }
   }, []);
 
@@ -88,43 +85,43 @@ const UpdateSavingInterest: React.FC = () => {
   }, []);
 
   const validateParameters = useCallback(async () => {
-    if (isFromAfterTo(formData.fromDate, formData.toDate)) { await showDialog('warning', 'Invalid Dates', 'From date cannot be after To date'); return; }
-    if (!formData.fromDate || !formData.toDate || !formData.interestRate) { await showDialog('warning', 'Missing Fields', 'Please fill all required fields.'); return; }
+    if (isFromAfterTo(formData.fromDate, formData.toDate)) { await showDialog('warning', t('Invalid Dates'), t('From date cannot be after To date')); return; }
+    if (!formData.fromDate || !formData.toDate || !formData.interestRate) { await showDialog('warning', t('Missing Fields'), t('Please fill all required fields.')); return; }
     setIsValidating(true);
     try {
       const response = await apiService.validateInterestParameters(formData);
       if (response.success && response.data) {
         setValidationResult(response.data);
-        if (response.data.valid) await showDialog('info', 'Validation Passed', 'Parameters validated successfully.');
-        else await showDialog('error', 'Validation Failed', response.data.message || 'Validation failed.');
+        if (response.data.valid) await showDialog('info', t('Validation Passed'), t('Parameters validated successfully.'));
+        else await showDialog('error', t('Validation Failed'), response.data.message || t('Validation failed.'));
       }
-    } catch { await showDialog('error', 'Validation Error', 'Validation process failed.'); }
+    } catch { await showDialog('error', t('Validation Error'), t('Validation process failed.')); }
     finally { setIsValidating(false); }
   }, [formData]);
 
   const previewCalculation = useCallback(async () => {
-    if (isFromAfterTo(formData.fromDate, formData.toDate)) { await showDialog('warning', 'Invalid Dates', 'From date cannot be after To date'); return; }
+    if (isFromAfterTo(formData.fromDate, formData.toDate)) { await showDialog('warning', t('Invalid Dates'), t('From date cannot be after To date')); return; }
     setIsPreviewing(true);
     try {
       const response = await apiService.previewInterestCalculation(formData);
       if (response.success && response.data) setPreviewResult(response.data);
-      else await showDialog('error', 'Preview Failed', 'Could not generate preview.');
-    } catch { await showDialog('error', 'Preview Error', 'Preview calculation failed.'); }
+      else await showDialog('error', t('Preview Failed'), t('Could not generate preview.'));
+    } catch { await showDialog('error', t('Preview Error'), t('Preview calculation failed.')); }
     finally { setIsPreviewing(false); }
   }, [formData]);
 
   const processInterest = useCallback(async () => {
-    if (isFromAfterTo(formData.fromDate, formData.toDate)) { await showDialog('warning', 'Invalid Dates', 'From date cannot be after To date'); return; }
+    if (isFromAfterTo(formData.fromDate, formData.toDate)) { await showDialog('warning', t('Invalid Dates'), t('From date cannot be after To date')); return; }
     const confirmed = await showConfirm('Confirm Interest Posting', `Post interest for ${formData.fromDate} to ${formData.toDate}. This cannot be undone.`);
     if (!confirmed) return;
     setIsProcessing(true);
     try {
       const response = await apiService.updateSavingInterest(formData);
       if (response.success) {
-        await showDialog('info', 'Interest Posted', `Members: ${response.data.totalMembers}\nTotal: ₹${response.data.totalInterestAmount}`);
+        await showDialog('info', t('Interest Posted'), t('Members: {{1}} Total: ₹{{2}}', { 1: response.data.totalMembers, 2: response.data.totalInterestAmount }));
         loadHistory(); setValidationResult(null); setPreviewResult(null);
-      } else await showDialog('error', 'Processing Failed', response.message || 'Interest posting failed.');
-    } catch { await showDialog('error', 'Critical Error', 'A critical error occurred.'); }
+      } else await showDialog('error', t('Processing Failed'), response.message || t('Interest posting failed.'));
+    } catch { await showDialog('error', t('Critical Error'), t('A critical error occurred.')); }
     finally { setIsProcessing(false); }
   }, [formData, loadHistory]);
 
@@ -148,21 +145,21 @@ const UpdateSavingInterest: React.FC = () => {
       {/* Header */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Saving Interest Ledger</h1>
-          <p className="aw-desc">Financial Yield Configuration</p>
+          <h1 className="aw-title">{t('Saving Interest Ledger')}</h1>
+          <p className="aw-desc">{t('Financial Yield Configuration')}</p>
         </div>
         <div className="aw-actions">
           {isLoading && (
             <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
-              <RefreshCw size={12} className="aw-spin" /> Syncing with ledger...
+              <RefreshCw size={12} className="aw-spin" /> {t('Syncing with ledger...')}
             </span>
           )}
           <span className="aw-pill tone-info" style={{ gap: 6 }}>
-            <TrendingUp size={12} /> Current Rate: {currentRate}%
+            <TrendingUp size={12} /> {t('Current Rate:')} {currentRate}%
           </span>
           <button type="button" onClick={processInterest} disabled={isProcessing || !validationResult?.valid} className="aw-btn aw-btn-primary">
             {isProcessing ? <RefreshCw size={13} className="aw-spin" /> : <Play size={13} />}
-            Execute Posting
+            {t('Execute Posting')}
           </button>
         </div>
       </div>
@@ -178,19 +175,19 @@ const UpdateSavingInterest: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Settings size={14} /></span>
-                <h2 className="aw-card-title">Parameters</h2>
+                <h2 className="aw-card-title">{t('Parameters')}</h2>
               </div>
               <div className="aw-stack">
                 <div className="aw-two" style={{ gap: 10 }}>
                   <div>
-                    <label className="aw-label" htmlFor="usi-from">From Date</label>
+                    <label className="aw-label" htmlFor="usi-from">{t('From Date')}</label>
                     <DatePicker id="usi-from" value={formData.fromDate ? dayjs(formData.fromDate) : null}
                       onChange={(d) => handleInputChange('fromDate', d ? d.format('YYYY-MM-DD') : '')}
                       format="DD-MMM-YYYY" className="aw-picker" popupClassName="aw-select-popup" allowClear={false}
                       suffixIcon={<Calendar size={13} />} />
                   </div>
                   <div>
-                    <label className="aw-label" htmlFor="usi-to">To Date</label>
+                    <label className="aw-label" htmlFor="usi-to">{t('To Date')}</label>
                     <DatePicker id="usi-to" value={formData.toDate ? dayjs(formData.toDate) : null}
                       onChange={(d) => handleInputChange('toDate', d ? d.format('YYYY-MM-DD') : '')}
                       format="DD-MMM-YYYY" className="aw-picker" popupClassName="aw-select-popup" allowClear={false}
@@ -198,7 +195,7 @@ const UpdateSavingInterest: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="aw-label" htmlFor="usi-rate">Yield Rate (% P.A.)</label>
+                  <label className="aw-label" htmlFor="usi-rate">{t('Yield Rate (% P.A.)')}</label>
                   <div className="aw-input-wrap has-icon">
                     <TrendingUp size={13} />
                     <input id="usi-rate" type="number" step="0.01" value={formData.interestRate}
@@ -207,31 +204,31 @@ const UpdateSavingInterest: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="aw-label" htmlFor="usi-head">Ledger Head</label>
+                  <label className="aw-label" htmlFor="usi-head">{t('Ledger Head')}</label>
                   <Select id="usi-head" showSearch value={formData.accountHead || undefined}
                     onChange={val => handleInputChange('accountHead', val)}
-                    placeholder="Select ledger head..." className="aw-select" popupClassName="aw-select-popup"
+                    placeholder={t('Select ledger head...')} className="aw-select" popupClassName="aw-select-popup"
                     optionFilterProp="label" listHeight={300}
                     options={headList.map(h => ({ value: h.code, label: `${h.code} - ${h.name}` }))} />
                 </div>
                 <div>
-                  <label className="aw-label" htmlFor="usi-voucher">Voucher No.</label>
+                  <label className="aw-label" htmlFor="usi-voucher">{t('Voucher No.')}</label>
                   <input id="usi-voucher" value={formData.voucherNumber} onChange={e => handleInputChange('voucherNumber', e.target.value)}
-                    placeholder="Auto-generated if blank..." className="aw-input" />
+                    placeholder={t('Auto-generated if blank...')} className="aw-input" />
                 </div>
                 <div>
-                  <label className="aw-label" htmlFor="usi-narration">Narration</label>
+                  <label className="aw-label" htmlFor="usi-narration">{t('Narration')}</label>
                   <textarea id="usi-narration" value={formData.narration} onChange={e => handleInputChange('narration', e.target.value)}
                     rows={2} className="aw-input" />
                 </div>
                 <div className="aw-btn-row" style={{ paddingTop: 12, borderTop: '1px solid var(--aw-border)' }}>
                   <button type="button" onClick={validateParameters} disabled={isValidating} className="aw-btn aw-btn-secondary"
-                    data-tip="Check dates, rate and ledger head" data-tip-pos="top-start">
-                    {isValidating ? <RefreshCw size={13} className="aw-spin" /> : <ShieldCheck size={13} />} Validate
+                    data-tip={t('Check dates, rate and ledger head')} data-tip-pos="top-start">
+                    {isValidating ? <RefreshCw size={13} className="aw-spin" /> : <ShieldCheck size={13} />} {t('Validate')}
                   </button>
                   <button type="button" onClick={previewCalculation} disabled={isPreviewing} className="aw-btn aw-btn-secondary"
-                    data-tip="Preview the result without posting" data-tip-pos="top-end">
-                    {isPreviewing ? <RefreshCw size={13} className="aw-spin" /> : <Eye size={13} />} Snapshot
+                    data-tip={t('Preview the result without posting')} data-tip-pos="top-end">
+                    {isPreviewing ? <RefreshCw size={13} className="aw-spin" /> : <Eye size={13} />} {t('Snapshot')}
                   </button>
                 </div>
               </div>
@@ -242,7 +239,7 @@ const UpdateSavingInterest: React.FC = () => {
               <div className={`aw-alert aw-fade-in ${validationResult.valid ? 'aw-alert-success' : 'aw-alert-danger'}`} role="status" style={{ marginBottom: 0 }}>
                 {validationResult.valid ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
                 <div>
-                  <strong style={{ textTransform: 'uppercase' }}>{validationResult.valid ? 'Validation Passed' : 'Validation Failed'}</strong>
+                  <strong style={{ textTransform: 'uppercase' }}>{validationResult.valid ? t('Validation Passed') : t('Validation Failed')}</strong>
                   {validationResult.message && <p style={{ marginTop: 2, fontWeight: 500 }}>{validationResult.message}</p>}
                 </div>
               </div>
@@ -253,14 +250,14 @@ const UpdateSavingInterest: React.FC = () => {
               <section className="aw-card aw-fade-in">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><Clock size={14} /></span>
-                  <h2 className="aw-card-title">Batch History</h2>
+                  <h2 className="aw-card-title">{t('Batch History')}</h2>
                 </div>
                 <div className="aw-rows" style={{ maxHeight: 200, overflowY: 'auto' }}>
                   {interestHistory.slice(0, 10).map(h => (
                     <div key={h.id} className="aw-row" style={{ alignItems: 'center' }}>
                       <div>
                         <span className="aw-row-value" style={{ display: 'block' }}>{dayjs(h.fromDate).format('DD/MM/YY')} — {dayjs(h.toDate).format('DD/MM/YY')}</span>
-                        <span className="aw-meta">{h.memberCount} members · {h.rate}% p.a.</span>
+                        <span className="aw-meta">{t('{{1}} {{2}} {{3}}% p.a.', { 1: h.memberCount, 2: t('members ·'), 3: h.rate })}</span>
                       </div>
                       <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>₹{formatCurrency(h.totalAmount)}</span>
                     </div>
@@ -276,12 +273,12 @@ const UpdateSavingInterest: React.FC = () => {
             <div className="aw-main-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <span className="aw-card-icon"><FileText size={14} /></span>
-                <h2 className="aw-card-title">Preview / Sandbox</h2>
+                <h2 className="aw-card-title">{t('Preview / Sandbox')}</h2>
               </div>
               {previewResult && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span className="aw-pill tone-muted">{previewResult.totalMembers} members</span>
-                  <span className="aw-pill tone-success">Total: ₹{formatCurrency(previewResult.totalInterestAmount)}</span>
+                  <span className="aw-pill tone-muted">{t('{{1}} members', { 1: previewResult.totalMembers })}</span>
+                  <span className="aw-pill tone-success">{t('Total: ₹{{1}}', { 1: formatCurrency(previewResult.totalInterestAmount) })}</span>
                 </div>
               )}
             </div>
@@ -310,24 +307,22 @@ const UpdateSavingInterest: React.FC = () => {
               ) : (
                 <div className="aw-empty" style={{ minHeight: '100%' }}>
                   <Eye size={38} />
-                  <strong className="aw-strong">No Preview Data</strong>
-                  <span>Click "Snapshot" after validating parameters</span>
+                  <strong className="aw-strong">{t('No Preview Data')}</strong>
+                  <span>{t('Click "Snapshot" after validating parameters')}</span>
                 </div>
               )}
             </div>
             {previewPages > 1 && (
               <div className="aw-main-foot">
-                <span>
-                  {((previewPage - 1) * PREVIEW_PAGE_SIZE) + 1}–{Math.min(previewPage * PREVIEW_PAGE_SIZE, previewRows.length)} of {previewRows.length}
-                </span>
+                <span>{t('{{1}}–{{2}} of {{3}}', { 1: ((previewPage - 1) * PREVIEW_PAGE_SIZE) + 1, 2: Math.min(previewPage * PREVIEW_PAGE_SIZE, previewRows.length), 3: previewRows.length })}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button type="button" onClick={() => setPreviewPage(Math.max(1, previewPage - 1))} disabled={previewPage === 1}
-                    className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label="Previous page" data-tip="Previous page" data-tip-pos="top-end">
+                    className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label={t('Previous page')} data-tip={t('Previous page')} data-tip-pos="top-end">
                     <ChevronLeft size={15} />
                   </button>
                   <span className="aw-strong" style={{ fontVariantNumeric: 'tabular-nums' }}>{previewPage} / {previewPages}</span>
                   <button type="button" onClick={() => setPreviewPage(Math.min(previewPages, previewPage + 1))} disabled={previewPage === previewPages}
-                    className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label="Next page" data-tip="Next page" data-tip-pos="top-end">
+                    className="aw-btn aw-btn-secondary" style={{ padding: '0 8px' }} aria-label={t('Next page')} data-tip={t('Next page')} data-tip-pos="top-end">
                     <ChevronRight size={15} />
                   </button>
                 </div>

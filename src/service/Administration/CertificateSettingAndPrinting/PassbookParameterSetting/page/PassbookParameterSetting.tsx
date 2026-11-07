@@ -4,6 +4,7 @@ import { Building2, FileText, Save, Search, Layers, Layout, Hash, ChevronRight }
 import AwDialog from '@/components/shared/kit/AwDialog';
 import apiService from '../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 interface BankPassbookSettings { formatName: string; accountType: string; }
 interface PageSettings { bankFormat: string; totalPages: string; linesPerPage: string; lineStartNumber: string; incrementLevel: string; }
@@ -47,6 +48,7 @@ const DEFAULT_PARAMS: PassbookParameters = {
 };
 
 const PassbookParameterSetting: React.FC = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'bank' | 'page' | 'detail' | 'first'>('bank');
   const [loading, setLoading] = useState(false);
   const [showFindModal, setShowFindModal] = useState(false);
@@ -101,7 +103,7 @@ const PassbookParameterSetting: React.FC = () => {
     setParams(prev => ({ ...prev, pageSettings: { ...prev.pageSettings, [field]: value } }));
 
   const handleSave = async () => {
-    if (!params.bankPassbookSettings.formatName) { message.error('Please enter a format name'); return; }
+    if (!params.bankPassbookSettings.formatName) { message.error(t('Please enter a format name')); return; }
     setLoading(true);
     try {
       const payload = {
@@ -124,10 +126,10 @@ const PassbookParameterSetting: React.FC = () => {
         ? await apiService.updatePassbookTemplate(params.id, payload)
         : await apiService.createPassbookTemplate(payload);
       if (resp.success) {
-        message.success('Passbook parameters saved');
+        message.success(t('Passbook parameters saved'));
         if (resp.data?.id) setParams(prev => ({ ...prev, id: resp.data.id }));
-      } else { message.error(resp.message || 'Save failed'); }
-    } catch { message.error('Connection error'); }
+      } else { message.error(resp.message || t('Save failed')); }
+    } catch { message.error(t('Connection error')); }
     finally { setLoading(false); }
   };
 
@@ -136,24 +138,24 @@ const PassbookParameterSetting: React.FC = () => {
     try {
       const resp = await apiService.getPassbookTemplates();
       if (resp.success) { setTemplates(resp.data); setShowFindModal(true); }
-      else message.error('Failed to load templates');
-    } catch { message.error('Connection error'); }
+      else message.error(t('Failed to load templates'));
+    } catch { message.error(t('Connection error')); }
     finally { setLoading(false); }
   };
 
   const TABS = [
-    { id: 'bank',   label: 'Identity',     icon: <Building2 size={14} /> },
-    { id: 'page',   label: 'Page Layout',  icon: <Layers size={14} /> },
-    { id: 'detail', label: 'Transactions', icon: <Layout size={14} /> },
-    { id: 'first',  label: 'First Page',   icon: <FileText size={14} /> },
+    { id: 'bank',   label: t('Identity'),     icon: <Building2 size={14} /> },
+    { id: 'page',   label: t('Page Layout'),  icon: <Layers size={14} /> },
+    { id: 'detail', label: t('Transactions'), icon: <Layout size={14} /> },
+    { id: 'first',  label: t('First Page'),   icon: <FileText size={14} /> },
   ];
 
   const PAGE_FIELDS = [
-    { label: 'Bank Format',     field: 'bankFormat',       icon: <Building2 size={13} /> },
-    { label: 'Total Pages',     field: 'totalPages',       icon: <Hash size={13} /> },
-    { label: 'Lines per Page',  field: 'linesPerPage',     icon: <FileText size={13} /> },
-    { label: 'Start Line No.',  field: 'lineStartNumber',  icon: <ChevronRight size={13} /> },
-    { label: 'Increment Level', field: 'incrementLevel',   icon: <Layers size={13} /> },
+    { label: t('Bank Format'),     field: 'bankFormat',       icon: <Building2 size={13} /> },
+    { label: t('Total Pages'),     field: 'totalPages',       icon: <Hash size={13} /> },
+    { label: t('Lines per Page'),  field: 'linesPerPage',     icon: <FileText size={13} /> },
+    { label: t('Start Line No.'),  field: 'lineStartNumber',  icon: <ChevronRight size={13} /> },
+    { label: t('Increment Level'), field: 'incrementLevel',   icon: <Layers size={13} /> },
   ] as const;
 
   usePageToolbarActions({
@@ -185,15 +187,15 @@ const PassbookParameterSetting: React.FC = () => {
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Passbook Parameter Setting</h1>
-          <p className="aw-desc">Configure passbook layout, page settings and field positions</p>
+          <h1 className="aw-title">{t('Passbook Parameter Setting')}</h1>
+          <p className="aw-desc">{t('Configure passbook layout, page settings and field positions')}</p>
         </div>
         <div className="aw-actions">
           <button type="button" onClick={handleFind} disabled={loading} className="aw-btn aw-btn-secondary">
-            <Search size={13} /> Find
+            <Search size={13} /> {t('Find')}
           </button>
           <button type="button" onClick={handleSave} disabled={loading} className="aw-btn aw-btn-primary">
-            <Save size={13} /> {loading ? 'Saving…' : 'Save'}
+            <Save size={13} /> {loading ? t('Saving…') : t('Save')}
           </button>
         </div>
       </div>
@@ -216,29 +218,29 @@ const PassbookParameterSetting: React.FC = () => {
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Building2 size={14} /></span>
                 <div>
-                  <h2 className="aw-card-title">Identity</h2>
-                  <p className="aw-meta">Template name and account type</p>
+                  <h2 className="aw-card-title">{t('Identity')}</h2>
+                  <p className="aw-meta">{t('Template name and account type')}</p>
                 </div>
               </div>
               <div className="aw-stack">
                 <div>
-                  <label className="aw-label" htmlFor="pb-name">Format Name</label>
+                  <label className="aw-label" htmlFor="pb-name">{t('Format Name')}</label>
                   <div className="aw-input-wrap has-icon">
                     <FileText size={13} />
                     <input id="pb-name" value={params.bankPassbookSettings.formatName} onChange={e => setBankField('formatName', e.target.value)} placeholder="IDENT_V1" className="aw-input" />
                   </div>
                 </div>
                 <div>
-                  <label className="aw-label" htmlFor="pb-acc">Account Type</label>
+                  <label className="aw-label" htmlFor="pb-acc">{t('Account Type')}</label>
                   <Select id="pb-acc" className="aw-select" popupClassName="aw-select-popup" value={params.bankPassbookSettings.accountType} onChange={v => setBankField('accountType', v)} options={ACCOUNT_OPTIONS} />
                 </div>
                 <div className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <span className="aw-strong" style={{ fontWeight: 600 }}>Set as system default template</span>
+                  <span className="aw-strong" style={{ fontWeight: 600 }}>{t('Set as system default template')}</span>
                   <button
                     type="button"
                     role="switch"
                     aria-checked={params.isDefault}
-                    aria-label="Set as system default template"
+                    aria-label={t('Set as system default template')}
                     onClick={() => setParams(prev => ({ ...prev, isDefault: !prev.isDefault }))}
                     className="aw-switch"
                   />
@@ -253,8 +255,8 @@ const PassbookParameterSetting: React.FC = () => {
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Layers size={14} /></span>
                 <div>
-                  <h2 className="aw-card-title">Page Layout</h2>
-                  <p className="aw-meta">Page dimensions and line configuration</p>
+                  <h2 className="aw-card-title">{t('Page Layout')}</h2>
+                  <p className="aw-meta">{t('Page dimensions and line configuration')}</p>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 'var(--aw-gap)' }}>
@@ -276,12 +278,12 @@ const PassbookParameterSetting: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Layout size={14} /></span>
-                <h2 className="aw-card-title">Transaction Columns</h2>
+                <h2 className="aw-card-title">{t('Transaction Columns')}</h2>
                 <input
                   value={params.detailPageSetting.bankFormat}
                   onChange={e => setParams(prev => ({ ...prev, detailPageSetting: { ...prev.detailPageSetting, bankFormat: e.target.value } }))}
-                  placeholder="Map key…"
-                  aria-label="Map key"
+                  placeholder={t('Map key…')}
+                  aria-label={t('Map key')}
                   className="aw-input"
                   style={{ marginLeft: 'auto', width: 180 }}
                 />
@@ -290,18 +292,18 @@ const PassbookParameterSetting: React.FC = () => {
                 <table className="aw-table">
                   <thead>
                     <tr>
-                      <th>Column Name</th>
-                      <th className="is-center" style={{ width: 100 }}>Row</th>
-                      <th className="is-center" style={{ width: 100 }}>Col</th>
-                      <th className="is-center" style={{ width: 90 }}>Visible</th>
+                      <th>{t('Column Name')}</th>
+                      <th className="is-center" style={{ width: 100 }}>{t('Row')}</th>
+                      <th className="is-center" style={{ width: 100 }}>{t('Col')}</th>
+                      <th className="is-center" style={{ width: 90 }}>{t('Visible')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {params.detailPageSetting.fields.map((f, idx) => (
                       <tr key={idx}>
                         <td>{f.name}</td>
-                        <td className="has-input"><input type="number" aria-label={`Row ${f.name}`} value={f.row} onChange={e => patchDetail(idx, { row: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
-                        <td className="has-input"><input type="number" aria-label={`Col ${f.name}`} value={f.col} onChange={e => patchDetail(idx, { col: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="has-input"><input type="number" aria-label={t('Row {{1}}', { 1: f.name })} value={f.row} onChange={e => patchDetail(idx, { row: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="has-input"><input type="number" aria-label={t('Col {{1}}', { 1: f.name })} value={f.col} onChange={e => patchDetail(idx, { col: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
                         <td className="is-center">{checkbox(f.visible, `Visible ${f.name}`, v => patchDetail(idx, { visible: v }))}</td>
                       </tr>
                     ))}
@@ -316,12 +318,12 @@ const PassbookParameterSetting: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><FileText size={14} /></span>
-                <h2 className="aw-card-title">First Page Fields</h2>
+                <h2 className="aw-card-title">{t('First Page Fields')}</h2>
                 <input
                   value={params.firstPageSetting.formatForBank}
                   onChange={e => setParams(prev => ({ ...prev, firstPageSetting: { ...prev.firstPageSetting, formatForBank: e.target.value } }))}
-                  placeholder="Map key…"
-                  aria-label="Map key"
+                  placeholder={t('Map key…')}
+                  aria-label={t('Map key')}
                   className="aw-input"
                   style={{ marginLeft: 'auto', width: 180 }}
                 />
@@ -330,19 +332,19 @@ const PassbookParameterSetting: React.FC = () => {
                 <table className="aw-table">
                   <thead>
                     <tr>
-                      <th>Field Name</th>
-                      <th className="is-center" style={{ width: 100 }}>Row</th>
-                      <th className="is-center" style={{ width: 100 }}>Col</th>
-                      <th className="is-center" style={{ width: 80 }}>Label</th>
-                      <th className="is-center" style={{ width: 80 }}>Visible</th>
+                      <th>{t('Field Name')}</th>
+                      <th className="is-center" style={{ width: 100 }}>{t('Row')}</th>
+                      <th className="is-center" style={{ width: 100 }}>{t('Col')}</th>
+                      <th className="is-center" style={{ width: 80 }}>{t('Label')}</th>
+                      <th className="is-center" style={{ width: 80 }}>{t('Visible')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {params.firstPageSetting.fields.map((f, idx) => (
                       <tr key={idx}>
                         <td>{f.name}</td>
-                        <td className="has-input"><input type="number" aria-label={`Row ${f.name}`} value={f.row} onChange={e => patchFirst(idx, { row: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
-                        <td className="has-input"><input type="number" aria-label={`Col ${f.name}`} value={f.col} onChange={e => patchFirst(idx, { col: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="has-input"><input type="number" aria-label={t('Row {{1}}', { 1: f.name })} value={f.row} onChange={e => patchFirst(idx, { row: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
+                        <td className="has-input"><input type="number" aria-label={t('Col {{1}}', { 1: f.name })} value={f.col} onChange={e => patchFirst(idx, { col: parseInt(e.target.value) || 0 })} className="aw-input" style={{ textAlign: 'center' }} /></td>
                         <td className="is-center">{checkbox(f.displayNameFlag, `Label ${f.name}`, v => patchFirst(idx, { displayNameFlag: v }))}</td>
                         <td className="is-center">{checkbox(f.visibleFlag, `Visible ${f.name}`, v => patchFirst(idx, { visibleFlag: v }))}</td>
                       </tr>
@@ -356,9 +358,9 @@ const PassbookParameterSetting: React.FC = () => {
       </div>
 
       {/* Find dialog */}
-      <AwDialog open={showFindModal} title="Select Passbook Template" icon={<Search size={14} />} onClose={() => setShowFindModal(false)} maxWidth="30rem">
+      <AwDialog open={showFindModal} title={t('Select Passbook Template')} icon={<Search size={14} />} onClose={() => setShowFindModal(false)} maxWidth="30rem">
         {templates.length === 0 ? (
-          <div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">No templates found</span></div>
+          <div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">{t('No templates found')}</span></div>
         ) : (
           <div className="aw-stack" style={{ gap: 6 }}>
             {templates.map((t: any, i: number) => (

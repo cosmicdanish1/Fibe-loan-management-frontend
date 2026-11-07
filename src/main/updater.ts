@@ -16,6 +16,8 @@ export interface UpdateState {
   currentVersion: string;
   version?: string | undefined;
   notes?: string | undefined;
+  /** Hand-written release notes (what is new / fixed), from update-info.json. Preferred over `notes`. */
+  highlights?: string[] | undefined;
   kind?: UpdateKind | undefined;
   requiresBackend?: string | undefined;
   backendVersion?: string | undefined;
@@ -30,6 +32,7 @@ interface UpdateInfoFile {
   version?: string;
   requiresBackend?: string;
   notes?: string;
+  highlights?: string[];
 }
 
 interface BackendHealth {
@@ -94,6 +97,7 @@ async function checkNow(): Promise<UpdateState> {
       status: 'available',
       version: info.version,
       notes,
+      highlights: Array.isArray(infoFile?.highlights) ? infoFile.highlights.filter((h) => typeof h === 'string').slice(0, 6) : undefined,
       requiresBackend: infoFile?.requiresBackend,
       backendVersion: health?.version,
       kind: classifyUpdate(health?.version, infoFile?.requiresBackend),

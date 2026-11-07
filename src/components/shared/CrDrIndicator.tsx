@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Standard credit/debit visual cue for report screens (screen only — never in print output):
@@ -14,6 +15,7 @@ interface CrDrIndicatorProps {
 }
 
 export function CrDrIndicator({ type, className = '', size = 14 }: CrDrIndicatorProps) {
+  const { t } = useTranslation();
   const isCredit = type === 'credit';
   const Icon = isCredit ? ArrowUp : ArrowDown;
   const color = isCredit ? 'text-emerald-500' : 'text-rose-500';
@@ -21,7 +23,7 @@ export function CrDrIndicator({ type, className = '', size = 14 }: CrDrIndicator
     <Icon
       size={size}
       strokeWidth={2.75}
-      aria-label={isCredit ? 'Credit' : 'Debit'}
+      aria-label={isCredit ? t('Credit') : t('Debit')}
       className={`inline-block align-middle shrink-0 ${color} ${className}`}
     />
   );

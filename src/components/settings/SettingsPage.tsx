@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LANGUAGES, setLanguage } from '../../i18n';
+import { LANGUAGES, setLanguage, tLabel } from '../../i18n';
 import {
   ConfigProvider,
   theme as antdTheme,
@@ -10,6 +10,7 @@ import { FONT_OPTIONS } from '../../config/fontOptions';
 import { TopBarLookSettings } from './TopBarLookSettings';
 import { onboardingApi, type OnboardingMode, type OnboardingReport, type OnboardingStatus } from '../../features/onboarding/onboardingApi';
 import { getCalmPreference, setCalmPreference } from '../../features/onboarding/calm';
+import { MOTION_STYLES, saveMotion, detectPc, useMotion } from '../../config/motion';
 import { TOUR_STEPS } from '../../features/onboarding/tourSteps';
 import LoadingAnimation from '../loaders/LoadingAnimation';
 import { LOADING_ANIMATIONS, saveLoadingAnimation, useLoadingAnimation } from '../../config/loadingAnimation';
@@ -241,17 +242,18 @@ const recordPinFailure = (): number => {
 
 // Sidebar / content header copy, keyed by tab.
 const TAB_META: Record<string, { title: string; subtitle: string; keywords: string }> = {
-  language:   { title: 'Language',   subtitle: 'Interface language',                 keywords: 'language hindi english marathi kannada translate translation regional bhasha' },
-  appearance: { title: 'Appearance', subtitle: 'Colors, typography and canvas',      keywords: 'theme dark light accent colour color gradient font text size bold shadow shadows density corner radius background image' },
-  dashboard:  { title: 'Dashboard',  subtitle: 'Widgets, quick actions and layout',  keywords: 'widgets quick actions shortcuts fy banner opacity transparency background notice board' },
-  reports:    { title: 'Reports',    subtitle: 'Which views each report offers, and which one it opens with', keywords: 'report views legacy pro bento terminal editorial ledger dense cash book layout switch default' },
-  alerts:     { title: 'Notifications', subtitle: 'Telegram, Discord and Jira: what is sent and where', keywords: 'telegram discord jira alerts notifications webhook login logout errors crashes backup day-end licence digest mute turn off on ticket' },
-  system:     { title: 'System & Window', subtitle: 'Notifications and global behavior', keywords: 'notifications toasts sound effects audio chatbot ai assistant' },
-  developer:  { title: 'Developer',  subtitle: 'Root-level diagnostics',             keywords: 'analytics realtime monitor window geometry reset layouts console' },
-  approvers:  { title: 'Approvers',  subtitle: 'Approver codes, in the Two-Factor & Approvals window', keywords: 'approver otp authenticator two-factor 2fa approval code loan closure early closure pass reverse authorised authorized privilege' },
-  forgot:      { title: 'Forgot Password', subtitle: 'How users may reset their own password', keywords: 'forgot password reset recover authenticator otp email code monthly periodic check two-factor 2fa sign in login' },
-  onboarding: { title: 'Welcome Tour', subtitle: 'When the first-login walkthrough starts', keywords: 'welcome tour walkthrough onboarding first login every login guide help replay' },
-  license:    { title: 'License',    subtitle: 'Activation and renewal',             keywords: 'license key activate renew expiry grace customer' },
+  language:   { title: tLabel('Language'),   subtitle: tLabel('Interface language'),                 keywords: 'language hindi english marathi kannada translate translation regional bhasha' },
+  appearance: { title: tLabel('Appearance'), subtitle: tLabel('Colors, typography and canvas'),      keywords: 'theme dark light accent colour color gradient font text size bold shadow shadows density corner radius background image' },
+  dashboard:  { title: tLabel('Dashboard'),  subtitle: tLabel('Widgets, quick actions and layout'),  keywords: 'widgets quick actions shortcuts fy banner opacity transparency background notice board' },
+  reports:    { title: tLabel('Reports'),    subtitle: tLabel('Which views each report offers, and which one it opens with'), keywords: 'report views legacy pro bento terminal editorial ledger dense cash book layout switch default' },
+  alerts:     { title: tLabel('Notifications'), subtitle: tLabel('Telegram, Discord and Jira: what is sent and where'), keywords: 'telegram discord jira alerts notifications webhook login logout errors crashes backup day-end licence digest mute turn off on ticket' },
+  system:     { title: tLabel('System & Window'), subtitle: tLabel('Notifications and global behavior'), keywords: 'notifications toasts sound effects audio chatbot ai assistant' },
+  developer:  { title: tLabel('Developer'),  subtitle: tLabel('Root-level diagnostics'),             keywords: 'analytics realtime monitor window geometry reset layouts console' },
+  approvers:  { title: tLabel('Approvers'),  subtitle: tLabel('Approver codes, in the Two-Factor & Approvals window'), keywords: 'approver otp authenticator two-factor 2fa approval code loan closure early closure pass reverse authorised authorized privilege' },
+  assistant:  { title: tLabel('AI Assistant'), subtitle: tLabel('Is the assistant working, and what staff asked it'), keywords: 'ai assistant chatbot chat bot gemini groq together health questions log feedback thumbs quota failing' },
+  forgot:      { title: tLabel('Forgot Password'), subtitle: tLabel('How users may reset their own password'), keywords: 'forgot password reset recover authenticator otp email code monthly periodic check two-factor 2fa sign in login' },
+  onboarding: { title: tLabel('Welcome Tour'), subtitle: tLabel('When the first-login walkthrough starts'), keywords: 'welcome tour walkthrough onboarding first login every login guide help replay' },
+  license:    { title: tLabel('License'),    subtitle: tLabel('Activation and renewal'),             keywords: 'license key activate renew expiry grace customer' },
 };
 
 // Category tints for the Quick Actions grid. The shared config carries
@@ -441,8 +443,123 @@ const COMING_SOON: { id: string; name: string; Icon: LucideIcon; gradient: strin
   { id: 'teams', name: 'Microsoft Teams', Icon: Users, gradient: 'linear-gradient(135deg,#464eb8,#7b83eb)' },
 ];
 
+/** AI Assistant (ES-439): is it set up and healthy, and what staff asked it. Administrators only (questions can hold member details). */
+interface AiHealth {
+  providers: { gemini: number; groq: boolean; together: boolean };
+  last24h: { total: number; ok: number; unavailable: number; notConfigured: number; rateLimited: number; avgLatencyMs: number; helpful: number; notHelpful: number } | null;
+}
+interface AiLogRow {
+  id: number; username: string | null; role: string | null; route: string | null; question: string; answer: string | null;
+  provider: string; status: string; failureReason: string | null; latencyMs: number; feedback: number | null; createdAt: string;
+}
+
+const AiAssistantSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  const { t } = useTranslation();
+  const [health, setHealth] = useState<AiHealth | null>(null);
+  const [rows, setRows] = useState<AiLogRow[]>([]);
+  const [filter, setFilter] = useState<'all' | 'failed' | 'down' | 'up'>('all');
+  const [open, setOpen] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setBusy(true); setNote(null);
+    try {
+      const [h, l] = await Promise.all([
+        apiService.get('/ai-chat/health'),
+        apiService.get('/ai-chat/logs', { params: { filter: filter === 'all' ? '' : filter, limit: 50 } }),
+      ]);
+      setHealth(((h as any)?.data ?? h) as AiHealth);
+      const list = (l as any)?.data ?? l;
+      setRows(Array.isArray(list) ? list : []);
+    } catch (e) { setNote(e instanceof Error ? e.message : 'Could not load the assistant data'); }
+    finally { setBusy(false); }
+  }, [filter]);
+  useEffect(() => { if (isAdmin) void load(); }, [isAdmin, load]);
+
+  if (!isAdmin) {
+    return (
+      <Panel icon={<MessageSquare size={16} />} tint="#6366f1" title={t('AI Assistant')} subtitle="Administrators only">
+        <p className="fz-body" style={{ color: C.dim }}>{t('Only an administrator can see how the AI assistant is doing and what staff asked it.')}</p>
+      </Panel>
+    );
+  }
+
+  const p = health?.providers;
+  const configured = !!p && (p.gemini > 0 || p.groq || p.together);
+  const s = health?.last24h;
+  const failRate = s && s.total > 0 ? Math.round(((s.unavailable + s.notConfigured) / s.total) * 100) : 0;
+  const statusColor = (st: string) => (st === 'OK' ? C.green : st === 'RATE_LIMITED' ? (C.amber ?? C.dim) : C.red);
+  const stat = (label: string, value: React.ReactNode, color?: string) => (
+    <div className="px-3.5 py-3 rounded-xl" style={{ background: C.fill }}>
+      <div className="fz-small" style={{ color: C.dim }}>{label}</div>
+      <div className="fz-body font-bold" style={{ color: color ?? C.textStrong, fontSize: 18 }}>{value}</div>
+    </div>
+  );
+  const chip = (key: typeof filter, label: string) => (
+    <button key={key} type="button" onClick={() => setFilter(key)} className="px-3 py-1.5 rounded-lg fz-small font-semibold"
+      style={{ background: filter === key ? accent : C.fill, color: filter === key ? '#fff' : C.text, border: `1px solid ${C.border}` }}>{label}</button>
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Panel icon={<Activity size={16} />} tint="#6366f1" title={t('Assistant health')} subtitle="Providers and the last 24 hours"
+        right={<Counter color={!configured ? C.red : failRate >= 30 ? C.red : C.green}>{!configured ? t('Not set up') : failRate >= 30 ? t('Failing') : t('Healthy')}</Counter>}>
+        <div className="flex flex-col gap-3">
+          {note && <div className="px-3.5 py-2.5 rounded-xl fz-body" style={{ background: C.fill, color: C.red }}>{note}</div>}
+          {!configured && health && (
+            <div className="px-3.5 py-2.5 rounded-xl fz-body" style={{ background: C.fill, color: C.red }}>
+              {t('No AI provider key is configured. Add GEMINI_API_KEYS, GROQ_API_KEY or TOGETHER_API_KEY to the backend .env file and restart the backend.')}
+            </div>
+          )}
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+            {stat('Gemini keys', p?.gemini ?? '–')}
+            {stat('Groq', p ? (p.groq ? t('On') : t('Off')) : '–')}
+            {stat('Together', p ? (p.together ? t('On') : t('Off')) : '–')}
+            {stat(t('Questions (24 h)'), s ? s.total : '–')}
+            {stat(t('Answered'), s ? s.ok : '–', C.green)}
+            {stat(t('Failed'), s ? s.unavailable + s.notConfigured : '–', s && s.unavailable + s.notConfigured > 0 ? C.red : undefined)}
+            {stat(t('Rate-limited'), s ? s.rateLimited : '–')}
+            {stat(t('Average time'), s ? `${(s.avgLatencyMs / 1000).toFixed(1)} s` : '–')}
+            {stat('👍 / 👎', s ? `${s.helpful} / ${s.notHelpful}` : '–')}
+          </div>
+          <div><button type="button" onClick={() => void load()} disabled={busy} className="px-3 py-1.5 rounded-lg fz-small font-semibold" style={{ background: C.fill, color: C.text, border: `1px solid ${C.border}` }}>{busy ? t('Loading…') : t('Refresh')}</button></div>
+        </div>
+      </Panel>
+
+      <Panel icon={<MessageSquare size={16} />} tint="#8b5cf6" title={t('What staff asked')} subtitle="Newest first, up to 50. Review thumbs-down answers to improve the documentation.">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            {chip('all', t('All'))}{chip('failed', t('Failed'))}{chip('down', '👎')}{chip('up', '👍')}
+          </div>
+          {rows.length === 0 && <p className="fz-body" style={{ color: C.dim }}>{busy ? t('Loading…') : t('Nothing to show yet.')}</p>}
+          {rows.map((r) => (
+            <div key={r.id} className="px-3.5 py-3 rounded-xl" style={{ background: C.fill }}>
+              <button type="button" onClick={() => setOpen(open === r.id ? null : r.id)} className="w-full text-left" style={{ color: 'inherit' }}>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="fz-body font-bold" style={{ color: C.textStrong, overflowWrap: 'anywhere' }}>{r.question}</span>
+                  <span className="shrink-0 fz-small font-semibold" style={{ color: statusColor(r.status) }}>
+                    {r.status === 'OK' ? r.provider : r.status.replace('_', ' ').toLowerCase()}{r.feedback === 1 ? ' 👍' : r.feedback === -1 ? ' 👎' : ''}
+                  </span>
+                </div>
+                <div className="fz-small" style={{ color: C.dim }}>
+                  {new Date(r.createdAt).toLocaleString()} · {r.username || '–'}{r.role ? ` (${r.role})` : ''}{r.route ? ` · ${r.route}` : ''} · {(r.latencyMs / 1000).toFixed(1)} s
+                </div>
+              </button>
+              {open === r.id && (
+                <p className="fz-body" style={{ color: C.text, marginTop: 8, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{r.answer || '–'}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </Panel>
+    </div>
+  );
+};
+
 /** Forgot password (ES-161): which methods the sign-in page offers, plus the periodic authenticator check. */
 const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  const { t } = useTranslation();
   const [cfg, setCfg] = useState<{ policy: string; forgotAuthenticator: boolean; monthlyCheckDays: number } | null>(null);
   const [days, setDays] = useState('30');
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
@@ -457,8 +574,8 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
 
   if (!isAdmin) {
     return (
-      <Panel icon={<KeyRound size={16} />} tint="#f59e0b" title="Forgot password" subtitle="Administrators only">
-        <p className="fz-body" style={{ color: C.dim }}>Only an administrator can choose how users may reset their password.</p>
+      <Panel icon={<KeyRound size={16} />} tint="#f59e0b" title={t('Forgot password')} subtitle="Administrators only">
+        <p className="fz-body" style={{ color: C.dim }}>{t('Only an administrator can choose how users may reset their password.')}</p>
       </Panel>
     );
   }
@@ -479,64 +596,63 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel icon={<KeyRound size={16} />} tint="#f59e0b" title="Forgot password" subtitle="Ways a user can reset their own password from the sign-in page">
+      <Panel icon={<KeyRound size={16} />} tint="#f59e0b" title={t('Forgot password')} subtitle="Ways a user can reset their own password from the sign-in page">
         <div className="flex flex-col gap-3">
           <p className="fz-body" style={{ color: C.dim }}>
-            Users who forget their password use <strong>Forgot password?</strong> on the sign-in page. They need the authenticator they already set up in <strong>My Profile</strong>, so there is no second QR code.
+            {t('Users who forget their password use')} <strong>{t('Forgot password?')}</strong> {t('on the sign-in page. They need the authenticator they already set up in')} <strong>{t('My Profile')}</strong>, so there is no second QR code.
           </p>
           {note && <div className="px-3.5 py-2.5 rounded-xl fz-body" style={{ background: C.fill, color: note.ok ? C.green : C.red }}>{note.text}</div>}
-          {off && <div className="px-3.5 py-2.5 rounded-xl fz-body" style={{ background: C.fill, color: C.amber ?? C.dim }}>Two-factor authentication is switched off in the Two-Factor window, so authenticator codes are unavailable.</div>}
+          {off && <div className="px-3.5 py-2.5 rounded-xl fz-body" style={{ background: C.fill, color: C.amber ?? C.dim }}>{t('Two-factor authentication is switched off in the Two-Factor window, so authenticator codes are unavailable.')}</div>}
 
           <div className={row} style={{ background: C.fill }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold" style={{ color: C.textStrong }}>Authenticator code</span>
-              <p className="fz-small" style={{ color: C.dim }}>The 6-digit code (or a recovery code) from the user's phone app. Only users who have set up an authenticator can use it.</p>
+              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Authenticator code')}</span>
+              <p className="fz-small" style={{ color: C.dim }}>{t("The 6-digit code (or a recovery code) from the user's phone app. Only users who have set up an authenticator can use it.")}</p>
             </div>
-            <Toggle on={!!cfg?.forgotAuthenticator && !off} accent={accent} label="Allow password reset with authenticator code"
+            <Toggle on={!!cfg?.forgotAuthenticator && !off} accent={accent} label={t('Allow password reset with authenticator code')}
               onChange={(v) => { if (!off && cfg) void save({ forgotAuthenticator: v }, v ? 'Authenticator reset switched on.' : 'Authenticator reset switched off. Users must ask an administrator.'); }} />
           </div>
 
           <div className={row} style={{ background: C.fill, opacity: 0.7 }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold" style={{ color: C.textStrong }}>Email OTP</span>
-              <p className="fz-small" style={{ color: C.dim }}>A one-time code sent to the user's email address. Needs email sending to be set up first.</p>
+              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Email OTP')}</span>
+              <p className="fz-small" style={{ color: C.dim }}>{t("A one-time code sent to the user's email address. Needs email sending to be set up first.")}</p>
             </div>
-            <Counter color={C.amber ?? C.dim}>Coming soon</Counter>
+            <Counter color={C.amber ?? C.dim}>{t('Coming soon')}</Counter>
           </div>
 
           <div className={row} style={{ background: C.fill }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold" style={{ color: C.textStrong }}>Contact administrator</span>
-              <p className="fz-small" style={{ color: C.dim }}>Always shown. An administrator can reset a user's authenticator or password.</p>
+              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Contact administrator')}</span>
+              <p className="fz-small" style={{ color: C.dim }}>{t("Always shown. An administrator can reset a user's authenticator or password.")}</p>
             </div>
-            <Counter>Always on</Counter>
+            <Counter>{t('Always on')}</Counter>
           </div>
         </div>
       </Panel>
 
-      <Panel icon={<ShieldCheck size={16} />} tint="#38bdf8" title="Periodic code check" subtitle="Keeps users in the habit of using their authenticator"
-        right={<Counter color={cfg && cfg.monthlyCheckDays > 0 ? C.green : C.dim}>{cfg && cfg.monthlyCheckDays > 0 ? `Every ${cfg.monthlyCheckDays} days` : 'Off'}</Counter>}>
+      <Panel icon={<ShieldCheck size={16} />} tint="#38bdf8" title={t('Periodic code check')} subtitle="Keeps users in the habit of using their authenticator"
+        right={<Counter color={cfg && cfg.monthlyCheckDays > 0 ? C.green : C.dim}>{cfg && cfg.monthlyCheckDays > 0 ? t('Every {{1}} days', { 1: cfg.monthlyCheckDays }) : t('Off')}</Counter>}>
         <div className="flex flex-col gap-3">
           <p className="fz-body" style={{ color: C.dim }}>
-            At least once in this many days, a user with an authenticator must enter their code when signing in, even on a remembered device.
-            Users without an authenticator are not affected. Set <strong>0</strong> to switch it off.
+            {t('At least once in this many days, a user with an authenticator must enter their code when signing in, even on a remembered device. Users without an authenticator are not affected. Set')} <strong>0</strong> {t('to switch it off.')}
           </p>
           <div className="flex items-center gap-2 flex-wrap">
-            <input type="number" min={0} max={365} aria-label="Days between code checks" value={days} onChange={(e) => setDays(e.target.value)}
+            <input type="number" min={0} max={365} aria-label={t('Days between code checks')} value={days} onChange={(e) => setDays(e.target.value)}
               className="rounded-lg px-3 fz-body outline-none" style={{ height: 34, width: 110, ...btn }} />
             <span className="fz-body" style={{ color: C.dim }}>days</span>
             <button type="button" disabled={!daysValid || !cfg || daysNum === cfg.monthlyCheckDays}
               className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
               style={{ height: 34, background: accent, color: '#fff', border: 0, opacity: !daysValid || !cfg || daysNum === cfg.monthlyCheckDays ? 0.5 : 1 }}
               onClick={() => void save({ monthlyCheckDays: daysNum }, daysNum === 0 ? 'Periodic check switched off.' : `Users are asked for their code at least every ${daysNum} days.`)}>
-              Save
+              {t('Save')}
             </button>
             <button type="button" className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={{ height: 34, ...btn }}
               onClick={() => void save({ monthlyCheckDays: daysNum === 0 ? 30 : 0 }, daysNum === 0 ? 'Periodic check switched on (30 days).' : 'Periodic check switched off.')}>
-              {daysNum === 0 ? 'Switch on' : 'Switch off'}
+              {daysNum === 0 ? t('Switch on') : t('Switch off')}
             </button>
           </div>
-          <p className="fz-small" style={{ color: C.dim }}>Note: if "Remember this device" is off in the Two-Factor window, users are already asked for a code at every sign-in.</p>
+          <p className="fz-small" style={{ color: C.dim }}>{t('Note: if "Remember this device" is off in the Two-Factor window, users are already asked for a code at every sign-in.')}</p>
         </div>
       </Panel>
     </div>
@@ -545,10 +661,10 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
 
 /** Welcome tour insights (ES-156): how far people get, where they skip, and who has accepted the terms. Administrators only. */
 const STEP_ORDER: { id: string; label: string }[] = [
-  { id: 'welcome', label: 'Welcome' },
-  { id: 'profile', label: 'Your profile' },
-  { id: 'password', label: 'Set your own password' },
-  ...TOUR_STEPS.map((t) => ({ id: t.id, label: `Tour: ${t.title}` })),
+  { id: 'welcome', label: tLabel('Welcome') },
+  { id: 'profile', label: tLabel('Your profile') },
+  { id: 'password', label: tLabel('Set your own password') },
+  ...TOUR_STEPS.map((t) => ({ id: t.id, label: tLabel('Tour: {{1}}', { 1: t.title }) })),
 ];
 
 const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
@@ -591,7 +707,7 @@ const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
           <div className="flex flex-col gap-1.5">
             {rows.map((r) => (
               <div key={r.id} className="flex items-center gap-3">
-                <span className="fz-small shrink-0" style={{ color: C.text, width: 220 }}>{r.label}</span>
+                <span className="fz-small shrink-0" style={{ color: C.text, width: 220 }}>{tLabel(r.label)}</span>
                 <div className="flex-1 rounded-full overflow-hidden" style={{ height: 8, background: C.fill }}>
                   <div style={{ width: `${pct(r.reached, top)}%`, height: '100%', background: accent, borderRadius: 999, transition: 'width .4s' }} />
                 </div>
@@ -691,6 +807,7 @@ const LanguageSettingsSection: React.FC<{ accent: string }> = ({ accent }) => {
 };
 
 const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -705,7 +822,7 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
   const run = async (fn: () => Promise<unknown>, okText: string) => {
     setBusy(true);
     try { await fn(); await load(); message.success(okText); }
-    catch (e: any) { message.error(e?.message || 'Could not save.'); }
+    catch (e: any) { message.error(e?.message || t('Could not save.')); }
     finally { setBusy(false); }
   };
 
@@ -723,9 +840,9 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
 
   if (error) {
     return (
-      <Panel icon={<Compass size={16} />} tint="#f97316" title="Welcome Tour" subtitle="Could not load">
+      <Panel icon={<Compass size={16} />} tint="#f97316" title={t('Welcome Tour')} subtitle="Could not load">
         <p className="fz-body" style={{ color: C.red }}>{error}</p>
-        <p className="fz-small mt-2" style={{ color: C.dim }}>If you have just updated the app, restart the backend and open this tab again.</p>
+        <p className="fz-small mt-2" style={{ color: C.dim }}>{t('If you have just updated the app, restart the backend and open this tab again.')}</p>
       </Panel>
     );
   }
@@ -737,31 +854,31 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel icon={<Compass size={16} />} tint="#f97316" title="My welcome tour" subtitle="Run it any time from Help › Replay Tour"
+      <Panel icon={<Compass size={16} />} tint="#f97316" title={t('My welcome tour')} subtitle="Run it any time from Help › Replay Tour"
         right={<Counter color={shown === 'never' ? C.dim : C.green}>{modeText(shown)}</Counter>}>
         <div className="flex flex-col gap-3">
-          <Row title="Use the administrator's default" hint={`Right now the default is: ${modeText(status.globalMode)}.`}
+          <Row title={t("Use the administrator's default")} hint={t('Right now the default is: {{1}}.', { 1: modeText(status.globalMode) })}
             on={usingDefault}
             onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'default' : status.globalMode), v ? 'Using the default.' : 'Using your own setting.')} />
-          <Row title="Start the tour automatically" hint="Show the welcome tour when you sign in."
+          <Row title={t('Start the tour automatically')} hint={t('Show the welcome tour when you sign in.')}
             on={shown !== 'never'} disabled={usingDefault}
             onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'first' : 'never'), v ? 'The tour will start automatically.' : 'The tour will not start automatically.')} />
-          <Row title="Show it at every login" hint="Off means only the first time you sign in."
+          <Row title={t('Show it at every login')} hint={t('Off means only the first time you sign in.')}
             on={shown === 'always'} disabled={usingDefault || shown === 'never'}
             onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'always' : 'first'), v ? 'The tour will show at every login.' : 'The tour will show only once.')} />
-          <Row title="Calm mode: no motion" hint="Turns off animation, confetti and typing effects in the tour on this PC. The system reduce-motion setting is respected too."
+          <Row title={t('Calm mode: no motion')} hint={t('Turns off animation, confetti and typing effects in the tour on this PC. The system reduce-motion setting is respected too.')}
             on={calm} onChange={(v) => { setCalm(v); setCalmPreference(v); }} />
         </div>
       </Panel>
 
       {isAdmin && (
-        <Panel icon={<Users size={16} />} tint="#6366f1" title="Default for everyone" subtitle="Applies to everyone who has not chosen their own setting"
+        <Panel icon={<Users size={16} />} tint="#6366f1" title={t('Default for everyone')} subtitle="Applies to everyone who has not chosen their own setting"
           right={<Counter color={status.globalMode === 'never' ? C.dim : C.green}>{modeText(status.globalMode)}</Counter>}>
           <div className="flex flex-col gap-3">
-            <Row title="Start the tour automatically" hint="Turn off to stop the tour appearing for people on the default."
+            <Row title={t('Start the tour automatically')} hint={t('Turn off to stop the tour appearing for people on the default.')}
               on={status.globalMode !== 'never'}
               onChange={(v) => void run(() => onboardingApi.setGlobalMode(v ? 'first' : 'never'), 'Default saved for everyone.')} />
-            <Row title="Show it at every login" hint="Off means only the first time each person signs in."
+            <Row title={t('Show it at every login')} hint={t('Off means only the first time each person signs in.')}
               on={status.globalMode === 'always'} disabled={status.globalMode === 'never'}
               onChange={(v) => void run(() => onboardingApi.setGlobalMode(v ? 'always' : 'first'), 'Default saved for everyone.')} />
           </div>
@@ -775,6 +892,7 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
 
 /** Approvers: everything lives in the one Two-Factor & Approvals window (ES-178); this tab is a summary with a link. */
 const ApproversSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  const { t } = useTranslation();
   const [info, setInfo] = useState<{ active: number; protectedOn: string[] } | null>(null);
   useEffect(() => {
     if (!isAdmin) return;
@@ -791,24 +909,24 @@ const ApproversSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> =
 
   if (!isAdmin) {
     return (
-      <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title="Approvers" subtitle="Administrators only">
-        <p className="fz-body" style={{ color: C.dim }}>Only an administrator manages approvers. Your own sign-in code is in My Profile.</p>
+      <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title={t('Approvers')} subtitle="Administrators only">
+        <p className="fz-body" style={{ color: C.dim }}>{t('Only an administrator manages approvers. Your own sign-in code is in My Profile.')}</p>
       </Panel>
     );
   }
   return (
-    <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title="Approvers & approval codes" subtitle="Managed in one window"
-      right={info ? <Counter color={info.active > 0 ? C.green : C.red}>{info.active} active approvers</Counter> : undefined}>
+    <Panel icon={<ShieldCheck size={16} />} tint="#a78bfa" title={t('Approvers & approval codes')} subtitle="Managed in one window"
+      right={info ? <Counter color={info.active > 0 ? C.green : C.red}>{info.active} {t('active approvers')}</Counter> : undefined}>
       <div className="flex flex-col gap-3">
         <p className="fz-body" style={{ color: C.dim }}>
-          Approvers, the protection switches, sign-in policy, users and activity are all in <strong>Two-Factor &amp; Approvals</strong>.
+          {t('Approvers, the protection switches, sign-in policy, users and activity are all in')} <strong>{t('Two-Factor & Approvals')}</strong>.
           {info && (info.protectedOn.length > 0
-            ? <> Approver code is required for: <strong style={{ color: C.textStrong }}>{info.protectedOn.join(', ')}</strong>.</>
-            : ' No window asks for an approver code at the moment.')}
+            ? <> {t('Approver code is required for:')} <strong style={{ color: C.textStrong }}>{info.protectedOn.join(', ')}</strong>.</>
+            : ' ' + t('No window asks for an approver code at the moment.'))}
         </p>
         <div>
           <button type="button" onClick={openWindow} className="rounded-lg px-4 fz-tiny font-black uppercase tracking-widest cursor-pointer"
-            style={{ height: 34, background: accent, color: '#fff', border: 0 }}>Open Two-Factor &amp; Approvals</button>
+            style={{ height: 34, background: accent, color: '#fff', border: 0 }}>{t('Open Two-Factor & Approvals')}</button>
         </div>
       </div>
     </Panel>
@@ -817,6 +935,7 @@ const ApproversSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> =
 
 /** Settings → Reports: which views each report offers and which one it opens with. Saved as you click. */
 const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) => {
+  const { t } = useTranslation();
   const [, setTick] = useState(0);
   const refresh = () => setTick(t => t + 1);
 
@@ -841,11 +960,11 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
             key={def.id}
             icon={<FileText size={16} />}
             tint="#ec4899"
-            title={def.title}
+            title={tLabel(def.title)}
             subtitle={`${def.group} · ${def.note ?? 'Choose the views this report offers'}`}
             right={
               <>
-                <Counter>{pref.enabled.length} / {def.available.length} views</Counter>
+                <Counter>{t('{{1}} / {{2}} views', { 1: pref.enabled.length, 2: def.available.length })}</Counter>
                 {custom && (
                   <button
                     type="button"
@@ -853,7 +972,7 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
                     className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
                     style={{ height: 28, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
                   >
-                    <RotateCcw size={12} /> Reset
+                    <RotateCcw size={12} /> {t('Reset')}
                   </button>
                 )}
               </>
@@ -875,7 +994,7 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
                   >
                     <div className="flex-1 min-w-0">
                       <p className="fz-tiny font-black uppercase tracking-wide leading-none" style={{ color: on ? C.textStrong : C.dim }}>
-                        {meta.label}{locked && <span style={{ color: C.dimmer, fontWeight: 700 }}> · always on</span>}
+                        {tLabel(meta.label)}{locked && <span style={{ color: C.dimmer, fontWeight: 700 }}> · always on</span>}
                       </p>
                       <p className="fz-tiny mt-1" style={{ color: C.dimmer }}>{meta.desc}</p>
                       <button
@@ -891,30 +1010,31 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
                           opacity: on ? 1 : 0.4,
                         }}
                       >
-                        {isDefault ? <><Check size={10} strokeWidth={3} style={{ display: 'inline', marginRight: 4 }} />Opens with</> : 'Open with this'}
+                        {isDefault ? <><Check size={10} strokeWidth={3} style={{ display: 'inline', marginRight: 4 }} />{t('Opens with')}</> : t('Open with this')}
                       </button>
                     </div>
                     <div style={{ opacity: locked ? 0.45 : 1, pointerEvents: locked ? 'none' : 'auto' }}>
-                      <Toggle on={on} onChange={v => toggleView(def.id, view, v)} accent={accent} label={`${meta.label} view for ${def.title}`} />
+                      <Toggle on={on} onChange={v => toggleView(def.id, view, v)} accent={accent} label={t('{{1}} view for {{2}}', { 1: meta.label, 2: def.title })} />
                     </div>
                   </div>
                 );
               })}
             </div>
             <p className="fz-small mt-3" style={{ color: C.dim }}>
-              Turn a view off and it disappears from the switch at the top of the report. Printing always uses the Legacy layout.
+              {t('Turn a view off and it disappears from the switch at the top of the report. Printing always uses the Legacy layout.')}
             </p>
           </Panel>
         );
       })}
       <p className="fz-small" style={{ color: C.dimmer }}>
-        More reports will appear here as they get Pro views. These choices are saved on this computer for your login and apply straight away.
+        {t('More reports will appear here as they get Pro views. These choices are saved on this computer for your login and apply straight away.')}
       </p>
     </div>
   );
 };
 
 const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ accent, isAdmin }) => {
+  const { t } = useTranslation();
   const [data, setData] = useState<AlertSettingsData | null>(null);
   const [loadError, setLoadError] = useState('');
   const [sel, setSel] = useState<ChannelId | null>(null);
@@ -931,9 +1051,9 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
       const res: any = await apiService.get('/alert-settings');
       const d = res?.data ?? res;
       if (d && Array.isArray(d.groups)) { setData(d); setLoadError(''); }
-      else setLoadError(res?.message || 'Could not load the notification settings.');
+      else setLoadError(res?.message || t('Could not load the notification settings.'));
     } catch (e: any) {
-      setLoadError(e?.message || 'Could not reach the server.');
+      setLoadError(e?.message || t('Could not reach the server.'));
     }
   }, []);
 
@@ -944,9 +1064,9 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
       const res: any = await apiService.get('/alert-settings/online');
       const d = res?.data ?? res;
       if (d && Array.isArray(d.users)) { setOnline(d.users); setOnlineError(''); }
-      else setOnlineError(res?.message || 'Could not load who is online.');
+      else setOnlineError(res?.message || t('Could not load who is online.'));
     } catch (e: any) {
-      setOnlineError(e?.message || 'Could not reach the server.');
+      setOnlineError(e?.message || t('Could not reach the server.'));
     }
   }, []);
 
@@ -963,8 +1083,8 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
     try {
       const res: any = await apiService.post('/alert-settings/online/post');
       const d = res?.data ?? res;
-      message.success(`Posted to the channels that receive it (${d?.count ?? 0} online).`);
-    } catch { message.error('Could not post the online list.'); }
+      message.success(t('Posted to the channels that receive it ({{1}} online).', { 1: d?.count ?? 0 }));
+    } catch { message.error(t('Could not post the online list.')); }
     finally { setTimeout(() => setPosting(false), 3000); }
   };
 
@@ -979,7 +1099,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
       setData(d);
     } catch (e: any) {
       setData(before);
-      message.error(e?.message || 'Could not save that change.');
+      message.error(e?.message || t('Could not save that change.'));
     }
   };
 
@@ -1011,7 +1131,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
     const n = Number(raw);
     setDrafts((p) => { const { [item.key]: _drop, ...rest } = p; return rest; });
     if (!Number.isFinite(n) || raw.trim() === '' || n < item.param.min || n > item.param.max) {
-      message.error(`${item.param.label} must be between ${item.param.min} and ${item.param.max}.`);
+      message.error(t('{{1}} must be between {{2}} and {{3}}.', { 1: item.param.label, 2: item.param.min, 3: item.param.max }));
       return;
     }
     if (n !== item.param.value) void save(`/alert-settings/${item.key}`, { param: n });
@@ -1023,9 +1143,9 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
       const res: any = await apiService.post(`/alert-settings/test/${dest}`);
       const d = res?.data ?? res;
       const name = dest === 'telegram' ? 'Telegram' : 'Discord';
-      if (d?.queued > 0) message.success(`Test messages are on their way to ${name} (${d.queued} channel${d.queued === 1 ? '' : 's'}).`);
-      else message.warning(`${name} is not configured on the server (see the .env file).`);
-    } catch { message.error('Could not send the test messages.'); }
+      if (d?.queued > 0) message.success(t('Test messages are on their way to {{1}} ({{2}} channel{{3}}).', { 1: name, 2: d.queued, 3: d.queued === 1 ? '' : 's' }));
+      else message.warning(t('{{1}} is not configured on the server (see the .env file).', { 1: name }));
+    } catch { message.error(t('Could not send the test messages.')); }
     finally { setTimeout(() => setTestingDest(null), 4000); }
   };
 
@@ -1046,18 +1166,18 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
 
   if (!isAdmin) {
     return (
-      <Panel icon={<Bell size={16} />} tint="#38bdf8" title="Notifications" subtitle="Administrators only">
-        <p className="fz-body" style={{ color: C.dim }}>Only an administrator can choose which alerts are sent and where.</p>
+      <Panel icon={<Bell size={16} />} tint="#38bdf8" title={t('Notifications')} subtitle="Administrators only">
+        <p className="fz-body" style={{ color: C.dim }}>{t('Only an administrator can choose which alerts are sent and where.')}</p>
       </Panel>
     );
   }
   if (!data) {
     return (
-      <Panel icon={<Bell size={16} />} tint="#38bdf8" title="Notifications" subtitle={loadError ? 'Could not load' : 'Loading…'}>
+      <Panel icon={<Bell size={16} />} tint="#38bdf8" title={t('Notifications')} subtitle={loadError ? 'Could not load' : 'Loading…'}>
         {loadError && (
           <div className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <span className="fz-body" style={{ color: C.red }}>{loadError}</span>
-            <button onClick={load} className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(false)}>Retry</button>
+            <button onClick={load} className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(false)}>{t('Retry')}</button>
           </div>
         )}
       </Panel>
@@ -1093,7 +1213,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
           type="button"
           onClick={() => setSel(def.id)}
           aria-pressed={selected}
-          aria-label={`Open ${def.name} settings`}
+          aria-label={t('Open {{1}} settings', { 1: def.name })}
           className="text-left cursor-pointer flex flex-col gap-3"
           style={{ flex: 1, border: 'none', background: 'transparent', padding: 0, color: 'inherit' }}
         >
@@ -1111,9 +1231,9 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
         </button>
         <div className="flex items-center justify-between gap-2">
           <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: selected ? def.tint : C.dimmer }}>
-            Open settings ›
+            {t('Open settings ›')}
           </span>
-          <Toggle on={ch.enabled} accent={def.tint} label={`Send alerts to ${def.name}`} onChange={(v) => toggleDest(def.id, v)} />
+          <Toggle on={ch.enabled} accent={def.tint} label={t('Send alerts to {{1}}', { 1: def.name })} onChange={(v) => toggleDest(def.id, v)} />
         </div>
       </div>
     );
@@ -1131,7 +1251,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
       </span>
       <span className="min-w-0">
         <span className="fz-body font-bold block truncate" style={{ color: C.text }}>{c.name}</span>
-        <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Coming soon</span>
+        <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Coming soon')}</span>
       </span>
     </div>
   );
@@ -1147,25 +1267,25 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
     const noTopics = sel === 'telegram' && ch.configured && mapping.length > 0 && mapping.every(([, ok]) => !ok);
     return (
       <Panel
-        icon={<def.Icon size={16} />} tint={def.tint} title={`${def.name} settings`}
+        icon={<def.Icon size={16} />} tint={def.tint} title={t('{{1}} settings', { 1: def.name })}
         subtitle={`Choose which alerts are sent to ${def.name}. Nothing here affects the other channels.`}
-        right={<Counter color={ch.enabled && data.master ? C.green : C.red}>{ch.enabled && data.master ? `${onCount} / ${allAlerts.length} alerts` : 'Off'}</Counter>}
+        right={<Counter color={ch.enabled && data.master ? C.green : C.red}>{ch.enabled && data.master ? t('{{1}} / {{2}} alerts', { 1: onCount, 2: allAlerts.length }) : t('Off')}</Counter>}
       >
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <div>
               <span className="fz-body font-bold block" style={{ color: C.text }}>
-                Connection: <span style={{ color: status.color }}>{status.text}</span>
+                {t('Connection:')} <span style={{ color: status.color }}>{status.text}</span>
               </span>
               <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
                 {sel === 'telegram'
-                  ? (ch.configured ? 'Sends to the topics of your Telegram group.' : 'Add the bot token and chat id to the server .env file.')
-                  : (ch.configured ? 'Sends to the Discord channels that have a webhook in the server .env file.' : 'Add a webhook URL per channel (DISCORD_WEBHOOK_…) to the server .env file. Nothing is sent until you do.')}
+                  ? (ch.configured ? t('Sends to the topics of your Telegram group.') : t('Add the bot token and chat id to the server .env file.'))
+                  : (ch.configured ? t('Sends to the Discord channels that have a webhook in the server .env file.') : t('Add a webhook URL per channel (DISCORD_WEBHOOK_…) to the server .env file. Nothing is sent until you do.'))}
               </span>
               {ch.configured && mapping.length > 0 && (
                 <span className="flex flex-wrap items-center gap-1.5 mt-2">
-                  <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: C.dimmer }}>{sel === 'discord' ? 'Channels' : 'Topics'}</span>
-                  {noTopics && <span className="fz-small" style={{ color: C.dim }}>none set up: everything goes to the group's General chat</span>}
+                  <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: C.dimmer }}>{sel === 'discord' ? t('Channels') : t('Topics')}</span>
+                  {noTopics && <span className="fz-small" style={{ color: C.dim }}>{t("none set up: everything goes to the group's General chat")}</span>}
                   {!noTopics && mapping.map(([name, ok]) => (
                     <span key={name} className="px-2 py-0.5 rounded-full fz-tiny font-bold"
                       style={{ background: `color-mix(in srgb, ${ok ? C.green : C.amber} 16%, transparent)`, color: ok ? C.green : C.amber }}>
@@ -1182,9 +1302,9 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
                 className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
                 style={smallButton(testingDest === sel || !ch.configured)}
               >
-                {testingDest === sel ? 'Sending…' : 'Send test'}
+                {testingDest === sel ? t('Sending…') : t('Send test')}
               </button>
-              <Toggle on={ch.enabled} accent={def.tint} label={`Send alerts to ${def.name}`} onChange={(v) => toggleDest(sel, v)} />
+              <Toggle on={ch.enabled} accent={def.tint} label={t('Send alerts to {{1}}', { 1: def.name })} onChange={(v) => toggleDest(sel, v)} />
             </div>
           </div>
 
@@ -1195,22 +1315,22 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
                 <div key={g.id}>
                   <div className="flex items-center justify-between gap-3 px-1 pb-2">
                     <div className="min-w-0">
-                      <span className="fz-body font-black block" style={{ color: ALERT_GROUP_TINT[g.id] || accent }}>{g.label}</span>
-                      <span className="fz-small block" style={{ color: C.dim }}>{g.description}</span>
+                      <span className="fz-body font-black block" style={{ color: ALERT_GROUP_TINT[g.id] || accent }}>{tLabel(g.label)}</span>
+                      <span className="fz-small block" style={{ color: C.dim }}>{tLabel(g.description)}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Counter color={on === g.alerts.length ? C.green : on === 0 ? C.red : C.amber}>{on} / {g.alerts.length}</Counter>
-                      <Toggle on={on === g.alerts.length} accent={def.tint} label={`All ${g.label} alerts to ${def.name}`} onChange={(v) => toggleGroupFor(g.id, sel, v)} />
+                      <Toggle on={on === g.alerts.length} accent={def.tint} label={t('All {{1}} alerts to {{2}}', { 1: g.label, 2: def.name })} onChange={(v) => toggleGroupFor(g.id, sel, v)} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     {g.alerts.map((a) => (
                       <div key={a.key} className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ background: C.fill }}>
                         <div className="min-w-0">
-                          <span className="fz-body font-bold block" style={{ color: C.text }}>{a.label}</span>
-                          <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{a.description}</span>
+                          <span className="fz-body font-bold block" style={{ color: C.text }}>{tLabel(a.label)}</span>
+                          <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{tLabel(a.description)}</span>
                         </div>
-                        <Toggle on={effective(a)} accent={def.tint} label={`${a.label} to ${def.name}`} onChange={(v) => toggleAlertFor(a.key, sel, v)} />
+                        <Toggle on={effective(a)} accent={def.tint} label={t('{{1}} to {{2}}', { 1: tLabel(a.label), 2: def.name })} onChange={(v) => toggleAlertFor(a.key, sel, v)} />
                       </div>
                     ))}
                   </div>
@@ -1227,25 +1347,25 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
 
   const renderOnlinePanel = () => (
     <Panel
-      icon={<Bell size={16} />} tint="#34d399" title="Online now"
+      icon={<Bell size={16} />} tint="#34d399" title={t('Online now')}
       subtitle="Everyone whose app is open and has signalled in the last few minutes"
       right={(
         <>
-          <Counter color={online && online.length > 0 ? C.green : C.dimmer}>{online ? `${online.length} online` : '…'}</Counter>
-          <button onClick={loadOnline} className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(false)}>Refresh</button>
+          <Counter color={online && online.length > 0 ? C.green : C.dimmer}>{online ? t('{{1}} online', { 1: online.length }) : '…'}</Counter>
+          <button onClick={loadOnline} className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(false)}>{t('Refresh')}</button>
           <button onClick={postOnline} disabled={posting || !online} className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(posting || !online)}>
-            {posting ? 'Posting…' : 'Post to channels'}
+            {posting ? t('Posting…') : t('Post to channels')}
           </button>
         </>
       )}
     >
       {onlineError && (
         <div className="px-4 py-3 rounded-xl fz-small font-semibold" style={{ background: C.fill, color: C.red }}>
-          {onlineError} (the backend may need a restart)
+          {onlineError} {t('(the backend may need a restart)')}
         </div>
       )}
       {!onlineError && online && online.length === 0 && (
-        <div className="px-4 py-3 rounded-xl fz-small" style={{ background: C.fill, color: C.dim }}>Nobody is online right now.</div>
+        <div className="px-4 py-3 rounded-xl fz-small" style={{ background: C.fill, color: C.dim }}>{t('Nobody is online right now.')}</div>
       )}
       {online && online.length > 0 && (
         <div className="space-y-2">
@@ -1270,22 +1390,22 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
   );
 
   const renderLimitsPanel = () => (
-      <Panel icon={<Bell size={16} />} tint="#fbbf24" title="Alert limits" subtitle="These limits apply to every channel, so changing one here changes it everywhere">
+      <Panel icon={<Bell size={16} />} tint="#fbbf24" title={t('Alert limits')} subtitle="These limits apply to every channel, so changing one here changes it everywhere">
         <div className="space-y-2.5">
           {withLimits.map((a) => (
             <div key={a.key} className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ background: C.fill }}>
               <div className="min-w-0">
-                <span className="fz-body font-bold block" style={{ color: C.text }}>{a.label}</span>
-                <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{a.description}</span>
+                <span className="fz-body font-bold block" style={{ color: C.text }}>{tLabel(a.label)}</span>
+                <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{tLabel(a.description)}</span>
               </div>
               <label className="flex items-center gap-2 fz-small shrink-0" style={{ color: C.dim }}>
-                {a.param!.label}
+                {tLabel(a.param!.label)}
                 <input
                   type="number"
                   inputMode="numeric"
                   min={a.param!.min}
                   max={a.param!.max}
-                  aria-label={`${a.label}: ${a.param!.label} (${a.param!.unit})`}
+                  aria-label={`${tLabel(a.label)}: ${tLabel(a.param!.label)} (${a.param!.unit})`}
                   value={drafts[a.key] ?? String(a.param!.value)}
                   onChange={(e) => setDrafts((p) => ({ ...p, [a.key]: e.target.value }))}
                   onBlur={() => commitParam(a)}
@@ -1311,7 +1431,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
           className="flex items-center gap-1.5 fz-small font-bold cursor-pointer"
           style={{ border: 'none', background: 'transparent', color: C.dim, padding: 0 }}
         >
-          ‹ Back to Notifications
+          ‹ {t('Back to Notifications')}
         </button>
         {renderChannelPanel(sel)}
         {renderLimitsPanel()}
@@ -1322,30 +1442,30 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
   return (
     <div className="space-y-5">
       <Panel
-        icon={<Bell size={16} />} tint="#38bdf8" title="Notifications"
+        icon={<Bell size={16} />} tint="#38bdf8" title={t('Notifications')}
         subtitle="Click a channel to open all of its settings. A society can use one, both or none."
-        right={<Counter color={data.master ? C.green : C.red}>{data.master ? 'Alerts on' : 'All muted'}</Counter>}
+        right={<Counter color={data.master ? C.green : C.red}>{data.master ? t('Alerts on') : t('All muted')}</Counter>}
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <div>
-              <span className="fz-body font-bold block" style={{ color: C.text }}>Send alerts</span>
+              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Send alerts')}</span>
               <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
-                Master switch for every channel. Off = nothing is sent anywhere. Muted alerts are dropped, never saved up for later.
+                {t('Master switch for every channel. Off = nothing is sent anywhere. Muted alerts are dropped, never saved up for later.')}
               </span>
             </div>
-            <Toggle on={data.master} accent={accent} label="Send alerts" onChange={toggleMaster} />
+            <Toggle on={data.master} accent={accent} label={t('Send alerts')} onChange={toggleMaster} />
           </div>
 
           <div>
-            <span className="fz-tiny font-black uppercase tracking-widest block mb-2" style={{ color: C.dimmer }}>Channels you can use now</span>
+            <span className="fz-tiny font-black uppercase tracking-widest block mb-2" style={{ color: C.dimmer }}>{t('Channels you can use now')}</span>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 220px))', gap: 14 }}>
               {CHANNEL_DEFS.map(renderChannelCard)}
             </div>
           </div>
 
           <div>
-            <span className="fz-tiny font-black uppercase tracking-widest block mb-2" style={{ color: C.dimmer }}>Planned</span>
+            <span className="fz-tiny font-black uppercase tracking-widest block mb-2" style={{ color: C.dimmer }}>{t('Planned')}</span>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10 }}>
               {COMING_SOON.map(renderComingSoon)}
             </div>
@@ -1355,15 +1475,15 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
 
       {renderOnlinePanel()}
 
-      <Panel icon={<Bell size={16} />} tint="#2684ff" title="Jira" subtitle="Support Desk queries become Jira tickets">
+      <Panel icon={<Bell size={16} />} tint="#2684ff" title={t('Jira')} subtitle="Support Desk queries become Jira tickets">
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <div>
-              <span className="fz-body font-bold block" style={{ color: C.text }}>Create a Jira ticket for each query</span>
+              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Create a Jira ticket for each query')}</span>
               <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
                 {data.jira.configured
-                  ? `Tickets go to project ${data.jira.projectKey} on ${data.jira.site} as "${data.jira.issueType}". Off = queries are still saved here, with no ticket.`
-                  : 'Jira is not configured on the server (.env). Queries are saved here until it is.'}
+                  ? t('Tickets go to project {{1}} on {{2}} as "{{3}}". Off = queries are still saved here, with no ticket.', { 1: data.jira.projectKey, 2: data.jira.site, 3: data.jira.issueType })
+                  : t('Jira is not configured on the server (.env). Queries are saved here until it is.')}
               </span>
             </div>
             <div className="flex items-center gap-3 shrink-0">
@@ -1373,9 +1493,9 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
                 className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
                 style={smallButton(jiraTesting || !data.jira.configured)}
               >
-                {jiraTesting ? 'Testing…' : 'Test connection'}
+                {jiraTesting ? t('Testing…') : t('Test connection')}
               </button>
-              <Toggle on={data.jira.enabled} accent={accent} label="Create a Jira ticket for each query" onChange={toggleJira} />
+              <Toggle on={data.jira.enabled} accent={accent} label={t('Create a Jira ticket for each query')} onChange={toggleJira} />
             </div>
           </div>
           {jiraResult && (
@@ -1392,6 +1512,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
 
 // --- License Section Component ---
 const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
+  const { t } = useTranslation();
   const { status, daysRemaining, graceDaysRemaining, message: licenseMsg, customerName, expiresAt, refresh } = useLicense();
   const [activateKey, setActivateKey] = useState('');
   const [activating, setActivating] = useState(false);
@@ -1406,7 +1527,7 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
 
   const handleActivate = async () => {
     if (activateKey.length !== 24) {
-      setActivateError('Enter a complete key: PWT0-XXXX-XXXX-XXXX-XXXX');
+      setActivateError(t('Enter a complete key: PWT0-XXXX-XXXX-XXXX-XXXX'));
       return;
     }
     setActivating(true);
@@ -1414,14 +1535,14 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
     try {
       const res = await apiService.activateLicense(activateKey);
       if (res.success) {
-        message.success('License activated!');
+        message.success(t('License activated!'));
         setActivateKey('');
         await refresh();
       } else {
-        setActivateError(res.message || res.error || 'Invalid key');
+        setActivateError(res.message || res.error || t('Invalid key'));
       }
     } catch {
-      setActivateError('Cannot connect to server');
+      setActivateError(t('Cannot connect to server'));
     } finally {
       setActivating(false);
     }
@@ -1430,11 +1551,11 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
   // Each status keeps its own tint so the card reads at a glance, the way the
   // light version did — just re-pitched for the dark panel.
   const statusConfig = {
-    active:        { color: '#34d399', icon: <ShieldCheck size={16} />,    label: 'Active' },
-    grace:         { color: '#fbbf24', icon: <AlertTriangle size={16} />,  label: 'Grace Period' },
-    expired:       { color: '#ff453a', icon: <AlertTriangle size={16} />,  label: 'Expired' },
-    not_activated: { color: '#8e8e93', icon: <KeyRound size={16} />,       label: 'Not Activated' },
-    checking:      { color: '#8e8e93', icon: <Clock size={16} />,          label: 'Checking...' },
+    active:        { color: '#34d399', icon: <ShieldCheck size={16} />,    label: t('Active') },
+    grace:         { color: '#fbbf24', icon: <AlertTriangle size={16} />,  label: t('Grace Period') },
+    expired:       { color: '#ff453a', icon: <AlertTriangle size={16} />,  label: t('Expired') },
+    not_activated: { color: '#8e8e93', icon: <KeyRound size={16} />,       label: t('Not Activated') },
+    checking:      { color: '#8e8e93', icon: <Clock size={16} />,          label: t('Checking...') },
   } as const;
 
   const cfg = statusConfig[status] || statusConfig.checking;
@@ -1450,12 +1571,12 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
         <div className="flex items-center gap-3 mb-5">
           <div className="p-2 rounded-[10px]" style={{ background: C.panel, color: cfg.color }}>{cfg.icon}</div>
           <div>
-            <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>License Status</h3>
+            <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>{t('License Status')}</h3>
             <span
               className="inline-block mt-1.5 px-2.5 py-0.5 fz-tiny font-black rounded-full uppercase tracking-widest"
               style={{ background: `rgba(${sr},${sg},${sb},.15)`, color: cfg.color }}
             >
-              {cfg.label}
+              {tLabel(cfg.label)}
             </span>
           </div>
         </div>
@@ -1463,25 +1584,25 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
         <div className="grid grid-cols-3 gap-4">
           {customerName && (
             <div>
-              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Customer</span>
+              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Customer')}</span>
               <span className="fz-body font-bold" style={{ color: C.text }}>{customerName}</span>
             </div>
           )}
           {expiresAt && (
             <div>
-              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Expires</span>
+              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Expires')}</span>
               <span className="fz-body font-bold" style={{ color: C.text }}>{new Date(expiresAt).toLocaleDateString()}</span>
             </div>
           )}
           {status === 'active' && (
             <div>
-              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Days Remaining</span>
+              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Days Remaining')}</span>
               <span className="font-black text-lg" style={{ color: daysRemaining <= 30 ? C.amber : C.green }}>{daysRemaining}</span>
             </div>
           )}
           {status === 'grace' && (
             <div>
-              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>Grace Days Left</span>
+              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Grace Days Left')}</span>
               <span className="font-black text-lg" style={{ color: C.red }}>{graceDaysRemaining}</span>
             </div>
           )}
@@ -1496,7 +1617,7 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
       <Panel
         icon={<KeyRound size={17} />}
         tint={accent}
-        title={status === 'not_activated' ? 'Activate Software' : 'Renew License'}
+        title={status === 'not_activated' ? t('Activate Software') : t('Renew License')}
         subtitle="Enter your license key"
       >
         <input
@@ -1521,7 +1642,7 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
             opacity: activating || activateKey.length !== 24 ? 0.45 : 1,
           }}
         >
-          {activating ? 'Working…' : status === 'not_activated' ? 'Activate' : 'Apply New Key'}
+          {activating ? t('Working…') : status === 'not_activated' ? t('Activate') : t('Apply New Key')}
         </button>
       </Panel>
     </div>
@@ -1531,6 +1652,7 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
 // --- Main Component ---
 
 const SettingsPage: React.FC = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const theme = useSelector((state: RootState) => state.theme);
 
@@ -1602,6 +1724,7 @@ const SettingsPage: React.FC = () => {
 
   const accent = settings.accentColor || '#6366f1';
   const loadingAnimation = useLoadingAnimation();
+  const motionUi = useMotion();
   const [ar, ag, ab] = hexToRgb(accent);
   const accentRgba = useCallback(
     (a: number) => `rgba(${ar},${ag},${ab},${a})`,
@@ -1735,7 +1858,7 @@ const SettingsPage: React.FC = () => {
       setIsDeveloperMode(false);
       sessionStorage.removeItem('developerModeEnabled');
       setActiveTab('appearance');
-      message.info('Developer mode deactivated');
+      message.info(t('Developer mode deactivated'));
     } else {
       setShowPinDialog(true);
       setPinInput('');
@@ -1747,7 +1870,7 @@ const SettingsPage: React.FC = () => {
     const lockedUntil = readPinLockUntil();
     if (lockedUntil > Date.now()) {
       const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
-      setPinError(`Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`);
+      setPinError(t('Too many failed attempts. Try again in {{1}} minute{{2}}.', { 1: mins, 2: mins === 1 ? '' : 's' }));
       setPinInput('');
       return;
     }
@@ -1760,18 +1883,18 @@ const SettingsPage: React.FC = () => {
       setPinInput('');
       setPinError('');
       setAttempts(0);
-      message.success('Developer mode activated');
+      message.success(t('Developer mode activated'));
       setActiveTab('developer');
     } else {
       const newAttempts = recordPinFailure();
       setAttempts(newAttempts);
 
       if (newAttempts >= MAX_ATTEMPTS) {
-        setPinError(`Too many failed attempts. Locked for ${PIN_LOCK_MINUTES} minutes.`);
+        setPinError(t('Too many failed attempts. Locked for {{1}} minutes.', { 1: PIN_LOCK_MINUTES }));
         setTimeout(() => setShowPinDialog(false), 1500);
         setPinInput('');
       } else {
-        setPinError(`Incorrect PIN. ${MAX_ATTEMPTS - newAttempts} attempts remaining.`);
+        setPinError(t('Incorrect PIN. {{1}} attempts remaining.', { 1: MAX_ATTEMPTS - newAttempts }));
         setPinInput('');
       }
     }
@@ -1807,10 +1930,10 @@ const SettingsPage: React.FC = () => {
         );
         message.success({ content: 'Configuration saved & broadcasted', icon: <CheckCircle2 className="text-emerald-500" /> });
       } else {
-        message.error('Failed to persist settings to server');
+        message.error(t('Failed to persist settings to server'));
       }
     } catch (error) {
-      message.error('Connection error while saving');
+      message.error(t('Connection error while saving'));
     } finally {
       setIsSaving(false);
     }
@@ -1820,12 +1943,12 @@ const SettingsPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        message.error('Please choose an image file.');
+        message.error(t('Please choose an image file.'));
         e.target.value = '';
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        message.error('Image is too large. Maximum size is 2 MB.');
+        message.error(t('Image is too large. Maximum size is 2 MB.'));
         e.target.value = '';
         return;
       }
@@ -1835,10 +1958,10 @@ const SettingsPage: React.FC = () => {
         // Make sure the data actually decodes as an image before persisting it.
         const probe = new Image();
         probe.onload = () => applyTheme({ backgroundImage: imageUrl, backgroundType: 'image' });
-        probe.onerror = () => message.error('That file could not be read as an image.');
+        probe.onerror = () => message.error(t('That file could not be read as an image.'));
         probe.src = imageUrl;
       };
-      reader.onerror = () => message.error('Failed to read the selected file.');
+      reader.onerror = () => message.error(t('Failed to read the selected file.'));
       reader.readAsDataURL(file);
       e.target.value = '';
     }
@@ -1855,9 +1978,9 @@ const SettingsPage: React.FC = () => {
   const resetWindowStates = useCallback(() => {
     if (window.electronAPI?.send) {
       window.electronAPI.send('reset-window-states');
-      message.success('Window layouts reset to default');
+      message.success(t('Window layouts reset to default'));
     } else {
-      message.warning('Only available in desktop app');
+      message.warning(t('Only available in desktop app'));
     }
   }, []);
 
@@ -1865,17 +1988,18 @@ const SettingsPage: React.FC = () => {
 
   // Icon tiles carry the gradient the design gives each section.
   const NAV_ITEMS = useMemo(() => ([
-    { key: 'appearance', label: 'Appearance',      Icon: Palette,   gradient: 'linear-gradient(135deg,#6366f1,#818cf8)' },
-    { key: 'dashboard',  label: 'Dashboard',       Icon: BarChart2, gradient: 'linear-gradient(135deg,#10b981,#34d399)' },
-    { key: 'reports',    label: 'Reports',         Icon: FileText,  gradient: 'linear-gradient(135deg,#ec4899,#f472b6)' },
-    { key: 'language',   label: 'Language',        Icon: Languages, gradient: 'linear-gradient(135deg,#6366f1,#a5b4fc)' },
-    { key: 'system',     label: 'System & Window', Icon: Monitor,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)' },
-    { key: 'alerts',     label: 'Notifications',   Icon: Bell,      gradient: 'linear-gradient(135deg,#229ed9,#4fc3f7)', adminOnly: true },
-    { key: 'approvers',  label: 'Approvers',       Icon: ShieldCheck, gradient: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', adminOnly: true },
-    { key: 'forgot',     label: 'Forgot Password', Icon: KeyRound,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)', adminOnly: true },
-    { key: 'developer',  label: 'Developer',      Icon: Code,      gradient: 'linear-gradient(135deg,#3f3f46,#71717a)', devOnly: true },
-    { key: 'onboarding', label: 'Welcome Tour',    Icon: Compass,   gradient: 'linear-gradient(135deg,#f97316,#fb923c)' },
-    { key: 'license',    label: 'License',        Icon: KeyRound,  gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)', afterDivider: true },
+    { key: 'appearance', label: t('Appearance'),      Icon: Palette,   gradient: 'linear-gradient(135deg,#6366f1,#818cf8)' },
+    { key: 'dashboard',  label: t('Dashboard'),       Icon: BarChart2, gradient: 'linear-gradient(135deg,#10b981,#34d399)' },
+    { key: 'reports',    label: t('Reports'),         Icon: FileText,  gradient: 'linear-gradient(135deg,#ec4899,#f472b6)' },
+    { key: 'language',   label: t('Language'),        Icon: Languages, gradient: 'linear-gradient(135deg,#6366f1,#a5b4fc)' },
+    { key: 'system',     label: t('System & Window'), Icon: Monitor,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)' },
+    { key: 'alerts',     label: t('Notifications'),   Icon: Bell,      gradient: 'linear-gradient(135deg,#229ed9,#4fc3f7)', adminOnly: true },
+    { key: 'approvers',  label: t('Approvers'),       Icon: ShieldCheck, gradient: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', adminOnly: true },
+    { key: 'assistant',  label: t('AI Assistant'),    Icon: MessageSquare, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', adminOnly: true },
+    { key: 'forgot',     label: t('Forgot Password'), Icon: KeyRound,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)', adminOnly: true },
+    { key: 'developer',  label: t('Developer'),      Icon: Code,      gradient: 'linear-gradient(135deg,#3f3f46,#71717a)', devOnly: true },
+    { key: 'onboarding', label: t('Welcome Tour'),    Icon: Compass,   gradient: 'linear-gradient(135deg,#f97316,#fb923c)' },
+    { key: 'license',    label: t('License'),        Icon: KeyRound,  gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)', afterDivider: true },
   ]), []);
 
   // The search box narrows the section list by title and by the settings each
@@ -1889,7 +2013,7 @@ const SettingsPage: React.FC = () => {
         if (!q) return true;
         const meta = TAB_META[item.key];
         return item.label.toLowerCase().includes(q)
-          || (meta ? `${meta.title} ${meta.subtitle} ${meta.keywords}`.toLowerCase().includes(q) : false);
+          || (meta ? `${tLabel(meta.title)} ${meta.subtitle} ${meta.keywords}`.toLowerCase().includes(q) : false);
       });
   }, [NAV_ITEMS, isDeveloperMode, isAdmin, navQuery]);
 
@@ -1914,11 +2038,11 @@ const SettingsPage: React.FC = () => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
       {/* Theme & Accent */}
-      <Panel icon={<Palette size={17} />} tint="#818cf8" title="Theme & Colors" subtitle="Global palette settings">
+      <Panel icon={<Palette size={17} />} tint="#818cf8" title={t('Theme & Colors')} subtitle="Global palette settings">
         <div className="space-y-5">
           {/* Theme Mode */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Interface Mode</label>
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Interface Mode')}</label>
             <div className="relative flex p-[3px] rounded-[9px]" style={{ background: C.fill }}>
               {/* Sliding pill: glides between Light and Dark instead of swapping backgrounds. */}
               <span
@@ -1957,14 +2081,14 @@ const SettingsPage: React.FC = () => {
 
           {/* Accent Color */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Accent Color</label>
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Accent Color')}</label>
             <div className="flex flex-wrap gap-2.5 items-center">
               {ACCENT_PRESETS.map(color => {
                 const selected = accent.toLowerCase() === color.toLowerCase();
                 return (
                   <button
                     key={color}
-                    aria-label={`Accent ${color}`}
+                    aria-label={t('Accent {{1}}', { 1: color })}
                     onClick={() => applyTheme({ accentColor: color })}
                     className="w-7 h-7 rounded-full border-0 cursor-pointer flex items-center justify-center"
                     style={{ background: color, boxShadow: selected ? `0 0 0 2px ${C.panel}, 0 0 0 4px ${color}` : 'none' }}
@@ -1987,12 +2111,12 @@ const SettingsPage: React.FC = () => {
       </Panel>
 
       {/* Layout & Type */}
-      <Panel icon={<Type size={17} />} tint="#f472b6" title="Layout & Type" subtitle="Density and scaling">
+      <Panel icon={<Type size={17} />} tint="#f472b6" title={t('Layout & Type')} subtitle="Density and scaling">
         <div className="space-y-5">
           {/* Text Size */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="fz-small font-black uppercase tracking-widest" style={fieldLabel}>Text Size</label>
+              <label className="fz-small font-black uppercase tracking-widest" style={fieldLabel}>{t('Text Size')}</label>
               <span
                 className="fz-tiny font-black uppercase px-2 py-0.5 rounded-full"
                 style={{ background: accentRgba(0.15), color: accent }}
@@ -2018,19 +2142,19 @@ const SettingsPage: React.FC = () => {
 
           <details className="settings-type-advanced rounded-[10px]" style={{ border: `1px solid ${C.border}`, background: C.fillSoft }}>
             <summary className="cursor-pointer px-3 py-2.5 font-bold" style={{ color: C.textStrong }}>
-              Advanced text sizes
+              {t('Advanced text sizes')}
             </summary>
             <div className="px-3 pb-3 space-y-4" style={{ borderTop: `1px solid ${C.divider}` }}>
-              <p className="fz-small pt-3" style={{ color: C.dim }}>Fine-tune Settings text. Other windows can adopt these same roles after you approve the result.</p>
+              <p className="fz-small pt-3" style={{ color: C.dim }}>{t('Fine-tune Settings text. Other windows can adopt these same roles after you approve the result.')}</p>
               {([
-                { role: 'heading', title: 'Headings', hint: 'Page, section and panel titles' },
-                { role: 'label', title: 'Labels & fields', hint: 'Control labels, input text and placeholders' },
-                { role: 'body', title: 'Supporting text', hint: 'Descriptions and helper text' },
+                { role: 'heading', title: t('Headings'), hint: t('Page, section and panel titles') },
+                { role: 'label', title: t('Labels & fields'), hint: t('Control labels, input text and placeholders') },
+                { role: 'body', title: t('Supporting text'), hint: t('Descriptions and helper text') },
               ] as const).map(({ role, title, hint }) => (
                 <div key={role} className="space-y-1.5">
                   <div className="flex items-baseline justify-between gap-2">
                     <label htmlFor={`settings-type-${role}`} className="font-semibold" style={{ color: C.textStrong }}>{title}</label>
-                    <span className="fz-small tabular-nums" style={{ color: C.dim }}>{typographyOffsets[role] > 0 ? '+' : ''}{typographyOffsets[role]} px</span>
+                    <span className="fz-small tabular-nums" style={{ color: C.dim }}>{t('{{1}}{{2}} px', { 1: typographyOffsets[role] > 0 ? '+' : '', 2: typographyOffsets[role] })}</span>
                   </div>
                   <p className="fz-small" style={{ color: C.dim }}>{hint}</p>
                   <Range
@@ -2046,10 +2170,10 @@ const SettingsPage: React.FC = () => {
                 </div>
               ))}
               <div className="settings-type-preview rounded-lg px-3 py-2.5" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
-                <div className="settings-panel-title font-bold" style={{ color: C.textStrong }}>Preview heading</div>
-                <label className="block mt-2" style={{ color: C.dim }}>Sample field</label>
-                <input readOnly placeholder="Sample placeholder" aria-label="Typography preview" className="w-full rounded-md px-2 py-1 mt-1" style={{ background: C.fillSoft, border: `1px solid ${C.border}`, color: C.textStrong }} />
-                <p className="fz-body mt-2" style={{ color: C.dim }}>Supporting information stays easy to read.</p>
+                <div className="settings-panel-title font-bold" style={{ color: C.textStrong }}>{t('Preview heading')}</div>
+                <label className="block mt-2" style={{ color: C.dim }}>{t('Sample field')}</label>
+                <input readOnly placeholder={t('Sample placeholder')} aria-label={t('Typography preview')} className="w-full rounded-md px-2 py-1 mt-1" style={{ background: C.fillSoft, border: `1px solid ${C.border}`, color: C.textStrong }} />
+                <p className="fz-body mt-2" style={{ color: C.dim }}>{t('Supporting information stays easy to read.')}</p>
               </div>
               <button
                 type="button"
@@ -2057,20 +2181,20 @@ const SettingsPage: React.FC = () => {
                 className="rounded-lg px-3 py-1.5 font-semibold cursor-pointer"
                 style={{ color: C.textStrong, background: C.fill, border: `1px solid ${C.border}` }}
               >
-                Reset advanced sizes
+                {t('Reset advanced sizes')}
               </button>
             </div>
           </details>
 
           {/* Font Style */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Font Style</label>
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Font Style')}</label>
             <div className="grid grid-cols-2 gap-2">
               {FONT_OPTIONS.map(font => {
                 const selected = settings.fontFamily === font.value;
                 return (
                   <div
-                    key={font.label}
+                    key={tLabel(font.label)}
                     onClick={() => applyTheme({ fontFamily: font.value })}
                     className="settings-select cursor-pointer rounded-[10px] px-3 py-2.5"
                     style={{
@@ -2086,14 +2210,14 @@ const SettingsPage: React.FC = () => {
                       className="fz-body font-bold leading-tight font-face-preview"
                       style={{ color: C.text, ['--preview-font' as any]: font.value }}
                     >
-                      {font.label}
+                      {tLabel(font.label)}
                     </div>
                     <div className="fz-small mt-0.5" style={{ color: C.dim }}>{font.hint}</div>
                     <div
                       className="fz-caption mt-1 truncate font-face-preview"
                       style={{ color: C.dimmer, ['--preview-font' as any]: font.value }}
                     >
-                      Member 1043 · ₹ 24,850.00
+                      {t('Member 1043 · ₹ 24,850.00')}
                     </div>
                   </div>
                 );
@@ -2104,13 +2228,13 @@ const SettingsPage: React.FC = () => {
           {/* Bold Text */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Bold Text</label>
-              <p className="fz-small mt-0.5" style={{ color: C.dim }}>Make all labelled text heavier</p>
+              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Bold Text')}</label>
+              <p className="fz-small mt-0.5" style={{ color: C.dim }}>{t('Make all labelled text heavier')}</p>
             </div>
             <Toggle
               on={settings.boldText}
               accent={accent}
-              label="Bold text"
+              label={t('Bold text')}
               onChange={(v) => {
                 setSettings(prev => ({ ...prev, boldText: v }));
                 document.documentElement.classList.toggle('bold-text', v);
@@ -2123,13 +2247,13 @@ const SettingsPage: React.FC = () => {
           {/* Soft Shadows */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Soft Shadows</label>
-              <p className="fz-small mt-0.5" style={{ color: C.dim }}>Subtle depth on cards, buttons and pop-ups. Turn off for maximum speed on older PCs.</p>
+              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Soft Shadows')}</label>
+              <p className="fz-small mt-0.5" style={{ color: C.dim }}>{t('Subtle depth on cards, buttons and pop-ups. Turn off for maximum speed on older PCs.')}</p>
             </div>
             <Toggle
               on={theme.shadows !== false}
               accent={accent}
-              label="Soft shadows"
+              label={t('Soft shadows')}
               onChange={(v) => applyTheme({ shadows: v })}
             />
           </div>
@@ -2137,15 +2261,15 @@ const SettingsPage: React.FC = () => {
           {/* Header Style */}
           <div className="space-y-2">
             <div>
-              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Header Style</label>
-              <p className="fz-small mt-0.5" style={{ color: C.dim }}>A soft decorative background behind each window's title bar.</p>
+              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Header Style')}</label>
+              <p className="fz-small mt-0.5" style={{ color: C.dim }}>{t("A soft decorative background behind each window's title bar.")}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {([
-                { id: 'none', label: 'None' },
-                { id: 'waves', label: 'Soft waves' },
-                { id: 'blobs', label: 'Blob shapes' },
-                { id: 'mesh', label: 'Mesh gradient' },
+                { id: 'none', label: t('None') },
+                { id: 'waves', label: t('Soft waves') },
+                { id: 'blobs', label: t('Blob shapes') },
+                { id: 'mesh', label: t('Mesh gradient') },
               ] as const).map(opt => {
                 const selected = (theme.headerStyle ?? 'waves') === opt.id;
                 const fill = accent;
@@ -2184,7 +2308,7 @@ const SettingsPage: React.FC = () => {
                         />
                       )}
                     </div>
-                    <span className="fz-small font-bold uppercase tracking-wider" style={{ color: C.text }}>{opt.label}</span>
+                    <span className="fz-small font-bold uppercase tracking-wider" style={{ color: C.text }}>{tLabel(opt.label)}</span>
                   </div>
                 );
               })}
@@ -2193,7 +2317,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Density Toggle */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>Layout Density</label>
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Layout Density')}</label>
             <div className="grid grid-cols-2 gap-2.5">
               {(['compact', 'comfortable'] as const).map(d => {
                 const selected = settings.density === d;
@@ -2223,9 +2347,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Border Radius */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>
-              Corner Radius: {settings.borderRadius}px
-            </label>
+            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('{{1}} {{2}}px', { 1: t('Corner Radius:'), 2: settings.borderRadius })}</label>
             <Range
               ariaLabel="Corner radius"
               format={v => `${v}px`}
@@ -2241,7 +2363,7 @@ const SettingsPage: React.FC = () => {
 
       {/* Background Config */}
       <div className="lg:col-span-2">
-        <Panel icon={<ImageIcon size={17} />} tint="#34d399" title="Background" subtitle="Canvas appearance">
+        <Panel icon={<ImageIcon size={17} />} tint="#34d399" title={t('Background')} subtitle="Canvas appearance">
           {/* Dark mode keeps its own canvas so the navbar and toolbars stay
               readable, which means these controls have no visible effect while
               it is on. Say so rather than letting them look broken. */}
@@ -2251,7 +2373,7 @@ const SettingsPage: React.FC = () => {
               style={{ background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.2)' }}
             >
               <p className="fz-caption font-bold" style={{ color: C.amber }}>
-                Dark mode uses its own canvas colour — these background settings apply in Light mode.
+                {t('Dark mode uses its own canvas colour — these background settings apply in Light mode.')}
               </p>
             </div>
           )}
@@ -2281,13 +2403,13 @@ const SettingsPage: React.FC = () => {
           {settings.backgroundType !== 'image' && (
             <div className="space-y-3">
               <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>
-                {settings.backgroundType === 'gradient' ? 'Colors' : 'Color Selection'}
+                {settings.backgroundType === 'gradient' ? t('Colors') : t('Color Selection')}
               </label>
               <div className="flex flex-wrap gap-2 items-center">
                 {BG_PRESETS.map(color => (
                   <button
                     key={color}
-                    aria-label={`Background ${color}`}
+                    aria-label={t('Background {{1}}', { 1: color })}
                     onClick={() => applyTheme({ backgroundColor1: color })}
                     className="border-0 cursor-pointer"
                     style={{
@@ -2327,7 +2449,7 @@ const SettingsPage: React.FC = () => {
                   className="rounded-[9px] fz-small font-bold flex items-center gap-2 px-4 cursor-pointer"
                   style={{ height: 34, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
                 >
-                  <UploadCloud size={13} /> Upload Image
+                  <UploadCloud size={13} /> {t('Upload Image')}
                 </button>
                 {/* Thumbnail of what was actually picked — the old build showed a
                     stray "Preview Text" chip here instead of the image. */}
@@ -2346,20 +2468,65 @@ const SettingsPage: React.FC = () => {
             </div>
           )}
         </Panel>
+
+        {/* ── Animations (ES-436) ───────────────────────────────────── */}
+        <Panel
+          icon={<Zap size={16} />}
+          tint="#a78bfa"
+          className="mt-4"
+          title={t('Animations')}
+          subtitle="How windows and pop-ups appear and disappear"
+          right={<Counter>{motionUi.resolved.mode === 'off' ? t('Off') : MOTION_STYLES.find(m => m.id === motionUi.resolved.mode)?.name}</Counter>}
+        >
+          <div className="grid grid-cols-2 gap-2.5">
+            {MOTION_STYLES.map(opt => {
+              const selected = motionUi.prefs.style === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => saveMotion({ style: opt.id })}
+                  aria-pressed={selected}
+                  className="flex flex-col items-center gap-1 p-3 rounded-[10px] cursor-pointer"
+                  style={{ background: selected ? accentRgba(0.12) : C.fill, border: '1.5px solid ' + (selected ? accent : C.border) }}
+                >
+                  <span className="fz-small font-bold flex items-center gap-1" style={{ color: selected ? accent : C.textStrong }}>
+                    {selected && <Check size={12} />}{t(opt.name)}
+                  </span>
+                  <span className="fz-tiny font-medium text-center" style={{ color: C.dim }}>{t(opt.description)}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl mt-3" style={{ background: C.fill }}>
+            <div className="min-w-0">
+              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Adapt to this PC (recommended)')}</span>
+              <p className="fz-small" style={{ color: C.dim }}>
+                {t('Checks how fast this PC draws the screen and shortens or switches off animation on a slow PC, so the app always feels quick.')}
+              </p>
+              <p className="fz-small mt-1" style={{ color: C.dim }}>
+                {t('This PC')}: {motionUi.pc.cores} {t('cores')}{motionUi.pc.memoryGb ? ', ' + motionUi.pc.memoryGb + ' GB ' + t('memory') : ''}{motionUi.pc.avgFrameMs ? ', ' + motionUi.pc.avgFrameMs + ' ms ' + t('per frame') : ''} — {motionUi.pc.tier === 'high' ? t('fast: full animation') : motionUi.pc.tier === 'mid' ? t('medium: short animation') : t('slow: animation off')}
+                {' · '}<button className="underline" style={{ color: accent }} onClick={() => void detectPc(true)}>{t('Check again')}</button>
+              </p>
+              {motionUi.resolved.reason === 'calm' && <p className="fz-small mt-1" style={{ color: C.dim }}>{t('Calm mode is on, so animation is off.')}</p>}
+              {motionUi.resolved.reason === 'system' && <p className="fz-small mt-1" style={{ color: C.dim }}>{t('Windows is set to reduce motion, so animation is off.')}</p>}
+            </div>
+            <Toggle on={motionUi.prefs.adaptive} accent={accent} label={t('Adapt to this PC (recommended)')} onChange={(v) => saveMotion({ adaptive: v })} />
+          </div>
+        </Panel>
       </div>
     </div>
   );
 
   const renderDashboard = () => {
     const BG_OPTIONS = [
-      { value: '#f5f6fa', label: 'Slate',   preview: '#f5f6fa' },
-      { value: '#fefef4', label: 'Cream',   preview: '#fefef4' },
-      { value: '#ffffff', label: 'White',   preview: '#ffffff' },
-      { value: '#f0f4ff', label: 'Blue',    preview: '#f0f4ff' },
-      { value: '#f0fff4', label: 'Mint',    preview: '#f0fff4' },
-      { value: '#fff8f0', label: 'Peach',   preview: '#fff8f0' },
-      { value: '#1e1b4b', label: 'Dark',    preview: '#1e1b4b' },
-      { value: '#0f172a', label: 'Night',   preview: '#0f172a' },
+      { value: '#f5f6fa', label: t('Slate'),   preview: '#f5f6fa' },
+      { value: '#fefef4', label: t('Cream'),   preview: '#fefef4' },
+      { value: '#ffffff', label: t('White'),   preview: '#ffffff' },
+      { value: '#f0f4ff', label: t('Blue'),    preview: '#f0f4ff' },
+      { value: '#f0fff4', label: t('Mint'),    preview: '#f0fff4' },
+      { value: '#fff8f0', label: t('Peach'),   preview: '#fff8f0' },
+      { value: '#1e1b4b', label: t('Dark'),    preview: '#1e1b4b' },
+      { value: '#0f172a', label: t('Night'),   preview: '#0f172a' },
     ];
 
     const applyDashboardBg = (color: string) => {
@@ -2369,24 +2536,24 @@ const SettingsPage: React.FC = () => {
     };
 
     const WIDGET_DEFS = [
-      { key: 'fyBanner'     as const, label: 'FY Indicator',      desc: 'Financial year banner with progress',  Icon: Calendar },
-      { key: 'quickActions' as const, label: 'Quick Actions',     desc: 'Configurable one-click shortcut buttons', Icon: Zap },
-      { key: 'noticeBoard'  as const, label: 'Notice Board',      desc: 'Admin notices & sticky notes',          Icon: Bell },
-      { key: 'shortcuts'    as const, label: 'Keyboard Shortcuts',desc: 'Hotkey reference panel',                Icon: Command },
-      { key: 'activeMembers'        as const, label: 'Active Members',        desc: 'Current active member count',        Icon: Users },
-      { key: 'sanctionedLoans'      as const, label: 'Sanctioned Loans',      desc: 'Pending disbursal, by loan type',    Icon: Landmark },
-      { key: 'monthEndOutstanding'  as const, label: 'Loan Outstanding',      desc: 'This month’s regular vs emergency split', Icon: TrendingUp },
-      { key: 'balanceDistribution' as const, label: 'Balance Distribution', desc: 'Members grouped by net balance (ring chart)', Icon: PiggyBank },
-      { key: 'pendingVouchers'     as const, label: 'Pending Vouchers',     desc: 'Vouchers waiting to be passed',      Icon: CheckSquare },
-      { key: 'cashPosition'        as const, label: 'Cash Position',        desc: 'Today’s cash book with a 7-day trend', Icon: Wallet },
-      { key: 'dayEndStatus'        as const, label: 'Day-End Status',       desc: 'Last open day and whether it is closed', Icon: Clock },
-      { key: 'demandRecovery'      as const, label: 'Demand vs Recovery',   desc: 'This month’s demand posted to the ledger (gauge)', Icon: Scale },
-      { key: 'depositsSummary'     as const, label: 'Deposits Summary',     desc: 'Fixed & recurring, savings and compulsory (ring chart)', Icon: Banknote },
-      { key: 'upcomingMaturities'  as const, label: 'Upcoming Maturities',  desc: 'Deposits maturing this month (timeline)', Icon: Calendar },
-      { key: 'loanApplications'    as const, label: 'Loan Applications',    desc: 'Pending → sanctioned → disbursed steps', Icon: FileText },
-      { key: 'overdueLoans'        as const, label: 'Overdue Loans',        desc: 'Defaulters by time since last payment (ring chart)', Icon: AlertTriangle },
-      { key: 'retiringMembers'     as const, label: 'Retiring Members',     desc: 'Members retiring in 6 months, with loan balance', Icon: Users },
-      { key: 'newMembers'          as const, label: 'New Members',          desc: 'Joined this month vs last month',    Icon: Star },
+      { key: 'fyBanner'     as const, label: t('FY Indicator'),      desc: 'Financial year banner with progress',  Icon: Calendar },
+      { key: 'quickActions' as const, label: t('Quick Actions'),     desc: 'Configurable one-click shortcut buttons', Icon: Zap },
+      { key: 'noticeBoard'  as const, label: t('Notice Board'),      desc: 'Admin notices & sticky notes',          Icon: Bell },
+      { key: 'shortcuts'    as const, label: t('Keyboard Shortcuts'),desc: 'Hotkey reference panel',                Icon: Command },
+      { key: 'activeMembers'        as const, label: t('Active Members'),        desc: 'Current active member count',        Icon: Users },
+      { key: 'sanctionedLoans'      as const, label: t('Sanctioned Loans'),      desc: 'Pending disbursal, by loan type',    Icon: Landmark },
+      { key: 'monthEndOutstanding'  as const, label: t('Loan Outstanding'),      desc: 'This month’s regular vs emergency split', Icon: TrendingUp },
+      { key: 'balanceDistribution' as const, label: t('Balance Distribution'), desc: 'Members grouped by net balance (ring chart)', Icon: PiggyBank },
+      { key: 'pendingVouchers'     as const, label: t('Pending Vouchers'),     desc: 'Vouchers waiting to be passed',      Icon: CheckSquare },
+      { key: 'cashPosition'        as const, label: t('Cash Position'),        desc: 'Today’s cash book with a 7-day trend', Icon: Wallet },
+      { key: 'dayEndStatus'        as const, label: t('Day-End Status'),       desc: 'Last open day and whether it is closed', Icon: Clock },
+      { key: 'demandRecovery'      as const, label: t('Demand vs Recovery'),   desc: 'This month’s demand posted to the ledger (gauge)', Icon: Scale },
+      { key: 'depositsSummary'     as const, label: t('Deposits Summary'),     desc: 'Fixed & recurring, savings and compulsory (ring chart)', Icon: Banknote },
+      { key: 'upcomingMaturities'  as const, label: t('Upcoming Maturities'),  desc: 'Deposits maturing this month (timeline)', Icon: Calendar },
+      { key: 'loanApplications'    as const, label: t('Loan Applications'),    desc: 'Pending → sanctioned → disbursed steps', Icon: FileText },
+      { key: 'overdueLoans'        as const, label: t('Overdue Loans'),        desc: 'Defaulters by time since last payment (ring chart)', Icon: AlertTriangle },
+      { key: 'retiringMembers'     as const, label: t('Retiring Members'),     desc: 'Members retiring in 6 months, with loan balance', Icon: Users },
+      { key: 'newMembers'          as const, label: t('New Members'),          desc: 'Joined this month vs last month',    Icon: Star },
     ];
 
     const bannerBgAlpha = (bannerOpacity / 100).toFixed(2);
@@ -2405,9 +2572,9 @@ const SettingsPage: React.FC = () => {
         <Panel
           icon={<LayoutGrid size={16} />}
           tint="#818cf8"
-          title="Dashboard Widgets"
+          title={t('Dashboard Widgets')}
           subtitle="Choose which panels are visible on your dashboard"
-          right={<Counter>{Object.values(widgetConfig).filter(Boolean).length} / {WIDGET_DEFS.length} on</Counter>}
+          right={<Counter>{t('{{1}} / {{2}} on', { 1: Object.values(widgetConfig).filter(Boolean).length, 2: WIDGET_DEFS.length })}</Counter>}
         >
           <div className="grid grid-cols-2 gap-2.5">
             {WIDGET_DEFS.map(({ key, label, desc, Icon }, i) => {
@@ -2453,14 +2620,14 @@ const SettingsPage: React.FC = () => {
         <Panel
           icon={<LayoutGrid size={16} />}
           tint="#60a5fa"
-          title="Dashboard Layout"
+          title={t('Dashboard Layout')}
           subtitle="Arrange the cards on the dashboard itself; reset them here"
         >
           <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold block" style={{ color: C.text }}>Reset Card Layout</span>
+              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Reset Card Layout')}</span>
               <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
-                On the dashboard, drag the bar at the top of a card to move it, drag the edge between cards to resize, and double-click an edge to reset it. This puts every card back in its original place and size.
+                {t('On the dashboard, drag the bar at the top of a card to move it, drag the edge between cards to resize, and double-click an edge to reset it. This puts every card back in its original place and size.')}
               </span>
             </div>
             <button
@@ -2468,7 +2635,7 @@ const SettingsPage: React.FC = () => {
               className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer shrink-0"
               style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
             >
-              {layoutReset ? <><Check size={12} strokeWidth={3} /> Layout reset</> : <><RotateCcw size={12} /> Reset Layout</>}
+              {layoutReset ? <><Check size={12} strokeWidth={3} /> {t('Layout reset')}</> : <><RotateCcw size={12} /> {t('Reset Layout')}</>}
             </button>
           </div>
         </Panel>
@@ -2477,11 +2644,11 @@ const SettingsPage: React.FC = () => {
         <Panel
           icon={<Zap size={16} />}
           tint="#34d399"
-          title="Quick Actions Bar"
+          title={t('Quick Actions Bar')}
           subtitle="Choose which windows appear in the dashboard quick actions"
           right={
             <>
-              <Counter>{enabledQaIds.length} / {ALL_QUICK_ACTION_DEFS.length} enabled</Counter>
+              <Counter>{t('{{1}} / {{2}} enabled', { 1: enabledQaIds.length, 2: ALL_QUICK_ACTION_DEFS.length })}</Counter>
               {enabledQaIds.length !== DEFAULT_ENABLED_QA_IDS.length && (
                 <button
                   onClick={() => {
@@ -2492,7 +2659,7 @@ const SettingsPage: React.FC = () => {
                   className="px-2.5 py-1 fz-mini font-black uppercase tracking-widest rounded-lg cursor-pointer"
                   style={{ color: C.dim, border: `1px solid ${C.border}`, background: 'transparent' }}
                 >
-                  Reset
+                  {t('Reset')}
                 </button>
               )}
             </>
@@ -2535,7 +2702,7 @@ const SettingsPage: React.FC = () => {
                             className="fz-micro font-black uppercase tracking-tight text-center leading-tight"
                             style={{ color: isOn ? '#e5e5ea' : C.dimmer }}
                           >
-                            {item.label}
+                            {tLabel(item.label)}
                           </span>
                         </div>
                       );
@@ -2551,11 +2718,11 @@ const SettingsPage: React.FC = () => {
         <Panel
           icon={<Layers size={16} />}
           tint="#a78bfa"
-          title="FY Banner Transparency"
+          title={t('FY Banner Transparency')}
           subtitle="Control how opaque the glass banner appears"
           right={
             <Counter color={bannerOpacity === 0 ? C.red : C.green}>
-              {bannerOpacity === 0 ? 'Invisible' : bannerOpacity === 100 ? 'Solid' : `${bannerOpacity}% opaque`}
+              {bannerOpacity === 0 ? t('Invisible') : bannerOpacity === 100 ? t('Solid') : t('{{1}}% opaque', { 1: bannerOpacity })}
             </Counter>
           }
         >
@@ -2563,11 +2730,11 @@ const SettingsPage: React.FC = () => {
             {/* Quick presets */}
             <div className="flex gap-2">
               {[
-                { label: 'Hidden', value: 0 },
-                { label: 'Ghost', value: 20 },
-                { label: 'Glass', value: 55 },
-                { label: 'Default', value: 78 },
-                { label: 'Solid', value: 100 },
+                { label: t('Hidden'), value: 0 },
+                { label: t('Ghost'), value: 20 },
+                { label: t('Glass'), value: 55 },
+                { label: t('Default'), value: 78 },
+                { label: t('Solid'), value: 100 },
               ].map(p => {
                 const selected = bannerOpacity === p.value;
                 return (
@@ -2581,7 +2748,7 @@ const SettingsPage: React.FC = () => {
                         : { background: C.fill, color: C.dim, border: `1px solid ${C.border}` }
                     }
                   >
-                    {p.label}
+                    {tLabel(p.label)}
                   </button>
                 );
               })}
@@ -2591,10 +2758,10 @@ const SettingsPage: React.FC = () => {
             <div>
               <div className="flex justify-between mb-2">
                 <span className="fz-tiny font-black uppercase tracking-widest flex items-center gap-1" style={{ color: C.dimmer }}>
-                  <EyeOff size={10} /> 0% — Invisible
+                  <EyeOff size={10} /> {t('0% — Invisible')}
                 </span>
                 <span className="fz-tiny font-black uppercase tracking-widest flex items-center gap-1" style={{ color: C.dimmer }}>
-                  100% — Solid <Eye size={10} />
+                  {t('100% — Solid')} <Eye size={10} />
                 </span>
               </div>
               <Range ariaLabel="FY banner opacity" format={v => `${v}%`} min={0} max={100} value={bannerOpacity} accent={accent} onChange={applyBannerOpacity} />
@@ -2603,7 +2770,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Live banner preview */}
             <div>
-              <p className="fz-tiny font-black uppercase tracking-widest mb-2" style={{ color: C.dimmer }}>Live Preview</p>
+              <p className="fz-tiny font-black uppercase tracking-widest mb-2" style={{ color: C.dimmer }}>{t('Live Preview')}</p>
               <div className="relative rounded-xl overflow-hidden h-16" style={{ background: settings.dashboardBg || '#f5f6fa' }}>
                 {/* Simulated blobs behind */}
                 <div className="absolute top-0 right-0 w-20 h-20 bg-violet-400/20 rounded-full blur-xl" />
@@ -2612,12 +2779,12 @@ const SettingsPage: React.FC = () => {
                 <div className="absolute inset-2 rounded-lg flex items-center px-4 gap-3" style={bannerPreviewStyle}>
                   <Calendar size={14} className="shrink-0" style={{ color: '#cbd5e1' }} />
                   <div>
-                    <p className="fz-micro uppercase tracking-widest font-black" style={{ color: '#94a3b8' }}>Current Financial Year</p>
+                    <p className="fz-micro uppercase tracking-widest font-black" style={{ color: '#94a3b8' }}>{t('Current Financial Year')}</p>
                     <p className="font-black fz-label leading-tight" style={{ color: '#fff' }}>FY 2026–27</p>
                   </div>
                   <div className="ml-auto flex items-center gap-3">
                     <div className="text-right">
-                      <p className="fz-nano uppercase" style={{ color: '#94a3b8' }}>Days Left</p>
+                      <p className="fz-nano uppercase" style={{ color: '#94a3b8' }}>{t('Days Left')}</p>
                       <p className="font-black text-sm leading-none" style={{ color: '#fcd34d' }}>292</p>
                     </div>
                     <div className="w-16">
@@ -2630,7 +2797,7 @@ const SettingsPage: React.FC = () => {
                 </div>
                 {bannerOpacity === 0 && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: '#64748b' }}>Banner hidden (opacity 0)</span>
+                    <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: '#64748b' }}>{t('Banner hidden (opacity 0)')}</span>
                   </div>
                 )}
               </div>
@@ -2642,7 +2809,7 @@ const SettingsPage: React.FC = () => {
         <Panel
           icon={<Zap size={16} />}
           tint="#34d399"
-          title="Loading Animation"
+          title={t('Loading Animation')}
           subtitle="Shown while data loads from the database"
           right={<Counter>{LOADING_ANIMATIONS.find(a => a.id === loadingAnimation)?.name}</Counter>}
         >
@@ -2666,7 +2833,7 @@ const SettingsPage: React.FC = () => {
                   <span className="fz-small font-bold flex items-center gap-1" style={{ color: selected ? accent : C.textStrong }}>
                     {selected && <Check size={12} />}{opt.name}
                   </span>
-                  <span className="fz-tiny font-medium text-center" style={{ color: C.dim }}>{opt.description}</span>
+                  <span className="fz-tiny font-medium text-center" style={{ color: C.dim }}>{tLabel(opt.description)}</span>
                 </button>
               );
             })}
@@ -2677,7 +2844,7 @@ const SettingsPage: React.FC = () => {
         <Panel
           icon={<ImageIcon size={16} />}
           tint="#38bdf8"
-          title="Dashboard Background"
+          title={t('Dashboard Background')}
           subtitle="Canvas colour for the home screen"
         >
           <div className="grid grid-cols-4 gap-2.5 mb-4">
@@ -2694,14 +2861,14 @@ const SettingsPage: React.FC = () => {
                   }}
                 >
                   <div className="w-full h-9 rounded-[7px]" style={{ backgroundColor: opt.preview, border: `1px solid ${C.border}` }} />
-                  <span className="fz-tiny font-black uppercase tracking-wider" style={{ color: C.text }}>{opt.label}</span>
+                  <span className="fz-tiny font-black uppercase tracking-wider" style={{ color: C.text }}>{tLabel(opt.label)}</span>
                 </button>
               );
             })}
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="fz-small font-black uppercase tracking-widest" style={fieldLabel}>Custom colour</span>
+            <span className="fz-small font-black uppercase tracking-widest" style={fieldLabel}>{t('Custom colour')}</span>
             <ColorWell value={settings.dashboardBg} ariaLabel="Dashboard background colour" onChange={applyDashboardBg} />
           </div>
         </Panel>
@@ -2713,21 +2880,21 @@ const SettingsPage: React.FC = () => {
     const rows = [
       {
         key: 'notifications',
-        title: 'Notifications',
+        title: t('Notifications'),
         desc: 'Show success and info toasts — errors and warnings always appear',
         value: settings.notifications,
         onChange: (c: boolean) => applyTheme({ notifications: c }),
       },
       {
         key: 'soundEffects',
-        title: 'Sound Effects',
+        title: t('Sound Effects'),
         desc: 'Play audio cues for interactions',
         value: settings.soundEffects,
         onChange: (c: boolean) => applyTheme({ soundEffects: c }),
       },
       {
         key: 'showChatbot',
-        title: 'AI Assistant (Chatbot)',
+        title: t('AI Assistant (Chatbot)'),
         desc: 'Show FIBE AI assistant bubble for app help',
         value: settings.showChatbot,
         onChange: (c: boolean) => applyTheme({ showChatbot: c }),
@@ -2736,7 +2903,7 @@ const SettingsPage: React.FC = () => {
 
     return (
       <div className="space-y-5">
-      <Panel icon={<Monitor size={16} />} tint="#fbbf24" title="System & Windows" subtitle="Global behavior">
+      <Panel icon={<Monitor size={16} />} tint="#fbbf24" title={t('System & Windows')} subtitle="Global behavior">
         <div className="space-y-2.5">
           {rows.map(row => (
             <div
@@ -2745,15 +2912,15 @@ const SettingsPage: React.FC = () => {
               style={{ background: C.fill }}
             >
               <div>
-                <span className="fz-body font-bold block" style={{ color: C.text }}>{row.title}</span>
+                <span className="fz-body font-bold block" style={{ color: C.text }}>{tLabel(row.title)}</span>
                 <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{row.desc}</span>
               </div>
-              <Toggle on={row.value} accent={accent} label={row.title} onChange={row.onChange} />
+              <Toggle on={row.value} accent={accent} label={tLabel(row.title)} onChange={row.onChange} />
             </div>
           ))}
         </div>
       </Panel>
-      <Panel icon={<Bell size={16} />} tint="#38bdf8" title="Notifications & Search" subtitle="Look and feel of the top-bar alerts and search">
+      <Panel icon={<Bell size={16} />} tint="#38bdf8" title={t('Notifications & Search')} subtitle="Look and feel of the top-bar alerts and search">
         <TopBarLookSettings accent={accent} />
       </Panel>
       </div>
@@ -2775,10 +2942,10 @@ const SettingsPage: React.FC = () => {
             <Terminal size={18} />
           </div>
           <div>
-            <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>Developer Console</h3>
+            <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>{t('Developer Console')}</h3>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full block" style={{ background: C.green }} />
-              <p className="fz-small font-medium uppercase tracking-widest" style={{ color: C.dim }}>Access Granted: Root Level</p>
+              <p className="fz-small font-medium uppercase tracking-widest" style={{ color: C.dim }}>{t('Access Granted: Root Level')}</p>
             </div>
           </div>
         </div>
@@ -2792,8 +2959,8 @@ const SettingsPage: React.FC = () => {
             <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center mb-2.5" style={{ background: 'rgba(99,102,241,.2)', color: '#818cf8' }}>
               <BarChart2 size={15} />
             </div>
-            <h4 className="font-bold fz-body mb-1" style={{ color: C.textStrong }}>Analytics Dashboard</h4>
-            <p className="fz-small" style={{ color: C.dim }}>View aggregated metrics.</p>
+            <h4 className="font-bold fz-body mb-1" style={{ color: C.textStrong }}>{t('Analytics Dashboard')}</h4>
+            <p className="fz-small" style={{ color: C.dim }}>{t('View aggregated metrics.')}</p>
           </button>
 
           <button
@@ -2804,24 +2971,24 @@ const SettingsPage: React.FC = () => {
             <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center mb-2.5" style={{ background: 'rgba(16,185,129,.2)', color: C.green }}>
               <Activity size={15} />
             </div>
-            <h4 className="font-bold fz-body mb-1" style={{ color: C.textStrong }}>Real-time Monitor</h4>
-            <p className="fz-small" style={{ color: C.dim }}>Watch live transaction streams.</p>
+            <h4 className="font-bold fz-body mb-1" style={{ color: C.textStrong }}>{t('Real-time Monitor')}</h4>
+            <p className="fz-small" style={{ color: C.dim }}>{t('Watch live transaction streams.')}</p>
           </button>
         </div>
       </div>
 
-      <Panel icon={<Monitor size={16} />} tint="#a78bfa" title="Environment State" subtitle="Window geometry & layout">
+      <Panel icon={<Monitor size={16} />} tint="#a78bfa" title={t('Environment State')} subtitle="Window geometry & layout">
         <div className="flex items-center justify-between px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
           <div>
-            <span className="fz-body font-bold block" style={{ color: C.text }}>Reset Window Layouts</span>
-            <span className="fz-small block mt-0.5" style={{ color: C.dim }}>Restore all windows to default dimensions</span>
+            <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Reset Window Layouts')}</span>
+            <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{t('Restore all windows to default dimensions')}</span>
           </div>
           <button
             onClick={resetWindowStates}
             className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
             style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
           >
-            <RotateCcw size={12} /> Reset Geometry
+            <RotateCcw size={12} /> {t('Reset Geometry')}
           </button>
         </div>
       </Panel>
@@ -2879,9 +3046,9 @@ const SettingsPage: React.FC = () => {
               <Settings size={20} />
             </div>
             <div>
-              <h1 className="settings-title font-bold tracking-tight leading-none" style={{ color: C.textStrong }}>System Configuration</h1>
+              <h1 className="settings-title font-bold tracking-tight leading-none" style={{ color: C.textStrong }}>{t('System Configuration')}</h1>
               <div className="flex items-center gap-1.5 mt-1.5 fz-tiny font-bold uppercase tracking-widest leading-none" style={{ color: C.dim }}>
-                <ShieldCheck size={11} style={{ color: C.green }} /> Administrative Panel
+                <ShieldCheck size={11} style={{ color: C.green }} /> {t('Administrative Panel')}
               </div>
             </div>
           </div>
@@ -2898,7 +3065,7 @@ const SettingsPage: React.FC = () => {
               }
             >
               {isDeveloperMode ? <Unlock size={13} /> : <Lock size={13} />}
-              {isDeveloperMode ? 'Dev Active' : 'Dev Locked'}
+              {isDeveloperMode ? t('Dev Active') : t('Dev Locked')}
             </button>
 
             <div className="w-px h-5" style={{ background: C.divider }} />
@@ -2911,7 +3078,7 @@ const SettingsPage: React.FC = () => {
             >
               <span key={isSaving ? 'saving' : justSaved ? 'saved' : 'idle'} className="settings-swap inline-flex items-center gap-2">
                 {isSaving ? <RotateCcw className="settings-spin" size={14} /> : justSaved ? <Check size={14} strokeWidth={3} /> : <Save size={14} />}
-                {isSaving ? 'Saving...' : justSaved ? 'Saved' : 'Save Changes'}
+                {isSaving ? t('Saving...') : justSaved ? t('Saved') : t('Save Changes')}
               </span>
             </button>
 
@@ -2920,7 +3087,7 @@ const SettingsPage: React.FC = () => {
               className="rounded-[9px] px-4 fz-small font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
               style={{ height: 34, background: 'rgba(255,69,58,.12)', color: C.red, border: '1px solid rgba(255,69,58,.15)' }}
             >
-              <X size={13} /> Close
+              <X size={13} /> {t('Close')}
             </button>
           </div>
         </div>
@@ -2937,14 +3104,14 @@ const SettingsPage: React.FC = () => {
               <input
                 value={navQuery}
                 onChange={e => setNavQuery(e.target.value)}
-                placeholder="Search settings"
-                aria-label="Search settings"
+                placeholder={t('Search settings')}
+                aria-label={t('Search settings')}
                 className="w-full box-border rounded-[9px] outline-none pl-8 pr-3 fz-body"
                 style={{ height: 34, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
               />
             </div>
 
-            <nav className="settings-nav flex flex-col gap-0.5" aria-label="Settings sections">
+            <nav className="settings-nav flex flex-col gap-0.5" aria-label={t('Settings sections')}>
               {visibleNav.map((item, idx) => {
                 const { key, label, Icon, gradient } = item;
                 // Keep the divider the design puts above License, but only when
@@ -2966,7 +3133,7 @@ const SettingsPage: React.FC = () => {
                 );
               })}
               {visibleNav.length === 0 && (
-                <p className="fz-small px-2 py-3" style={{ color: C.dimmer }}>No section matches “{navQuery}”.</p>
+                <p className="fz-small px-2 py-3" style={{ color: C.dimmer }}>{t('No section matches “')}{navQuery}”.</p>
               )}
             </nav>
           </div>
@@ -2977,8 +3144,8 @@ const SettingsPage: React.FC = () => {
               className="settings-main-header sticky top-0 z-[8]"
               style={{ background: C.bg }}
             >
-              <h2 className="m-0 settings-section-title font-bold tracking-tight" style={{ color: C.textStrong }}>{tabMeta.title}</h2>
-              <p className="mt-1 fz-body" style={{ color: C.dim }}>{tabMeta.subtitle}</p>
+              <h2 className="m-0 settings-section-title font-bold tracking-tight" style={{ color: C.textStrong }}>{tLabel(tabMeta.title)}</h2>
+              <p className="mt-1 fz-body" style={{ color: C.dim }}>{tLabel(tabMeta.subtitle)}</p>
             </div>
 
             <div className="settings-main-body" style={{ maxWidth: 1080 }}>
@@ -2989,7 +3156,8 @@ const SettingsPage: React.FC = () => {
               {activeTab === 'system' && renderSystem()}
               {activeTab === 'alerts' && <AlertSettingsSection accent={accent} isAdmin={isAdmin} />}
               {activeTab === 'approvers' && <ApproversSettingsSection accent={accent} isAdmin={isAdmin} />}
-              {activeTab === 'forgot' && <ForgotPasswordSettingsSection accent={accent} isAdmin={isAdmin} />}
+              {activeTab === 'assistant' && <AiAssistantSettingsSection accent={accent} isAdmin={isAdmin} />}
+              {activeTab === 'forgot' &&<ForgotPasswordSettingsSection accent={accent} isAdmin={isAdmin} />}
               {activeTab === 'developer' && renderDeveloper()}
               {activeTab === 'onboarding' && <OnboardingSettingsSection accent={accent} isAdmin={isAdmin} />}
               {activeTab === 'license' && renderLicense()}
@@ -3008,17 +3176,17 @@ const SettingsPage: React.FC = () => {
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="Security access"
+              aria-label={t('Security access')}
               onClick={e => e.stopPropagation()}
               className="rounded-[18px] p-6 settings-pop"
               style={{ width: 320, background: C.panel, border: `1px solid ${C.border}` }}
             >
               <div className="flex items-center gap-2 mb-4" style={{ color: accent }}>
                 <Lock size={16} />
-                <span className="text-sm font-black uppercase tracking-wide">Security Access</span>
+                <span className="text-sm font-black uppercase tracking-wide">{t('Security Access')}</span>
               </div>
               <p className="text-center fz-small font-bold uppercase tracking-widest mb-3.5" style={{ color: C.dim }}>
-                Enter Restricted PIN to Unlock
+                {t('Enter Restricted PIN to Unlock')}
               </p>
               <input
                 ref={pinInputRef}
@@ -3041,14 +3209,14 @@ const SettingsPage: React.FC = () => {
                 className="w-full mt-3 rounded-[10px] border-0 fz-small font-black uppercase tracking-widest text-white cursor-pointer"
                 style={{ height: 42, background: accent }}
               >
-                Authenticate
+                {t('Authenticate')}
               </button>
               <button
                 onClick={() => setShowPinDialog(false)}
                 className="w-full mt-1.5 border-0 bg-transparent fz-small font-bold cursor-pointer"
                 style={{ height: 36, color: C.dim }}
               >
-                Cancel
+                {t('Cancel')}
               </button>
             </div>
           </div>

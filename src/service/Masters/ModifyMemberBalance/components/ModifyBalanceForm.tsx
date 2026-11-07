@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import type { MemberBalanceHookReturn, MemberBalanceData } from '../interfaces/interface';
 import MemberLookupInput from '../../../../components/shared/MemberLookup/MemberLookupInput';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
+import { useTranslation } from 'react-i18next';
 
 // Amount box: rupee icon, right-aligned figures.
 const AmtInput: React.FC<{
@@ -45,6 +46,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
     navigateMember,
     save, reset,
 }) => {
+  const { t } = useTranslation();
     const handleExit = () => {
         if ((window as any).electron?.ipcRenderer) {
             (window as any).electron.ipcRenderer.send('window-close');
@@ -60,10 +62,10 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
     });
 
     const rows: { label: string; dot: string; op: keyof MemberBalanceData; amt?: keyof MemberBalanceData; muted?: boolean }[] = [
-        { label: 'Shares', dot: 'var(--aw-accent)', op: 'shareOpBal', amt: 'shareAmt' },
-        { label: 'Monthly Contribution', dot: 'var(--aw-success)', op: 'mdOpBal', amt: 'mdAmt' },
-        { label: 'Compulsory Deposit', dot: 'var(--aw-warning)', op: 'cdOpBal', amt: 'cdAmt' },
-        { label: 'Loan Exec. Receipt', dot: 'var(--aw-muted)', op: 'lnExecRec', muted: true },
+        { label: t('Shares'), dot: 'var(--aw-accent)', op: 'shareOpBal', amt: 'shareAmt' },
+        { label: t('Monthly Contribution'), dot: 'var(--aw-success)', op: 'mdOpBal', amt: 'mdAmt' },
+        { label: t('Compulsory Deposit'), dot: 'var(--aw-warning)', op: 'cdOpBal', amt: 'cdAmt' },
+        { label: t('Loan Exec. Receipt'), dot: 'var(--aw-muted)', op: 'lnExecRec', muted: true },
     ];
 
     return (
@@ -72,18 +74,18 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
             {/* Header */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">Modify Member Balance</h1>
-                    <p className="aw-desc">fundsmaster — Edit Balances</p>
+                    <h1 className="aw-title">{t('Modify Member Balance')}</h1>
+                    <p className="aw-desc">{t('fundsmaster — Edit Balances')}</p>
                 </div>
                 <div className="aw-actions">
-                    <button type="button" onClick={reset} className="aw-btn aw-btn-secondary" data-tip="Undo changes and reload this member" data-tip-pos="bottom-end">
-                        <RotateCcw size={13} /> Revert
+                    <button type="button" onClick={reset} className="aw-btn aw-btn-secondary" data-tip={t('Undo changes and reload this member')} data-tip-pos="bottom-end">
+                        <RotateCcw size={13} /> {t('Revert')}
                     </button>
                     <button type="button" onClick={save} className="aw-btn aw-btn-primary">
-                        <Save size={13} /> Save
+                        <Save size={13} /> {t('Save')}
                     </button>
-                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost" data-tip="Close this window" data-tip-pos="bottom-end">
-                        <X size={13} /> Exit
+                    <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost" data-tip={t('Close this window')} data-tip-pos="bottom-end">
+                        <X size={13} /> {t('Exit')}
                     </button>
                 </div>
             </div>
@@ -96,22 +98,22 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Users size={14} /></span>
-                            <h2 className="aw-card-title">Member Selection</h2>
+                            <h2 className="aw-card-title">{t('Member Selection')}</h2>
                             {memberTotal > 0 && (
                                 <span className="aw-pill" style={{ marginLeft: 'auto' }}>
-                                    {memberIndex > 0 ? `${memberIndex} / ${memberTotal}` : `${memberTotal} members`}
+                                    {memberIndex > 0 ? `${memberIndex} / ${memberTotal}` : t('{{1}} members', { 1: memberTotal })}
                                 </span>
                             )}
                         </div>
                         <div className="aw-form-3">
                             {/* Wing */}
                             <div>
-                                <label className="aw-label" htmlFor="mmb-wing">Select Wing</label>
+                                <label className="aw-label" htmlFor="mmb-wing">{t('Select Wing')}</label>
                                 <Select
                                     id="mmb-wing"
                                     value={wing || null}
                                     onChange={(v) => setWing(v as string)}
-                                    placeholder="Select wing..."
+                                    placeholder={t('Select wing...')}
                                     className="aw-select"
                                     popupClassName="aw-select-popup"
                                     allowClear
@@ -121,15 +123,15 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
 
                             {/* Member No with navigation */}
                             <div className="aw-span-2">
-                                <label className="aw-label" htmlFor="mmb-member">Member No</label>
+                                <label className="aw-label" htmlFor="mmb-member">{t('Member No')}</label>
                                 <div className="aw-inline" style={{ alignItems: 'center' }}>
                                     <div className="aw-btn-group">
                                         <button type="button" onClick={() => navigateMember('first')} className="aw-btn aw-btn-secondary"
-                                            aria-label="First member" data-tip="First member" data-tip-pos="top-start">
+                                            aria-label={t('First member')} data-tip={t('First member')} data-tip-pos="top-start">
                                             <ChevronsLeft size={14} />
                                         </button>
                                         <button type="button" onClick={() => navigateMember('prev')} className="aw-btn aw-btn-secondary"
-                                            aria-label="Previous member" data-tip="Previous member">
+                                            aria-label={t('Previous member')} data-tip={t('Previous member')}>
                                             <ChevronLeft size={14} />
                                         </button>
                                     </div>
@@ -138,18 +140,18 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                             variant="kit"
                                             value={memberNo}
                                             onChange={handleMemberSelect}
-                                            placeholder="Enter member no or search..."
+                                            placeholder={t('Enter member no or search...')}
                                             showLookupButton={true}
                                             autoSearch={true}
                                         />
                                     </div>
                                     <div className="aw-btn-group">
                                         <button type="button" onClick={() => navigateMember('next')} className="aw-btn aw-btn-secondary"
-                                            aria-label="Next member" data-tip="Next member">
+                                            aria-label={t('Next member')} data-tip={t('Next member')}>
                                             <ChevronRight size={14} />
                                         </button>
                                         <button type="button" onClick={() => navigateMember('last')} className="aw-btn aw-btn-secondary"
-                                            aria-label="Last member" data-tip="Last member" data-tip-pos="top-end">
+                                            aria-label={t('Last member')} data-tip={t('Last member')} data-tip-pos="top-end">
                                             <ChevronsRight size={14} />
                                         </button>
                                     </div>
@@ -167,13 +169,13 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><IndianRupee size={14} /></span>
-                            <h2 className="aw-card-title">Balances</h2>
+                            <h2 className="aw-card-title">{t('Balances')}</h2>
                         </div>
 
                         <div className="aw-bal-grid" style={{ marginBottom: 4 }}>
                             <div />
-                            <span className="aw-label is-right" style={{ textAlign: 'right', margin: 0 }}>Opening Balance</span>
-                            <span className="aw-label is-right" style={{ textAlign: 'right', margin: 0 }}>Install / Contri Amt</span>
+                            <span className="aw-label is-right" style={{ textAlign: 'right', margin: 0 }}>{t('Opening Balance')}</span>
+                            <span className="aw-label is-right" style={{ textAlign: 'right', margin: 0 }}>{t('Install / Contri Amt')}</span>
                         </div>
                         <div className="aw-bal-grid">
                             {rows.map(r => (
@@ -181,8 +183,8 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                     <div className="aw-bal-label" style={r.muted ? { color: 'var(--aw-muted)' } : undefined}>
                                         <span className="aw-bal-dot" style={{ background: r.dot }} />{r.label}
                                     </div>
-                                    <AmtInput value={formData[r.op]} onChange={upd(r.op)} label={`${r.label} opening balance`} />
-                                    {r.amt ? <AmtInput value={formData[r.amt]} onChange={upd(r.amt)} label={`${r.label} installment amount`} /> : <div />}
+                                    <AmtInput value={formData[r.op]} onChange={upd(r.op)} label={t('{{1}} opening balance', { 1: r.label })} />
+                                    {r.amt ? <AmtInput value={formData[r.amt]} onChange={upd(r.amt)} label={t('{{1}} installment amount', { 1: r.label })} /> : <div />}
                                 </React.Fragment>
                             ))}
                         </div>
@@ -190,10 +192,10 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                         {/* Suspense Balance — full-width highlight */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--aw-border)' }}>
                             <div className="aw-bal-label" style={{ color: 'var(--aw-danger)' }}>
-                                <span className="aw-bal-dot" style={{ background: 'var(--aw-danger)' }} />Suspense Balance
+                                <span className="aw-bal-dot" style={{ background: 'var(--aw-danger)' }} />{t('Suspense Balance')}
                             </div>
                             <div style={{ width: 170 }}>
-                                <AmtInput value={formData.suspBal} onChange={upd('suspBal')} label="Suspense balance" accent />
+                                <AmtInput value={formData.suspBal} onChange={upd('suspBal')} label={t('Suspense balance')} accent />
                             </div>
                         </div>
                     </section>
@@ -201,8 +203,8 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                     {/* ── Loans ── */}
                     <div className="aw-two">
                         {[
-                            { title: 'Regular Loan', op: 'rlnOpBal' as const, amt: 'rlnAmt' as const },
-                            { title: 'Emergency Loan', op: 'elnOpBal' as const, amt: 'elnAmt' as const },
+                            { title: t('Regular Loan'), op: 'rlnOpBal' as const, amt: 'rlnAmt' as const },
+                            { title: t('Emergency Loan'), op: 'elnOpBal' as const, amt: 'elnAmt' as const },
                         ].map(l => (
                             <section key={l.title} className="aw-card">
                                 <div className="aw-card-head">
@@ -211,12 +213,12 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                 </div>
                                 <div className="aw-two" style={{ gap: 10 }}>
                                     <div>
-                                        <label className="aw-label">Op. Balance</label>
-                                        <AmtInput value={formData[l.op]} onChange={upd(l.op)} label={`${l.title} opening balance`} />
+                                        <label className="aw-label">{t('Op. Balance')}</label>
+                                        <AmtInput value={formData[l.op]} onChange={upd(l.op)} label={t('{{1}} opening balance', { 1: l.title })} />
                                     </div>
                                     <div>
-                                        <label className="aw-label">Inst. Amount</label>
-                                        <AmtInput value={formData[l.amt]} onChange={upd(l.amt)} label={`${l.title} installment amount`} />
+                                        <label className="aw-label">{t('Inst. Amount')}</label>
+                                        <AmtInput value={formData[l.amt]} onChange={upd(l.amt)} label={t('{{1}} installment amount', { 1: l.title })} />
                                     </div>
                                 </div>
                             </section>
@@ -229,7 +231,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
             {/* Footer */}
             <div className="aw-footer">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <Building2 size={12} /> Modify Balance Registry
+                    <Building2 size={12} /> {t('Modify Balance Registry')}
                     {memberName && <span style={{ color: 'var(--aw-accent)' }}>· {memberName}</span>}
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>

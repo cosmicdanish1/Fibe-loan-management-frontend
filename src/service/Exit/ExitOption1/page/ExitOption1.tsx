@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 declare global {
   interface Window {
@@ -15,6 +16,7 @@ declare global {
 }
 
 const ExitOption1: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
@@ -83,17 +85,17 @@ const ExitOption1: React.FC = () => {
   }, [progress, exitMessages]);
 
   const steps = [
-    { label: 'Saved', at: 20 },
-    { label: 'Closed', at: 50 },
-    { label: 'Done', at: 80 },
+    { label: t('Saved'), at: 20 },
+    { label: t('Closed'), at: 50 },
+    { label: t('Done'), at: 80 },
   ];
 
   return (
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Exit Application</h1>
-          <p className="aw-desc">Paper White Technology - LMS</p>
+          <h1 className="aw-title">{t('Exit Application')}</h1>
+          <p className="aw-desc">{t('Paper White Technology - LMS')}</p>
         </div>
       </div>
 
@@ -103,22 +105,22 @@ const ExitOption1: React.FC = () => {
             <div className="aw-card-icon" style={{ margin: '0 auto', width: 52, height: 52, ['--aw-tone' as any]: 'var(--aw-danger)' }}>
               <AlertTriangle size={26} style={{ color: 'var(--aw-danger)' }} />
             </div>
-            <h2 className="aw-title" style={{ textAlign: 'center' }}>Exit Application</h2>
-            <p className="aw-meta">Are you sure you want to exit Paper White Technology - LMS?</p>
+            <h2 className="aw-title" style={{ textAlign: 'center' }}>{t('Exit Application')}</h2>
+            <p className="aw-meta">{t('Are you sure you want to exit Paper White Technology - LMS?')}</p>
 
             <div className="aw-alert aw-alert-danger" role="alert" style={{ textAlign: 'left' }}>
               <div>
-                <strong>Important Notice</strong>
-                <p>All unsaved changes will be lost. Make sure you've saved your work before exiting.</p>
+                <strong>{t('Important Notice')}</strong>
+                <p>{t("All unsaved changes will be lost. Make sure you've saved your work before exiting.")}</p>
               </div>
             </div>
 
             <div className="aw-btn-row" style={{ justifyContent: 'center' }}>
               <button type="button" onClick={handleCancel} className="aw-btn aw-btn-secondary" style={{ flex: 1 }}>
-                <X size={14} /> Cancel
+                <X size={14} /> {t('Cancel')}
               </button>
               <button type="button" onClick={handleExit} className="aw-btn aw-btn-danger" style={{ flex: 1 }}>
-                <LogOut size={14} /> Exit
+                <LogOut size={14} /> {t('Exit')}
               </button>
             </div>
           </section>
@@ -129,10 +131,10 @@ const ExitOption1: React.FC = () => {
             <div className="aw-card-icon" style={{ margin: '0 auto', width: 52, height: 52 }}>
               <LogOut size={26} />
             </div>
-            <h2 className="aw-title" style={{ textAlign: 'center' }}>Goodbye!</h2>
-            <p className="aw-meta">Thank you for using Paper White Technology</p>
+            <h2 className="aw-title" style={{ textAlign: 'center' }}>{t('Goodbye!')}</h2>
+            <p className="aw-meta">{t('Thank you for using Paper White Technology')}</p>
 
-            <div className="aw-bar" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Exit progress">
+            <div className="aw-bar" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label={t('Exit progress')}>
               <span style={{ width: `${progress}%`, transition: 'width .3s linear' }} />
             </div>
             <div className="aw-row" style={{ borderBottom: 0 }}>
@@ -147,14 +149,14 @@ const ExitOption1: React.FC = () => {
                 </span>
               ))}
             </div>
-            <p className="aw-meta">See you soon!</p>
+            <p className="aw-meta">{t('See you soon!')}</p>
           </section>
         )}
       </div>
 
       <div className="aw-footer">
-        <span>{showConfirmation ? 'Press ESC to cancel' : 'Closing application…'}</span>
-        <span>Exit</span>
+        <span>{showConfirmation ? t('Press ESC to cancel') : t('Closing application…')}</span>
+        <span>{t('Exit')}</span>
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import apiService from '../../../../services/api';
+import { friendlyError } from '@/utils/friendlyError';
+import { useTranslation } from 'react-i18next';
 
 export interface DividendPreviewMember {
     mbno: string;
@@ -20,9 +22,12 @@ export interface DividendPreview {
 }
 
 export const useDividendCalculation = () => {
+  const { t } = useTranslation();
     const [yearcode, setYearcodeRaw] = useState<number>(1);
     // null = field left blank (must not silently become 0%)
     const [dividendRate, setDividendRateRaw] = useState<number | null>(10);
+    // Fixed / Minimum / Maximum rate from Modify Business Rules (ES-476); only the ones switched on apply
+    const [rateRules, setRateRules] = useState<{ fixed: { active: boolean; value: number }; min: { active: boolean; value: number }; max: { active: boolean; value: number }; payoutPercent: number } | null>(null);
     const [preview, setPreview] = useState<DividendPreview | null>(null);
     const [loading, setLoading] = useState(false);
     const [committing, setCommitting] = useState(false);
@@ -52,11 +57,27 @@ export const useDividendCalculation = () => {
         setDividendRateRaw(v);
     }, []);
 
+    // Load the rules once; start from the fixed rate if there is one, else from Dividend Payout (%)
+    useEffect(() => {
+        let cancelled = false;
+        apiService.getDividendRateRules().then((res) => {
+            if (cancelled || !res.success || !res.data) return;
+            const r = res.data;
+            setRateRules(r);
+            if (r.fixed?.active) setDividendRateRaw(r.fixed.value);
+            else if (r.payoutPercent > 0) setDividendRateRaw(r.payoutPercent);
+        });
+        return () => { cancelled = true; };
+    }, []);
+
     const validateParams = (): string | null => {
         if (!Number.isInteger(yearcode) || yearcode <= 0) return 'Enter a valid year code.';
         if (dividendRate === null || !Number.isFinite(dividendRate) || dividendRate <= 0 || dividendRate > 100) {
             return 'Dividend rate must be a number greater than 0 and at most 100.';
         }
+        if (rateRules?.fixed.active && dividendRate !== rateRules.fixed.value) return `The dividend rate is fixed at ${rateRules.fixed.value}% in Business Rules.`;
+        if (rateRules?.min.active && dividendRate < rateRules.min.value) return `The dividend rate cannot be below ${rateRules.min.value}% (Business Rules).`;
+        if (rateRules?.max.active && dividendRate > rateRules.max.value) return `The dividend rate cannot be above ${rateRules.max.value}% (Business Rules).`;
         return null;
     };
 
@@ -80,7 +101,7 @@ export const useDividendCalculation = () => {
                 setPreview(res.data ?? null);
             } else {
                 setPreview(null);
-                setError(res.message || 'Failed to load dividend preview.');
+                setError(friendlyError(res, 'load the dividend preview').lines.join(' '));
             }
         } catch (err: any) {
             if (seq !== previewSeq.current) return;
@@ -105,7 +126,7 @@ export const useDividendCalculation = () => {
                 setCommitResult(res.data ?? null);
                 await loadPreview(false);
             } else {
-                setError(res.message || 'Failed to commit dividend calculation.');
+                setError(friendlyError(res, 'commit the dividend calculation').lines.join(' '));
             }
         } catch (err: any) {
             setError(err.message || 'Failed to commit dividend calculation.');
@@ -120,19 +141,19 @@ export const useDividendCalculation = () => {
         try {
             const res = await apiService.captureShareMonthEndSnapshot(snapMonth, snapYear);
             if (res.success) {
-                setSnapshotMessage(res.data?.message || `Captured snapshot for ${snapMonth}/${snapYear}.`);
+                setSnapshotMessage(res.data?.message || t('Captured snapshot for {{1}}/{{2}}.', { 1: snapMonth, 2: snapYear }));
             } else {
-                setSnapshotMessage(res.message || 'Failed to capture snapshot.');
+                setSnapshotMessage(res.message || t('Failed to capture snapshot.'));
             }
         } catch (err: any) {
-            setSnapshotMessage(err.message || 'Failed to capture snapshot.');
+            setSnapshotMessage(err.message || t('Failed to capture snapshot.'));
         } finally {
             setSnapshotting(false);
         }
     }, [snapMonth, snapYear]);
 
     return {
-        yearcode, setYearcode, dividendRate, setDividendRate,
+        yearcode, setYearcode, dividendRate, setDividendRate, rateRules,
         preview, loading, committing, commitResult, error,
         loadPreview, commit,
         snapMonth, setSnapMonth, snapYear, setSnapYear, snapshotting, snapshotMessage, captureSnapshot,

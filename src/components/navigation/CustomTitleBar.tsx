@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Minus, Square } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CustomTitleBarProps {
   title?: string;
@@ -16,6 +17,7 @@ const CustomTitleBar: React.FC<CustomTitleBarProps> = ({
   onMaximize,
   showControls = true
 }) => {
+  const { t } = useTranslation();
   const handleClose = () => {
     if (onClose) {
       onClose();
@@ -68,7 +70,7 @@ const CustomTitleBar: React.FC<CustomTitleBarProps> = ({
           <button
             onClick={handleMinimize}
             className="p-1 rounded hover:bg-gray-200 transition-colors duration-150"
-            title="Minimize"
+            title={t('Minimize')}
           >
             <Minus size={14} className="text-gray-600" />
           </button>
@@ -77,7 +79,7 @@ const CustomTitleBar: React.FC<CustomTitleBarProps> = ({
           <button
             onClick={handleMaximize}
             className="p-1 rounded hover:bg-gray-200 transition-colors duration-150"
-            title="Maximize"
+            title={t('Maximize')}
           >
             <Square size={14} className="text-gray-600" />
           </button>
@@ -86,7 +88,7 @@ const CustomTitleBar: React.FC<CustomTitleBarProps> = ({
           <button
             onClick={handleClose}
             className="p-1 rounded hover:bg-red-500 hover:text-white transition-colors duration-150"
-            title="Close"
+            title={t('Close')}
           >
             <X size={14} className="text-gray-600 hover:text-white" />
           </button>

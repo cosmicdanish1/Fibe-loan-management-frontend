@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Status = 'idle' | 'testing' | 'ok' | 'fail' | 'saving';
@@ -22,6 +23,7 @@ async function pingServer(ip: string): Promise<{ ok: boolean; ms: number; error?
 // Router tree), so react-router hooks (useNavigate etc.) must never be used here
 // — they crash the whole app with a white screen on fresh installs.
 export default function ServerSetup() {
+  const { t } = useTranslation();
   const [ip, setIp] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [pingMs, setPingMs] = useState<number | null>(null);
@@ -32,7 +34,7 @@ export default function ServerSetup() {
 
   // ── Test connection ──
   const handleTest = async () => {
-    if (!ipValid) { setErrorMsg('Enter a valid IP address first.'); return; }
+    if (!ipValid) { setErrorMsg(t('Enter a valid IP address first.')); return; }
     setStatus('testing');
     setErrorMsg('');
     setPingMs(null);
@@ -41,14 +43,14 @@ export default function ServerSetup() {
       setPingMs(result.ms);
       setStatus('ok');
     } else {
-      setErrorMsg(result.error ?? 'Cannot reach server. Check IP and firewall.');
+      setErrorMsg(result.error ?? t('Cannot reach server. Check IP and firewall.'));
       setStatus('fail');
     }
   };
 
   // ── Save and enter app ──
   const handleSave = async () => {
-    if (!ipValid) { setErrorMsg('Enter a valid IP address first.'); return; }
+    if (!ipValid) { setErrorMsg(t('Enter a valid IP address first.')); return; }
     setStatus('saving');
     setErrorMsg('');
     const result = await eAPI()?.saveServerConfig(ipTrimmed);
@@ -57,7 +59,7 @@ export default function ServerSetup() {
       window.location.hash = '#/login';
       window.location.reload();
     } else {
-      setErrorMsg(result?.error ?? 'Failed to save. Try again.');
+      setErrorMsg(result?.error ?? t('Failed to save. Try again.'));
       setStatus('fail');
     }
   };
@@ -81,13 +83,13 @@ export default function ServerSetup() {
               <path d="M8 21h8M12 17v4" />
             </svg>
           </div>
-          <h1 style={styles.title}>Fibe Loan Management</h1>
-          <p style={styles.subtitle}>First-time setup — connect to your server</p>
+          <h1 style={styles.title}>{t('Fibe Loan Management')}</h1>
+          <p style={styles.subtitle}>{t('First-time setup — connect to your server')}</p>
         </div>
 
         {/* Input */}
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Server IP Address</label>
+          <label style={styles.label}>{t('Server IP Address')}</label>
           <div style={styles.inputRow}>
             <input
               style={{
@@ -104,18 +106,18 @@ export default function ServerSetup() {
             />
             <span style={styles.portBadge}>:3001</span>
           </div>
-          <p style={styles.hint}>This is the IP of the Windows PC running the NestJS backend on your LAN.</p>
+          <p style={styles.hint}>{t('This is the IP of the Windows PC running the NestJS backend on your LAN.')}</p>
         </div>
 
         {/* Status message */}
         {status === 'ok' && (
           <div style={{ ...styles.banner, background: '#dcfce7', color: '#166534' }}>
-            ✅ Connected in {pingMs}ms — server is reachable
+            ✅ {t('Connected in')} {pingMs}{t('ms — server is reachable')}
           </div>
         )}
         {status === 'fail' && (
           <div style={{ ...styles.banner, background: '#fee2e2', color: '#991b1b' }}>
-            ❌ {errorMsg || 'Cannot reach server'}
+            ❌ {errorMsg || t('Cannot reach server')}
           </div>
         )}
         {errorMsg && status === 'idle' && (
@@ -131,7 +133,7 @@ export default function ServerSetup() {
             onClick={handleTest}
             disabled={status === 'testing' || status === 'saving' || !ipValid}
           >
-            {status === 'testing' ? '⏳ Testing…' : '🔌 Test Connection'}
+            {status === 'testing' ? '⏳ ' + t('Testing…') : '🔌 ' + t('Test Connection')}
           </button>
 
           <button
@@ -143,15 +145,15 @@ export default function ServerSetup() {
             onClick={handleSave}
             disabled={!ipValid || status === 'saving'}
           >
-            {status === 'saving' ? '⏳ Saving…' : '✅ Save & Open App'}
+            {status === 'saving' ? '⏳ ' + t('Saving…') : '✅ ' + t('Save & Open App')}
           </button>
         </div>
 
         {/* Tip */}
         <div style={styles.tip}>
-          <strong>Tip:</strong> On the server PC, run{' '}
-          <code style={styles.code}>ipconfig</code> and look for the{' '}
-          <em>IPv4 Address</em> under your LAN adapter (usually starts with 192.168.x.x).
+          <strong>{t('Tip:')}</strong> {t('On the server PC, run')}{' '}
+          <code style={styles.code}>ipconfig</code> {t('and look for the')}{' '}
+          <em>{t('IPv4 Address')}</em> {t('under your LAN adapter (usually starts with 192.168.x.x).')}
         </div>
       </div>
     </div>

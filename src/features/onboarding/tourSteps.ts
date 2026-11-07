@@ -1,5 +1,6 @@
 import type { User } from '../../auth/types/auth.types';
 import { allowedLabels, Highlight, isAdminUser, joinNames } from './roleAccess';
+import { tLabel } from '../../i18n';
 
 export type DoodleKind = 'circle' | 'underline' | 'box';
 
@@ -25,51 +26,51 @@ export interface TourStep {
 
 export const TOUR_STEPS: TourStep[] = [
   { id: 'menu-admin', target: '[data-tour="menu-admin"]', doodle: 'underline',
-    title: 'Administration', text: 'The tools your role allows in this menu.',
+    title: tLabel('Administration'), text: 'The tools your role allows in this menu.',
     textFor: (u) => (isAdminUser(u)
       ? 'The controls only administrators see: day-end, users and security, financial year closing and business rules.'
       : 'The few tools your role allows in this menu.'),
     highlights: [
-      { action: 'LOAN_APP', label: 'Loan Application' }, { action: 'DAY_END', label: 'Day-End' },
-      { action: 'USER_MANAGEMENT', label: 'user management' }, { action: 'CHANGE_PASSWORD', label: 'Change Password' },
+      { action: 'LOAN_APP', label: tLabel('Loan Application') }, { action: 'DAY_END', label: tLabel('Day-End') },
+      { action: 'USER_MANAGEMENT', label: tLabel('user management') }, { action: 'CHANGE_PASSWORD', label: tLabel('Change Password') },
     ] },
   { id: 'menu-masters', target: '[data-tour="menu-masters"]', doodle: 'underline',
-    title: 'Masters', text: 'The reference data everything else relies on.',
+    title: tLabel('Masters'), text: 'The reference data everything else relies on.',
     highlights: [
-      { action: 'MEMBER_MASTER', label: 'Member Master' }, { action: 'SAVING_AC_OPENING', label: 'Saving A/c Opening' },
-      { action: 'RD_MEMBER_SETUP', label: 'RD Member Setup' }, { action: 'WING_OFFICE_MASTER', label: 'Wing / Office Master' },
+      { action: 'MEMBER_MASTER', label: tLabel('Member Master') }, { action: 'SAVING_AC_OPENING', label: tLabel('Saving A/c Opening') },
+      { action: 'RD_MEMBER_SETUP', label: tLabel('RD Member Setup') }, { action: 'WING_OFFICE_MASTER', label: tLabel('Wing / Office Master') },
     ] },
   { id: 'menu-transaction', target: '[data-tour="menu-transaction"]', doodle: 'underline',
-    title: 'Transaction', text: 'Your daily work is entered and passed here.',
+    title: tLabel('Transaction'), text: 'Your daily work is entered and passed here.',
     highlights: [
-      { action: 'LOAN_PAYMENT', label: 'Loan Payment' }, { action: 'LOAN_REPAYMENT', label: 'Loan Repayment' },
-      { action: 'RECEIPT_PAYMENT', label: 'Receipt' }, { action: 'PASS_TRANSACTIONS', label: 'Pass Transactions' },
-      { action: 'GENERATE', label: 'Demand Generate' }, { action: 'IMPORT_DEMAND_LIST', label: 'Import Demand List' },
+      { action: 'LOAN_PAYMENT', label: tLabel('Loan Payment') }, { action: 'LOAN_REPAYMENT', label: tLabel('Loan Repayment') },
+      { action: 'RECEIPT_PAYMENT', label: tLabel('Receipt') }, { action: 'PASS_TRANSACTIONS', label: tLabel('Pass Transactions') },
+      { action: 'GENERATE', label: tLabel('Demand Generate') }, { action: 'IMPORT_DEMAND_LIST', label: tLabel('Import Demand List') },
     ] },
   { id: 'menu-reports', target: '[data-tour="menu-reports"]', doodle: 'underline',
-    title: 'Reports', text: 'Daily, monthly and yearly reports, ready to view or print in the familiar layout.' },
+    title: tLabel('Reports'), text: 'Daily, monthly and yearly reports, ready to view or print in the familiar layout.' },
   { id: 'menu-utility', target: '[data-tour="menu-utility"]', doodle: 'underline',
-    title: 'Utility', text: 'Handy tools. Stuck? Open Support Desk here to raise a ticket with the support team.',
+    title: tLabel('Utility'), text: 'Handy tools. Stuck? Open Support Desk here to raise a ticket with the support team.',
     highlights: [
-      { action: 'CALCULATOR', label: 'Calculator' }, { action: 'EMI_CHART', label: 'EMI Chart' },
-      { action: 'DATABASE_BACKUP', label: 'Database BackUp' },
+      { action: 'CALCULATOR', label: tLabel('Calculator') }, { action: 'EMI_CHART', label: tLabel('EMI Chart') },
+      { action: 'DATABASE_BACKUP', label: tLabel('Database BackUp') },
     ] },
   { id: 'search', target: '[data-tour="search"]', doodle: 'box',
-    title: 'Find anything fast', text: 'Type part of a window name, like "loan" or "day end", and jump straight to it.' },
+    title: tLabel('Find anything fast'), text: 'Type part of a window name, like "loan" or "day end", and jump straight to it.' },
   { id: 'notifications', target: '[data-tour="notifications"]', doodle: 'circle',
-    title: 'Notifications', text: 'Reminders and alerts that need your attention show up under the bell.' },
+    title: tLabel('Notifications'), text: 'Reminders and alerts that need your attention show up under the bell.' },
   { id: 'connection', target: '[data-tour="connection"]', doodle: 'circle',
-    title: 'Server connection', text: 'Green means you are connected to the server. If it turns red, tell your administrator.' },
+    title: tLabel('Server connection'), text: 'Green means you are connected to the server. If it turns red, tell your administrator.' },
   { id: 'profile-menu', target: '[data-tour="profile-menu"]', doodle: 'box',
-    title: 'Your account', text: 'Open My Profile, change your password or log out from here.' },
+    title: tLabel('Your account'), text: 'Open My Profile, change your password or log out from here.' },
   { id: 'quick-actions', target: '[data-bento-cell="quickActions"]', doodle: 'box',
-    title: 'Quick actions', text: 'One-click shortcuts to the windows you use most. You can choose them in Settings.' },
+    title: tLabel('Quick actions'), text: 'One-click shortcuts to the windows you use most. You can choose them in Settings.' },
   { id: 'notice-board', target: '[data-bento-cell="noticeBoard"]', doodle: 'box',
-    title: 'Notice board', text: 'Post short notes for everyone to see, like a holiday or a cut-off time.' },
+    title: tLabel('Notice board'), text: 'Post short notes for everyone to see, like a holiday or a cut-off time.' },
   { id: 'menu-help', target: '[data-tour="menu-help"]', doodle: 'underline',
-    title: 'Need this again?', text: 'Help › Replay Tour runs this walkthrough, and How It Works replays the slides.' },
+    title: tLabel('Need this again?'), text: 'Help › Replay Tour runs this walkthrough, and How It Works replays the slides.' },
   { id: 'menu-settings', target: '[data-tour="menu-settings"]', doodle: 'underline',
-    title: 'Make it yours', text: 'Colours, text size, dashboard widgets and when this tour appears: all in Settings.',
+    title: tLabel('Make it yours'), text: 'Colours, text size, dashboard widgets and when this tour appears: all in Settings.',
     textFor: (u) => (isAdminUser(u)
       ? 'Colours and widgets for you, and for everyone: notifications, approvers and the default for this tour.'
       : 'Colours, text size, dashboard widgets and when this tour appears: all in Settings.') },

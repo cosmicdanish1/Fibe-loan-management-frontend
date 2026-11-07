@@ -1,0 +1,11 @@
+import { start, go, sleep, text } from './lib.mjs';
+const { browser, page } = await start();
+const calls = []; page.on('request', (r) => { if (r.url().includes('preview-calculation')) console.log('REQ', r.postData()); });
+page.on('response', async (r) => { if (r.url().includes('/api/') && !r.url().includes('client-logs')) { let b=''; if (r.request().method()!=='GET' || /interest/.test(r.url())) { try { b=(await r.text()).slice(0,500);} catch{} } calls.push(`${r.request().method()} ${r.url().replace(/https?:\/\/[^/]+/, '').slice(0,90)} ${r.status()} ${b}`); } });
+await page.evaluate(() => { window.__msgs=[]; window.__h = {}; window.electronAPI = { showMessageBox: async (o) => { window.__msgs.push({m:o.message,d:(o.detail||'').slice(0,300)}); return { response: 0 }; }, openNewWindow() {}, ipcRenderer: { on: (c, f) => { window.__h[c] = f; }, removeListener() {}, send() {} } }; });
+await go(page, '#/interest-calculation-posting'); await sleep(2000);
+await page.getByRole('button', { name: /Preview Interest List/ }).click(); const t0=Date.now(); await page.waitForFunction(()=>!/Processing.../.test(document.body.innerText),{timeout:150000}).catch(()=>console.log("TIMEOUT")); console.log("took ms",Date.now()-t0); await sleep(1000);
+console.log((await text(page)).replace(/\s+/g, ' ').slice(0, 1500));
+console.log('MSGS', JSON.stringify(await page.evaluate(()=>window.__msgs)));
+console.log('CALLS', JSON.stringify(calls.filter(c=>!c.startsWith('GET /api/v1/interest/current')).slice(-5)));
+await browser.close();

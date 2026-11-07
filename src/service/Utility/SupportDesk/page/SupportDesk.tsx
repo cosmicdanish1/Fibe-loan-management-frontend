@@ -6,6 +6,8 @@ import { message } from 'antd';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../services/api';
 import { useAuth } from '../../../../auth/context/AuthContext';
+import { useTranslation } from 'react-i18next';
+import { tLabel } from '../../../../i18n';
 
 type QueryType = 'BUG' | 'QUESTION' | 'DATA_CORRECTION' | 'FEATURE_REQUEST' | 'OTHER';
 type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -29,18 +31,18 @@ interface SupportQueryRow {
 }
 
 const QUERY_TYPES: { value: QueryType; label: string; hint: string }[] = [
-  { value: 'BUG', label: 'Bug', hint: 'Something is not working or shows a wrong result' },
-  { value: 'QUESTION', label: 'Question', hint: 'How do I do something?' },
-  { value: 'DATA_CORRECTION', label: 'Data correction', hint: 'A saved record needs to be corrected' },
-  { value: 'FEATURE_REQUEST', label: 'Feature request', hint: 'Something new we would like' },
-  { value: 'OTHER', label: 'Other', hint: 'Anything else' },
+  { value: 'BUG', label: tLabel('Bug'), hint: tLabel('Something is not working or shows a wrong result') },
+  { value: 'QUESTION', label: tLabel('Question'), hint: tLabel('How do I do something?') },
+  { value: 'DATA_CORRECTION', label: tLabel('Data correction'), hint: tLabel('A saved record needs to be corrected') },
+  { value: 'FEATURE_REQUEST', label: tLabel('Feature request'), hint: tLabel('Something new we would like') },
+  { value: 'OTHER', label: tLabel('Other'), hint: tLabel('Anything else') },
 ];
 
 const PRIORITIES: { value: Priority; label: string }[] = [
-  { value: 'LOW', label: 'Low' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'HIGH', label: 'High' },
-  { value: 'CRITICAL', label: 'Critical' },
+  { value: 'LOW', label: tLabel('Low') },
+  { value: 'MEDIUM', label: tLabel('Medium') },
+  { value: 'HIGH', label: tLabel('High') },
+  { value: 'CRITICAL', label: tLabel('Critical') },
 ];
 
 const MODULES = [
@@ -64,6 +66,7 @@ const closeWindow = () => {
 };
 
 const SupportDesk: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = ['administrator', 'admin', 'system'].includes(String(user?.role || '').toLowerCase());
 
@@ -95,11 +98,11 @@ const SupportDesk: React.FC = () => {
   const takeImage = useCallback((file: File | null | undefined) => {
     if (!file) return;
     if (!ALLOWED_IMAGES.includes(file.type)) {
-      message.error('Only PNG or JPEG screenshots are allowed.');
+      message.error(t('Only PNG or JPEG screenshots are allowed.'));
       return;
     }
     if (file.size > MAX_SCREENSHOT_BYTES) {
-      message.error('Screenshot is larger than 3 MB. Please crop it or use a smaller one.');
+      message.error(t('Screenshot is larger than 3 MB. Please crop it or use a smaller one.'));
       return;
     }
     setScreenshot(file);
@@ -131,10 +134,10 @@ const SupportDesk: React.FC = () => {
     setLoading(true);
     try {
       const raw: any = await apiService.get('/support-queries/mine');
-      if (raw?.success === false) { message.error(raw.message || raw.error || 'Could not load your queries.'); return; }
+      if (raw?.success === false) { message.error(raw.message || raw.error || t('Could not load your queries.')); return; }
       const res = unwrap(raw);
       setMine(Array.isArray(res) ? res : []);
-    } catch { message.error('Could not load your queries.'); }
+    } catch { message.error(t('Could not load your queries.')); }
     finally { setLoading(false); }
   }, []);
 
@@ -143,10 +146,10 @@ const SupportDesk: React.FC = () => {
     setLoading(true);
     try {
       const raw: any = await apiService.get('/support-queries/admin/all');
-      if (raw?.success === false) { message.error(raw.message || raw.error || 'Could not load all queries.'); return; }
+      if (raw?.success === false) { message.error(raw.message || raw.error || t('Could not load all queries.')); return; }
       const res = unwrap(raw);
       setAll(Array.isArray(res) ? res : []);
-    } catch { message.error('Could not load all queries.'); }
+    } catch { message.error(t('Could not load all queries.')); }
     finally { setLoading(false); }
   }, [isAdmin]);
 
@@ -170,8 +173,8 @@ const SupportDesk: React.FC = () => {
 
   const submit = async () => {
     setFormError(null);
-    if (!subjectOk) { setFormError('Please give the query a short title (at least 5 characters).'); return; }
-    if (!descriptionOk) { setFormError('Please describe the problem in a little more detail (at least 10 characters).'); return; }
+    if (!subjectOk) { setFormError(t('Please give the query a short title (at least 5 characters).')); return; }
+    if (!descriptionOk) { setFormError(t('Please describe the problem in a little more detail (at least 10 characters).')); return; }
 
     const fd = new FormData();
     fd.append('queryType', queryType);
@@ -188,12 +191,12 @@ const SupportDesk: React.FC = () => {
       const res: any = await apiService.request('/support-queries', { method: 'POST', body: fd });
       const data = unwrap(res);
       if (res?.success === false || !data?.id) {
-        setFormError(res?.message || res?.error || 'Could not submit your query. Please try again.');
+        setFormError(res?.message || res?.error || t('Could not submit your query. Please try again.'));
         return;
       }
       setSubmitted({ ticket: data.ticketNo || ticketNo(data.id) });
     } catch (e: any) {
-      setFormError(e?.message || 'Could not submit your query. Check your connection and try again.');
+      setFormError(e?.message || t('Could not submit your query. Check your connection and try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -203,10 +206,10 @@ const SupportDesk: React.FC = () => {
     setRetryingId(id);
     try {
       const res = await apiService.post(`/support-queries/${id}/retry`);
-      if (!res.success) { message.error(res.message || res.error || 'Retry failed.'); return; }
-      message.success('Delivery retried.');
+      if (!res.success) { message.error(res.message || res.error || t('Retry failed.')); return; }
+      message.success(t('Delivery retried.'));
       await loadAll();
-    } catch { message.error('Retry failed.'); }
+    } catch { message.error(t('Retry failed.')); }
     finally { setRetryingId(null); }
   };
 
@@ -223,25 +226,25 @@ const SupportDesk: React.FC = () => {
     const tone = status === 'SENT' ? 'var(--aw-success)' : status === 'FAILED' ? 'var(--aw-danger)' : status === 'SKIPPED' ? 'var(--aw-muted)' : 'var(--aw-warning)';
     return (
       <span className="aw-pill" title={error || undefined} style={{ color: tone, background: `color-mix(in srgb, ${tone} 12%, transparent)` }}>
-        {status === 'SENT' ? 'Sent' : status === 'FAILED' ? 'Failed' : status === 'DISABLED' ? 'Not set up' : status === 'SKIPPED' ? 'Muted' : 'Queued'}
+        {status === 'SENT' ? t('Sent') : status === 'FAILED' ? t('Failed') : status === 'DISABLED' ? t('Not set up') : status === 'SKIPPED' ? t('Muted') : t('Queued')}
       </span>
     );
   };
 
   const renderTable = (rows: SupportQueryRow[], admin: boolean) => (
     rows.length === 0 ? (
-      <div className="aw-empty"><LifeBuoy size={28} /><span>{loading ? 'Loading…' : 'No queries yet.'}</span></div>
+      <div className="aw-empty"><LifeBuoy size={28} /><span>{loading ? t('Loading…') : t('No queries yet.')}</span></div>
     ) : (
       <div className="aw-table-wrap">
         <table className="aw-table" style={{ minWidth: admin ? 980 : 760 }}>
           <thead>
             <tr>
-              <th>Ticket</th><th>Subject</th><th>Type</th><th>Priority</th>
-              {admin && <th>Raised by</th>}
-              <th>Raised</th>
-              <th>{admin ? 'Jira' : 'Reference'}</th>
-              {admin && <th>Telegram</th>}
-              {!admin && <th>Status</th>}
+              <th>{t('Ticket')}</th><th>{t('Subject')}</th><th>{t('Type')}</th><th>{t('Priority')}</th>
+              {admin && <th>{t('Raised by')}</th>}
+              <th>{t('Raised')}</th>
+              <th>{admin ? t('Jira') : t('Reference')}</th>
+              {admin && <th>{t('Telegram')}</th>}
+              {!admin && <th>{t('Status')}</th>}
               {admin && <th />}
             </tr>
           </thead>
@@ -261,7 +264,7 @@ const SupportDesk: React.FC = () => {
                   <td>
                     {((r.jiraStatus !== 'SENT' && r.jiraStatus !== 'SKIPPED') || (r.telegramStatus !== 'SENT' && r.telegramStatus !== 'SKIPPED')) && (
                       <button type="button" className="aw-btn aw-btn-secondary" disabled={retryingId === r.id} onClick={() => retry(r.id)}>
-                        <RotateCw size={12} className={retryingId === r.id ? 'aw-spin' : ''} /> Retry
+                        <RotateCw size={12} className={retryingId === r.id ? 'aw-spin' : ''} /> {t('Retry')}
                       </button>
                     )}
                   </td>
@@ -278,18 +281,18 @@ const SupportDesk: React.FC = () => {
     <div className="app-window">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <h1 className="aw-title">Support Desk</h1>
+          <h1 className="aw-title">{t('Support Desk')}</h1>
           <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <LifeBuoy size={12} /> Report a problem or ask a question — our team is notified straight away
+            <LifeBuoy size={12} /> {t('Report a problem or ask a question — our team is notified straight away')}
           </p>
         </div>
         <div className="aw-actions">
           {tab !== 'raise' && (
-            <button type="button" onClick={refresh} disabled={loading} className="aw-icon-btn" aria-label="Refresh" data-tip="Refresh" data-tip-pos="bottom-end">
+            <button type="button" onClick={refresh} disabled={loading} className="aw-icon-btn" aria-label={t('Refresh')} data-tip={t('Refresh')} data-tip-pos="bottom-end">
               <RefreshCw size={14} className={loading ? 'aw-spin' : ''} />
             </button>
           )}
-          <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost"><X size={13} /> Close</button>
+          <button type="button" onClick={closeWindow} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Close')}</button>
         </div>
       </div>
 
@@ -306,14 +309,14 @@ const SupportDesk: React.FC = () => {
           <section className="aw-card" style={{ maxWidth: 640, margin: '0 auto' }}>
             <div className="aw-alert aw-alert-success">
               <CheckCircle2 size={16} />
-              <span>Your query has been received. Your reference number is <strong>{submitted.ticket}</strong>.</span>
+              <span>{t('Your query has been received. Your reference number is')} <strong>{submitted.ticket}</strong>.</span>
             </div>
             <p className="aw-muted" style={{ margin: '0 0 12px' }}>
-              The support team has been notified. You can follow it any time under <strong>My Queries</strong>.
+              {t('The support team has been notified. You can follow it any time under')} <strong>{t('My Queries')}</strong>.
             </p>
             <div className="aw-actions">
-              <button type="button" className="aw-btn aw-btn-primary" onClick={resetForm}>Raise another query</button>
-              <button type="button" className="aw-btn aw-btn-secondary" onClick={() => { resetForm(); setTab('mine'); }}>View my queries</button>
+              <button type="button" className="aw-btn aw-btn-primary" onClick={resetForm}>{t('Raise another query')}</button>
+              <button type="button" className="aw-btn aw-btn-secondary" onClick={() => { resetForm(); setTab('mine'); }}>{t('View my queries')}</button>
             </div>
           </section>
         ) : (
@@ -322,7 +325,7 @@ const SupportDesk: React.FC = () => {
 
             <div className="aw-stack">
               <div>
-                <span className="aw-label" id="sd-type-label">What kind of query is this?</span>
+                <span className="aw-label" id="sd-type-label">{t('What kind of query is this?')}</span>
                 <div className="aw-chips" role="radiogroup" aria-labelledby="sd-type-label">
                   {QUERY_TYPES.map((t) => (
                     <button key={t.value} type="button" role="radio" aria-checked={queryType === t.value} className="aw-chip" title={t.hint} onClick={() => setQueryType(t.value)}>
@@ -335,14 +338,14 @@ const SupportDesk: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 'var(--aw-gap)' }}>
                 <div>
-                  <label className="aw-label" htmlFor="sd-module">Which window is it about?</label>
+                  <label className="aw-label" htmlFor="sd-module">{t('Which window is it about?')}</label>
                   <select id="sd-module" className="aw-input" value={module} onChange={(e) => setModule(e.target.value)}>
-                    <option value="">Not sure / not about a window</option>
+                    <option value="">{t('Not sure / not about a window')}</option>
                     {MODULES.map((m) => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
                 <div>
-                  <span className="aw-label" id="sd-pri-label">How urgent is it?</span>
+                  <span className="aw-label" id="sd-pri-label">{t('How urgent is it?')}</span>
                   <div className="aw-chips" role="radiogroup" aria-labelledby="sd-pri-label">
                     {PRIORITIES.map((p) => (
                       <button key={p.value} type="button" role="radio" aria-checked={priority === p.value} className="aw-chip" onClick={() => setPriority(p.value)}>
@@ -355,35 +358,35 @@ const SupportDesk: React.FC = () => {
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <label className="aw-label" htmlFor="sd-subject">Title</label>
+                  <label className="aw-label" htmlFor="sd-subject">{t('Title')}</label>
                   <span className="aw-meta">{subject.length}/200</span>
                 </div>
                 <input id="sd-subject" className="aw-input" value={subject} maxLength={200}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="e.g. Cash Book total does not match the day book" />
+                  placeholder={t('e.g. Cash Book total does not match the day book')} />
               </div>
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <label className="aw-label" htmlFor="sd-desc">Describe the problem</label>
+                  <label className="aw-label" htmlFor="sd-desc">{t('Describe the problem')}</label>
                   <span className="aw-meta">{description.length}/5000</span>
                 </div>
                 <textarea id="sd-desc" className="aw-input" rows={6} value={description} maxLength={5000}
                   onChange={(e) => setDescription(e.target.value)}
                   style={{ padding: '8px 10px', resize: 'vertical', lineHeight: 1.45 }}
-                  placeholder="What were you doing? What did you expect, and what happened instead? Include member numbers, dates or amounts if they help." />
+                  placeholder={t('What were you doing? What did you expect, and what happened instead? Include member numbers, dates or amounts if they help.')} />
               </div>
 
               <div>
-                <span className="aw-label">Screenshot (optional)</span>
+                <span className="aw-label">{t('Screenshot (optional)')}</span>
                 {screenshot && preview ? (
                   <div className="aw-panel" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <img src={preview} alt="Screenshot preview" style={{ maxHeight: 120, maxWidth: 220, borderRadius: 6, border: '1px solid var(--aw-border)' }} />
+                    <img src={preview} alt={t('Screenshot preview')} style={{ maxHeight: 120, maxWidth: 220, borderRadius: 6, border: '1px solid var(--aw-border)' }} />
                     <div className="min-w-0" style={{ flex: 1 }}>
                       <div className="aw-strong" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{screenshot.name}</div>
                       <div className="aw-meta">{(screenshot.size / 1024).toFixed(0)} KB</div>
                     </div>
-                    <button type="button" className="aw-icon-btn is-danger" aria-label="Remove screenshot" data-tip="Remove" onClick={() => setScreenshot(null)}>
+                    <button type="button" className="aw-icon-btn is-danger" aria-label={t('Remove screenshot')} data-tip={t('Remove')} onClick={() => setScreenshot(null)}>
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -392,7 +395,7 @@ const SupportDesk: React.FC = () => {
                     className="aw-panel"
                     tabIndex={0}
                     role="button"
-                    aria-label="Add a screenshot: click to choose a file, drop one here, or paste with Ctrl+V"
+                    aria-label={t('Add a screenshot: click to choose a file, drop one here, or paste with Ctrl+V')}
                     style={{ display: 'flex', alignItems: 'center', gap: 12, borderStyle: 'dashed', cursor: 'pointer' }}
                     onClick={() => fileInput.current?.click()}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.current?.click(); } }}
@@ -401,9 +404,9 @@ const SupportDesk: React.FC = () => {
                   >
                     <ImagePlus size={22} style={{ color: 'var(--aw-accent)', flex: 'none' }} />
                     <div>
-                      <div className="aw-strong">Click to choose, drag a file here, or paste</div>
+                      <div className="aw-strong">{t('Click to choose, drag a file here, or paste')}</div>
                       <div className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <ClipboardPaste size={11} /> Press <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> to capture the screen, then <kbd>Ctrl</kbd>+<kbd>V</kbd> here · PNG or JPEG, up to 3 MB
+                        <ClipboardPaste size={11} /> {t('Press')} <kbd>{t('Win')}</kbd>+<kbd>{t('Shift')}</kbd>+<kbd>S</kbd> {t('to capture the screen, then')} <kbd>{t('Ctrl')}</kbd>+<kbd>V</kbd> {t('here · PNG or JPEG, up to 3 MB')}
                       </div>
                     </div>
                   </div>
@@ -415,13 +418,13 @@ const SupportDesk: React.FC = () => {
               <div className="aw-actions" style={{ justifyContent: 'space-between' }}>
                 <span className="aw-meta" style={!canSubmit && !submitting ? { color: 'var(--aw-warning)' } : undefined}>
                   {!subjectOk
-                    ? `Title needs at least 5 characters (${subject.trim().length}/5)`
+                    ? t('Title needs at least 5 characters ({{1}}/5)', { 1: subject.trim().length })
                     : !descriptionOk
-                      ? `Description needs at least 10 characters (${description.trim().length}/10)`
-                      : <>Sent as <strong>{user?.username || 'you'}</strong>{appVersion ? ` · app v${appVersion}` : ''}</>}
+                      ? t('Description needs at least 10 characters ({{1}}/10)', { 1: description.trim().length })
+                      : <>{t('Sent as')} <strong>{user?.username || 'you'}</strong>{appVersion ? ` · app v${appVersion}` : ''}</>}
                 </span>
                 <button type="button" className="aw-btn aw-btn-primary" disabled={!canSubmit} onClick={submit}>
-                  <Send size={13} className={submitting ? 'aw-spin' : ''} /> {submitting ? 'Sending…' : 'Submit query'}
+                  <Send size={13} className={submitting ? 'aw-spin' : ''} /> {submitting ? t('Sending…') : t('Submit query')}
                 </button>
               </div>
             </div>
