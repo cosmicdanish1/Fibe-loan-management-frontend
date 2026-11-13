@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { ConfigProvider, Input, Button, Radio, Spin, message, Modal, theme } from 'antd';
 import { FileText, Printer, Search, RotateCcw, Award, User, Users, Monitor } from 'lucide-react';
 import { useSelector } from 'react-redux';
@@ -126,6 +127,7 @@ const NewShareCertificate: React.FC = () => {
     setLoading(true);
     try {
       const response = await apiService.getShareCertificate({ memberNo });
+      if (isFailure(response)) { await notifyError(response, 'load the share certificate'); return; }
       const data: ShareData = (response as any).data || response;
       if (!data || !data.memberNo) {
         message.error('Member not found');

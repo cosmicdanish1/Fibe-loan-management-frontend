@@ -1,21 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { useSelector } from 'react-redux';
-import { message } from 'antd';
 import type { RootState } from '../../store';
 
 const FloatingChatBot = lazy(() => import('../../components/chat/FloatingChatBot'));
 import {
   Users, BookOpen, PiggyBank, ArrowDownLeft, Printer, Database,
-  FileDown, Zap, Calendar, Plus, X, Bell,
-  AlertTriangle, Info, CheckCircle, Command, LayoutGrid,
-  EyeOff, GripVertical,
+  FileDown, Zap, Calendar, Plus, Command, LayoutGrid,
+  EyeOff,
   BookMarked, Building2, FilePen, Scale, Tag, Briefcase,
   FileText, ArrowLeftRight, Wallet, ArrowRightLeft, CreditCard, RotateCcw,
   Layers, CheckSquare, Receipt, ReceiptText, DollarSign, Landmark,
   PenLine, Moon, Calculator, TrendingUp, Star, Settings2, ListOrdered,
   ShieldCheck, Lock, Hash, BarChart2, Banknote, MessageSquare,
-  Award, Medal, FlagOff, type LucideIcon,
+  Award, Medal, FlagOff, SlidersHorizontal, Check, type LucideIcon,
 } from 'lucide-react';
+import './dashboard.css';
+import { CountUp } from './DashCharts';
 import {
   ALL_QUICK_ACTION_DEFS, DEFAULT_ENABLED_QA_IDS,
   QA_STORAGE_KEY, QA_BROADCAST_CHANNEL,
@@ -24,31 +24,21 @@ import {
   ActiveMembersWidget, SanctionedLoansWidget,
   MonthEndOutstandingWidget, MemberBalanceDistributionWidget,
 } from './AnalyticsWidgets';
-import apiService from '../../services/api';
+import NoticeBoardCard from './NoticeBoardCard';
 import BentoGrid from './BentoGrid';
-import { loadLayout, saveLayout, clearLayout, DEFAULT_ROWS, DEFAULT_WIDGET_CONFIG, type RowLayout, type WidgetConfig } from './dashboardLayout';
+import { loadArtConfig, saveArtConfig, resolveArt, resolvePicture, type ArtConfig } from './dashboardArt';
+import { loadLayout, saveLayout, clearLayout, DEFAULT_ROWS, DEFAULT_WIDGET_CONFIG, CARD_IDS, CARD_LABELS, type RowLayout, type WidgetConfig, type WidgetKey } from './dashboardLayout';
 import {
   useDashboardSummary, PendingVouchersWidget, CashPositionWidget, DayEndStatusWidget, DemandRecoveryWidget,
   DepositsSummaryWidget, UpcomingMaturitiesWidget, LoanApplicationsWidget, OverdueLoansWidget,
   RetiringMembersWidget, NewMembersWidget,
 } from './SummaryWidgets';
+import {
+  WaitingApprovalWidget, TodayCashFlowWidget, RdDuesWidget, TopDefaultersWidget, DisbursedThisMonthWidget, LastBackupWidget,
+} from './MoreWidgets';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { tLabel } from '../../i18n';
-
-// ─── Types ─────────────────────────────────────────────────────────────────
-
-interface Notice {
-  id: number;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success';
-  postedAt: string;
-  postedBy: string;
-  showOnMobile?: boolean;
-  audienceWing?: string | null;
-  audienceOffice?: number | null;
-}
 
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -126,14 +116,6 @@ const SHORTCUTS = [
   { label: tLabel('Exit form'),     keys: ['Esc'] },
 ];
 
-// ─── Notice style map (kit alert variants) ───────────────────────────────────
-
-const NOTICE_STYLES = {
-  info:    { cls: 'aw-alert-info',    Icon: Info },
-  warning: { cls: 'aw-alert-warning', Icon: AlertTriangle },
-  success: { cls: 'aw-alert-success', Icon: CheckCircle },
-};
-
 const kbdStyle: React.CSSProperties = {
   border: '1px solid var(--aw-border-strong)', background: 'var(--aw-surface-muted)', borderRadius: 5,
   padding: '2px 7px', fontSize: 'calc(var(--type-body-size) - 2px)', fontWeight: 700, lineHeight: 1.2, color: 'var(--aw-text)',
@@ -153,6 +135,19 @@ const Dashboard: React.FC = () => {
   // Widget visibility & banner opacity — synced from Settings via BroadcastChannel
   const [widgets, setWidgets] = useState<WidgetConfig>(loadWidgetConfig);
   const [bannerOpacity, setBannerOpacity] = useState<number>(loadBannerOpacity);
+  // Optional picture behind the top of the dashboard (Settings → Dashboard → Dashboard Art).
+  const [artConfig, setArtConfig] = useState<ArtConfig>(loadArtConfig);
+  const art = resolveArt(artConfig, isDark);
+  // The same picture can also sit inside individual cards, switched on card by card in Customize mode.
+  const cardArt = resolvePicture(artConfig, isDark);
+  const artCards = useMemo(() => new Set(artConfig.cards), [artConfig.cards]);
+  const toggleCardArt = useCallback((id: string) => {
+    // Start from what is saved, so a change made in Settings meanwhile is not lost.
+    const saved = loadArtConfig();
+    const next = { ...saved, cards: saved.cards.includes(id) ? saved.cards.filter(c => c !== id) : [...saved.cards, id] };
+    saveArtConfig(next);
+    setArtConfig(next);
+  }, []);
 
   // Quick Actions config — synced from Settings via BroadcastChannel
   const [enabledQaIds, setEnabledQaIds] = useState<string[]>(() => {
@@ -171,6 +166,7 @@ const Dashboard: React.FC = () => {
       if (e.data?.widgets)      setWidgets({ ...DEFAULT_WIDGET_CONFIG, ...e.data.widgets });
       if (e.data?.resetLayout)  resetLayoutRef.current();
       if (e.data?.bannerOpacity !== undefined) setBannerOpacity(e.data.bannerOpacity);
+      if (e.data?.art) setArtConfig(e.data.art);
     };
 
     const qaCh = new BroadcastChannel(QA_BROADCAST_CHANNEL);
@@ -189,132 +185,19 @@ const Dashboard: React.FC = () => {
     [enabledQaIds]
   );
 
-  // Notice board — shared across every PC via the backend, not localStorage.
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const noticesRef = useRef<Notice[]>([]);
-  noticesRef.current = notices;
-  const [showAddForm, setShowAddForm] = useState(false);
-  const EMPTY_FORM = { title: '', message: '', type: 'info' as Notice['type'], showOnMobile: false, audienceWing: '', audienceOffice: '' };
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [noticeWings, setNoticeWings] = useState<any[]>([]);
-  const [noticeOffices, setNoticeOffices] = useState<any[]>([]);
-  // Ids currently animating out before removal — lets the delete fade play.
-  const [removingIds, setRemovingIds] = useState<number[]>([]);
-  // Dragged notice id, tracked outside state so drag-over doesn't re-render.
-  const dragIdRef = useRef<number | null>(null);
+  // Customize mode: cards can be moved and resized only while this is on. In normal use the
+  // dashboard has no drag handles at all, so nothing unexpected appears under the pointer.
+  const [editing, setEditing] = useState(false);
 
-  const refreshNotices = useCallback(async () => {
-    const res = await apiService.getDashboardNotices();
-    if (res.success && Array.isArray(res.data)) {
-      setNotices(res.data.map((n: any) => ({
-        id: n.id, title: n.title, message: n.message, type: n.type,
-        postedAt: n.createdAt, postedBy: n.postedBy, showOnMobile: !!n.showOnMobile,
-        audienceWing: n.audienceWing ?? null, audienceOffice: n.audienceOffice ?? null,
-      })));
-    }
-  }, []);
-
-  useEffect(() => { refreshNotices(); }, [refreshNotices]);
-
-  // Ctrl+N → New Member
+  // Ctrl+N → New Member; Esc leaves Customize mode
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === 'n') { e.preventDefault(); openWindow('/masters/member'); }
+      if (e.key === 'Escape') setEditing(false);
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
-
-  const addNotice = useCallback(async () => {
-    if (!form.title.trim() || !form.message.trim()) return;
-    const res = await apiService.createDashboardNotice({
-      title: form.title.trim(), message: form.message.trim(),
-      type: form.type, postedBy: getCurrentUserName(), showOnMobile: form.showOnMobile,
-      audienceWing: form.showOnMobile && form.audienceWing ? form.audienceWing : null,
-      audienceOffice: form.showOnMobile && form.audienceWing && form.audienceOffice !== '' ? Number(form.audienceOffice) : null,
-    });
-    if (!res.success) {
-      message.error(t('Could not post the notice — please try again.'));
-      return;
-    }
-    await refreshNotices();
-    setForm(EMPTY_FORM);
-    setNoticeOffices([]);
-    setShowAddForm(false);
-  }, [form, refreshNotices]);
-
-  const deleteNotice = useCallback((id: number) => {
-    // Play the fade-out, then commit the removal.
-    setRemovingIds(prev => [...prev, id]);
-    setTimeout(async () => {
-      const res = await apiService.deleteDashboardNotice(id);
-      if (res.success) {
-        setNotices(prev => prev.filter(n => n.id !== id));
-      } else {
-        message.error(t('Could not delete the notice — please try again.'));
-      }
-      setRemovingIds(prev => prev.filter(x => x !== id));
-    }, 200);
-  }, []);
-
-  const closeForm = useCallback(() => {
-    setShowAddForm(false);
-    setForm(EMPTY_FORM);
-    setNoticeOffices([]);
-  }, []);
-
-  // Wing list loads the first time the mobile option is ticked; offices load per wing.
-  const onShowOnMobileChange = useCallback(async (checked: boolean) => {
-    setForm(p => ({ ...p, showOnMobile: checked, ...(checked ? {} : { audienceWing: '', audienceOffice: '' }) }));
-    if (checked && noticeWings.length === 0) {
-      const res: any = await apiService.getReportWings();
-      if (res.success && Array.isArray(res.data)) setNoticeWings(res.data);
-    }
-  }, [noticeWings.length]);
-
-  const onAudienceWingChange = useCallback(async (wingNo: string) => {
-    setForm(p => ({ ...p, audienceWing: wingNo, audienceOffice: '' }));
-    setNoticeOffices([]);
-    if (wingNo) {
-      const res: any = await apiService.getReportOffices(wingNo);
-      if (res.success && Array.isArray(res.data)) setNoticeOffices(res.data);
-    }
-  }, []);
-
-  // Drag-and-drop reorder — optimistic locally, persisted in the background
-  // so one user's reordering doesn't block on the network.
-  const handleNoticeDrop = useCallback((targetId: number) => {
-    const draggedId = dragIdRef.current;
-    dragIdRef.current = null;
-    if (draggedId === null || draggedId === targetId) return;
-    // Compute the new order outside the state updater (updaters must be pure; StrictMode runs
-    // them twice) and fire the API call exactly once.
-    const prev = noticesRef.current;
-    const list = [...prev];
-    const fromIdx = list.findIndex(n => n.id === draggedId);
-    const toIdx = list.findIndex(n => n.id === targetId);
-    if (fromIdx === -1 || toIdx === -1) return;
-    const [moved] = list.splice(fromIdx, 1);
-    if (!moved) return;
-    list.splice(toIdx, 0, moved);
-    setNotices(list);
-    apiService.reorderDashboardNotices(list.map(n => n.id)).then(res => {
-      if (res && res.success === false) throw new Error('reorder failed');
-    }).catch(() => {
-      setNotices(prev);
-      message.error(t('Could not save the new notice order — please try again.'));
-    });
-  }, []);
-
-  // Enter posts (Ctrl/⌘+Enter inside the textarea, where Enter is a newline);
-  // Esc cancels.
-  const handleFormKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') { e.preventDefault(); closeForm(); return; }
-    if (e.key === 'Enter') {
-      const isTextarea = (e.target as HTMLElement).tagName === 'TEXTAREA';
-      if (!isTextarea || e.ctrlKey || e.metaKey) { e.preventDefault(); addNotice(); }
-    }
-  }, [addNotice, closeForm]);
 
 
   const anyVisible = Object.values(widgets).some(Boolean);
@@ -337,41 +220,52 @@ const Dashboard: React.FC = () => {
     [widgets]
   );
 
+  // Customize mode can switch a card off (×) or back on (the "Add" list). Same saved setting as the
+  // switches in Settings → Dashboard, so both places always agree.
+  const setWidgetOn = useCallback((id: WidgetKey, on: boolean) => {
+    setWidgets(prev => {
+      const next = { ...prev, [id]: on };
+      try { localStorage.setItem(WIDGET_CONFIG_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return next;
+    });
+  }, []);
+  const hiddenIds = CARD_IDS.filter(id => !widgets[id]);
+
   const summaryState = useDashboardSummary();
+
+  const userName = useMemo(() => getCurrentUserName(), []);
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? t('Good morning') : hour < 17 ? t('Good afternoon') : t('Good evening');
 
   const cards: Record<string, React.ReactNode> = {
     fyBanner: (
-            <section className="aw-card" style={{ background: `color-mix(in srgb, var(--aw-accent) ${bannerTint}%, var(--aw-surface))` }}>
-              <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+            <section className="aw-card dash-fy" style={{
+              background: `radial-gradient(90% 140% at 100% 0%, color-mix(in srgb, var(--aw-accent) ${Math.round(bannerTint * 0.9)}%, transparent), transparent 62%), color-mix(in srgb, var(--aw-accent) ${bannerTint}%, var(--aw-surface))`,
+            }}>
+              <div className="dash-fy-head">
                 <div className="aw-inline" style={{ alignItems: 'center', gap: 12 }}>
-                  <span className="aw-card-icon" style={{ width: 36, height: 36 }}><Calendar size={17} /></span>
+                  <span className="aw-card-icon" style={{ width: 38, height: 38 }}><Calendar size={18} /></span>
                   <div>
                     <p className="aw-label" style={{ margin: 0 }}>{t('Current Financial Year')}</p>
-                    <p className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 4px)', marginTop: 2 }}>{fy.label}</p>
+                    <p className="dash-fy-year">{fy.label}</p>
                   </div>
                 </div>
-                <div className="aw-inline" style={{ alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <p className="aw-label" style={{ margin: 0 }}>{t('Started')}</p>
-                    <p className="aw-strong">{fy.startDate}</p>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <p className="aw-label" style={{ margin: 0 }}>{t('Ends')}</p>
-                    <p className="aw-strong">{fy.endDate}</p>
-                  </div>
-                  <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-warning)', minWidth: 84 }}>
-                    <div className="aw-stat-value">{fy.remaining}</div>
-                    <div className="aw-stat-label">{t('days left')}</div>
-                  </div>
-                  <div style={{ width: 140 }}>
-                    <div className="aw-inline" style={{ justifyContent: 'space-between' }}>
-                      <span className="aw-label" style={{ margin: 0 }}>{t('Progress')}</span>
-                      <strong>{fy.progress}%</strong>
-                    </div>
-                    <div className="aw-bar" role="progressbar" aria-valuenow={fy.progress} aria-valuemin={0} aria-valuemax={100} aria-label={t('Financial year progress')} style={{ marginTop: 6 }}>
-                      <span style={{ width: `${fy.progress}%`, background: 'var(--aw-success)' }} />
-                    </div>
-                  </div>
+                <div className="dash-fy-days">
+                  <strong><CountUp value={fy.remaining} /></strong>
+                  <span className="aw-label" style={{ margin: 0 }}>{t('days left')}</span>
+                </div>
+              </div>
+              <div>
+                <div className="aw-inline" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span className="aw-label" style={{ margin: 0 }}>{t('Progress')}</span>
+                  <strong className="dash-num">{fy.progress}%</strong>
+                </div>
+                <div className="dash-fy-track" role="progressbar" aria-valuenow={fy.progress} aria-valuemin={0} aria-valuemax={100} aria-label={t('Financial year progress')}>
+                  <span className="dash-fy-fill" style={{ width: `${fy.progress}%` }} />
+                </div>
+                <div className="dash-fy-ends">
+                  <span className="aw-meta">{t('Started')} <strong style={{ color: 'var(--aw-text)' }}>{fy.startDate}</strong></span>
+                  <span className="aw-meta">{t('Ends')} <strong style={{ color: 'var(--aw-text)' }}>{fy.endDate}</strong></span>
                 </div>
               </div>
             </section>
@@ -391,14 +285,13 @@ const Dashboard: React.FC = () => {
                   <span className="aw-meta">{t('Go to Settings → Dashboard to add some')}</span>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(104px, 1fr))', gap: 'var(--aw-gap)' }}>
-                  {visibleActions.map(qa => {
+                <div className="dash-qa-grid">
+                  {visibleActions.map((qa, i) => {
                     const IconComp = ICON_MAP[qa.iconName] ?? Zap;
                     return (
-                      <button key={qa.id} type="button" onClick={() => openWindow(qa.route)} className="aw-panel"
-                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
-                        <span className="aw-card-icon" style={{ width: 34, height: 34 }}><IconComp size={16} /></span>
-                        <span style={{ fontSize: 'calc(var(--type-body-size) - 2px)', fontWeight: 700, textAlign: 'center', lineHeight: 1.2, textTransform: 'uppercase', letterSpacing: '.02em' }}>{tLabel(qa.label)}</span>
+                      <button key={qa.id} type="button" onClick={() => openWindow(qa.route)} className="dash-qa" style={{ ['--i' as any]: Math.min(i, 12) }}>
+                        <span className="aw-card-icon"><IconComp size={17} /></span>
+                        <span className="dash-qa-label">{tLabel(qa.label)}</span>
                       </button>
                     );
                   })}
@@ -406,84 +299,7 @@ const Dashboard: React.FC = () => {
               )}
             </section>
     ),
-    noticeBoard: (
-                <section className="aw-card">
-                  <div className="aw-card-head">
-                    <span className="aw-card-icon"><Bell size={14} /></span>
-                    <h2 className="aw-card-title">{t('Notice Board')}</h2>
-                    {notices.length > 0 && <span className="aw-pill">{notices.length}</span>}
-                    <button type="button" onClick={() => setShowAddForm(v => !v)} className="aw-btn aw-btn-primary aw-btn-sm" style={{ marginLeft: 'auto' }}>
-                      <Plus size={12} /> {t('Add Notice')}
-                    </button>
-                  </div>
-
-                  {showAddForm && (
-                    <div className="aw-panel aw-fade-in" onKeyDown={handleFormKeyDown}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--aw-gap)' }}>
-                        <input aria-label={t('Notice title')} className="aw-input" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder={t('Notice title...')} />
-                        <select aria-label={t('Notice type')} className="aw-input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as Notice['type'] }))}>
-                          <option value="info">{t('Info')}</option>
-                          <option value="warning">{t('Warning')}</option>
-                          <option value="success">{t('Success')}</option>
-                        </select>
-                      </div>
-                      <textarea aria-label={t('Notice message')} className="aw-input" value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
-                        placeholder={t('Notice message...')} rows={2} style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
-                      <label className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                        <input type="checkbox" checked={form.showOnMobile} onChange={e => onShowOnMobileChange(e.target.checked)} />
-                        {t('Show on mobile app')}
-                      </label>
-                      {form.showOnMobile && (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--aw-gap)' }}>
-                          <select aria-label={t('Audience wing')} className="aw-input" value={form.audienceWing} onChange={e => onAudienceWingChange(e.target.value)}>
-                            <option value="">{t('All members')}</option>
-                            {noticeWings.map(w => <option key={w.wingNo} value={w.wingNo}>{w.name || w.wingName || w.wingNo}</option>)}
-                          </select>
-                          <select aria-label={t('Audience office')} className="aw-input" value={form.audienceOffice} disabled={!form.audienceWing}
-                            onChange={e => setForm(p => ({ ...p, audienceOffice: e.target.value }))}>
-                            <option value="">{t('All offices of the wing')}</option>
-                            {noticeOffices.map(o => <option key={o.officeNo} value={o.officeNo}>{o.name || o.officeName || o.officeNo}</option>)}
-                          </select>
-                        </div>
-                      )}
-                      <div className="aw-btn-row">
-                        <button type="button" onClick={addNotice} className="aw-btn aw-btn-primary aw-btn-sm">{t('Post')}</button>
-                        <button type="button" onClick={closeForm} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Cancel')}</button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 120, maxHeight: 300, overflowY: 'auto' }}>
-                    {notices.length === 0 ? (
-                      <div className="aw-empty" style={{ padding: 24 }}>
-                        <Bell size={28} />
-                        <p className="aw-strong">{t('No notices posted yet')}</p>
-                        <span className="aw-meta">{t('Click "Add Notice" to post one')}</span>
-                      </div>
-                    ) : notices.map((n) => {
-                      const s = NOTICE_STYLES[n.type];
-                      return (
-                        <div key={n.id}
-                          draggable
-                          onDragStart={() => { dragIdRef.current = n.id; }}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={() => handleNoticeDrop(n.id)}
-                          className={`aw-alert ${s.cls} aw-fade-in`}
-                          style={{ opacity: removingIds.includes(n.id) ? 0 : 1, transition: 'opacity .2s', alignItems: 'flex-start', cursor: 'grab' }}>
-                          <GripVertical size={13} style={{ flex: 'none', marginTop: 2 }} />
-                          <s.Icon size={14} style={{ flex: 'none', marginTop: 2 }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <strong>{n.title}</strong>
-                            <p>{n.message}</p>
-                            <p className="aw-meta" style={{ textTransform: 'uppercase', marginTop: 4 }}>{n.postedBy} · {dayjs(n.postedAt).format('D MMM, h:mm A')}{n.showOnMobile ? ` · ${t('Shown in mobile app')}${n.audienceWing ? ` (${t('Wing')} ${n.audienceWing}${n.audienceOffice != null ? `, ${t('Office')} ${n.audienceOffice}` : ''})` : ''}` : ''}</p>
-                          </div>
-                          <button type="button" className="aw-icon-btn is-sm is-danger" onClick={() => deleteNotice(n.id)} aria-label={t('Delete notice')} data-tip={t('Delete notice')} data-tip-pos="left"><X size={13} /></button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-    ),
+    noticeBoard: <NoticeBoardCard />,
     shortcuts: (
                 <section className="aw-card">
                   <div className="aw-card-head">
@@ -522,15 +338,56 @@ const Dashboard: React.FC = () => {
     overdueLoans: <OverdueLoansWidget />,
     retiringMembers: <RetiringMembersWidget state={summaryState} />,
     newMembers: <NewMembersWidget state={summaryState} />,
+    waitingApproval: <WaitingApprovalWidget state={summaryState} onOpen={route => openWindow(route)} />,
+    todayCashFlow: <TodayCashFlowWidget onOpen={route => openWindow(route)} />,
+    rdDues: <RdDuesWidget state={summaryState} onOpen={route => openWindow(route)} />,
+    topDefaulters: <TopDefaultersWidget onOpen={route => openWindow(route)} />,
+    disbursedThisMonth: <DisbursedThisMonthWidget onOpen={route => openWindow(route)} />,
+    lastBackup: <LastBackupWidget onOpen={route => openWindow(route)} />,
   };
 
   return (
-    <div className="app-window" style={{ flex: '1 1 auto', height: 'auto', minHeight: 0, ...(customBg && !isDark ? { background: customBg } : {}) }}>
-      <div className="aw-content">
+    <div className="app-window dash" style={{ flex: '1 1 auto', height: 'auto', minHeight: 0, ...(customBg && !isDark ? { background: customBg } : {}) }}>
+      <div className={`aw-content${art ? " has-art" : ""}`}>
+        {art && <div className="dash-art" aria-hidden style={{ backgroundImage: `url("${art}")` }} />}
         <div className="aw-stack">
 
+          <header className="dash-top">
+            <div>
+              <h1 className="dash-hello">{greeting}, <span>{userName}</span></h1>
+              <p className="aw-meta" style={{ margin: '3px 0 0' }}>{dayjs().format('dddd, D MMMM YYYY')} · {fy.label}</p>
+            </div>
+            <div className="dash-top-actions">
+              {editing && (
+                <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={resetLayout}>
+                  <RotateCcw size={12} /> {t('Reset layout')}
+                </button>
+              )}
+              <button type="button" className={`aw-btn aw-btn-sm ${editing ? 'aw-btn-primary' : 'aw-btn-secondary'}`} onClick={() => setEditing(v => !v)} aria-pressed={editing}>
+                {editing ? <><Check size={12} /> {t('Done')}</> : <><SlidersHorizontal size={12} /> {t('Customize')}</>}
+              </button>
+            </div>
+          </header>
+
+          {editing && (
+            <div className="aw-panel aw-panel-accent aw-fade-in dash-edit-bar">
+              <SlidersHorizontal size={14} style={{ flex: 'none', color: 'var(--aw-accent)' }} />
+              <span className="aw-strong">{t('Arrange your dashboard')}</span>
+              <span className="aw-meta">{t('Drag a card to move it · drag the line between two cards to resize them · × removes a card · the picture button shows art inside a card · Esc when done')}</span>
+              <div className="dash-add">
+                <span className="aw-label" style={{ margin: 0 }}>{hiddenIds.length ? t('Add a widget') : t('Every widget is on the dashboard')}</span>
+                {hiddenIds.map(id => (
+                  <button key={id} type="button" className="aw-chip" onClick={() => setWidgetOn(id, true)}>
+                    <Plus size={12} /> {t(CARD_LABELS[id])}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {anyVisible && (
-            <BentoGrid rows={rows} hidden={hidden} onChange={handleLayout} renderCard={id => cards[id] ?? null} />
+            <BentoGrid rows={rows} hidden={hidden} editing={editing} artUrl={cardArt} artCards={artCards} onToggleArt={toggleCardArt}
+              onHide={id => setWidgetOn(id as WidgetKey, false)} onChange={handleLayout} renderCard={id => cards[id] ?? null} />
           )}
 
           {/* All widgets hidden */}
@@ -538,7 +395,7 @@ const Dashboard: React.FC = () => {
             <div className="aw-empty" style={{ padding: '80px 16px' }}>
               <EyeOff size={40} />
               <p className="aw-strong">{t('All widgets hidden')}</p>
-              <span className="aw-meta">{t('Go to Settings → Dashboard to turn them back on')}</span>
+              <span className="aw-meta">{t('Press Customize above to add them back')}</span>
             </div>
           )}
 

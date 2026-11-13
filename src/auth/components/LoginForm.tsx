@@ -10,6 +10,8 @@ import fibeLogo from '../../assets/fibe-logo.png';
 import { apiService } from '../../services/api';
 import LoadingAnimation from '../../components/loaders/LoadingAnimation';
 import { useTranslation } from 'react-i18next';
+import { listenForKonami, specialDayGreeting } from '../../utils/kovaSignature';
+import { reportEgg } from '../../utils/eggHunt';
 
 const apiServiceAdopt = (authData: any) => apiService.adoptAuth(authData);
 
@@ -30,6 +32,15 @@ const LoginForm: React.FC = () => {
   const [fieldError, setFieldError] = useState('');
   const [success, setSuccess] = useState(false);
   const [appVersion, setAppVersion] = useState('');
+
+  // Easter egg #8: Konami code shows a short credit card for a few seconds
+  const [credits, setCredits] = useState(false);
+  useEffect(() => listenForKonami(() => {
+    setCredits(true);
+    window.setTimeout(() => setCredits(false), 6000);
+  }), []);
+
+  useEffect(() => { if (specialDayGreeting()) reportEgg('date'); }, []);
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -236,7 +247,7 @@ const LoginForm: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span>{appVersion ? t('Version {{1}}', { 1: appVersion }) : ''}</span>
+        <span>{credits ? 'Made with love by MD Danish Qureshi & Akshay Kumar - The Kova Studio. Riddle: luck visits the day that closes, once in forty.' : specialDayGreeting() || (appVersion ? t('Version {{1}}', { 1: appVersion }) : '')}</span>
       </div>
 
       {success && (

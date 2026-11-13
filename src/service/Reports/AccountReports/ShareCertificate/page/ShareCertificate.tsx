@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { message } from 'antd';
 import { Printer, Search, RotateCcw, Award, User } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
@@ -120,6 +121,7 @@ const ShareCertificate: React.FC = () => {
     setLoading(true);
     try {
       const response = await apiService.getShareCertificate({ memberNo: no });
+      if (isFailure(response)) { await notifyError(response, 'load the share certificate'); return; }
       const data: ShareData = (response as any)?.data || response;
 
       if (data && data.memberNo) {

@@ -2,6 +2,7 @@
 // Data for the Member Status window (ES-100): which retired members can be marked inactive, which are
 // still waiting for their RD to reach zero, who retires soon — plus the manual mark-inactive / re-activate actions.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isFailure, toastError } from '@/utils/dialog';
 import apiService from '../../../../services/api';
 
 export type StatusCategory = 'ready' | 'retired-rd' | 'upcoming';
@@ -107,6 +108,7 @@ export const useMemberStatus = () => {
   const history = async (memberNo: string): Promise<HistoryRow[]> => {
     try {
       const res = await apiService.getMemberStatusHistory(memberNo);
+      if (isFailure(res)) toastError(res, 'load the status history');
       const d = res.success ? unwrap(res.data) : [];
       return Array.isArray(d) ? d : [];
     } catch { return []; }

@@ -18,9 +18,22 @@ const fmt = (n: number | string) =>
 
 const TIER_LABEL: Record<number, string> = { 0: 'Grace', 1: 'Same-Month', 2: 'Monthly' };
 
+// Two views of the same quote. Simple shows what the operator needs to close the loan; Detailed shows
+// the full working (consolidation, payroll adjustments, the calculation, instalment tables). Both use
+// the same figures and the same Close Loan action. Warnings are shown in both, never hidden by Simple.
+type ClosureView = 'simple' | 'detailed';
+const viewKey = () => {
+    let user = '';
+    try { user = String(JSON.parse(localStorage.getItem('user') || '{}')?.username || ''); } catch { /* no saved user */ }
+    return `lms-loan-closure-view:${user}`;
+};
+const loadView = (): ClosureView => {
+    try { return localStorage.getItem(viewKey()) === 'detailed' ? 'detailed' : 'simple'; } catch { return 'simple'; }
+};
+
 const LoanEarlyClosureForm: React.FC<Props> = ({
     form, activeLoans, quote, quoteLoading, loading, message, closed, requireTypeConfirm,
-    updateForm, handleMemberLookup, handleLoanSelect, recalculate, toggleApplyRdShare,
+    updateForm, handleMemberLookup, handleLoanSelect, recalculate, toggleApplyRdShare, toggleAdjustPayrollLag, recordPayrollLagRefund,
     applySuggestedAdjustment, handleExecuteClosure, handleReset,
 }) => {
   const { t } = useTranslation();
@@ -30,6 +43,12 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
     const [showClosedLoans, setShowClosedLoans] = useState(false);
     const [showRepaymentHistory, setShowRepaymentHistory] = useState(false);
     const [showRbSchedule, setShowRbSchedule] = useState(false);
+    const [view, setViewState] = useState<ClosureView>(loadView);
+    const detailed = view === 'detailed';
+    const setView = (next: ClosureView) => {
+        setViewState(next);
+        try { localStorage.setItem(viewKey(), next); } catch { /* storage unavailable */ }
+    };
 
     const selectedLoan = activeLoans.find(l => l.loancaseno === form.selectedLoanCase);
     const selectedLoanIsClosed = !!selectedLoan && Number(selectedLoan.balance) <= 0;
@@ -108,9 +127,17 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Loan Early Closure')}</h1>
-                    <p className="aw-desc">{t('Foreclose a loan — outstanding principal + reducing-balance interest + prior dues')}</p>
+                    <p className="aw-desc">{detailed
+                        ? t('Foreclose a loan — outstanding principal + reducing-balance interest + prior dues')
+                        : t('Close a loan before its last instalment and collect what is owed')}</p>
                 </div>
                 <div className="aw-actions">
+                    <div className="aw-chips" role="radiogroup" aria-label={t('How much detail to show')}>
+                        <button type="button" role="radio" aria-checked={!detailed} className="aw-chip" onClick={() => setView('simple')}
+                            data-tip={t('Only what is needed to close the loan')} data-tip-pos="bottom">{t('Simple')}</button>
+                        <button type="button" role="radio" aria-checked={detailed} className="aw-chip" onClick={() => setView('detailed')}
+                            data-tip={t('The full working: history, calculation and tables')} data-tip-pos="bottom">{t('Detailed')}</button>
+                    </div>
                     {quote && !closed && !selectedLoanIsClosed && (
                         <span className="aw-pill tone-warning aw-fade-in"><AlertTriangle size={11} style={{ marginRight: 5 }} />{t('Irreversible action')}</span>
                     )}
@@ -233,6 +260,8 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 loantype={activeLoans.find(l => l.loancaseno === form.selectedLoanCase)?.loantype}
                                 showClosure={false}
                                 refreshKey={closed ? 'closed' : 'open'}
+                                compact={!detailed}
+                                onShowDetails={() => setView('detailed')}
                             />
                         )}
                     </div>
@@ -285,10 +314,34 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     </p>
                                 )}
 
+                                {/* Simple view: the loan's history in one line each. The full blocks are in Detailed. */}
+                                {!detailed && (quote.consolidationHistory.absorbedCases.length > 0 || quote.consolidationHistory.consolidatedIntoLoancaseno || (!selectedLoanIsClosed && quote.payrollAdjustments?.length > 0)) && (
+                                    <div className="aw-rows">
+                                        {quote.consolidationHistory.absorbedCases.length > 0 && (
+                                            <div className="aw-row">
+                                                <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><GitMerge size={13} /> {t('Includes earlier loan')}</span>
+                                                <span className="aw-row-value">{quote.consolidationHistory.absorbedCases.map(c => `#${c.loancaseno}`).join(', ')}</span>
+                                            </div>
+                                        )}
+                                        {quote.consolidationHistory.consolidatedIntoLoancaseno && (
+                                            <div className="aw-row">
+                                                <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><GitMerge size={13} /> {t('Folded into loan')}</span>
+                                                <span className="aw-row-value">#{quote.consolidationHistory.consolidatedIntoLoancaseno}</span>
+                                            </div>
+                                        )}
+                                        {!selectedLoanIsClosed && quote.payrollAdjustments?.length > 0 && (
+                                            <div className="aw-row">
+                                                <span className="aw-row-label">{t('Old-loan payroll deductions already credited')}</span>
+                                                <span className="aw-row-value">−₹{fmt(quote.payrollLagPrincipalOffset || 0)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Consolidation History — absorbed cases and/or the case this rolled into. */}
-                                {(quote.consolidationHistory.absorbedCases.length > 0 || quote.consolidationHistory.consolidatedIntoLoancaseno) && (
+                                {detailed && (quote.consolidationHistory.absorbedCases.length > 0 || quote.consolidationHistory.consolidatedIntoLoancaseno) && (
                                     <div className="aw-alert aw-alert-info" style={{ marginBottom: 0, flexDirection: 'column', gap: 6 }}>
-                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
                                             <GitMerge size={13} /> {t('Consolidation History')}
                                         </span>
                                         {quote.consolidationHistory.absorbedCases.length > 0 && (
@@ -319,20 +372,72 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 )}
 
                                 {!selectedLoanIsClosed && <>
+                                    {/* ES-522: delayed old-loan payroll money (principal + interest) owed back to the member. First thing under the quote header so it is easy to find. */}
+                                    {quote.payrollLagPrincipalOffset > 0 && (
+                                        <div className="aw-panel aw-panel-accent" style={{ border: '1px solid var(--aw-accent)' }}>
+                                            <div className="aw-stack" style={{ gap: 10 }}>
+                                                <div>
+                                                    <span className="aw-strong" style={{ display: 'block' }}>{t('Old-loan payroll was still deducted after this loan started')}</span>
+                                                    <span className="aw-meta">{t('Collected after the consolidation: principal ₹{{1}} + interest ₹{{2}}. Tick the box to treat it as money owed back to the member instead of reducing the loan.', { 1: fmt(quote.payrollLagPrincipalOffset), 2: fmt(quote.payrollLagInterestOffset ?? 0) })}</span>
+                                                </div>
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', borderRadius: 8, background: 'var(--aw-surface, transparent)', border: '1px solid var(--aw-border, #ccc)' }}>
+                                                    <input type="checkbox" checked={form.adjustPayrollLag} onChange={e => toggleAdjustPayrollLag(e.target.checked)} style={{ width: 20, height: 20, accentColor: 'var(--aw-accent)' }} />
+                                                    <span className="aw-strong">{t('Return the delayed payroll principal and interest to the member (do not reduce the loan)')}</span>
+                                                </label>
+                                                {form.adjustPayrollLag && (
+                                                    <div className="aw-stack aw-fade-in" style={{ gap: 6 }}>
+                                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontVariantNumeric: 'tabular-nums' }}>
+                                                            <thead>
+                                                                <tr className="aw-meta" style={{ textAlign: 'right' }}>
+                                                                    <th style={{ textAlign: 'left', fontWeight: 600 }}>{t('Part')}</th>
+                                                                    <th style={{ fontWeight: 600 }}>{t('Collected')}</th>
+                                                                    <th style={{ fontWeight: 600 }}>{t('Already returned')}</th>
+                                                                    <th style={{ fontWeight: 600 }}>{t('Still owed back')}</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr style={{ textAlign: 'right' }}>
+                                                                    <td style={{ textAlign: 'left' }}>{t('Principal')}</td>
+                                                                    <td>₹{fmt(quote.payrollLagPrincipalOffset)}</td>
+                                                                    <td>₹{fmt(quote.payrollLagRefunded ?? 0)}</td>
+                                                                    <td className="aw-strong">₹{fmt(quote.payrollLagRefundDue ?? 0)}</td>
+                                                                </tr>
+                                                                <tr style={{ textAlign: 'right' }}>
+                                                                    <td style={{ textAlign: 'left' }}>{t('Interest')}</td>
+                                                                    <td>₹{fmt(quote.payrollLagInterestOffset ?? 0)}</td>
+                                                                    <td>₹{fmt(quote.payrollLagInterestRefunded ?? 0)}</td>
+                                                                    <td className="aw-strong">₹{fmt(quote.payrollLagInterestRefundDue ?? 0)}</td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                        <div className="aw-meta">{t('Outstanding principal shown and used for the average interest: ₹{{1}}. What is still owed back is deducted only from the amount the member pays; the loan account closes at ₹{{2}} principal.', { 1: fmt(quote.outstandingPrincipal), 2: fmt(quote.ledgerPrincipal ?? quote.outstandingPrincipal) })}</div>
+                                                        {((quote.payrollLagRefundDue ?? 0) > 0 || (quote.payrollLagInterestRefundDue ?? 0) > 0) && (
+                                                            <button type="button" className="aw-btn" style={{ alignSelf: 'flex-start' }} onClick={() => {
+                                                                const v = window.prompt(t('Voucher no. of the refund already paid to the member (optional)'), '');
+                                                                if (v === null) return;
+                                                                recordPayrollLagRefund(quote.payrollLagRefundDue ?? 0, quote.payrollLagInterestRefundDue ?? 0, v);
+                                                            }}>{t('Record that ₹{{1}} principal + ₹{{2}} interest was already returned to the member', { 1: fmt(quote.payrollLagRefundDue ?? 0), 2: fmt(quote.payrollLagInterestRefundDue ?? 0) })}</button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Future installments note */}
-                                    {quote.totalInstallments - quote.paidInstallments - quote.unpaidInstallments.length > 0 && (
+                                    {detailed && quote.totalInstallments - quote.paidInstallments - quote.unpaidInstallments.length > 0 && (
                                         <div className="aw-panel">
                                             <span className="aw-meta">
                                                 {t('This closure also settles the remaining principal of')}{' '}
                                                 <b>{quote.totalInstallments - quote.paidInstallments - quote.unpaidInstallments.length} {t('installment(s) not yet due')}</b>{' '}
-                                                — already included in Outstanding Principal above.
+                                                {t('— already included in Outstanding Principal below.')}
                                             </span>
                                         </div>
                                     )}
 
-                                    {quote.payrollAdjustments?.length > 0 && (
+                                    {detailed && quote.payrollAdjustments?.length > 0 && (
                                         <div className="aw-alert aw-alert-info" style={{ marginBottom: 0, flexDirection: 'column', gap: 8 }}>
-                                            <span style={{ textTransform: 'uppercase', letterSpacing: '.04em' }}>{t('Previous-Loan Payroll Adjustment')}</span>
+                                            <span style={{ fontWeight: 700 }}>{t('Previous-Loan Payroll Adjustment')}</span>
                                             <span style={{ fontWeight: 500 }}>
                                                 {t("These BSP deductions belong to predecessor-loan payroll. Principal collected after this loan's consolidation is credited once against closure principal, but never counts as or advances a current-loan installment. The predecessor interest is shown for audit and is not charged again here.")}
                                             </span>
@@ -359,24 +464,56 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                         </div>
                                     )}
 
+                                    {/* Simple view: the settlement as one short sum. */}
+                                    {!detailed && (
+                                        <div className="aw-rows">
+                                            <div className="aw-row">
+                                                <span className="aw-row-label">{t('Outstanding principal')}</span>
+                                                <span className="aw-row-value">₹{fmt(quote.outstandingPrincipal)}</span>
+                                            </div>
+                                            <div className="aw-row">
+                                                <span className="aw-row-label">{t('Closure interest')}</span>
+                                                <span className="aw-row-value">₹{fmt(quote.closureInterest)}</span>
+                                            </div>
+                                            <div className="aw-row">
+                                                <span className="aw-row-label">
+                                                    {t('Penal interest')}
+                                                    {quote.unpaidInstallments.length > 0 && <span className="aw-meta"> · {t('{{1}} instalment{{2}} past due', { 1: quote.unpaidInstallments.length, 2: quote.unpaidInstallments.length === 1 ? '' : 's' })}</span>}
+                                                </span>
+                                                <span className="aw-row-value" style={Number(quote.penalInterest) > 0 ? { color: 'var(--aw-danger)' } : undefined}>₹{fmt(quote.penalInterest)}</span>
+                                            </div>
+                                            {quote.adjustment !== 0 && (
+                                                <div className="aw-row">
+                                                    <span className="aw-row-label">{t('Adjustment')}</span>
+                                                    <span className="aw-row-value">₹{fmt(quote.adjustment)}</span>
+                                                </div>
+                                            )}
+                                            <div className="aw-row aw-row-total">
+                                                <span className="aw-row-label">{t('Settlement Amount')}</span>
+                                                <span className="aw-row-value">₹{fmt(quote.finalClosureAmount)}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Amount grid */}
-                                    <div className="aw-two">
-                                        {amountCell('Outstanding Principal', `₹${fmt(quote.outstandingPrincipal)}`)}
-                                        {amountCell('NR Interest (already-due installments)', `₹${fmt(quote.nrInterest)}`)}
+                                    {detailed && <div className="aw-two">
+                                        {amountCell(t('Outstanding Principal'), `₹${fmt(quote.outstandingPrincipal)}`)}
+                                        {amountCell(t('NR Interest (already-due installments)'), `₹${fmt(quote.nrInterest)}`)}
                                         {quote.futureInstallmentCount > 0 && amountCell(
                                             `AP Closure Interest (${quote.futureInstallmentCount} future installment${quote.futureInstallmentCount === 1 ? '' : 's'})`,
                                             `₹${fmt(quote.apInterest)}`,
                                             { span: true, note: `Average remaining principal ₹${fmt(quote.averageRemainingPrincipal)} × monthly rate = ₹${fmt(quote.averageRbInterest)} average RB interest/month` },
                                         )}
-                                        {amountCell('Closure Interest (NR + AP)', `₹${fmt(quote.closureInterest)}`)}
-                                        {amountCell('Penal Interest', `₹${fmt(quote.penalInterest)}`, {
-                                            tone: 'var(--aw-danger)',
+                                        {amountCell(t('Closure Interest (NR + AP)'), `₹${fmt(quote.closureInterest)}`)}
+                                        {amountCell(t('Penal Interest'), `₹${fmt(quote.penalInterest)}`, {
+                                            // Red only when there is a penalty to collect; ₹0.00 is not a warning.
+                                            ...(Number(quote.penalInterest) > 0 ? { tone: 'var(--aw-danger)' } : {}),
                                             note: quote.penaltyPolicy?.enabled
                                                 ? `Global rate ${fmt(quote.penaltyPolicy.annualRate)}% p.a.; active from ${quote.penaltyPolicy.activationDate || 'configured activation date'}.`
                                                 : 'Tiered loan penalty policy is disabled.',
                                         })}
-                                        {quote.adjustment !== 0 && amountCell('Applicable Adjustment', `₹${fmt(quote.adjustment)}`, { span: true })}
-                                    </div>
+                                        {quote.adjustment !== 0 && amountCell(t('Applicable Adjustment'), `₹${fmt(quote.adjustment)}`, { span: true })}
+                                    </div>}
 
                                     {quote.suggestedAdjustment !== 0 && (
                                         <div className="aw-alert aw-alert-info" style={{ marginBottom: 0, flexDirection: 'column', gap: 6 }}>
@@ -397,7 +534,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     )}
 
                                     {/* Calculation trace */}
-                                    <div className="aw-panel">
+                                    {detailed && <div className="aw-panel">
                                         <span className="aw-label">{t('How This Was Calculated (AP / Average-Principal Method)')}</span>
                                         <div className="aw-meta" style={{ fontFamily: "'IBM Plex Mono', 'Courier New', monospace", lineHeight: 1.55, display: 'flex', flexDirection: 'column', gap: 5 }}>
                                             {quote.effectiveSchedule && (
@@ -444,13 +581,23 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
+                                    </div>}
 
-                                    {/* Final amount highlight */}
-                                    <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <span className="aw-strong">{t('Settlement Amount')}</span>
-                                        <span className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 7px)', color: 'var(--aw-accent)' }}>₹{fmt(quote.finalClosureAmount)}</span>
-                                    </div>
+                                    {/* Settlement total. A plain total row: the one highlighted figure in this card is Payable by Member. */}
+                                    {detailed && (
+                                        <div className="aw-rows">
+                                            <div className="aw-row aw-row-total">
+                                                <span className="aw-row-label">{t('Settlement Amount')}</span>
+                                                <span className="aw-row-value">₹{fmt(quote.finalClosureAmount)}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {quote.currentMonthInGrace && (
+                                        <div className="aw-panel aw-meta">
+                                            {t('Installment #{{1}} (due {{2}}) is still inside its grace period: it is counted with the remaining installments and no flat interest is charged for this month.', { 1: quote.currentMonthInGrace.installmentNo, 2: quote.currentMonthInGrace.dueDate })}
+                                        </div>
+                                    )}
 
                                     {/* RD / Share Value adjustment */}
                                     <div className="aw-panel">
@@ -487,13 +634,26 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     </div>
 
                                     {/* Payable by member — the real collection figure */}
-                                    <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderColor: 'var(--aw-accent)' }}>
-                                        <span className="aw-strong">{t('Payable by Member')}</span>
-                                        <span className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 9px)', color: 'var(--aw-accent)' }}>₹{fmt(quote.payableByMember)}</span>
+                                    <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderColor: 'var(--aw-accent)' }}>
+                                        <span>
+                                            <span className="aw-strong" style={{ display: 'block' }}>{t('Payable by Member')}</span>
+                                            <span className="aw-meta">
+                                                {quote.rdShareAdjustment && form.applyRdShare && quote.rdShareAdjustment.appliedFromRdShare > 0
+                                                    ? t('Settlement amount less ₹{{1}} from RD / share value', { 1: fmt(quote.rdShareAdjustment.appliedFromRdShare) })
+                                                    : t('The amount to collect before closing')}
+                                            </span>
+                                        </span>
+                                        <span className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 9px)', color: 'var(--aw-accent)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>₹{fmt(quote.payableByMember)}</span>
                                     </div>
 
+                                    {!detailed && (
+                                        <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setView('detailed')}>
+                                            <ChevronRight size={12} /> {t('See how this was calculated')}
+                                        </button>
+                                    )}
+
                                     {/* Unpaid installments table */}
-                                    {quote.unpaidInstallments.length > 0 && (
+                                    {detailed && quote.unpaidInstallments.length > 0 && (
                                         <div>
                                             <span className="aw-label">{quote.unpaidInstallments.length} {t('Installment(s) Contributing to Overdue Interest / Penal')}</span>
                                             <div className="aw-table-wrap" style={{ maxHeight: 280 }}>
@@ -521,7 +681,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 </>}
 
                                 {/* Repayment History — collapsible, every real payment on this case */}
-                                {quote.repaymentHistory.length > 0 && (
+                                {(detailed || selectedLoanIsClosed) && quote.repaymentHistory.length > 0 && (
                                     <div>
                                         {toggleRow(showRepaymentHistory, () => setShowRepaymentHistory(v => !v), <History size={12} />, `Repayment History (${quote.repaymentHistory.length})`)}
                                         {showRepaymentHistory && (
@@ -549,7 +709,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 )}
 
                                 {/* RB Schedule — collapsible, the full amortization plan */}
-                                {quote.rbSchedule.length > 0 && (
+                                {detailed && quote.rbSchedule.length > 0 && (
                                     <div>
                                         {toggleRow(showRbSchedule, () => setShowRbSchedule(v => !v), <Table2 size={12} />, `Reducing-Balance Schedule (${quote.rbSchedule.length} installments)`)}
                                         {showRbSchedule && (

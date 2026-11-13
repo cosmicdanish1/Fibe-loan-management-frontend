@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { isFailure, toastError } from '@/utils/dialog';
 import type { WingMasterData, WingMasterHookReturn } from '../interface/interface';
 import { apiService } from '../../../../services/api';
 
@@ -29,6 +30,7 @@ export const useWingMaster = (): WingMasterHookReturn => {
     if (!code) return;
     try {
       const check = await apiService.getWing(code);
+      if (isFailure(check)) toastError(check, 'load the wing');
       if (check.success && check.data) {
         const wing = (check.data as any).data || check.data;
         setData(prev => ({

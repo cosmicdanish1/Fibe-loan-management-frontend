@@ -5,6 +5,7 @@ import type {
 } from '../interface/interface';
 import apiService from '../../../../services/api';
 import { message } from 'antd';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { useTranslation } from 'react-i18next';
 
 export const useSignatureScanning = (): SignatureScanningHookReturn => {
@@ -57,6 +58,13 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
       // BUG FIX: the endpoint returns { success: true, data: null } for a
       // nonexistent member rather than a 404 — must be checked explicitly,
       // otherwise `member.mbno` below throws and surfaces as a generic error.
+      // A failed call (network, 500) is not 'member not found'.
+      if (isFailure(response)) {
+        await notifyError(response, 'look up the member');
+        setSignatureObjectUrl('');
+        setData(prev => ({ ...prev, loading: false, memberId: '', memberName: '' }));
+        return;
+      }
       const member = response?.success ? response.data : null;
       if (member) {
         // BUG FIX 1: member_master returns lowercase DB column names.
@@ -87,7 +95,7 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
       }
     } catch (error) {
       console.error(error);
-      message.error(t('Error searching member'));
+      await notifyError(null, 'look up the member');
       setData(prev => ({ ...prev, loading: false }));
     }
   }, [loadSignatureImage, setSignatureObjectUrl]);
@@ -100,11 +108,13 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
 
     try {
       // BUG FIX 2: use master (member_master) endpoint, not the TypeORM members endpoint
-      await apiService.deleteMemberSignatureMaster(data.memberId);
+      const res = await apiService.deleteMemberSignatureMaster(data.memberId);
+      // apiService.request does not throw: without this check a failed delete was reported as "Signature purged".
+      if (isFailure(res)) { await notifyError(res, 'delete the signature'); return; }
       setSignatureObjectUrl('');
       message.success(t('Signature purged'));
     } catch (error) {
-      message.error(t('Failed to delete signature'));
+      await notifyError(null, 'delete the signature');
     }
   }, [data.memberId, setSignatureObjectUrl]);
 
@@ -137,7 +147,7 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
         setData(prev => ({ ...prev, loading: false }));
         return true;
       } else {
-        message.error(t('Upload failed'));
+        await notifyError(response, 'upload the signature');
         setData(prev => ({ ...prev, loading: false }));
         return false;
       }

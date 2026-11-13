@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Save, RotateCcw, PenTool, Upload as UploadIcon, X as XIcon, CheckCircle2, User, Camera } from 'lucide-react';
+import { Search, Save, RotateCcw, PenTool, Upload as UploadIcon, X as XIcon, CheckCircle2, User, Camera, RefreshCw } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import apiService from '../../../../services/api';
 import { getApiBaseUrlSync } from '../../../../services/apiVersionConfig';
@@ -28,7 +28,7 @@ const MemberSelect: React.FC<MemberSelectProps> = ({ value, onChange, children, 
 
   return (
     <AntSelect
-      className={`mm-select ${className}`.trim()}
+      className={`aw-select ${className}`.trim()}
       popupClassName="aw-select-popup"
       aria-label={ariaLabel}
       value={value}
@@ -797,40 +797,29 @@ const MemberMaster: React.FC = () => {
   });
 
   return (
-    <div className="app-window mm-form h-screen flex flex-col overflow-auto">
+    <div className="app-window mm-form">
       {/* Header */}
-      <div className="mm-page-header px-4 py-3 flex items-center justify-between gap-4 shrink-0">
+      <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <p className="mm-eyebrow">{t('Member records')}</p>
-          <h1 className="mm-page-title">{t('Member Master')}</h1>
-          <p className="mm-page-description">{t('Create and manage member information.')}</p>
+          <h1 className="aw-title">{t('Member Master')}</h1>
+          <p className="aw-desc">{t('Create and manage member information.')}</p>
         </div>
         {formData.memberNumber ? <MobileAccessBadge memberNo={String(formData.memberNumber)} /> : null}
       </div>
 
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-3 rounded-lg shadow-xl border ${notification.type === 'success'
-          ? 'bg-green-50 border-green-200 text-green-800'
-          : notification.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-800'
-            : 'bg-violet-50 border-violet-200 text-violet-800'
-          }`} style={{ minWidth: 320, maxWidth: 420 }}>
+        <div className={`mm-toast aw-alert aw-fade-in ${notification.type === 'success' ? 'aw-alert-success' : notification.type === 'error' ? 'aw-alert-danger' : 'aw-alert-info'}`} role="status">
           <div className="flex items-start gap-2">
             <div className="flex-1">
-              <div className={`font-black fz-body uppercase tracking-wide ${notification.type === 'success' ? 'text-green-800' :
-                notification.type === 'error' ? 'text-red-800' : 'text-violet-800'
-                }`}>
-                {notification.type === 'success' ? '✅ ' : notification.type === 'error' ? '❌ ' : 'ℹ️ '}
-                {notification.message}
-              </div>
+              <div className="aw-strong" style={{ color: 'inherit' }}>{notification.message}</div>
               {/* Structured detail card for create-success */}
               {notification.detail && (
-                <div className="mt-2 bg-white rounded-md p-2 border border-green-200 space-y-1">
+                <div className="aw-panel mt-2 space-y-1">
                   {Object.entries(notification.detail).map(([k, v]) => (
                     <div key={k} className="flex gap-2 fz-label">
-                      <span className="text-gray-500 font-semibold w-28 shrink-0">{k}:</span>
-                      <span className={`font-black ${k === 'Member No' ? 'text-blue-700 fz-body' : 'text-gray-800'}`}>{v}</span>
+                      <span className="aw-meta w-28 shrink-0">{k}:</span>
+                      <span className={`aw-strong ${k === 'Member No' ? 'mm-accent-text' : ''}`}>{v}</span>
                     </div>
                   ))}
                 </div>
@@ -843,7 +832,7 @@ const MemberMaster: React.FC = () => {
             </div>
             <button
               onClick={() => setNotification(null)}
-              className="ml-2 text-gray-400 hover:text-gray-600"
+              className="aw-icon-btn is-sm" aria-label={t('Close')}
             >
               ✕
             </button>
@@ -852,13 +841,13 @@ const MemberMaster: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <div className="mm-content flex-1 px-4 py-4 overflow-auto">
-        <div className="mm-content-inner mx-auto">
+      <div className="aw-content">
+        <div className="mm-content-inner aw-stack">
           {/* Identity Card */}
-          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
-            <div className="mm-section-heading">
-              <span className="mm-section-number" aria-hidden="true">01</span>
-              <h2>{t('Member identity')}</h2>
+          <div className="mm-section aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon mm-section-number" aria-hidden="true">01</span>
+              <h2 className="aw-card-title">{t('Member identity')}</h2>
             </div>
             {/* Top Row: Avatar, Member Number, Search, Active */}
             <div className="mm-record-toolbar flex flex-row flex-wrap items-center gap-2 mb-2">
@@ -872,38 +861,38 @@ const MemberMaster: React.FC = () => {
                     alt={t('Profile')}
                     onClick={() => document.getElementById('photo-profile-header')?.click()}
                     onError={() => { if (!mediaQueue.profile) setMediaSavedUrls(p => { const n = { ...p }; delete n.profile; return n; }); }}
-                    className="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-sm cursor-pointer transition-transform group-hover:scale-105"
+                    className="mm-avatar w-11 h-11 rounded-full object-cover cursor-pointer transition-transform group-hover:scale-105"
                   />
                 ) : (
                   <div
                     onClick={() => document.getElementById('photo-profile-header')?.click()}
-                    className="w-11 h-11 rounded-full border border-slate-200 shadow-sm cursor-pointer bg-violet-600 flex items-center justify-center text-white font-black text-sm uppercase transition-transform group-hover:scale-105"
+                    className="mm-avatar mm-avatar-initials w-11 h-11 rounded-full cursor-pointer flex items-center justify-center uppercase transition-transform group-hover:scale-105"
                   >
                     {((formData.firstName?.[0] || '') + (formData.lastName?.[0] || '')) || <User size={18} />}
                   </div>
                 )}
                 <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
-                  <Camera size={13} className="text-white" />
+                  <Camera size={13} />
                 </div>
-                {mediaQueue.profile && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 fz-nano font-black text-amber-600 bg-white px-1 rounded whitespace-nowrap shadow">{t('on save')}</span>}
+                {mediaQueue.profile && <span className="mm-queued mm-queued-badge absolute -bottom-1 left-1/2 -translate-x-1/2 px-1 rounded whitespace-nowrap">{t('on save')}</span>}
               </div>
 
               <div className="flex items-center gap-1.5">
-                <label className="text-slate-500 fz-tiny font-semibold whitespace-nowrap uppercase tracking-wide">{t('Member No')}</label>
+                <label className="aw-label mm-inline-label">{t('Member No')}</label>
                 <input
                   type="text"
                   value={formData.memberNumber}
                   onChange={(e) => handleInputChange('memberNumber', e.target.value)}
-                  className="px-2 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium w-24"
+                  className="aw-input mm-memberno"
                   placeholder={t('Auto')}
                 />
                 <button
                   onClick={handleSearchClick}
                   disabled={isLoadingMember}
-                  className="px-2 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md fz-caption font-semibold transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide"
+                  className="aw-btn aw-btn-secondary"
                 >
                   {isLoadingMember ? (
-                    <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                    <RefreshCw size={12} className="aw-spin" />
                   ) : (
                     <Search className="w-3 h-3" />
                   )}
@@ -911,17 +900,14 @@ const MemberMaster: React.FC = () => {
                 </button>
                 <button
                   onClick={() => document.getElementById('kyc-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                  className="px-2 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md fz-caption font-semibold transition-colors flex items-center gap-1 uppercase tracking-wide"
+                  className="aw-btn aw-btn-secondary"
                   data-tip={t('Jump to KYC Documents')} data-tip-pos="bottom"
                 >
                   <UploadIcon className="w-3 h-3" /> <span>{t('KYC Docs')}</span>
                 </button>
               </div>
 
-              <span className={`mm-record-mode fz-tiny font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${formData.memberNumber
-                ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-violet-50 text-violet-700 border border-violet-200'
-                }`}>
+              <span className={`mm-record-mode aw-pill ${formData.memberNumber ? 'tone-success' : ''}`}>
                 {formData.memberNumber ? t('Editing member') : t('New member')}
               </span>
 
@@ -930,19 +916,16 @@ const MemberMaster: React.FC = () => {
                   onClick={() => handleInputChange('isActive', !formData.isActive)}
                   role="checkbox"
                   aria-checked={formData.isActive}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border cursor-pointer select-none transition-colors ${formData.isActive
-                    ? 'border-green-300 bg-green-50 text-green-700'
-                    : 'border-slate-300 bg-white text-slate-500'
-                    }`}
+                  className={`mm-active-toggle ${formData.isActive ? 'is-on' : ''}`} tabIndex={0} onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); handleInputChange('isActive', !formData.isActive); } }}
                 >
-                  <div className={`w-1.5 h-1.5 rounded-full ${formData.isActive ? 'bg-green-600' : 'bg-slate-400'}`} />
-                  <span className="fz-caption font-bold uppercase tracking-wide">{formData.isActive ? t('Active') : t('Inactive')}</span>
+                  <span className="mm-dot" aria-hidden="true" />
+                  <span className="mm-active-label">{formData.isActive ? t('Active') : t('Inactive')}</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleReset}
                   disabled={isSaving}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-semibold rounded-md shadow-sm transition-colors fz-caption uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                  className="aw-btn aw-btn-secondary"
                 >
                   <RotateCcw className="w-3 h-3" /> <span>{t('Reset')}</span>
                 </button>
@@ -950,9 +933,9 @@ const MemberMaster: React.FC = () => {
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex items-center gap-1 px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-md shadow-sm transition-colors fz-caption uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                  className="aw-btn aw-btn-primary"
                 >
-                  {isSaving ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-3 h-3" />}
+                  {isSaving ? <RefreshCw size={12} className="aw-spin" /> : <Save className="w-3 h-3" />}
                   <span>{isSaving ? t('Saving…') : formData.memberNumber ? t('Update') : t('Create')}</span>
                 </button>
               </div>
@@ -961,7 +944,7 @@ const MemberMaster: React.FC = () => {
             {/* Name Fields Row */}
             <div className="grid grid-cols-12 gap-2">
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Title')}</label>
+                <label className="aw-label">{t('Title')}</label>
                 <MemberSelect
                   ariaLabel="Title"
                   value={formData.title}
@@ -975,32 +958,32 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('First Name *')}</label>
+                <label className="aw-label">{t('First Name *')}</label>
                 <input
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder={t('Enter first name')}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Middle Name')}</label>
+                <label className="aw-label">{t('Middle Name')}</label>
                 <input
                   type="text"
                   value={formData.middleName}
                   onChange={(e) => handleInputChange('middleName', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder={t('Enter middle name')}
                 />
               </div>
               <div className="col-span-4">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Last Name *')}</label>
+                <label className="aw-label">{t('Last Name *')}</label>
                 <input
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder={t('Enter last name')}
                 />
               </div>
@@ -1008,12 +991,12 @@ const MemberMaster: React.FC = () => {
             {/* Father's Name Row */}
             <div className="grid grid-cols-12 gap-2 mt-2">
               <div className="col-span-12">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t("Father's Name")}</label>
+                <label className="aw-label">{t("Father's Name")}</label>
                 <input
                   type="text"
                   value={formData.fatherName}
                   onChange={(e) => handleInputChange('fatherName', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder={t("Enter father's name")}
                 />
               </div>
@@ -1021,39 +1004,37 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Personal & Employment Details Card */}
-          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
-            <div className="mm-section-heading">
-              <span className="mm-section-number" aria-hidden="true">02</span>
-              <h2>{t('Personal & employment')}</h2>
+          <div className="mm-section aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon mm-section-number" aria-hidden="true">02</span>
+              <h2 className="aw-card-title">{t('Personal & employment')}</h2>
             </div>
 
             {/* Row 1: Gender, DOB, Age, Monthly Contribution, Compulsary Deposit */}
             <div className="grid grid-cols-12 gap-2 mb-2">
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-1 uppercase tracking-wide">{t('Gender')}</label>
-                <div className="flex gap-1.5">
+                <label className="aw-label">{t('Gender')}</label>
+                <div className="flex gap-1.5" role="radiogroup" aria-label={t('Gender')}>
                   <div
+                    role="radio" tabIndex={0} aria-checked={formData.gender === 'male'}
                     onClick={() => handleInputChange('gender', 'male')}
-                    className={`mm-gender-option flex-1 text-center px-1.5 py-1 rounded-md fz-tiny font-bold cursor-pointer uppercase border transition-colors ${formData.gender === 'male'
-                      ? 'border-violet-500 bg-violet-50 text-violet-700'
-                      : 'border-slate-300 bg-white text-slate-500'
-                      }`}
+                    onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); handleInputChange('gender', 'male'); } }}
+                    className="aw-chip mm-gender-option flex-1 justify-center"
                   >
                     {t('Male')}
                   </div>
                   <div
+                    role="radio" tabIndex={0} aria-checked={formData.gender === 'female'}
                     onClick={() => handleInputChange('gender', 'female')}
-                    className={`mm-gender-option flex-1 text-center px-1.5 py-1 rounded-md fz-tiny font-bold cursor-pointer uppercase border transition-colors ${formData.gender === 'female'
-                      ? 'border-violet-500 bg-violet-50 text-violet-700'
-                      : 'border-slate-300 bg-white text-slate-500'
-                      }`}
+                    onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); handleInputChange('gender', 'female'); } }}
+                    className="aw-chip mm-gender-option flex-1 justify-center"
                   >
                     {t('Female')}
                   </div>
                 </div>
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Date Of Birth')}</label>
+                <label className="aw-label">{t('Date Of Birth')}</label>
                 <input
                   type="date"
                   value={formData.dateOfBirth}
@@ -1075,41 +1056,41 @@ const MemberMaster: React.FC = () => {
                       handleInputChange('age', age);
                     }
                   }}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
               <div className="col-span-1">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Age')}</label>
+                <label className="aw-label">{t('Age')}</label>
                 <input
                   type="number"
                   value={formData.age}
                   onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 0)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-slate-50 text-slate-500 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input mm-auto"
                   placeholder={t('Auto')}
                   title={t('Age is auto-calculated from Date of Birth')}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Monthly Contrib.')}</label>
+                <label className="aw-label">{t('Monthly Contrib.')}</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.monthlyContribution}
                   onChange={(e) => handleInputChange('monthlyContribution', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder="0.00"
                 />
               </div>
               <div className="col-span-4">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Compulsary Dep.')}</label>
+                <label className="aw-label">{t('Compulsary Dep.')}</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.compulsatoryDeposit}
                   onChange={(e) => handleInputChange('compulsatoryDeposit', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder="0.00"
                 />
                 {/* RD starts automatically for a new member using this amount
@@ -1121,9 +1102,9 @@ const MemberMaster: React.FC = () => {
                     type="checkbox"
                     checked={formData.startRd}
                     onChange={(e) => handleInputChange('startRd', e.target.checked)}
-                    className="accent-violet-600"
+                    style={{ accentColor: 'var(--aw-accent)' }}
                   />
-                  <span className="text-slate-500 fz-tiny font-medium">{t('Start RD for this member')}</span>
+                  <span className="aw-meta">{t('Start RD for this member')}</span>
                 </label>
               </div>
             </div>
@@ -1131,16 +1112,16 @@ const MemberMaster: React.FC = () => {
             {/* Row 2: Sr.No, Designation, Basic Pay, ShareAmt, Insurance */}
             <div className="grid grid-cols-12 gap-2 mb-2">
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Sr.No/EPF/P.NO')}</label>
+                <label className="aw-label">{t('Sr.No/EPF/P.NO')}</label>
                 <input
                   type="text"
                   value={formData.srNoEpfPfNo}
                   onChange={(e) => handleInputChange('srNoEpfPfNo', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Designation')}</label>
+                <label className="aw-label">{t('Designation')}</label>
                 <MemberSelect
                   ariaLabel="Designation"
                   searchable
@@ -1427,26 +1408,26 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Basic Pay')}</label>
+                <label className="aw-label">{t('Basic Pay')}</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.basicPay}
                   onChange={(e) => handleInputChange('basicPay', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder="0.00"
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('ShareAmt')}</label>
+                <label className="aw-label">{t('ShareAmt')}</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.shareAmt}
                   onChange={(e) => handleInputChange('shareAmt', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder="0.00"
                 />
               </div>
@@ -1463,17 +1444,15 @@ const MemberMaster: React.FC = () => {
                   aria-checked={formData.isInsured}
                   className="flex items-center gap-1.5 py-1 cursor-pointer select-none"
                 >
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center fz-nano font-black text-white ${formData.isInsured ? 'bg-violet-600 border-violet-600' : 'border-slate-300 bg-white'
-                    }`}>
+                  <div className={`mm-check ${formData.isInsured ? 'is-on' : ''}`}>
                     {formData.isInsured && '✓'}
                   </div>
-                  <span className="text-slate-500 fz-tiny font-semibold uppercase tracking-wide">{t('Insured')}</span>
+                  <span className="aw-meta">{t('Insured')}</span>
                 </div>
               </div>
               <div className="col-span-2">
-                <label className={`fz-tiny font-semibold block mb-0.5 uppercase tracking-wide ${formData.isInsured ? 'text-slate-500' : 'text-slate-300'
-                  }`}>
-                  {t('Insurance Amt')} {formData.isInsured && <span className="text-red-500">*</span>}
+                <label className="aw-label" style={formData.isInsured ? undefined : { opacity: 0.55 }}>
+                  {t('Insurance Amt')} {formData.isInsured && <span style={{ color: 'var(--aw-danger)' }}>*</span>}
                 </label>
                 <input
                   type="number"
@@ -1482,16 +1461,13 @@ const MemberMaster: React.FC = () => {
                   value={formData.amountOfInsurance}
                   onChange={(e) => handleInputChange('amountOfInsurance', e.target.value)}
                   disabled={!formData.isInsured}
-                  className={`w-full px-1.5 py-1 border rounded-md focus:outline-none fz-caption font-medium transition-colors ${formData.isInsured
-                    ? 'border-slate-300 bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20'
-                    : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed'
-                    }`}
+                  className="aw-input"
                   placeholder={formData.isInsured ? "0.00" : t("Check 'Insured'")}
                   title={formData.isInsured ? t('Enter the insurance amount') : t("Please check 'Insured' checkbox first")}
                 />
                 {!formData.isInsured && (
-                  <p className="fz-mini text-slate-400 mt-0.5">
-                    💡 {t('Check "Insured" to enable')}
+                  <p className="aw-meta mt-0.5">
+                    {t('Check "Insured" to enable')}
                   </p>
                 )}
               </div>
@@ -1500,30 +1476,30 @@ const MemberMaster: React.FC = () => {
             {/* Row 3: Membership Date, Retirement Date, Department */}
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Membership Date')}</label>
+                <label className="aw-label">{t('Membership Date')}</label>
                 <input
                   type="date"
                   value={formData.membershipDate}
                   onChange={(e) => handleInputChange('membershipDate', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Retirement Date')}</label>
+                <label className="aw-label">{t('Retirement Date')}</label>
                 <input
                   type="date"
                   value={formData.retirementDate}
                   onChange={(e) => handleInputChange('retirementDate', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Department')}</label>
+                <label className="aw-label">{t('Department')}</label>
                 <input
                   type="text"
                   value={formData.department}
                   onChange={(e) => handleInputChange('department', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
             </div>
@@ -1531,23 +1507,23 @@ const MemberMaster: React.FC = () => {
             {/* Row 4: PanCard, Aadhar, Phone, FRS, BranchMS */}
             <div className="grid grid-cols-12 gap-2 mt-2">
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('PanCard No')}</label>
+                <label className="aw-label">{t('PanCard No')}</label>
                 <input
                   type="text"
                   value={formData.panCardNo}
                   onChange={(e) => handleInputChange('panCardNo', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder="ABCDE1234F"
                   maxLength={10}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Aadhar No')}</label>
+                <label className="aw-label">{t('Aadhar No')}</label>
                 <input
                   type="text"
                   value={formData.aadharNo}
                   onChange={(e) => handleInputChange('aadharNo', e.target.value.replace(/\D/g, '').slice(0, 12))}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder={'12 ' + t('digits')}
                   maxLength={12}
                 />
@@ -1557,22 +1533,22 @@ const MemberMaster: React.FC = () => {
                   discarded on every save. No landline column exists to wire it to; adding one
                   needs a deliberate decision, not a silent schema change. */}
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('F.R.S. Number')}</label>
+                <label className="aw-label">{t('F.R.S. Number')}</label>
                 <input
                   type="text"
                   value={formData.frsNumber}
                   onChange={(e) => handleInputChange('frsNumber', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder={t('FRS No')}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Branch MS No')}</label>
+                <label className="aw-label">{t('Branch MS No')}</label>
                 <input
                   type="text"
                   value={formData.branchMsNo}
                   onChange={(e) => handleInputChange('branchMsNo', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder={t('Branch MS')}
                 />
               </div>
@@ -1580,25 +1556,25 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Address & Status Details Card */}
-          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
-            <div className="mm-section-heading">
-              <span className="mm-section-number" aria-hidden="true">03</span>
-              <h2>{t('Address & status')}</h2>
+          <div className="mm-section aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon mm-section-number" aria-hidden="true">03</span>
+              <h2 className="aw-card-title">{t('Address & status')}</h2>
             </div>
 
             {/* Row 1: Home Address, Status, Date Withdrawl/Retire */}
             <div className="grid grid-cols-12 gap-2 mb-2">
               <div className="col-span-6">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Home Address')}</label>
+                <label className="aw-label">{t('Home Address')}</label>
                 <textarea
                   value={formData.homeAddress}
                   onChange={(e) => handleInputChange('homeAddress', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium h-16 resize-none"
+                  className="aw-input mm-textarea"
                   placeholder={t('Enter complete home address...')}
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Status')}</label>
+                <label className="aw-label">{t('Status')}</label>
                 <MemberSelect
                   ariaLabel="Status"
                   value={formData.status}
@@ -1611,12 +1587,12 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Date Withdrawl/Retire')}</label>
+                <label className="aw-label">{t('Date Withdrawl/Retire')}</label>
                 <input
                   type="date"
                   value={formData.dateOfWithdrawRetire}
                   onChange={(e) => handleInputChange('dateOfWithdrawRetire', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
             </div>
@@ -1624,7 +1600,7 @@ const MemberMaster: React.FC = () => {
             {/* Row 2: Cast Category and Member Type */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Cast Category')}</label>
+                <label className="aw-label">{t('Cast Category')}</label>
                 <MemberSelect
                   ariaLabel="Cast Category"
                   value={formData.castCategory}
@@ -1641,7 +1617,7 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Member Type')}</label>
+                <label className="aw-label">{t('Member Type')}</label>
                 <MemberSelect
                   ariaLabel="Member Type"
                   value={formData.memberType}
@@ -1658,16 +1634,16 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Organization & Nominee Details Card */}
-          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
-            <div className="mm-section-heading">
-              <span className="mm-section-number" aria-hidden="true">04</span>
-              <h2>{t('Organization & nominee')}</h2>
+          <div className="mm-section aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon mm-section-number" aria-hidden="true">04</span>
+              <h2 className="aw-card-title">{t('Organization & nominee')}</h2>
             </div>
 
             {/* Division/RO and Branch */}
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Division/RO *')}</label>
+                <label className="aw-label">{t('Division/RO *')}</label>
                 <MemberSelect
                   ariaLabel="Division/RO"
                   value={formData.divisionRo}
@@ -1677,7 +1653,7 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Branch')}</label>
+                <label className="aw-label">{t('Branch')}</label>
                 <MemberSelect
                   ariaLabel="Branch"
                   value={formData.branch}
@@ -1697,25 +1673,25 @@ const MemberMaster: React.FC = () => {
             {/* Nominee Section */}
             <div className="grid grid-cols-12 gap-2">
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t("Nominee's Name")}</label>
+                <label className="aw-label">{t("Nominee's Name")}</label>
                 <input
                   type="text"
                   value={formData.nomineeName}
                   onChange={(e) => handleInputChange('nomineeName', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
               <div className="col-span-3">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Nominee Address')}</label>
+                <label className="aw-label">{t('Nominee Address')}</label>
                 <input
                   type="text"
                   value={formData.nomineeAddress}
                   onChange={(e) => handleInputChange('nomineeAddress', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Relation')}</label>
+                <label className="aw-label">{t('Relation')}</label>
                 <MemberSelect
                   ariaLabel="Relation"
                   value={formData.relationWithNominee}
@@ -1735,21 +1711,21 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Declaration Date')}</label>
+                <label className="aw-label">{t('Declaration Date')}</label>
                 <input
                   type="date"
                   value={formData.declarationDate}
                   onChange={(e) => handleInputChange('declarationDate', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
               <div className="col-span-2">
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Remarks')}</label>
+                <label className="aw-label">{t('Remarks')}</label>
                 <input
                   type="text"
                   value={formData.remarks}
                   onChange={(e) => handleInputChange('remarks', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                 />
               </div>
             </div>
@@ -1757,27 +1733,27 @@ const MemberMaster: React.FC = () => {
           </div>
 
           {/* Documents & Media Card */}
-          <div className="mm-section border border-slate-200 rounded-lg p-2.5 bg-white shadow-sm mb-2">
-            <div className="mm-section-heading">
-              <span className="mm-section-number" aria-hidden="true">05</span>
-              <h2>{t('Documents & media')}</h2>
+          <div className="mm-section aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon mm-section-number" aria-hidden="true">05</span>
+              <h2 className="aw-card-title">{t('Documents & media')}</h2>
             </div>
 
             {/* Mobile + Email */}
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Mobile No')}</label>
+                <label className="aw-label">{t('Mobile No')}</label>
                 <input type="tel" value={formData.mobileNumber}
                   onChange={(e) => handleInputChange('mobileNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder={'10 ' + t('digits (starts 6-9)')}
                   maxLength={10} />
               </div>
               <div>
-                <label className="text-slate-500 fz-tiny font-semibold block mb-0.5 uppercase tracking-wide">{t('Email Address')}</label>
+                <label className="aw-label">{t('Email Address')}</label>
                 <input type="email" value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-1.5 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 fz-caption font-medium"
+                  className="aw-input"
                   placeholder={t('member@example.com')} />
               </div>
             </div>
@@ -1788,12 +1764,12 @@ const MemberMaster: React.FC = () => {
                 const labels: Record<string, string> = { profile: 'Profile Photo', doc_front: 'ID — Front', doc_back: 'ID — Back' };
                 const preview = mediaPreviews[type] || mediaSavedUrls[type] || '';
                 return (
-                  <div key={type} className="border border-slate-200 rounded-lg bg-white p-1.5 flex flex-col items-center gap-1">
-                    <span className="fz-mini font-bold text-slate-500 uppercase tracking-wide">{labels[type]}</span>
+                  <div key={type} className="mm-subcard flex flex-col items-center gap-1">
+                    <span className="aw-label" style={{ margin: 0 }}>{labels[type]}</span>
                     {preview ? (
                       <div className="relative">
                         <img src={preview} alt={labels[type]}
-                          className="w-20 h-20 object-cover rounded-md border border-slate-200"
+                          className="mm-thumb w-20 h-20 object-cover"
                           onError={() => {
                             // 404 = no file saved yet — clear saved URL so placeholder shows
                             if (!mediaQueue[type]) {
@@ -1801,12 +1777,12 @@ const MemberMaster: React.FC = () => {
                             }
                           }} />
                         <button onClick={() => { setMediaQueue(p => { const n = {...p}; delete n[type]; return n; }); setMediaPreviews(p => { const n = {...p}; delete n[type]; return n; }); }}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center hover:bg-red-600">
+                          className="mm-x mm-x-danger absolute -top-1 -right-1" aria-label={t('Remove')}>
                           <XIcon size={8} />
                         </button>
                       </div>
                     ) : (
-                      <div className="w-20 h-20 border border-dashed border-slate-300 rounded-md flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:border-violet-400 hover:bg-violet-50"
+                      <div className="mm-drop w-20 h-20 flex flex-col items-center justify-center cursor-pointer"
                         onClick={() => document.getElementById(`photo-${type}`)?.click()}>
                         <UploadIcon size={16} />
                         <span className="fz-micro mt-0.5">{t('Click to upload')}</span>
@@ -1815,21 +1791,21 @@ const MemberMaster: React.FC = () => {
                     <input id={`photo-${type}`} type="file" accept="image/jpeg,image/png" className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoSelect(type, f); e.target.value = ''; }} />
                     <button onClick={() => document.getElementById(`photo-${type}`)?.click()}
-                      className="fz-micro font-bold text-violet-600 hover:text-violet-800 uppercase tracking-wide px-2 py-0.5 border border-slate-300 rounded-md hover:bg-violet-50">
+                      className="aw-btn aw-btn-secondary aw-btn-sm">
                       {preview ? t('Change') : t('Browse')}
                     </button>
-                    {mediaQueue[type] && <span className="fz-nano text-amber-600 font-black">⏳ {t('Will upload on save')}</span>}
+                    {mediaQueue[type] && <span className="mm-queued">{t('Will upload on save')}</span>}
                   </div>
                 );
               })}
             </div>
 
             {/* KYC Documents — typed, multi-upload */}
-            <div id="kyc-section" className="border border-slate-200 rounded-lg bg-white p-2 mb-2">
+            <div id="kyc-section" className="mm-subcard mb-2">
               <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
-                <span className="fz-tiny font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                <span className="aw-label flex items-center gap-1" style={{ margin: 0 }}>
                   {t('KYC Documents')}
-                  {kycDocuments.length > 0 && <span className="bg-violet-50 text-violet-700 px-1.5 rounded-full fz-mini">{kycDocuments.length}</span>}
+                  {kycDocuments.length > 0 && <span className="aw-pill">{kycDocuments.length}</span>}
                 </span>
                 <div className="flex items-center gap-1.5">
                   <MemberSelect ariaLabel="KYC document type" value={kycDocType} onChange={setKycDocType} className="mm-kyc-select">
@@ -1838,26 +1814,26 @@ const MemberMaster: React.FC = () => {
                   <input id="kyc-file" type="file" accept="image/jpeg,image/png,application/pdf" className="hidden"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleKycUpload(f); e.target.value = ''; }} />
                   <button onClick={() => document.getElementById('kyc-file')?.click()} disabled={kycUploading || !formData.memberNumber}
-                    className="fz-tiny font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 disabled:cursor-not-allowed px-2.5 py-1 rounded-md uppercase tracking-wide flex items-center gap-1 transition-colors">
+                    className="aw-btn aw-btn-primary aw-btn-sm">
                     <UploadIcon size={10} /> {kycUploading ? t('Uploading…') : t('Add Document')}
                   </button>
                 </div>
               </div>
               {!formData.memberNumber && (
-                <p className="fz-mini text-amber-600 font-semibold mb-1">💡 {t('Save the member first to attach KYC documents.')}</p>
+                <p className="aw-meta mb-1" style={{ color: 'var(--aw-warning)' }}>{t('Save the member first to attach KYC documents.')}</p>
               )}
               {kycDocuments.length === 0 ? (
-                <p className="fz-mini text-slate-400 font-semibold text-center py-2 uppercase tracking-wide">{t('No documents uploaded')}</p>
+                <p className="aw-meta text-center py-2">{t('No documents uploaded')}</p>
               ) : (
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5">
                   {kycDocuments.map((doc) => (
-                    <div key={doc.id} className="border border-violet-100 rounded-full bg-violet-50 px-2.5 py-1 flex items-center justify-between gap-1.5">
+                    <div key={doc.id} className="mm-chip flex items-center justify-between gap-1.5">
                       <a href={`${getApiBaseUrlSync()}/members/master/${formData.memberNumber}/document/${doc.id}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1">
-                        <span className="block fz-mini font-bold text-violet-700 uppercase truncate">{doc.docType}</span>
-                        <span className="block fz-micro text-violet-400 truncate" title={doc.fileName}>{doc.fileName || t('View')}</span>
+                        <span className="block aw-strong truncate" style={{ color: 'var(--aw-accent)' }}>{doc.docType}</span>
+                        <span className="block aw-meta truncate" title={doc.fileName}>{doc.fileName || t('View')}</span>
                       </a>
                       <button onClick={() => handleKycDelete(doc.id)}
-                        className="bg-white text-violet-400 rounded-full w-4 h-4 flex items-center justify-center hover:bg-red-500 hover:text-white shrink-0 transition-colors">
+                        className="mm-x mm-x-danger shrink-0" aria-label={t('Remove')}>
                         <XIcon size={8} />
                       </button>
                     </div>
@@ -1867,13 +1843,13 @@ const MemberMaster: React.FC = () => {
             </div>
 
             {/* Signature */}
-            <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
-              <div className="bg-violet-600 px-2 py-0.5 flex items-center justify-between">
-                <span className="fz-mini font-black text-white uppercase tracking-wide flex items-center gap-1"><PenTool size={9} /> {t('Signature')}</span>
+            <div className="mm-subcard mm-sign">
+              <div className="mm-sign-head flex items-center justify-between">
+                <span className="aw-label flex items-center gap-1" style={{ margin: 0 }}><PenTool size={11} /> {t('Signature')}</span>
                 <div className="flex gap-1">
                   {(['draw', 'upload'] as const).map(m => (
                     <button key={m} onClick={() => setSigMode(m)}
-                      className={`fz-micro font-black px-2 py-0.5 rounded uppercase tracking-wide transition-all ${sigMode === m ? 'bg-white text-violet-700' : 'text-violet-200 hover:text-white'}`}>
+                      role="radio" aria-checked={sigMode === m} className="aw-chip mm-sign-mode">
                       {m === 'draw' ? '✏ ' + t('Draw') : '⬆ ' + t('Upload')}
                     </button>
                   ))}
@@ -1883,29 +1859,29 @@ const MemberMaster: React.FC = () => {
               {/* Draw tab */}
               {sigMode === 'draw' && (
                 <div>
-                  <div className="relative bg-white">
+                  <div className="mm-sign-pad relative">
                     <canvas ref={canvasRef} width={600} height={120}
-                      className="w-full cursor-crosshair border-b border-violet-100 select-none"
+                      className="mm-sign-canvas w-full cursor-crosshair select-none"
                       style={{ touchAction: 'none', display: 'block', height: 140 }}
                       onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={stopDrawing} onMouseLeave={stopDrawing} />
                     {!hasDrawing && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <span className="fz-mini font-black text-slate-300 uppercase tracking-widest">{t('Sign here with mouse or touch')}</span>
+                        <span className="aw-meta">{t('Sign here with mouse or touch')}</span>
                       </div>
                     )}
                   </div>
-                  <div className="px-2 py-1 bg-slate-50 flex items-center justify-between border-t border-slate-200">
+                  <div className="mm-sign-foot flex items-center justify-between">
                     <button onClick={clearCanvas} disabled={!hasDrawing}
-                      className="fz-micro font-bold px-2 py-0.5 border border-slate-300 rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-30 uppercase">
+                      className="aw-btn aw-btn-secondary aw-btn-sm">
                       {t('Clear')}
                     </button>
                     <div className="flex items-center gap-2">
-                      {sigQueue && <span className="fz-nano text-amber-600 font-black">⏳ {t('Will upload on save')}</span>}
+                      {sigQueue && <span className="mm-queued">{t('Will upload on save')}</span>}
                       {savedSigUrl && !sigQueue && (
-                        <span className="fz-nano text-emerald-600 font-black flex items-center gap-0.5"><CheckCircle2 size={8} /> {t('Saved')}</span>
+                        <span className="mm-saved flex items-center gap-0.5"><CheckCircle2 size={10} /> {t('Saved')}</span>
                       )}
                       <button onClick={queueDrawing} disabled={!hasDrawing}
-                        className="fz-micro font-bold px-3 py-0.5 bg-violet-600 hover:bg-violet-500 disabled:bg-slate-300 text-white rounded-md uppercase tracking-wide">
+                        className="aw-btn aw-btn-primary aw-btn-sm">
                         {t('Use This Signature')}
                       </button>
                     </div>
@@ -1916,11 +1892,11 @@ const MemberMaster: React.FC = () => {
               {/* Upload tab */}
               {sigMode === 'upload' && (
                 <div className="p-2">
-                  <div className="border border-dashed border-slate-300 rounded-md p-4 flex flex-col items-center gap-1 cursor-pointer hover:border-violet-500 hover:bg-violet-50"
+                  <div className="mm-drop p-4 flex flex-col items-center gap-1 cursor-pointer"
                     onClick={() => document.getElementById('sig-upload')?.click()}>
-                    <UploadIcon size={20} className="text-slate-300" />
-                    <span className="fz-mini font-bold text-slate-500 uppercase">{t('Click to upload signature (JPG/PNG)')}</span>
-                    {sigQueue && <span className="fz-micro text-amber-600 font-black">⏳ {t('{{1}} — will upload on save', { 1: sigQueue.name })}</span>}
+                    <UploadIcon size={20} />
+                    <span className="aw-meta">{t('Click to upload signature (JPG/PNG)')}</span>
+                    {sigQueue && <span className="mm-queued">{t('{{1}} — will upload on save', { 1: sigQueue.name })}</span>}
                   </div>
                   <input id="sig-upload" type="file" accept="image/jpeg,image/png" className="hidden"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSigQueue(f); } e.target.value = ''; }} />
@@ -1929,11 +1905,11 @@ const MemberMaster: React.FC = () => {
 
               {/* Saved signature preview */}
               {savedSigUrl && !sigQueue && (
-                <div className="border-t border-slate-200 px-2 py-1 bg-emerald-50 flex items-center gap-2">
-                  <CheckCircle2 size={10} className="text-emerald-600" />
-                  <span className="fz-micro font-black text-emerald-700 uppercase">{t('Saved Signature:')}</span>
+                <div className="mm-sign-saved flex items-center gap-2">
+                  <CheckCircle2 size={12} className="mm-saved" />
+                  <span className="mm-saved">{t('Saved Signature:')}</span>
                   <img src={savedSigUrl} alt={t('Saved signature')}
-                    className="max-h-10 max-w-32 object-contain bg-white border border-emerald-200 rounded p-0.5"
+                    className="mm-sign-img max-h-10 max-w-32 object-contain"
                     onError={() => setSavedSigUrl('')} />
                 </div>
               )}
@@ -1949,108 +1925,64 @@ const MemberMaster: React.FC = () => {
         onSelect={(member) => handleMemberSelect(member.memberNo)}
       />
 
-      {/* Member Master presentation. Colors, sizes, spacing, radius, and shadows all come from the shared
-          window tokens (--aw-*), so every Settings option applies here without a local copy. */}
+      {/* Member Master layout. Controls, cards, buttons, chips and colours come from the shared window kit
+          (aw-*), so every Settings option applies here without a local copy. Only the things the kit does not
+          have are defined below: the form grid spacing, the photo / KYC / signature pieces and the Active switch. */}
       <style>{`
-        .mm-form {
-          --mm-control-height: max(30px, calc(var(--fz-base) * 2.45 * var(--ui-density, 1)));
-          --mm-card-padding-y: calc(15px * var(--ui-density, 1));
-          --mm-card-padding-x: calc(18px * var(--ui-density, 1));
-          --mm-field-gap-x: calc(13px * var(--ui-density, 1));
-          --mm-field-gap-y: calc(11px * var(--ui-density, 1));
-          --mm-radius: var(--aw-radius);
-          --mm-bg: var(--aw-bg);
-          --mm-surface: var(--aw-surface);
-          --mm-surface-muted: var(--aw-surface-muted);
-          --mm-text: var(--aw-text);
-          --mm-muted: var(--aw-muted);
-          --mm-border: var(--aw-border);
-          --mm-border-strong: var(--aw-border-strong);
-          --mm-accent: var(--aw-accent);
-          --mm-accent-soft: var(--aw-accent-soft);
-          --mm-focus: var(--aw-focus);
-          --mm-shadow: var(--aw-shadow);
-          background: var(--mm-bg);
-          color: var(--mm-text);
-        }
-        .mm-page-header { background: var(--mm-surface); border-bottom: 1px solid var(--mm-border); }
-        .mm-page-title { margin: 0; color: var(--mm-text); font-size: var(--type-page-title); line-height: 1.2; font-weight: 700; letter-spacing: -.025em; }
-        .mm-page-description { margin: 3px 0 0; color: var(--mm-muted); font-size: calc(var(--type-body-size) - 1px); line-height: 1.35; }
-        .mm-eyebrow { margin: 0 0 3px; color: var(--mm-accent); font-size: calc(var(--fz-base) - 3px); line-height: 1; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-        .mm-content { padding: 14px 16px; background: var(--mm-bg); }
-        .mm-content-inner { max-width: 1440px; }
-        .mm-form .mm-section { margin-bottom: 12px; padding: var(--mm-card-padding-y) var(--mm-card-padding-x); border-color: var(--mm-border) !important; border-radius: calc(var(--mm-radius) * 1.8); background: var(--mm-surface) !important; box-shadow: var(--mm-shadow); }
-        .mm-section-heading { display: flex; align-items: center; gap: 9px; padding-bottom: 10px; margin-bottom: 11px; border-bottom: 1px solid var(--mm-border); }
-        .mm-section-heading h2 { margin: 0; color: var(--mm-text); font-size: var(--type-panel-title); line-height: 1.25; font-weight: 700; letter-spacing: -.01em; }
-        .mm-section-number { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; flex: none; border-radius: calc(var(--mm-radius) * .9); color: var(--mm-accent); background: var(--mm-accent-soft); font-size: calc(var(--fz-base) - 2px); font-weight: 700; font-variant-numeric: tabular-nums; }
-        .mm-section > .grid { column-gap: var(--mm-field-gap-x); row-gap: var(--mm-field-gap-y); margin-bottom: 0; }
-        .mm-section > .grid + .grid { margin-top: var(--mm-field-gap-y); }
-        .mm-section .grid label:not(.flex), .mm-record-toolbar label { display: block; margin-bottom: 4px; color: var(--mm-muted); font-size: calc(var(--type-label-size) + 1px); line-height: 1.2; font-weight: 700; letter-spacing: .04em; }
-        .mm-section input:not([type="checkbox"]):not([type="file"]):not(.ant-select-selection-search-input), .mm-section textarea { min-height: var(--mm-control-height); padding: 5px 10px; border-radius: var(--mm-radius); font-size: var(--type-field-size); line-height: 1.35; }
-        .mm-section textarea { min-height: 64px; }
-        .mm-form input:not(.ant-select-selection-search-input), .mm-form textarea { border-color: var(--mm-border-strong); background: var(--mm-surface-muted); color: var(--mm-text); transition-property: border-color, box-shadow, background-color !important; transition-duration: .22s !important; transition-timing-function: var(--aw-ease) !important; }
-        .mm-form input:not(.ant-select-selection-search-input):hover, .mm-form textarea:hover { border-color: color-mix(in srgb, var(--mm-accent) 45%, var(--mm-border-strong)); }
-        .mm-form input:not(.ant-select-selection-search-input):focus, .mm-form textarea:focus { border-color: var(--mm-accent) !important; background: var(--mm-surface) !important; box-shadow: 0 0 0 3px var(--mm-focus) !important; outline: none; }
-        .mm-form input:disabled, .mm-form textarea:disabled { background: var(--mm-surface-muted); color: var(--mm-muted); opacity: .8; }
-        .mm-form input::placeholder, .mm-form textarea::placeholder { color: var(--mm-muted); opacity: .8; }
-
-        .mm-form .mm-select { display: block; width: 100%; min-width: 0; font-size: var(--type-field-size); }
-        .mm-form .mm-select .ant-select-selector { min-height: var(--mm-control-height); padding: 1px 10px; border: 1px solid var(--mm-border-strong) !important; border-radius: var(--mm-radius); background: var(--mm-surface-muted) !important; color: var(--mm-text); box-shadow: none; transition-property: border-color, box-shadow, background-color !important; transition-duration: .22s !important; transition-timing-function: var(--aw-ease) !important; }
-        .mm-form .mm-select:hover .ant-select-selector { border-color: color-mix(in srgb, var(--mm-accent) 45%, var(--mm-border-strong)) !important; }
-        .mm-form .mm-select.ant-select-focused .ant-select-selector { border-color: var(--mm-accent) !important; background: var(--mm-surface) !important; box-shadow: 0 0 0 3px var(--mm-focus); }
-        .mm-form .mm-select .ant-select-selection-item, .mm-form .mm-select .ant-select-selection-placeholder { color: var(--mm-text); line-height: calc(var(--mm-control-height) - 4px); }
-        .mm-form .mm-select .ant-select-arrow { color: var(--mm-muted); }
-        .mm-form .mm-select.ant-select-open .ant-select-arrow { color: var(--mm-accent); transform: rotate(180deg); transition: transform .26s var(--aw-ease) !important; transition-duration: .26s !important; }
-        .mm-form .mm-select .ant-select-selection-search-input { background: transparent; color: var(--mm-text); box-shadow: none !important; }
+        .mm-content-inner { max-width: 1440px; width: 100%; margin: 0 auto; }
+        .mm-form .mm-section > .grid { column-gap: calc(13px * var(--ui-density, 1)); row-gap: calc(11px * var(--ui-density, 1)); margin-bottom: 0; }
+        .mm-form .mm-section > .grid + .grid { margin-top: calc(11px * var(--ui-density, 1)); }
+        .mm-form .mm-textarea { height: auto; min-height: 64px; padding-top: 7px; resize: none; }
+        .mm-form .mm-auto { background: var(--aw-surface-muted); color: var(--aw-muted); }
         .mm-form .mm-kyc-select { min-width: 160px; }
+        .mm-form .mm-accent-text { color: var(--aw-accent); }
 
-        .mm-gender-option { display: inline-flex; align-items: center; justify-content: center; min-height: var(--mm-control-height); font-size: var(--type-label-size); border-radius: var(--mm-radius); transition-property: border-color, background-color, color !important; transition-duration: .22s !important; transition-timing-function: var(--aw-ease) !important; }
-        .mm-record-toolbar { padding-bottom: 11px; margin-bottom: 12px; border-bottom: 1px solid var(--mm-border); gap: 8px; }
-        .mm-record-toolbar label { margin-bottom: 0; }
-        .mm-record-toolbar button { min-height: calc(var(--mm-control-height) - 1px); padding: 6px 12px; border-radius: var(--mm-radius); font-size: var(--type-label-size); }
-        .mm-record-toolbar .bg-slate-700 { background: var(--mm-surface-muted) !important; color: var(--mm-text); border: 1px solid var(--mm-border-strong); box-shadow: none; }
-        .mm-record-toolbar .bg-slate-700:hover { background: var(--mm-accent-soft) !important; }
-        .mm-record-toolbar .bg-violet-600 { box-shadow: var(--aw-shadow-btn); }
-        .mm-record-mode { padding: 6px 10px; border-radius: 999px; font-size: var(--type-label-size); letter-spacing: .02em; }
-        .mm-form button:focus-visible, .mm-form [role="checkbox"]:focus-visible { outline: 3px solid var(--mm-focus); outline-offset: 2px; }
-
-        /* The window was written with Tailwind colors. Re-point them at the theme so the accent,
-           success, warning, and danger colors and Light/Dark all follow Settings. */
-        .app-window.mm-form :not(img).bg-white { background-color: var(--aw-surface) !important; }
-        .app-window.mm-form input.bg-white:not(:focus), .app-window.mm-form textarea.bg-white:not(:focus) { background-color: var(--aw-surface-muted) !important; }
-        .app-window.mm-form .bg-slate-50 { background-color: var(--aw-surface-muted) !important; }
-        .app-window.mm-form .text-slate-700, .app-window.mm-form .text-slate-600, .app-window.mm-form .text-gray-800 { color: var(--aw-text) !important; }
-        .app-window.mm-form .text-slate-500, .app-window.mm-form .text-slate-400, .app-window.mm-form .text-slate-300, .app-window.mm-form .text-gray-500, .app-window.mm-form .text-gray-400 { color: var(--aw-muted) !important; }
-        .app-window.mm-form .border-slate-300, .app-window.mm-form .border-slate-400 { border-color: var(--aw-border-strong) !important; }
-        .app-window.mm-form .border-slate-200 { border-color: var(--aw-border) !important; }
-        .app-window.mm-form .hover\\:bg-slate-50:hover, .app-window.mm-form .hover\\:bg-slate-100:hover { background-color: var(--aw-accent-soft) !important; }
-
-        .app-window.mm-form .bg-violet-600 { background-color: var(--aw-accent) !important; }
-        .app-window.mm-form .hover\\:bg-violet-700:hover, .app-window.mm-form .hover\\:bg-violet-500:hover { background-color: color-mix(in srgb, var(--aw-accent) 88%, #000) !important; }
-        .app-window.mm-form .bg-violet-50, .app-window.mm-form .hover\\:bg-violet-50:hover { background-color: var(--aw-accent-soft) !important; }
-        .app-window.mm-form .text-violet-700, .app-window.mm-form .text-violet-800, .app-window.mm-form .text-violet-600, .app-window.mm-form .text-violet-400, .app-window.mm-form .hover\\:text-violet-800:hover { color: var(--aw-accent) !important; }
-        .app-window.mm-form .text-violet-200 { color: color-mix(in srgb, var(--aw-accent) 40%, #fff) !important; }
-        .app-window.mm-form .border-violet-500, .app-window.mm-form .border-violet-600, .app-window.mm-form .hover\\:border-violet-500:hover, .app-window.mm-form .hover\\:border-violet-400:hover { border-color: var(--aw-accent) !important; }
-        .app-window.mm-form .border-violet-200, .app-window.mm-form .border-violet-100 { border-color: color-mix(in srgb, var(--aw-accent) 25%, transparent) !important; }
-        .app-window.mm-form .focus\\:border-violet-500:focus { border-color: var(--aw-accent) !important; }
-        .app-window.mm-form .focus\\:ring-violet-500\\/20:focus { --tw-ring-color: var(--aw-focus) !important; }
-        .app-window.mm-form .accent-violet-600 { accent-color: var(--aw-accent); }
-
-        .app-window.mm-form .bg-green-50, .app-window.mm-form .bg-emerald-50 { background-color: color-mix(in srgb, var(--aw-success) 10%, var(--aw-surface)) !important; }
-        .app-window.mm-form .text-green-700, .app-window.mm-form .text-green-800, .app-window.mm-form .text-emerald-600, .app-window.mm-form .text-emerald-700 { color: var(--aw-success) !important; }
-        .app-window.mm-form .border-green-200, .app-window.mm-form .border-green-300, .app-window.mm-form .border-emerald-200 { border-color: color-mix(in srgb, var(--aw-success) 30%, transparent) !important; }
-        .app-window.mm-form .bg-green-600 { background-color: var(--aw-success) !important; }
-        .app-window.mm-form .bg-red-50 { background-color: color-mix(in srgb, var(--aw-danger) 10%, var(--aw-surface)) !important; }
-        .app-window.mm-form .text-red-800, .app-window.mm-form .text-red-500 { color: var(--aw-danger) !important; }
-        .app-window.mm-form .border-red-200 { border-color: color-mix(in srgb, var(--aw-danger) 30%, transparent) !important; }
-        .app-window.mm-form .bg-red-500, .app-window.mm-form .hover\\:bg-red-600:hover, .app-window.mm-form .hover\\:bg-red-500:hover { background-color: var(--aw-danger) !important; }
-        .app-window.mm-form .text-amber-600 { color: var(--aw-warning) !important; }
-
-        @media (max-width: 1050px) {
-          .mm-content { padding: 11px; }
-          .mm-page-header { padding: 9px 12px; }
-          .mm-record-toolbar { gap: 6px; }
+        /* Record bar: photo, member no, search, mode, Active, Reset, Save */
+        .mm-record-toolbar { padding-bottom: 11px; margin-bottom: 12px; border-bottom: 1px solid var(--aw-border); gap: 8px; }
+        .mm-form .mm-inline-label { margin: 0; white-space: nowrap; }
+        .mm-form .mm-memberno { width: 110px; }
+        .mm-form .mm-avatar { border: 1px solid var(--aw-border); box-shadow: var(--aw-shadow); }
+        .mm-form .mm-avatar-initials { background: var(--aw-accent); color: #fff; font-weight: 700; font-size: calc(var(--type-body-size) - 1px); }
+        .mm-form .mm-queued { color: var(--aw-warning); font-size: calc(var(--type-label-size) + 1px); font-weight: 700; }
+        .mm-form .mm-queued::before { content: '↑ '; }
+        .mm-form .mm-queued-badge { background: var(--aw-surface); box-shadow: var(--aw-shadow); }
+        .mm-form .mm-saved { color: var(--aw-success); font-size: calc(var(--type-label-size) + 1px); font-weight: 700; }
+        .mm-form .mm-active-toggle {
+          display: inline-flex; align-items: center; gap: 7px; min-height: calc(var(--aw-control-h) - 2px); padding: 0 13px; border-radius: 999px; cursor: pointer; user-select: none;
+          border: 1px solid var(--aw-border-strong); background: var(--aw-surface-muted); color: var(--aw-muted); font-size: var(--type-label-size); font-weight: 700;
+          transition: background-color .2s var(--aw-ease), border-color .2s var(--aw-ease), color .2s var(--aw-ease) !important; transition-duration: .2s !important;
         }
+        .mm-form .mm-active-toggle .mm-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aw-muted); }
+        .mm-form .mm-active-toggle.is-on { color: var(--aw-success); border-color: color-mix(in srgb, var(--aw-success) 35%, transparent); background: color-mix(in srgb, var(--aw-success) 10%, var(--aw-surface)); }
+        .mm-form .mm-active-toggle.is-on .mm-dot { background: var(--aw-success); }
+        .mm-form .mm-active-toggle:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+        .mm-form .mm-gender-option { min-height: calc(var(--aw-control-h) - 2px); }
+
+        /* Insured box */
+        .mm-form .mm-check { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; border: 1px solid var(--aw-border-strong); background: var(--aw-surface-muted); color: #fff; font-size: 12px; font-weight: 700; }
+        .mm-form .mm-check.is-on { background: var(--aw-accent); border-color: var(--aw-accent); }
+
+        /* Photos, KYC and signature */
+        .mm-form .mm-subcard { padding: 10px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface-muted); }
+        .mm-form .mm-thumb { border-radius: var(--aw-radius); border: 1px solid var(--aw-border); }
+        .mm-form .mm-drop { border-radius: var(--aw-radius); border: 1px dashed var(--aw-border-strong); color: var(--aw-muted); background: var(--aw-surface); transition: border-color .2s var(--aw-ease), background-color .2s var(--aw-ease) !important; transition-duration: .2s !important; }
+        .mm-form .mm-drop:hover { border-color: var(--aw-accent); background: var(--aw-accent-soft); color: var(--aw-accent); }
+        .mm-form .mm-x { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; cursor: pointer; background: var(--aw-surface); color: var(--aw-muted); box-shadow: var(--aw-shadow); }
+        .mm-form .mm-x-danger:hover { background: var(--aw-danger); color: #fff; }
+        .mm-form .mm-chip { padding: 5px 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--aw-accent) 25%, transparent); background: var(--aw-accent-soft); }
+        .mm-form .mm-sign { padding: 0; overflow: hidden; }
+        .mm-form .mm-sign-head { padding: 7px 10px; border-bottom: 1px solid var(--aw-border); }
+        .mm-form .mm-sign-mode { min-height: 24px; padding: 0 10px; font-size: calc(var(--type-label-size) + 1px); }
+        .mm-form .mm-sign-pad { background: var(--aw-surface); }
+        .mm-form .mm-sign-canvas { border-bottom: 1px solid var(--aw-border); }
+        .mm-form .mm-sign-foot { padding: 7px 10px; background: var(--aw-surface-muted); }
+        .mm-form .mm-sign-saved { padding: 7px 10px; border-top: 1px solid var(--aw-border); background: color-mix(in srgb, var(--aw-success) 8%, var(--aw-surface)); }
+        .mm-form .mm-sign-img { background: var(--aw-surface); border: 1px solid var(--aw-border); border-radius: 6px; padding: 2px; }
+
+        /* Message after Create / Update / Load: top-right, above everything */
+        .mm-form .mm-toast { position: fixed; top: 16px; right: 16px; z-index: 50; min-width: 320px; max-width: 420px; margin: 0; box-shadow: var(--aw-shadow-pop); }
+
+        @media (max-width: 1050px) { .mm-record-toolbar { gap: 6px; } }
         @media (max-width: 720px) {
           .mm-section > .grid.grid-cols-12 > div { grid-column: span 6 / span 6; }
           .mm-section > .grid.grid-cols-12 > .col-span-12, .mm-section > .grid.grid-cols-12 > .col-span-6 { grid-column: span 12 / span 12; }

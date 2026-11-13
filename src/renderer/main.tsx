@@ -14,6 +14,10 @@ import '../utils/suppressAntdWarnings';
 import { initGlobalErrorHandlers } from '../services/globalErrorHandlers';
 initGlobalErrorHandlers();
 
+// Easter egg: signature in the DevTools console
+import { printKovaSignature } from '../utils/kovaSignature';
+printKovaSignature();
+
 // Animation settings (Settings > Animations): applied to <html> before the first screen is drawn.
 import { initMotion } from '../config/motion';
 initMotion();

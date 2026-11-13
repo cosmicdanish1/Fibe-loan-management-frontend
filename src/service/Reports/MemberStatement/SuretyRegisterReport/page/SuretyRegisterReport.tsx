@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { ConfigProvider, Button, Spin, Input, Modal, Select, Radio, message, theme } from 'antd';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
@@ -105,6 +106,7 @@ const SuretyRegisterReport: React.FC = () => {
       const params: { memberFrom: string; memberTo: string; loanType?: string } = { memberFrom, memberTo };
       if (loanType) params.loanType = loanType;
       const response = await apiService.getSuretyRegister(params);
+      if (isFailure(response)) { await notifyError(response, 'load the surety register'); return; }
       const data: SuretyRecord[] = Array.isArray(response)
         ? response
         : Array.isArray((response as any)?.data)

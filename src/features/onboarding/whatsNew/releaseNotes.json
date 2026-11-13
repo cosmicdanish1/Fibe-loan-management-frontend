@@ -2,6 +2,23 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.10.0",
+      "date": "2026-11-13",
+      "title": "A customisable dashboard and delayed-payroll handling",
+      "new": [
+        "Dashboard art: pick a background picture in Settings, Dashboard, from ten styles in Light and Dark, or import your own.",
+        "Customize mode on the dashboard: move, resize, switch cards off and add them back; Ctrl+N opens a new member.",
+        "Notice board with private sticky notes, colours and an important marker for administrators.",
+        "Early Closure now shows delayed payroll principal and interest separately, and lets you record that it was already returned to the member."
+      ],
+      "improved": [
+        "Settings is organised into clearer sections, with Alert Channels and System & Window.",
+        "Early Closure tells you when the closure date falls inside the grace period of an unpaid instalment.",
+        "Each PC's log now carries its own name, so support can tell which PC an error came from."
+      ],
+      "fixed": []
+    },
+    {
       "version": "1.9.0",
       "date": "2026-11-07",
       "title": "More languages, System Update and Mobile Control Center",

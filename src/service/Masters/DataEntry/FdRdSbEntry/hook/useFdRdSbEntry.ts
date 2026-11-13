@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { FdRdSbEntryData, FdRdSbEntryHookReturn, EntryType } from '../interface/FdRdSbEntryInterfaces';
 import { apiService } from '../../../../../services/api';
 import { useTranslation } from 'react-i18next';
-import { showDialog4 as showDialog } from '@/utils/dialog';
+import { showDialog4 as showDialog, toastError, isFailure } from '@/utils/dialog';
 
 const emptyForm = (entryType: EntryType = 'RD'): FdRdSbEntryData => ({
   entryType,
@@ -38,6 +38,7 @@ export const useFdRdSbEntry = (): FdRdSbEntryHookReturn => {
     if (!memberNo) return;
     try {
       const response = await apiService.getFdRdSbAccounts(memberNo, type);
+      if (isFailure(response)) toastError(response, 'load the member accounts');
       if (seq !== accountsSeq.current) return;
       const raw = Array.isArray(response.data) ? response.data : [];
       const accounts = raw.map((a: any) => ({

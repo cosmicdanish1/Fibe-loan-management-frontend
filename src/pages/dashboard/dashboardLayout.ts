@@ -1,9 +1,10 @@
-// Dashboard bento layout: rows of cards, each card with a width weight and each
-// row with an optional fixed height. Weights are relative, so when one card is
-// widened its neighbours in the row shrink and the row always fills the window.
+// Dashboard bento layout: rows of cards, each card with a width weight. Weights are relative, so when
+// one card is widened its neighbour in the row shrinks and the row always fills the window. A row's
+// height always comes from its content: fixed row heights let cards run into the row below, so a
+// height stored by an older version is dropped when the layout is loaded.
 
 export interface CardLayout { id: string; w: number }
-export interface RowLayout { id: string; h?: number; cards: CardLayout[] }
+export interface RowLayout { id: string; cards: CardLayout[] }
 
 // v2: the default now puts every widget in the compact four-to-a-row size; older saved layouts are dropped once.
 const STORAGE_KEY = 'lms-dashboard-layout-v2';
@@ -16,9 +17,23 @@ export const CARD_IDS = [
   'pendingVouchers', 'cashPosition', 'dayEndStatus', 'demandRecovery',
   'depositsSummary', 'upcomingMaturities', 'loanApplications',
   'overdueLoans', 'retiringMembers', 'newMembers',
+  'waitingApproval', 'todayCashFlow', 'rdDues',
+  'topDefaulters', 'disbursedThisMonth', 'lastBackup',
 ] as const;
 
 export type WidgetKey = typeof CARD_IDS[number];
+
+// Names shown in Customize mode (the "add a widget" list). English keys; pass through t().
+export const CARD_LABELS: Record<WidgetKey, string> = {
+  fyBanner: 'Financial Year', quickActions: 'Quick Actions', noticeBoard: 'Notice Board', shortcuts: 'Keyboard Shortcuts',
+  activeMembers: 'Active Members', sanctionedLoans: 'Sanctioned Loans', monthEndOutstanding: 'Loan Outstanding',
+  balanceDistribution: 'Member Balance Distribution', pendingVouchers: 'Vouchers To Pass', cashPosition: 'Cash Position',
+  dayEndStatus: 'Day-End Status', demandRecovery: 'Demand vs Recovery', depositsSummary: 'Deposits Summary',
+  upcomingMaturities: 'Upcoming Maturities', loanApplications: 'Loan Applications', overdueLoans: 'Overdue Loans',
+  retiringMembers: 'Retiring Members', newMembers: 'New Members',
+  waitingApproval: 'Waiting For Approval', todayCashFlow: "Today's Receipts vs Payments", rdDues: 'RD Instalments',
+  topDefaulters: 'Top Defaulters', disbursedThisMonth: 'Loans Disbursed', lastBackup: 'Last Database Backup',
+};
 export type WidgetConfig = Record<WidgetKey, boolean>;
 
 export const DEFAULT_WIDGET_CONFIG: WidgetConfig = Object.fromEntries(
@@ -26,8 +41,7 @@ export const DEFAULT_WIDGET_CONFIG: WidgetConfig = Object.fromEntries(
 ) as WidgetConfig;
 
 const defaultRows = (): RowLayout[] => [
-  { id: 'row-banner', cards: [{ id: 'fyBanner', w: 1 }] },
-  { id: 'row-actions', cards: [{ id: 'quickActions', w: 1 }] },
+  { id: 'row-top', cards: [{ id: 'quickActions', w: 1.6 }, { id: 'fyBanner', w: 1 }] },
   {
     id: 'row-today',
     cards: [
@@ -51,6 +65,8 @@ const defaultRows = (): RowLayout[] => [
     ],
   },
   { id: 'row-risk', cards: [{ id: 'overdueLoans', w: 1 }, { id: 'retiringMembers', w: 1 }] },
+  { id: 'row-work', cards: [{ id: 'waitingApproval', w: 1 }, { id: 'todayCashFlow', w: 1 }, { id: 'rdDues', w: 1 }] },
+  { id: 'row-lists', cards: [{ id: 'topDefaulters', w: 1 }, { id: 'disbursedThisMonth', w: 1 }, { id: 'lastBackup', w: 1 }] },
 ];
 
 export const DEFAULT_ROWS = defaultRows;
@@ -67,16 +83,12 @@ export const normalizeLayout = (input: RowLayout[]): RowLayout[] => {
       seen.add(c.id);
       return true;
     }).map(c => ({ id: c.id, w: Number.isFinite(c.w) && c.w > 0 ? c.w : 1 }));
-    if (cards.length) {
-      const next: RowLayout = { id: row.id, cards };
-      if (typeof row.h === 'number' && row.h > 0) next.h = row.h;
-      rows.push(next);
-    }
+    if (cards.length) rows.push({ id: row.id, cards });
   }
-  // Cards missing from the saved layout are added four to a row, the same compact size as the rest.
+  // Cards missing from the saved layout (widgets added in a later version) are added three to a row at the end.
   const missing = CARD_IDS.filter(id => !seen.has(id));
-  for (let i = 0; i < missing.length; i += 4) {
-    rows.push({ id: `row-new-${i / 4}-${missing[i]}`, cards: missing.slice(i, i + 4).map(id => ({ id, w: 1 })) });
+  for (let i = 0; i < missing.length; i += 3) {
+    rows.push({ id: `row-new-${i / 3}-${missing[i]}`, cards: missing.slice(i, i + 3).map(id => ({ id, w: 1 })) });
   }
   return rows;
 };

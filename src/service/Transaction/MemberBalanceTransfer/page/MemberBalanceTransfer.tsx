@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { isFailure, toastError } from '@/utils/dialog';
 import { Select, DatePicker, message } from 'antd';
 import { ArrowRightLeft, RotateCcw, Zap, Send, X, Users } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -52,6 +53,7 @@ const MemberBalanceTransfer: React.FC = () => {
     const loadHeads = async () => {
       try {
         const res = await apiService.getHeadList();
+        if (isFailure(res)) toastError(res, 'load the head list');
         if (res.success && res.data) setHeads(res.data);
       } catch { /* silent */ }
     };

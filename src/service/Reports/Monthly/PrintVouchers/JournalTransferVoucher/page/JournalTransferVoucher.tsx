@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
 import dayjs from 'dayjs';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
-import { showDialog3 as showDialog } from '@/utils/dialog';
+import { showDialog3 as showDialog, toastError, isFailure } from '@/utils/dialog';
 
 const { Option } = Select;
 
@@ -148,6 +148,7 @@ const JournalTransferVoucher: React.FC = () => {
   const fetchVoucherList = async () => {
     try {
       const response = await apiService.getAllJournalVoucherReferences();
+      if (isFailure(response)) toastError(response, 'load the voucher list');
       if (response.success && Array.isArray(response.data)) {
         setVoucherList(response.data);
       }

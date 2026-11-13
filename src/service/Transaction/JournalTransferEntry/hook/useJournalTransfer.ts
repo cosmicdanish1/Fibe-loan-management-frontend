@@ -7,7 +7,7 @@ import {
 } from '../interface/JournalTransferInterfaces';
 import { apiService } from '../../../../services/api';
 import { useTranslation } from 'react-i18next';
-import { showDialog4 as showDialog } from '@/utils/dialog';
+import { showDialog4 as showDialog, toastError, isFailure } from '@/utils/dialog';
 
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
     if ((window as any).electronAPI?.showMessageBox) {
@@ -72,6 +72,7 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
     const fetchMemberList = async () => {
         try {
             const response = await apiService.lookupMembers(undefined, 100);
+            if (isFailure(response)) toastError(response, 'load the member list');
             if (response.success && Array.isArray(response.data)) {
                 setMemberList(response.data.map((m: any) => ({
                     mbno: String(m.memberNo || m.mbno || ''),
@@ -84,6 +85,7 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
     const fetchVoucherList = async () => {
         try {
             const response = await apiService.getPendingVouchers();
+            if (isFailure(response)) toastError(response, 'load the pending vouchers');
             if (response.success && response.data) {
                 const items = Array.isArray(response.data) ? response.data : [];
                 // Store ALL flat rows so handleVoucherSelect can use them directly

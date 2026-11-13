@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { isFailure, toastError } from '@/utils/dialog';
 import { Select, Button, Input, ConfigProvider, DatePicker, Pagination, Modal, Radio, message, theme as antdTheme } from 'antd';
 import { ScrollText, Printer, Search, Download, FileCheck, Monitor } from 'lucide-react';
 import { apiService } from '../../../../../../services/api';
@@ -68,6 +69,7 @@ const DividendWarrant: React.FC = () => {
   const loadWings = async () => {
     try {
       const res = await apiService.getReportWings();
+      if (isFailure(res)) toastError(res, 'load the wing list');
       if (res?.success) {
         const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
         setWings(list);

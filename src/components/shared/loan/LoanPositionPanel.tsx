@@ -85,9 +85,17 @@ interface Props {
     showClosure?: boolean;
     /** Change this to make the panel reload (for example after a payment is recorded). */
     refreshKey?: unknown;
+    /**
+     * Compact mode (the Early Closure window's Simple view): only what needs the operator's attention.
+     * Notices and a ledger-vs-record difference are always shown; the full tables are left out.
+     * Nothing that asks for a check is ever hidden by this mode.
+     */
+    compact?: boolean;
+    /** Compact mode: called by "See details", so the window can switch to its detailed view. */
+    onShowDetails?: () => void;
 }
 
-const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showClosure = true, refreshKey }) => {
+const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showClosure = true, refreshKey, compact = false, onShowDetails }) => {
   const { t } = useTranslation();
     const [pos, setPos] = useState<Position | null>(null);
     const [loading, setLoading] = useState(false);
@@ -148,8 +156,8 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
             <div className="aw-card-head">
                 <span className="aw-card-icon"><Scale size={14} /></span>
                 <div>
-                    <h2 className="aw-card-title">{t('Loan Position')}</h2>
-                    <p className="aw-meta">{t('Worked out now from the ledger and the loan terms. Nothing here is saved; correct anything that looks wrong with Journal/Transfer Entry.')}</p>
+                    <h2 className="aw-card-title">{compact ? t('Checks Before Closing') : t('Loan Position')}</h2>
+                    {!compact && <p className="aw-meta">{t('Worked out now from the ledger and the loan terms. Nothing here is saved; correct anything that looks wrong with Journal/Transfer Entry.')}</p>}
                 </div>
                 <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" style={{ marginLeft: 'auto' }} onClick={() => void load()} disabled={loading}>
                     <RefreshCw size={13} className={loading ? 'aw-spin' : undefined} /> {t('Refresh')}
@@ -190,7 +198,36 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                         </p>
                     )}
 
-                    <div className="aw-table-wrap">
+                    {/* Compact mode: one line that says whether the ledger and the loan record agree, and a way to the full working. */}
+                    {compact && (
+                        <>
+                            {Math.abs(diff) > 10 ? (
+                                <div className="aw-alert aw-alert-warning" role="alert" style={{ marginBottom: 0 }}>
+                                    <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+                                    <span>
+                                        <strong>{t('The ledger and the loan record do not agree.')}</strong>{' '}
+                                        {t('Ledger {{1}}, loan record {{2}}: the ledger is {{3}} by {{4}}. Check this before closing.', {
+                                            1: inr(pos.ledger.balance), 2: inr(pos.record.balance),
+                                            3: diff < 0 ? t('lower') : t('higher'), 4: inr(Math.abs(diff)),
+                                        })}
+                                    </span>
+                                </div>
+                            ) : openNotices.length === 0 ? (
+                                <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--aw-success)' }}>
+                                    <CheckCircle2 size={13} /> {t('Nothing needs checking. The ledger and the loan record agree ({{1}}).', { 1: inr(pos.ledger.balance) })}
+                                </p>
+                            ) : (
+                                <p className="aw-meta">{t('The ledger and the loan record agree ({{1}}).', { 1: inr(pos.ledger.balance) })}</p>
+                            )}
+                            {onShowDetails && (
+                                <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" style={{ alignSelf: 'flex-start' }} onClick={onShowDetails}>
+                                    <ChevronRight size={13} /> {t('See the full loan position')}
+                                </button>
+                            )}
+                        </>
+                    )}
+
+                    {!compact && <div className="aw-table-wrap">
                         <table className="aw-table">
                             <tbody>
                                 <tr><td colSpan={3} className="aw-strong">{t('This loan')}</td></tr>
@@ -267,9 +304,9 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                                 )}
                             </tbody>
                         </table>
-                    </div>
+                    </div>}
 
-                    {pos.ledger.adjustments.length > 0 && (
+                    {!compact && pos.ledger.adjustments.length > 0 && (
                         <div>
                             <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" onClick={() => setShowJournals(v => !v)}>
                                 {showJournals ? <ChevronDown size={13} /> : <ChevronRight size={13} />} Journal adjustments ({pos.ledger.adjustments.length})

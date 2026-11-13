@@ -6,6 +6,7 @@ import Navbar from '../navigation/Navbar';
 import SubNavbar from '../navigation/SubNavbar';
 import UpdateNotice from '../UpdateNotice';
 import { apiService } from '../../services/api';
+import EggHuntHost from '../EggHuntHost';
 import OnboardingHost from '../../features/onboarding/OnboardingHost';
 import { useTranslation } from 'react-i18next';
 
@@ -65,6 +66,9 @@ const MainLayout: React.FC = () => {
 
             {/* First-login walkthrough: dashboard window only */}
             {showNavbar && <OnboardingHost />}
+
+            {/* Easter-egg hunt: progress + finale (dashboard window only) */}
+            {showNavbar && <EggHuntHost />}
 
             {/* Watermark */}
             <div className="absolute bottom-4 right-4 text-sm font-medium pointer-events-none"

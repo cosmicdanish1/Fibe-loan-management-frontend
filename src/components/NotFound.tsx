@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { Result, Button, Typography } from 'antd';
 import { WarningOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { reportEgg } from '../utils/eggHunt';
 
 const NotFound: React.FC = () => {
   const { t } = useTranslation();
@@ -11,6 +12,7 @@ const NotFound: React.FC = () => {
 
     useEffect(() => {
         // Log detailed error info for debugging
+        reportEgg('notfound');
         console.error(`[ROUTING ERROR] 404 Page Not Found`);
         console.error(`[ROUTING ERROR] Attempted Path: ${location.pathname}`);
         console.error(`[ROUTING ERROR] Search Params: ${location.search}`);
@@ -30,6 +32,9 @@ const NotFound: React.FC = () => {
                             <p><strong>{t('Path:')}</strong> {location.pathname}</p>
                             <p><strong>{t('Status:')}</strong> {t('Route not defined in App.tsx')}</p>
                             <p className="mt-2">{t('Please check if the route exists in')} <code>{t('App.tsx')}</code> {t('and matches the menu configuration.')}</p>
+                            {/* Easter egg #4 */}
+                            <p className="mt-3 italic text-gray-500">Lost? We were too, once. Then we built this. - The Kova Studio</p>
+                            <p className="mt-1 italic text-gray-500">Riddle: hold everything at once where the company signs its name; the ink is hiding.</p>
                         </div>
                     </div>
                 }

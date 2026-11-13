@@ -4,6 +4,7 @@ import { useAuth } from '../../../../../auth/context/AuthContext';
 import AwDialog from '@/components/shared/kit/AwDialog';
 import PasswordInput from '../../../../../components/shared/PasswordInput';
 import { useTranslation } from 'react-i18next';
+import { GOLD_GLOW_STYLE, useEggHunt } from '../../../../../utils/eggHunt';
 
 const ACTIVITY = [
   { action: 'System Login', date: 'Today, 10:23 AM', details: 'Successful login from IP 192.168.1.45', type: 'login' },
@@ -57,6 +58,7 @@ const MyProfile: React.FC = () => {
   };
 
   const initial = (profile.fullName.charAt(0) || 'A').toUpperCase();
+  const eggs = useEggHunt();
   const tabs = ['info', 'security'] as const;
 
   return (
@@ -75,7 +77,7 @@ const MyProfile: React.FC = () => {
         <div className="aw-stack" style={{ maxWidth: 1080 }}>
           <section className="aw-card">
             <div className="aw-inline" style={{ gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div className="aw-avatar" style={{ width: 76, height: 76, fontSize: 30, cursor: 'default', color: 'var(--aw-accent)' }} aria-hidden>{initial}</div>
+              <div className="aw-avatar" style={{ width: 76, height: 76, fontSize: 30, cursor: 'default', color: 'var(--aw-accent)', ...(eggs.completed ? GOLD_GLOW_STYLE : {}) }} title={eggs.completed ? 'Easter-egg hunter' : undefined} aria-hidden>{initial}</div>
               <div style={{ flex: 1, minWidth: 220 }}>
                 <div className="aw-inline" style={{ alignItems: 'center', gap: 8 }}>
                   <h2 className="aw-title">{profile.fullName}</h2>

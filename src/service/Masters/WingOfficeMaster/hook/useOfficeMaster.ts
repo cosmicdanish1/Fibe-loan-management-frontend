@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { isFailure, toastError } from '@/utils/dialog';
 import type { OfficeMasterData, OfficeMasterHookReturn } from '../interface/interface';
 import { apiService } from '../../../../services/api';
 
@@ -27,6 +28,7 @@ export const useOfficeMaster = (): OfficeMasterHookReturn => {
     if (!branchNo || isNaN(parseInt(branchNo))) return;
     try {
       const response = await apiService.getOffice(parseInt(branchNo));
+      if (isFailure(response)) toastError(response, 'load the office');
       if (response.success && response.data) {
         const office = (response.data as any).data || response.data;
         setData(prev => ({

@@ -5,6 +5,8 @@ import {
 } from '../../services/uiPrefs';
 import './topbar.css';
 import { useTranslation } from 'react-i18next';
+import { reportEgg } from '../../utils/eggHunt';
+import { kovaSearchMessage } from '../../utils/kovaSignature';
 
 export interface SearchItem {
   id: string;
@@ -87,6 +89,11 @@ export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
   }, [items, q, usage, prefs.learn]);
 
   useEffect(() => { setActive(0); }, [q, open]);
+
+  // Easter egg: counted when the story card is actually shown
+  useEffect(() => {
+    if (results.list.length === 0 && kovaSearchMessage(query)) reportEgg('search');
+  }, [results, query]);
 
   const openBox = useCallback(() => {
     setUsage(readSearchUsage());
@@ -173,8 +180,17 @@ export const GlobalSearch: React.FC<{ items: SearchItem[] }> = ({ items }) => {
             {results.list.length === 0 ? (
               <div className="tb-empty" style={{ padding: '22px 12px 26px' }}>
                 <div className="tb-empty-ico" style={{ color: 'var(--tb-faint)', background: 'var(--tb-hover)' }}><SearchX size={22} /></div>
-                <b>{t('No match for “')}{query.trim()}”</b>
-                <span>{t('Try part of a window name, like “loan” or “ledger”.')}</span>
+                {kovaSearchMessage(query) ? (
+                  <>
+                    <b>{kovaSearchMessage(query)!.title}</b>
+                    <span>{kovaSearchMessage(query)!.body}</span>
+                  </>
+                ) : (
+                  <>
+                    <b>{t('No match for “')}{query.trim()}”</b>
+                    <span>{t('Try part of a window name, like “loan” or “ledger”.')}</span>
+                  </>
+                )}
               </div>
             ) : (
               results.list.map((item, i) => (

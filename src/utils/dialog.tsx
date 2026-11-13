@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal } from 'antd';
+import { Modal, message } from 'antd';
 import i18n from '../i18n';
 import { friendlyError, ApiFailure, FriendlyError } from './friendlyError';
 
@@ -63,4 +63,23 @@ function ErrorBody({ fe }: { fe: FriendlyError }) {
 export function notifyError(res: ApiFailure | null | undefined, action?: string): Promise<void> {
   const fe = friendlyError(res, action ? t(action) : undefined, (k, o) => i18n.t(k, o as any) as string);
   return antdDialog('error', fe.headline, <ErrorBody fe={fe} />);
+}
+
+/** True when an API call came back as a failure (apiService.request never throws; it returns success:false). */
+export function isFailure(res: unknown): boolean {
+  return !!res && typeof res === 'object' && (res as { success?: unknown }).success === false;
+}
+
+/**
+ * A small non-blocking message for a failure the user did not click for directly (a list or default value that
+ * loads when a window opens): "Could not load the head list: <plain reason>". Several of these in a row show once
+ * per action name, so a window that loads five lists does not stack five toasts.
+ */
+const recentToasts = new Map<string, number>();
+export function toastError(res: ApiFailure | null | undefined, action: string): void {
+  const now = Date.now();
+  if ((recentToasts.get(action) ?? 0) > now - 4000) return;
+  recentToasts.set(action, now);
+  const fe = friendlyError(res, t(action), (k, o) => i18n.t(k, o as any) as string);
+  message.error({ content: `${fe.headline}. ${fe.lines[0] ?? ''}`.trim(), duration: 6 });
 }

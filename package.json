@@ -1,6 +1,6 @@
 {
   "name": "electron-react-ts",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "main": "dist/main/main.js",
   "scripts": {
     "predev": "node scripts/ensure-dist.js",
@@ -64,7 +64,8 @@
           ]
         }
       ],
-      "icon": "buildResources/icon.ico"
+      "icon": "buildResources/icon.ico",
+      "legalTrademarks": "Crafted by The Kova Studio - MD Danish Qureshi & Akshay Kumar"
     },
     "nsis": {
       "oneClick": false,

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { isFailure, toastError } from '@/utils/dialog';
 import type { DesignationData, DesignationHookReturn } from '../interfaces/interface';
 import { apiService } from '../../../../services/api';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +20,7 @@ export const useDesignationMaster = (): DesignationHookReturn => {
   const fetchDesignations = useCallback(async () => {
     try {
       const response = await apiService.getDesignations();
+      if (isFailure(response)) toastError(response, 'load the designations');
       if (response.success && response.data) {
         const raw = Array.isArray(response.data) ? response.data : [];
         setDesignations(raw.map((d: any) => ({

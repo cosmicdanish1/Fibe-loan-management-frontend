@@ -1,0 +1,338 @@
+[
+ {
+  "f": "src/auth/components/ForgotPasswordStep.tsx",
+  "line": 44,
+  "call": "forgotVerify",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/auth/components/ForgotPasswordStep.tsx",
+  "line": 58,
+  "call": "forgotReset",
+  "kind": "result ignored"
+ },
+ {
+  "f": "src/auth/components/TwoFaStep.tsx",
+  "line": 114,
+  "call": "twoFaLoginVerify",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/auth/components/TwoFaStep.tsx",
+  "line": 125,
+  "call": "twoFaLoginEnrolConfirm",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/components/chat/FloatingChatBot.tsx",
+  "line": 125,
+  "call": "post",
+  "kind": "result ignored"
+ },
+ {
+  "f": "src/components/settings/SettingsPage.tsx",
+  "line": 569,
+  "call": "twoFaGetSettings",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/components/settings/SettingsPage.tsx",
+  "line": 585,
+  "call": "twoFaSaveSettings",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/components/settings/SettingsPage.tsx",
+  "line": 1804,
+  "call": "getUserPreferences",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Administration/DemandPrintOrder/page/DemandPrintOrder.tsx",
+  "line": 87,
+  "call": "showMessageBox",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Administration/FinancialYear/FinancialYearClosing/page/FinancialYearClosing.tsx",
+  "line": 114,
+  "call": "showMessageBox",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Administration/FinancialYear/TransferEntriesForClosing/page/TransferEntriesForClosing.tsx",
+  "line": 126,
+  "call": "showMessageBox",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Administration/InterestCalculation/hook/useIntresterCal.ts",
+  "line": 162,
+  "call": "getCurrentInterestRate",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Administration/Security/LogoutUser/page/LogoutUser.tsx",
+  "line": 80,
+  "call": "showMessageBox",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Administration/Security/TwoFactorSettings/components/ApprovalGuardsCard.tsx",
+  "line": 71,
+  "call": "twoFaSetApprovers",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Administration/Security/TwoFactorSettings/components/ApprovalGuardsCard.tsx",
+  "line": 82,
+  "call": "twoFaSaveGuards",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Administration/Security/TwoFactorSettings/components/ApprovalGuardsCard.tsx",
+  "line": 186,
+  "call": "twoFaSaveGuards",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Administration/Security/TwoFactorSettings/components/PolicyPanel.tsx",
+  "line": 56,
+  "call": "twoFaSaveSettings",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Masters/DataEntry/FdRdSbEntry/hook/useFdRdSbEntry.ts",
+  "line": 40,
+  "call": "getFdRdSbAccounts",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Masters/DesignationMaster/hooks/useDesignationMaster.ts",
+  "line": 21,
+  "call": "getDesignations",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Masters/MemberMaster/page/MemberMaster.tsx",
+  "line": 133,
+  "call": "fetchProtectedFile",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Masters/MemberMaster/page/MemberMaster.tsx",
+  "line": 535,
+  "call": "request",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Masters/MemberMaster/page/MemberMaster.tsx",
+  "line": 693,
+  "call": "request",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Masters/MemberStatus/hook/useMemberStatus.ts",
+  "line": 109,
+  "call": "getMemberStatusHistory",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Masters/MemberStatus/hook/useMemberStatus.ts",
+  "line": 117,
+  "call": "markMemberInactive",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Masters/MemberStatus/hook/useMemberStatus.ts",
+  "line": 127,
+  "call": "reactivateMember",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Masters/RdRepayment/hooks/useRdRepayment.ts",
+  "line": 86,
+  "call": "recordRdRepayment",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Masters/SavingAccountOpening/hooks/useSavingAccountOpening.ts",
+  "line": 42,
+  "call": "getNextSbAccountNumber",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Masters/SignatureScanning/hook/useSignatureScanning.ts",
+  "line": 34,
+  "call": "fetchProtectedFile",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Masters/SignatureScanning/hook/useSignatureScanning.ts",
+  "line": 103,
+  "call": "deleteMemberSignatureMaster",
+  "kind": "result ignored"
+ },
+ {
+  "f": "src/service/Masters/WingOfficeMaster/hook/useOfficeMaster.ts",
+  "line": 29,
+  "call": "getOffice",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Masters/WingOfficeMaster/hook/useOfficeMaster.ts",
+  "line": 84,
+  "call": "getOffices",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Masters/WingOfficeMaster/hook/useWingMaster.ts",
+  "line": 31,
+  "call": "getWing",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Reports/AccountReports/LoanContributionsRegister/page/LoanContributionsRegister.tsx",
+  "line": 136,
+  "call": "getLoanContributionsRegister",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Reports/AccountReports/RecoveryDetails/page/RecoveryDetails.tsx",
+  "line": 158,
+  "call": "getRecoveryDetails",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Reports/AccountReports/RecurringDetails/page/RecurringDetails.tsx",
+  "line": 158,
+  "call": "getRecurringDetails",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Reports/AccountReports/ShareCertificate/page/ShareCertificate.tsx",
+  "line": 122,
+  "call": "getShareCertificate",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Reports/MemberStatement/InterestCertificate/page/InterestCertificate.tsx",
+  "line": 131,
+  "call": "post",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Reports/MemberStatement/LoanNilCertificate/page/LoanNilCertificate.tsx",
+  "line": 55,
+  "call": "get",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Reports/MemberStatement/NewShareCertificate/page/NewShareCertificate.tsx",
+  "line": 128,
+  "call": "getShareCertificate",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Reports/MemberStatement/SuretyRegisterReport/page/SuretyRegisterReport.tsx",
+  "line": 107,
+  "call": "getSuretyRegister",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Reports/Monthly/PrintVouchers/JournalTransferVoucher/page/JournalTransferVoucher.tsx",
+  "line": 150,
+  "call": "getAllJournalVoucherReferences",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Reports/PassBookPrinting/page/PassBookPrinting.tsx",
+  "line": 482,
+  "call": "updatePassbookTracking",
+  "kind": "result ignored"
+ },
+ {
+  "f": "src/service/Reports/PassBookPrinting/page/PassBookPrinting.tsx",
+  "line": 514,
+  "call": "updatePassbookTracking",
+  "kind": "result ignored"
+ },
+ {
+  "f": "src/service/Reports/ReportHeadOrder/page/ReportHeadOrder.tsx",
+  "line": 25,
+  "call": "showMessageBox",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Reports/Yearly/AnnualMemberStatement/page/AnnualMemberStatement.tsx",
+  "line": 87,
+  "call": "getAnnualMemberStatement",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Reports/Yearly/CustomizedTrialBalance/DefinePL/page/DefinePL.tsx",
+  "line": 46,
+  "call": "getAllReportSchedules",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Reports/Yearly/CustomizedTrialBalance/DefineProfitLoss/page/DefineProfitLoss.tsx",
+  "line": 60,
+  "call": "getAllReportSchedules",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Reports/Yearly/InterestList/DividendPaid/page/DividendPaid.tsx",
+  "line": 67,
+  "call": "getDividendPaid",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Reports/Yearly/InterestList/DividendWarrant/page/DividendWarrant.tsx",
+  "line": 70,
+  "call": "getReportWings",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Reports/Yearly/MemberLoanDetail/page/MemberLoanDetail.tsx",
+  "line": 73,
+  "call": "getMemberLoanDetail",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Transaction/JournalTransferEntry/hook/useJournalTransfer.ts",
+  "line": 74,
+  "call": "lookupMembers",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Transaction/JournalTransferEntry/hook/useJournalTransfer.ts",
+  "line": 86,
+  "call": "getPendingVouchers",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Transaction/MemberBalanceTransfer/page/MemberBalanceTransfer.tsx",
+  "line": 54,
+  "call": "getHeadList",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Transaction/PassTransactions/hook/usePassTransactions.ts",
+  "line": 108,
+  "call": "passTransaction",
+  "kind": "success-only"
+ },
+ {
+  "f": "src/service/Transaction/Receipt&Payment/Receipt/hook/useReceipt.ts",
+  "line": 101,
+  "call": "get",
+  "kind": "result never checked"
+ },
+ {
+  "f": "src/service/Utility/UpdateSavingInterest/page/UpdateSavingInterest.tsx",
+  "line": 51,
+  "call": "getHeadList",
+  "kind": "success-only"
+ }
+]

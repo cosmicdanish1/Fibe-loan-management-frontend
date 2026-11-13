@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { Select, Input, Button, Radio, Modal, ConfigProvider, Tooltip, Pagination, theme as antdTheme } from 'antd';
 import {
   Landmark,
@@ -71,6 +72,7 @@ const MemberLoanDetail: React.FC = () => {
     setLoading(true);
     try {
       const res = await apiService.getMemberLoanDetail(memberFrom, memberTo, selectedLoanType);
+      if (isFailure(res)) await notifyError(res, 'load the member loan detail');
       if (res?.success) {
         const rows: LoanDetailItem[] = Array.isArray(res.data)
           ? res.data
@@ -81,6 +83,7 @@ const MemberLoanDetail: React.FC = () => {
       }
     } catch (e) {
       console.error('MemberLoanDetail fetch error:', e);
+      await notifyError(null, 'load the member loan detail');
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,952 @@
+
+##### src/auth/components/ForgotPasswordStep.tsx:44 forgotVerify [result never checked]
+39:   const verify = async () => {
+40:     if (busy) return;
+41:     if (!username.trim() || !code.trim()) { setError('Enter your username and the code.'); return; }
+42:     setBusy(true); setError('');
+43:     try {
+44:       const r = await apiService.forgotVerify(username.trim(), code);
+45:       setToken(r.resetToken); setCode(''); setStage('password');
+46:     } catch (e) {
+47:       setError(e instanceof Error ? e.message : 'Verification failed');
+48:       setCode('');
+49:     } finally { setBusy(false); }
+50:   };
+51: 
+52:   const reset = async () => {
+53:     if (busy) return;
+
+##### src/auth/components/ForgotPasswordStep.tsx:58 forgotReset [result ignored]
+53:     if (busy) return;
+54:     if (pw.length < 8 || !RULE.test(pw)) { setError('Use at least 8 characters with an uppercase letter, a lowercase letter and a number.'); return; }
+55:     if (pw !== pw2) { setError('The two passwords do not match.'); return; }
+56:     setBusy(true); setError('');
+57:     try {
+58:       await apiService.forgotReset(token, pw);
+59:       setPw(''); setPw2(''); setStage('done');
+60:     } catch (e) {
+61:       setError(e instanceof Error ? e.message : 'Could not change the password');
+62:     } finally { setBusy(false); }
+63:   };
+64: 
+65:   const err = error && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><div>{error}</div></div>;
+66:   const optionStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%' };
+67: 
+
+##### src/auth/components/TwoFaStep.tsx:114 twoFaLoginVerify [result never checked]
+109: 
+110:   const verify = async () => {
+111:     if (busy || !code.trim()) return;
+112:     setBusy(true); setError('');
+113:     try {
+114:       const auth = await apiService.twoFaLoginVerify(challenge.username, challenge.challengeToken, code, remember);
+115:       onComplete(auth);
+116:     } catch (e) {
+117:       setError(e instanceof Error ? e.message : 'Verification failed');
+118:       setCode('');
+119:     } finally { setBusy(false); }
+120:   };
+121: 
+122:   const confirmEnrol = async (c: string) => {
+123:     setBusy(true); setError('');
+
+##### src/auth/components/TwoFaStep.tsx:125 twoFaLoginEnrolConfirm [result never checked]
+120:   };
+121: 
+122:   const confirmEnrol = async (c: string) => {
+123:     setBusy(true); setError('');
+124:     try {
+125:       const res = await apiService.twoFaLoginEnrolConfirm(challenge.challengeToken, c);
+126:       setPending(res);
+127:       setCodes(res.recoveryCodes);
+128:     } catch (e) {
+129:       setError(e instanceof Error ? e.message : 'Verification failed');
+130:     } finally { setBusy(false); }
+131:   };
+132: 
+133:   const title = challenge.mode === 'enrol' ? 'Set up two-factor authentication' : 'Two-factor authentication';
+134: 
+
+##### src/components/chat/FloatingChatBot.tsx:125 post [result ignored]
+120:   const rate = useCallback(async (index: number, value: 1 | -1) => {
+121:     const msg = messages[index];
+122:     if (!msg?.logId || msg.feedback) return;
+123:     setMessages(prev => prev.map((m, i) => (i === index ? { ...m, feedback: value } : m)));
+124:     try {
+125:       await apiService.post('/ai-chat/feedback', { logId: msg.logId, value });
+126:     } catch {
+127:       // feedback is best-effort; nothing to tell the employee
+128:     }
+129:   }, [messages]);
+130: 
+131:   const clearChat = useCallback(() => {
+132:     setMessages([{ role: 'assistant', content: 'Chat cleared! How can I help you with FIBE? — Paper White Technology', provider: 'system', ts: Date.now() }]);
+133:   }, []);
+134: 
+
+##### src/components/settings/SettingsPage.tsx:569 twoFaGetSettings [result never checked]
+564:   const [days, setDays] = useState('30');
+565:   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+566: 
+567:   const load = useCallback(async () => {
+568:     try {
+569:       const r = await apiService.twoFaGetSettings();
+570:       setCfg(r.settings); setDays(String(r.settings.monthlyCheckDays));
+571:     } catch (e) { setNote({ ok: false, text: e instanceof Error ? e.message : 'Could not load settings' }); }
+572:   }, []);
+573:   useEffect(() => { if (isAdmin) void load(); }, [isAdmin, load]);
+574: 
+575:   if (!isAdmin) {
+576:     return (
+577:       <Panel icon={<KeyRound size={16} />} tint="#f59e0b" title={t('Forgot password')} subtitle="Administrators only">
+578:         <p className="fz-body" style={{ color: C.dim }}>{t('Only an administrator can choose how users may reset their password.')}</p>
+
+##### src/components/settings/SettingsPage.tsx:585 twoFaSaveSettings [result never checked]
+580:     );
+581:   }
+582: 
+583:   const save = async (patch: Partial<{ forgotAuthenticator: boolean; monthlyCheckDays: number }>, okText: string) => {
+584:     try {
+585:       const r = await apiService.twoFaSaveSettings(patch);
+586:       setCfg(r.settings); setDays(String(r.settings.monthlyCheckDays));
+587:       setNote({ ok: true, text: okText });
+588:     } catch (e) { setNote({ ok: false, text: e instanceof Error ? e.message : 'Could not save' }); }
+589:   };
+590: 
+591:   const off = cfg?.policy === 'off';
+592:   const btn: React.CSSProperties = { background: C.fill, border: `1px solid ${C.border}`, color: C.text };
+593:   const daysNum = Number(days);
+594:   const daysValid = days !== '' && Number.isInteger(daysNum) && daysNum >= 0 && daysNum <= 365;
+
+##### src/components/settings/SettingsPage.tsx:1804 getUserPreferences [success-only]
+1799: 
+1800:   useEffect(() => {
+1801:     // 1. Fetch latest settings from server ensures we display the "Truth"
+1802:     const fetchLatestSettings = async () => {
+1803:       try {
+1804:         const prefRes = await apiService.getUserPreferences();
+1805: 
+1806:         if (prefRes.success && prefRes.data) {
+1807:           // Only the shared theme state is updated; the effect below mirrors it
+1808:           // into this form. Null columns are skipped so they can't wipe a value.
+1809:           const remotePrefs = Object.fromEntries(
+1810:             Object.entries(prefRes.data).filter(([, v]) => v !== null && v !== undefined)
+1811:           );
+1812:           dispatch(setTheme(remotePrefs));
+1813:         }
+
+##### src/service/Administration/DemandPrintOrder/page/DemandPrintOrder.tsx:87 showMessageBox [result never checked]
+82:   const handleDeleteRow = async (index: number) => {
+83:     const row = rows[index];
+84:     const api = (window as any).electronAPI;
+85:     let confirmed = false;
+86:     if (api?.showMessageBox) {
+87:       const res = await api.showMessageBox({
+88:         type: 'warning',
+89:         title: t('Delete Row'),
+90:         message: `Delete "${row?.description || row?.headCode || 'this row'}"?`,
+91:         detail: 'This will permanently remove it from the demand print order.',
+92:         buttons: ['Cancel', 'Delete'],
+93:         defaultId: 0,
+94:         cancelId: 0,
+95:       });
+96:       confirmed = res.response === 1;
+
+##### src/service/Administration/FinancialYear/FinancialYearClosing/page/FinancialYearClosing.tsx:114 showMessageBox [result never checked]
+109: 
+110:     // Native confirmation dialog for destructive operation
+111:     const api = (window as any).electronAPI;
+112:     let confirmed = false;
+113:     if (api?.showMessageBox) {
+114:       const res = await api.showMessageBox({
+115:         type: 'warning',
+116:         title: t('Close Financial Year'),
+117:         message: `Close Financial Year ${fy.yearCode}?`,
+118:         detail: `Period: ${fy.startDate} → ${fy.endDate}\n\nThis will PERMANENTLY lock all transactions for this year.\nThis action cannot be undone.\n\nProceed only after ensuring:\n  ✓ Transfer Entries have been posted\n  ✓ All accounts are reconciled\n  ✓ Audit has been verified`,
+119:         buttons: ['Cancel', 'Close Financial Year'],
+120:         defaultId: 0,
+121:         cancelId: 0,
+122:       });
+123:       confirmed = res.response === 1;
+
+##### src/service/Administration/FinancialYear/TransferEntriesForClosing/page/TransferEntriesForClosing.tsx:126 showMessageBox [result never checked]
+121: 
+122:     // Confirmation before destructive operation
+123:     const api = (window as any).electronAPI;
+124:     let confirmed = false;
+125:     if (api?.showMessageBox) {
+126:       const res = await api.showMessageBox({
+127:         type: 'warning',
+128:         title: t('Confirm Transfer'),
+129:         message: `Initiate ledger transit for ${selectedYear ? yearLabel(selectedYear) : `FY ${yearCodeNum}`}?`,
+130:         detail: 'This will post closing transfer entries for the selected financial year.\n\nThis operation cannot be easily undone. Proceed only if year-end accounts are verified.',
+131:         buttons: ['Cancel', 'Initiate Transfer'],
+132:         defaultId: 0,
+133:         cancelId: 0,
+134:       });
+135:       confirmed = res.response === 1;
+
+##### src/service/Administration/InterestCalculation/hook/useIntresterCal.ts:162 getCurrentInterestRate [success-only]
+157: 
+158:   // Load current interest rate on mount
+159:   useEffect(() => {
+160:     const loadRate = async () => {
+161:       try {
+162:         const response = await apiService.getCurrentInterestRate();
+163:         if (response.success && response.data) {
+164:           const rate = typeof response.data === 'number' ? response.data : (response.data as any).rate;
+165:           if (rate) {
+166:             setFormData(prev => ({ ...prev, rate: String(rate) }));
+167:           }
+168:         }
+169:       } catch (err) {
+170:         console.error('Error loading interest rate:', err);
+171:       }
+
+##### src/service/Administration/Security/LogoutUser/page/LogoutUser.tsx:80 showMessageBox [result never checked]
+75:         : `Force logout "${formData.userName}"?`;
+76:       const detail = isSelf
+77:         ? 'This is the account you are currently logged in as. Confirming will immediately end your session and close the application, the same as using the regular Logout button.'
+78:         : 'This will immediately terminate their active session.';
+79:       if (api?.showMessageBox) {
+80:         const res = await api.showMessageBox({
+81:           type: 'warning',
+82:           title: t('Confirm Logout'),
+83:           message,
+84:           detail,
+85:           buttons: ['Cancel', 'Logout'],
+86:           defaultId: 0,
+87:           cancelId: 0,
+88:         });
+89:         return res.response === 1;
+
+##### src/service/Administration/Security/TwoFactorSettings/components/ApprovalGuardsCard.tsx:71 twoFaSetApprovers [result never checked]
+66:   const codeGivers = useMemo(() => current.filter((a) => a.active), [current]);
+67:   const activeCount = current.filter((a) => a.active).length;
+68: 
+69:   const changeApprover = async (id: number, add: boolean, name: string) => {
+70:     try {
+71:       const r = await apiService.twoFaSetApprovers(add ? [id] : [], add ? [] : [id]);
+72:       setApprovers(r.approvers);
+73:       flash('ok', add ? `${name} is now an approver. They must set up their authenticator in My Profile before their code counts.` : `${name} is no longer an approver. Their code stops working immediately.`);
+74:       setPick('');
+75:     } catch (e) { flash('err', e instanceof Error ? e.message : 'Could not change approver'); }
+76:   };
+77: 
+78:   const toggle = async (a: GuardAction) => {
+79:     const on = !!guards[a.key]?.enabled;
+80:     if (on) { setDlg({ key: a.key, label: a.label }); return; } // OFF needs password + an approver's code
+
+##### src/service/Administration/Security/TwoFactorSettings/components/ApprovalGuardsCard.tsx:82 twoFaSaveGuards [result never checked]
+77: 
+78:   const toggle = async (a: GuardAction) => {
+79:     const on = !!guards[a.key]?.enabled;
+80:     if (on) { setDlg({ key: a.key, label: a.label }); return; } // OFF needs password + an approver's code
+81:     try {
+82:       const r = await apiService.twoFaSaveGuards({ [a.key]: { enabled: true } });
+83:       setGuards(r.guards); if (r.approvers) setApprovers(r.approvers);
+84:       flash('ok', `${a.label}: an approver's code is now required. Applies immediately.`);
+85:     } catch (e) { flash('err', e instanceof Error ? e.message : 'Could not switch on'); }
+86:   };
+87: 
+88:   const saveOwn = async (v: boolean) => {
+89:     try { await apiService.twoFaSaveSettings({ approverCanApproveOwn: v }); setOwnApproval(v); }
+90:     catch (e) { flash('err', e instanceof Error ? e.message : 'Could not save'); }
+91:   };
+
+##### src/service/Administration/Security/TwoFactorSettings/components/ApprovalGuardsCard.tsx:186 twoFaSaveGuards [result never checked]
+181:       <AwDialog open={!!dlg} title={t('Switch protection off')} onClose={close} icon={<ShieldOff size={14} />} maxWidth="26rem" compact>
+182:         {dlg && (
+183:           <form className="aw-stack" style={{ gap: 8 }} onSubmit={(e) => {
+184:             e.preventDefault();
+185:             run(async () => {
+186:               const r = await apiService.twoFaSaveGuards({ [dlg.key]: { enabled: false } }, { password: pw, code });
+187:               setGuards(r.guards); if (r.approvers) setApprovers(r.approvers);
+188:               flash('ok', `${dlg.label}: no approver code needed any more.`);
+189:               close();
+190:             });
+191:           }}>
+192:             <span className="aw-meta">{t('Switching')} <strong>{dlg.label}</strong> {t('off removes the approval step. Enter')} <strong>{t('your password')}</strong> {t('and a')} <strong>{t('current code from an approver')}</strong> {t('(not your own).')}</span>
+193:             <label className="aw-label" htmlFor="guard-off-pw">1. {t('Your own login password')}</label>
+194:             <PasswordInput id="guard-off-pw" className="aw-input" placeholder={t('The password you sign in with')} aria-label={t('Your login password')} autoFocus value={pw} onChange={(e) => setPw(e.target.value)} />
+195:             <label className="aw-label" htmlFor="guard-off-code">2. {t('Approver code')}</label>
+
+##### src/service/Administration/Security/TwoFactorSettings/components/PolicyPanel.tsx:56 twoFaSaveSettings [result never checked]
+51:     if (s.policy === 'all' && saved?.policy !== 'all'
+52:       && !window.confirm(t('Make two-factor authentication mandatory for EVERYONE? Anyone who has not set it up will be asked to scan their QR at their next sign-in.'))) return;
+53:     setBusy(true);
+54:     try {
+55:       const patch = Object.fromEntries(keys.map((k) => [k, s[k]]));
+56:       const r = await apiService.twoFaSaveSettings(patch);
+57:       setS(r.settings); setSaved(r.settings);
+58:       flash('ok', 'Saved. Sign-in changes apply from the next sign-in.');
+59:     } catch (e) { flash('err', e instanceof Error ? e.message : 'Save failed'); }
+60:     finally { setBusy(false); }
+61:   };
+62: 
+63:   if (!s) return <p className="aw-meta">{msg ? msg.text : t('Loading…')}</p>;
+64: 
+65:   return (
+
+##### src/service/Masters/DataEntry/FdRdSbEntry/hook/useFdRdSbEntry.ts:40 getFdRdSbAccounts [result never checked]
+35: 
+36:   const loadAccounts = useCallback(async (memberNo: string, type: EntryType) => {
+37:     const seq = ++accountsSeq.current;
+38:     if (!memberNo) return;
+39:     try {
+40:       const response = await apiService.getFdRdSbAccounts(memberNo, type);
+41:       if (seq !== accountsSeq.current) return;
+42:       const raw = Array.isArray(response.data) ? response.data : [];
+43:       const accounts = raw.map((a: any) => ({
+44:         accountNo: a.accountNo?.toString() || '',
+45:         certNo: a.certNo || '',
+46:         amount: a.amount?.toString() || '0',
+47:         label: `${a.accountNo} — ${a.certNo || ''} (₹${parseFloat(a.amount || 0).toLocaleString()})`
+48:       }));
+49:       setFormData(prev => ({ ...prev, accounts, accountNo: accounts.length === 1 ? (accounts[0]?.accountNo ?? '') : '' }));
+
+##### src/service/Masters/DesignationMaster/hooks/useDesignationMaster.ts:21 getDesignations [success-only]
+16:   const [formData, setFormData] = useState<DesignationData>({ code: '', name: '', level: '' });
+17:   const [designations, setDesignations] = useState<DesignationData[]>([]);
+18: 
+19:   const fetchDesignations = useCallback(async () => {
+20:     try {
+21:       const response = await apiService.getDesignations();
+22:       if (response.success && response.data) {
+23:         const raw = Array.isArray(response.data) ? response.data : [];
+24:         setDesignations(raw.map((d: any) => ({
+25:           code: (d.code || d.designationcode || '').toString(),
+26:           name: d.name || d.designationName || d.designationname || '',
+27:           level: d.level != null ? d.level.toString() : (d.designationlevel != null ? d.designationlevel.toString() : ''),
+28:         })));
+29:       }
+30:     } catch (error) {
+
+##### src/service/Masters/MemberMaster/page/MemberMaster.tsx:133 fetchProtectedFile [result never checked]
+128:   // a plain <img src="..."> can't carry the Authorization header and 401s.
+129:   // Fetch as a blob (with the header) and hand the <img> an object URL instead.
+130:   // isCurrent lets a caller drop a response that arrives after the user already picked another member.
+131:   const loadProtectedImage = useCallback(async (key: MediaKey, endpoint: string, isCurrent?: () => boolean) => {
+132:     try {
+133:       const blob = await apiService.fetchProtectedFile(endpoint);
+134:       if (isCurrent && !isCurrent()) return;
+135:       setMediaObjectUrl(key, blob ? URL.createObjectURL(blob) : '');
+136:     } catch {
+137:       if (isCurrent && !isCurrent()) return;
+138:       setMediaObjectUrl(key, '');
+139:     }
+140:   }, [setMediaObjectUrl]);
+141: 
+142:   // Bumped on every member selection; late responses from an older selection are ignored.
+
+##### src/service/Masters/MemberMaster/page/MemberMaster.tsx:535 request [success-only]
+530:         branchmsno: formData.branch || formData.branchMsNo || '',
+531:         email: formData.email || '',
+532:       };
+533: 
+534:       // Shared apiService: adds auth, refreshes the token on 401 and copes with non-JSON error bodies.
+535:       const response = await apiService.request(endpoint, {
+536:         method,
+537:         body: JSON.stringify(memberPayload),
+538:       });
+539: 
+540:       if (response.success) {
+541:         // TransformInterceptor wraps all responses: { success, data: <controller_return> }.
+542:         // saveMemberMaster service also wraps: { success, data: <pg_row> }.
+543:         // apiService.request already strips the outer envelope, so response.data.data
+544:         // is the actual PostgreSQL RETURNING row.
+
+##### src/service/Masters/MemberMaster/page/MemberMaster.tsx:693 request [success-only]
+688:     const isCurrent = () => seq === memberSelectSeqRef.current;
+689: 
+690:     try {
+691:       showNotification('info', `Loading member details for ${memberNo}...`);
+692: 
+693:       const response = await apiService.request(`/members/details/${encodeURIComponent(memberNo)}`);
+694:       if (!isCurrent()) return; // user picked another member meanwhile
+695: 
+696:       if (response.success) {
+697:         const memberDetails = (response.data || {}) as any;
+698: 
+699:         // Helper to get value from multiple possible keys
+700:         const getVal = (d: any, keys: string[]) => {
+701:           for (const k of keys) {
+702:             if (d[k] !== undefined && d[k] !== null) return d[k];
+
+##### src/service/Masters/MemberStatus/hook/useMemberStatus.ts:109 getMemberStatusHistory [success-only]
+104:     }
+105:   };
+106: 
+107:   const history = async (memberNo: string): Promise<HistoryRow[]> => {
+108:     try {
+109:       const res = await apiService.getMemberStatusHistory(memberNo);
+110:       const d = res.success ? unwrap(res.data) : [];
+111:       return Array.isArray(d) ? d : [];
+112:     } catch { return []; }
+113:   };
+114: 
+115:   const markInactive = async (memberNo: string, reason: string, force: boolean) => {
+116:     try {
+117:       const res = await apiService.markMemberInactive(memberNo, reason, force);
+118:       if (res.success) { await load(); return { ok: true as const }; }
+
+##### src/service/Masters/MemberStatus/hook/useMemberStatus.ts:117 markMemberInactive [success-only]
+112:     } catch { return []; }
+113:   };
+114: 
+115:   const markInactive = async (memberNo: string, reason: string, force: boolean) => {
+116:     try {
+117:       const res = await apiService.markMemberInactive(memberNo, reason, force);
+118:       if (res.success) { await load(); return { ok: true as const }; }
+119:       return { ok: false as const, error: (res as any).message || 'Could not mark the member inactive' };
+120:     } catch (e: any) {
+121:       return { ok: false as const, error: e?.message || 'Could not mark the member inactive' };
+122:     }
+123:   };
+124: 
+125:   const reactivate = async (memberNo: string, reason: string) => {
+126:     try {
+
+##### src/service/Masters/MemberStatus/hook/useMemberStatus.ts:127 reactivateMember [success-only]
+122:     }
+123:   };
+124: 
+125:   const reactivate = async (memberNo: string, reason: string) => {
+126:     try {
+127:       const res = await apiService.reactivateMember(memberNo, reason);
+128:       if (res.success) { await load(); return { ok: true as const }; }
+129:       return { ok: false as const, error: (res as any).message || 'Could not re-activate the member' };
+130:     } catch (e: any) {
+131:       return { ok: false as const, error: e?.message || 'Could not re-activate the member' };
+132:     }
+133:   };
+134: 
+135:   return {
+136:     category, changeCategory, months, changeMonths, search, changeSearch, page, setPage,
+
+##### src/service/Masters/RdRepayment/hooks/useRdRepayment.ts:86 recordRdRepayment [success-only]
+81:         }
+82:         savingRef.current = true;
+83:         setSaving(true);
+84:         setMessage(null);
+85:         try {
+86:             const res = await apiService.recordRdRepayment(mbno, yearcode, installmentMonth, installmentYear, amount, recordedBy, narration);
+87:             if (res.success) {
+88:                 setMessage({ type: 'success', text: res.message || 'Payment recorded.' });
+89:                 await loadMember(mbno, memberName, yearcode, true);
+90:                 return true;
+91:             }
+92:             setMessage({ type: 'error', text: res.message || 'Failed to record payment.' });
+93:             return false;
+94:         } catch (err: any) {
+95:             setMessage({ type: 'error', text: err.message || 'Failed to record payment.' });
+
+##### src/service/Masters/SavingAccountOpening/hooks/useSavingAccountOpening.ts:42 getNextSbAccountNumber [success-only]
+37:     };
+38: 
+39:     // FIX 1: auto-generate the next account number on mount (still editable).
+40:     const fetchNextAccountNo = useCallback(async () => {
+41:         try {
+42:             const res = await apiService.getNextSbAccountNumber();
+43:             const next = (res.data as any)?.nextAccountNumber ?? (res.data as any)?.data?.nextAccountNumber;
+44:             if (res.success && next) {
+45:                 setData(prev => (prev.accountNo ? prev : { ...prev, accountNo: String(next) }));
+46:             }
+47:         } catch { /* silent — user can still type manually */ }
+48:     }, []);
+49: 
+50:     useEffect(() => { fetchNextAccountNo(); }, [fetchNextAccountNo]);
+51: 
+
+##### src/service/Masters/SignatureScanning/hook/useSignatureScanning.ts:34 fetchProtectedFile [result never checked]
+29: 
+30:   // BUG FIX: the endpoint is JWT-protected, so a plain <img src="..."> 401s —
+31:   // fetch it as a blob (with the Authorization header) and hand back an object URL.
+32:   const loadSignatureImage = useCallback(async (mbno: string) => {
+33:     try {
+34:       const blob = await apiService.fetchProtectedFile(`/members/master/${mbno}/signature`);
+35:       setSignatureObjectUrl(blob ? URL.createObjectURL(blob) : '');
+36:     } catch (error) {
+37:       console.error(error);
+38:       setSignatureObjectUrl('');
+39:     }
+40:   }, [setSignatureObjectUrl]);
+41: 
+42:   const updateMemberNumber = useCallback((value: string) => {
+43:     setData(prev => ({ ...prev, memberNumber: value }));
+
+##### src/service/Masters/SignatureScanning/hook/useSignatureScanning.ts:103 deleteMemberSignatureMaster [result ignored]
+98:       return;
+99:     }
+100: 
+101:     try {
+102:       // BUG FIX 2: use master (member_master) endpoint, not the TypeORM members endpoint
+103:       await apiService.deleteMemberSignatureMaster(data.memberId);
+104:       setSignatureObjectUrl('');
+105:       message.success(t('Signature purged'));
+106:     } catch (error) {
+107:       message.error(t('Failed to delete signature'));
+108:     }
+109:   }, [data.memberId, setSignatureObjectUrl]);
+110: 
+111:   const uploadFile = useCallback(async (file: File) => {
+112:     if (!data.memberId) {
+
+##### src/service/Masters/WingOfficeMaster/hook/useOfficeMaster.ts:29 getOffice [success-only]
+24:   const [isExisting, setIsExisting] = useState(false);
+25: 
+26:   const fetchOffice = useCallback(async (branchNo: string) => {
+27:     if (!branchNo || isNaN(parseInt(branchNo))) return;
+28:     try {
+29:       const response = await apiService.getOffice(parseInt(branchNo));
+30:       if (response.success && response.data) {
+31:         const office = (response.data as any).data || response.data;
+32:         setData(prev => ({
+33:           ...prev,
+34:           name: office.officeName || office.office_name || '',
+35:           divisionRO: (office.division ?? '').toString(),
+36:           address: office.address || '',
+37:           city: office.city || ''
+38:         }));
+
+##### src/service/Masters/WingOfficeMaster/hook/useOfficeMaster.ts:84 getOffices [result never checked]
+79:       // officeno is NOT NULL. The UI says "leave blank for new", so when blank we auto-assign
+80:       // the next number (MAX + 1) instead of blocking the user. A typed value must be numeric.
+81:       let officeId: number;
+82:       if (!data.branchNo || data.branchNo.trim() === '') {
+83:         try {
+84:           const list = await apiService.getOffices();
+85:           const offices = (list.data as any)?.data || list.data || [];
+86:           const maxNo = Array.isArray(offices)
+87:             ? offices.reduce((m: number, o: any) => Math.max(m, Number(o.officeId ?? o.officeno ?? 0)), 0)
+88:             : 0;
+89:           officeId = maxNo + 1;
+90:         } catch {
+91:           officeId = 1;
+92:         }
+93:       } else if (isNaN(parseInt(data.branchNo))) {
+
+##### src/service/Masters/WingOfficeMaster/hook/useWingMaster.ts:31 getWing [success-only]
+26:   }, []);
+27: 
+28:   const fetchWing = useCallback(async (code: string) => {
+29:     if (!code) return;
+30:     try {
+31:       const check = await apiService.getWing(code);
+32:       if (check.success && check.data) {
+33:         const wing = (check.data as any).data || check.data;
+34:         setData(prev => ({
+35:           ...prev,
+36:           name: wing.wingName || wing.wname || '',
+37:           state: wing.state || wing.winstate?.toString() || '1'
+38:         }));
+39:         setIsExisting(true);
+40:       }
+
+##### src/service/Reports/AccountReports/LoanContributionsRegister/page/LoanContributionsRegister.tsx:136 getLoanContributionsRegister [result never checked]
+131:       message.warning('From date cannot be after To date');
+132:       return;
+133:     }
+134:     setLoading(true);
+135:     try {
+136:       const response = await apiService.getLoanContributionsRegister({
+137:         memberNo: no,
+138:         fromDate: fromDate.format('YYYY-MM-DD'),
+139:         toDate: toDate.format('YYYY-MM-DD'),
+140:       });
+141:       const rec = (response as any)?.data || response;
+142: 
+143:       if (rec && rec.memberNo) {
+144:         setMemberName(rec.memberName || '');
+145:         const text = buildReportText(rec);
+
+##### src/service/Reports/AccountReports/RecoveryDetails/page/RecoveryDetails.tsx:158 getRecoveryDetails [result never checked]
+153:       message.warning('Please enter Member Number');
+154:       return;
+155:     }
+156:     setLoading(true);
+157:     try {
+158:       const response = await apiService.getRecoveryDetails({
+159:         memberNo: no,
+160:         month,
+161:         year: String(year),
+162:       });
+163:       const rec: RecoveryData | null = (response as any)?.data || response || null;
+164: 
+165:       if (rec && rec.memberNo) {
+166:         setMemberName(rec.memberName || '');
+167:         const text = buildReportText(rec, month, year);
+
+##### src/service/Reports/AccountReports/RecurringDetails/page/RecurringDetails.tsx:158 getRecurringDetails [result never checked]
+153:       message.warning('Please enter Member Number');
+154:       return;
+155:     }
+156:     setLoading(true);
+157:     try {
+158:       const response = await apiService.getRecurringDetails({ memberNo: no });
+159:       const rows: RDItem[] = Array.isArray((response as any)?.data)
+160:         ? (response as any).data
+161:         : Array.isArray(response) ? (response as any) : [];
+162: 
+163:       if (rows[0]?.memberName) setMemberName(rows[0].memberName);
+164: 
+165:       const text = buildReportText(rows, no);
+166:       setReportText(text);
+167:       setRecordCount(rows.length);
+
+##### src/service/Reports/AccountReports/ShareCertificate/page/ShareCertificate.tsx:122 getShareCertificate [result never checked]
+117:       message.warning('Please enter Member Number');
+118:       return;
+119:     }
+120:     setLoading(true);
+121:     try {
+122:       const response = await apiService.getShareCertificate({ memberNo: no });
+123:       const data: ShareData = (response as any)?.data || response;
+124: 
+125:       if (data && data.memberNo) {
+126:         setMemberName(data.memberName || '');
+127:         const text = buildCertificate(data);
+128:         setCertText(text);
+129:         message.success('Share Certificate generated');
+130:         if (outputType === 'printer') printCertificate(text);
+131:       } else {
+
+##### src/service/Reports/MemberStatement/InterestCertificate/page/InterestCertificate.tsx:131 post [result never checked]
+126:       message.warning('Please enter Member Number');
+127:       return;
+128:     }
+129:     setLoading(true);
+130:     try {
+131:       const response = await apiService.post('/reports/interest-certificate', { memberNo, year });
+132:       const data: InterestData = (response as any).data || response;
+133:       if (!data || !data.memberNo) {
+134:         message.error('No interest data found for this member and year');
+135:         setCertText('');
+136:         return;
+137:       }
+138:       if (data.memberName && !memberName) setMemberName(data.memberName);
+139:       const text = buildCertificate(data);
+140:       setCertText(text);
+
+##### src/service/Reports/MemberStatement/LoanNilCertificate/page/LoanNilCertificate.tsx:55 get [result never checked]
+50:       return;
+51:     }
+52: 
+53:     setLoading(true);
+54:     try {
+55:       const response = await apiService.get(`/reports/loan-nil-certificate/${memberNo}`);
+56:       const data = (response as any).data || response;
+57: 
+58:       if (data && data.memberNo) {
+59:         setCertificateData(data);
+60:         if (data.memberName && !memberName) setMemberName(data.memberName);
+61:         if (!data.isNil) {
+62:           message.warning('Member has active outstanding loans');
+63:         } else {
+64:           message.success('Certificate generated — No active loans');
+
+##### src/service/Reports/MemberStatement/NewShareCertificate/page/NewShareCertificate.tsx:128 getShareCertificate [result never checked]
+123:       message.warning('Please enter Member Number');
+124:       return;
+125:     }
+126:     setLoading(true);
+127:     try {
+128:       const response = await apiService.getShareCertificate({ memberNo });
+129:       const data: ShareData = (response as any).data || response;
+130:       if (!data || !data.memberNo) {
+131:         message.error('Member not found');
+132:         setCertText('');
+133:         return;
+134:       }
+135:       if (data.memberName && !memberName) setMemberName(data.memberName);
+136:       const text = buildCertificate(data);
+137:       setCertText(text);
+
+##### src/service/Reports/MemberStatement/SuretyRegisterReport/page/SuretyRegisterReport.tsx:107 getSuretyRegister [result never checked]
+102:     }
+103:     setLoading(true);
+104:     try {
+105:       const params: { memberFrom: string; memberTo: string; loanType?: string } = { memberFrom, memberTo };
+106:       if (loanType) params.loanType = loanType;
+107:       const response = await apiService.getSuretyRegister(params);
+108:       const data: SuretyRecord[] = Array.isArray(response)
+109:         ? response
+110:         : Array.isArray((response as any)?.data)
+111:         ? (response as any).data
+112:         : [];
+113:       setReportData(data);
+114:       if (data.length === 0) message.info('No surety records found in this range');
+115:       else if (outputType === 'printer') {
+116:         // Build HTML for print
+
+##### src/service/Reports/Monthly/PrintVouchers/JournalTransferVoucher/page/JournalTransferVoucher.tsx:150 getAllJournalVoucherReferences [success-only]
+145:     fetchVoucherList();
+146:   }, []);
+147: 
+148:   const fetchVoucherList = async () => {
+149:     try {
+150:       const response = await apiService.getAllJournalVoucherReferences();
+151:       if (response.success && Array.isArray(response.data)) {
+152:         setVoucherList(response.data);
+153:       }
+154:     } catch (error) {
+155:       console.error('Error fetching journal vouchers:', error);
+156:     }
+157:   };
+158: 
+159:   const handleVoucherSelect = async (value: string) => {
+
+##### src/service/Reports/PassBookPrinting/page/PassBookPrinting.tsx:482 updatePassbookTracking [result ignored]
+477:       // Browser dev fallback — no silent printing available
+478:       printInIframe(buildPrintDoc(previewTitle, pages.map(p => p.body), pageWMm, pageHMm, bookHMm, detailLineH));
+479:       const maxLedgerId = Math.max(0, ...pages.map(p => p.maxLedgerId));
+480:       if (kind === 'details' && maxLedgerId > 0) {
+481:         try {
+482:           await apiService.updatePassbookTracking(memberNo.trim(), passbookType, maxLedgerId, totalPending);
+483:           await handleLoad();
+484:         } catch { /* non-fatal */ }
+485:       }
+486:       setPreviewKind(null);
+487:       return;
+488:     }
+489: 
+490:     setPrinting(true);
+491:     try {
+
+##### src/service/Reports/PassBookPrinting/page/PassBookPrinting.tsx:514 updatePassbookTracking [result ignored]
+509:           break;
+510:         }
+511:         pagesPrinted++;
+512:         if (kind === 'details' && page.maxLedgerId > 0) {
+513:           try {
+514:             await apiService.updatePassbookTracking(memberNo.trim(), passbookType, page.maxLedgerId, page.rowCount);
+515:           } catch { /* non-fatal — reprint can be reset from this screen */ }
+516:           printedRows += page.rowCount;
+517:         }
+518:       }
+519:       if (pagesPrinted === pages.length) {
+520:         message.success(kind === 'first' ? 'First page printed' : `Passbook details printed (${printedRows} transactions)`);
+521:       } else if (pagesPrinted > 0) {
+522:         message.warning(`Stopped after ${pagesPrinted} of ${pages.length} pages — remaining rows are still pending`);
+523:       }
+
+##### src/service/Reports/ReportHeadOrder/page/ReportHeadOrder.tsx:25 showMessageBox [result never checked]
+20: const COLS = '36px 84px 104px minmax(0,1fr) 72px 104px';
+21: 
+22: const confirmDialog = async (title: string, msg: string, detail: string, okLabel: string): Promise<boolean> => {
+23:   const api = (window as any).electronAPI;
+24:   if (api?.showMessageBox) {
+25:     const res = await api.showMessageBox({
+26:       type: 'warning', title, message: msg, detail,
+27:       buttons: ['Cancel', okLabel], defaultId: 0, cancelId: 0,
+28:     });
+29:     return res.response === 1;
+30:   }
+31:   return window.confirm(`${msg}\n\n${detail}`);
+32: };
+33: 
+34: const closeWindow = () => {
+
+##### src/service/Reports/Yearly/AnnualMemberStatement/page/AnnualMemberStatement.tsx:87 getAnnualMemberStatement [success-only]
+82:   }, [selectedWing]);
+83: 
+84:   const handleGenerate = useCallback(async (): Promise<AnnualStatementItem[]> => {
+85:     setLoading(true);
+86:     try {
+87:       const res = await apiService.getAnnualMemberStatement(
+88:         selectedWing || undefined,
+89:         selectedOffice || undefined,
+90:         asOnDate.format('YYYY-MM-DD')
+91:       );
+92:       if (res?.success) {
+93:         const rows: AnnualStatementItem[] = res.data?.reportData
+94:           ?? (Array.isArray(res.data) ? res.data : (res.data?.data ?? []));
+95:         setData(rows);
+96:         return rows;
+
+##### src/service/Reports/Yearly/CustomizedTrialBalance/DefinePL/page/DefinePL.tsx:46 getAllReportSchedules [success-only]
+41:     fetchSchedules();
+42:   }, []);
+43: 
+44:   const fetchSchedules = async () => {
+45:     try {
+46:       const response = await apiService.getAllReportSchedules('PL');
+47:       if (response.success) {
+48:         setSchedules(response.data);
+49:       }
+50:     } catch (error) {
+51:       console.error('Error fetching schedules:', error);
+52:     }
+53:   };
+54: 
+55:   const loadScheduleDetails = async (id: number) => {
+
+##### src/service/Reports/Yearly/CustomizedTrialBalance/DefineProfitLoss/page/DefineProfitLoss.tsx:60 getAllReportSchedules [success-only]
+55:     fetchSchedules();
+56:   }, []);
+57: 
+58:   const fetchSchedules = async () => {
+59:     try {
+60:       const response = await apiService.getAllReportSchedules('PL');
+61:       if (response.success && response.data) {
+62:         setSchedules(response.data);
+63:       }
+64:     } catch (error) {
+65:       console.error('Error fetching schedules:', error);
+66:     }
+67:   };
+68: 
+69:   const loadScheduleDetails = async (id: number) => {
+
+##### src/service/Reports/Yearly/InterestList/DividendPaid/page/DividendPaid.tsx:67 getDividendPaid [success-only]
+62:       message.warning('From date cannot be after To date');
+63:       return [];
+64:     }
+65:     setLoading(true);
+66:     try {
+67:       const response = await apiService.getDividendPaid(
+68:         selectedWing || '',
+69:         fromDate.format('YYYY-MM-DD'),
+70:         toDate.format('YYYY-MM-DD')
+71:       );
+72:       if (response?.success) {
+73:         const rows: DividendPaidData[] = Array.isArray(response.data)
+74:           ? response.data
+75:           : (response.data?.data ?? []);
+76:         setData(rows);
+
+##### src/service/Reports/Yearly/InterestList/DividendWarrant/page/DividendWarrant.tsx:70 getReportWings [success-only]
+65:     else { setOffices([]); setSelectedOffice(''); }
+66:   }, [selectedWing]); // eslint-disable-line react-hooks/exhaustive-deps
+67: 
+68:   const loadWings = async () => {
+69:     try {
+70:       const res = await apiService.getReportWings();
+71:       if (res?.success) {
+72:         const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+73:         setWings(list);
+74:       }
+75:     } catch (e) { console.error('Wings load error:', e); }
+76:   };
+77: 
+78:   const loadOffices = async (wingNo: string) => {
+79:     try {
+
+##### src/service/Reports/Yearly/MemberLoanDetail/page/MemberLoanDetail.tsx:73 getMemberLoanDetail [success-only]
+68: 
+69:   const handleSearch = useCallback(async (): Promise<LoanDetailItem[]> => {
+70:     if (!memberFrom || !memberTo) return [];
+71:     setLoading(true);
+72:     try {
+73:       const res = await apiService.getMemberLoanDetail(memberFrom, memberTo, selectedLoanType);
+74:       if (res?.success) {
+75:         const rows: LoanDetailItem[] = Array.isArray(res.data)
+76:           ? res.data
+77:           : (res.data?.data ?? []);
+78:         setTableData(rows);
+79:         setCurrentPage(1);
+80:         return rows;
+81:       }
+82:     } catch (e) {
+
+##### src/service/Transaction/JournalTransferEntry/hook/useJournalTransfer.ts:74 lookupMembers [success-only]
+69:     // screen expects.
+70:     // NOTE: only the first 100 members are preloaded for the Member No picker (the lookup endpoint is paged);
+71:     // members beyond that are not offered here and must be typed in.
+72:     const fetchMemberList = async () => {
+73:         try {
+74:             const response = await apiService.lookupMembers(undefined, 100);
+75:             if (response.success && Array.isArray(response.data)) {
+76:                 setMemberList(response.data.map((m: any) => ({
+77:                     mbno: String(m.memberNo || m.mbno || ''),
+78:                     name: (m.memberName || m.name || '').trim(),
+79:                 })).filter((m: any) => m.mbno));
+80:             }
+81:         } catch (e) { console.error('Member list fetch error:', e); }
+82:     };
+83: 
+
+##### src/service/Transaction/JournalTransferEntry/hook/useJournalTransfer.ts:86 getPendingVouchers [success-only]
+81:         } catch (e) { console.error('Member list fetch error:', e); }
+82:     };
+83: 
+84:     const fetchVoucherList = async () => {
+85:         try {
+86:             const response = await apiService.getPendingVouchers();
+87:             if (response.success && response.data) {
+88:                 const items = Array.isArray(response.data) ? response.data : [];
+89:                 // Store ALL flat rows so handleVoucherSelect can use them directly
+90:                 setRawVoucherRows(items);
+91: 
+92:                 const seen = new Set<string>();
+93:                 const vouchers: VoucherOption[] = [];
+94:                 for (const item of items) {
+95:                     if (!item.voucherNo || seen.has(item.voucherNo)) continue;
+
+##### src/service/Transaction/MemberBalanceTransfer/page/MemberBalanceTransfer.tsx:54 getHeadList [success-only]
+49:   };
+50: 
+51:   useEffect(() => {
+52:     const loadHeads = async () => {
+53:       try {
+54:         const res = await apiService.getHeadList();
+55:         if (res.success && res.data) setHeads(res.data);
+56:       } catch { /* silent */ }
+57:     };
+58:     loadHeads();
+59:   }, []);
+60: 
+61:   const handleGenerate = async () => {
+62:     if (!debitHead || !creditHead) { message.warning(t('Select both Debit Head and Credit Head')); return; }
+63:     const limit = resolveCreditLimit();
+
+##### src/service/Transaction/PassTransactions/hook/usePassTransactions.ts:108 passTransaction [success-only]
+103:             'Pass'
+104:         );
+105:         if (!confirmed) return;
+106: 
+107:         try {
+108:             const response = await apiService.passTransaction(voucherNo);
+109:             if (response.success) {
+110:                 // Surface loan consolidation explicitly — passTransaction()
+111:                 // now returns a `consolidation` block whenever this
+112:                 // disbursement absorbed an existing same-type loan (see
+113:                 // pass-transaction.service.ts). Previously this happened
+114:                 // silently: an old case got zeroed and a new combined one
+115:                 // created with no indication to the operator it occurred.
+116:                 const consolidation = (response.data as any)?.consolidation;
+117:                 const reagreement = (response.data as any)?.reagreement;
+
+##### src/service/Transaction/Receipt&Payment/Receipt/hook/useReceipt.ts:101 get [result never checked]
+96:   // Load loan balances for a member
+97:   const loadMemberBalances = useCallback(async (memberNo: string, memberName: string, officeNo: string) => {
+98:     const seq = ++memberSeq.current;
+99:     setIsLoadingMember(true);
+100:     try {
+101:       const response = await apiService.get(`/utilities/member/balance?memberNo=${memberNo}`);
+102:       if (seq !== memberSeq.current) return; // a newer member was picked meanwhile
+103:       // Response is double-wrapped by the transform interceptor: data.data holds the payload.
+104:       const data = response?.data?.data ?? response?.data;
+105:       const loan = data?.loan_summary || {};
+106: 
+107:       setFormData(prev => ({
+108:         ...prev,
+109:         memberNo,
+110:         memberName,
+
+##### src/service/Utility/UpdateSavingInterest/page/UpdateSavingInterest.tsx:51 getHeadList [success-only]
+46:     finally { setIsLoading(false); }
+47:   }, []);
+48: 
+49:   const loadHeads = useCallback(async () => {
+50:     try {
+51:       const response = await apiService.getHeadList();
+52:       const heads = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+53:       setHeadList(Array.isArray(heads) ? heads : []);
+54:     } catch { setHeadList([]); }
+55:   }, []);
+56: 
+57:   const setDefaultDates = useCallback(() => {
+58:     // Default to the last COMPLETED quarter (the current one is still unfinished).
+59:     const now = dayjs();
+60:     const qStart = dayjs().year(now.year()).month(Math.floor(now.month() / 3) * 3).date(1).subtract(3, 'month');

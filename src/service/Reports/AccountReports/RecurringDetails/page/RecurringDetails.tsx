@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { message } from 'antd';
 import { Printer, Search, RotateCcw, Repeat, User } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
@@ -156,6 +157,7 @@ const RecurringDetails: React.FC = () => {
     setLoading(true);
     try {
       const response = await apiService.getRecurringDetails({ memberNo: no });
+      if (isFailure(response)) { await notifyError(response, 'load the recurring deposit details'); return; }
       const rows: RDItem[] = Array.isArray((response as any)?.data)
         ? (response as any).data
         : Array.isArray(response) ? (response as any) : [];

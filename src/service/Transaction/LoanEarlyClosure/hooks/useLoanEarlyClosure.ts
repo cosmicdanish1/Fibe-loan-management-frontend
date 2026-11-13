@@ -122,6 +122,21 @@ export interface ClosureQuote {
     /** Post-consolidation predecessor principal already recovered through BSP;
      *  reduces closure principal but does not settle/advance an EMI. */
     payrollLagPrincipalOffset: number;
+    /** ES-522: set when the closure date is inside the grace period of the current month's unpaid installment: that
+     *  installment is averaged with the remaining ones and carries no flat interest of its own. */
+    currentMonthInGrace?: { installmentNo: number; dueDate: string; principalDue: number } | null;
+    /** ES-522: true when the quote was calculated with the "delayed payroll principal is owed back" option ON. */
+    adjustPayrollLag?: boolean;
+    /** ES-522: delayed payroll principal already returned to the member (tracked separately). */
+    payrollLagRefunded?: number;
+    /** ES-522: delayed payroll principal still owed back; deducted from what the member pays (0 when the option is off). */
+    payrollLagRefundDue?: number;
+    /** ES-522: old-loan INTEREST carried by the same delayed payroll deductions, tracked separately from the principal. */
+    payrollLagInterestOffset?: number;
+    payrollLagInterestRefunded?: number;
+    payrollLagInterestRefundDue?: number;
+    /** ES-522: principal really still on the ledger account after the delayed payroll / refund. */
+    ledgerPrincipal?: number;
     adjustment: number;
     /** Payroll-lag credit, DETECTED (see backend recordLoanRepayment) but
      *  never auto-applied — negative, NOT included in finalClosureAmount
@@ -177,6 +192,8 @@ export interface ClosureForm {
     /** Adjust RD / Share Value toward the closure amount before asking the
      *  member to pay the rest — defaults to checked per business policy. */
     applyRdShare: boolean;
+    /** ES-522: treat the delayed predecessor-payroll principal as owed back to the member instead of reducing the loan. */
+    adjustPayrollLag: boolean;
 }
 
 // Local calendar date (toISOString would give the UTC date, which is
@@ -197,6 +214,7 @@ const makeDefaultForm = (): ClosureForm => ({
     adjustment: 0,
     receiptNo: '',
     applyRdShare: true,
+    adjustPayrollLag: false,
 });
 
 export const useLoanEarlyClosure = () => {
@@ -229,7 +247,7 @@ export const useLoanEarlyClosure = () => {
         if (key === 'adjustment' && !Number.isFinite(value as number)) return;
         // The quote was computed for the old inputs - invalidate it so Close
         // stays disabled until a fresh quote is fetched (Recalc).
-        if (key === 'closureDate' || key === 'adjustment' || key === 'selectedLoanCase' || key === 'applyRdShare') {
+        if (key === 'closureDate' || key === 'adjustment' || key === 'selectedLoanCase' || key === 'applyRdShare' || key === 'adjustPayrollLag') {
             quoteSeq.current++;
             setQuote(null);
             setQuoteLoading(false);
@@ -266,7 +284,7 @@ export const useLoanEarlyClosure = () => {
         }
     }, []);
 
-    const fetchQuote = useCallback(async (loancaseno: string, adjustment: number, closureDate: string, applyRdShare: boolean, mbno: string) => {
+    const fetchQuote = useCallback(async (loancaseno: string, adjustment: number, closureDate: string, applyRdShare: boolean, mbno: string, adjustPayrollLag: boolean = false) => {
         if (!loancaseno) return;
         const seq = ++quoteSeq.current;
         setQuote(null);
@@ -285,7 +303,7 @@ export const useLoanEarlyClosure = () => {
                 // across members, so without this a case-number collision
                 // with an unrelated member's loan can silently quote the
                 // wrong one.
-                body: JSON.stringify({ adjustment, closureDate, applyRdShare, mbno }),
+                body: JSON.stringify({ adjustment, closureDate, applyRdShare, mbno, adjustPayrollLag }),
             });
             if (!res.ok) throw new Error('Failed to load closure quote');
             const data = await res.json();
@@ -312,17 +330,43 @@ export const useLoanEarlyClosure = () => {
     const handleLoanSelect = useCallback(async (loancaseno: string) => {
         setForm(prev => ({ ...prev, selectedLoanCase: loancaseno, adjustment: 0 }));
         setClosed(false);
-        await fetchQuote(loancaseno, 0, form.closureDate, form.applyRdShare, form.mbno);
-    }, [fetchQuote, form.closureDate, form.applyRdShare, form.mbno]);
+        await fetchQuote(loancaseno, 0, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag);
+    }, [fetchQuote, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag]);
 
     const recalculate = useCallback(async () => {
-        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno);
-    }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, fetchQuote]);
+        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag);
+    }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag, fetchQuote]);
 
     const toggleApplyRdShare = useCallback(async (value: boolean) => {
         setForm(prev => ({ ...prev, applyRdShare: value }));
-        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, value, form.mbno);
-    }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.mbno, fetchQuote]);
+        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, value, form.mbno, form.adjustPayrollLag);
+    }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.mbno, form.adjustPayrollLag, fetchQuote]);
+
+    /** ES-522: switch the "delayed payroll principal is owed back to the member" option and re-quote. */
+    const toggleAdjustPayrollLag = useCallback(async (value: boolean) => {
+        setForm(prev => ({ ...prev, adjustPayrollLag: value }));
+        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, value);
+    }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, fetchQuote]);
+
+    /** ES-522: record that (part of) the delayed payroll principal was already returned to the member, then re-quote. */
+    const recordPayrollLagRefund = useCallback(async (principal: number, interest: number, voucherNo: string) => {
+        if (!form.selectedLoanCase || !form.mbno) return;
+        try {
+            const base = await getApiBaseUrl();
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch(`${base}/loans/early-closure/payroll-lag-refunds/${form.selectedLoanCase}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                body: JSON.stringify({ mbno: form.mbno, principal, interest, voucherNo: voucherNo || undefined, refundedOn: form.closureDate }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to record the refund');
+            setMessage({ type: 'success', text: 'Refund recorded.' });
+            await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag);
+        } catch (err: any) {
+            setMessage({ type: 'error', text: err.message });
+        }
+    }, [form.selectedLoanCase, form.mbno, form.adjustment, form.closureDate, form.applyRdShare, form.adjustPayrollLag, fetchQuote]);
 
     /** One-click accept for quote.suggestedAdjustment (the detected
      *  payroll-lag credit) — per the user's explicit decision, this is
@@ -334,8 +378,8 @@ export const useLoanEarlyClosure = () => {
         if (!quote || !form.selectedLoanCase || quote.suggestedAdjustment === 0) return;
         const value = form.adjustment + quote.suggestedAdjustment;
         setForm(prev => ({ ...prev, adjustment: value }));
-        await fetchQuote(form.selectedLoanCase, value, form.closureDate, form.applyRdShare, form.mbno);
-    }, [quote, form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, fetchQuote]);
+        await fetchQuote(form.selectedLoanCase, value, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag);
+    }, [quote, form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag, fetchQuote]);
 
     const handleExecuteClosure = async () => {
         if (!form.selectedLoanCase || !quote) return;
@@ -357,6 +401,7 @@ export const useLoanEarlyClosure = () => {
                     closureDate: form.closureDate,
                     applyRdShare: form.applyRdShare,
                     mbno: form.mbno,
+                    adjustPayrollLag: form.adjustPayrollLag,
                 }),
             };
             // ES-116: when the administrator has switched on "authenticator code" for Early Closure the
@@ -401,6 +446,8 @@ export const useLoanEarlyClosure = () => {
         handleLoanSelect,
         recalculate,
         toggleApplyRdShare,
+        toggleAdjustPayrollLag,
+        recordPayrollLagRefund,
         applySuggestedAdjustment,
         handleExecuteClosure,
         handleReset,

@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 import { DatePicker, Select } from 'antd';
 import { isFromAfterTo } from '@/utils/dates';
 import { useTranslation } from 'react-i18next';
-import { showDialog3 as showDialog } from '@/utils/dialog';
+import { showDialog3 as showDialog, toastError, isFailure } from '@/utils/dialog';
 
 const showConfirm = async (title: string, detail: string): Promise<boolean> => {
   if ((window as any).electronAPI?.showMessageBox) {
@@ -49,6 +49,7 @@ const UpdateSavingInterest: React.FC = () => {
   const loadHeads = useCallback(async () => {
     try {
       const response = await apiService.getHeadList();
+      if (isFailure(response)) toastError(response, 'load the head list');
       const heads = Array.isArray(response.data) ? response.data : (response.data?.data || []);
       setHeadList(Array.isArray(heads) ? heads : []);
     } catch { setHeadList([]); }

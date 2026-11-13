@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { reportEgg } from '../../../../utils/eggHunt';
 import { Info, Building2, Mail, Code2, Cpu, Sparkles, Users, ShieldCheck, Zap, Heart, Award } from 'lucide-react';
 import { apiService } from '../../../../services/api';
 import AwDialog from '@/components/shared/kit/AwDialog';
@@ -128,6 +129,17 @@ const About: React.FC = () => {
   }, []);
 
   useEffect(() => { fetchSystemInfo(); }, [fetchSystemInfo]);
+
+  // Easter egg: counted when the hidden note is part of the user's selection (Ctrl+A)
+  const eggRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const onSelect = () => {
+      const sel = window.getSelection();
+      if (eggRef.current && sel && !sel.isCollapsed && sel.containsNode(eggRef.current, true)) reportEgg('about');
+    };
+    document.addEventListener('selectionchange', onSelect);
+    return () => document.removeEventListener('selectionchange', onSelect);
+  }, []);
 
   const formatUptime = (seconds: number) => {
     const d = Math.floor(seconds / 86400);
@@ -284,6 +296,11 @@ const About: React.FC = () => {
       <div className="aw-footer">
         <span>© {new Date().getFullYear()} {t('Paper White Technology · All rights reserved')}</span>
         <span>{t('About')}</span>
+      </div>
+      {/* Easter egg #5: invisible until the text is selected (Ctrl+A) */}
+      <style>{'.kova-egg::selection{color:#fff;background:#0a84ff}'}</style>
+      <div aria-hidden="true" style={{ padding: '2px 16px', fontSize: 11, color: 'transparent', userSelect: 'text' }}>
+        <span ref={eggRef} className="kova-egg" style={{ color: 'transparent' }}>This was our first application to reach production. Made with love by MD Danish Qureshi &amp; Akshay Kumar - The Kova Studio. Riddle: ask the box that knows every window for the ones who built them; say a name.</span>
       </div>
 
       <AwDialog open={!!(modal && modalData)} title={modalData?.title ?? ''} onClose={() => setModal(null)} icon={<Info size={14} />} maxWidth="30rem" compact>

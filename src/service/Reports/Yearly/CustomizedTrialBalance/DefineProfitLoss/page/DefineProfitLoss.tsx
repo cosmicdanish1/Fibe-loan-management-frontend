@@ -16,7 +16,7 @@ import { apiService } from '../../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../../utils/pageToolbarActions';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../../store';
-import { showDialog3 as showDialog } from '@/utils/dialog';
+import { showDialog3 as showDialog, toastError, isFailure } from '@/utils/dialog';
 
 const { Option } = Select;
 
@@ -58,6 +58,7 @@ const DefineProfitLoss: React.FC = () => {
   const fetchSchedules = async () => {
     try {
       const response = await apiService.getAllReportSchedules('PL');
+      if (isFailure(response)) toastError(response, 'load the saved schedules');
       if (response.success && response.data) {
         setSchedules(response.data);
       }

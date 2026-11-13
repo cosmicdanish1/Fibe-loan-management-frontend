@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { DatePicker, Button, ConfigProvider, Select, Radio, message, theme as antdTheme } from 'antd';
 import { Printer, CreditCard, Building2, Search, Monitor } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
@@ -69,6 +70,7 @@ const DividendPaid: React.FC = () => {
         fromDate.format('YYYY-MM-DD'),
         toDate.format('YYYY-MM-DD')
       );
+      if (isFailure(response)) await notifyError(response, 'load the dividend paid report');
       if (response?.success) {
         const rows: DividendPaidData[] = Array.isArray(response.data)
           ? response.data
@@ -77,7 +79,8 @@ const DividendPaid: React.FC = () => {
         return rows;
       }
     } catch (e: any) {
-      console.error('DividendPaid fetch error:', e);
+      console.error('InterestList fetch error:', e);
+      await notifyError(null, 'load the dividend paid report');
     } finally {
       setLoading(false);
     }

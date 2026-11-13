@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { ConfigProvider, Select, message, Spin, theme as antdTheme, Modal } from 'antd';
 import { BookOpen, User, Search, RotateCcw, Printer, FileText, X, Users, ChevronLeft, ChevronRight, Save, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { isFailure } from '@/utils/dialog';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../store';
 import dayjs from 'dayjs';
@@ -479,9 +480,9 @@ const PassBookPrinting: React.FC = () => {
       const maxLedgerId = Math.max(0, ...pages.map(p => p.maxLedgerId));
       if (kind === 'details' && maxLedgerId > 0) {
         try {
-          await apiService.updatePassbookTracking(memberNo.trim(), passbookType, maxLedgerId, totalPending);
-          await handleLoad();
-        } catch { /* non-fatal */ }
+          const tracked = await apiService.updatePassbookTracking(memberNo.trim(), passbookType, maxLedgerId, totalPending);
+          if (isFailure(tracked)) { message.warning('The passbook was printed but the printed rows could not be recorded, so a reprint may repeat them. Please try again or reset the passbook from this screen.'); } else await handleLoad();
+        } catch { message.warning('The passbook was printed but the printed rows could not be recorded, so a reprint may repeat them. Please try again or reset the passbook from this screen.'); }
       }
       setPreviewKind(null);
       return;
@@ -511,8 +512,9 @@ const PassBookPrinting: React.FC = () => {
         pagesPrinted++;
         if (kind === 'details' && page.maxLedgerId > 0) {
           try {
-            await apiService.updatePassbookTracking(memberNo.trim(), passbookType, page.maxLedgerId, page.rowCount);
-          } catch { /* non-fatal — reprint can be reset from this screen */ }
+            const tracked = await apiService.updatePassbookTracking(memberNo.trim(), passbookType, page.maxLedgerId, page.rowCount);
+            if (isFailure(tracked)) message.warning('The passbook was printed but the printed rows could not be recorded, so a reprint may repeat them. Please try again or reset the passbook from this screen.');
+          } catch { message.warning('The passbook was printed but the printed rows could not be recorded, so a reprint may repeat them. Please try again or reset the passbook from this screen.'); }
           printedRows += page.rowCount;
         }
       }

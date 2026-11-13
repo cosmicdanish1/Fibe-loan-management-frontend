@@ -1,0 +1,317 @@
+/* Dashboard only. Everything is scoped under `.app-window.dash`, so no other window is touched.
+   It builds on the shared kit (aw-* classes and tokens) and follows Settings: accent, Light / Dark,
+   density, radius, shadows and the Animations choice.
+
+   Motion note: input.css switches every animation off with `* { animation-duration: .001ms !important }`.
+   Rules here opt back in with `!important`, and every duration comes from the variables below so that
+   "Animations: Off", the slow-PC mode and the system reduce-motion setting still win. */
+
+.app-window.dash {
+  --dash-in: .5s;      /* cards arriving */
+  --dash-fast: .2s;    /* hover feedback */
+  --dash-draw: .9s;    /* charts drawing themselves */
+  --dash-step: 45ms;   /* delay between one card and the next */
+}
+html[data-motion-lite="1"] .app-window.dash { --dash-in: .1s; --dash-fast: .1s; --dash-draw: .1s; --dash-step: 0ms; }
+html[data-motion="off"] .app-window.dash { --dash-in: .001ms; --dash-fast: .001ms; --dash-draw: .001ms; --dash-step: 0ms; }
+@media (prefers-reduced-motion: reduce) {
+  .app-window.dash { --dash-in: .001ms; --dash-fast: .001ms; --dash-draw: .001ms; --dash-step: 0ms; }
+}
+
+/* ── Dashboard art: a picture behind the top of the dashboard (Settings → Dashboard → Dashboard Art).
+   It scrolls with the page and fades into the page colour, so cards lower down sit on a plain background.
+   Cards stay solid; only the greeting strip gets a frosted backing so its text reads over any picture. ── */
+.app-window.dash .aw-content.has-art { position: relative; }
+.app-window.dash .dash-art {
+  position: absolute; top: 0; left: 0; right: 0; height: min(460px, 62vh); z-index: 0; pointer-events: none;
+  background-size: cover; background-position: center 35%; background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+  animation: dashArtIn var(--dash-draw) var(--aw-ease) backwards !important;
+  animation-duration: var(--dash-draw) !important;
+}
+@keyframes dashArtIn { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
+.app-window.dash .aw-content.has-art > .aw-stack { position: relative; z-index: 1; }
+.app-window.dash .aw-content.has-art .dash-top {
+  padding: 10px 14px; border-radius: calc(var(--aw-radius) * 1.8);
+  background: color-mix(in srgb, var(--aw-surface) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--aw-surface) 60%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: var(--aw-shadow);
+}
+
+/* ── Top strip: greeting, date, Customize ─────────────────────────────────── */
+.app-window.dash .dash-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--aw-gap); padding: 2px 2px 0; }
+.app-window.dash .dash-hello { margin: 0; color: var(--aw-text); font-size: var(--type-page-title); line-height: 1.2; font-weight: 700; letter-spacing: -.02em; }
+.app-window.dash .dash-hello span { color: var(--aw-accent); }
+.app-window.dash .dash-top-actions { display: flex; align-items: center; gap: 8px; }
+.app-window.dash .dash-edit-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ── Grid: rows of cards. Heights always come from the content, so cards can never sit on top of each other. ── */
+.app-window.dash .bento-grid { container: dash / inline-size; display: flex; flex-direction: column; gap: var(--aw-gap); }
+.app-window.dash .bento-row { display: grid; grid-template-columns: var(--cols, minmax(0, 1fr)); gap: var(--aw-gap); align-items: stretch; }
+.app-window.dash .bento-cell {
+  position: relative; display: flex; min-width: 0; border-radius: calc(var(--aw-radius) * 1.8);
+  animation: dashRise var(--dash-in) var(--aw-ease) backwards !important;
+  animation-duration: var(--dash-in) !important;
+  animation-delay: calc(var(--i, 0) * var(--dash-step)) !important;
+}
+.app-window.dash .bento-inner { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.app-window.dash .bento-inner > .aw-card { flex: 1 1 auto; min-width: 0; }
+.app-window.dash .bento-grid.is-settled .bento-cell { animation: none !important; }
+@keyframes dashRise { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
+
+/* Narrower windows: four-across rows become two-across, then one column. */
+@container dash (min-width: 641px) and (max-width: 1080px) {
+  .app-window.dash .bento-row[data-n="3"], .app-window.dash .bento-row[data-n="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-window.dash .bento-row[data-n="3"] > .bento-cell:last-of-type { grid-column: 1 / -1; }
+  .app-window.dash .bento-row[data-n="3"] .bento-split, .app-window.dash .bento-row[data-n="4"] .bento-split { display: none; }
+}
+@container dash (max-width: 640px) {
+  .app-window.dash .bento-row { grid-template-columns: minmax(0, 1fr); }
+  .app-window.dash .bento-split { display: none; }
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+.app-window.dash .bento-inner > .aw-card {
+  transition: transform var(--dash-fast) var(--aw-ease), box-shadow var(--dash-fast) var(--aw-ease), border-color var(--dash-fast) var(--aw-ease) !important;
+  transition-duration: var(--dash-fast) !important;
+}
+/* Widget cards carry their own colour (--dash-tone): a soft wash in the top-left corner and a matching hover edge. */
+.app-window.dash .bento-inner > .dash-card {
+  background:
+    radial-gradient(130% 85% at 0% 0%, color-mix(in srgb, var(--dash-tone, var(--aw-accent)) 7%, transparent), transparent 58%),
+    var(--aw-surface);
+}
+.app-window.dash .bento-cell:not(.is-editing):hover > .bento-inner > .aw-card {
+  transform: translateY(-2px);
+  box-shadow: var(--aw-shadow-pop);
+  border-color: color-mix(in srgb, var(--dash-tone, var(--aw-accent)) 32%, var(--aw-border-strong));
+}
+.app-window.dash .dash-tone-dot {
+  width: 8px; height: 8px; flex: none; border-radius: 3px; background: var(--dash-tone, var(--aw-accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-tone, var(--aw-accent)) 18%, transparent);
+}
+.app-window.dash .dash-num { font-variant-numeric: tabular-nums; }
+
+/* ── One anatomy for every widget ──────────────────────────────────────────
+   1. Head      colour dot + title
+   2. Headline  the one number that matters, top-left, always the same size; its caption under it;
+                a status pill on the right
+   3. Body      the picture or the list (ring + legend, gauge, trend line, steps, rows)
+   4. Foot      one line of context or the card's action, pinned to the bottom edge so the
+                feet of all cards in a row line up
+   A card with nothing to show centres its message in the body. */
+.app-window.dash .dash-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--aw-gap); }
+.app-window.dash .dash-body > .aw-empty { flex: 1 1 auto; }
+.app-window.dash .dash-headline { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; min-height: calc(var(--type-body-size) * 2 + 24px); }
+.app-window.dash .dash-big { margin: 0; color: var(--dash-tone, var(--aw-text)); font-size: calc(var(--type-body-size) + 12px); line-height: 1; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.app-window.dash .dash-big small { margin-left: 4px; color: var(--aw-muted); font-size: var(--type-body-size); font-weight: 700; letter-spacing: 0; }
+.app-window.dash .dash-caption { margin: 7px 0 0; color: var(--aw-muted); font-size: calc(var(--type-label-size) + 1px); line-height: 1.3; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.app-window.dash .dash-headline > .aw-pill { flex: none; gap: 3px; white-space: nowrap; }
+.app-window.dash .dash-viz { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.app-window.dash .dash-viz > .aw-rows { flex: 1 1 150px; min-width: 150px; }
+.app-window.dash .dash-foot {
+  margin-top: auto; padding-top: calc(var(--aw-pad) * .7); border-top: 1px solid var(--aw-border);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px;
+  min-height: calc(var(--aw-control-h) + var(--aw-pad) * .7);
+  color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); font-weight: 600;
+}
+.app-window.dash .dash-foot strong { color: var(--aw-text); font-variant-numeric: tabular-nums; }
+.app-window.dash .dash-ring-center strong { font-size: calc(var(--type-body-size) + 5px); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.app-window.dash .dash-ring-center span { max-width: 86px; margin-top: 2px; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 2px); line-height: 1.15; font-weight: 600; }
+
+/* Bars grow from the left when the card arrives. */
+.app-window.dash .aw-bar > span {
+  transform-origin: left center;
+  animation: dashGrowX var(--dash-draw) var(--aw-ease) backwards !important;
+  animation-duration: var(--dash-draw) !important;
+}
+@keyframes dashGrowX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ── Charts ────────────────────────────────────────────────────────────── */
+/* Ring and gauge: the stroke is drawn from nothing to its full length (--len). */
+.app-window.dash .dash-draw {
+  animation: dashDraw var(--dash-draw) var(--aw-ease) backwards !important;
+  animation-duration: var(--dash-draw) !important;
+}
+@keyframes dashDraw { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+.app-window.dash .dash-seg { transition: stroke-width var(--dash-fast) var(--aw-ease) !important; transition-duration: var(--dash-fast) !important; }
+.app-window.dash .dash-seg:hover { stroke-width: calc(var(--seg-w) + 4px); }
+/* Trend line: revealed from left to right, then the end dot pops in. */
+.app-window.dash .dash-reveal {
+  animation: dashReveal var(--dash-draw) var(--aw-ease) backwards !important;
+  animation-duration: var(--dash-draw) !important;
+}
+@keyframes dashReveal { from { clip-path: inset(-10px 100% -10px 0); } to { clip-path: inset(-10px -10px -10px 0); } }
+.app-window.dash .dash-dot-in {
+  animation: dashPop var(--dash-in) var(--aw-ease) backwards !important;
+  animation-duration: var(--dash-in) !important;
+  animation-delay: calc(var(--dash-draw) * .8) !important;
+}
+@keyframes dashPop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+
+/* ── Loading placeholder ───────────────────────────────────────────────── */
+.app-window.dash .dash-skel { display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 4px 0; }
+.app-window.dash .dash-skel > span {
+  display: block; height: 12px; border-radius: 6px;
+  background: linear-gradient(90deg, var(--aw-border) 20%, var(--aw-surface-muted) 50%, var(--aw-border) 80%);
+  background-size: 220% 100%;
+  animation: dashShimmer 1.3s linear infinite !important;
+  animation-duration: 1.3s !important;
+  animation-iteration-count: infinite !important;
+}
+.app-window.dash .dash-skel > span:first-child { height: 26px; width: 45%; }
+.app-window.dash .dash-skel > span:nth-child(3) { width: 70%; }
+@keyframes dashShimmer { from { background-position: 100% 0; } to { background-position: -120% 0; } }
+
+/* ── Notice Board and My Notes ─────────────────────────────────────────── */
+.app-window.dash .dash-notice .aw-card-head { flex-wrap: wrap; row-gap: 8px; }
+.app-window.dash .dash-notice-tabs { margin-left: 6px; }
+.app-window.dash .dash-notice-tabs .aw-chip { gap: 5px; padding: 0 10px; }
+.app-window.dash .dash-notice-count { min-width: 18px; padding: 0 5px; border-radius: 999px; background: color-mix(in srgb, currentColor 16%, transparent); font-size: calc(var(--type-body-size) - 3px); line-height: 1.6; text-align: center; }
+.app-window.dash .dash-notice-form { display: flex; flex-direction: column; gap: var(--aw-gap); margin-bottom: var(--aw-gap); }
+.app-window.dash .dash-notice-list { flex: 1 1 auto; min-height: 120px; max-height: 320px; overflow-y: auto; padding: 4px 4px 0 0; }
+.app-window.dash .dash-notice-item { margin-bottom: 8px; transition: opacity var(--dash-fast) var(--aw-ease) !important; transition-duration: var(--dash-fast) !important; }
+.app-window.dash .dash-notice-item p { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* An administrator's important notice: stronger edge, pinned look, always first. */
+.app-window.dash .dash-notice-item.is-important {
+  --aw-tone: var(--aw-danger);
+  border-left: 4px solid var(--aw-danger);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--aw-danger) 14%, var(--aw-surface)), color-mix(in srgb, var(--aw-danger) 5%, var(--aw-surface)));
+}
+.app-window.dash .dash-notice-flag { margin-left: 8px; vertical-align: 1px; }
+
+/* Sticky notes: paper squares in the note's colour, slightly tilted; they straighten when pointed at. */
+.app-window.dash .dash-notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; padding: 6px 4px 8px; }
+.app-window.dash .dash-note {
+  --note: #eab308;
+  display: flex; flex-direction: column; gap: 6px; min-height: 132px; padding: 12px 12px 10px;
+  border-radius: 4px 4px 14px 4px; color: var(--aw-text);
+  background: color-mix(in srgb, var(--note) 24%, var(--aw-surface));
+  border: 1px solid color-mix(in srgb, var(--note) 42%, transparent);
+  border-top: 5px solid color-mix(in srgb, var(--note) 75%, var(--aw-surface));
+  box-shadow: var(--aw-shadow);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform var(--dash-fast) var(--aw-ease), box-shadow var(--dash-fast) var(--aw-ease), opacity var(--dash-fast) var(--aw-ease) !important;
+  transition-duration: var(--dash-fast) !important;
+}
+.app-window.dash .dash-note:hover { transform: rotate(0deg) translateY(-3px); box-shadow: var(--aw-shadow-pop); }
+.app-window.dash .dash-note[data-color="green"], .app-window.dash .dash-swatch[data-color="green"] { --note: #22c55e; }
+.app-window.dash .dash-note[data-color="blue"], .app-window.dash .dash-swatch[data-color="blue"] { --note: #3b82f6; }
+.app-window.dash .dash-note[data-color="pink"], .app-window.dash .dash-swatch[data-color="pink"] { --note: #ec4899; }
+.app-window.dash .dash-note[data-color="purple"], .app-window.dash .dash-swatch[data-color="purple"] { --note: #8b5cf6; }
+.app-window.dash .dash-note header { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.app-window.dash .dash-note header strong { min-width: 0; font-size: var(--type-body-size); line-height: 1.3; overflow-wrap: anywhere; }
+.app-window.dash .dash-note header .aw-icon-btn { width: 22px; height: 22px; margin: -4px -6px 0 0; flex: none; opacity: 0; }
+.app-window.dash .dash-note:hover header .aw-icon-btn, .app-window.dash .dash-note header .aw-icon-btn:focus-visible { opacity: 1; }
+.app-window.dash .dash-note p { flex: 1 1 auto; margin: 0; font-size: calc(var(--type-body-size) - 1px); font-weight: 500; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.app-window.dash .dash-note footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 3px); font-weight: 600; }
+.app-window.dash .dash-note-publish {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; cursor: pointer; font: inherit; font-weight: 700;
+  color: var(--aw-text); background: color-mix(in srgb, var(--note) 30%, var(--aw-surface)); border: 1px solid color-mix(in srgb, var(--note) 55%, transparent);
+}
+.app-window.dash .dash-note-publish:hover { background: color-mix(in srgb, var(--note) 55%, var(--aw-surface)); }
+.app-window.dash .dash-swatch {
+  --note: #eab308; width: 22px; height: 22px; padding: 0; border-radius: 6px; cursor: pointer;
+  background: color-mix(in srgb, var(--note) 60%, var(--aw-surface)); border: 2px solid transparent;
+}
+.app-window.dash .dash-swatch.is-on { border-color: var(--aw-text); box-shadow: 0 0 0 2px var(--aw-surface) inset; }
+
+/* ── Quick Actions ─────────────────────────────────────────────────────── */
+.app-window.dash .dash-qa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--aw-gap); }
+.app-window.dash .dash-qa {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 8px;
+  border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface-muted);
+  color: inherit; font: inherit; cursor: pointer;
+  transition: transform var(--dash-fast) var(--aw-ease), box-shadow var(--dash-fast) var(--aw-ease), border-color var(--dash-fast) var(--aw-ease), background-color var(--dash-fast) var(--aw-ease) !important;
+  transition-duration: var(--dash-fast) !important;
+  animation: dashPop var(--dash-in) var(--aw-ease) backwards !important;
+  animation-duration: var(--dash-in) !important;
+  animation-delay: calc(var(--i, 0) * var(--dash-step) * .7) !important;
+}
+.app-window.dash .dash-qa .aw-card-icon {
+  width: 36px; height: 36px;
+  transition: transform var(--dash-fast) var(--aw-ease), background-color var(--dash-fast) var(--aw-ease) !important;
+  transition-duration: var(--dash-fast) !important;
+}
+.app-window.dash .dash-qa-label { font-size: calc(var(--type-body-size) - 2px); font-weight: 700; line-height: 1.2; text-align: center; text-transform: uppercase; letter-spacing: .02em; }
+.app-window.dash .dash-qa:hover {
+  transform: translateY(-3px); box-shadow: var(--aw-shadow-pop); background: var(--aw-accent-soft);
+  border-color: color-mix(in srgb, var(--aw-accent) 45%, var(--aw-border-strong));
+}
+.app-window.dash .dash-qa:hover .aw-card-icon { transform: scale(1.1) rotate(-5deg); background: color-mix(in srgb, var(--aw-accent) 24%, var(--aw-surface)); }
+.app-window.dash .dash-qa:active { transform: translateY(0) scale(.97); }
+.app-window.dash .dash-qa:focus-visible { outline: 2px solid var(--aw-accent); outline-offset: 2px; }
+
+/* ── Financial-year banner ─────────────────────────────────────────────── */
+.app-window.dash .dash-fy { justify-content: space-between; gap: var(--aw-pad); }
+.app-window.dash .dash-fy-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.app-window.dash .dash-fy-year { margin: 2px 0 0; color: var(--aw-text); font-size: calc(var(--type-body-size) + 8px); line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
+.app-window.dash .dash-fy-days { display: flex; align-items: baseline; gap: 6px; }
+.app-window.dash .dash-fy-days strong { color: var(--aw-text); font-size: calc(var(--type-body-size) + 16px); line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; }
+.app-window.dash .dash-fy-track { position: relative; height: 10px; border-radius: 999px; background: color-mix(in srgb, var(--aw-text) 10%, transparent); }
+.app-window.dash .dash-fy-fill {
+  position: relative; display: block; height: 100%; min-width: 10px; border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--aw-accent) 55%, var(--aw-surface)), var(--aw-accent));
+  animation: dashGrowW var(--dash-draw) var(--aw-ease) backwards !important;
+  animation-duration: var(--dash-draw) !important;
+}
+@keyframes dashGrowW { from { width: 0; } }
+.app-window.dash .dash-fy-fill::after {
+  content: ''; position: absolute; right: -4px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; box-sizing: border-box;
+  background: var(--aw-surface); border: 3px solid var(--aw-accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--aw-accent) 20%, transparent);
+}
+.app-window.dash .dash-fy-ends { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; }
+
+/* ── Customize mode: the handles exist only while it is on, so nothing appears on hover in normal use. ── */
+.app-window.dash .bento-cell.is-editing { cursor: grab; touch-action: none; user-select: none; }
+.app-window.dash .bento-cell.is-editing > .bento-inner { pointer-events: none; }
+.app-window.dash .bento-cell.is-editing > .bento-inner > .aw-card { border-style: dashed; border-color: color-mix(in srgb, var(--aw-accent) 45%, var(--aw-border-strong)); }
+.app-window.dash .bento-cell.is-editing:hover > .bento-inner > .aw-card { border-color: var(--aw-accent); box-shadow: 0 0 0 3px var(--aw-focus); }
+.app-window.dash .bento-cell.is-dragging { opacity: .45; }
+.app-window.dash .bento-grip {
+  position: absolute; top: 6px; left: 50%; z-index: 3; transform: translateX(-50%); pointer-events: none;
+  display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 16px; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--aw-accent) 40%, var(--aw-border-strong)); background: var(--aw-surface); color: var(--aw-accent);
+}
+.app-window.dash .bento-hide {
+  position: absolute; top: -8px; right: -8px; z-index: 5; display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--aw-danger) 40%, var(--aw-border-strong)); background: var(--aw-surface); color: var(--aw-danger); box-shadow: var(--aw-shadow);
+}
+.app-window.dash .bento-hide:hover { background: var(--aw-danger); border-color: var(--aw-danger); color: var(--aw-surface); }
+/* ── Art inside a card (switched on per card in Customize mode) ──
+   The picture fills the card under a veil of the card colour: thick on the left where the figures are,
+   thinner towards the top-right corner where the picture shows through. The card's own tint or the
+   financial-year colour is replaced while the picture is on. */
+.app-window.dash .bento-cell.has-art > .bento-inner > .aw-card {
+  background:
+    linear-gradient(105deg,
+      color-mix(in srgb, var(--aw-surface) 90%, transparent) 0%,
+      color-mix(in srgb, var(--aw-surface) 80%, transparent) 55%,
+      color-mix(in srgb, var(--aw-surface) 52%, transparent) 100%),
+    var(--card-art) var(--card-art-x, 50%) 40% / cover no-repeat,
+    var(--aw-surface) !important;
+}
+.app-window.dash .bento-cell.has-art .aw-card-head { border-bottom-color: color-mix(in srgb, var(--aw-text) 12%, transparent); }
+.app-window.dash .bento-cell.has-art .dash-foot { border-top-color: color-mix(in srgb, var(--aw-text) 12%, transparent); }
+.app-window.dash .bento-art-btn {
+  position: absolute; top: -8px; right: 22px; z-index: 5; display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--aw-accent) 40%, var(--aw-border-strong)); background: var(--aw-surface); color: var(--aw-accent); box-shadow: var(--aw-shadow);
+}
+.app-window.dash .bento-art-btn:hover, .app-window.dash .bento-art-btn.is-on { background: var(--aw-accent); border-color: var(--aw-accent); color: #fff; }
+.app-window.dash .dash-add { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; flex-basis: 100%; }
+.app-window.dash .dash-add .aw-chip { gap: 5px; }
+.app-window.dash .bento-split { position: absolute; top: 0; bottom: 0; right: calc(-1 * var(--aw-gap)); width: var(--aw-gap); min-width: 10px; z-index: 4; cursor: col-resize; touch-action: none; }
+.app-window.dash .bento-split::after {
+  content: ''; position: absolute; top: 14%; bottom: 14%; left: 50%; width: 4px; margin-left: -2px; border-radius: 4px; background: var(--aw-accent); opacity: .28;
+  transition: opacity var(--dash-fast) var(--aw-ease) !important; transition-duration: var(--dash-fast) !important;
+}
+.app-window.dash .bento-split:hover::after { opacity: .85; }
+.dash-ghost {
+  position: fixed; z-index: 9999; pointer-events: none; display: inline-flex; align-items: center; gap: 8px; max-width: 280px;
+  padding: 8px 14px; border-radius: 12px; border: 1px solid var(--aw-accent); background: var(--aw-surface); color: var(--aw-text);
+  font-weight: 700; box-shadow: 0 14px 30px rgba(0, 0, 0, .28); transform: rotate(-2deg);
+}

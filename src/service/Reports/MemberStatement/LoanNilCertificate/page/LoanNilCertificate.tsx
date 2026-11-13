@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { ConfigProvider, Button, Spin, Input, Modal, message } from 'antd';
 import { FileText, Printer, Search, RotateCcw, Award, User, Users, CheckCircle, XCircle } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
@@ -53,6 +54,7 @@ const LoanNilCertificate: React.FC = () => {
     setLoading(true);
     try {
       const response = await apiService.get(`/reports/loan-nil-certificate/${memberNo}`);
+      if (isFailure(response)) { await notifyError(response, 'load the loan nil certificate'); return; }
       const data = (response as any).data || response;
 
       if (data && data.memberNo) {

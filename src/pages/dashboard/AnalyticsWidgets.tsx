@@ -1,23 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { Donut, LegendRow, type Slice } from './DashCharts';
+import { Donut, LegendRow, CountUp, type Slice } from './DashCharts';
 import apiService from '../../services/api';
-import LoadingAnimation from '../../components/loaders/LoadingAnimation';
 import { useTranslation } from 'react-i18next';
 
-// ─── Shared card shell — the kit card, with a small tone marker in the head ──
+// ─── One anatomy for every dashboard widget ──────────────────────────────────
+// Every widget is built from the same four parts, in the same order, so the dashboard reads as
+// one system even though each card shows different data:
+//
+//   1. Head      <WidgetCard title tone>   colour dot + title
+//   2. Headline  <Headline>                THE number, top-left, one size; caption under it; a
+//                                          status pill on the right
+//   3. Body      ring + legend (className="dash-viz"), gauge, trend line, steps, or rows
+//   4. Foot      <CardFoot>                one line of context, or the card's action button on the
+//                                          right; pinned to the bottom so feet line up across a row
+//
+// Rules: the headline number is never repeated inside a chart (a ring's middle names its largest
+// share instead); actions live only in the foot; the widget's tone colours the dot, the headline
+// number and nothing else. A new widget should use these parts and not lay itself out by hand.
+
 export const WidgetCard: React.FC<{
   title: string;
   tone: string;
   children: React.ReactNode;
 }> = ({ title, tone, children }) => (
-  <section className="aw-card">
+  <section className="aw-card dash-card" style={{ ['--dash-tone' as any]: tone }}>
     <div className="aw-card-head">
-      <span style={{ width: 8, height: 8, borderRadius: 2, background: tone, flex: 'none' }} />
+      <span className="dash-tone-dot" />
       <h2 className="aw-card-title">{title}</h2>
     </div>
-    {children}
+    <div className="dash-body">{children}</div>
   </section>
+);
+
+/** Part 2: the one number that matters, its caption, and an optional status pill on the right. */
+export const Headline: React.FC<{ value: React.ReactNode; caption: React.ReactNode; pill?: React.ReactNode; neutral?: boolean }> = ({
+  value, caption, pill, neutral,
+}) => (
+  <div className="dash-headline">
+    <div style={{ minWidth: 0 }}>
+      <p className="dash-big" style={neutral ? { color: 'var(--aw-text)' } : undefined}>{value}</p>
+      <p className="dash-caption">{caption}</p>
+    </div>
+    {pill}
+  </div>
+);
+
+/** Part 4: context on the left, action (if any) on the right, always on the card's bottom edge. */
+export const CardFoot: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="dash-foot">{children}</div>
 );
 
 export const ErrorNote: React.FC<{ message: string }> = ({ message }) => (
@@ -27,7 +58,9 @@ export const ErrorNote: React.FC<{ message: string }> = ({ message }) => (
 );
 
 export const Loading: React.FC<{ height?: number }> = ({ height = 64 }) => (
-  <div className="aw-empty" style={{ height: Math.max(height, 96), padding: 0 }}><LoadingAnimation height="100%" /></div>
+  <div className="dash-skel" role="status" aria-label="Loading" style={{ minHeight: Math.max(height, 96) }}>
+    <span /><span /><span />
+  </div>
 );
 
 export const money = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
@@ -56,8 +89,6 @@ export const TONE_INFO = 'var(--aw-info, var(--aw-accent))';
 export const TONE_WARNING = 'var(--aw-warning)';
 export const TONE_SUCCESS = 'var(--aw-success)';
 
-export const bigNumber: React.CSSProperties = { fontSize: 'calc(var(--type-body-size) + 14px)', fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums' };
-
 // ─── 1. Active Members — live register count ───────────────────────────────
 export const ActiveMembersWidget: React.FC = () => {
   const { t } = useTranslation();
@@ -81,19 +112,14 @@ export const ActiveMembersWidget: React.FC = () => {
       ) : count === null ? (
         <Loading />
       ) : (
-        <div className="aw-stack">
-          <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <div>
-              <p style={{ ...bigNumber, color: TONE_ACCENT }}>{count.toLocaleString('en-IN')}</p>
-              <p className="aw-label" style={{ marginTop: 6 }}>{t('Currently Active')}</p>
-            </div>
-            <span className="aw-pill tone-success">{t('Live register')}</span>
-          </div>
-          <div className="aw-row" style={{ borderBottom: 0, borderTop: '1px solid var(--aw-border)' }}>
-            <span className="aw-meta">{t('Active member records')}</span>
+        <>
+          <Headline value={<CountUp value={count} />} caption={t('Currently Active')}
+            pill={<span className="aw-pill tone-success">{t('Live register')}</span>} />
+          <CardFoot>
+            <span>{t('Active member records')}</span>
             <strong>{count.toLocaleString('en-IN')}</strong>
-          </div>
-        </div>
+          </CardFoot>
+        </>
       )}
     </WidgetCard>
   );
@@ -139,21 +165,16 @@ export const SanctionedLoansWidget: React.FC = () => {
       ) : summary.count === 0 ? (
         <ErrorNote message={t('No sanctioned loans awaiting disbursal')} />
       ) : (
-        <div className="aw-stack">
-          <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <div>
-              <p style={bigNumber}>
-                {summary.count} <span className="aw-meta" style={{ fontSize: 'var(--type-body-size)', fontWeight: 700 }}>loan{summary.count === 1 ? '' : 's'}</span>
-              </p>
-              <p className="aw-meta" style={{ marginTop: 6, fontWeight: 700 }}>{money(summary.totalValue)} {t('total value')}</p>
-            </div>
-            <span className="aw-pill tone-warning">{t('Awaiting payout')}</span>
-          </div>
-          <div className="aw-row" style={{ borderBottom: 0, borderTop: '1px solid var(--aw-border)' }}>
-            <span className="aw-meta">{t('Regular')} {summary.regular} · {t('Emergency')} {summary.emergency}</span>
-            <span className="aw-meta">{t('Oldest')} {dateLabel(summary.oldestDate)}</span>
-          </div>
-        </div>
+        <>
+          <Headline
+            value={<><CountUp value={summary.count} /><small>loan{summary.count === 1 ? '' : 's'}</small></>}
+            caption={<>{money(summary.totalValue)} {t('total value')}</>}
+            pill={<span className="aw-pill tone-warning">{t('Awaiting payout')}</span>} />
+          <CardFoot>
+            <span>{t('Regular')} <strong>{summary.regular}</strong> · {t('Emergency')} <strong>{summary.emergency}</strong></span>
+            <span>{t('Oldest')} {dateLabel(summary.oldestDate)}</span>
+          </CardFoot>
+        </>
       )}
     </WidgetCard>
   );
@@ -201,18 +222,23 @@ export const MonthEndOutstandingWidget: React.FC = () => {
       ) : totals.total === 0 ? (
         <ErrorNote message={t('No month-end snapshot for this month yet')} />
       ) : (
-        <div className="aw-stack" style={{ gap: 8 }}>
-          <p style={{ ...bigNumber, fontSize: 'calc(var(--type-body-size) + 10px)', color: TONE_INFO }}>{money(totals.total)}</p>
-          <div className="aw-bar" role="img" aria-label={t('Regular versus emergency loan outstanding')}>
-            <span style={{ width: `${(totals.regular / totals.total) * 100}%`, background: TONE_INFO }} />
-            <span style={{ width: `${(totals.emergency / totals.total) * 100}%`, background: TONE_WARNING }} />
+        <>
+          <Headline value={<CountUp value={totals.total} format={money} />} caption={t('Total outstanding')} />
+          <div>
+            <div className="aw-bar" role="img" aria-label={t('Regular versus emergency loan outstanding')}>
+              <span style={{ width: `${(totals.regular / totals.total) * 100}%`, background: TONE_INFO }} />
+              <span style={{ width: `${(totals.emergency / totals.total) * 100}%`, background: TONE_WARNING }} />
+            </div>
+            <div className="aw-rows" style={{ marginTop: 6 }}>
+              <LegendRow color={TONE_INFO} label={t('Regular')} sub={`${totals.regularCount} loan${totals.regularCount === 1 ? '' : 's'}`} value={money(totals.regular)} />
+              <LegendRow color={TONE_WARNING} label={t('Emergency')} sub={`${totals.emergencyCount} loan${totals.emergencyCount === 1 ? '' : 's'}`} value={money(totals.emergency)} />
+            </div>
           </div>
-          <div className="aw-inline" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <span className="aw-meta"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 5, background: TONE_INFO }} />{t('Regular')} {money(totals.regular)} · {totals.regularCount}</span>
-            <span className="aw-meta"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 5, background: TONE_WARNING }} />{t('Emergency')} {money(totals.emergency)} · {totals.emergencyCount}</span>
-          </div>
-          <p className="aw-meta">{t('Snapshot')} {dateLabel(totals.snapshotDate)}</p>
-        </div>
+          <CardFoot>
+            <span>{t('Snapshot')}</span>
+            <span>{dateLabel(totals.snapshotDate)}</span>
+          </CardFoot>
+        </>
       )}
     </WidgetCard>
   );
@@ -269,28 +295,26 @@ export const MemberBalanceDistributionWidget: React.FC = () => {
       ) : rows === null ? (
         <Loading height={128} />
       ) : (
-        <div className="aw-stack" style={{ gap: 8 }}>
-          <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <div>
-              <p style={{ ...bigNumber, fontSize: 'calc(var(--type-body-size) + 10px)', color: TONE_SUCCESS }}>{totalMembers.toLocaleString('en-IN')}</p>
-              <p className="aw-label" style={{ marginTop: 6 }}>{t('{{1}} {{2}} total', { 1: t('Members ·'), 2: money(totalBalance) })}</p>
-            </div>
-            <span className="aw-pill tone-success">{t('By balance')}</span>
-          </div>
-          <div className="aw-inline" style={{ alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <>
+          <Headline value={<CountUp value={totalMembers} />} caption={t('Members')}
+            pill={<span className="aw-pill tone-success">{t('By balance')}</span>} />
+          <div className="dash-viz">
             <Donut
               ariaLabel="Members by balance range"
               slices={rows.map((r, i): Slice => ({ label: r.label, value: r.count, color: BALANCE_COLORS[i % BALANCE_COLORS.length] as string }))}
-              center={<><strong style={{ fontSize: 'calc(var(--type-body-size) + 6px)' }}>{totalMembers.toLocaleString('en-IN')}</strong><span className="aw-meta">members</span></>}
             />
-            <div className="aw-rows" style={{ flex: 1, minWidth: 150 }}>
+            <div className="aw-rows">
               {rows.map((r, i) => (
                 <LegendRow key={r.label} color={BALANCE_COLORS[i % BALANCE_COLORS.length] as string} label={r.label}
                   value={`${r.count.toLocaleString('en-IN')} · ${r.share.toFixed(1)}%`} />
               ))}
             </div>
           </div>
-        </div>
+          <CardFoot>
+            <span>{t('Total balance')}</span>
+            <strong>{money(totalBalance)}</strong>
+          </CardFoot>
+        </>
       )}
     </WidgetCard>
   );

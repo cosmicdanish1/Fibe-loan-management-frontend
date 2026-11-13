@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { isFailure, notifyError, toastError } from '@/utils/dialog';
 import { Select, Button, DatePicker, ConfigProvider, Radio, Tooltip, theme as antdTheme } from 'antd';
 import {
   FileText, Printer, Search, Calendar, Building,
@@ -58,6 +59,7 @@ const AnnualMemberStatement: React.FC = () => {
   // Load wings on mount
   useEffect(() => {
     apiService.getWingList().then((res: any) => {
+      if (isFailure(res)) toastError(res, 'load the wing list');
       if (res?.success) {
         const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
         setWings(list.map((w: any) => ({ wingNo: String(w.wingNo ?? ''), name: w.name ?? '' })));
@@ -89,6 +91,7 @@ const AnnualMemberStatement: React.FC = () => {
         selectedOffice || undefined,
         asOnDate.format('YYYY-MM-DD')
       );
+      if (isFailure(res)) await notifyError(res, 'load the annual member statement');
       if (res?.success) {
         const rows: AnnualStatementItem[] = res.data?.reportData
           ?? (Array.isArray(res.data) ? res.data : (res.data?.data ?? []));
@@ -97,6 +100,7 @@ const AnnualMemberStatement: React.FC = () => {
       }
     } catch (e) {
       console.error('AnnualMemberStatement fetch error:', e);
+      await notifyError(null, 'load the annual member statement');
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { isFailure, toastError } from '@/utils/dialog';
 import { SavingAccountData, SavingAccountHookReturn, SavingNominee } from '../interfaces/interface';
 import { apiService } from '../../../../services/api';
 
@@ -40,6 +41,7 @@ export const useSavingAccountOpening = (): SavingAccountHookReturn => {
     const fetchNextAccountNo = useCallback(async () => {
         try {
             const res = await apiService.getNextSbAccountNumber();
+            if (isFailure(res)) toastError(res, 'get the next account number');
             const next = (res.data as any)?.nextAccountNumber ?? (res.data as any)?.data?.nextAccountNumber;
             if (res.success && next) {
                 setData(prev => (prev.accountNo ? prev : { ...prev, accountNo: String(next) }));

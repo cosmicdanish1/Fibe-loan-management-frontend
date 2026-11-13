@@ -2129,9 +2129,23 @@ ipcMain.on('renderer-logs', (_event, entries) => {
   const logDir = resolveLogDir();
   try { if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true }); } catch { /* ok */ }
   const logFile = path.join(logDir, 'renderer.log');
-  const lines = entries
+  // Same secret scrub the backend applies (passwords, tokens, OTP/PIN, Aadhaar, PAN, Bearer headers), so a log
+  // file copied off a PC for support never carries a credential.
+  const redact = (text: string): string => text
+    .replace(/(["']?\b(?:[\w-]*(?:password|passwd|token|secret)|otp|pin|mpin|auth[-_ ]?code|x-auth-code)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s&,;}"']+)/gi, '$1"[REDACTED]"')
+    .replace(/("?aadhaar"?\s*[:=]\s*)"?\d{4}\s?\d{4}\s?\d{4}"?/gi, '$1"[REDACTED]"')
+    .replace(/("?pan"?\s*[:=]\s*)"?[A-Z]{5}\d{4}[A-Z]"?/gi, '$1"[REDACTED]"')
+    .replace(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/g, 'Bearer [REDACTED]');
+  const lines = redact(entries
     .map((e: any) => `[${e.timestamp}] [${e.level}] [${e.route}] ${e.message}${e.data ? ' ' + JSON.stringify(e.data) : ''}`)
-    .join('\n') + '\n';
+    .join('\n') + '\n');
+  // renderer.log used to grow forever. At 10 MB it becomes renderer.old.log (the previous one is replaced), so the
+  // pair never exceeds ~20 MB, the same budget as main.log.
+  try {
+    if (fs.existsSync(logFile) && fs.statSync(logFile).size >= 10 * 1024 * 1024) {
+      fs.renameSync(logFile, path.join(logDir, 'renderer.old.log'));
+    }
+  } catch { /* rotation is best effort; the append below still works */ }
   fs.appendFile(logFile, lines, () => { /* fire and forget */ });
 });
 

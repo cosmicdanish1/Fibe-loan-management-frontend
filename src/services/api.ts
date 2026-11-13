@@ -1104,10 +1104,28 @@ class ApiService {
     showOnMobile?: boolean;
     audienceWing?: string | null;
     audienceOffice?: number | null;
+    /** A private note: only the signed-in user sees it until they publish it. */
+    isPrivate?: boolean;
+    /** Administrators only: keeps the notice at the top of every user's board. */
+    isImportant?: boolean;
+    color?: string | null;
   }): Promise<ApiResponse> {
     return this.request('/dashboard-notices', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  /** What the signed-in user may do on the notice board ({ username, isAdmin, colors }). */
+  async getDashboardNoticeAccess(): Promise<ApiResponse> {
+    return this.request('/dashboard-notices/access');
+  }
+
+  /** Publish your private note to everyone (isPrivate false), or take your notice back to private (true). */
+  async setDashboardNoticePrivate(id: number, isPrivate: boolean): Promise<ApiResponse> {
+    return this.request(`/dashboard-notices/${id}/visibility`, {
+      method: 'PUT',
+      body: JSON.stringify({ isPrivate }),
     });
   }
 

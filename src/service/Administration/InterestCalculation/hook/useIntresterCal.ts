@@ -1,5 +1,6 @@
 // hooks.ts
 import { useState, useCallback, useEffect } from 'react';
+import { isFailure, toastError } from '@/utils/dialog';
 import type {
     CalculationData,
     DropdownOption,
@@ -160,6 +161,7 @@ export const useInterestCalculator = (initialData?: Partial<CalculationData>): U
     const loadRate = async () => {
       try {
         const response = await apiService.getCurrentInterestRate();
+        if (isFailure(response)) toastError(response, 'load the current interest rate');
         if (response.success && response.data) {
           const rate = typeof response.data === 'number' ? response.data : (response.data as any).rate;
           if (rate) {

@@ -4,7 +4,7 @@ import { PlusOutlined, SaveOutlined, FileAddOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { apiService } from '../../../../../../services/api';
 import { usePageToolbarActions } from '../../../../../../utils/pageToolbarActions';
-import { showDialog3 as showDialog } from '@/utils/dialog';
+import { showDialog3 as showDialog, toastError, isFailure } from '@/utils/dialog';
 
 const { Text, Title } = Typography;
 const { Option } = Select;
@@ -44,6 +44,7 @@ const DefinePL: React.FC = () => {
   const fetchSchedules = async () => {
     try {
       const response = await apiService.getAllReportSchedules('PL');
+      if (isFailure(response)) toastError(response, 'load the saved schedules');
       if (response.success) {
         setSchedules(response.data);
       }

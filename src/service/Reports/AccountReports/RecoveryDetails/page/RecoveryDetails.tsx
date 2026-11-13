@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { Select, message } from 'antd';
 import { Printer, Search, RotateCcw, IndianRupee, User, Calendar } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
@@ -160,6 +161,7 @@ const RecoveryDetails: React.FC = () => {
         month,
         year: String(year),
       });
+      if (isFailure(response)) { await notifyError(response, 'load the recovery details'); return; }
       const rec: RecoveryData | null = (response as any)?.data || response || null;
 
       if (rec && rec.memberNo) {

@@ -1,10 +1,13 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
-import { GripHorizontal } from 'lucide-react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { GripHorizontal, X, Image as ImageIcon } from 'lucide-react';
 import type { RowLayout, CardLayout } from './dashboardLayout';
 import { useTranslation } from 'react-i18next';
 
 const MIN_WEIGHT = 0.35;
-const MIN_ROW_HEIGHT = 110;
+/** A card is never resized narrower than this, so its content always fits. */
+const MIN_CARD_PX = 220;
+/** More than this many cards side by side would be too cramped to read. */
+const MAX_PER_ROW = 4;
 
 // Where a dragged card goes: next to a card in its row, or in a new row above / below it.
 type Dest =
@@ -15,6 +18,14 @@ interface BentoGridProps {
   rows: RowLayout[];
   /** Cards that are switched off in Settings: not drawn, but they keep their place in the layout. */
   hidden: Set<string>;
+  /** Customize mode. Cards can be moved and resized only while it is on; otherwise no handles exist at all. */
+  editing: boolean;
+  /** Customize mode: the × on a card. The card is switched off, not deleted; it can be added back. */
+  onHide: (id: string) => void;
+  /** The chosen dashboard picture (null when there is none), the cards that show it inside, and the Customize-mode switch for one card. */
+  artUrl: string | null;
+  artCards: Set<string>;
+  onToggleArt: (id: string) => void;
   /** `commit` is false while a drag is in progress and true when it ends (time to save). */
   onChange: (rows: RowLayout[], commit: boolean) => void;
   renderCard: (id: string) => React.ReactNode;
@@ -49,13 +60,24 @@ const applyMove = (rows: RowLayout[], id: string, dest: Dest): RowLayout[] => {
 
 const sameDest = (a: Dest | null, b: Dest | null) => JSON.stringify(a) === JSON.stringify(b);
 
-const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCard }) => {
+// Layout rules: every row is a CSS grid whose columns follow the card weights, and its height always
+// comes from the content. Nothing has a fixed pixel height, so one row can never run into the next.
+// The styles (and the narrow-window reflow) live in dashboard.css.
+const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, editing, onHide, artUrl, artCards, onToggleArt, onChange, renderCard }) => {
   const { t } = useTranslation();
   const gridEl = useRef<HTMLDivElement | null>(null);
   const rowEls = useRef<Record<string, HTMLDivElement | null>>({});
   const [dragId, setDragId] = useState<string | null>(null);
   const [preview, setPreview] = useState<RowLayout[] | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number; label: string } | null>(null);
+
+  // The arrival animation plays once, when the dashboard opens. After that it is switched off, so a card
+  // that changes row while being dragged does not fade in again.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setSettled(true), 1500);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // While a card is being dragged the grid shows the layout it would have if dropped now.
   const shown = preview ?? rows;
@@ -91,6 +113,7 @@ const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCar
   // ── Resize: the edge between two neighbouring cards ───────────────────────
   const startSplit = (e: React.PointerEvent, rowId: string, aId: string, bId: string) => {
     e.preventDefault();
+    e.stopPropagation(); // the card underneath must not start a move
     const rowEl = rowEls.current[rowId];
     const snapshot = rows;
     const row = snapshot.find(r => r.id === rowId);
@@ -102,79 +125,50 @@ const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCar
     if (!a || !b) return;
     const x0 = e.clientX;
     const width = rowEl.getBoundingClientRect().width || 1;
+    const pair = a.w + b.w;
+    // Smallest weight either card may take: the readable minimum width, but never more than half the pair.
+    const lo = Math.min(Math.max(MIN_WEIGHT, (MIN_CARD_PX / width) * total), pair / 2);
     let latest = snapshot;
-    const apply = (dx: number) => {
-      const na = clamp(a.w + (dx / width) * total, MIN_WEIGHT, a.w + b.w - MIN_WEIGHT);
-      const nb = a.w + b.w - na;
+    const move = (ev: PointerEvent) => {
+      const na = clamp(a.w + ((ev.clientX - x0) / width) * total, lo, pair - lo);
+      const nb = pair - na;
       latest = snapshot.map(r => r.id !== rowId ? r : {
         ...r, cards: r.cards.map(c => c.id === aId ? { ...c, w: na } : c.id === bId ? { ...c, w: nb } : c),
       });
       onChange(latest, false);
     };
-    const move = (ev: PointerEvent) => apply(ev.clientX - x0);
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
       document.body.style.cursor = '';
       onChange(latest, true);
     };
     document.body.style.cursor = 'col-resize';
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   };
 
   const equalise = (rowId: string) => {
     onChange(rows.map(r => r.id !== rowId ? r : { ...r, cards: r.cards.map(c => ({ ...c, w: 1 })) }), true);
   };
 
-  // ── Resize: the bottom edge of a row ──────────────────────────────────────
-  const startRowResize = (e: React.PointerEvent, rowId: string) => {
-    e.preventDefault();
-    const rowEl = rowEls.current[rowId];
-    if (!rowEl) return;
-    const snapshot = rows;
-    const y0 = e.clientY;
-    const h0 = rowEl.getBoundingClientRect().height;
-    let latest = snapshot;
-    const move = (ev: PointerEvent) => {
-      const h = Math.max(MIN_ROW_HEIGHT, Math.round(h0 + (ev.clientY - y0)));
-      latest = snapshot.map(r => r.id === rowId ? { ...r, h } : r);
-      onChange(latest, false);
-    };
-    const up = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      document.body.style.cursor = '';
-      onChange(latest, true);
-    };
-    document.body.style.cursor = 'row-resize';
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-  };
-
-  const autoHeight = (rowId: string) => {
-    onChange(rows.map(r => {
-      if (r.id !== rowId) return r;
-      const { h: _h, ...rest } = r;
-      return rest;
-    }), true);
-  };
-
-  // ── Move: press the grip, drag; the other cards slide aside to show where it lands ──
+  // ── Move: press a card, drag; the other cards slide aside to show where it lands ──
   // Pointer-based (the browser's native drag-and-drop is unreliable inside Electron).
   const startMove = (e: React.PointerEvent, cardId: string) => {
     if (e.button !== 0) return;
     e.preventDefault();
     const x0 = e.clientX;
     const y0 = e.clientY;
-    const cell = (e.currentTarget as HTMLElement).closest('.bento-cell');
-    const label = cell?.querySelector('.aw-card-title')?.textContent || 'Card';
+    const cell = e.currentTarget as HTMLElement;
+    const label = cell.querySelector('.aw-card-title, .aw-label')?.textContent || t('Card');
     const state: { active: boolean; dest: Dest | null } = { active: false, dest: null };
 
     // The card under the pointer (or the nearest one when the pointer is in a gap) decides the drop:
     // top / bottom edge = a new row above / below it; left / right half = beside it.
     const locate = (x: number, y: number): Dest | null => {
-      const cells = Array.from(document.querySelectorAll<HTMLElement>('[data-bento-cell]'));
+      const cells = Array.from(gridEl.current?.querySelectorAll<HTMLElement>('[data-bento-cell]') ?? []);
       let best: { el: HTMLElement; d: number } | null = null;
       for (const el of cells) {
         const r = el.getBoundingClientRect();
@@ -191,6 +185,10 @@ const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCar
       const rx = (x - r.left) / r.width;
       if (ry < 0.22) return { targetId: id, row: 'above' };
       if (ry > 0.78) return { targetId: id, row: 'below' };
+      // A full row takes no more cards: the card gets a row of its own next to it instead.
+      const targetRow = rows.find(row => row.cards.some(c => c.id === id));
+      const others = targetRow ? targetRow.cards.filter(c => c.id !== cardId && !hidden.has(c.id)).length : 0;
+      if (others >= MAX_PER_ROW) return { targetId: id, row: ry < 0.5 ? 'above' : 'below' };
       return { targetId: id, side: rx < 0.5 ? 'before' : 'after' };
     };
 
@@ -212,6 +210,7 @@ const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCar
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
       document.body.style.cursor = '';
       const { active, dest } = state;
       setGhost(null);
@@ -224,99 +223,86 @@ const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, onChange, renderCar
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   };
 
-  return (
-    <div ref={gridEl} className="bento-grid" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--aw-gap)' }}>
-      <style>{`
-        .bento-cell .bento-grip { opacity: 0; }
-        .bento-cell:hover .bento-grip, .bento-cell:focus-within .bento-grip { opacity: 1; }
-        .bento-cell .bento-split::after { content: ''; position: absolute; top: 12%; bottom: 12%; left: 50%; width: 3px; margin-left: -1.5px; border-radius: 3px; background: var(--aw-accent); opacity: 0; }
-        .bento-cell .bento-split:hover::after { opacity: .55; }
-        .bento-row .bento-hgrip::after { content: ''; position: absolute; left: 30%; right: 30%; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 3px; background: var(--aw-accent); opacity: 0; }
-        .bento-row:hover .bento-hgrip::after { opacity: .3; }
-        .bento-row .bento-hgrip:hover::after { opacity: .7; }
-        .bento-inner > .aw-card { flex: 1 1 auto; min-width: 0; }
-      `}</style>
+  let cellIndex = 0;
 
+  return (
+    <div ref={gridEl} className={`bento-grid${settled ? ' is-settled' : ''}`}>
       {visibleRows.map(({ row, cards }) => (
         <div
           key={row.id}
           ref={el => { rowEls.current[row.id] = el; }}
           className="bento-row"
-          style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--aw-gap)', position: 'relative', ...(row.h ? { height: row.h } : {}) }}
+          data-n={cards.length}
+          style={{ ['--cols' as any]: cards.map(c => `minmax(0, ${c.w}fr)`).join(' ') }}
         >
           {cards.map((card, ci) => {
             const next = cards[ci + 1];
             const dragging = dragId === card.id;
+            const n = cellIndex++;
+            const i = Math.min(n, 14);
+            const withArt = !!artUrl && artCards.has(card.id);
             return (
               <div
                 key={card.id}
-                className="bento-cell"
+                className={`bento-cell${editing ? ' is-editing' : ''}${dragging ? ' is-dragging' : ''}${withArt ? ' has-art' : ''}`}
                 data-bento-cell={card.id}
                 style={{
-                  flex: `${card.w} 1 0`, minWidth: 200, position: 'relative', display: 'flex', minHeight: 0,
-                  opacity: dragging ? 0.4 : 1,
-                  outline: dragging ? '2px dashed var(--aw-accent)' : undefined,
-                  outlineOffset: dragging ? 2 : undefined,
-                  borderRadius: 'calc(var(--aw-radius) * 1.8)',
+                  ['--i' as any]: i,
+                  // Each card shows a different part of the picture, so neighbouring cards do not look identical.
+                  ...(withArt ? { ['--card-art' as any]: `url("${artUrl}")`, ['--card-art-x' as any]: `${(n * 37) % 101}%` } : {}),
                 }}
+                onPointerDown={editing ? e => startMove(e, card.id) : undefined}
+                aria-label={editing ? t('Drag to move this card') : undefined}
               >
-                <div className="bento-inner" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: row.h ? 'auto' : 'visible' }}>
+                <div className="bento-inner">
                   {renderCard(card.id)}
                 </div>
 
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className="bento-grip"
-                  onPointerDown={e => startMove(e, card.id)}
-                  aria-label={t('Drag to move this card')}
-                  data-tip={t('Drag to move')} data-tip-pos="bottom"
-                  style={{
-                    position: 'absolute', top: 3, left: '50%', transform: 'translateX(-50%)', zIndex: 3,
-                    width: 34, height: 14, padding: 0, border: '1px solid var(--aw-border-strong)', borderRadius: 7,
-                    background: 'var(--aw-surface)', color: 'var(--aw-muted)', cursor: 'grab', touchAction: 'none',
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <GripHorizontal size={12} />
-                </div>
+                {editing && <span className="bento-grip" aria-hidden><GripHorizontal size={12} /></span>}
 
-                {next && !dragId && (
+                {editing && !dragId && artUrl && (
+                  <button
+                    type="button" className={`bento-art-btn${withArt ? ' is-on' : ''}`}
+                    onPointerDown={e => e.stopPropagation()}
+                    onClick={() => onToggleArt(card.id)}
+                    aria-pressed={withArt}
+                    aria-label={withArt ? t('Remove the picture from this card') : t('Show the picture inside this card')}
+                  >
+                    <ImageIcon size={13} />
+                  </button>
+                )}
+
+                {editing && !dragId && (
+                  <button
+                    type="button" className="bento-hide"
+                    onPointerDown={e => e.stopPropagation()}
+                    onClick={() => onHide(card.id)}
+                    aria-label={t('Remove this card from the dashboard')}
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+
+                {editing && next && !dragId && (
                   <div
                     className="bento-split"
                     role="separator" aria-orientation="vertical" aria-label={t('Drag to resize')}
                     onPointerDown={e => startSplit(e, row.id, card.id, next.id)}
                     onDoubleClick={() => equalise(row.id)}
-                    style={{ position: 'absolute', top: 0, bottom: 0, right: 'calc(var(--aw-gap) / -2 - 6px)', width: 12, zIndex: 4, cursor: 'col-resize', touchAction: 'none' }}
                   />
                 )}
               </div>
             );
           })}
-
-          {!dragId && (
-            <div
-              className="bento-hgrip"
-              role="separator" aria-orientation="horizontal" aria-label={t('Drag to change the row height')}
-              onPointerDown={e => startRowResize(e, row.id)}
-              onDoubleClick={() => autoHeight(row.id)}
-              style={{ position: 'absolute', left: 0, right: 0, bottom: 'calc(var(--aw-gap) / -2 - 6px)', height: 12, zIndex: 4, cursor: 'row-resize', touchAction: 'none' }}
-            />
-          )}
         </div>
       ))}
 
       {ghost && (
-        <div
-          style={{
-            position: 'fixed', left: ghost.x + 14, top: ghost.y + 14, zIndex: 9999, pointerEvents: 'none',
-            padding: '8px 14px', borderRadius: 10, border: '1px solid var(--aw-accent)', background: 'var(--aw-surface)',
-            color: 'var(--aw-text)', fontWeight: 700, boxShadow: '0 14px 30px rgba(0,0,0,.28)', maxWidth: 260,
-          }}
-        >
-          {ghost.label}
+        <div className="dash-ghost" style={{ left: ghost.x + 14, top: ghost.y + 14 }}>
+          <GripHorizontal size={14} /> {ghost.label}
         </div>
       )}
     </div>

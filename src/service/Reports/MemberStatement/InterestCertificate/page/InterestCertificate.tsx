@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { ConfigProvider, Input, Button, Radio, Spin, message, Modal, Select, theme } from 'antd';
 import { FileText, Printer, Search, RotateCcw, BadgePercent, User, Users, Monitor } from 'lucide-react';
 import { useSelector } from 'react-redux';
@@ -129,6 +130,7 @@ const InterestCertificate: React.FC = () => {
     setLoading(true);
     try {
       const response = await apiService.post('/reports/interest-certificate', { memberNo, year });
+      if (isFailure(response)) { await notifyError(response, 'load the interest certificate'); return; }
       const data: InterestData = (response as any).data || response;
       if (!data || !data.memberNo) {
         message.error('No interest data found for this member and year');

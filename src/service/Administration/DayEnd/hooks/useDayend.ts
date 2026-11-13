@@ -4,6 +4,7 @@ import type { DayendData, UseDayendReturn } from '../interface/dayend';
 import { apiService } from '../../../../services/api';
 import { localISODate } from '../../../../utils/dates';
 import { useTranslation } from 'react-i18next';
+import { rareDayEndLine } from '../../../../utils/kovaSignature';
 
 // Helper function to get current date in YYYY-MM-DD format
 const getCurrentDate = (): string => {
@@ -205,7 +206,7 @@ export const useDayend = (): UseDayendReturn => {
             type: 'info',
             title: t('Day-End Processing'),
             message: '✅ Day-End Closed Successfully!',
-            detail: `Date: ${dayendData.date}\nStatus: COMPLETED\n\nSystem date advanced to next business day.`,
+            detail: `Date: ${dayendData.date}\nStatus: COMPLETED\n\nSystem date advanced to next business day.${rareDayEndLine()}`,
             buttons: ['OK']
           });
         }
@@ -223,7 +224,7 @@ export const useDayend = (): UseDayendReturn => {
           type: 'info',
           title: t('Day-End Processing'),
           message: '✅ Day-End Closed Successfully!',
-          detail: `Date: ${dayendData.date}\nStatus: COMPLETED\n\nSystem date advanced to next business day.`,
+          detail: `Date: ${dayendData.date}\nStatus: COMPLETED\n\nSystem date advanced to next business day.${rareDayEndLine()}`,
           buttons: ['OK']
         });
       }

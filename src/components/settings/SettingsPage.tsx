@@ -11,10 +11,11 @@ import { TopBarLookSettings } from './TopBarLookSettings';
 import { onboardingApi, type OnboardingMode, type OnboardingReport, type OnboardingStatus } from '../../features/onboarding/onboardingApi';
 import { getCalmPreference, setCalmPreference } from '../../features/onboarding/calm';
 import { MOTION_STYLES, saveMotion, detectPc, useMotion } from '../../config/motion';
+import { notifyError } from '../../utils/dialog';
 import { TOUR_STEPS } from '../../features/onboarding/tourSteps';
 import LoadingAnimation from '../loaders/LoadingAnimation';
 import { LOADING_ANIMATIONS, saveLoadingAnimation, useLoadingAnimation } from '../../config/loadingAnimation';
-import { DEFAULT_TYPOGRAPHY_OFFSETS, normalizeTypographyOffsets, readTypographyOffsets, saveTypographyOffsets, TYPOGRAPHY_SYNC_CHANNEL, type TypographyOffsets } from '../../config/typographyPreferences';
+import { DEFAULT_TYPOGRAPHY_OFFSETS, readTypographyOffsets, saveTypographyOffsets } from '../../config/typographyPreferences';
 import {
   Settings,
   Save,
@@ -37,8 +38,6 @@ import {
   KeyRound,
   AlertTriangle,
   Clock,
-  Eye,
-  EyeOff,
   Calendar,
   Zap,
   Bell,
@@ -66,7 +65,10 @@ import { setTheme } from '../../store/slices/themeSlice';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../auth/context/AuthContext';
 import { useLicense } from '../license/LicenseContext';
-import { DEFAULT_WIDGET_CONFIG, clearLayout, type WidgetConfig } from '../../pages/dashboard/dashboardLayout';
+import { DEFAULT_WIDGET_CONFIG, CARD_LABELS, clearLayout, type WidgetConfig } from '../../pages/dashboard/dashboardLayout';
+import {
+  ART_LIBRARY, CUSTOM_ART, loadArtConfig, saveArtConfig, loadCustomArt, importCustomArt, removeCustomArt, type ArtConfig,
+} from '../../pages/dashboard/dashboardArt';
 import { runThemeTransition } from '../../utils/themeTransition';
 import { flushSync } from 'react-dom';
 import {
@@ -244,11 +246,11 @@ const recordPinFailure = (): number => {
 const TAB_META: Record<string, { title: string; subtitle: string; keywords: string }> = {
   language:   { title: tLabel('Language'),   subtitle: tLabel('Interface language'),                 keywords: 'language hindi english marathi kannada translate translation regional bhasha' },
   appearance: { title: tLabel('Appearance'), subtitle: tLabel('Colors, typography and canvas'),      keywords: 'theme dark light accent colour color gradient font text size bold shadow shadows density corner radius background image' },
-  dashboard:  { title: tLabel('Dashboard'),  subtitle: tLabel('Widgets, quick actions and layout'),  keywords: 'widgets quick actions shortcuts fy banner opacity transparency background notice board' },
+  dashboard:  { title: tLabel('Dashboard'),  subtitle: tLabel('Widgets, layout, background, art and quick actions'),  keywords: 'widgets quick actions shortcuts background art picture image notice board layout customize' },
   reports:    { title: tLabel('Reports'),    subtitle: tLabel('Which views each report offers, and which one it opens with'), keywords: 'report views legacy pro bento terminal editorial ledger dense cash book layout switch default' },
-  alerts:     { title: tLabel('Notifications'), subtitle: tLabel('Telegram, Discord and Jira: what is sent and where'), keywords: 'telegram discord jira alerts notifications webhook login logout errors crashes backup day-end licence digest mute turn off on ticket' },
-  system:     { title: tLabel('System & Window'), subtitle: tLabel('Notifications and global behavior'), keywords: 'notifications toasts sound effects audio chatbot ai assistant' },
-  developer:  { title: tLabel('Developer'),  subtitle: tLabel('Root-level diagnostics'),             keywords: 'analytics realtime monitor window geometry reset layouts console' },
+  alerts:     { title: tLabel('Alert Channels'), subtitle: tLabel('Telegram, Discord and Jira: what is sent and where'), keywords: 'telegram discord jira alerts notifications webhook login logout errors crashes backup day-end licence digest mute turn off on ticket' },
+  system:     { title: tLabel('System & Window'), subtitle: tLabel('Pop-up messages, sounds, windows and the top bar'), keywords: 'notifications toasts pop-up messages sound effects audio chatbot ai assistant window geometry reset layouts top bar search' },
+  developer:  { title: tLabel('Developer'),  subtitle: tLabel('Diagnostic windows'),                 keywords: 'analytics realtime monitor console' },
   approvers:  { title: tLabel('Approvers'),  subtitle: tLabel('Approver codes, in the Two-Factor & Approvals window'), keywords: 'approver otp authenticator two-factor 2fa approval code loan closure early closure pass reverse authorised authorized privilege' },
   assistant:  { title: tLabel('AI Assistant'), subtitle: tLabel('Is the assistant working, and what staff asked it'), keywords: 'ai assistant chatbot chat bot gemini groq together health questions log feedback thumbs quota failing' },
   forgot:      { title: tLabel('Forgot Password'), subtitle: tLabel('How users may reset their own password'), keywords: 'forgot password reset recover authenticator otp email code monthly periodic check two-factor 2fa sign in login' },
@@ -290,8 +292,9 @@ const Panel: React.FC<{
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
-}> = ({ icon, tint, title, subtitle, right, className = '', style, children }) => {
-  const [r, g, b] = hexToRgb(tint);
+}> = ({ icon, title, subtitle, right, className = '', style, children }) => {
+  // Every panel's icon tile is the accent colour. Colour in Settings means something (red, amber and
+  // green are status), so panels no longer each carry their own hue; `tint` is accepted and ignored.
   return (
     <div
       className={`settings-panel rounded-2xl ${className}`}
@@ -300,14 +303,14 @@ const Panel: React.FC<{
       <div className="settings-panel-heading flex items-center gap-3" style={{ borderBottom: `1px solid ${C.divider}` }}>
         <div
           className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-          style={{ background: `rgba(${r},${g},${b},.18)`, color: tint }}
+          style={{ background: 'color-mix(in srgb, var(--settings-accent) 16%, transparent)', color: 'var(--settings-accent)' }}
         >
           {icon}
         </div>
         <div className="min-w-0">
           <h3 className="settings-panel-title font-bold tracking-tight" style={{ color: C.textStrong }}>{title}</h3>
           {subtitle && (
-            <p className="fz-small font-medium" style={{ color: C.dim }}>{subtitle}</p>
+            <p className="fz-small font-medium" style={{ color: C.dim }}>{tLabel(subtitle)}</p>
           )}
         </div>
         {right && <div className="ml-auto flex items-center gap-2">{right}</div>}
@@ -318,10 +321,10 @@ const Panel: React.FC<{
 };
 
 /** Pill badge used for the "6 / 8 on" style counters. */
-const Counter: React.FC<{ children: React.ReactNode; color?: string }> = ({ children, color = C.green }) => {
+const Counter: React.FC<{ children: React.ReactNode; color?: string }> = ({ children, color = 'var(--settings-accent)' }) => {
   return (
     <span
-      className="px-2.5 py-1 fz-tiny font-black rounded-full uppercase tracking-widest"
+      className="px-2.5 py-1 fz-tiny font-bold rounded-full"
       style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
     >
       {children}
@@ -424,9 +427,6 @@ interface AlertSettingsData {
 
 interface OnlineUser { username: string; role: string; host: string; ip: string; mac: string; version: string; minutes: number }
 
-const ALERT_GROUP_TINT: Record<string, string> = {
-  queries: '#38bdf8', errors: '#f87171', activity: '#34d399', business: '#fbbf24', digest: '#a78bfa',
-};
 
 /** Channels that work today. Each gets its own big card and its own settings panel. */
 const CHANNEL_DEFS: { id: ChannelId; name: string; tagline: string; Icon: LucideIcon; gradient: string; tint: string }[] = [
@@ -497,8 +497,8 @@ const AiAssistantSettingsSection: React.FC<{ accent: string; isAdmin: boolean }>
     </div>
   );
   const chip = (key: typeof filter, label: string) => (
-    <button key={key} type="button" onClick={() => setFilter(key)} className="px-3 py-1.5 rounded-lg fz-small font-semibold"
-      style={{ background: filter === key ? accent : C.fill, color: filter === key ? '#fff' : C.text, border: `1px solid ${C.border}` }}>{label}</button>
+    <button key={key} type="button" aria-pressed={filter === key} onClick={() => setFilter(key)} className="px-3 py-1.5 rounded-full fz-small font-bold cursor-pointer"
+      style={{ background: filter === key ? `color-mix(in srgb, ${accent} 14%, transparent)` : 'transparent', color: filter === key ? C.textStrong : C.dim, border: `1px solid ${filter === key ? accent : C.border}` }}>{label}</button>
   );
 
   return (
@@ -513,7 +513,7 @@ const AiAssistantSettingsSection: React.FC<{ accent: string; isAdmin: boolean }>
             </div>
           )}
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
-            {stat('Gemini keys', p?.gemini ?? '–')}
+            {stat(t('Gemini keys'), p?.gemini ?? '–')}
             {stat('Groq', p ? (p.groq ? t('On') : t('Off')) : '–')}
             {stat('Together', p ? (p.together ? t('On') : t('Off')) : '–')}
             {stat(t('Questions (24 h)'), s ? s.total : '–')}
@@ -610,7 +610,7 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
               <p className="fz-small" style={{ color: C.dim }}>{t("The 6-digit code (or a recovery code) from the user's phone app. Only users who have set up an authenticator can use it.")}</p>
             </div>
             <Toggle on={!!cfg?.forgotAuthenticator && !off} accent={accent} label={t('Allow password reset with authenticator code')}
-              onChange={(v) => { if (!off && cfg) void save({ forgotAuthenticator: v }, v ? 'Authenticator reset switched on.' : 'Authenticator reset switched off. Users must ask an administrator.'); }} />
+              onChange={(v) => { if (!off && cfg) void save({ forgotAuthenticator: v }, v ? t('Authenticator reset switched on.') : t('Authenticator reset switched off. Users must ask an administrator.')); }} />
           </div>
 
           <div className={row} style={{ background: C.fill, opacity: 0.7 }}>
@@ -640,16 +640,12 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
           <div className="flex items-center gap-2 flex-wrap">
             <input type="number" min={0} max={365} aria-label={t('Days between code checks')} value={days} onChange={(e) => setDays(e.target.value)}
               className="rounded-lg px-3 fz-body outline-none" style={{ height: 34, width: 110, ...btn }} />
-            <span className="fz-body" style={{ color: C.dim }}>days</span>
+            <span className="fz-body" style={{ color: C.dim }}>{t('days')}</span>
             <button type="button" disabled={!daysValid || !cfg || daysNum === cfg.monthlyCheckDays}
-              className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
+              className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer"
               style={{ height: 34, background: accent, color: '#fff', border: 0, opacity: !daysValid || !cfg || daysNum === cfg.monthlyCheckDays ? 0.5 : 1 }}
-              onClick={() => void save({ monthlyCheckDays: daysNum }, daysNum === 0 ? 'Periodic check switched off.' : `Users are asked for their code at least every ${daysNum} days.`)}>
+              onClick={() => void save({ monthlyCheckDays: daysNum }, daysNum === 0 ? t('Periodic check switched off.') : t('Users are asked for their code at least every {{1}} days.', { 1: daysNum }))}>
               {t('Save')}
-            </button>
-            <button type="button" className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={{ height: 34, ...btn }}
-              onClick={() => void save({ monthlyCheckDays: daysNum === 0 ? 30 : 0 }, daysNum === 0 ? 'Periodic check switched on (30 days).' : 'Periodic check switched off.')}>
-              {daysNum === 0 ? t('Switch on') : t('Switch off')}
             </button>
           </div>
           <p className="fz-small" style={{ color: C.dim }}>{t('Note: if "Remember this device" is off in the Two-Factor window, users are already asked for a code at every sign-in.')}</p>
@@ -668,6 +664,7 @@ const STEP_ORDER: { id: string; label: string }[] = [
 ];
 
 const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
+  const { t } = useTranslation();
   const [report, setReport] = useState<OnboardingReport | null>(null);
   const [error, setError] = useState('');
   const load = useCallback(async () => {
@@ -676,7 +673,7 @@ const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  if (error) return <Panel icon={<BarChart2 size={16} />} tint="#0ea5e9" title="Tour insights" subtitle="Could not load"><p className="fz-body" style={{ color: C.red }}>{error}</p></Panel>;
+  if (error) return <Panel icon={<BarChart2 size={16} />} tint="#0ea5e9" title={t('Tour insights')} subtitle={t('Could not load')}><p className="fz-body" style={{ color: C.red }}>{error}</p></Panel>;
   if (!report) return null;
 
   const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0);
@@ -685,24 +682,24 @@ const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
   const top = Math.max(1, report.started, ...rows.map((r) => r.reached));
   const stat = (label: string, value: string, sub?: string) => (
     <div className="rounded-xl px-3.5 py-3 flex-1 min-w-[120px]" style={{ background: C.fill }}>
-      <div className="fz-tiny font-black uppercase tracking-widest" style={{ color: C.dim }}>{label}</div>
+      <div className="fz-tiny font-bold" style={{ color: C.dim }}>{label}</div>
       <div className="font-bold" style={{ color: C.textStrong, fontSize: '1.4em' }}>{value}</div>
       {sub && <div className="fz-small" style={{ color: C.dim }}>{sub}</div>}
     </div>
   );
-  const t = report.terms;
+  const terms = report.terms;
 
   return (
     <>
-      <Panel icon={<BarChart2 size={16} />} tint="#0ea5e9" title="Tour insights" subtitle="How far people get through the welcome tour"
-        right={<button type="button" onClick={() => void load()} className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={{ height: 30, background: C.fill, border: `1px solid ${C.border}`, color: C.text }}>Refresh</button>}>
+      <Panel icon={<BarChart2 size={16} />} tint="#0ea5e9" title={t('Tour insights')} subtitle={t('How far people get through the welcome tour')}
+        right={<button type="button" onClick={() => void load()} className="rounded-lg px-3 fz-tiny font-bold cursor-pointer" style={{ height: 30, background: C.fill, border: `1px solid ${C.border}`, color: C.text }}>{t('Refresh')}</button>}>
         <div className="flex flex-col gap-4">
           <div className="flex gap-3 flex-wrap">
-            {stat('Users', String(report.totalUsers))}
-            {stat('Started', String(report.started), `${pct(report.started, report.totalUsers)}% of users`)}
-            {stat('Finished or skipped', String(report.completed), `${pct(report.completed, report.totalUsers)}% of users`)}
-            {stat('Tour finished', String(report.tourDone))}
-            {stat('Slides watched', String(report.slidesDone))}
+            {stat(t('Users'), String(report.totalUsers))}
+            {stat(t('Started'), String(report.started), t('{{1}}% of users', { 1: pct(report.started, report.totalUsers) }))}
+            {stat(t('Finished or skipped'), String(report.completed), t('{{1}}% of users', { 1: pct(report.completed, report.totalUsers) }))}
+            {stat(t('Tour finished'), String(report.tourDone))}
+            {stat(t('Slides watched'), String(report.slidesDone))}
           </div>
           <div className="flex flex-col gap-1.5">
             {rows.map((r) => (
@@ -711,38 +708,38 @@ const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
                 <div className="flex-1 rounded-full overflow-hidden" style={{ height: 8, background: C.fill }}>
                   <div style={{ width: `${pct(r.reached, top)}%`, height: '100%', background: accent, borderRadius: 999, transition: 'width .4s' }} />
                 </div>
-                <span className="fz-small shrink-0 text-right" style={{ color: C.dim, width: 120 }}>{r.reached} reached{r.skipped ? `, ${r.skipped} skipped` : ''}</span>
+                <span className="fz-small shrink-0 text-right" style={{ color: C.dim, width: 120 }}>{t('{{1}} reached', { 1: r.reached })}{r.skipped ? t(', {{1}} skipped', { 1: r.skipped }) : ''}</span>
               </div>
             ))}
           </div>
-          <p className="fz-small" style={{ color: C.dim }}>"Reached" counts people who saw the step. "Skipped" counts people who left the tour on that step. Counting starts from the first walkthrough after this update.</p>
+          <p className="fz-small" style={{ color: C.dim }}>{t('Reached counts people who saw the step. Skipped counts people who left the tour on that step. Counting starts from the first walkthrough after this update.')}</p>
         </div>
       </Panel>
 
-      <Panel icon={<ShieldCheck size={16} />} tint="#10b981" title="Terms and Conditions" subtitle={`Version ${t.version}`}
-        right={<Counter color={t.pendingTotal === 0 ? C.green : C.amber}>{t.accepted} of {report.totalUsers} accepted</Counter>}>
+      <Panel icon={<ShieldCheck size={16} />} tint="#10b981" title={t('Terms and Conditions')} subtitle={t('Version {{1}}', { 1: terms.version })}
+        right={<Counter color={terms.pendingTotal === 0 ? C.green : C.amber}>{t('{{1}} of {{2}} accepted', { 1: terms.accepted, 2: report.totalUsers })}</Counter>}>
         <div className="flex flex-col gap-4">
           <div className="rounded-full overflow-hidden" style={{ height: 8, background: C.fill }}>
-            <div style={{ width: `${pct(t.accepted, report.totalUsers)}%`, height: '100%', background: C.green, borderRadius: 999, transition: 'width .4s' }} />
+            <div style={{ width: `${pct(terms.accepted, report.totalUsers)}%`, height: '100%', background: C.green, borderRadius: 999, transition: 'width .4s' }} />
           </div>
           <div>
-            <div className="fz-tiny font-black uppercase tracking-widest mb-1.5" style={{ color: C.dim }}>Not accepted yet ({t.pendingTotal})</div>
-            {t.pending.length === 0
-              ? <p className="fz-body" style={{ color: C.green }}>Everyone has accepted this version.</p>
+            <div className="fz-tiny font-bold mb-1.5" style={{ color: C.dim }}>{t('Not accepted yet')} ({terms.pendingTotal})</div>
+            {terms.pending.length === 0
+              ? <p className="fz-body" style={{ color: C.green }}>{t('Everyone has accepted this version.')}</p>
               : <div className="flex flex-wrap gap-1.5">
-                  {t.pending.map((p) => <span key={p.username} className="px-2.5 py-1 rounded-full fz-small" style={{ background: C.fill, color: C.text }}>{p.username}</span>)}
-                  {t.pendingTotal > t.pending.length && <span className="fz-small" style={{ color: C.dim }}>and {t.pendingTotal - t.pending.length} more</span>}
+                  {terms.pending.map((p) => <span key={p.username} className="px-2.5 py-1 rounded-full fz-small" style={{ background: C.fill, color: C.text }}>{p.username}</span>)}
+                  {terms.pendingTotal > terms.pending.length && <span className="fz-small" style={{ color: C.dim }}>{t('and {{1}} more', { 1: terms.pendingTotal - terms.pending.length })}</span>}
                 </div>}
           </div>
           <div>
-            <div className="fz-tiny font-black uppercase tracking-widest mb-1.5" style={{ color: C.dim }}>Recent acceptances</div>
-            {t.recent.length === 0
-              ? <p className="fz-body" style={{ color: C.dim }}>Nobody has accepted yet.</p>
+            <div className="fz-tiny font-bold mb-1.5" style={{ color: C.dim }}>{t('Recent acceptances')}</div>
+            {terms.recent.length === 0
+              ? <p className="fz-body" style={{ color: C.dim }}>{t('Nobody has accepted yet.')}</p>
               : <div className="flex flex-col gap-1">
-                  {t.recent.slice(0, 10).map((r) => (
+                  {terms.recent.slice(0, 10).map((r) => (
                     <div key={r.username + r.acceptedAt} className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg" style={{ background: C.fill }}>
                       <span className="fz-body font-bold" style={{ color: C.textStrong }}>{r.username}</span>
-                      <span className="fz-small" style={{ color: C.dim }}>version {r.version} · {new Date(r.acceptedAt).toLocaleString()}</span>
+                      <span className="fz-small" style={{ color: C.dim }}>{t('version')} {r.version} · {new Date(r.acceptedAt).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>}
@@ -826,7 +823,7 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
     finally { setBusy(false); }
   };
 
-  const modeText = (m: OnboardingMode) => (m === 'always' ? 'Every login' : m === 'never' ? 'Off' : 'First login only');
+  const modeText = (m: OnboardingMode) => (m === 'always' ? t('Every login') : m === 'never' ? t('Off') : t('First login only'));
   const row = 'flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl';
   const Row: React.FC<{ title: string; hint: string; on: boolean; disabled?: boolean; onChange: (v: boolean) => void }> = ({ title, hint, on, disabled, onChange }) => (
     <div className={row} style={{ background: C.fill, opacity: disabled ? 0.5 : 1, pointerEvents: disabled || busy ? 'none' : 'auto' }}>
@@ -859,14 +856,14 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
         <div className="flex flex-col gap-3">
           <Row title={t("Use the administrator's default")} hint={t('Right now the default is: {{1}}.', { 1: modeText(status.globalMode) })}
             on={usingDefault}
-            onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'default' : status.globalMode), v ? 'Using the default.' : 'Using your own setting.')} />
+            onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'default' : status.globalMode), v ? t('Using the default.') : t('Using your own setting.'))} />
           <Row title={t('Start the tour automatically')} hint={t('Show the welcome tour when you sign in.')}
             on={shown !== 'never'} disabled={usingDefault}
-            onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'first' : 'never'), v ? 'The tour will start automatically.' : 'The tour will not start automatically.')} />
+            onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'first' : 'never'), v ? t('The tour will start automatically.') : t('The tour will not start automatically.'))} />
           <Row title={t('Show it at every login')} hint={t('Off means only the first time you sign in.')}
             on={shown === 'always'} disabled={usingDefault || shown === 'never'}
-            onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'always' : 'first'), v ? 'The tour will show at every login.' : 'The tour will show only once.')} />
-          <Row title={t('Calm mode: no motion')} hint={t('Turns off animation, confetti and typing effects in the tour on this PC. The system reduce-motion setting is respected too.')}
+            onChange={(v) => void run(() => onboardingApi.setPreference(v ? 'always' : 'first'), v ? t('The tour will show at every login.') : t('The tour will show only once.'))} />
+          <Row title={t('Calm mode: no motion')} hint={t('Turns off every animation in the app on this PC, tour included. The same switch is in Appearance, under Animations.')}
             on={calm} onChange={(v) => { setCalm(v); setCalmPreference(v); }} />
         </div>
       </Panel>
@@ -877,10 +874,10 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
           <div className="flex flex-col gap-3">
             <Row title={t('Start the tour automatically')} hint={t('Turn off to stop the tour appearing for people on the default.')}
               on={status.globalMode !== 'never'}
-              onChange={(v) => void run(() => onboardingApi.setGlobalMode(v ? 'first' : 'never'), 'Default saved for everyone.')} />
+              onChange={(v) => void run(() => onboardingApi.setGlobalMode(v ? 'first' : 'never'), t('Default saved for everyone.'))} />
             <Row title={t('Show it at every login')} hint={t('Off means only the first time each person signs in.')}
               on={status.globalMode === 'always'} disabled={status.globalMode === 'never'}
-              onChange={(v) => void run(() => onboardingApi.setGlobalMode(v ? 'always' : 'first'), 'Default saved for everyone.')} />
+              onChange={(v) => void run(() => onboardingApi.setGlobalMode(v ? 'always' : 'first'), t('Default saved for everyone.'))} />
           </div>
         </Panel>
       )}
@@ -925,7 +922,7 @@ const ApproversSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> =
             : ' ' + t('No window asks for an approver code at the moment.'))}
         </p>
         <div>
-          <button type="button" onClick={openWindow} className="rounded-lg px-4 fz-tiny font-black uppercase tracking-widest cursor-pointer"
+          <button type="button" onClick={openWindow} className="rounded-lg px-4 fz-tiny font-bold cursor-pointer"
             style={{ height: 34, background: accent, color: '#fff', border: 0 }}>{t('Open Two-Factor & Approvals')}</button>
         </div>
       </div>
@@ -952,6 +949,10 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
 
   return (
     <div className="space-y-5">
+      {/* One explanation for the whole tab, instead of repeating it under every report. */}
+      <p className="fz-small" style={{ color: C.dim }}>
+        {t('Turn a view off and it disappears from the switch at the top of that report. Printing always uses the Legacy layout. These choices are saved on this computer for your login and apply straight away. More reports will appear here as they get Pro views.')}
+      </p>
       {REPORT_VIEW_REGISTRY.map(def => {
         const pref = getReportPref(def.id);
         const custom = hasCustomPref(def.id);
@@ -961,7 +962,7 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
             icon={<FileText size={16} />}
             tint="#ec4899"
             title={tLabel(def.title)}
-            subtitle={`${def.group} · ${def.note ?? 'Choose the views this report offers'}`}
+            subtitle={`${tLabel(def.group)} · ${tLabel(def.note ?? 'Choose the views this report offers')}`}
             right={
               <>
                 <Counter>{t('{{1}} / {{2}} views', { 1: pref.enabled.length, 2: def.available.length })}</Counter>
@@ -969,7 +970,7 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
                   <button
                     type="button"
                     onClick={() => { resetReportPref(def.id); refresh(); }}
-                    className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+                    className="rounded-lg px-3 fz-tiny font-bold flex items-center gap-2 cursor-pointer"
                     style={{ height: 28, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
                   >
                     <RotateCcw size={12} /> {t('Reset')}
@@ -993,15 +994,15 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
                       : { border: `1px solid ${C.border}`, background: C.fillSoft, opacity: 0.75 }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="fz-tiny font-black uppercase tracking-wide leading-none" style={{ color: on ? C.textStrong : C.dim }}>
-                        {tLabel(meta.label)}{locked && <span style={{ color: C.dimmer, fontWeight: 700 }}> · always on</span>}
+                      <p className="fz-tiny font-bold leading-none" style={{ color: on ? C.textStrong : C.dim }}>
+                        {tLabel(meta.label)}{locked && <span style={{ color: C.dimmer, fontWeight: 700 }}> · {t('always on')}</span>}
                       </p>
-                      <p className="fz-tiny mt-1" style={{ color: C.dimmer }}>{meta.desc}</p>
+                      <p className="fz-tiny mt-1" style={{ color: C.dimmer }}>{tLabel(meta.desc)}</p>
                       <button
                         type="button"
                         disabled={!on || isDefault}
                         onClick={() => setDefault(def.id, view)}
-                        className="mt-2 rounded-md px-2 fz-tiny font-black uppercase tracking-widest cursor-pointer disabled:cursor-default"
+                        className="mt-2 rounded-md px-2 fz-tiny font-bold cursor-pointer disabled:cursor-default"
                         style={{
                           height: 22,
                           border: `1px solid ${isDefault ? accent : C.border}`,
@@ -1020,15 +1021,9 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
                 );
               })}
             </div>
-            <p className="fz-small mt-3" style={{ color: C.dim }}>
-              {t('Turn a view off and it disappears from the switch at the top of the report. Printing always uses the Legacy layout.')}
-            </p>
           </Panel>
         );
       })}
-      <p className="fz-small" style={{ color: C.dimmer }}>
-        {t('More reports will appear here as they get Pro views. These choices are saved on this computer for your login and apply straight away.')}
-      </p>
     </div>
   );
 };
@@ -1166,18 +1161,18 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
 
   if (!isAdmin) {
     return (
-      <Panel icon={<Bell size={16} />} tint="#38bdf8" title={t('Notifications')} subtitle="Administrators only">
+      <Panel icon={<Bell size={16} />} tint="#38bdf8" title={t('Alert Channels')} subtitle="Administrators only">
         <p className="fz-body" style={{ color: C.dim }}>{t('Only an administrator can choose which alerts are sent and where.')}</p>
       </Panel>
     );
   }
   if (!data) {
     return (
-      <Panel icon={<Bell size={16} />} tint="#38bdf8" title={t('Notifications')} subtitle={loadError ? 'Could not load' : 'Loading…'}>
+      <Panel icon={<Bell size={16} />} tint="#38bdf8" title={t('Alert Channels')} subtitle={loadError ? 'Could not load' : 'Loading…'}>
         {loadError && (
           <div className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <span className="fz-body" style={{ color: C.red }}>{loadError}</span>
-            <button onClick={load} className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(false)}>{t('Retry')}</button>
+            <button onClick={load} className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer" style={smallButton(false)}>{t('Retry')}</button>
           </div>
         )}
       </Panel>
@@ -1188,9 +1183,9 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
   const withLimits = allAlerts.filter((a) => a.param);
   const statusOf = (id: ChannelId) => {
     const ch = data[id];
-    if (!ch.configured) return { text: 'Not configured', color: C.amber };
-    if (!ch.enabled) return { text: 'Switched off', color: C.dimmer };
-    return { text: 'Active', color: C.green };
+    if (!ch.configured) return { text: t('Not configured'), color: C.amber };
+    if (!ch.enabled) return { text: t('Switched off'), color: C.dimmer };
+    return { text: t('Active'), color: C.green };
   };
 
   // These are plain render functions (not components), so React keeps focus when a switch is pressed.
@@ -1230,7 +1225,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
           </span>
         </button>
         <div className="flex items-center justify-between gap-2">
-          <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: selected ? def.tint : C.dimmer }}>
+          <span className="fz-tiny font-bold" style={{ color: selected ? def.tint : C.dimmer }}>
             {t('Open settings ›')}
           </span>
           <Toggle on={ch.enabled} accent={def.tint} label={t('Send alerts to {{1}}', { 1: def.name })} onChange={(v) => toggleDest(def.id, v)} />
@@ -1251,7 +1246,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
       </span>
       <span className="min-w-0">
         <span className="fz-body font-bold block truncate" style={{ color: C.text }}>{c.name}</span>
-        <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Coming soon')}</span>
+        <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Coming soon')}</span>
       </span>
     </div>
   );
@@ -1284,7 +1279,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
               </span>
               {ch.configured && mapping.length > 0 && (
                 <span className="flex flex-wrap items-center gap-1.5 mt-2">
-                  <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: C.dimmer }}>{sel === 'discord' ? t('Channels') : t('Topics')}</span>
+                  <span className="fz-tiny font-bold" style={{ color: C.dimmer }}>{sel === 'discord' ? t('Channels') : t('Topics')}</span>
                   {noTopics && <span className="fz-small" style={{ color: C.dim }}>{t("none set up: everything goes to the group's General chat")}</span>}
                   {!noTopics && mapping.map(([name, ok]) => (
                     <span key={name} className="px-2 py-0.5 rounded-full fz-tiny font-bold"
@@ -1299,7 +1294,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
               <button
                 onClick={() => sendTest(sel)}
                 disabled={testingDest === sel || !ch.configured}
-                className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
+                className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer"
                 style={smallButton(testingDest === sel || !ch.configured)}
               >
                 {testingDest === sel ? t('Sending…') : t('Send test')}
@@ -1315,7 +1310,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
                 <div key={g.id}>
                   <div className="flex items-center justify-between gap-3 px-1 pb-2">
                     <div className="min-w-0">
-                      <span className="fz-body font-black block" style={{ color: ALERT_GROUP_TINT[g.id] || accent }}>{tLabel(g.label)}</span>
+                      <span className="fz-body font-bold block" style={{ color: g.id === 'errors' ? C.red : C.textStrong }}>{tLabel(g.label)}</span>
                       <span className="fz-small block" style={{ color: C.dim }}>{tLabel(g.description)}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -1352,8 +1347,8 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
       right={(
         <>
           <Counter color={online && online.length > 0 ? C.green : C.dimmer}>{online ? t('{{1}} online', { 1: online.length }) : '…'}</Counter>
-          <button onClick={loadOnline} className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(false)}>{t('Refresh')}</button>
-          <button onClick={postOnline} disabled={posting || !online} className="rounded-lg px-3 fz-tiny font-black uppercase tracking-widest cursor-pointer" style={smallButton(posting || !online)}>
+          <button onClick={loadOnline} className="rounded-lg px-3 fz-tiny font-bold cursor-pointer" style={smallButton(false)}>{t('Refresh')}</button>
+          <button onClick={postOnline} disabled={posting || !online} className="rounded-lg px-3 fz-tiny font-bold cursor-pointer" style={smallButton(posting || !online)}>
             {posting ? t('Posting…') : t('Post to channels')}
           </button>
         </>
@@ -1375,13 +1370,13 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
                 <span className="fz-body font-bold block" style={{ color: C.text }}>
                   <span className="inline-block rounded-full align-middle mr-2" style={{ width: 8, height: 8, background: C.green }} />
                   {u.username}
-                  {u.role && <span className="fz-tiny font-black uppercase tracking-widest ml-2" style={{ color: C.dimmer }}>{u.role.toLowerCase()}</span>}
+                  {u.role && <span className="fz-tiny font-bold ml-2" style={{ color: C.dimmer }}>{u.role.toLowerCase()}</span>}
                 </span>
                 <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
                   {[u.host, u.ip, u.mac && `MAC ${u.mac}`, u.version && `v${u.version}`].filter(Boolean).join(' · ')}
                 </span>
               </div>
-              <span className="fz-small font-bold shrink-0" style={{ color: C.dim }}>online {fmtMinutes(u.minutes)}</span>
+              <span className="fz-small font-bold shrink-0" style={{ color: C.dim }}>{t('online')} {fmtMinutes(u.minutes)}</span>
             </div>
           ))}
         </div>
@@ -1431,7 +1426,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
           className="flex items-center gap-1.5 fz-small font-bold cursor-pointer"
           style={{ border: 'none', background: 'transparent', color: C.dim, padding: 0 }}
         >
-          ‹ {t('Back to Notifications')}
+          ‹ {t('Back to Alert Channels')}
         </button>
         {renderChannelPanel(sel)}
         {renderLimitsPanel()}
@@ -1442,7 +1437,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
   return (
     <div className="space-y-5">
       <Panel
-        icon={<Bell size={16} />} tint="#38bdf8" title={t('Notifications')}
+        icon={<Bell size={16} />} tint="#38bdf8" title={t('Alert Channels')}
         subtitle="Click a channel to open all of its settings. A society can use one, both or none."
         right={<Counter color={data.master ? C.green : C.red}>{data.master ? t('Alerts on') : t('All muted')}</Counter>}
       >
@@ -1458,14 +1453,14 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
           </div>
 
           <div>
-            <span className="fz-tiny font-black uppercase tracking-widest block mb-2" style={{ color: C.dimmer }}>{t('Channels you can use now')}</span>
+            <span className="fz-tiny font-bold block mb-2" style={{ color: C.dimmer }}>{t('Channels you can use now')}</span>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 220px))', gap: 14 }}>
               {CHANNEL_DEFS.map(renderChannelCard)}
             </div>
           </div>
 
           <div>
-            <span className="fz-tiny font-black uppercase tracking-widest block mb-2" style={{ color: C.dimmer }}>{t('Planned')}</span>
+            <span className="fz-tiny font-bold block mb-2" style={{ color: C.dimmer }}>{t('Planned')}</span>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10 }}>
               {COMING_SOON.map(renderComingSoon)}
             </div>
@@ -1490,7 +1485,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
               <button
                 onClick={testJira}
                 disabled={jiraTesting || !data.jira.configured}
-                className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest cursor-pointer"
+                className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer"
                 style={smallButton(jiraTesting || !data.jira.configured)}
               >
                 {jiraTesting ? t('Testing…') : t('Test connection')}
@@ -1571,7 +1566,7 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
         <div className="flex items-center gap-3 mb-5">
           <div className="p-2 rounded-[10px]" style={{ background: C.panel, color: cfg.color }}>{cfg.icon}</div>
           <div>
-            <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>{t('License Status')}</h3>
+            <h3 className="text-sm font-bold" style={{ color: C.textStrong }}>{t('License Status')}</h3>
             <span
               className="inline-block mt-1.5 px-2.5 py-0.5 fz-tiny font-black rounded-full uppercase tracking-widest"
               style={{ background: `rgba(${sr},${sg},${sb},.15)`, color: cfg.color }}
@@ -1584,25 +1579,25 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
         <div className="grid grid-cols-3 gap-4">
           {customerName && (
             <div>
-              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Customer')}</span>
+              <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Customer')}</span>
               <span className="fz-body font-bold" style={{ color: C.text }}>{customerName}</span>
             </div>
           )}
           {expiresAt && (
             <div>
-              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Expires')}</span>
+              <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Expires')}</span>
               <span className="fz-body font-bold" style={{ color: C.text }}>{new Date(expiresAt).toLocaleDateString()}</span>
             </div>
           )}
           {status === 'active' && (
             <div>
-              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Days Remaining')}</span>
+              <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Days Remaining')}</span>
               <span className="font-black text-lg" style={{ color: daysRemaining <= 30 ? C.amber : C.green }}>{daysRemaining}</span>
             </div>
           )}
           {status === 'grace' && (
             <div>
-              <span className="fz-tiny font-black uppercase tracking-widest block" style={{ color: C.dimmer }}>{t('Grace Days Left')}</span>
+              <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Grace Days Left')}</span>
               <span className="font-black text-lg" style={{ color: C.red }}>{graceDaysRemaining}</span>
             </div>
           )}
@@ -1618,7 +1613,7 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
         icon={<KeyRound size={17} />}
         tint={accent}
         title={status === 'not_activated' ? t('Activate Software') : t('Renew License')}
-        subtitle="Enter your license key"
+        subtitle={t('Enter your license key')}
       >
         <input
           value={activateKey}
@@ -1687,18 +1682,16 @@ const SettingsPage: React.FC = () => {
   // flips in the same render as the theme change.
   const isDark = theme.interfaceMode === 'dark';
   const palette = SETTINGS_PALETTES[isDark ? 'dark' : 'light'];
-  const [typographyOffsets, setTypographyOffsets] = useState<TypographyOffsets>(readTypographyOffsets);
-
-  const updateTypographyOffset = (role: keyof TypographyOffsets, value: number) => {
-    const next = saveTypographyOffsets({ ...typographyOffsets, [role]: value });
-    setTypographyOffsets(next);
-  };
-
+  // "Advanced text sizes" was removed from Appearance: it only changed the Settings window itself and
+  // read as if it changed the whole app. Any offsets saved by it are put back to normal once, because
+  // there is no longer a control to undo them.
   useEffect(() => {
-    const channel = new BroadcastChannel(TYPOGRAPHY_SYNC_CHANNEL);
-    channel.onmessage = event => setTypographyOffsets(normalizeTypographyOffsets(event.data));
-    return () => channel.close();
+    const saved = readTypographyOffsets();
+    if (JSON.stringify(saved) !== JSON.stringify(DEFAULT_TYPOGRAPHY_OFFSETS)) saveTypographyOffsets(DEFAULT_TYPOGRAPHY_OFFSETS);
   }, []);
+
+  // Calm mode (no motion). Shown in Appearance → Animations and in Welcome Tour; both write the same setting.
+  const [calmPref, setCalmPref] = useState(getCalmPreference);
 
   const [activeTab, setActiveTab] = useState('appearance');
   const { user: authUser } = useAuth();
@@ -1739,11 +1732,6 @@ const SettingsPage: React.FC = () => {
     } catch { return defaults; }
   });
 
-  const [bannerOpacity, setBannerOpacity] = useState<number>(() => {
-    const v = parseInt(localStorage.getItem('lms-fy-banner-opacity') || '78', 10);
-    return isNaN(v) ? 78 : v;
-  });
-
   const [enabledQaIds, setEnabledQaIds] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem(QA_STORAGE_KEY);
@@ -1766,6 +1754,51 @@ const SettingsPage: React.FC = () => {
 
   // Puts every dashboard card back where it started; the open dashboard hears the broadcast and redraws.
   const [layoutReset, setLayoutReset] = useState(false);
+
+  // Dashboard art: on/off and the chosen picture, saved on this PC and sent to the open dashboard.
+  const [artConfig, setArtConfig] = useState<ArtConfig>(loadArtConfig);
+  const [customArt, setCustomArt] = useState<string | null>(loadCustomArt);
+  const [artError, setArtError] = useState('');
+  // The category whose pictures are listed; opens on the category of the picture in use.
+  const [artCategory, setArtCategory] = useState<string>(() => {
+    const current = loadArtConfig().art;
+    return current === CUSTOM_ART ? CUSTOM_ART : current.split('/')[0] || (ART_LIBRARY[0]?.id ?? CUSTOM_ART);
+  });
+  const updateArt = (patch: Partial<ArtConfig>) => {
+    // Start from what is saved: the dashboard changes the per-card list on its own, and that must not be lost.
+    const next = { ...loadArtConfig(), ...patch };
+    setArtConfig(next);
+    saveArtConfig(next);
+    try { const bc = new BroadcastChannel('lms_dashboard_config'); bc.postMessage({ art: next }); bc.close(); } catch { }
+  };
+  const toggleArtCard = (id: string) => {
+    const cards = loadArtConfig().cards;
+    updateArt({ cards: cards.includes(id) ? cards.filter(c => c !== id) : [...cards, id] });
+  };
+  // Choosing a picture keeps it wherever it is already shown. If it is shown nowhere yet, it goes behind the dashboard.
+  const pickArt = (art: string) => {
+    const saved = loadArtConfig();
+    updateArt({ art, ...(saved.enabled || saved.cards.length > 0 ? {} : { enabled: true }) });
+  };
+  const onImportArt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // the same file can be picked again
+    if (!file) return;
+    setArtError('');
+    try {
+      setCustomArt(await importCustomArt(file));
+      pickArt(CUSTOM_ART);
+    } catch (err: any) {
+      setArtError(t(err?.message || 'The picture could not be imported.'));
+    }
+  };
+  const onRemoveArt = () => {
+    removeCustomArt();
+    setCustomArt(null);
+    setArtError('');
+    // Without the picture there is nothing to show, so fall back to the first built-in one.
+    if (artConfig.art === CUSTOM_ART) updateArt({ art: ART_LIBRARY[0]?.artworks[0]?.id ?? CUSTOM_ART, enabled: false });
+  };
   const resetDashboardLayout = useCallback(() => {
     clearLayout();
     broadcastDashboardConfig({ resetLayout: true });
@@ -1780,12 +1813,6 @@ const SettingsPage: React.FC = () => {
       broadcastDashboardConfig({ widgets: next });
       return next;
     });
-  }, [broadcastDashboardConfig]);
-
-  const applyBannerOpacity = useCallback((v: number) => {
-    setBannerOpacity(v);
-    localStorage.setItem('lms-fy-banner-opacity', String(v));
-    broadcastDashboardConfig({ bannerOpacity: v });
   }, [broadcastDashboardConfig]);
 
   // --- Effects ---
@@ -1930,10 +1957,10 @@ const SettingsPage: React.FC = () => {
         );
         message.success({ content: 'Configuration saved & broadcasted', icon: <CheckCircle2 className="text-emerald-500" /> });
       } else {
-        message.error(t('Failed to persist settings to server'));
+        void notifyError(prefRes, 'save the settings');
       }
     } catch (error) {
-      message.error(t('Connection error while saving'));
+      void notifyError(null, 'save the settings');
     } finally {
       setIsSaving(false);
     }
@@ -2038,16 +2065,16 @@ const SettingsPage: React.FC = () => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
       {/* Theme & Accent */}
-      <Panel icon={<Palette size={17} />} tint="#818cf8" title={t('Theme & Colors')} subtitle="Global palette settings">
+      <Panel icon={<Palette size={17} />} tint="#818cf8" title={t('Theme & Colors')} subtitle={t('Light or dark, and the accent colour')}>
         <div className="space-y-5">
           {/* Theme Mode */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Interface Mode')}</label>
-            <div className="relative flex p-[3px] rounded-[9px]" style={{ background: C.fill }}>
+            <label className="fz-small font-bold block" style={fieldLabel}>{t('Interface Mode')}</label>
+            <div className="relative flex p-[3px] rounded-[10px]" style={{ background: C.fill }}>
               {/* Sliding pill: glides between Light and Dark instead of swapping backgrounds. */}
               <span
                 aria-hidden="true"
-                className="settings-seg-thumb absolute rounded-[7px]"
+                className="settings-seg-thumb absolute rounded-[8px]"
                 style={{
                   top: 3, bottom: 3, left: 3, width: 'calc(50% - 3px)',
                   background: C.panel, boxShadow: `0 1px 3px ${C.border}`,
@@ -2068,11 +2095,11 @@ const SettingsPage: React.FC = () => {
                         document.documentElement.classList.toggle('dark', mode === 'dark');
                       });
                     }}
-                    className="relative z-[1] flex-1 py-1.5 rounded-[7px] border-0 bg-transparent fz-small font-bold uppercase tracking-widest cursor-pointer flex items-center justify-center gap-1.5"
+                    className="relative z-[1] flex-1 py-1.5 rounded-[8px] border-0 bg-transparent fz-small font-bold cursor-pointer flex items-center justify-center gap-1.5"
                     style={{ color: active ? C.textStrong : C.dim }}
                   >
                     <ModeIcon size={13} />
-                    {mode}
+                    {mode === 'light' ? t('Light') : t('Dark')}
                   </button>
                 );
               })}
@@ -2081,7 +2108,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Accent Color */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Accent Color')}</label>
+            <label className="fz-small font-bold block" style={fieldLabel}>{t('Accent Color')}</label>
             <div className="flex flex-wrap gap-2.5 items-center">
               {ACCENT_PRESETS.map(color => {
                 const selected = accent.toLowerCase() === color.toLowerCase();
@@ -2111,17 +2138,17 @@ const SettingsPage: React.FC = () => {
       </Panel>
 
       {/* Layout & Type */}
-      <Panel icon={<Type size={17} />} tint="#f472b6" title={t('Layout & Type')} subtitle="Density and scaling">
+      <Panel icon={<Type size={17} />} tint="#f472b6" title={t('Text')} subtitle={t('Size, font and weight')}>
         <div className="space-y-5">
           {/* Text Size */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="fz-small font-black uppercase tracking-widest" style={fieldLabel}>{t('Text Size')}</label>
+              <label className="fz-small font-bold" style={fieldLabel}>{t('Text Size')}</label>
               <span
                 className="fz-tiny font-black uppercase px-2 py-0.5 rounded-full"
                 style={{ background: accentRgba(0.15), color: accent }}
               >
-                {settings.fontSize}
+                {t(settings.fontSize === 'small' ? 'Small' : settings.fontSize === 'medium' ? 'Medium' : 'Large')}
               </span>
             </div>
             <Range
@@ -2135,60 +2162,12 @@ const SettingsPage: React.FC = () => {
                 applyTheme({ fontScale: [0.9, 1.0, 1.2][v] ?? 1.0 });
               }}
             />
-            <div className="flex justify-between fz-tiny font-black" style={{ color: C.dim }}>
-              <span>A</span><span>AA</span><span>AAA</span>
-            </div>
           </div>
 
-          <details className="settings-type-advanced rounded-[10px]" style={{ border: `1px solid ${C.border}`, background: C.fillSoft }}>
-            <summary className="cursor-pointer px-3 py-2.5 font-bold" style={{ color: C.textStrong }}>
-              {t('Advanced text sizes')}
-            </summary>
-            <div className="px-3 pb-3 space-y-4" style={{ borderTop: `1px solid ${C.divider}` }}>
-              <p className="fz-small pt-3" style={{ color: C.dim }}>{t('Fine-tune Settings text. Other windows can adopt these same roles after you approve the result.')}</p>
-              {([
-                { role: 'heading', title: t('Headings'), hint: t('Page, section and panel titles') },
-                { role: 'label', title: t('Labels & fields'), hint: t('Control labels, input text and placeholders') },
-                { role: 'body', title: t('Supporting text'), hint: t('Descriptions and helper text') },
-              ] as const).map(({ role, title, hint }) => (
-                <div key={role} className="space-y-1.5">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <label htmlFor={`settings-type-${role}`} className="font-semibold" style={{ color: C.textStrong }}>{title}</label>
-                    <span className="fz-small tabular-nums" style={{ color: C.dim }}>{t('{{1}}{{2}} px', { 1: typographyOffsets[role] > 0 ? '+' : '', 2: typographyOffsets[role] })}</span>
-                  </div>
-                  <p className="fz-small" style={{ color: C.dim }}>{hint}</p>
-                  <Range
-                    id={`settings-type-${role}`}
-                    ariaLabel={title}
-                    min={-2}
-                    max={4}
-                    value={typographyOffsets[role]}
-                    onChange={v => updateTypographyOffset(role, v)}
-                    accent={accent}
-                    format={v => `${v > 0 ? '+' : ''}${v} px`}
-                  />
-                </div>
-              ))}
-              <div className="settings-type-preview rounded-lg px-3 py-2.5" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
-                <div className="settings-panel-title font-bold" style={{ color: C.textStrong }}>{t('Preview heading')}</div>
-                <label className="block mt-2" style={{ color: C.dim }}>{t('Sample field')}</label>
-                <input readOnly placeholder={t('Sample placeholder')} aria-label={t('Typography preview')} className="w-full rounded-md px-2 py-1 mt-1" style={{ background: C.fillSoft, border: `1px solid ${C.border}`, color: C.textStrong }} />
-                <p className="fz-body mt-2" style={{ color: C.dim }}>{t('Supporting information stays easy to read.')}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setTypographyOffsets(saveTypographyOffsets(DEFAULT_TYPOGRAPHY_OFFSETS))}
-                className="rounded-lg px-3 py-1.5 font-semibold cursor-pointer"
-                style={{ color: C.textStrong, background: C.fill, border: `1px solid ${C.border}` }}
-              >
-                {t('Reset advanced sizes')}
-              </button>
-            </div>
-          </details>
 
           {/* Font Style */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Font Style')}</label>
+            <label className="fz-small font-bold block" style={fieldLabel}>{t('Font Style')}</label>
             <div className="grid grid-cols-2 gap-2">
               {FONT_OPTIONS.map(font => {
                 const selected = settings.fontFamily === font.value;
@@ -2228,7 +2207,7 @@ const SettingsPage: React.FC = () => {
           {/* Bold Text */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Bold Text')}</label>
+              <label className="fz-small font-bold block" style={fieldLabel}>{t('Bold Text')}</label>
               <p className="fz-small mt-0.5" style={{ color: C.dim }}>{t('Make all labelled text heavier')}</p>
             </div>
             <Toggle
@@ -2244,10 +2223,16 @@ const SettingsPage: React.FC = () => {
             />
           </div>
 
+        </div>
+      </Panel>
+
+      {/* Shape & depth: everything about how surfaces look, kept apart from text. */}
+      <Panel icon={<Layers size={17} />} tint="#f472b6" title={t('Shape & Depth')} subtitle={t('Spacing, corners, shadows and window headers')} className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
           {/* Soft Shadows */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4 lg:col-span-2">
             <div>
-              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Soft Shadows')}</label>
+              <label className="fz-small font-bold block" style={fieldLabel}>{t('Soft Shadows')}</label>
               <p className="fz-small mt-0.5" style={{ color: C.dim }}>{t('Subtle depth on cards, buttons and pop-ups. Turn off for maximum speed on older PCs.')}</p>
             </div>
             <Toggle
@@ -2259,9 +2244,9 @@ const SettingsPage: React.FC = () => {
           </div>
 
           {/* Header Style */}
-          <div className="space-y-2">
+          <div className="space-y-2 lg:col-span-2">
             <div>
-              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Header Style')}</label>
+              <label className="fz-small font-bold block" style={fieldLabel}>{t('Header Style')}</label>
               <p className="fz-small mt-0.5" style={{ color: C.dim }}>{t("A soft decorative background behind each window's title bar.")}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -2308,7 +2293,7 @@ const SettingsPage: React.FC = () => {
                         />
                       )}
                     </div>
-                    <span className="fz-small font-bold uppercase tracking-wider" style={{ color: C.text }}>{tLabel(opt.label)}</span>
+                    <span className="fz-small font-bold" style={{ color: C.text }}>{tLabel(opt.label)}</span>
                   </div>
                 );
               })}
@@ -2317,7 +2302,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Density Toggle */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('Layout Density')}</label>
+            <label className="fz-small font-bold block" style={fieldLabel}>{t('Layout Density')}</label>
             <div className="grid grid-cols-2 gap-2.5">
               {(['compact', 'comfortable'] as const).map(d => {
                 const selected = settings.density === d;
@@ -2338,7 +2323,7 @@ const SettingsPage: React.FC = () => {
                       <div className="h-[5px] w-2/3 rounded-full mb-1.5" style={{ background: C.dim }} />
                       <div className="h-[5px] w-full rounded-full" style={{ background: C.divider }} />
                     </div>
-                    <span className="fz-small font-bold uppercase tracking-wider" style={{ color: C.text }}>{d}</span>
+                    <span className="fz-small font-bold" style={{ color: C.text }}>{d === 'compact' ? t('Compact') : t('Comfortable')}</span>
                   </div>
                 );
               })}
@@ -2347,7 +2332,10 @@ const SettingsPage: React.FC = () => {
 
           {/* Border Radius */}
           <div className="space-y-2">
-            <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>{t('{{1}} {{2}}px', { 1: t('Corner Radius:'), 2: settings.borderRadius })}</label>
+            <div className="flex justify-between items-center">
+              <label className="fz-small font-bold" style={fieldLabel}>{t('Corner Radius')}</label>
+              <span className="fz-tiny font-bold px-2 py-0.5 rounded-full" style={{ background: accentRgba(0.15), color: accent }}>{settings.borderRadius}px</span>
+            </div>
             <Range
               ariaLabel="Corner radius"
               format={v => `${v}px`}
@@ -2363,13 +2351,13 @@ const SettingsPage: React.FC = () => {
 
       {/* Background Config */}
       <div className="lg:col-span-2">
-        <Panel icon={<ImageIcon size={17} />} tint="#34d399" title={t('Background')} subtitle="Canvas appearance">
+        <Panel icon={<ImageIcon size={17} />} tint="#34d399" title={t('App Background')} subtitle={t('The colour or picture behind every window')}>
           {/* Dark mode keeps its own canvas so the navbar and toolbars stay
               readable, which means these controls have no visible effect while
               it is on. Say so rather than letting them look broken. */}
           {settings.themeMode === 'dark' && (
             <div
-              className="mb-4 px-3.5 py-2.5 rounded-[9px]"
+              className="mb-4 px-3.5 py-2.5 rounded-[10px]"
               style={{ background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.2)' }}
             >
               <p className="fz-caption font-bold" style={{ color: C.amber }}>
@@ -2386,14 +2374,14 @@ const SettingsPage: React.FC = () => {
                 <button
                   key={mode}
                   onClick={() => applyTheme({ backgroundType: mode })}
-                  className="flex-1 py-2 rounded-lg fz-small font-bold uppercase tracking-widest cursor-pointer"
+                  className="flex-1 py-2 rounded-lg fz-small font-bold cursor-pointer"
                   style={
                     selected
-                      ? { background: C.green, color: '#04140d', border: 'none' }
+                      ? { background: accentRgba(0.12), color: accent, border: `1px solid ${accent}` }
                       : { background: C.fill, color: C.dim, border: `1px solid ${C.border}` }
                   }
                 >
-                  {mode}
+                  {mode === 'solid' ? t('Solid') : mode === 'gradient' ? t('Gradient') : t('Image')}
                 </button>
               );
             })}
@@ -2402,7 +2390,7 @@ const SettingsPage: React.FC = () => {
           {/* Solid/Gradient Controls */}
           {settings.backgroundType !== 'image' && (
             <div className="space-y-3">
-              <label className="fz-small font-black uppercase tracking-widest block" style={fieldLabel}>
+              <label className="fz-small font-bold block" style={fieldLabel}>
                 {settings.backgroundType === 'gradient' ? t('Colors') : t('Color Selection')}
               </label>
               <div className="flex flex-wrap gap-2 items-center">
@@ -2414,7 +2402,7 @@ const SettingsPage: React.FC = () => {
                     className="border-0 cursor-pointer"
                     style={{
                       width: 24, height: 24, borderRadius: 6, background: color,
-                      boxShadow: settings.backgroundColor1 === color ? `0 0 0 2px ${C.green}` : `0 0 0 1px ${C.border}`,
+                      boxShadow: settings.backgroundColor1 === color ? `0 0 0 2px ${accent}` : `0 0 0 1px ${C.border}`,
                     }}
                   />
                 ))}
@@ -2446,7 +2434,7 @@ const SettingsPage: React.FC = () => {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="rounded-[9px] fz-small font-bold flex items-center gap-2 px-4 cursor-pointer"
+                  className="rounded-[10px] fz-small font-bold flex items-center gap-2 px-4 cursor-pointer"
                   style={{ height: 34, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
                 >
                   <UploadCloud size={13} /> {t('Upload Image')}
@@ -2507,301 +2495,23 @@ const SettingsPage: React.FC = () => {
                 {t('This PC')}: {motionUi.pc.cores} {t('cores')}{motionUi.pc.memoryGb ? ', ' + motionUi.pc.memoryGb + ' GB ' + t('memory') : ''}{motionUi.pc.avgFrameMs ? ', ' + motionUi.pc.avgFrameMs + ' ms ' + t('per frame') : ''} — {motionUi.pc.tier === 'high' ? t('fast: full animation') : motionUi.pc.tier === 'mid' ? t('medium: short animation') : t('slow: animation off')}
                 {' · '}<button className="underline" style={{ color: accent }} onClick={() => void detectPc(true)}>{t('Check again')}</button>
               </p>
-              {motionUi.resolved.reason === 'calm' && <p className="fz-small mt-1" style={{ color: C.dim }}>{t('Calm mode is on, so animation is off.')}</p>}
               {motionUi.resolved.reason === 'system' && <p className="fz-small mt-1" style={{ color: C.dim }}>{t('Windows is set to reduce motion, so animation is off.')}</p>}
             </div>
             <Toggle on={motionUi.prefs.adaptive} accent={accent} label={t('Adapt to this PC (recommended)')} onChange={(v) => saveMotion({ adaptive: v })} />
           </div>
-        </Panel>
-      </div>
-    </div>
-  );
-
-  const renderDashboard = () => {
-    const BG_OPTIONS = [
-      { value: '#f5f6fa', label: t('Slate'),   preview: '#f5f6fa' },
-      { value: '#fefef4', label: t('Cream'),   preview: '#fefef4' },
-      { value: '#ffffff', label: t('White'),   preview: '#ffffff' },
-      { value: '#f0f4ff', label: t('Blue'),    preview: '#f0f4ff' },
-      { value: '#f0fff4', label: t('Mint'),    preview: '#f0fff4' },
-      { value: '#fff8f0', label: t('Peach'),   preview: '#fff8f0' },
-      { value: '#1e1b4b', label: t('Dark'),    preview: '#1e1b4b' },
-      { value: '#0f172a', label: t('Night'),   preview: '#0f172a' },
-    ];
-
-    const applyDashboardBg = (color: string) => {
-      setSettings(prev => ({ ...prev, dashboardBg: color }));
-      localStorage.setItem('lms-dashboard-bg', color);
-      try { const bc = new BroadcastChannel('lms_dashboard_bg'); bc.postMessage({ dashboardBg: color }); bc.close(); } catch { }
-    };
-
-    const WIDGET_DEFS = [
-      { key: 'fyBanner'     as const, label: t('FY Indicator'),      desc: 'Financial year banner with progress',  Icon: Calendar },
-      { key: 'quickActions' as const, label: t('Quick Actions'),     desc: 'Configurable one-click shortcut buttons', Icon: Zap },
-      { key: 'noticeBoard'  as const, label: t('Notice Board'),      desc: 'Admin notices & sticky notes',          Icon: Bell },
-      { key: 'shortcuts'    as const, label: t('Keyboard Shortcuts'),desc: 'Hotkey reference panel',                Icon: Command },
-      { key: 'activeMembers'        as const, label: t('Active Members'),        desc: 'Current active member count',        Icon: Users },
-      { key: 'sanctionedLoans'      as const, label: t('Sanctioned Loans'),      desc: 'Pending disbursal, by loan type',    Icon: Landmark },
-      { key: 'monthEndOutstanding'  as const, label: t('Loan Outstanding'),      desc: 'This month’s regular vs emergency split', Icon: TrendingUp },
-      { key: 'balanceDistribution' as const, label: t('Balance Distribution'), desc: 'Members grouped by net balance (ring chart)', Icon: PiggyBank },
-      { key: 'pendingVouchers'     as const, label: t('Pending Vouchers'),     desc: 'Vouchers waiting to be passed',      Icon: CheckSquare },
-      { key: 'cashPosition'        as const, label: t('Cash Position'),        desc: 'Today’s cash book with a 7-day trend', Icon: Wallet },
-      { key: 'dayEndStatus'        as const, label: t('Day-End Status'),       desc: 'Last open day and whether it is closed', Icon: Clock },
-      { key: 'demandRecovery'      as const, label: t('Demand vs Recovery'),   desc: 'This month’s demand posted to the ledger (gauge)', Icon: Scale },
-      { key: 'depositsSummary'     as const, label: t('Deposits Summary'),     desc: 'Fixed & recurring, savings and compulsory (ring chart)', Icon: Banknote },
-      { key: 'upcomingMaturities'  as const, label: t('Upcoming Maturities'),  desc: 'Deposits maturing this month (timeline)', Icon: Calendar },
-      { key: 'loanApplications'    as const, label: t('Loan Applications'),    desc: 'Pending → sanctioned → disbursed steps', Icon: FileText },
-      { key: 'overdueLoans'        as const, label: t('Overdue Loans'),        desc: 'Defaulters by time since last payment (ring chart)', Icon: AlertTriangle },
-      { key: 'retiringMembers'     as const, label: t('Retiring Members'),     desc: 'Members retiring in 6 months, with loan balance', Icon: Users },
-      { key: 'newMembers'          as const, label: t('New Members'),          desc: 'Joined this month vs last month',    Icon: Star },
-    ];
-
-    const bannerBgAlpha = (bannerOpacity / 100).toFixed(2);
-    const bannerPreviewStyle: React.CSSProperties = {
-      backdropFilter: 'blur(12px)',
-      background: `rgba(15,23,42,${bannerBgAlpha})`,
-      border: '1px solid rgba(255,255,255,0.10)',
-    };
-
-    const categories = Array.from(new Set(ALL_QUICK_ACTION_DEFS.map(d => d.category)));
-
-    return (
-      <div className="space-y-5">
-
-        {/* ── Widget Visibility ─────────────────────────────────────── */}
-        <Panel
-          icon={<LayoutGrid size={16} />}
-          tint="#818cf8"
-          title={t('Dashboard Widgets')}
-          subtitle="Choose which panels are visible on your dashboard"
-          right={<Counter>{t('{{1}} / {{2}} on', { 1: Object.values(widgetConfig).filter(Boolean).length, 2: WIDGET_DEFS.length })}</Counter>}
-        >
-          <div className="grid grid-cols-2 gap-2.5">
-            {WIDGET_DEFS.map(({ key, label, desc, Icon }, i) => {
-              const isOn = widgetConfig[key];
-              const color = ACCENT_PRESETS[i % ACCENT_PRESETS.length]!;
-              return (
-                <div
-                  key={key}
-                  onClick={() => toggleWidget(key)}
-                  className="settings-select cursor-pointer rounded-xl p-3 flex items-center gap-3"
-                  style={
-                    isOn
-                      ? { border: `1px solid ${color}66`, background: `${color}1a` }
-                      : { border: `1px solid ${C.border}`, background: C.fillSoft, opacity: 0.7 }
-                  }
-                >
-                  <div
-                    className="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center shrink-0"
-                    style={{ background: isOn ? `${color}33` : C.fill, color: isOn ? color : C.dimmer }}
-                  >
-                    <Icon size={17} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="fz-tiny font-black uppercase tracking-wide leading-none" style={{ color: isOn ? C.textStrong : C.dim }}>{label}</p>
-                    <p className="fz-tiny mt-1 truncate" style={{ color: C.dimmer }}>{desc}</p>
-                  </div>
-                  <div
-                    className="settings-track relative shrink-0"
-                    style={{ width: 34, height: 19, borderRadius: 10, background: isOn ? color : C.border }}
-                  >
-                    <span
-                      className="absolute block rounded-full settings-knob"
-                      style={{ width: 15, height: 15, top: 2, left: 2, transform: `translateX(${isOn ? 15 : 0}px)`, background: '#fff' }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Panel>
-
-        {/* ── Dashboard Layout ──────────────────────────────────────── */}
-        <Panel
-          icon={<LayoutGrid size={16} />}
-          tint="#60a5fa"
-          title={t('Dashboard Layout')}
-          subtitle="Arrange the cards on the dashboard itself; reset them here"
-        >
-          <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
+          {/* Calm mode switches every animation off, whatever is chosen above, so it is shown here too
+              (the same switch is in Welcome Tour). */}
+          <div className="flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl mt-2.5" style={{ background: C.fill }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Reset Card Layout')}</span>
-              <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
-                {t('On the dashboard, drag the bar at the top of a card to move it, drag the edge between cards to resize, and double-click an edge to reset it. This puts every card back in its original place and size.')}
-              </span>
+              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Calm mode: no motion')}</span>
+              <p className="fz-small" style={{ color: C.dim }}>
+                {calmPref
+                  ? t('On. Every animation is off on this PC, whatever style is chosen above.')
+                  : t('Turns off every animation on this PC, whatever style is chosen above.')}
+              </p>
             </div>
-            <button
-              onClick={resetDashboardLayout}
-              className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer shrink-0"
-              style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
-            >
-              {layoutReset ? <><Check size={12} strokeWidth={3} /> {t('Layout reset')}</> : <><RotateCcw size={12} /> {t('Reset Layout')}</>}
-            </button>
-          </div>
-        </Panel>
-
-        {/* ── Quick Actions Configuration ───────────────────────────── */}
-        <Panel
-          icon={<Zap size={16} />}
-          tint="#34d399"
-          title={t('Quick Actions Bar')}
-          subtitle="Choose which windows appear in the dashboard quick actions"
-          right={
-            <>
-              <Counter>{t('{{1}} / {{2}} enabled', { 1: enabledQaIds.length, 2: ALL_QUICK_ACTION_DEFS.length })}</Counter>
-              {enabledQaIds.length !== DEFAULT_ENABLED_QA_IDS.length && (
-                <button
-                  onClick={() => {
-                    setEnabledQaIds(DEFAULT_ENABLED_QA_IDS);
-                    localStorage.setItem(QA_STORAGE_KEY, JSON.stringify(DEFAULT_ENABLED_QA_IDS));
-                    try { const bc = new BroadcastChannel(QA_BROADCAST_CHANNEL); bc.postMessage({ enabledIds: DEFAULT_ENABLED_QA_IDS }); bc.close(); } catch { }
-                  }}
-                  className="px-2.5 py-1 fz-mini font-black uppercase tracking-widest rounded-lg cursor-pointer"
-                  style={{ color: C.dim, border: `1px solid ${C.border}`, background: 'transparent' }}
-                >
-                  {t('Reset')}
-                </button>
-              )}
-            </>
-          }
-        >
-          <div className="space-y-4">
-            {categories.map(cat => {
-              const items = ALL_QUICK_ACTION_DEFS.filter(d => d.category === cat);
-              const enabledInCat = items.filter(d => enabledQaIds.includes(d.id)).length;
-              const color = QA_CATEGORY_COLOR[cat] ?? '#6366f1';
-              return (
-                <div key={cat}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="fz-tiny font-black uppercase tracking-widest" style={{ color }}>{cat}</span>
-                    <div className="flex-1 h-px" style={{ background: C.divider }} />
-                    <span className="fz-mini" style={{ color: C.dimmer }}>{enabledInCat}/{items.length}</span>
-                  </div>
-                  <div className="grid grid-cols-6 gap-2">
-                    {items.map((item: QuickActionDef) => {
-                      const isOn = enabledQaIds.includes(item.id);
-                      const IconComp = QA_ICON_MAP[item.iconName] ?? Zap;
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => toggleQaItem(item.id)}
-                          className="settings-select cursor-pointer rounded-[10px] px-1.5 py-2.5 flex flex-col items-center gap-1.5"
-                          style={
-                            isOn
-                              ? { border: `1px solid ${color}66`, background: `${color}1a` }
-                              : { border: `1px solid ${C.border}`, background: C.fillSoft, opacity: 0.7 }
-                          }
-                        >
-                          <div
-                            className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center"
-                            style={{ background: isOn ? `${color}33` : C.fill, color: isOn ? color : C.dimmer }}
-                          >
-                            <IconComp size={13} />
-                          </div>
-                          <span
-                            className="fz-micro font-black uppercase tracking-tight text-center leading-tight"
-                            style={{ color: isOn ? '#e5e5ea' : C.dimmer }}
-                          >
-                            {tLabel(item.label)}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Panel>
-
-        {/* ── FY Banner Transparency ────────────────────────────────── */}
-        <Panel
-          icon={<Layers size={16} />}
-          tint="#a78bfa"
-          title={t('FY Banner Transparency')}
-          subtitle="Control how opaque the glass banner appears"
-          right={
-            <Counter color={bannerOpacity === 0 ? C.red : C.green}>
-              {bannerOpacity === 0 ? t('Invisible') : bannerOpacity === 100 ? t('Solid') : t('{{1}}% opaque', { 1: bannerOpacity })}
-            </Counter>
-          }
-        >
-          <div className="space-y-4">
-            {/* Quick presets */}
-            <div className="flex gap-2">
-              {[
-                { label: t('Hidden'), value: 0 },
-                { label: t('Ghost'), value: 20 },
-                { label: t('Glass'), value: 55 },
-                { label: t('Default'), value: 78 },
-                { label: t('Solid'), value: 100 },
-              ].map(p => {
-                const selected = bannerOpacity === p.value;
-                return (
-                  <button
-                    key={p.value}
-                    onClick={() => applyBannerOpacity(p.value)}
-                    className="flex-1 py-1.5 rounded-lg fz-tiny font-black uppercase tracking-widest cursor-pointer"
-                    style={
-                      selected
-                        ? { background: accent, color: '#fff', border: 'none' }
-                        : { background: C.fill, color: C.dim, border: `1px solid ${C.border}` }
-                    }
-                  >
-                    {tLabel(p.label)}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Slider */}
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="fz-tiny font-black uppercase tracking-widest flex items-center gap-1" style={{ color: C.dimmer }}>
-                  <EyeOff size={10} /> {t('0% — Invisible')}
-                </span>
-                <span className="fz-tiny font-black uppercase tracking-widest flex items-center gap-1" style={{ color: C.dimmer }}>
-                  {t('100% — Solid')} <Eye size={10} />
-                </span>
-              </div>
-              <Range ariaLabel="FY banner opacity" format={v => `${v}%`} min={0} max={100} value={bannerOpacity} accent={accent} onChange={applyBannerOpacity} />
-              <p className="text-center fz-tiny font-black uppercase tracking-widest mt-1" style={{ color: accent }}>{bannerOpacity}%</p>
-            </div>
-
-            {/* Live banner preview */}
-            <div>
-              <p className="fz-tiny font-black uppercase tracking-widest mb-2" style={{ color: C.dimmer }}>{t('Live Preview')}</p>
-              <div className="relative rounded-xl overflow-hidden h-16" style={{ background: settings.dashboardBg || '#f5f6fa' }}>
-                {/* Simulated blobs behind */}
-                <div className="absolute top-0 right-0 w-20 h-20 bg-violet-400/20 rounded-full blur-xl" />
-                <div className="absolute bottom-0 left-0 w-16 h-16 bg-emerald-400/15 rounded-full blur-xl" />
-                {/* Banner */}
-                <div className="absolute inset-2 rounded-lg flex items-center px-4 gap-3" style={bannerPreviewStyle}>
-                  <Calendar size={14} className="shrink-0" style={{ color: '#cbd5e1' }} />
-                  <div>
-                    <p className="fz-micro uppercase tracking-widest font-black" style={{ color: '#94a3b8' }}>{t('Current Financial Year')}</p>
-                    <p className="font-black fz-label leading-tight" style={{ color: '#fff' }}>FY 2026–27</p>
-                  </div>
-                  <div className="ml-auto flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="fz-nano uppercase" style={{ color: '#94a3b8' }}>{t('Days Left')}</p>
-                      <p className="font-black text-sm leading-none" style={{ color: '#fcd34d' }}>292</p>
-                    </div>
-                    <div className="w-16">
-                      <div className="h-1 rounded-full overflow-hidden" style={{ background: C.fill }}>
-                        <div className="h-full rounded-full" style={{ width: '20%', background: '#10b981' }} />
-                      </div>
-                      <p className="fz-nano uppercase mt-0.5 text-right" style={{ color: '#94a3b8' }}>20%</p>
-                    </div>
-                  </div>
-                </div>
-                {bannerOpacity === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="fz-tiny font-black uppercase tracking-widest" style={{ color: '#64748b' }}>{t('Banner hidden (opacity 0)')}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            <Toggle on={calmPref} accent={accent} label={t('Calm mode: no motion')}
+              onChange={(v) => { setCalmPreference(v); setCalmPref(v); saveMotion({}); }} />
           </div>
         </Panel>
 
@@ -2809,8 +2519,9 @@ const SettingsPage: React.FC = () => {
         <Panel
           icon={<Zap size={16} />}
           tint="#34d399"
+          className="mt-4"
           title={t('Loading Animation')}
-          subtitle="Shown while data loads from the database"
+          subtitle="Shown while a window loads its data"
           right={<Counter>{LOADING_ANIMATIONS.find(a => a.id === loadingAnimation)?.name}</Counter>}
         >
           <div className="grid grid-cols-3 gap-2.5">
@@ -2840,38 +2551,382 @@ const SettingsPage: React.FC = () => {
           </div>
         </Panel>
 
-        {/* ── Background Theme ──────────────────────────────────────── */}
+      </div>
+    </div>
+  );
+
+  const renderDashboard = () => {
+    const BG_OPTIONS = [
+      { value: '#f5f6fa', label: t('Slate'),   preview: '#f5f6fa' },
+      { value: '#fefef4', label: t('Cream'),   preview: '#fefef4' },
+      { value: '#ffffff', label: t('White'),   preview: '#ffffff' },
+      { value: '#f0f4ff', label: t('Blue'),    preview: '#f0f4ff' },
+      { value: '#f0fff4', label: t('Mint'),    preview: '#f0fff4' },
+      { value: '#fff8f0', label: t('Peach'),   preview: '#fff8f0' },
+    ];
+
+    const applyDashboardBg = (color: string) => {
+      setSettings(prev => ({ ...prev, dashboardBg: color }));
+      localStorage.setItem('lms-dashboard-bg', color);
+      try { const bc = new BroadcastChannel('lms_dashboard_bg'); bc.postMessage({ dashboardBg: color }); bc.close(); } catch { }
+    };
+
+    const WIDGET_DEFS = [
+      { key: 'fyBanner'     as const, label: t(CARD_LABELS.fyBanner),      desc: 'Financial year banner with progress',  Icon: Calendar },
+      { key: 'quickActions' as const, label: t(CARD_LABELS.quickActions),     desc: 'Configurable one-click shortcut buttons', Icon: Zap },
+      { key: 'noticeBoard'  as const, label: t(CARD_LABELS.noticeBoard),      desc: 'Admin notices & sticky notes',          Icon: Bell },
+      { key: 'shortcuts'    as const, label: t(CARD_LABELS.shortcuts),desc: 'Hotkey reference panel',                Icon: Command },
+      { key: 'activeMembers'        as const, label: t(CARD_LABELS.activeMembers),        desc: 'Current active member count',        Icon: Users },
+      { key: 'sanctionedLoans'      as const, label: t(CARD_LABELS.sanctionedLoans),      desc: 'Pending disbursal, by loan type',    Icon: Landmark },
+      { key: 'monthEndOutstanding'  as const, label: t(CARD_LABELS.monthEndOutstanding),      desc: 'This month’s regular vs emergency split', Icon: TrendingUp },
+      { key: 'balanceDistribution' as const, label: t(CARD_LABELS.balanceDistribution), desc: 'Members grouped by net balance (ring chart)', Icon: PiggyBank },
+      { key: 'pendingVouchers'     as const, label: t(CARD_LABELS.pendingVouchers),     desc: 'Vouchers waiting to be passed',      Icon: CheckSquare },
+      { key: 'cashPosition'        as const, label: t(CARD_LABELS.cashPosition),        desc: 'Today’s cash book with a 7-day trend', Icon: Wallet },
+      { key: 'dayEndStatus'        as const, label: t(CARD_LABELS.dayEndStatus),       desc: 'Last open day and whether it is closed', Icon: Clock },
+      { key: 'demandRecovery'      as const, label: t(CARD_LABELS.demandRecovery),   desc: 'This month’s demand posted to the ledger (gauge)', Icon: Scale },
+      { key: 'depositsSummary'     as const, label: t(CARD_LABELS.depositsSummary),     desc: 'Fixed & recurring, savings and compulsory (ring chart)', Icon: Banknote },
+      { key: 'upcomingMaturities'  as const, label: t(CARD_LABELS.upcomingMaturities),  desc: 'Deposits maturing this month (timeline)', Icon: Calendar },
+      { key: 'loanApplications'    as const, label: t(CARD_LABELS.loanApplications),    desc: 'Pending → sanctioned → disbursed steps', Icon: FileText },
+      { key: 'overdueLoans'        as const, label: t(CARD_LABELS.overdueLoans),        desc: 'Defaulters by time since last payment (ring chart)', Icon: AlertTriangle },
+      { key: 'retiringMembers'     as const, label: t(CARD_LABELS.retiringMembers),     desc: 'Members retiring in 6 months, with loan balance', Icon: Users },
+      { key: 'newMembers'          as const, label: t(CARD_LABELS.newMembers),          desc: 'Joined this month vs last month',    Icon: Star },
+      { key: 'waitingApproval'     as const, label: t(CARD_LABELS.waitingApproval), desc: 'Vouchers to pass, loans to sanction and to pay out', Icon: CheckSquare },
+      { key: 'todayCashFlow'       as const, label: t(CARD_LABELS.todayCashFlow), desc: 'Today’s cash book: receipts, payments and net', Icon: Wallet },
+      { key: 'rdDues'              as const, label: t(CARD_LABELS.rdDues),       desc: 'This month’s RD instalments: collected vs pending (gauge)', Icon: Calendar },
+      { key: 'topDefaulters'       as const, label: t(CARD_LABELS.topDefaulters),       desc: 'The five longest-overdue loans',     Icon: AlertTriangle },
+      { key: 'disbursedThisMonth'  as const, label: t(CARD_LABELS.disbursedThisMonth),      desc: 'Loans paid out this month, latest first', Icon: Landmark },
+      { key: 'lastBackup'          as const, label: t(CARD_LABELS.lastBackup), desc: 'When the last backup was taken and how old it is', Icon: Clock },
+    ];
+
+    const categories = Array.from(new Set(ALL_QUICK_ACTION_DEFS.map(d => d.category)));
+
+    return (
+      <div className="space-y-5">
+
+        {/* ── Widget Visibility ─────────────────────────────────────── */}
         <Panel
-          icon={<ImageIcon size={16} />}
-          tint="#38bdf8"
-          title={t('Dashboard Background')}
-          subtitle="Canvas colour for the home screen"
+          icon={<LayoutGrid size={16} />}
+          tint="#818cf8"
+          title={t('Dashboard Widgets')}
+          subtitle="Choose which panels are visible on your dashboard"
+          right={<Counter>{t('{{1}} / {{2}} on', { 1: Object.values(widgetConfig).filter(Boolean).length, 2: WIDGET_DEFS.length })}</Counter>}
         >
-          <div className="grid grid-cols-4 gap-2.5 mb-4">
-            {BG_OPTIONS.map(opt => {
-              const selected = settings.dashboardBg === opt.value;
+          <div className="grid grid-cols-2 gap-2.5">
+            {WIDGET_DEFS.map(({ key, label, desc, Icon }) => {
+              const isOn = widgetConfig[key];
+              const color = accent;
               return (
-                <button
-                  key={opt.value}
-                  onClick={() => applyDashboardBg(opt.value)}
-                  className="flex flex-col items-center gap-1.5 p-2 rounded-[10px] cursor-pointer"
-                  style={{
-                    border: `1px solid ${selected ? accent : C.border}`,
-                    background: selected ? accentRgba(0.1) : 'transparent',
-                  }}
+                <div
+                  key={key}
+                  onClick={() => toggleWidget(key)}
+                  className="settings-select cursor-pointer rounded-xl p-3 flex items-center gap-3"
+                  style={
+                    isOn
+                      ? { border: `1px solid ${color}66`, background: `${color}1a` }
+                      : { border: `1px solid ${C.border}`, background: C.fillSoft, opacity: 0.7 }
+                  }
                 >
-                  <div className="w-full h-9 rounded-[7px]" style={{ backgroundColor: opt.preview, border: `1px solid ${C.border}` }} />
-                  <span className="fz-tiny font-black uppercase tracking-wider" style={{ color: C.text }}>{tLabel(opt.label)}</span>
-                </button>
+                  <div
+                    className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center shrink-0"
+                    style={{ background: isOn ? `${color}33` : C.fill, color: isOn ? color : C.dimmer }}
+                  >
+                    <Icon size={17} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="fz-tiny font-bold leading-none" style={{ color: isOn ? C.textStrong : C.dim }}>{label}</p>
+                    <p className="fz-tiny mt-1 truncate" style={{ color: C.dimmer }}>{desc}</p>
+                  </div>
+                  <div
+                    className="settings-track relative shrink-0"
+                    style={{ width: 34, height: 19, borderRadius: 10, background: isOn ? color : C.border }}
+                  >
+                    <span
+                      className="absolute block rounded-full settings-knob"
+                      style={{ width: 15, height: 15, top: 2, left: 2, transform: `translateX(${isOn ? 15 : 0}px)`, background: '#fff' }}
+                    />
+                  </div>
+                </div>
               );
             })}
           </div>
+        </Panel>
 
-          <div className="flex items-center gap-3">
-            <span className="fz-small font-black uppercase tracking-widest" style={fieldLabel}>{t('Custom colour')}</span>
-            <ColorWell value={settings.dashboardBg} ariaLabel="Dashboard background colour" onChange={applyDashboardBg} />
+        {/* ── Dashboard Layout ──────────────────────────────────────── */}
+        <Panel
+          icon={<LayoutGrid size={16} />}
+          tint="#60a5fa"
+          title={t('Dashboard Layout')}
+          subtitle={t('Cards are arranged on the dashboard itself, in Customize mode')}
+        >
+          <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
+            <div className="min-w-0">
+              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Reset Card Layout')}</span>
+              <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
+                {t('To arrange the dashboard, press Customize on it: drag a card to move it, drag the line between two cards to resize them, and use × to remove a card. This button puts every card back in its original place and size.')}
+              </span>
+            </div>
+            <button
+              onClick={resetDashboardLayout}
+              className="rounded-lg px-3.5 fz-tiny font-bold flex items-center gap-2 cursor-pointer shrink-0"
+              style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
+            >
+              {layoutReset ? <><Check size={12} strokeWidth={3} /> {t('Layout reset')}</> : <><RotateCcw size={12} /> {t('Reset Layout')}</>}
+            </button>
           </div>
         </Panel>
+
+        {/* ── Dashboard Art ─────────────────────────────────────────── */}
+        <Panel
+          icon={<ImageIcon size={16} />}
+          tint="#a78bfa"
+          title={t('Background & Art')}
+          subtitle={t('The background colour of the dashboard, and a picture behind it or inside its cards')}
+          right={
+            <>
+              <span className="fz-small font-bold" style={{ color: C.dim }}>{t('Picture behind the dashboard')}</span>
+              <Toggle on={artConfig.enabled} accent={accent} label={t('Show the picture behind the dashboard')} onChange={(v) => updateArt({ enabled: v })} />
+            </>
+          }
+        >
+          <div>
+            {/* Background colour of the dashboard page. Light mode only: Dark keeps its own colour so text stays readable. */}
+            <div className="px-4 py-3.5 rounded-xl mb-4" style={{ background: C.fill }}>
+              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Background colour')}</span>
+              <span className="fz-small block mt-0.5 mb-3" style={{ color: isDark ? C.amber : C.dim }}>
+                {isDark
+                  ? t('Dark mode uses its own background colour. This choice applies in Light mode.')
+                  : t('The colour of the dashboard page, behind the cards.')}
+              </span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                {BG_OPTIONS.map(opt => {
+                  const selected = settings.dashboardBg === opt.value;
+                  return (
+                    <button
+                      key={opt.value} type="button" aria-pressed={selected}
+                      onClick={() => applyDashboardBg(opt.value)}
+                      className="flex items-center gap-2 pl-1.5 pr-3 rounded-full cursor-pointer"
+                      style={{ height: 30, border: `1px solid ${selected ? accent : C.border}`, background: selected ? accentRgba(0.12) : 'transparent' }}
+                    >
+                      <span className="block rounded-full" style={{ width: 18, height: 18, backgroundColor: opt.preview, border: `1px solid ${C.border}` }} />
+                      <span className="fz-tiny font-bold" style={{ color: selected ? C.textStrong : C.dim }}>{tLabel(opt.label)}</span>
+                    </button>
+                  );
+                })}
+                <span className="fz-small font-bold ml-1" style={fieldLabel}>{t('Custom')}</span>
+                <ColorWell value={settings.dashboardBg} ariaLabel="Dashboard background colour" onChange={applyDashboardBg} />
+              </div>
+            </div>
+            {/* Where the picture is shown inside cards. The same list is changed by the picture button in the dashboard's Customize mode. */}
+            <div className="px-4 py-3.5 rounded-xl mb-4" style={{ background: C.fill }}>
+              <div className="flex items-center justify-between gap-3 mb-2.5">
+                <div className="min-w-0">
+                  <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Show inside these cards')}</span>
+                  <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{t('Click a card to put the picture inside it. Each card is switched on its own.')}</span>
+                </div>
+                {artConfig.cards.length > 0 && (
+                  <button
+                    type="button" onClick={() => updateArt({ cards: [] })}
+                    className="px-2.5 py-1 fz-mini font-bold rounded-lg cursor-pointer shrink-0"
+                    style={{ color: C.dim, border: `1px solid ${C.border}`, background: 'transparent' }}
+                  >
+                    {t('Clear all')}
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {WIDGET_DEFS.map(({ key, label }) => {
+                  const on = artConfig.cards.includes(key);
+                  return (
+                    <button
+                      key={key} type="button" aria-pressed={on} onClick={() => toggleArtCard(key)}
+                      className="rounded-full px-3 fz-tiny font-bold cursor-pointer flex items-center gap-1.5"
+                      style={{ height: 28, border: `1px solid ${on ? accent : C.border}`, background: on ? accentRgba(0.14) : 'transparent', color: on ? C.textStrong : C.dim }}
+                    >
+                      {on && <Check size={11} strokeWidth={3} style={{ color: accent }} />}
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="fz-small mb-3" style={{ color: C.dim }}>
+              {t("The switch above shows the picture behind the whole dashboard. The cards can also be chosen on the dashboard itself: press Customize, then the picture button on a card.")}
+              {artConfig.cards.length > 0 && <> {t("Cards showing the picture now: {{1}}.", { 1: artConfig.cards.length })}</>}
+            </p>
+            {/* Categories: one chip each; the pictures of the chosen category are listed below. */}
+            <div className="flex flex-wrap gap-2 mb-3" role="radiogroup" aria-label={t('Art category')}>
+              {[...ART_LIBRARY.map(c => ({ id: c.id, label: c.label, count: c.artworks.length })), { id: CUSTOM_ART, label: 'My Picture', count: customArt ? 1 : 0 }].map(c => {
+                const on = artCategory === c.id;
+                return (
+                  <button
+                    key={c.id} type="button" role="radio" aria-checked={on}
+                    onClick={() => setArtCategory(c.id)}
+                    className="rounded-full px-3 fz-tiny font-bold cursor-pointer flex items-center gap-1.5"
+                    style={{ height: 28, border: `1px solid ${on ? accent : C.border}`, background: on ? accent : C.fill, color: on ? '#fff' : C.dim }}
+                  >
+                    {t(c.label)}
+                    <span style={{ opacity: 0.75 }}>{c.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {artCategory === CUSTOM_ART ? (
+              <div className="flex flex-wrap items-center gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
+                <button
+                  type="button" aria-pressed={artConfig.art === CUSTOM_ART} disabled={!customArt}
+                  onClick={() => customArt && pickArt(CUSTOM_ART)}
+                  className="rounded-xl overflow-hidden p-0 shrink-0 flex items-center justify-center fz-tiny font-bold"
+                  style={{
+                    width: 240, aspectRatio: '3 / 1', color: C.dimmer, cursor: customArt ? 'pointer' : 'default',
+                    border: `2px solid ${customArt && artConfig.art === CUSTOM_ART ? accent : C.border}`,
+                    ...(customArt ? { backgroundImage: `url("${customArt}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: C.fillSoft }),
+                  }}
+                >
+                  {!customArt && t('No picture imported')}
+                </button>
+                <div className="min-w-0 flex-1">
+                  <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Use your own picture')}</span>
+                  <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
+                    {t('PNG, JPG or WebP. The dashboard shows a wide 3:1 banner, so a picture of another shape is scaled to fill it and cut around its centre. Best result: 2400 × 800 or larger. The picture stays on this PC and is used in both Light and Dark.')}
+                  </span>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <label
+                      className="rounded-lg px-3.5 fz-tiny font-bold flex items-center gap-2 cursor-pointer"
+                      style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
+                    >
+                      <UploadCloud size={13} /> {customArt ? t('Replace Picture') : t('Import Picture')}
+                      <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={onImportArt} />
+                    </label>
+                    {customArt && (
+                      <button
+                        type="button" onClick={onRemoveArt}
+                        className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer"
+                        style={{ height: 32, border: `1px solid ${C.border}`, background: 'transparent', color: C.dim }}
+                      >
+                        {t('Remove')}
+                      </button>
+                    )}
+                  </div>
+                  {artError && <span className="fz-small block mt-2" role="alert" style={{ color: '#ef4444' }}>{artError}</span>}
+                </div>
+              </div>
+            ) : (
+              <>
+                {(() => {
+                  const cat = ART_LIBRARY.find(c => c.id === artCategory) ?? ART_LIBRARY[0];
+                  if (!cat) return <span className="fz-small" style={{ color: C.dim }}>{t('No pictures are installed.')}</span>;
+                  return (
+                    <>
+                      {cat.desc && <p className="fz-small mb-3" style={{ color: C.dim }}>{t(cat.desc)}</p>}
+                      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}>
+                        {cat.artworks.map((a, i) => {
+                          const selected = artConfig.art === a.id;
+                          return (
+                            <button
+                              key={a.id} type="button" aria-pressed={selected}
+                              onClick={() => pickArt(a.id)}
+                              className="rounded-xl overflow-hidden text-left cursor-pointer p-0"
+                              style={{ border: `2px solid ${selected ? accent : C.border}`, background: C.fill }}
+                            >
+                              {/* Light and dark side by side, so the user sees both before choosing. */}
+                              <div className="flex" style={{ aspectRatio: '3 / 1' }}>
+                                {[a.light ?? a.dark, a.dark ?? a.light].map((src, k) => (
+                                  <div key={k} className="flex-1" style={{ backgroundImage: src ? `url("${src}")` : undefined, backgroundSize: 'cover', backgroundPosition: k === 0 ? 'left center' : 'right center' }} />
+                                ))}
+                              </div>
+                              <div className="flex items-center justify-between gap-2 px-2.5 py-2">
+                                <span className="fz-tiny font-bold truncate" style={{ color: selected ? C.textStrong : C.dim }}>
+                                  {t(cat.label)} {cat.artworks.length > 1 ? i + 1 : ''}
+                                </span>
+                                {selected && <Check size={12} strokeWidth={3} style={{ color: accent, flex: 'none' }} />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  );
+                })()}
+              </>
+            )}
+          </div>
+        </Panel>
+
+        {/* ── Quick Actions Configuration ───────────────────────────── */}
+        <Panel
+          icon={<Zap size={16} />}
+          tint="#34d399"
+          title={t('Quick Actions Bar')}
+          subtitle="Choose which windows appear in the dashboard quick actions"
+          right={
+            <>
+              <Counter>{t('{{1}} / {{2}} enabled', { 1: enabledQaIds.length, 2: ALL_QUICK_ACTION_DEFS.length })}</Counter>
+              {enabledQaIds.length !== DEFAULT_ENABLED_QA_IDS.length && (
+                <button
+                  onClick={() => {
+                    setEnabledQaIds(DEFAULT_ENABLED_QA_IDS);
+                    localStorage.setItem(QA_STORAGE_KEY, JSON.stringify(DEFAULT_ENABLED_QA_IDS));
+                    try { const bc = new BroadcastChannel(QA_BROADCAST_CHANNEL); bc.postMessage({ enabledIds: DEFAULT_ENABLED_QA_IDS }); bc.close(); } catch { }
+                  }}
+                  className="px-2.5 py-1 fz-mini font-bold rounded-lg cursor-pointer"
+                  style={{ color: C.dim, border: `1px solid ${C.border}`, background: 'transparent' }}
+                >
+                  {t('Reset')}
+                </button>
+              )}
+            </>
+          }
+        >
+          <div className="space-y-4">
+            {categories.map(cat => {
+              const items = ALL_QUICK_ACTION_DEFS.filter(d => d.category === cat);
+              const enabledInCat = items.filter(d => enabledQaIds.includes(d.id)).length;
+              const color = QA_CATEGORY_COLOR[cat] ?? '#6366f1';
+              return (
+                <div key={cat}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="fz-tiny font-bold" style={{ color }}>{cat}</span>
+                    <div className="flex-1 h-px" style={{ background: C.divider }} />
+                    <span className="fz-mini" style={{ color: C.dimmer }}>{enabledInCat}/{items.length}</span>
+                  </div>
+                  <div className="grid grid-cols-6 gap-2">
+                    {items.map((item: QuickActionDef) => {
+                      const isOn = enabledQaIds.includes(item.id);
+                      const IconComp = QA_ICON_MAP[item.iconName] ?? Zap;
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => toggleQaItem(item.id)}
+                          className="settings-select cursor-pointer rounded-[10px] px-1.5 py-2.5 flex flex-col items-center gap-1.5"
+                          style={
+                            isOn
+                              ? { border: `1px solid ${color}66`, background: `${color}1a` }
+                              : { border: `1px solid ${C.border}`, background: C.fillSoft, opacity: 0.7 }
+                          }
+                        >
+                          <div
+                            className="w-[26px] h-[26px] rounded-[8px] flex items-center justify-center"
+                            style={{ background: isOn ? `${color}33` : C.fill, color: isOn ? color : C.dimmer }}
+                          >
+                            <IconComp size={13} />
+                          </div>
+                          <span
+                            className="fz-micro font-black uppercase tracking-tight text-center leading-tight"
+                            style={{ color: isOn ? '#e5e5ea' : C.dimmer }}
+                          >
+                            {tLabel(item.label)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Panel>
+
       </div>
     );
   };
@@ -2880,22 +2935,22 @@ const SettingsPage: React.FC = () => {
     const rows = [
       {
         key: 'notifications',
-        title: t('Notifications'),
-        desc: 'Show success and info toasts — errors and warnings always appear',
+        title: t('Pop-up messages'),
+        desc: t('Show the small success and information messages. Errors and warnings always appear.'),
         value: settings.notifications,
         onChange: (c: boolean) => applyTheme({ notifications: c }),
       },
       {
         key: 'soundEffects',
-        title: t('Sound Effects'),
-        desc: 'Play audio cues for interactions',
+        title: t('Sound effects'),
+        desc: t('Play a short sound with messages and actions.'),
         value: settings.soundEffects,
         onChange: (c: boolean) => applyTheme({ soundEffects: c }),
       },
       {
         key: 'showChatbot',
-        title: t('AI Assistant (Chatbot)'),
-        desc: 'Show FIBE AI assistant bubble for app help',
+        title: t('AI Assistant button'),
+        desc: t('Show the assistant button in the corner of the screen. What the assistant can do is set in the AI Assistant section.'),
         value: settings.showChatbot,
         onChange: (c: boolean) => applyTheme({ showChatbot: c }),
       },
@@ -2903,24 +2958,39 @@ const SettingsPage: React.FC = () => {
 
     return (
       <div className="space-y-5">
-      <Panel icon={<Monitor size={16} />} tint="#fbbf24" title={t('System & Windows')} subtitle="Global behavior">
+      <Panel icon={<Monitor size={16} />} tint="#fbbf24" title={t('Messages, Sound & Assistant')} subtitle={t('What appears and sounds while you work')}>
         <div className="space-y-2.5">
           {rows.map(row => (
             <div
               key={row.key}
-              className="flex items-center justify-between px-4 py-3.5 rounded-xl"
+              className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl"
               style={{ background: C.fill }}
             >
-              <div>
-                <span className="fz-body font-bold block" style={{ color: C.text }}>{tLabel(row.title)}</span>
+              <div className="min-w-0">
+                <span className="fz-body font-bold block" style={{ color: C.text }}>{row.title}</span>
                 <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{row.desc}</span>
               </div>
-              <Toggle on={row.value} accent={accent} label={tLabel(row.title)} onChange={row.onChange} />
+              <Toggle on={row.value} accent={accent} label={row.title} onChange={row.onChange} />
             </div>
           ))}
         </div>
       </Panel>
-      <Panel icon={<Bell size={16} />} tint="#38bdf8" title={t('Notifications & Search')} subtitle="Look and feel of the top-bar alerts and search">
+      <Panel icon={<Monitor size={16} />} tint="#a78bfa" title={t('Windows')} subtitle={t('Size and position of the windows the app opens')}>
+        <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
+          <div className="min-w-0">
+            <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Reset window sizes')}</span>
+            <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{t('Every window opens at its original size and position again. The dashboard card layout is reset separately, in Dashboard.')}</span>
+          </div>
+          <button
+            onClick={resetWindowStates}
+            className="rounded-lg px-3.5 fz-tiny font-bold flex items-center gap-2 cursor-pointer shrink-0"
+            style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
+          >
+            <RotateCcw size={12} /> {t('Reset Windows')}
+          </button>
+        </div>
+      </Panel>
+      <Panel icon={<Bell size={16} />} tint="#38bdf8" title={t('Top Bar Look')} subtitle={t('How the bell and the search box in the top bar look')}>
         <TopBarLookSettings accent={accent} />
       </Panel>
       </div>
@@ -2929,67 +2999,26 @@ const SettingsPage: React.FC = () => {
 
   const renderDeveloper = () => (
     <div className="space-y-5">
-      <div
-        className="rounded-2xl p-6 relative overflow-hidden"
-        style={{ background: C.panel, border: `1px solid ${C.border}` }}
-      >
-        <div className="absolute top-0 right-0 p-8 opacity-[0.07] pointer-events-none">
-          <Code size={120} className="text-indigo-400" />
-        </div>
-
-        <div className="flex items-center gap-3 mb-6 relative z-10">
-          <div className="w-9 h-9 rounded-[10px] flex items-center justify-center" style={{ background: 'rgba(16,185,129,.18)', color: C.green }}>
-            <Terminal size={18} />
-          </div>
-          <div>
-            <h3 className="text-sm font-black uppercase tracking-wide" style={{ color: C.textStrong }}>{t('Developer Console')}</h3>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="w-1.5 h-1.5 rounded-full block" style={{ background: C.green }} />
-              <p className="fz-small font-medium uppercase tracking-widest" style={{ color: C.dim }}>{t('Access Granted: Root Level')}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative z-10">
-          <button
-            onClick={() => openWindow('/analytics-dashboard', 'Analytics Dashboard')}
-            className="text-left rounded-xl p-4 cursor-pointer"
-            style={{ background: C.fill, border: `1px solid ${C.border}`, color: C.text }}
-          >
-            <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center mb-2.5" style={{ background: 'rgba(99,102,241,.2)', color: '#818cf8' }}>
-              <BarChart2 size={15} />
-            </div>
-            <h4 className="font-bold fz-body mb-1" style={{ color: C.textStrong }}>{t('Analytics Dashboard')}</h4>
-            <p className="fz-small" style={{ color: C.dim }}>{t('View aggregated metrics.')}</p>
-          </button>
-
-          <button
-            onClick={() => openWindow('/analytics-realtime', 'Real-time Monitor', 1600, 1000)}
-            className="text-left rounded-xl p-4 cursor-pointer"
-            style={{ background: C.fill, border: `1px solid ${C.border}`, color: C.text }}
-          >
-            <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center mb-2.5" style={{ background: 'rgba(16,185,129,.2)', color: C.green }}>
-              <Activity size={15} />
-            </div>
-            <h4 className="font-bold fz-body mb-1" style={{ color: C.textStrong }}>{t('Real-time Monitor')}</h4>
-            <p className="fz-small" style={{ color: C.dim }}>{t('Watch live transaction streams.')}</p>
-          </button>
-        </div>
-      </div>
-
-      <Panel icon={<Monitor size={16} />} tint="#a78bfa" title={t('Environment State')} subtitle="Window geometry & layout">
-        <div className="flex items-center justify-between px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
-          <div>
-            <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Reset Window Layouts')}</span>
-            <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{t('Restore all windows to default dimensions')}</span>
-          </div>
-          <button
-            onClick={resetWindowStates}
-            className="rounded-lg px-3.5 fz-tiny font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
-            style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
-          >
-            <RotateCcw size={12} /> {t('Reset Geometry')}
-          </button>
+      <Panel icon={<Terminal size={16} />} tint="#34d399" title={t('Diagnostic Windows')} subtitle={t('For the developer and support; they change nothing')}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          {[
+            { Icon: BarChart2, title: t('Analytics Dashboard'), desc: t('Totals and trends of how the app is used.'), open: () => openWindow('/analytics-dashboard', 'Analytics Dashboard') },
+            { Icon: Activity, title: t('Real-time Monitor'), desc: t('Transactions as they happen.'), open: () => openWindow('/analytics-realtime', 'Real-time Monitor', 1600, 1000) },
+          ].map(({ Icon, title, desc, open }) => (
+            <button
+              key={title} type="button" onClick={open}
+              className="settings-select text-left rounded-xl p-3 cursor-pointer flex items-center gap-3"
+              style={{ background: C.fillSoft, border: `1px solid ${C.border}`, color: C.text }}
+            >
+              <span className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center shrink-0" style={{ background: accentRgba(0.16), color: accent }}>
+                <Icon size={17} />
+              </span>
+              <span className="min-w-0">
+                <span className="fz-body font-bold block" style={{ color: C.textStrong }}>{title}</span>
+                <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{desc}</span>
+              </span>
+            </button>
+          ))}
         </div>
       </Panel>
     </div>
@@ -3047,7 +3076,7 @@ const SettingsPage: React.FC = () => {
             </div>
             <div>
               <h1 className="settings-title font-bold tracking-tight leading-none" style={{ color: C.textStrong }}>{t('System Configuration')}</h1>
-              <div className="flex items-center gap-1.5 mt-1.5 fz-tiny font-bold uppercase tracking-widest leading-none" style={{ color: C.dim }}>
+              <div className="flex items-center gap-1.5 mt-1.5 fz-tiny font-bold leading-none" style={{ color: C.dim }}>
                 <ShieldCheck size={11} style={{ color: C.green }} /> {t('Administrative Panel')}
               </div>
             </div>
@@ -3057,7 +3086,7 @@ const SettingsPage: React.FC = () => {
 
             <button
               onClick={handleDeveloperModeToggle}
-              className="rounded-[9px] px-3.5 fz-small font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+              className="rounded-[10px] px-3.5 fz-small font-bold flex items-center gap-2 cursor-pointer"
               style={
                 isDeveloperMode
                   ? { height: 34, background: 'rgba(52,211,153,.12)', color: C.green, border: '1px solid rgba(52,211,153,.2)' }
@@ -3073,7 +3102,7 @@ const SettingsPage: React.FC = () => {
             <button
               onClick={handleSaveWithAnimation}
               disabled={isSaving}
-              className="rounded-[9px] border-0 text-white fz-small font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+              className="rounded-[10px] border-0 text-white fz-small font-bold flex items-center gap-2 cursor-pointer"
               style={{ height: 34, paddingLeft: 18, paddingRight: 18, background: accent, boxShadow: '0 3px 12px rgba(0,0,0,.35)' }}
             >
               <span key={isSaving ? 'saving' : justSaved ? 'saved' : 'idle'} className="settings-swap inline-flex items-center gap-2">
@@ -3084,7 +3113,7 @@ const SettingsPage: React.FC = () => {
 
             <button
               onClick={() => window.close()}
-              className="rounded-[9px] px-4 fz-small font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+              className="rounded-[10px] px-4 fz-small font-bold flex items-center gap-2 cursor-pointer"
               style={{ height: 34, background: 'rgba(255,69,58,.12)', color: C.red, border: '1px solid rgba(255,69,58,.15)' }}
             >
               <X size={13} /> {t('Close')}
@@ -3106,7 +3135,7 @@ const SettingsPage: React.FC = () => {
                 onChange={e => setNavQuery(e.target.value)}
                 placeholder={t('Search settings')}
                 aria-label={t('Search settings')}
-                className="w-full box-border rounded-[9px] outline-none pl-8 pr-3 fz-body"
+                className="w-full box-border rounded-[10px] outline-none pl-8 pr-3 fz-body"
                 style={{ height: 34, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
               />
             </div>
@@ -3183,9 +3212,9 @@ const SettingsPage: React.FC = () => {
             >
               <div className="flex items-center gap-2 mb-4" style={{ color: accent }}>
                 <Lock size={16} />
-                <span className="text-sm font-black uppercase tracking-wide">{t('Security Access')}</span>
+                <span className="text-sm font-bold">{t('Security Access')}</span>
               </div>
-              <p className="text-center fz-small font-bold uppercase tracking-widest mb-3.5" style={{ color: C.dim }}>
+              <p className="text-center fz-small font-bold mb-3.5" style={{ color: C.dim }}>
                 {t('Enter Restricted PIN to Unlock')}
               </p>
               <input
@@ -3206,7 +3235,7 @@ const SettingsPage: React.FC = () => {
               {pinError && <p className="text-center fz-small font-bold mt-2.5" style={{ color: C.red }}>{pinError}</p>}
               <button
                 onClick={handlePinSubmit}
-                className="w-full mt-3 rounded-[10px] border-0 fz-small font-black uppercase tracking-widest text-white cursor-pointer"
+                className="w-full mt-3 rounded-[10px] border-0 fz-small font-bold text-white cursor-pointer"
                 style={{ height: 42, background: accent }}
               >
                 {t('Authenticate')}

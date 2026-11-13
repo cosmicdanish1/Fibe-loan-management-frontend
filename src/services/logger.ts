@@ -144,13 +144,32 @@ function bufferForShipping(entry: LogEntry): void {
   }
 }
 
-function getHostname(): string {
+// ES-33: the Electron preload has no getHostname(); the PC name comes from the main process (get-client-info).
+// It is read once, then cached, so the log shipping stays synchronous.
+let cachedHostname: string | null = null;
+let hostnameRequested = false;
+
+function requestHostname(): void {
+  if (hostnameRequested) return;
+  hostnameRequested = true;
   try {
-    return (window as any).electronAPI?.getHostname?.() || window.location.hostname || 'browser';
+    const info = (window as any).electronAPI?.getClientInfo?.();
+    Promise.resolve(info).then((i: any) => {
+      if (i && typeof i.hostname === 'string' && i.hostname) cachedHostname = i.hostname;
+    }).catch(() => { /* fall back below */ });
+  } catch { /* fall back below */ }
+}
+
+function getHostname(): string {
+  requestHostname();
+  try {
+    return cachedHostname || window.location.hostname || 'browser';
   } catch {
-    return 'browser';
+    return cachedHostname || 'browser';
   }
 }
+
+if (typeof window !== 'undefined') requestHostname(); // start reading the PC name at load, before the first flush
 
 async function flushLogs(): Promise<void> {
   if (LOG_BUFFER.length === 0) return;

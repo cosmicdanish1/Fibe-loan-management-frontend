@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { isFailure, notifyError } from '@/utils/dialog';
 import { DatePicker, message } from 'antd';
 import { Printer, Search, RotateCcw, Briefcase, User, Calendar } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
@@ -138,6 +139,7 @@ const LoanContributionsRegister: React.FC = () => {
         fromDate: fromDate.format('YYYY-MM-DD'),
         toDate: toDate.format('YYYY-MM-DD'),
       });
+      if (isFailure(response)) { await notifyError(response, 'load the loan contributions register'); return; }
       const rec = (response as any)?.data || response;
 
       if (rec && rec.memberNo) {

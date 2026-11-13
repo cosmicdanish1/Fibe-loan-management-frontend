@@ -3,12 +3,14 @@ import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { useAuth } from '../auth/context/AuthContext';
 import { NotificationBell } from './topbar/NotificationBell';
 import { useTranslation } from 'react-i18next';
+import { GOLD_GLOW_STYLE, useEggHunt } from '../utils/eggHunt';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const UserProfileMenu: React.FC = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const eggs = useEggHunt();
 
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -53,7 +55,11 @@ export const UserProfileMenu: React.FC = () => {
           onClick={() => setProfileOpen(v => !v)}
           className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
         >
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0">
+          <div
+            className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
+            style={eggs.completed ? GOLD_GLOW_STYLE : undefined}
+            title={eggs.completed ? 'Easter-egg hunter' : undefined}
+          >
             {user.username?.charAt(0).toUpperCase() ?? 'U'}
           </div>
           <span className="font-medium text-sm hidden sm:block">{user.username}</span>
