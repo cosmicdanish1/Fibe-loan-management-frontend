@@ -67,7 +67,7 @@ import { useAuth } from '../../auth/context/AuthContext';
 import { useLicense } from '../license/LicenseContext';
 import { DEFAULT_WIDGET_CONFIG, CARD_LABELS, clearLayout, type WidgetConfig } from '../../pages/dashboard/dashboardLayout';
 import {
-  ART_LIBRARY, CUSTOM_ART, loadArtConfig, saveArtConfig, loadCustomArt, importCustomArt, removeCustomArt, type ArtConfig,
+  ART_LIBRARY, ART_CHOICES, CUSTOM_ART, loadArtConfig, saveArtConfig, loadCustomArt, importCustomArt, removeCustomArt, type ArtConfig,
 } from '../../pages/dashboard/dashboardArt';
 import { runThemeTransition } from '../../utils/themeTransition';
 import { flushSync } from 'react-dom';
@@ -1771,6 +1771,12 @@ const SettingsPage: React.FC = () => {
     saveArtConfig(next);
     try { const bc = new BroadcastChannel('lms_dashboard_config'); bc.postMessage({ art: next }); bc.close(); } catch { }
   };
+  // Give one card its own picture ('' = follow the default picture).
+  const setCardPicture = (id: string, art: string) => {
+    const cardArt = { ...loadArtConfig().cardArt };
+    if (art) cardArt[id] = art; else delete cardArt[id];
+    updateArt({ cardArt });
+  };
   const toggleArtCard = (id: string) => {
     const cards = loadArtConfig().cards;
     updateArt({ cards: cards.includes(id) ? cards.filter(c => c !== id) : [...cards, id] });
@@ -2749,6 +2755,55 @@ const SettingsPage: React.FC = () => {
                 })}
               </div>
             </div>
+            {/* A picture of its own for each card that shows one. */}
+            {artConfig.cards.length > 0 && (
+              <div className="px-4 py-3.5 rounded-xl mb-4" style={{ background: C.fill }}>
+                <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Picture for each card')}</span>
+                <span className="fz-small block mt-0.5 mb-3" style={{ color: C.dim }}>{t('Every card can use a different picture. "Default" follows the picture chosen below.')}</span>
+                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
+                  {WIDGET_DEFS.filter(w => artConfig.cards.includes(w.key)).map(w => (
+                    <label key={w.key} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg" style={{ border: `1px solid ${C.border}`, background: C.fillSoft }}>
+                      <span className="fz-small font-bold truncate" style={{ color: C.text }}>{w.label}</span>
+                      <select
+                        aria-label={t('Picture for {{1}}', { 1: w.label })}
+                        value={artConfig.cardArt[w.key] ?? ''}
+                        onChange={e => setCardPicture(w.key, e.target.value)}
+                        className="rounded-md px-2 fz-small font-bold cursor-pointer"
+                        style={{ height: 30, maxWidth: 170, border: `1px solid ${C.border}`, background: C.panel, color: C.text }}
+                      >
+                        <option value="">{t('Default')}</option>
+                        {ART_CHOICES.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                        {customArt && <option value={CUSTOM_ART}>{t('My picture')}</option>}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Parallax: the pictures drift as the dashboard scrolls. */}
+            <div className="px-4 py-3.5 rounded-xl mb-4" style={{ background: C.fill }}>
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Parallax motion')}</span>
+                  <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
+                    {t('When you scroll the dashboard, each picture drifts a little against its card, and the picture behind the page moves slower than the page. It switches itself off when Animations are off or in Calm mode, and on a slow PC.')}
+                  </span>
+                </div>
+                <Toggle on={artConfig.parallax} accent={accent} label={t('Parallax motion')} onChange={v => updateArt({ parallax: v })} />
+              </div>
+              <div className="mt-3" style={{ opacity: artConfig.parallax ? 1 : 0.5, pointerEvents: artConfig.parallax ? 'auto' : 'none' }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="fz-small font-bold" style={{ color: C.dim }}>{t('Strength')}</span>
+                  <span className="fz-tiny font-bold px-2 py-0.5 rounded-full" style={{ background: accentRgba(0.15), color: accent }}>
+                    {artConfig.parallaxStrength === 0 ? t('Off') : artConfig.parallaxStrength < 34 ? t('Gentle') : artConfig.parallaxStrength < 67 ? t('Medium') : t('Strong')} · {artConfig.parallaxStrength}%
+                  </span>
+                </div>
+                <Range ariaLabel={t('Parallax strength')} min={0} max={100} step={5} value={artConfig.parallaxStrength} accent={accent}
+                  format={v => `${v}%`} onChange={v => updateArt({ parallaxStrength: v })} />
+              </div>
+            </div>
+
             <p className="fz-small mb-3" style={{ color: C.dim }}>
               {t("The switch above shows the picture behind the whole dashboard. The cards can also be chosen on the dashboard itself: press Customize, then the picture button on a card.")}
               {artConfig.cards.length > 0 && <> {t("Cards showing the picture now: {{1}}.", { 1: artConfig.cards.length })}</>}

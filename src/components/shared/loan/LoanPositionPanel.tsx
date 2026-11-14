@@ -93,14 +93,32 @@ interface Props {
     compact?: boolean;
     /** Compact mode: called by "See details", so the window can switch to its detailed view. */
     onShowDetails?: () => void;
+    /** Groups of the position table fold open and closed. Off (all open, no controls) on Loan Repayment. */
+    collapsible?: boolean;
 }
 
-const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showClosure = true, refreshKey, compact = false, onShowDetails }) => {
+const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showClosure = true, refreshKey, compact = false, onShowDetails, collapsible = false }) => {
   const { t } = useTranslation();
     const [pos, setPos] = useState<Position | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showJournals, setShowJournals] = useState(false);
+    // Which table groups are folded open. The first two answer "what is this loan and what is owed", so they start open.
+    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ loan: true, owed: true });
+    const isOpen = (k: string) => !collapsible || !!openGroups[k];
+    const head = (k: string, label: React.ReactNode, count?: number) => collapsible ? (
+        <tr key={`head-${k}`}>
+            <td colSpan={3} style={{ padding: 0 }}>
+                <button type="button" aria-expanded={!!openGroups[k]} onClick={() => setOpenGroups(p => ({ ...p, [k]: !p[k] }))}
+                    className="aw-btn aw-btn-ghost aw-btn-sm" style={{ width: '100%', justifyContent: 'flex-start', fontWeight: 700 }}>
+                    {openGroups[k] ? <ChevronDown size={13} /> : <ChevronRight size={13} />} {label}
+                    {count !== undefined && <span className="aw-pill" style={{ marginLeft: 'auto' }}>{count}</span>}
+                </button>
+            </td>
+        </tr>
+    ) : (
+        <tr key={`head-${k}`}><td colSpan={3} className="aw-strong">{label}</td></tr>
+    );
 
     const load = useCallback(async () => {
         if (!mbno || !loancaseno) { setPos(null); return; }
@@ -230,7 +248,8 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                     {!compact && <div className="aw-table-wrap">
                         <table className="aw-table">
                             <tbody>
-                                <tr><td colSpan={3} className="aw-strong">{t('This loan')}</td></tr>
+                                {head('loan', t('This loan'))}
+                                {isOpen('loan') && <>
                                 <Row label={t('Loan')}
                                     value={`${LOAN_TYPE_LABEL[pos.loan.loantype] || pos.loan.loantype} #${pos.loan.loancaseno}`}
                                     hint={pos.loan.source} />
@@ -243,7 +262,9 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                                         hint={`${a.date ? dmy(a.date) : ''}${a.closureInterest !== null ? ` · interest cleared ${inr(a.closureInterest)}` : ''}`} />
                                 ))}
 
-                                <tr><td colSpan={3} className="aw-strong">{t('What is owed')}</td></tr>
+                                </>}
+                                {head('owed', t('What is owed'))}
+                                {isOpen('owed') && <>
                                 <Row label={t('By the ledger')} strong value={inr(pos.ledger.balance)} hint={`${pos.ledger.account} (${pos.ledger.headCode})`} />
                                 <Row label={t('By the loan record')} value={inr(pos.record.balance)}
                                     hint={pos.record.summaryBalance !== null ? t('Member summary {{1}}', { 1: inr(pos.record.summaryBalance) }) : undefined} />
@@ -252,7 +273,9 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                                     hint={Math.abs(diff) > 10 && pos.record.oldEmiDeductions.principal > 0
                                         ? t('Old-EMI deductions kept aside {{1}}', { 1: inr(pos.record.oldEmiDeductions.principal) }) : undefined} />
 
-                                <tr><td colSpan={3} className="aw-strong">{t('Paid in the ledger')}{pos.ledger.runStartedOn ? ' ' + t('since {{1}}', { 1: dmy(pos.ledger.runStartedOn) }) : ''}</td></tr>
+                                </>}
+                                {head('ledgerPaid', <>{t('Paid in the ledger')}{pos.ledger.runStartedOn ? ' ' + t('since {{1}}', { 1: dmy(pos.ledger.runStartedOn) }) : ''}</>)}
+                                {isOpen('ledgerPaid') && <>
                                 <Row label={t('Demand (D vouchers)')} value={inr(pos.ledger.paidByChannel.demand)} />
                                 <Row label={t('Cash receipts (R vouchers)')} value={inr(pos.ledger.paidByChannel.cash)} />
                                 <Row label={t('Journal credits')} value={inr(pos.ledger.paidByChannel.journal)} />
@@ -262,7 +285,9 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                                 <Row label={t('Total paid')} strong value={inr(pos.ledger.paidByChannel.total)}
                                     hint={t('Loans taken / added: {{1}} ({{2}})', { 1: inr(pos.ledger.loansAddedTotal), 2: pos.ledger.loansAdded.length })} />
 
-                                <tr><td colSpan={3} className="aw-strong">{t('Paid on the loan record')}</td></tr>
+                                </>}
+                                {head('recordPaid', t('Paid on the loan record'))}
+                                {isOpen('recordPaid') && <>
                                 <Row label={t('Principal / interest')} value={`${inr(pos.record.principalPaid)} / ${inr(pos.record.interestPaid)}`}
                                     hint={pos.record.penalPaid > 0 ? t('Penal {{1}}', { 1: inr(pos.record.penalPaid) }) : t('{{1}} payments', { 1: pos.record.paymentsRecorded })} />
                                 {pos.record.oldEmiDeductions.count > 0 && (
@@ -270,9 +295,12 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                                         hint={t('{{1}} deduction{{2}}', { 1: pos.record.oldEmiDeductions.count, 2: pos.record.oldEmiDeductions.count === 1 ? '' : 's' })} />
                                 )}
 
+                                </>}
+
                                 {s && (
                                     <>
-                                        <tr><td colSpan={3} className="aw-strong">{t('Against the EMI schedule')}</td></tr>
+                                        {head('schedule', t('Against the EMI schedule'))}
+                                        {isOpen('schedule') && <>
                                         <Row label={t('EMIs due so far')} value={`${s.instalmentsDueSoFar} · ${inr(s.principalDueSoFar)}`} hint="principal" />
                                         <Row label={t('Principal paid (loan record)')} value={inr(s.principalPaidOnRecord)} />
                                         <Row label={s.aheadOrBehind >= 0 ? t('Ahead of schedule') : t('Behind schedule')}
@@ -280,6 +308,7 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                                             hint={s.aheadOrBehindInEmis !== null ? t('{{1}} EMIs', { 1: Math.abs(s.aheadOrBehindInEmis) }) : undefined} />
                                         <Row label={t('Finish at the scheduled pace')} value={monthYear(s.projectedFinish)}
                                             hint={s.monthsLeftAtScheduledPace !== null ? t('{{1}} months left (ledger balance)', { 1: s.monthsLeftAtScheduledPace }) : undefined} />
+                                        </>}
                                     </>
                                 )}
 

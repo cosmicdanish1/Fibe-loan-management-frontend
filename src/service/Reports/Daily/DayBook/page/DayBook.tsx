@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Settings, RefreshCw, Printer, FileDown, Search, BookOpen, Calendar } from 'lucide-react';
-import { DatePicker, Spin, message } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
+import { DatePicker, message } from 'antd';
 import { apiService } from '../../../../../services/api';
 import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
 import { useReportViews } from '../../../../../components/reports/views/reportViews';
@@ -103,26 +101,7 @@ const DayBook: React.FC<{ filterType?: 'all' | 'cd' | 'sb' }> = ({ filterType = 
   const [data, setData] = useState<DayBookData | null>(null);
   const { enabled, view, setView } = useReportViews(REPORT_ID);
 
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
   // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
-  const isDark = interfaceMode === 'dark';
-
-  // Legacy report-body colours (the body keeps its original look; only the shell uses the app kit)
-  const muted     = isDark ? 'text-slate-400'                                 : 'text-slate-500';
-  const subtle    = isDark ? 'text-slate-500'                                 : 'text-slate-400';
-  const panelHdTx = isDark ? 'text-slate-300'                                 : 'text-slate-700';
-  const contentBg = isDark ? 'bg-slate-900/40'                                : 'bg-white';
-
-  // Monospace line colors
-  const lineDefault = isDark ? 'text-slate-300'               : 'text-slate-700';
-  const lineDash     = isDark ? 'text-slate-600'               : 'text-slate-300';
-  const lineCompany  = isDark ? 'text-slate-400'               : 'text-slate-500';
-  const lineTitle    = isDark ? 'text-white font-bold'         : 'text-slate-900 font-bold';
-  const lineSection  = isDark ? 'text-indigo-300 font-bold'    : 'text-indigo-700 font-bold';
-  const lineHeadRow  = isDark ? 'text-amber-300 font-bold'     : 'text-amber-700 font-bold';
-  const lineColHd    = isDark ? 'text-slate-400 font-semibold' : 'text-slate-500 font-semibold';
-  const lineSummary  = isDark ? 'text-emerald-300 font-semibold' : 'text-emerald-700 font-semibold';
-  const lineFooter   = isDark ? 'text-slate-500 italic'        : 'text-slate-400 italic';
 
   useEffect(() => { loadData(); }, [selectedDate, filterType]);
 
@@ -265,52 +244,42 @@ const DayBook: React.FC<{ filterType?: 'all' | 'cd' | 'sb' }> = ({ filterType = 
                  exactly (same lines[] feeds both this preview and handlePrint). */
               <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div className="aw-main-head">
-                  <span className={`text-xs font-extrabold uppercase tracking-wide ${panelHdTx}`}>
-                    Day Book — {selectedDate.format('DD-MMM-YYYY')}
-                  </span>
-                  {data && (
-                    <span className={`fz-small font-mono ${subtle}`}>
-                      {data.totalTransactions} entries · {reportLines.length} lines
-                    </span>
-                  )}
+                  <span className="aw-card-title">Day Book — {selectedDate.format('DD-MMM-YYYY')}</span>
+                  {data && <span className="aw-meta">{data.totalTransactions} entries · {reportLines.length} lines</span>}
                 </div>
 
-                <div className={`db-preview-body p-4 ${contentBg}`}>
-                  <Spin spinning={loading} tip="Loading...">
-                    {reportLines.length > 0 ? (
-                      <pre className={`font-mono text-[11.5px] leading-[1.55] whitespace-pre select-text w-fit mx-auto ${lineDefault}`}>
-                        {reportLines.map((line, i) => {
-                          const isDash = line.trim().startsWith('-');
-                          const isCompany = i <= 1;
-                          const isTitle = line.startsWith('Day Book For Date');
-                          const isSection = line === 'Payment' || line === 'Receipt';
-                          const isHeadRow = /^[A-Z]\w*\s{2,}\S/.test(line) && !isSection;
-                          const isColHeader = line.startsWith('Mem No.');
-                          const isSummary = line.includes('Opening Balance') || line.includes('Closing Balance') ||
-                            line.includes('Total Receipt') || line.includes('Total Payment') || line.trim().startsWith('Total');
-                          const isFooter = line.startsWith('*');
+                <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+                  {reportLines.length > 0 ? (
+                    <pre className="font-mono fz-caption select-text" style={{ margin: '0 auto', width: 'fit-content', lineHeight: 1.55, whiteSpace: 'pre', color: 'var(--aw-text)' }}>
+                      {reportLines.map((line, i) => {
+                        const isDash = line.trim().startsWith('-');
+                        const isCompany = i <= 1;
+                        const isTitle = line.startsWith('Day Book For Date');
+                        const isSection = line === 'Payment' || line === 'Receipt';
+                        const isHeadRow = /^[A-Z]w*s{2,}S/.test(line) && !isSection;
+                        const isColHeader = line.startsWith('Mem No.');
+                        const isSummary = line.includes('Opening Balance') || line.includes('Closing Balance') ||
+                          line.includes('Total Receipt') || line.includes('Total Payment') || line.trim().startsWith('Total');
+                        const isFooter = line.startsWith('*');
 
-                          let cls = lineDefault;
-                          if (isDash) cls = lineDash;
-                          else if (isCompany) cls = lineCompany;
-                          else if (isTitle) cls = lineTitle;
-                          else if (isSection) cls = lineSection;
-                          else if (isColHeader) cls = lineColHd;
-                          else if (isSummary) cls = lineSummary;
-                          else if (isFooter) cls = lineFooter;
-                          else if (isHeadRow) cls = lineHeadRow;
+                        let style: React.CSSProperties = {};
+                        if (isDash || isCompany || isFooter) style = { color: 'var(--aw-muted)', ...(isFooter ? { fontStyle: 'italic' } : {}) };
+                        else if (isTitle) style = { fontWeight: 700 };
+                        else if (isSection) style = { color: 'var(--aw-accent)', fontWeight: 700 };
+                        else if (isColHeader) style = { color: 'var(--aw-muted)', fontWeight: 600 };
+                        else if (isSummary) style = { color: 'var(--aw-success)', fontWeight: 600 };
+                        else if (isHeadRow) style = { color: 'var(--aw-warning)', fontWeight: 700 };
 
-                          return <span key={i} className={`block ${cls}`}>{line || ' '}</span>;
-                        })}
-                      </pre>
-                    ) : !loading ? (
-                      <div className="flex flex-col items-center justify-center h-64 gap-3">
-                        <BookOpen size={48} className={isDark ? 'text-slate-700' : 'text-slate-300'} />
-                        <p className={`text-sm font-bold uppercase tracking-wide ${muted}`}>No transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
-                        <p className={`text-xs ${subtle}`}>Try a date that has vouchers</p>
-                      </div>
-                    ) : null}
-                  </Spin>
+                        return <span key={i} style={{ display: 'block', ...style }}>{line || ' '}</span>;
+                      })}
+                    </pre>
+                  ) : !loading ? (
+                    <div className="aw-empty" style={{ padding: 32 }}>
+                      <BookOpen size={34} />
+                      <p className="aw-strong">No transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
+                      <span className="aw-meta">Try a date that has vouchers</span>
+                    </div>
+                  ) : null}
                 </div>
               </section>
             )}
@@ -330,11 +299,6 @@ const DayBook: React.FC<{ filterType?: 'all' | 'cd' | 'sb' }> = ({ filterType = 
         <span>Day Book · Daily Journal</span>
         <span>{selectedDate.format('YYYYMMDD')}</span>
       </div>
-
-      <style>{`
-        /* ── Day Book — dark mode for the legacy body ── */
-        html.dark .db-preview-body { background-color: #1c1c1e !important; }
-      `}</style>
     </div>
   );
 };

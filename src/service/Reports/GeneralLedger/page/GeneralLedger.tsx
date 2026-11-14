@@ -5,9 +5,7 @@ import {
   FileDown,
   RefreshCw,
 } from 'lucide-react';
-import { DatePicker, Spin, Select, message } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../store';
+import { DatePicker, Select, message } from 'antd';
 import { apiService } from '../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
@@ -144,8 +142,6 @@ const currentFinancialYearStart = () => {
 };
 
 const GeneralLedger: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
   const { enabled, view, setView } = useReportViews('general-ledger');
 
   const [headCode, setHeadCode]     = useState<string>('');
@@ -297,14 +293,6 @@ const GeneralLedger: React.FC = () => {
   const selectedHead = headMasters.find(h => h.code === headCode);
   const headName = selectedHead?.headName || '';
 
-  /* ── theme tokens ── */
-  const text     = isDark ? 'text-slate-100' : 'text-slate-800';
-  const muted    = isDark ? 'text-slate-400' : 'text-slate-500';
-  const tblHd    = isDark ? 'bg-[#263148] text-slate-300' : 'bg-slate-100 text-slate-700';
-  const tblBdr   = isDark ? 'border-slate-600' : 'border-slate-300';
-  const rowHover = isDark ? 'hover:bg-white/5' : 'hover:bg-emerald-50/40';
-  const sumRow   = isDark ? 'bg-[#263148]'  : 'bg-slate-100';
-
   const spec = useGlSpec(ledgerData?.entries ?? [], `${headCode} ${headName}`.trim(), ledgerData?.openingBalance ?? 0, ledgerData?.closingBalance ?? 0, ledgerData?.totalDebits ?? 0, ledgerData?.totalCredits ?? 0);
   const hasData = !!ledgerData;
   const period = `${fromDate?.format('DD-MMM-YYYY')} to ${toDate?.format('DD-MMM-YYYY')}`;
@@ -378,109 +366,78 @@ const GeneralLedger: React.FC = () => {
             <span className="aw-meta">{hasData ? `${headCode} – ${headName}` : 'No report yet'}</span>
           </div>
           <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
-            <Spin spinning={isLoading} tip="Loading…" size="small">
               {ledgerData ? (
-              <div className="font-mono fz-small">
-                {/* Company header */}
-                <div className={`text-center mb-2 pb-2 border-b border-dashed ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
-                  <div className={`fz-caption font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                  <div className={`fz-tiny ${muted}`}>Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
-                  <div className="fz-small font-bold text-emerald-500 mt-0.5">General Ledger Report</div>
-                  <div className={`fz-tiny ${muted}`}>Head: {headCode} – {headName} &nbsp;|&nbsp; Period: {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}</div>
+              <div className="font-mono">
+                <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                  <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited.</div>
+                  <div className="aw-meta">Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+                  <div className="aw-strong">General Ledger Report</div>
+                  <div className="aw-meta">Head: {headCode} – {headName} &nbsp;|&nbsp; Period: {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}</div>
                 </div>
 
-                {/* Table */}
-                <table className={`gl-table w-full border ${tblBdr}`} style={{ borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr className={`gl-table-head ${tblHd}`}>
-                      <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold w-24`}>Date</th>
-                      <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold w-20`}>MB No</th>
-                      <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold w-20`}>Voucher</th>
-                      <th className={`text-left py-1.5 px-2 border-r ${tblBdr} font-bold`}>Narration</th>
-                      <th className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold w-28`}>Payment</th>
-                      <th className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold w-28`}>Receipt</th>
-                      <th className={`text-right py-1.5 px-2 font-bold w-32`}>Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Opening row */}
-                    <tr className={`border-b ${tblBdr} ${isDark ? 'bg-emerald-900/20' : 'bg-emerald-50'}`}>
-                      <td colSpan={4} className={`py-1 px-2 border-r ${tblBdr} font-bold ${text} text-right`}>Opening Balance :</td>
-                      <td className={`text-right py-1 px-2 border-r ${tblBdr} ${muted}`}>–</td>
-                      <td className={`text-right py-1 px-2 border-r ${tblBdr} ${muted}`}>–</td>
-                      <td className="text-right py-1 px-2 font-bold text-emerald-500">{fmt(ledgerData.openingBalance)}</td>
-                    </tr>
-
-                    {/* Entries */}
-                    {ledgerData.entries.map((e, idx) => (
-                      <tr key={idx} className={`border-b ${tblBdr} ${rowHover} transition-colors`}>
-                        <td className={`py-1 px-2 border-r ${tblBdr} ${text} whitespace-nowrap`}>
-                          {dayjs(e.transactionDate).format('DD-MMM-YYYY')}
-                        </td>
-                        <td className={`py-1 px-2 border-r ${tblBdr} ${muted}`}>{e.memberNumber || '–'}</td>
-                        <td className={`py-1 px-2 border-r ${tblBdr} ${text}`}>{e.voucherNo || '–'}</td>
-                        <td className={`py-1 px-2 border-r ${tblBdr} ${muted}`}>{e.narration}</td>
-                        <td className={`text-right py-1 px-2 border-r ${tblBdr} font-semibold ${e.debit > 0 ? 'text-rose-500' : muted}`}>
-                          {e.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.debit)}</>) : '–'}
-                        </td>
-                        <td className={`text-right py-1 px-2 border-r ${tblBdr} font-semibold ${e.credit > 0 ? 'text-emerald-500' : muted}`}>
-                          {e.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.credit)}</>) : '–'}
-                        </td>
-                        <td className="text-right py-1 px-2 font-bold text-teal-400">{fmt(e.balance)}</td>
+                <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                  <table className="aw-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th><th>MB no</th><th>Voucher</th><th>Narration</th>
+                        <th className="is-right">Payment</th><th className="is-right">Receipt</th><th className="is-right">Balance</th>
                       </tr>
-                    ))}
-
-                    {ledgerData.entries.length === 0 && (
-                      <tr className={`border-b ${tblBdr}`}>
-                        <td colSpan={7} className={`py-5 text-center ${muted}`}>
-                          No transactions for this account head and period.
-                        </td>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colSpan={4} className="is-right"><b>Opening Balance :</b></td>
+                        <td className="is-right is-muted">–</td>
+                        <td className="is-right is-muted">–</td>
+                        <td className="is-right"><b>{fmt(ledgerData.openingBalance)}</b></td>
                       </tr>
-                    )}
 
-                    {/* Summary footer */}
-                    <tr className={`border-t-2 border-b ${tblBdr} ${sumRow}`}>
-                      <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Payments :</td>
-                      <td className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-rose-500`}>
-                        {ledgerData.totalDebits > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(ledgerData.totalDebits)}
-                      </td>
-                      <td className={`text-right py-1.5 px-2 border-r ${tblBdr} ${muted}`}>–</td>
-                      <td className="py-1.5 px-2" />
-                    </tr>
-                    <tr className={`border-b ${tblBdr} ${sumRow}`}>
-                      <td colSpan={4} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold ${text}`}>Total Receipts :</td>
-                      <td className={`text-right py-1.5 px-2 border-r ${tblBdr} ${muted}`}>–</td>
-                      <td className={`text-right py-1.5 px-2 border-r ${tblBdr} font-semibold text-emerald-500`}>
-                        {ledgerData.totalCredits > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(ledgerData.totalCredits)}
-                      </td>
-                      <td className="py-1.5 px-2" />
-                    </tr>
-                    <tr className={`${sumRow}`}>
-                      <td colSpan={6} className={`text-right py-1.5 px-2 border-r ${tblBdr} font-bold text-emerald-500`}>Closing Balance :</td>
-                      <td className="text-right py-1.5 px-2 font-black text-emerald-500">{fmt(ledgerData.closingBalance)}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                      {ledgerData.entries.map((e, idx) => (
+                        <tr key={idx}>
+                          <td style={{ whiteSpace: 'nowrap' }}>{dayjs(e.transactionDate).format('DD-MMM-YYYY')}</td>
+                          <td className="is-muted">{e.memberNumber || '–'}</td>
+                          <td>{e.voucherNo || '–'}</td>
+                          <td className="is-muted">{e.narration}</td>
+                          <td className={e.debit > 0 ? 'is-right' : 'is-right is-muted'} style={e.debit > 0 ? { color: 'var(--aw-danger)' } : undefined}>{e.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.debit)}</>) : '–'}</td>
+                          <td className={e.credit > 0 ? 'is-right is-success' : 'is-right is-muted'}>{e.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.credit)}</>) : '–'}</td>
+                          <td className="is-right is-accent">{fmt(e.balance)}</td>
+                        </tr>
+                      ))}
 
-                <div className={`text-center mt-2 fz-tiny ${muted}`}>* Report As Per Data Available</div>
+                      {ledgerData.entries.length === 0 && (
+                        <tr><td colSpan={7} className="is-muted" style={{ textAlign: 'center' }}>No transactions for this account head and period.</td></tr>
+                      )}
+
+                      <tr>
+                        <td colSpan={4} className="is-right"><b>Total Payments :</b></td>
+                        <td className="is-right"><b>{ledgerData.totalDebits > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(ledgerData.totalDebits)}</b></td>
+                        <td className="is-right is-muted">–</td>
+                        <td />
+                      </tr>
+                      <tr>
+                        <td colSpan={4} className="is-right"><b>Total Receipts :</b></td>
+                        <td className="is-right is-muted">–</td>
+                        <td className="is-right"><b>{ledgerData.totalCredits > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(ledgerData.totalCredits)}</b></td>
+                        <td />
+                      </tr>
+                      <tr>
+                        <td colSpan={6} className="is-right"><b>Closing Balance :</b></td>
+                        <td className="is-right"><b>{fmt(ledgerData.closingBalance)}</b></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <p className="aw-meta" style={{ textAlign: 'center', marginTop: 10 }}>* Report As Per Data Available</p>
               </div>
               ) : !isLoading ? (
                 <ReportEmpty icon={<FileText size={34} />} title="No Data" hint="Select head code and date range, then Generate" />
               ) : null}
-            </Spin>
           </div>
         </section>
       )}
       {view !== 'legacy' && !hasData && !reportError && (
         <ReportEmpty icon={<FileText size={34} />} title={isLoading ? 'Loading…' : 'No Data'} hint="Select head code and date range, then Generate" />
       )}
-
-      <style>{`
-        html.dark .gl-table { border-color: rgba(255,255,255,.07) !important; }
-        html.dark .gl-table td,
-        html.dark .gl-table th { border-color: rgba(255,255,255,.07) !important; }
-        html.dark .gl-table-head { background-color: #1c1c1e !important; color: #8e8e93 !important; }
-      `}</style>
     </ReportShell>
   );
 };

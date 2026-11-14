@@ -895,6 +895,7 @@ const WINDOW_CONFIGS: Record<string, {
 
   // Utility Tools
   '/utility/calculator': { title: 'Loan Calculator', frameless: false, width: 1200, height: 800, resizable: true, alwaysOnTop: false, singleton: true },
+  '/utility/society-calculator': { title: 'Society Calculator', frameless: false, width: 1360, height: 860, resizable: true, alwaysOnTop: false, singleton: true },
   '/utility/find': { title: 'Find & Search', frameless: false, width: 1000, height: 700, resizable: true, alwaysOnTop: false, singleton: true },
   '/utility/member-balance': { title: 'Member Balance', frameless: false, width: 900, height: 700 },
   '/utility/emi-chart': { title: 'EMI Chart', frameless: false, width: 800, height: 600 },

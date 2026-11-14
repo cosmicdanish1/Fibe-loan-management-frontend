@@ -1,16 +1,13 @@
-import React, { useState, useRef } from 'react';
-import { ConfigProvider, Select, message, Spin, theme as antdTheme, Modal } from 'antd';
-import { BookOpen, User, Search, RotateCcw, Printer, FileText, X, Users, ChevronLeft, ChevronRight, Save, Trash2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { message, Modal } from 'antd';
+import { BookOpen, Search, RotateCcw, Printer, FileText, X, ChevronLeft, ChevronRight, Save, Trash2 } from 'lucide-react';
 import { isFailure } from '@/utils/dialog';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../store';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../services/api';
-import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '../../../../components/shared/kit/MemberField';
+import AwDialog from '../../../../components/shared/kit/AwDialog';
+import { ReportShell, ParamCard, StatCards, ReportEmpty } from '../../../../components/reports/views/ReportShell';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
-
-const { Option } = Select;
 
 interface TrackingRow {
   accountNumber: string;
@@ -215,7 +212,6 @@ const PassBookPrinting: React.FC = () => {
   const [resetting, setResetting] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [data, setData] = useState<PassbookData | null>(null);
-  const [showMemberLookup, setShowMemberLookup] = useState(false);
   const [previewKind, setPreviewKind] = useState<'first' | 'details' | null>(null);
   const [previewPageIndex, setPreviewPageIndex] = useState(0);
   const [pageSetup, setPageSetup] = useState<PageSetup>(() => {
@@ -237,27 +233,6 @@ const PassBookPrinting: React.FC = () => {
   const [newPresetName, setNewPresetName] = useState('');
   const [printers, setPrinters] = useState<Array<{ name: string; displayName?: string; isDefault?: boolean }>>([]);
   const [printerName, setPrinterName] = useState<string>(() => localStorage.getItem('passbookPrinterName') || '');
-  const printRef = useRef<HTMLDivElement>(null);
-
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
-
-  // Theme variables
-  const bg      = isDark ? 'bg-[#0f172a]'                           : 'bg-slate-50';
-  const header  = isDark ? 'border-b border-white/5 bg-gradient-to-r from-slate-900 to-slate-900' : 'border-b border-slate-200 bg-white/80 backdrop-blur-sm';
-  const panel   = isDark ? 'border border-slate-700 bg-slate-800'   : 'border border-slate-200 bg-white';
-  const panelHd = isDark ? 'border-b border-slate-700'              : 'border-b border-slate-100 bg-slate-50';
-  const text    = isDark ? 'text-white'                             : 'text-slate-800';
-  const muted   = isDark ? 'text-slate-400'                         : 'text-slate-500';
-  const subtle  = isDark ? 'text-slate-500'                         : 'text-slate-400';
-  const tblHd   = isDark ? 'bg-slate-900/60'                        : 'bg-slate-100';
-  const tblHdTx = isDark ? 'text-slate-400'                         : 'text-slate-600';
-  const tblBdr  = isDark ? 'border-slate-700'                       : 'border-slate-200';
-  const rowEven = isDark ? 'bg-slate-800'                           : 'bg-white';
-  const rowOdd  = isDark ? 'bg-slate-800/50'                        : 'bg-slate-50';
-  const rowTx   = isDark ? 'text-slate-300'                         : 'text-slate-700';
-  const inpBg   = isDark ? 'bg-slate-700 border-slate-600 text-white focus:border-indigo-500' : 'bg-white border-slate-300 text-slate-800 focus:border-indigo-500';
-  const btnSec  = isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300';
 
   const handleLoad = async () => {
     if (!memberNo.trim()) { message.warning('Enter a member number'); return; }
@@ -276,7 +251,6 @@ const PassBookPrinting: React.FC = () => {
 
   const handleMemberSelect = (m: any) => {
     setMemberNo(m.memberNo || m.mbno || '');
-    setShowMemberLookup(false);
   };
 
   const handleReset = async () => {
@@ -531,409 +505,250 @@ const PassBookPrinting: React.FC = () => {
   };
 
   // ─── Render ──────────────────────────────────────────────────────────────────
-  return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      token: {
-        colorPrimary: '#6366f1',
-        borderRadius: 6,
-        colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-        colorBorder: isDark ? '#334155' : '#e2e8f0',
-      }
-    }}>
-      <div className={`pbp-page h-screen flex flex-col overflow-hidden font-sans ${bg} ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+  const activeTracking = passbookType === 'D' ? depositTracking : loanTracking;
+  const kindLabel = passbookType === 'D' ? 'deposit' : 'loan';
+  const drCell = (v: number) => <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{v > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(v)}</td>;
+  const crCell = (v: number) => <td className="is-right is-success">{v > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(v)}</td>;
+  const balCell = (v: number) => <td className="is-right is-accent">{fmt(v)}</td>;
 
-        {/* Header */}
-        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className={`pbp-header px-4 py-3 flex items-center justify-between shrink-0 ${header}`}>
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/30">
-              <BookOpen size={18} className="text-white" />
+  return (
+    <ReportShell
+      className="pbp-page"
+      title="Pass Book Printing"
+      desc="Enter a member number to load the passbook tracking details"
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset} disabled={!data || resetting}><RotateCcw size={14} className={resetting ? 'aw-spin' : undefined} /> Reset printing</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={() => openPreview('first')} disabled={!data || printing}><FileText size={14} /> Print first page</button>
+          <button type="button" className="aw-btn aw-btn-primary" onClick={() => openPreview('details')} disabled={!data || printing || totalPending === 0}><Printer size={14} className={printing ? 'aw-spin' : undefined} /> Print details</button>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={() => { setData(null); setMemberNo(''); }}><X size={14} /> Exit</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Member" icon={<BookOpen size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="pbp-member">Member number</label>
+              <MemberField id="pbp-member" value={memberNo} onChange={setMemberNo} onSelect={handleMemberSelect} onSubmit={() => handleLoad()} placeholder="e.g. 610031401" />
             </div>
             <div>
-              <h1 className={`text-sm font-black uppercase tracking-wider ${text}`}>Pass Book Printing</h1>
-              <p className={`fz-small mt-0.5 ${muted}`}>Enter member number to load passbook tracking details</p>
+              <label className="aw-label" htmlFor="pbp-type">Deposit / loan passbook</label>
+              <select id="pbp-type" className="aw-input" value={passbookType} onChange={e => setPassbookType(e.target.value as 'D' | 'L')}>
+                {PASSBOOK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <button type="button" className="aw-btn aw-btn-secondary" onClick={() => handleLoad()} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Search'}
+            </button>
+            {data?.memberDetails.memberName && <p className="aw-strong">{data.memberDetails.memberName}</p>}
+            {data?.memberDetails.address && (
+              <div><span className="aw-label">Address</span><p className="aw-meta">{data.memberDetails.address}</p></div>
+            )}
+          </ParamCard>
+          {data && <StatCards items={[{ label: `Pending ${kindLabel} rows`, value: String(totalPending), tone: totalPending > 0 ? 'warning' : 'success' }]} />}
+        </>
+      }
+      footerLeft="Pass Book Printing"
+      footerRight={data ? `Member ${data.memberDetails.memberNo}` : ''}
+    >
+      {!data ? (
+        <ReportEmpty icon={<BookOpen size={34} />} title={loading ? 'Loading…' : 'No Member Loaded'} hint="Enter a member number and click Search to load passbook details" />
+      ) : (
+        <>
+          <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="aw-main-head">
+              <span className="aw-card-title">Pass Book Printing Details</span>
+              <span className="aw-meta">{totalPending} pending {kindLabel} rows</span>
+            </div>
+            <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+              <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                <table className="aw-table">
+                  <thead>
+                    <tr>
+                      <th>Tr_Date printed</th>
+                      <th className="is-center">Deposit: last Row_Id printed</th>
+                      <th className="is-center">Loan: last Row_Id printed</th>
+                      <th className="is-center">Last line no.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{activeTracking?.trDate ? dayjs(activeTracking.trDate).format('DD-MM-YYYY') : <span className="is-muted">—</span>}</td>
+                      <td className="is-center is-accent">{depositTracking?.ledgerId ?? 0}</td>
+                      <td className="is-center is-accent">{loanTracking?.ledgerId ?? 0}</td>
+                      <td className="is-center">{activeTracking?.lastLineNo ?? 0}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          {totalPending > 0 ? (
+            <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="aw-main-head">
+                <span className="aw-card-title">Pending: {totalPending} unprinted {kindLabel} transactions</span>
+              </div>
+              <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+                <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                  {passbookType === 'D' ? (
+                    <table className="aw-table">
+                      <thead>
+                        <tr>
+                          <th rowSpan={2}>#</th><th rowSpan={2}>TrDate</th><th rowSpan={2}>Vchr no</th>
+                          <th colSpan={3} className="is-center">Share value</th>
+                          <th colSpan={3} className="is-center">Compulsory deposit</th>
+                          <th colSpan={2} className="is-center">F.R.S.-1</th>
+                          <th className="is-center">F.R.S.-2</th>
+                        </tr>
+                        <tr>
+                          {['Dr', 'Cr', 'Bal', 'Dr', 'Cr', 'Bal', 'Dr', 'Cr', 'Cr'].map((h, i) => <th key={i} className="is-right">{h}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.depositRows.map((r, i) => (
+                          <tr key={i}>
+                            <td className="is-muted">{i + 1}</td>
+                            <td>{fmtDate(r.transDate)}</td>
+                            <td className="is-muted">{r.vchrNo || '—'}</td>
+                            {drCell(r.SH_Dr_Amt)}{crCell(r.SH_Cr_Amt)}{balCell(r.SH_Bal_Amt)}
+                            {drCell(r.FD_Dr_Amt)}{crCell(r.FD_Cr_Amt)}{balCell(r.FD_Bal_Amt)}
+                            {drCell(r.FRS_Dr_Amt)}{crCell(r.FRS_Cr_Amt)}{crCell(r.FRS_Cr_Amt1)}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <table className="aw-table">
+                      <thead>
+                        <tr>
+                          <th rowSpan={2}>#</th><th rowSpan={2}>TrDate</th><th rowSpan={2}>Vchr no</th>
+                          <th colSpan={3} className="is-center">Regular loan</th>
+                          <th colSpan={3} className="is-center">Emergency loan</th>
+                        </tr>
+                        <tr>
+                          {['Dr', 'Cr', 'Bal', 'Dr', 'Cr', 'Bal'].map((h, i) => <th key={i} className="is-right">{h}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.loanRows.map((r, i) => (
+                          <tr key={i}>
+                            <td className="is-muted">{i + 1}</td>
+                            <td>{fmtDate(r.transDate)}</td>
+                            <td className="is-muted">{r.vchrNo || '—'}</td>
+                            {drCell(r.RLN_Dr_Amt)}{crCell(r.RLN_Cr_Amt)}{balCell(r.RLN_Bal_Amt)}
+                            {drCell(r.ALN_Dr_Amt)}{crCell(r.ALN_Cr_Amt)}{balCell(r.ALN_Bal_Amt)}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </section>
+          ) : (
+            <p className="aw-meta" style={{ textAlign: 'center', color: 'var(--aw-success)', fontWeight: 700 }}>All transactions have been printed</p>
+          )}
+        </>
+      )}
+
+      {/* Print preview: an exact render of the job sent to the passbook printer */}
+      <AwDialog open={!!previewKind} title={`Print Preview — ${previewKind === 'first' ? 'First Page' : 'Passbook Details'}`} icon={<Printer size={14} />} maxWidth="56rem" onClose={() => { if (!printing) setPreviewKind(null); }}>
+        {previewKind && (
+          <div className="aw-stack">
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+              <div>
+                <label className="aw-label" htmlFor="pbp-preset">Preset</label>
+                <select id="pbp-preset" className="aw-input" value={selectedPreset} onChange={e => e.target.value && applyPreset(e.target.value)} style={{ minWidth: 200 }}>
+                  <option value="">Custom</option>
+                  {presets.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                </select>
+              </div>
+              {!savingPreset ? (
+                <button type="button" className="aw-btn aw-btn-secondary" onClick={() => { setNewPresetName(selectedPreset || ''); setSavingPreset(true); }}><Save size={14} /> Save as preset</button>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+                  <input
+                    autoFocus
+                    className="aw-input"
+                    aria-label="Preset name"
+                    value={newPresetName}
+                    onChange={e => setNewPresetName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveCurrentAsPreset(); if (e.key === 'Escape') setSavingPreset(false); }}
+                    placeholder="Preset name"
+                  />
+                  <button type="button" className="aw-btn aw-btn-primary" onClick={saveCurrentAsPreset} disabled={!newPresetName.trim()}>Save</button>
+                  <button type="button" className="aw-btn aw-btn-ghost" onClick={() => setSavingPreset(false)}>Cancel</button>
+                </div>
+              )}
+              {selectedPreset && (
+                <button type="button" className="aw-btn aw-btn-ghost" onClick={deleteSelectedPreset} aria-label="Delete this preset" title="Delete this preset"><Trash2 size={14} /></button>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
+              {([
+                { label: 'Page width (in)', key: 'widthIn', step: 0.1, min: 2 },
+                { label: 'Page height (in)', key: 'heightIn', step: 0.1, min: 2 },
+                { label: 'Book height (in)', key: 'bookHeightIn', step: 0.1, min: 2 },
+                { label: 'Lines / page', key: 'linesPerPage', step: 1, min: 5 },
+              ] as const).map(fld => (
+                <div key={fld.key}>
+                  <label className="aw-label" htmlFor={`pbp-${fld.key}`}>{fld.label}</label>
+                  <input
+                    id={`pbp-${fld.key}`}
+                    className="aw-input"
+                    style={{ width: 90 }}
+                    type="number" step={fld.step} min={fld.min} value={pageSetup[fld.key]}
+                    onChange={e => {
+                      const v = parseFloat(e.target.value);
+                      if (Number.isFinite(v) && v > 0) updatePageSetup({ [fld.key]: v } as Partial<PageSetup>);
+                    }}
+                  />
+                </div>
+              ))}
+              <span className="aw-meta">job = {pageWMm.toFixed(1)} × {bookHMm.toFixed(1)} mm</span>
+            </div>
+            <iframe
+              title="Passbook print preview"
+              srcDoc={previewHtml}
+              style={{ width: '100%', height: 420, border: 'none', borderRadius: 8, background: '#3f434a' }}
+            />
+            {previewPages.length > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                <button type="button" className="aw-btn aw-btn-ghost" onClick={() => setPreviewPageIndex(i => Math.max(0, i - 1))} disabled={clampedPageIndex === 0}><ChevronLeft size={14} /> Prev</button>
+                <span className="aw-meta">Page {clampedPageIndex + 1} of {previewPages.length}</span>
+                <button type="button" className="aw-btn aw-btn-ghost" onClick={() => setPreviewPageIndex(i => Math.min(previewPages.length - 1, i + 1))} disabled={clampedPageIndex === previewPages.length - 1}>Next <ChevronRight size={14} /></button>
+              </div>
+            )}
+            <p className="aw-meta">
+              {previewPages.length} page{previewPages.length > 1 ? 's' : ''}, {pageSetup.linesPerPage} lines per page.
+              Content prints from the top of the inserted book; the dashed line in the preview marks where the passbook page (fold) ends.
+              {previewPages.length > 1 && ' Pages print one at a time — you will be asked to flip the passbook between pages.'}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap', borderTop: '1px solid var(--aw-border)', paddingTop: 12 }}>
+              <div style={{ marginRight: 'auto' }}>
+                <label className="aw-label" htmlFor="pbp-printer">Printer</label>
+                <select
+                  id="pbp-printer"
+                  className="aw-input"
+                  style={{ minWidth: 230 }}
+                  value={printerName}
+                  onChange={e => { setPrinterName(e.target.value); localStorage.setItem('passbookPrinterName', e.target.value); }}
+                  disabled={printing}
+                >
+                  <option value="">Ask via system dialog</option>
+                  {printers.map(p => <option key={p.name} value={p.name}>{p.displayName || p.name}</option>)}
+                </select>
+              </div>
+              <button type="button" className="aw-btn aw-btn-ghost" onClick={() => setPreviewKind(null)} disabled={printing}>Cancel</button>
+              <button type="button" className="aw-btn aw-btn-primary" onClick={handleConfirmPrint} disabled={printing}>
+                <Printer size={14} className={printing ? 'aw-spin' : undefined} /> Print
+              </button>
             </div>
           </div>
-        </motion.div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-4 flex flex-col gap-4">
-
-          {/* Member Input */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className={`pbp-panel rounded-xl overflow-hidden shrink-0 ${panel}`}>
-            <div className={`pbp-panel-header px-5 py-3 flex items-center gap-2 ${panelHd}`}>
-              <User size={14} className="text-indigo-400" />
-              <h2 className={`text-xs font-black uppercase tracking-wider ${text}`}>Member Details</h2>
-            </div>
-            <div className="p-4 flex flex-wrap gap-5 items-end">
-              <div className="space-y-1.5 flex-1 min-w-[180px]">
-                <label className={`fz-small font-bold uppercase tracking-wider ${muted}`}>Member Number</label>
-                <div className="flex gap-2">
-                  <input
-                    value={memberNo}
-                    onChange={e => setMemberNo(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleLoad()}
-                    placeholder="e.g. 610031401"
-                    className={`pbp-input flex-1 h-9 border rounded-lg px-3 text-sm focus:outline-none transition-colors ${inpBg}`}
-                  />
-                  <button onClick={() => setShowMemberLookup(true)}
-                    className={`h-9 px-3 rounded-lg transition-all flex items-center gap-1.5 ${btnSec}`}>
-                    <Users size={13} />
-                  </button>
-                  <button onClick={handleLoad} disabled={loading}
-                    className="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-50">
-                    {loading ? <Spin size="small" /> : <Search size={13} />} Search
-                  </button>
-                </div>
-                {data?.memberDetails.memberName && (
-                  <p className={`text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{data.memberDetails.memberName}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 min-w-[200px]">
-                <label className={`fz-small font-bold uppercase tracking-wider ${muted}`}>Deposit / Loan Passbook</label>
-                <Select value={passbookType} onChange={v => setPassbookType(v)} className="w-full" style={{ height: 36 }}>
-                  {PASSBOOK_TYPES.map(t => <Option key={t.value} value={t.value}>{t.label}</Option>)}
-                </Select>
-              </div>
-
-              {data?.memberDetails.address && (
-                <div className="space-y-1 min-w-[160px]">
-                  <label className={`fz-small font-bold uppercase tracking-wider ${muted}`}>Address</label>
-                  <p className={`text-xs ${rowTx}`}>{data.memberDetails.address}</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Tracking & Transactions */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-            className={`pbp-panel rounded-xl overflow-hidden flex-1 flex flex-col min-h-0 ${panel}`}>
-
-            <div className={`pbp-panel-header px-5 py-3 flex items-center gap-2 shrink-0 ${panelHd}`}>
-              <FileText size={14} className={isDark ? 'text-amber-400' : 'text-amber-500'} />
-              <h2 className={`text-xs font-black uppercase tracking-wider ${text}`}>Pass Book Printing Details</h2>
-              {data && (
-                <span className={`ml-auto fz-small font-mono ${muted}`}>
-                  {totalPending} pending {passbookType === 'D' ? 'deposit' : 'loan'} rows
-                </span>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-auto">
-              {/* Tracking summary row */}
-              <table className="w-full fz-caption border-collapse">
-                <thead>
-                  <tr className={tblHd}>
-                    <th className={`text-left px-4 py-2.5 font-bold uppercase tracking-wider border-b ${tblBdr} ${tblHdTx}`}>Tr_Date Printed</th>
-                    <th className={`text-center px-4 py-2.5 font-bold uppercase tracking-wider border-b border-l ${tblBdr} ${tblHdTx}`}>
-                      <div>Deposit</div><div className={`font-normal normal-case fz-small ${subtle}`}>Last Row_Id Printed</div>
-                    </th>
-                    <th className={`text-center px-4 py-2.5 font-bold uppercase tracking-wider border-b border-l ${tblBdr} ${tblHdTx}`}>
-                      <div>Loan</div><div className={`font-normal normal-case fz-small ${subtle}`}>Last Row_Id Printed</div>
-                    </th>
-                    <th className={`text-center px-4 py-2.5 font-bold uppercase tracking-wider border-b border-l ${tblBdr} ${tblHdTx}`}>Last Line No.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data ? (
-                    <tr className={`border-b transition-colors ${tblBdr} ${isDark ? 'bg-slate-800 hover:bg-slate-700/30' : 'bg-white hover:bg-slate-50'}`}>
-                      <td className={`px-4 py-3 font-mono ${rowTx}`}>
-                        {(passbookType === 'D' ? depositTracking : loanTracking)?.trDate
-                          ? dayjs((passbookType === 'D' ? depositTracking : loanTracking)!.trDate).format('DD-MM-YYYY')
-                          : <span className={subtle}>—</span>}
-                      </td>
-                      <td className={`px-4 py-3 text-center border-l ${tblBdr}`}>
-                        <span className={`font-mono font-bold ${depositTracking?.ledgerId ? (isDark ? 'text-indigo-300' : 'text-indigo-600') : subtle}`}>
-                          {depositTracking?.ledgerId ?? 0}
-                        </span>
-                      </td>
-                      <td className={`px-4 py-3 text-center border-l ${tblBdr}`}>
-                        <span className={`font-mono font-bold ${loanTracking?.ledgerId ? (isDark ? 'text-emerald-300' : 'text-emerald-600') : subtle}`}>
-                          {loanTracking?.ledgerId ?? 0}
-                        </span>
-                      </td>
-                      <td className={`px-4 py-3 text-center border-l ${tblBdr}`}>
-                        <span className={`font-mono ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>
-                          {(passbookType === 'D' ? depositTracking : loanTracking)?.lastLineNo ?? 0}
-                        </span>
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className={`px-4 py-8 text-center text-xs ${muted}`}>
-                        {loading ? 'Loading…' : 'Enter a member number and click Search to load passbook details'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
-              {/* Pending transactions grid */}
-              {data && totalPending > 0 && (
-                <div className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className={`fz-small font-black uppercase tracking-wider ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                      Pending: {totalPending} unprinted {passbookType === 'D' ? 'deposit' : 'loan'} transactions
-                    </span>
-                  </div>
-
-                  <div className={`rounded-lg border overflow-auto ${tblBdr}`}>
-                    {passbookType === 'D' ? (
-                      <table className="w-full fz-small border-collapse">
-                        <thead>
-                          <tr className={`${tblHd} border-b ${tblBdr}`}>
-                            <th rowSpan={2} className={`text-left px-2 py-2 font-bold border-b border-r whitespace-nowrap ${tblBdr} ${tblHdTx}`}>#</th>
-                            <th rowSpan={2} className={`text-left px-2 py-2 font-bold border-b border-r whitespace-nowrap ${tblBdr} ${tblHdTx}`}>TrDate</th>
-                            <th rowSpan={2} className={`text-left px-2 py-2 font-bold border-b border-r whitespace-nowrap ${tblBdr} ${tblHdTx}`}>Vchr No</th>
-                            <th colSpan={3} className={`text-center px-2 py-1 font-bold border-b border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>Share Value</th>
-                            <th colSpan={3} className={`text-center px-2 py-1 font-bold border-b border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>Compulsory Deposit</th>
-                            <th colSpan={2} className={`text-center px-2 py-1 font-bold border-b border-r ${tblBdr} ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>F.R.S.-1</th>
-                            <th className={`text-center px-2 py-1 font-bold border-b ${tblBdr} ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>F.R.S.-2</th>
-                          </tr>
-                          <tr className={`${isDark ? 'bg-slate-900/60' : 'bg-slate-50'}`}>
-                            {['Dr','Cr','Bal','Dr','Cr','Bal','Dr','Cr','Cr'].map((h, i, arr) => (
-                              <th key={i} className={`text-right px-2 py-1 font-bold border-b ${i < arr.length-1 ? 'border-r' : ''} ${tblBdr} ${tblHdTx}`}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(data.depositRows).map((r, i) => (
-                            <tr key={i} className={`border-t ${tblBdr} ${i % 2 === 0 ? rowEven : rowOdd}`}>
-                              <td className={`px-2 py-1.5 font-mono border-r ${tblBdr} ${subtle}`}>{i + 1}</td>
-                              <td className={`px-2 py-1.5 whitespace-nowrap border-r ${tblBdr} ${rowTx}`}>{fmtDate(r.transDate)}</td>
-                              <td className={`px-2 py-1.5 font-mono border-r ${tblBdr} ${muted}`}>{r.vchrNo || '—'}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.SH_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.SH_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.SH_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.SH_Cr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono font-bold border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>{fmt(r.SH_Bal_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.FD_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.FD_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.FD_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.FD_Cr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono font-bold border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>{fmt(r.FD_Bal_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.FRS_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.FRS_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.FRS_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.FRS_Cr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>{r.FRS_Cr_Amt1 > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.FRS_Cr_Amt1)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <table className="w-full fz-small border-collapse">
-                        <thead>
-                          <tr className={`${tblHd} border-b ${tblBdr}`}>
-                            <th rowSpan={2} className={`text-left px-2 py-2 font-bold border-b border-r ${tblBdr} ${tblHdTx}`}>#</th>
-                            <th rowSpan={2} className={`text-left px-2 py-2 font-bold border-b border-r whitespace-nowrap ${tblBdr} ${tblHdTx}`}>TrDate</th>
-                            <th rowSpan={2} className={`text-left px-2 py-2 font-bold border-b border-r whitespace-nowrap ${tblBdr} ${tblHdTx}`}>Vchr No</th>
-                            <th colSpan={3} className={`text-center px-2 py-1 font-bold border-b border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>Regular Loan</th>
-                            <th colSpan={3} className={`text-center px-2 py-1 font-bold border-b ${tblBdr} ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>Emergency Loan</th>
-                          </tr>
-                          <tr className={`${isDark ? 'bg-slate-900/60' : 'bg-slate-50'}`}>
-                            {['Dr','Cr','Bal','Dr','Cr','Bal'].map((h, i, arr) => (
-                              <th key={i} className={`text-right px-2 py-1 font-bold border-b ${i < arr.length-1 ? 'border-r' : ''} ${tblBdr} ${tblHdTx}`}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(data.loanRows).map((r, i) => (
-                            <tr key={i} className={`border-t ${tblBdr} ${i % 2 === 0 ? rowEven : rowOdd}`}>
-                              <td className={`px-2 py-1.5 font-mono border-r ${tblBdr} ${subtle}`}>{i + 1}</td>
-                              <td className={`px-2 py-1.5 whitespace-nowrap border-r ${tblBdr} ${rowTx}`}>{fmtDate(r.transDate)}</td>
-                              <td className={`px-2 py-1.5 font-mono border-r ${tblBdr} ${muted}`}>{r.vchrNo || '—'}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.RLN_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.RLN_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.RLN_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.RLN_Cr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono font-bold border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>{fmt(r.RLN_Bal_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{r.ALN_Dr_Amt > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(r.ALN_Dr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono border-r ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.ALN_Cr_Amt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(r.ALN_Cr_Amt)}</td>
-                              <td className={`px-2 py-1.5 text-right font-mono font-bold ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>{fmt(r.ALN_Bal_Amt)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {data && totalPending === 0 && (
-                <div className={`px-4 py-6 text-center text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                  All transactions have been printed
-                </div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Action Buttons */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            className="flex justify-end gap-3 shrink-0">
-            <button onClick={handleReset} disabled={!data || resetting}
-              className={`h-9 px-5 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 active:scale-95 disabled:opacity-40 border ${isDark ? 'bg-slate-700 hover:bg-slate-600 border-slate-600' : 'bg-slate-200 hover:bg-slate-300 border-slate-300 text-slate-700'}`}>
-              {resetting ? <Spin size="small" /> : <RotateCcw size={13} />} Reset Printing
-            </button>
-            <button onClick={() => openPreview('first')} disabled={!data || printing}
-              className="h-9 px-5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-amber-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-40">
-              <FileText size={13} /> Print First Page
-            </button>
-            <button onClick={() => openPreview('details')} disabled={!data || printing || totalPending === 0}
-              className="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-40">
-              {printing ? <Spin size="small" /> : <Printer size={13} />} Print Details
-            </button>
-            <button onClick={() => { setData(null); setMemberNo(''); }}
-              className="h-9 px-4 bg-rose-700 hover:bg-rose-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 active:scale-95">
-              <X size={13} /> Exit
-            </button>
-          </motion.div>
-        </div>
-
-        <div ref={printRef} className="hidden" />
-
-        <Modal
-          title={<div className="flex items-center gap-2"><div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center"><Users size={16} className="text-white" /></div><span className="font-black">Member Lookup</span></div>}
-          open={showMemberLookup} onCancel={() => setShowMemberLookup(false)} footer={null} width={1000} centered destroyOnClose>
-          <MemberLookup isModal onSelect={handleMemberSelect} onClose={() => setShowMemberLookup(false)} />
-        </Modal>
-
-        {/* Print preview — exact render of the job sent to the passbook printer */}
-        <Modal
-          title={<div className="flex items-center gap-2"><div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center"><Printer size={16} className="text-white" /></div><span className="font-black">Print Preview — {previewKind === 'first' ? 'First Page' : 'Passbook Details'}</span></div>}
-          open={!!previewKind}
-          onCancel={() => !printing && setPreviewKind(null)}
-          width={880}
-          centered
-          destroyOnClose
-          footer={
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 mr-auto">
-                <span className={`fz-small font-bold uppercase tracking-wider ${muted}`}>Printer</span>
-                <Select
-                  {...(printerName ? { value: printerName } : {})}
-                  placeholder="Ask via system dialog"
-                  onChange={(v: string) => { setPrinterName(v); localStorage.setItem('passbookPrinterName', v); }}
-                  style={{ minWidth: 230 }}
-                  disabled={printing}
-                  options={printers.map(p => ({ value: p.name, label: p.displayName || p.name }))}
-                />
-              </div>
-              <button onClick={() => setPreviewKind(null)} disabled={printing}
-                className={`h-9 px-5 rounded-lg text-xs font-bold transition-all disabled:opacity-40 ${btnSec}`}>
-                Cancel
-              </button>
-              <button onClick={handleConfirmPrint} disabled={printing}
-                className="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-40">
-                {printing ? <Spin size="small" /> : <Printer size={13} />} Print
-              </button>
-            </div>
-          }>
-          {previewKind && (
-            <div className="space-y-2">
-              {/* Size presets — different passbook vendors/models use different physical sizes */}
-              <div className="flex items-end gap-2 flex-wrap">
-                <div className="space-y-1">
-                  <label className={`block fz-small font-bold uppercase tracking-wider ${muted}`}>Preset</label>
-                  <Select
-                    {...(selectedPreset ? { value: selectedPreset } : {})}
-                    placeholder="Custom"
-                    onChange={(v: string) => applyPreset(v)}
-                    style={{ minWidth: 200 }}
-                    options={presets.map(p => ({ value: p.name, label: p.name }))}
-                  />
-                </div>
-                {!savingPreset ? (
-                  <button onClick={() => { setNewPresetName(selectedPreset || ''); setSavingPreset(true); }}
-                    className={`h-8 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${btnSec}`}>
-                    <Save size={12} /> Save as preset
-                  </button>
-                ) : (
-                  <div className="flex items-end gap-1.5">
-                    <input
-                      autoFocus
-                      value={newPresetName}
-                      onChange={e => setNewPresetName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') saveCurrentAsPreset(); if (e.key === 'Escape') setSavingPreset(false); }}
-                      placeholder="Preset name"
-                      className={`h-8 border rounded-lg px-2 text-xs focus:outline-none ${inpBg}`}
-                    />
-                    <button onClick={saveCurrentAsPreset} disabled={!newPresetName.trim()}
-                      className="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-40">
-                      Save
-                    </button>
-                    <button onClick={() => setSavingPreset(false)}
-                      className={`h-8 px-3 rounded-lg text-xs font-bold transition-all ${btnSec}`}>
-                      Cancel
-                    </button>
-                  </div>
-                )}
-                {selectedPreset && (
-                  <button onClick={deleteSelectedPreset} title="Delete this preset"
-                    className="h-8 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-rose-700/90 hover:bg-rose-600 text-white">
-                    <Trash2 size={12} />
-                  </button>
-                )}
-              </div>
-              <div className="flex items-end gap-4 flex-wrap">
-                {([
-                  { label: 'Page width (in)', key: 'widthIn', step: 0.1, min: 2 },
-                  { label: 'Page height (in)', key: 'heightIn', step: 0.1, min: 2 },
-                  { label: 'Book height (in)', key: 'bookHeightIn', step: 0.1, min: 2 },
-                  { label: 'Lines / page', key: 'linesPerPage', step: 1, min: 5 },
-                ] as const).map(f => (
-                  <div key={f.key} className="space-y-1">
-                    <label className={`block fz-small font-bold uppercase tracking-wider ${muted}`}>{f.label}</label>
-                    <input
-                      type="number" step={f.step} min={f.min} value={pageSetup[f.key]}
-                      onChange={e => {
-                        const v = parseFloat(e.target.value);
-                        if (Number.isFinite(v) && v > 0) updatePageSetup({ [f.key]: v } as Partial<PageSetup>);
-                      }}
-                      className={`pbp-input w-20 h-8 border rounded-lg px-2 text-xs focus:outline-none ${inpBg}`}
-                    />
-                  </div>
-                ))}
-                <span className={`fz-small pb-2 ${muted}`}>job = {pageWMm.toFixed(1)} × {bookHMm.toFixed(1)} mm</span>
-              </div>
-              <iframe
-                title="Passbook print preview"
-                srcDoc={previewHtml}
-                style={{ width: '100%', height: 420, border: 'none', borderRadius: 8, background: '#3f434a' }}
-              />
-              {previewPages.length > 1 && (
-                <div className="flex items-center justify-center gap-3">
-                  <button onClick={() => setPreviewPageIndex(i => Math.max(0, i - 1))} disabled={clampedPageIndex === 0}
-                    className={`h-8 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-30 ${btnSec}`}>
-                    <ChevronLeft size={13} /> Prev
-                  </button>
-                  <span className={`fz-small font-bold ${muted}`}>Page {clampedPageIndex + 1} of {previewPages.length}</span>
-                  <button onClick={() => setPreviewPageIndex(i => Math.min(previewPages.length - 1, i + 1))} disabled={clampedPageIndex === previewPages.length - 1}
-                    className={`h-8 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-30 ${btnSec}`}>
-                    Next <ChevronRight size={13} />
-                  </button>
-                </div>
-              )}
-              <p className={`fz-caption ${muted}`}>
-                {previewPages.length} page{previewPages.length > 1 ? 's' : ''}, {pageSetup.linesPerPage} lines per page.
-                Content prints from the top of the inserted book; the dashed line in the preview marks where the passbook page (fold) ends.
-                {previewPages.length > 1 && ' Pages print one at a time — you will be asked to flip the passbook between pages.'}
-              </p>
-            </div>
-          )}
-        </Modal>
-      </div>
-
-      <style>{`
-        /* ── Pass Book Printing — dark mode (screen chrome only; the passbook
-           print preview iframe renders the actual print job and stays as-is) ── */
-        html.dark .pbp-page { background-color: #000000 !important; }
-        html.dark .pbp-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .pbp-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .pbp-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .pbp-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .pbp-page .ant-select-selector { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .pbp-page .ant-select-selection-item { color: #f5f5f7 !important; }
-        html.dark .ant-modal-content,
-        html.dark .ant-modal-header { background-color: #1c1c1e !important; }
-        html.dark .ant-modal-title { color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+        )}
+      </AwDialog>
+    </ReportShell>
   );
 };
 

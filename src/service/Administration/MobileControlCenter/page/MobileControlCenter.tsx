@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import ActivationRequestsPanel from './ActivationRequestsPanel';
 import MemberAccessPanel from './MemberAccessPanel';
 import PhoneQualityPanel from './PhoneQualityPanel';
+import FeaturesPanel from './FeaturesPanel';
+import SecurityAuditPanel from './SecurityAuditPanel';
 
 type TabId = 'members' | 'requests' | 'phones' | 'dashboard' | 'broadcasts' | 'features' | 'content' | 'audit' | 'health';
 
@@ -26,10 +28,10 @@ const MobileControlCenter: React.FC = () => {
     { id: 'requests', label: t('Activation requests'), ready: true },
     { id: 'phones', label: t('Phone numbers'), ready: true },
     { id: 'broadcasts', label: t('Broadcasts'), ready: false },
-    { id: 'features', label: t('Features and releases'), ready: false },
+    { id: 'features', label: t('Features and releases'), ready: true },
     { id: 'content', label: t('Content'), ready: false },
     { id: 'dashboard', label: t('Dashboard'), ready: false },
-    { id: 'audit', label: t('Security and audit'), ready: false },
+    { id: 'audit', label: t('Security and audit'), ready: true },
     { id: 'health', label: t('Health and server hours'), ready: false },
   ];
   const current = tabs.find((x) => x.id === tab)!;
@@ -60,6 +62,8 @@ const MobileControlCenter: React.FC = () => {
         {tab === 'members' && <MemberAccessPanel />}
         {tab === 'requests' && <ActivationRequestsPanel />}
         {tab === 'phones' && <PhoneQualityPanel />}
+        {tab === 'features' && <FeaturesPanel />}
+        {tab === 'audit' && <SecurityAuditPanel />}
         {!current.ready && (
           <section className="aw-card">
             <div className="aw-empty">

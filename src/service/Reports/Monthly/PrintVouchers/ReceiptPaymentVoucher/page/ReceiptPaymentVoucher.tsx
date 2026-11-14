@@ -1,27 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiService } from '../../../../../../services/api';
-import {
-  DatePicker, Select, Button, Spin, ConfigProvider, theme as antdTheme
-} from 'antd';
-import {
-  Printer,
-  FileDown,
-  Search,
-  FileText,
-  Wallet,
-  ShieldCheck,
-  User,
-  CreditCard,
-  Building2,
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../../store';
+import { Printer, FileDown, Search, FileText } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
-import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { ReportShell, ParamCard, StatCards, ReportEmpty } from '../../../../../../components/reports/views/ReportShell';
 import { showDialog3 as showDialog } from '@/utils/dialog';
-
-const { Option } = Select;
 
 interface VoucherEntry {
   key: string;
@@ -50,9 +32,6 @@ const csvCell = (value: unknown): string => {
 };
 
 const ReceiptPaymentVoucher: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
-
   const [date, setDate] = useState<Dayjs | null>(dayjs());
   const [voucherDateKey, setVoucherDateKey] = useState('');
   const [voucherNo, setVoucherNo] = useState<string>('');
@@ -65,6 +44,7 @@ const ReceiptPaymentVoucher: React.FC = () => {
   const [bank, setBank] = useState<string>('');
   const [chequeDate, setChequeDate] = useState<Dayjs | null>(null);
   const [voucherList, setVoucherList] = useState<VoucherReference[]>([]);
+  const [voucherFilter, setVoucherFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [entries, setEntries] = useState<VoucherEntry[]>([]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
@@ -274,331 +254,193 @@ const ReceiptPaymentVoucher: React.FC = () => {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const bg      = isDark ? 'bg-[#0f172a]'             : 'bg-gradient-to-br from-slate-50 to-indigo-50/30';
-  const panel   = isDark ? 'bg-[#1e293b] border-[#334155]' : 'bg-white/90 border-slate-200/60';
-  const panelHd = isDark ? 'bg-[#263148] border-[#334155]' : 'bg-gradient-to-r from-slate-50 to-indigo-50/50 border-slate-100';
-  const text    = isDark ? 'text-slate-100'            : 'text-slate-800';
-  const muted   = isDark ? 'text-slate-400'            : 'text-slate-500';
-  const border  = isDark ? 'border-[#334155]'          : 'border-slate-200/60';
-  const infoBox = isDark ? 'bg-[#1a2744] border-indigo-900/50' : 'bg-indigo-50 border-indigo-100';
-  const moBox   = isDark ? 'bg-[#263148] border-[#334155]'    : 'bg-slate-50 border-slate-100';
-  const chqBox  = isDark ? 'bg-[#1e293b] border-[#334155]'    : 'bg-white border-slate-200';
-  const vHdBox  = isDark ? 'bg-[#263148] border-slate-600'    : 'bg-slate-50 border-slate-400';
-  const tblHd   = isDark ? 'bg-[#1a2744] border-slate-600'    : 'bg-slate-200 border-slate-400';
-  const tblBdr  = isDark ? 'border-slate-600'          : 'border-slate-300';
-  const tblBdrH = isDark ? 'border-slate-600'          : 'border-slate-400';
+  const shownVouchers = voucherList
+    .filter(v => !voucherFilter.trim() || `${v.voucher_no}`.toLowerCase().includes(voucherFilter.trim().toLowerCase()))
+    .slice(0, 300);
+  const hasData = entries.length > 0;
 
   return (
-    <ConfigProvider theme={{ algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm, token: { colorPrimary: '#6366f1', borderRadius: 12 } }}>
-    <div className={`rpv-page h-screen flex flex-col ${bg} font-sans overflow-hidden`}>
-      {/* Header */}
-      <div className={`rpv-header ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 border-slate-200/60'} backdrop-blur-sm border-b px-4 py-2.5 flex items-center justify-between z-10 shadow-sm shrink-0`}>
-        <div className="flex items-center gap-2.5">
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-2 rounded-xl text-white shadow-md">
-            <Wallet size={16} />
+    <ReportShell
+      className="rpv-page"
+      title="Receipt / Payment Voucher"
+      desc="Find a saved voucher and print it"
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!hasData}><FileDown size={14} /> CSV</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!hasData}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Search voucher" icon={<Search size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="rpv-filter">Voucher no.</label>
+              <input id="rpv-filter" className="aw-input" value={voucherFilter} onChange={e => setVoucherFilter(e.target.value)} placeholder="Type to filter" />
+            </div>
+            <select
+              className="aw-input"
+              aria-label="Voucher"
+              value={voucherNo && voucherDateKey ? `${voucherNo}|${voucherDateKey}` : ''}
+              onChange={e => handleVoucherSelect(e.target.value)}
+              disabled={isLoading}
+            >
+              <option value="">Select voucher</option>
+              {shownVouchers.map(v => (
+                <option key={voucherRefValue(v)} value={voucherRefValue(v)}>#{v.voucher_no} · {dayjs(v.voucher_date).format('DD-MMM-YYYY')}</option>
+              ))}
+            </select>
+            {voucherList.length > shownVouchers.length && <p className="aw-meta">Showing the first {shownVouchers.length} matches. Type more of the number to narrow the list.</p>}
+          </ParamCard>
+          {voucherNo && (
+            <section className="aw-card">
+              <div className="aw-stack">
+                <div><span className="aw-label">Date</span><span className="aw-strong">{date ? date.format('DD-MMM-YYYY') : '—'}</span></div>
+                <div><span className="aw-label">Type</span><span className={`aw-pill tone-${vchrType === 'Receipt' ? 'success' : 'danger'}`}>{vchrType || '—'}</span></div>
+                <div><span className="aw-label">Mode</span><span className="aw-strong">{mode || 'N/A'}</span></div>
+                <div><span className="aw-label">Member</span><span className="aw-strong">MB-{memberNo || 'N/A'}</span><div className="aw-meta">{memberName || 'No member'}</div></div>
+                {chequeNo && (
+                  <div><span className="aw-label">Cheque</span><span className="aw-strong">#{chequeNo}</span><div className="aw-meta">{bank} · {chequeDate?.format('DD-MMM-YYYY')}</div></div>
+                )}
+              </div>
+            </section>
+          )}
+          {totalAmount > 0 && (
+            <StatCards items={[{ label: 'Total amount', value: `₹${formatCurrency(totalAmount)}`, tone: vchrType === 'Receipt' ? 'success' : 'danger' }]} />
+          )}
+        </>
+      }
+      footerLeft="Receipt / Payment Voucher"
+      footerRight={voucherNo ? `Voucher #${voucherNo}` : ''}
+    >
+      {hasData ? (
+        <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">Voucher Preview</span>
+            <span className="aw-meta">{voucherNo ? `Voucher #${voucherNo}` : ''}</span>
           </div>
-          <div>
-            <h1 className={`fz-body font-black ${text} tracking-tight leading-none uppercase`}>Receipt/Payment Voucher</h1>
-            <div className={`flex items-center gap-1.5 mt-0.5 fz-caption font-bold ${muted} uppercase tracking-wide leading-none`}>
-              <ShieldCheck size={10} className="text-indigo-500" /> Voucher Print Archive
+          <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+            <style>{`
+              #rpv-print-area { color: var(--aw-text); }
+              #rpv-print-area * { border-color: var(--aw-border); }
+              #rpv-print-area .rpv-muted { color: var(--aw-muted); }
+              #rpv-print-area .rpv-box { background: var(--aw-surface-muted); }
+              #rpv-print-area .rpv-lbl { color: var(--aw-muted); }
+              #rpv-print-area .rpv-val { color: var(--aw-accent); }
+              #rpv-print-area .rpv-bar { background: var(--aw-surface-muted); }
+            `}</style>
+            <div id="rpv-print-area" className="font-mono fz-caption">
+              {/* Company Header */}
+              <div className="text-center mb-3 border-b border-dashed pb-2">
+                <div className="fz-label font-bold">Espat Karmchari Co-Operative Credit Society Limited.</div>
+                <div className="fz-caption rpv-muted">Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+                <div className="fz-caption font-bold mt-1 uppercase">Print Voucher</div>
+              </div>
+
+              {/* Voucher Header Info */}
+              <div className="border mb-3 p-3 rpv-box">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-2 fz-caption">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold rpv-lbl w-24">Date</span>
+                    <span className="font-semibold">{date?.format('DD-MMM-YYYY')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold rpv-lbl w-24">Voucher No.</span>
+                    <span className="font-bold px-2 py-0.5 rounded">{voucherNo}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold rpv-lbl w-24">Vchr Type</span>
+                    <span className="font-bold uppercase">{vchrType}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold rpv-lbl w-24">Mode</span>
+                    <span className="font-bold uppercase">{mode}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold rpv-lbl w-24">Member No.</span>
+                    <span className="font-semibold">{memberNo || 'N/A'}</span>
+                    <span className="font-semibold">{memberName}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold rpv-lbl w-24">Narration</span>
+                    <span className="font-semibold">{narration || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold rpv-lbl w-24">Cheque No</span>
+                    <span className="font-semibold">{chequeNo || '-'}</span>
+                  </div>
+                  {chequeNo && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold rpv-lbl w-24">Bank</span>
+                        <span className="font-semibold uppercase">{bank}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold rpv-lbl w-24">Cheque Date</span>
+                        <span className="font-semibold">{chequeDate?.format('DD-MMM-YYYY')}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex items-center gap-2 col-span-2">
+                    <span className="font-bold rpv-lbl w-24"></span>
+                    <span className="font-bold rpv-lbl ml-auto">Total Amount</span>
+                    <span className="font-bold fz-caption">{formatCurrency(totalAmount)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Table */}
+              <div className="border">
+                <table className="w-full fz-caption" style={{ borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr className="rpv-box border-b">
+                      <th className="text-left py-1.5 px-2 border-r font-bold w-16">Srno</th>
+                      <th className="text-left py-1.5 px-2 border-r font-bold">Member No</th>
+                      <th className="text-left py-1.5 px-2 border-r font-bold">Member Name</th>
+                      <th className="text-left py-1.5 px-2 border-r font-bold">Head</th>
+                      <th className="text-left py-1.5 px-2 border-r font-bold">Description</th>
+                      <th className="text-right py-1.5 px-2 border-r font-bold w-28">Payment</th>
+                      <th className="text-right py-1.5 px-2 font-bold w-28">Receipt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((entry, idx) => (
+                      <tr key={idx} className="border-b">
+                        <td className="py-1 px-2 border-r rpv-muted font-semibold text-center">{idx + 1}</td>
+                        <td className="py-1 px-2 border-r">{entry.member_no}</td>
+                        <td className="py-1 px-2 border-r">{entry.member_name}</td>
+                        <td className="py-1 px-2 border-r rpv-val font-bold">{entry.head_code}</td>
+                        <td className="py-1 px-2 border-r rpv-val font-semibold uppercase">{entry.head_name}</td>
+                        <td className="text-right py-1 px-2 border-r font-semibold">
+                          {entry.direction === 'Payment' ? formatCurrency(entry.amount) : ''}
+                        </td>
+                        <td className="text-right py-1 px-2 rpv-val font-bold">
+                          {entry.direction === 'Receipt' ? formatCurrency(entry.amount) : ''}
+                        </td>
+                      </tr>
+                    ))}
+
+                    <tr className="border-b">
+                      <td className="py-1 px-2 border-r">&nbsp;</td>
+                      <td className="py-1 px-2 border-r"></td>
+                      <td className="py-1 px-2 border-r"></td>
+                      <td className="py-1 px-2 border-r"></td>
+                      <td className="py-1 px-2 border-r"></td>
+                      <td className="py-1 px-2 border-r"></td>
+                      <td className="py-1 px-2"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Footer bar */}
+              <div className="rpv-bar h-16 mt-0 border-x border-b"></div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            icon={<Printer size={12} />}
-            className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide border-slate-200 hover:border-indigo-500 hover:text-indigo-600 transition-all"
-            onClick={handlePrint}
-            disabled={!entries.length}
-          >Print</Button>
-          <Button
-            type="primary"
-            icon={<FileDown size={12} />}
-            className="h-8 px-3 rounded-lg fz-caption font-bold uppercase tracking-wide"
-            onClick={handleExportCSV}
-            disabled={!entries.length}
-          >CSV</Button>
-        </div>
-      </div>
-
-      {/* Main */}
-      <div className="flex-1 overflow-hidden p-3 flex gap-3">
-        {/* Sidebar */}
-        <div className="w-[280px] flex flex-col gap-2 shrink-0 overflow-y-auto pr-1 select-none custom-scrollbar-indigo">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={`rpv-panel ${panel} backdrop-blur-sm border rounded-xl overflow-hidden shadow-sm`}
-          >
-            <div className={`rpv-panel-header ${panelHd} border-b px-4 py-2.5`}>
-              <h3 className={`fz-caption font-black ${text} tracking-wide uppercase flex items-center gap-1.5`}>
-                <Search size={12} className="text-indigo-500" />
-                Search Voucher
-              </h3>
-            </div>
-
-            <div className="p-3 space-y-3">
-              <div className="space-y-1">
-                <label className={`fz-caption font-bold ${muted} uppercase tracking-tight`}>Voucher No</label>
-                <Select
-                  value={voucherNo && voucherDateKey ? `${voucherNo}|${voucherDateKey}` : ''}
-                  onChange={handleVoucherSelect}
-                  className="w-full voucher-select"
-                  placeholder="Select Voucher"
-                  showSearch
-                  // BUG FIX: optionFilterProp="children" compares typed text
-                  // against each Option's children — but children here is a
-                  // <span> JSX element, not plain text, so AntD's default
-                  // search can never extract a matching string from it.
-                  // Confirmed live: searching for a real, existing voucher
-                  // number ("P25888") always returned "No data". "value" is
-                  // the plain voucher-number string the user actually types.
-                  optionFilterProp="value"
-                  loading={isLoading}
-                  size="small"
-                >
-                  {voucherList.map(v => (
-                    <Option key={voucherRefValue(v)} value={voucherRefValue(v)}>
-                      <span className="font-bold fz-caption">#{v.voucher_no} · {dayjs(v.voucher_date).format('DD-MMM-YYYY')}</span>
-                    </Option>
-                  ))}
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className={`fz-caption font-bold ${muted} uppercase tracking-tight`}>Date</label>
-                  <DatePicker
-                    value={date}
-                    onChange={setDate}
-                    className="w-full h-9 rounded-lg fz-caption"
-                    format="DD-MMM-YYYY"
-                    size="small"
-                    disabled
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className={`fz-caption font-bold ${muted} uppercase tracking-tight`}>Type</label>
-                  <div className={`h-9 rounded-lg border flex items-center justify-center px-2 ${vchrType === 'Receipt' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'}`}>
-                    <span className="fz-caption font-black uppercase">{vchrType}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className={`fz-caption font-bold ${muted} uppercase tracking-tight`}>Mode</label>
-                <div className={`${moBox} p-2.5 rounded-lg border flex items-center gap-2`}>
-                  <CreditCard size={14} className="text-indigo-500" />
-                  <span className={`fz-caption font-bold ${text} uppercase`}>{mode || 'N/A'}</span>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className={`fz-caption font-bold ${muted} uppercase tracking-tight`}>Member</label>
-                <div className={`${infoBox} rounded-lg p-3 border`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <User size={12} className="text-indigo-500" />
-                    <span className="fz-caption font-bold text-indigo-400 uppercase">MB-{memberNo || 'N/A'}</span>
-                  </div>
-                  <div className={`fz-caption font-bold ${text} truncate`}>{memberName || 'No Member'}</div>
-                </div>
-              </div>
-
-              {chequeNo && (
-                <div className="space-y-1">
-                  <label className={`fz-caption font-bold ${muted} uppercase tracking-tight`}>Cheque Details</label>
-                  <div className={`${chqBox} border rounded-lg p-2.5 space-y-2`}>
-                    <div className="flex items-center gap-2">
-                      <Building2 size={11} className={muted} />
-                      <span className={`fz-caption font-semibold ${text}`}>{bank}</span>
-                    </div>
-                    <div className={`fz-caption font-bold ${text}`}>#{chequeNo}</div>
-                    <div className={`fz-caption ${muted}`}>{chequeDate?.format('DD-MMM-YYYY')}</div>
-                  </div>
-                </div>
-              )}
-
-              {totalAmount > 0 && (
-                <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg p-3 text-white shadow-md">
-                  <div className="fz-caption font-bold uppercase tracking-wide opacity-90 mb-0.5">Total Amount</div>
-                  <div className="fz-heading font-black font-mono flex items-center">
-                    <CrDrIndicator type={vchrType === 'Receipt' ? 'credit' : 'debit'} className="mr-1" />₹{formatCurrency(totalAmount)}
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Report Panel */}
-        <div className={`rpv-panel flex-1 ${panel} backdrop-blur-sm border rounded-xl shadow-sm flex flex-col overflow-hidden`}>
-          <div className={`rpv-panel-header ${panelHd} border-b px-4 py-2.5 flex items-center justify-between shrink-0`}>
-            <div className="flex items-center gap-2">
-              <div className={`${isDark ? 'bg-[#1e293b]' : 'bg-white'} p-1.5 rounded-lg shadow-sm border ${border}`}>
-                <FileText size={14} className="text-indigo-500" />
-              </div>
-              <div>
-                <h3 className={`fz-label font-extrabold ${text} uppercase tracking-wide leading-none`}>Voucher Preview</h3>
-                <p className={`fz-caption font-semibold ${muted} uppercase mt-0.5 tracking-tight`}>
-                  {voucherNo ? `Voucher #${voucherNo}` : 'Select voucher to preview'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className={`rpv-preview-body flex-1 overflow-auto p-3 custom-scrollbar-indigo ${isDark ? 'bg-[#1e293b]' : 'bg-white'}`}>
-            <Spin spinning={isLoading} tip="Loading..." size="small">
-              {entries.length > 0 ? (
-                <div id="rpv-print-area" className="legacy-report-compact font-mono fz-caption">
-                  {/* Company Header */}
-                  <div className={`text-center mb-3 border-b border-dashed ${isDark ? 'border-slate-600' : 'border-slate-300'} pb-2`}>
-                    <div className={`fz-label font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                    <div className={`fz-caption ${muted}`}>Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
-                    <div className="fz-caption font-bold text-indigo-400 mt-1 uppercase">Print Voucher</div>
-                  </div>
-
-                  {/* Voucher Header Info */}
-                  <div className={`border ${tblBdrH} mb-3 p-3 ${vHdBox}`}>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 fz-caption">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-pink-500 w-24">Date</span>
-                        <span className={`font-semibold ${text}`}>{date?.format('DD-MMM-YYYY')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-pink-500 w-24">Voucher No.</span>
-                        <span className={`font-bold ${isDark ? 'text-indigo-300 bg-indigo-900/50' : 'text-blue-700 bg-blue-100'} px-2 py-0.5 rounded`}>{voucherNo}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-pink-500 w-24">Vchr Type</span>
-                        <span className={`font-bold ${isDark ? 'text-rose-400' : 'text-red-700'} uppercase`}>{vchrType}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-pink-500 w-24">Mode</span>
-                        <span className={`font-bold ${isDark ? 'text-rose-400' : 'text-red-700'} uppercase`}>{mode}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-pink-500 w-24">Member No.</span>
-                        <span className={`font-semibold ${text}`}>{memberNo || 'N/A'}</span>
-                        <span className={`font-semibold ${text}`}>{memberName}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-pink-500 w-24">Narration</span>
-                        <span className={`font-semibold ${isDark ? 'text-rose-400' : 'text-red-700'}`}>{narration || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-pink-500 w-24">Cheque No</span>
-                        <span className={`font-semibold ${text}`}>{chequeNo || '-'}</span>
-                      </div>
-                      {chequeNo && (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-pink-500 w-24">Bank</span>
-                            <span className={`font-semibold ${isDark ? 'text-rose-400' : 'text-red-700'} uppercase`}>{bank}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-pink-500 w-24">Cheque Date</span>
-                            <span className={`font-semibold ${text}`}>{chequeDate?.format('DD-MMM-YYYY')}</span>
-                          </div>
-                        </>
-                      )}
-                      <div className="flex items-center gap-2 col-span-2">
-                        <span className="font-bold text-pink-500 w-24"></span>
-                        <span className="font-bold text-pink-500 ml-auto">Total Amount</span>
-                        <span className={`font-bold ${isDark ? 'text-rose-400' : 'text-red-700'} fz-caption`}>{formatCurrency(totalAmount)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Main Table */}
-                  <div className={`border ${tblBdrH}`}>
-                    <table className="w-full fz-caption" style={{ borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr className={`${tblHd} border-b ${tblBdrH}`}>
-                          <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold w-16`}>Srno</th>
-                          <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold`}>Member No</th>
-                          <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold`}>Member Name</th>
-                          <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold`}>Head</th>
-                          <th className={`text-left py-1.5 px-2 border-r ${tblBdrH} font-bold`}>Description</th>
-                          <th className={`text-right py-1.5 px-2 border-r ${tblBdrH} font-bold w-28`}>Payment</th>
-                          <th className={`text-right py-1.5 px-2 font-bold w-28`}>Receipt</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {entries.map((entry, idx) => (
-                          <motion.tr
-                            key={idx}
-                            className={`border-b ${tblBdr}`}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: Math.min(idx * 0.02, 0.5) }}
-                          >
-                            <td className={`py-1 px-2 border-r ${tblBdr} ${muted} font-semibold text-center`}>{idx + 1}</td>
-                            <td className={`py-1 px-2 border-r ${tblBdr} ${text}`}>{entry.member_no}</td>
-                            <td className={`py-1 px-2 border-r ${tblBdr} ${text}`}>{entry.member_name}</td>
-                            <td className={`py-1 px-2 border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-blue-700'} font-bold`}>{entry.head_code}</td>
-                            <td className={`py-1 px-2 border-r ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-blue-700'} font-semibold uppercase`}>{entry.head_name}</td>
-                            <td className={`text-right py-1 px-2 border-r ${tblBdr} ${text} font-semibold`}>
-                              {entry.direction === 'Payment' ? formatCurrency(entry.amount) : ''}
-                            </td>
-                            <td className={`text-right py-1 px-2 ${isDark ? 'text-indigo-300' : 'text-blue-700'} font-bold`}>
-                              {entry.direction === 'Receipt' ? formatCurrency(entry.amount) : ''}
-                            </td>
-                          </motion.tr>
-                        ))}
-
-                        <tr className={`border-b ${tblBdr}`}>
-                          <td className={`py-1 px-2 border-r ${tblBdr}`}>&nbsp;</td>
-                          <td className={`py-1 px-2 border-r ${tblBdr}`}></td>
-                          <td className={`py-1 px-2 border-r ${tblBdr}`}></td>
-                          <td className={`py-1 px-2 border-r ${tblBdr}`}></td>
-                          <td className={`py-1 px-2 border-r ${tblBdr}`}></td>
-                          <td className={`py-1 px-2 border-r ${tblBdr}`}></td>
-                          <td className="py-1 px-2"></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Footer bar */}
-                  <div className={`${isDark ? 'bg-slate-700' : 'bg-slate-400'} h-16 mt-0 border-x border-b ${tblBdrH}`}></div>
-                </div>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center py-20 opacity-40 select-none">
-                  <FileText size={60} className={`${muted} mb-4`} />
-                  <h3 className={`fz-label font-black ${muted} uppercase tracking-widest`}>No Voucher Selected</h3>
-                  <p className={`fz-caption font-bold ${muted} uppercase mt-2 text-center max-w-[200px]`}>Select a voucher from the list to preview</p>
-                </div>
-              )}
-            </Spin>
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        .custom-scrollbar-indigo::-webkit-scrollbar { width: 4px; height: 4px; }
-        .custom-scrollbar-indigo::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar-indigo::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #818cf8, #6366f1);
-          border-radius: 10px;
-        }
-        .legacy-report-compact table { border-collapse: collapse; }
-        /* Printing now goes through a hidden iframe (see handlePrint) that
-           clones only #rpv-print-area — no @media print rule is needed on
-           this live page anymore; window.print() is no longer called on it. */
-
-        /* ── Receipt/Payment Voucher — dark mode ── */
-        html.dark .rpv-page { background-color: #000000 !important; }
-        html.dark .rpv-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .rpv-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .rpv-panel-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; background-image: none !important; }
-        html.dark .rpv-preview-body { background-color: #1c1c1e !important; }
-        html.dark .rpv-page .ant-select-selector,
-        html.dark .rpv-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .rpv-page .ant-select-selection-item,
-        html.dark .rpv-page .ant-picker input { color: #f5f5f7 !important; }
-      `}</style>
-    </div>
-    </ConfigProvider>
+        </section>
+      ) : (
+        <ReportEmpty icon={<FileText size={34} />} title={isLoading ? 'Loading…' : 'No Voucher Selected'} hint="Select a voucher from the list to preview" />
+      )}
+    </ReportShell>
   );
 };
 

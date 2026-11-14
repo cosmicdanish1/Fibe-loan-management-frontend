@@ -10,6 +10,9 @@ export interface ActiveLoan {
     balance: number;
     no_of_instal: number;
     instal_amt: number;
+    /** ES-539: date the loan was taken (yyyy-mm-dd) and its annual interest rate. */
+    loan_date?: string | null;
+    rate?: number | null;
     /** Set once this case has been closed and folded into a successor —
      *  either by a real-time consolidation (PassTransactionService) or by
      *  legacy migration replay. null while the loan is still open/standalone. */

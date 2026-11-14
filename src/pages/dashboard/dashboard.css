@@ -281,21 +281,51 @@ html[data-motion="off"] .app-window.dash { --dash-in: .001ms; --dash-fast: .001m
   border: 1px solid color-mix(in srgb, var(--aw-danger) 40%, var(--aw-border-strong)); background: var(--aw-surface); color: var(--aw-danger); box-shadow: var(--aw-shadow);
 }
 .app-window.dash .bento-hide:hover { background: var(--aw-danger); border-color: var(--aw-danger); color: var(--aw-surface); }
-/* ── Art inside a card (switched on per card in Customize mode) ──
-   The picture fills the card under a veil of the card colour: thick on the left where the figures are,
-   thinner towards the top-right corner where the picture shows through. The card's own tint or the
-   financial-year colour is replaced while the picture is on. */
-.app-window.dash .bento-cell.has-art > .bento-inner > .aw-card {
-  background:
-    linear-gradient(105deg,
-      color-mix(in srgb, var(--aw-surface) 90%, transparent) 0%,
-      color-mix(in srgb, var(--aw-surface) 80%, transparent) 55%,
-      color-mix(in srgb, var(--aw-surface) 52%, transparent) 100%),
-    var(--card-art) var(--card-art-x, 50%) 40% / cover no-repeat,
-    var(--aw-surface) !important;
+/* ── Art inside a card (chosen per card in Customize mode or in Settings) ──
+   The picture is its own layer behind the card, clipped to the card's corners and a little taller than the card
+   so it can drift for parallax (--par-range, set by useArtParallax; 0 when parallax is off). Over it lies a veil of
+   the page colour: thick on the left where the figures are, thinner towards the right where the picture shows
+   through. The card itself becomes transparent while a picture is on. */
+.app-window.dash .bento-cell.has-art > .bento-art {
+  position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; border-radius: calc(var(--aw-radius) * 1.8);
+  transition: transform var(--dash-fast) var(--aw-ease), opacity var(--dash-fast) var(--aw-ease) !important; transition-duration: var(--dash-fast) !important;
 }
+.app-window.dash .bento-art-img {
+  position: absolute; left: 0; right: 0; top: calc(var(--par-range, 0px) * -1); bottom: calc(var(--par-range, 0px) * -1);
+  background-size: cover; background-repeat: no-repeat; will-change: transform;
+}
+.app-window.dash .bento-art-veil {
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg,
+    color-mix(in srgb, var(--aw-surface) 90%, transparent) 0%,
+    color-mix(in srgb, var(--aw-surface) 80%, transparent) 55%,
+    color-mix(in srgb, var(--aw-surface) 52%, transparent) 100%);
+}
+.app-window.dash .bento-cell.has-art > .bento-inner { position: relative; z-index: 1; transition: transform var(--dash-fast) var(--aw-ease) !important; transition-duration: var(--dash-fast) !important; }
+.app-window.dash .bento-cell.has-art > .bento-inner > .aw-card { background: transparent !important; }
+/* The whole cell lifts together on hover (picture + card), not the card alone. */
+.app-window.dash .bento-cell.has-art:not(.is-editing):hover > .bento-inner > .aw-card { transform: none; }
+.app-window.dash .bento-cell.has-art:not(.is-editing):hover > .bento-inner,
+.app-window.dash .bento-cell.has-art:not(.is-editing):hover > .bento-art { transform: translateY(-2px); }
 .app-window.dash .bento-cell.has-art .aw-card-head { border-bottom-color: color-mix(in srgb, var(--aw-text) 12%, transparent); }
 .app-window.dash .bento-cell.has-art .dash-foot { border-top-color: color-mix(in srgb, var(--aw-text) 12%, transparent); }
+
+/* Picture picker pop-up (Customize mode) */
+.app-window.dash .bento-art-pop {
+  position: absolute; top: 20px; right: 8px; z-index: 8; width: min(300px, calc(100% - 16px)); padding: 10px; display: flex; flex-direction: column; gap: 8px;
+  border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border-strong); background: var(--aw-surface); box-shadow: var(--aw-shadow-pop); cursor: default;
+}
+.app-window.dash .bento-art-pop-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.app-window.dash .bento-art-pop .aw-chip.is-picked { color: var(--aw-accent); border-color: var(--aw-accent); background: var(--aw-accent-soft); }
+.app-window.dash .bento-art-pop-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; max-height: 190px; overflow-y: auto; padding: 2px; }
+.app-window.dash .bento-art-thumb {
+  position: relative; height: 38px; padding: 0; border-radius: 8px; border: 2px solid transparent; cursor: pointer; color: #fff;
+  background: var(--aw-surface-muted) center / cover no-repeat; display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 0 0 1px var(--aw-border);
+}
+.app-window.dash .bento-art-thumb:hover { border-color: color-mix(in srgb, var(--aw-accent) 55%, transparent); }
+.app-window.dash .bento-art-thumb.is-picked { border-color: var(--aw-accent); }
+.app-window.dash .bento-art-thumb.is-picked svg { filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .7)); }
 .app-window.dash .bento-art-btn {
   position: absolute; top: -8px; right: 22px; z-index: 5; display: inline-flex; align-items: center; justify-content: center;
   width: 24px; height: 24px; padding: 0; border-radius: 50%; cursor: pointer;

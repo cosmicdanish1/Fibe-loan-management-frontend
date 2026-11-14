@@ -3,9 +3,7 @@ import {
   Search, Printer, FileDown, User, RotateCcw, BookOpen,
   Calendar, List, 
 } from 'lucide-react';
-import { DatePicker, Spin, Select, message } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
+import { DatePicker, Select, message } from 'antd';
 import { apiService } from '../../../../../services/api';
 import MemberField from '../../../../../components/shared/kit/MemberField';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
@@ -162,8 +160,6 @@ function buildMemberLedgerLines(data: LedgerData): string[] {
 }
 
 const MemberLedgerReport: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
   const { enabled, view, setView } = useReportViews('member-ledger-report');
 
   const [headCode, setHeadCode] = useState<string>('');
@@ -362,11 +358,6 @@ const MemberLedgerReport: React.FC = () => {
   };
 
 
-  // Theme classes
-  const text = isDark ? 'text-slate-100' : 'text-slate-800';
-  const muted = isDark ? 'text-slate-400' : 'text-slate-500';
-  const border = isDark ? 'border-slate-700' : 'border-slate-200';
-
   const entries = data?.entries ?? [];
   const spec = useMlrSpec(entries, `${memberNumber} ${memberName}`.trim(), data?.openingBalance ?? 0, data?.closingBalance ?? 0, data?.totalDebits ?? 0, data?.totalCredits ?? 0);
   const hasData = !!data && entries.length > 0;
@@ -457,80 +448,52 @@ const MemberLedgerReport: React.FC = () => {
             <span className="aw-meta">{period}{data ? ` · ${data.totalTransactions} entries` : ''}</span>
           </div>
           <div className="mlr-preview-body" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
-            <Spin spinning={loading} tip="Loading...">
               {data && data.entries.length > 0 ? (
                   <div id="ledger-print-area" className="font-mono">
-                    {/* Company header */}
-                    <div className={`text-center mb-3 pb-2 border-b ${border}`}>
-                      <div className={`text-xs font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className={`fz-small ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                      <div className={`fz-small font-bold mt-1 ${text}`}>Ledger Report (Personal)</div>
+                    <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                      <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited.</div>
+                      <div className="aw-meta">Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
+                      <div className="aw-strong">Ledger Report (Personal)</div>
                     </div>
 
-                    {/* Report meta */}
-                    <div className={`mb-3 fz-small space-y-0.5 border-b pb-2 ${border} ${muted}`}>
-                      <div>Head Name : <span className={`font-bold ${text}`}>{data.headName}</span> :CODE :{data.headCode}</div>
-                      <div className="border-t border-dashed mt-1 pt-1 ${border}" />
-                      <div>Member Number : <span className={`font-bold ${text}`}>{data.memberNumber}</span></div>
-                      <div>Name : <span className={`font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>Mr/Ms {data.memberName}</span></div>
-                      <div>Report From Date <span className={`font-bold ${text}`}>{dayjs(data.fromDate).format('DD-MMM-YYYY')}</span> To Date <span className={`font-bold ${text}`}>{dayjs(data.toDate).format('DD-MMM-YYYY')}</span></div>
-                      <div>Opening Balance : <span className={`font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>{balLabel(data.openingBalance)}</span></div>
+                    <div className="aw-meta aw-stack" style={{ gap: 2, marginBottom: 10 }}>
+                      <div>Head Name : <b>{data.headName}</b> :CODE :{data.headCode}</div>
+                      <div>Member Number : <b>{data.memberNumber}</b></div>
+                      <div>Name : <b>Mr/Ms {data.memberName}</b></div>
+                      <div>Report From Date <b>{dayjs(data.fromDate).format('DD-MMM-YYYY')}</b> To Date <b>{dayjs(data.toDate).format('DD-MMM-YYYY')}</b></div>
+                      <div>Opening Balance : <b>{balLabel(data.openingBalance)}</b></div>
                     </div>
 
-                    {/* Table */}
-                    <table className="w-full fz-small" style={{ borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr className={`border-b-2 ${isDark ? 'border-slate-500' : 'border-slate-400'}`}>
-                          {['Date', 'Particulars', 'Voucher No', 'Payment', 'Receipt', 'Balance'].map(h => (
-                            <th key={h} className={`py-1 px-2 text-left font-black fz-small uppercase ${text}
-                              ${['Payment', 'Receipt', 'Balance'].includes(h) ? 'text-right' : ''}`}>
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                        <tr className={`border-b ${border}`}><td colSpan={6} /></tr>
-                      </thead>
-                      <tbody>
-                        {data.entries.map((e, i) => (
-                          <tr key={i} className={`border-b ${isDark ? 'border-slate-700/50' : 'border-dashed border-slate-200'}
-                            ${isDark ? (i % 2 === 0 ? 'bg-slate-800/60' : 'bg-slate-800/30') : (i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50')}
-                            hover:${isDark ? 'bg-slate-700/30' : 'bg-cyan-50/30'} transition-colors`}>
-                            <td className={`py-0.5 px-2 font-semibold ${muted}`} style={{ width: '90px' }}>
-                              {dayjs(e.transactionDate).format('DD-MMM-YYYY')}
-                            </td>
-                            <td className={`py-0.5 px-2 ${text}`}>{e.narration}</td>
-                            <td className={`py-0.5 px-2 font-semibold ${isDark ? 'text-amber-300' : 'text-slate-600'}`} style={{ width: '80px' }}>
-                              {e.voucherNo}
-                            </td>
-                            <td className={`py-0.5 px-2 text-right font-semibold ${isDark ? 'text-rose-300' : 'text-rose-600'}`} style={{ width: '90px' }}>
-                              {e.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.debit)}</>) : ''}
-                            </td>
-                            <td className={`py-0.5 px-2 text-right font-semibold ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`} style={{ width: '90px' }}>
-                              {e.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.credit)}</>) : ''}
-                            </td>
-                            <td className={`py-0.5 px-2 text-right font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`} style={{ width: '110px' }}>
-                              {balLabel(e.balance)}
-                            </td>
+                    <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                      <table className="aw-table">
+                        <thead>
+                          <tr>
+                            <th>Date</th><th>Particulars</th><th>Voucher no</th>
+                            <th className="is-right">Payment</th><th className="is-right">Receipt</th><th className="is-right">Balance</th>
                           </tr>
-                        ))}
+                        </thead>
+                        <tbody>
+                          {data.entries.map((e, i) => (
+                            <tr key={i}>
+                              <td className="is-muted">{dayjs(e.transactionDate).format('DD-MMM-YYYY')}</td>
+                              <td>{e.narration}</td>
+                              <td>{e.voucherNo}</td>
+                              <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{e.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.debit)}</>) : ''}</td>
+                              <td className="is-right is-success">{e.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.credit)}</>) : ''}</td>
+                              <td className="is-right is-accent">{balLabel(e.balance)}</td>
+                            </tr>
+                          ))}
+                          <tr>
+                            <td colSpan={3}><b>Total Amount :-</b></td>
+                            <td className="is-right"><b>{fmt(data.totalDebits)}</b></td>
+                            <td className="is-right"><b>{fmt(data.totalCredits)}</b></td>
+                            <td />
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
 
-                        {/* Separator */}
-                        <tr><td colSpan={6} className={`border-b-2 ${isDark ? 'border-slate-500' : 'border-slate-400'}`} /></tr>
-
-                        {/* Total Amount */}
-                        <tr className={isDark ? 'bg-slate-900/60' : 'bg-slate-50'}>
-                          <td colSpan={3} className={`py-1 px-2 font-black fz-small ${text}`}>Total Amount :-</td>
-                          <td className={`py-1 px-2 text-right font-black fz-small ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{fmt(data.totalDebits)}</td>
-                          <td className={`py-1 px-2 text-right font-black fz-small ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{fmt(data.totalCredits)}</td>
-                          <td />
-                        </tr>
-
-                        <tr><td colSpan={6} className={`border-b-2 ${isDark ? 'border-slate-500' : 'border-slate-400'}`} /></tr>
-                      </tbody>
-                    </table>
-
-                    {/* Footer notes */}
-                    <div className={`mt-3 fz-tiny space-y-0.5 ${muted}`}>
+                    <div className="aw-meta aw-stack" style={{ gap: 2, marginTop: 10 }}>
                       <div>* Report As Per Data Available ..</div>
                       <div>* Note&nbsp;&nbsp; D-Demand&nbsp;&nbsp; R-Receipt&nbsp;&nbsp; P-Payment&nbsp;&nbsp; J-Jouneral Transfer Entry</div>
                     </div>
@@ -538,7 +501,6 @@ const MemberLedgerReport: React.FC = () => {
               ) : !loading ? (
                 <ReportEmpty icon={<BookOpen size={34} />} title={!headCode || !memberNumber ? 'Select member, head code and date range' : 'No transactions found'} {...(memberName ? { hint: memberName } : {})} />
               ) : null}
-            </Spin>
           </div>
         </section>
       )}

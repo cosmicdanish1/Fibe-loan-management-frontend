@@ -26,7 +26,9 @@ import {
 } from './AnalyticsWidgets';
 import NoticeBoardCard from './NoticeBoardCard';
 import BentoGrid from './BentoGrid';
-import { loadArtConfig, saveArtConfig, resolveArt, resolvePicture, type ArtConfig } from './dashboardArt';
+import { loadArtConfig, saveArtConfig, resolveArt, resolveCardPicture, loadCustomArt, type ArtConfig } from './dashboardArt';
+import { useArtParallax } from './useArtParallax';
+import type { CardArtChoice } from './CardArtPicker';
 import { loadLayout, saveLayout, clearLayout, DEFAULT_ROWS, DEFAULT_WIDGET_CONFIG, CARD_IDS, CARD_LABELS, type RowLayout, type WidgetConfig, type WidgetKey } from './dashboardLayout';
 import {
   useDashboardSummary, PendingVouchersWidget, CashPositionWidget, DayEndStatusWidget, DemandRecoveryWidget,
@@ -138,16 +140,31 @@ const Dashboard: React.FC = () => {
   // Optional picture behind the top of the dashboard (Settings → Dashboard → Dashboard Art).
   const [artConfig, setArtConfig] = useState<ArtConfig>(loadArtConfig);
   const art = resolveArt(artConfig, isDark);
-  // The same picture can also sit inside individual cards, switched on card by card in Customize mode.
-  const cardArt = resolvePicture(artConfig, isDark);
-  const artCards = useMemo(() => new Set(artConfig.cards), [artConfig.cards]);
-  const toggleCardArt = useCallback((id: string) => {
-    // Start from what is saved, so a change made in Settings meanwhile is not lost.
-    const saved = loadArtConfig();
-    const next = { ...saved, cards: saved.cards.includes(id) ? saved.cards.filter(c => c !== id) : [...saved.cards, id] };
-    saveArtConfig(next);
-    setArtConfig(next);
-  }, []);
+  // Pictures can also sit inside individual cards, chosen card by card in Customize mode (or in Settings).
+  const cardArtApi = useMemo(() => ({
+    isDark,
+    pictureFor: (id: string) => (artConfig.cards.includes(id) ? resolveCardPicture(artConfig, id, isDark) : null),
+    choiceFor: (id: string): CardArtChoice => (!artConfig.cards.includes(id) ? 'off' : artConfig.cardArt[id] ?? 'default'),
+    onChoose: (id: string, choice: CardArtChoice) => {
+      // Start from what is saved, so a change made in Settings meanwhile is not lost.
+      const saved = loadArtConfig();
+      const cardArt = { ...saved.cardArt };
+      delete cardArt[id];
+      let cards = saved.cards.filter(c => c !== id);
+      if (choice !== 'off') {
+        cards = [...cards, id];
+        if (choice !== 'default') cardArt[id] = choice;
+      }
+      const next = { ...saved, cards, cardArt };
+      saveArtConfig(next);
+      setArtConfig(next);
+    },
+    customAvailable: !!loadCustomArt(),
+    customUrl: loadCustomArt(),
+  }), [artConfig, isDark]);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  useArtParallax(contentRef, artConfig.parallax, artConfig.parallaxStrength,
+    `${art ? 1 : 0}|${artConfig.cards.join(',')}|${JSON.stringify(artConfig.cardArt)}|${artConfig.art}|${isDark ? 'd' : 'l'}`);
 
   // Quick Actions config — synced from Settings via BroadcastChannel
   const [enabledQaIds, setEnabledQaIds] = useState<string[]>(() => {
@@ -348,7 +365,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="app-window dash" style={{ flex: '1 1 auto', height: 'auto', minHeight: 0, ...(customBg && !isDark ? { background: customBg } : {}) }}>
-      <div className={`aw-content${art ? " has-art" : ""}`}>
+      <div ref={contentRef} className={`aw-content${art ? " has-art" : ""}`}>
         {art && <div className="dash-art" aria-hidden style={{ backgroundImage: `url("${art}")` }} />}
         <div className="aw-stack">
 
@@ -386,7 +403,7 @@ const Dashboard: React.FC = () => {
           )}
 
           {anyVisible && (
-            <BentoGrid rows={rows} hidden={hidden} editing={editing} artUrl={cardArt} artCards={artCards} onToggleArt={toggleCardArt}
+            <BentoGrid rows={rows} hidden={hidden} editing={editing} art={cardArtApi}
               onHide={id => setWidgetOn(id as WidgetKey, false)} onChange={handleLayout} renderCard={id => cards[id] ?? null} />
           )}
 

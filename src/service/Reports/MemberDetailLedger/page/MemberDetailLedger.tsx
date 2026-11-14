@@ -1,33 +1,14 @@
 import React, { useState, useCallback, useRef } from 'react';
-import {
-  FileText,
-  Search,
-  Printer,
-  User,
-  RotateCcw,
-  ShieldCheck,
-  BookOpen,
-  Calendar,
-} from 'lucide-react';
-import {
-  ConfigProvider,
-  Button,
-  DatePicker,
-  Spin,
-  Radio,
-  Input,
-  Modal,
-  message,
-  theme as antdTheme,
-} from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../store';
+import { FileText, Search, Printer, User, RotateCcw } from 'lucide-react';
+import { message } from 'antd';
 import { apiService } from '../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
-import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '../../../../components/shared/kit/MemberField';
 import { renderCrDrText } from '../../../../components/shared/CrDrIndicator';
 import { isFromAfterTo } from '@/utils/dates';
-import { ProBar, ProBody } from '../../../../components/reports/views/ProIsland';
+import { ReportShell, ParamCard, OutputChoice, ReportEmpty } from '../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../components/reports/views/ReportViewSwitcher';
+import { GenericBento, GenericEditorial, GenericTerminal } from '../../../../components/reports/views/GenericPro';
 import { useReportViews } from '../../../../components/reports/views/reportViews';
 import { useDetailLedgerSpec } from '../views/detailPro';
 
@@ -194,16 +175,11 @@ const printReportText = (text: string) => {
 
 // ── component ────────────────────────────────────────────────────────────────
 const MemberDetailLedger: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark =
-    interfaceMode === 'dark';
-
   const [memberNo,   setMemberNo]   = useState('');
   const [memberName, setMemberName] = useState('');
   const [fromDate,   setFromDate]   = useState<Dayjs>(dayjs().startOf('month'));
   const [toDate,     setToDate]     = useState<Dayjs>(dayjs());
   const [outputType, setOutputType] = useState('screen');
-  const [showLookup, setShowLookup] = useState(false);
   const [reportText, setReportText] = useState('');
   const [isLoading,  setIsLoading]  = useState(false);
   const [detail,     setDetail]     = useState<DetailLedger | null>(null);
@@ -212,7 +188,6 @@ const MemberDetailLedger: React.FC = () => {
   const handleMemberSelect = useCallback((member: any) => {
     setMemberNo(member.memberNo || member.mbno || '');
     setMemberName(member.memberName || member.name || '');
-    setShowLookup(false);
   }, []);
 
   const handleReset = useCallback(() => {
@@ -282,228 +257,65 @@ const MemberDetailLedger: React.FC = () => {
   const { enabled, view, setView } = useReportViews('member-detail-ledger');
   const spec = useDetailLedgerSpec(detail);
 
+  const range = `${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`;
+  const hasEntries = !!detail && detail.entries.length > 0;
+
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#8b5cf6',
-          borderRadius: 6,
-          fontSize: 12,
-          colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-          colorBorder: isDark ? '#334155' : '#e2e8f0',
-        },
-      }}
+    <ReportShell
+      className="mdl-page"
+      title="Member Detail Ledger"
+      desc="Per-account transaction ledger for a member"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!reportText}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <ParamCard title="Ledger" icon={<User size={14} />}>
+          <div>
+            <label className="aw-label" htmlFor="mdl-member">Member No.</label>
+            <MemberField id="mdl-member" value={memberNo} onChange={setMemberNo} onSelect={handleMemberSelect} onSubmit={() => handleGenerate()} />
+          </div>
+          <input className="aw-input" value={memberName} readOnly placeholder="Member name" aria-label="Member name" />
+          <div>
+            <label className="aw-label" htmlFor="mdl-from">From date</label>
+            <input id="mdl-from" type="date" className="aw-input" value={fromDate.format('YYYY-MM-DD')} onChange={e => e.target.value && setFromDate(dayjs(e.target.value))} />
+          </div>
+          <div>
+            <label className="aw-label" htmlFor="mdl-to">To date</label>
+            <input id="mdl-to" type="date" className="aw-input" value={toDate.format('YYYY-MM-DD')} onChange={e => e.target.value && setToDate(dayjs(e.target.value))} />
+          </div>
+          <OutputChoice value={outputType === 'printer' ? 'printer' : 'screen'} onChange={setOutputType} id="mdl-output" />
+          <button type="button" className="aw-btn aw-btn-primary" onClick={() => handleGenerate()} disabled={isLoading} style={{ width: '100%' }}>
+            <Search size={14} className={isLoading ? 'aw-spin' : undefined} /> {isLoading ? 'Loading…' : 'Generate'}
+          </button>
+        </ParamCard>
+      }
+      footerLeft="Member Detail Ledger"
+      footerRight={memberNo ? `Member ${memberNo} · ${range}` : range}
     >
-      <style>{`
-        .custom-scrollbar-violet::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar-violet::-webkit-scrollbar-track {
-          background: ${isDark ? '#1e293b' : '#f8fafc'}; border-radius: 3px;
-        }
-        .custom-scrollbar-violet::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 3px; }
-        .custom-scrollbar-violet::-webkit-scrollbar-thumb:hover { background: #a78bfa; }
-      `}</style>
+      {hasEntries && view === 'bento' && <GenericBento spec={spec} />}
+      {hasEntries && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><GenericTerminal spec={spec} /></div>}
+      {hasEntries && view === 'editorial' && <GenericEditorial spec={spec} title="Member Detail Ledger" subtitle={`${memberNo} · ${range}`} />}
+      {reportText && view !== 'legacy' && !hasEntries && <p className="aw-meta" style={{ padding: 12 }}>No entries to show</p>}
 
-      <div className={`mdl-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-violet-50/20 to-slate-50'}`}>
-
-        {/* Header */}
-        <div className={`mdl-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 no-print border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-violet-600 to-violet-700 p-1.5 rounded-lg text-white shadow-md">
-              <BookOpen size={14} />
-            </div>
-            <div>
-              <h1 className={`text-xs font-black tracking-tight leading-none ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Member Detail Ledger</h1>
-              <div className="flex items-center gap-1 mt-0.5 fz-body font-bold text-slate-400 uppercase tracking-wider leading-none">
-                <ShieldCheck size={8} className="text-violet-500" /> Per-Account Transaction Ledger
-              </div>
-            </div>
+      {reportText && view === 'legacy' && (
+        <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">Detail Ledger — Member: {memberNo || 'N/A'}</span>
+            <span className="aw-meta">{range}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Button
-              icon={<RotateCcw size={11} />}
-              size="small"
-              className="h-7 px-2 rounded-lg fz-body font-bold uppercase tracking-wide border-slate-200 hover:border-violet-500 hover:text-violet-600"
-              onClick={handleReset}
-            >Reset</Button>
-            <Button
-              icon={<Printer size={11} />}
-              size="small"
-              className="h-7 px-2 rounded-lg fz-body font-bold uppercase tracking-wide border-slate-200 hover:border-violet-500 hover:text-violet-600"
-              onClick={handlePrint}
-              disabled={!reportText}
-            >Print</Button>
+          <div style={{ padding: 'var(--aw-pad)', overflow: 'auto', minHeight: 160 }}>
+            <pre className="font-mono fz-caption select-text" style={{ margin: 0, whiteSpace: 'pre', lineHeight: 1.5, color: 'var(--aw-text)' }}>{renderCrDrText(reportText)}</pre>
           </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-2 flex gap-2">
-
-          {/* Sidebar */}
-          <div className="w-[220px] flex flex-col gap-2 shrink-0 no-print overflow-y-auto custom-scrollbar-violet">
-
-            {/* Member */}
-            <div className={`mdl-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
-              <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-2 py-1 flex items-center gap-1">
-                <User size={10} className="text-white" />
-                <h3 className="fz-body font-black text-white tracking-wide uppercase">Member</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <label className={`fz-caption font-bold uppercase tracking-tight flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  <User size={10} className="text-violet-500" />Member No
-                </label>
-                <Input.Search
-                  placeholder="Type member no..."
-                  value={memberNo}
-                  onChange={e => setMemberNo(e.target.value)}
-                  onSearch={() => setShowLookup(true)}
-                  className="h-8 fz-label font-semibold"
-                />
-                <label className={`fz-caption font-bold uppercase tracking-tight flex items-center gap-1 mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  <User size={10} className="text-violet-500" />Member Name
-                </label>
-                <Input
-                  value={memberName}
-                  readOnly
-                  placeholder="Selected member name"
-                  className="h-8 fz-label font-semibold"
-                />
-              </div>
-            </div>
-
-            {/* Date Range */}
-            <div className={`mdl-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
-              <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-2 py-1 flex items-center gap-1">
-                <Calendar size={10} className="text-white" />
-                <h3 className="fz-body font-black text-white tracking-wide uppercase">Date Range</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <div>
-                  <label className={`fz-body font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>From</label>
-                  <DatePicker className="w-full h-7 fz-caption font-semibold" value={fromDate} onChange={v => v && setFromDate(v)} format="DD-MMM-YY" />
-                </div>
-                <div>
-                  <label className={`fz-body font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>To</label>
-                  <DatePicker className="w-full h-7 fz-caption font-semibold" value={toDate} onChange={v => v && setToDate(v)} format="DD-MMM-YY" />
-                </div>
-              </div>
-            </div>
-
-            {/* Output */}
-            <div className={`mdl-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
-              <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-2 py-1 flex items-center gap-1">
-                <FileText size={10} className="text-white" />
-                <h3 className="fz-body font-black text-white tracking-wide uppercase">Output</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <Radio.Group size="small" value={outputType} onChange={e => setOutputType(e.target.value)} className="w-full">
-                  <Radio.Button value="screen"  className="w-1/2 text-center fz-body font-bold">SCR</Radio.Button>
-                  <Radio.Button value="printer" className="w-1/2 text-center fz-body font-bold">PTR</Radio.Button>
-                </Radio.Group>
-                <Button
-                  type="primary" block size="small"
-                  icon={<Search size={11} />}
-                  onClick={handleGenerate}
-                  loading={isLoading}
-                  className="h-8 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 font-black uppercase tracking-wider fz-body mt-1 shadow-lg"
-                >Generate</Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Report Panel */}
-          <div className={`mdl-panel flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-violet-200/60'}`}>
-            <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-3 py-1.5 flex items-center justify-between shrink-0 no-print">
-              <div className="flex items-center gap-1.5">
-                <div className="bg-white/20 p-1 rounded-md">
-                  <FileText size={12} className="text-white" />
-                </div>
-                <div>
-                  <h3 className="fz-small font-black text-white uppercase tracking-wide leading-none">Detail Ledger</h3>
-                  <p className="fz-body font-bold text-violet-200 uppercase mt-0.5 tracking-tight leading-none">
-                    {fromDate.format('DD-MMM-YY')} – {toDate.format('DD-MMM-YY')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className={`mdl-panel-body flex-1 overflow-auto p-2 custom-scrollbar-violet ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-violet-50/10'}`}>
-              <Spin spinning={isLoading} tip="Loading..." size="small">
-                {reportText ? (
-                <>
-                <ProBar enabled={enabled} view={view} setView={setView} />
-                {view !== 'legacy' && (detail !== null && detail.entries.length > 0 ? <ProBody view={view} spec={spec} title="Member Detail Ledger" subtitle={`${memberNo} · ${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No entries to show'}</p>)}
-                {view === 'legacy' && (
-                  <pre
-                    className="font-mono"
-                    style={{
-                      fontSize: '10px',
-                      lineHeight: 1.45,
-                      color: isDark ? '#e2e8f0' : '#1e293b',
-                      background: 'transparent',
-                      margin: 0,
-                      padding: '6px 4px',
-                      whiteSpace: 'pre',
-                    }}
-                  >
-                    {renderCrDrText(reportText)}
-                  </pre>
-                )}
-                </>
-                ) : (
-                  <div className="py-32 text-center">
-                    <div className="w-20 h-20 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                      <FileText className="text-4xl text-violet-200" />
-                    </div>
-                    <h4 className="text-slate-400 font-black text-xs uppercase tracking-wider">No Data</h4>
-                    <p className="text-slate-300 fz-small mt-1 font-semibold">
-                      Select a member and click Generate
-                    </p>
-                  </div>
-                )}
-              </Spin>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Member Lookup Modal */}
-      <Modal
-        open={showLookup}
-        onCancel={() => setShowLookup(false)}
-        footer={null}
-        width={950}
-        centered
-        destroyOnClose
-        styles={{ body: { padding: 0 } }}
-      >
-        <div className="p-2">
-          <MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} />
-        </div>
-      </Modal>
-
-      <style>{`
-        html.dark .mdl-page { background-color: #000000 !important; color: #f5f5f7 !important; }
-        html.dark .mdl-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mdl-header h1 { color: #f5f5f7 !important; }
-        html.dark .mdl-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mdl-card label { color: #8e8e93 !important; }
-        html.dark .mdl-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mdl-panel-body { background-color: #000000 !important; }
-        html.dark .mdl-page pre { color: #f5f5f7 !important; }
-        html.dark .mdl-page .text-slate-400 { color: #8e8e93 !important; }
-        html.dark .mdl-page .text-slate-300 { color: #71717a !important; }
-        html.dark .mdl-page .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .mdl-page .border-slate-200 { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mdl-page input,
-        html.dark .mdl-page .ant-input,
-        html.dark .mdl-page .ant-input-affix-wrapper,
-        html.dark .mdl-page .ant-picker { background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mdl-page .ant-picker input { color: #f5f5f7 !important; }
-        html.dark .mdl-page .ant-radio-button-wrapper { background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .mdl-page button.border-slate-200 { background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important; }
-      `}</style>
-    </ConfigProvider>
+        </section>
+      )}
+      {!reportText && (
+        <ReportEmpty icon={<FileText size={34} />} title={isLoading ? 'Loading…' : 'No Data'} hint="Select a member and click Generate" />
+      )}
+    </ReportShell>
   );
 };
 

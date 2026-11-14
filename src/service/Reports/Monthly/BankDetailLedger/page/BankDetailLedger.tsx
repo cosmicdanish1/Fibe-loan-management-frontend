@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { DatePicker, Select, Spin } from 'antd';
+import { DatePicker, Select } from 'antd';
 import { Printer, FileDown, Settings, RefreshCw, FileText, Search } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import { csvCell } from '@/utils/csv';
 import { isFromAfterTo } from '@/utils/dates';
@@ -116,8 +114,6 @@ const BankDetailLedger: React.FC = () => {
   const [bankName, setBankName] = useState<string>('');
   const [openingBalance, setOpeningBalance] = useState<number>(0);
 
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
   const { enabled, view, setView } = useReportViews('monthly.bank-detail-ledger');
 
   useEffect(() => {
@@ -330,129 +326,60 @@ const BankDetailLedger: React.FC = () => {
             <span className="aw-meta">{bankName || 'Select bank'}</span>
           </div>
           <div className="bdl-page-preview-body" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
-            <Spin spinning={loading} tip="Loading..." size="small">
               {data.length > 0 ? (
-                <div className="legacy-report-enhanced fz-label">
-                    {/* Enhanced Company Header */}
-                    <div className="text-center mb-6 pb-4 border-b-2 border-amber-200">
-                      <div className="fz-body font-black text-blue-800 mb-1">Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className="fz-label text-slate-700 font-medium">Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
-                      <div className="fz-caption text-slate-600 font-medium mt-1">Reg No: A.R/DRG/1796, Tel No: 0788-2298736</div>
-                    </div>
-
-                    {/* Enhanced Report Title */}
-                    <div className="text-center mb-5">
-                      <div className="fz-body font-black text-amber-800 mb-2">
-                        Bank Account: <span className="text-blue-800">{selectedBank} - {bankName}</span>
-                      </div>
-                      <div className="fz-label text-slate-700 font-semibold">
-                        Period: {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}
-                      </div>
-                    </div>
-
-                    {/* Enhanced Legacy Table */}
-                    <table className="w-full fz-label border-collapse shadow-sm" style={{ border: '2px solid #d97706' }}>
+                <div>
+                  <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                    <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited.</div>
+                    <div className="aw-meta">Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+                    <div className="aw-meta">Reg No: A.R/DRG/1796, Tel No: 0788-2298736</div>
+                    <div className="aw-strong" style={{ marginTop: 8 }}>Bank account: {selectedBank} - {bankName}</div>
+                    <div className="aw-meta">Period: {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}</div>
+                  </div>
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                    <table className="aw-table">
                       <thead>
-                        <tr style={{ backgroundColor: isDark ? '#1f2937' : '#fef3c7' }}>
-                          <th className="text-left py-3 px-4 font-black text-amber-900" style={{ border: '1px solid #d97706', width: '110px' }}>DATE</th>
-                          <th className="text-left py-3 px-4 font-black text-amber-900" style={{ border: '1px solid #d97706', width: '110px' }}>VOUCHER</th>
-                          <th className="text-left py-3 px-4 font-black text-amber-900" style={{ border: '1px solid #d97706' }}>NARRATION</th>
-                          <th className="text-right py-3 px-4 font-black text-amber-900" style={{ border: '1px solid #d97706', width: '130px' }}>DEBIT</th>
-                          <th className="text-right py-3 px-4 font-black text-amber-900" style={{ border: '1px solid #d97706', width: '130px' }}>CREDIT</th>
-                          <th className="text-right py-3 px-4 font-black text-amber-900" style={{ border: '1px solid #d97706', width: '150px' }}>BALANCE</th>
-                        </tr>
+                        <tr><th>Date</th><th>Voucher</th><th>Narration</th><th className="is-right">Debit</th><th className="is-right">Credit</th><th className="is-right">Balance</th></tr>
                       </thead>
                       <tbody>
                         {data.map((item, idx) => (
-                           <tr key={idx} style={{ backgroundColor: isDark ? (idx % 2 === 0 ? '#1e293b' : '#0f172a') : (idx % 2 === 0 ? '#fff' : '#fefbf3') }} className="hover:bg-amber-50/50 transition-colors">
-                            <td className="py-2.5 px-4 text-slate-800 font-bold" style={{ border: '1px solid #e5e7eb' }}>
-                              {dayjs(item.date).format('DD-MMM-YY')}
-                            </td>
-                            <td className="py-2.5 px-4 text-blue-700 font-bold" style={{ border: '1px solid #e5e7eb' }}>
-                              {item.voucherNo}
-                            </td>
-                            <td className="py-2.5 px-4 text-slate-700 font-medium" style={{ border: '1px solid #e5e7eb' }}>
-                              {item.narration}
-                            </td>
-                            <td className="text-right py-2.5 px-4 font-bold text-emerald-700" style={{ border: '1px solid #e5e7eb' }}>
-                              {item.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(item.debit)}</>) : '0.00'}
-                            </td>
-                            <td className="text-right py-2.5 px-4 font-bold text-rose-700" style={{ border: '1px solid #e5e7eb' }}>
-                              {item.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(item.credit)}</>) : '0.00'}
-                            </td>
-                            <td className="text-right py-2.5 px-4 font-bold text-slate-900" style={{ border: '1px solid #e5e7eb' }}>
-                              {formatCurrency(Math.abs(item.balance))} {item.balance >= 0 ? 'DR' : 'CR'}
-                            </td>
+                          <tr key={idx}>
+                            <td>{dayjs(item.date).format('DD-MMM-YY')}</td>
+                            <td className="is-accent">{item.voucherNo}</td>
+                            <td>{item.narration}</td>
+                            <td className="is-right">{item.debit > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(item.debit)}</>) : '0.00'}</td>
+                            <td className="is-right">{item.credit > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(item.credit)}</>) : '0.00'}</td>
+                            <td className="is-right">{formatCurrency(Math.abs(item.balance))} {item.balance >= 0 ? 'DR' : 'CR'}</td>
                           </tr>
                         ))}
-                        <tr style={{ backgroundColor: isDark ? '#1e293b' : '#fef3c7' }}>
-                          <td colSpan={3} className="py-3 px-4 text-right font-black text-amber-900 fz-heading" style={{ border: '2px solid #d97706' }}>
-                            TOTAL:
-                          </td>
-                          <td className="text-right py-3 px-4 font-black text-emerald-800 fz-heading" style={{ border: '2px solid #d97706' }}>
-                            {totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebit)}
-                          </td>
-                          <td className="text-right py-3 px-4 font-black text-rose-800 fz-heading" style={{ border: '2px solid #d97706' }}>
-                            {totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredit)}
-                          </td>
-                          <td className="text-right py-3 px-4 font-black text-slate-900 fz-heading" style={{ border: '2px solid #d97706' }}>
-                            {formatCurrency(Math.abs(closingBalance))} {closingBalance >= 0 ? 'DR' : 'CR'}
-                          </td>
+                        <tr>
+                          <td colSpan={3} className="is-right"><b>Total</b></td>
+                          <td className="is-right"><b>{totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebit)}</b></td>
+                          <td className="is-right"><b>{totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredit)}</b></td>
+                          <td className="is-right"><b>{formatCurrency(Math.abs(closingBalance))} {closingBalance >= 0 ? 'DR' : 'CR'}</b></td>
                         </tr>
                       </tbody>
                     </table>
-
-                    {/* Enhanced Summary */}
-                    <div className="mt-6">
-                      <table className="fz-label ml-auto bg-amber-50/50 rounded-lg overflow-hidden" style={{ width: 'auto' }}>
-                        <tbody>
-                          <tr>
-                            <td className="text-right py-2 px-5 font-black text-amber-800">Opening Balance:</td>
-                            <td className="text-right py-2 px-5 font-black text-slate-900" style={{ minWidth: '160px' }}>
-                              {formatCurrency(Math.abs(openingBalance))} {openingBalance >= 0 ? 'DR' : 'CR'}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="text-right py-2 px-5 font-black text-amber-800">Total Debit:</td>
-                            <td className="text-right py-2 px-5 font-black text-emerald-800">
-                              {totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebit)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="text-right py-2 px-5 font-black text-amber-800">Total Credit:</td>
-                            <td className="text-right py-2 px-5 font-black text-rose-800">
-                              {totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredit)}
-                            </td>
-                          </tr>
-                          <tr style={{ borderTop: '2px solid #d97706' }}>
-                            <td className="text-right py-2 px-5 font-black text-amber-800">Closing Balance:</td>
-                            <td className="text-right py-2 px-5 font-black text-slate-900">
-                              {formatCurrency(Math.abs(closingBalance))} {closingBalance >= 0 ? 'DR' : 'CR'}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
                   </div>
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none', width: 'fit-content', marginLeft: 'auto', marginTop: 12 }}>
+                    <table className="aw-table">
+                      <tbody>
+                        <tr><td className="is-right">Opening balance</td><td className="is-right">{formatCurrency(Math.abs(openingBalance))} {openingBalance >= 0 ? 'DR' : 'CR'}</td></tr>
+                        <tr><td className="is-right">Total debit</td><td className="is-right">{totalDebit > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebit)}</td></tr>
+                        <tr><td className="is-right">Total credit</td><td className="is-right">{totalCredit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredit)}</td></tr>
+                        <tr><td className="is-right"><b>Closing balance</b></td><td className="is-right"><b>{formatCurrency(Math.abs(closingBalance))} {closingBalance >= 0 ? 'DR' : 'CR'}</b></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               ) : (
                 <ReportEmpty icon={<FileText size={34} />} title="No Data" hint="Select a bank account and date range" />
               )}
-            </Spin>
           </div>
         </section>
       )}
       {view !== 'legacy' && !(data.length > 0) && (
         <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Data'} hint="Select a bank account and date range" />
       )}
-
-      <style>{`
-        .bdl-page .legacy-report-enhanced { max-width: 100%; margin: 0 auto; }
-        html.dark .bdl-page .legacy-report-enhanced { color: #f5f5f7 !important; }
-        html.dark .bdl-page .legacy-report-enhanced table,
-        html.dark .bdl-page .legacy-report-enhanced th,
-        html.dark .bdl-page .legacy-report-enhanced td,
-        html.dark .bdl-page .legacy-report-enhanced tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.15) !important; color: #f5f5f7 !important; }
-      `}</style>
     </ReportShell>
   );
 };

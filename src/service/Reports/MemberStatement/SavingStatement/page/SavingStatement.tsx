@@ -1,22 +1,15 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { ConfigProvider, Button, Spin, Input, DatePicker, Modal, Radio, message, theme as antdTheme } from 'antd';
-import {
-  FileText,
-  Printer,
-  Search,
-  RotateCcw,
-  Wallet,
-  User,
-  Calendar,
-} from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
+import { Wallet, Printer, Search, RotateCcw, User, Calendar } from 'lucide-react';
+import { message } from 'antd';
 import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
-import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '../../../../../components/shared/kit/MemberField';
 import { isFromAfterTo } from '@/utils/dates';
-import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { ReportShell, ParamCard, StatCards, OutputChoice, ReportEmpty, LegacyDocument } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { GenericBento, GenericEditorial, GenericTerminal } from '../../../../../components/reports/views/GenericPro';
 import { useReportViews } from '../../../../../components/reports/views/reportViews';
+import '../../../../../components/reports/views/proViews.css';
 import { useSavingSpec } from '../views/savingPro';
 
 // ── layout ───────────────────────────────────────────────────────────────────
@@ -144,16 +137,13 @@ const printReportText = (text: string) => {
 
 // ── component ────────────────────────────────────────────────────────────────
 const SavingStatement: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark =
-    interfaceMode === 'dark';
+
 
   const [memberNo,   setMemberNo]   = useState('');
   const [memberName, setMemberName] = useState('');
   const [fromDate,   setFromDate]   = useState<Dayjs>(dayjs().startOf('year'));
   const [toDate,     setToDate]     = useState<Dayjs>(dayjs());
-  const [outputType, setOutputType] = useState('screen');
-  const [showLookup, setShowLookup] = useState(false);
+  const [outputType, setOutputType] = useState<'screen' | 'printer'>('screen');
   const [reportText, setReportText] = useState('');
   const [isLoading,  setIsLoading]  = useState(false);
   const [savingData, setSavingData] = useState<SavingData | null>(null);
@@ -162,7 +152,6 @@ const SavingStatement: React.FC = () => {
   const handleMemberSelect = useCallback((member: any) => {
     setMemberNo(member.memberNo || member.mbno || '');
     setMemberName(member.memberName || member.name || '');
-    setShowLookup(false);
   }, []);
 
   const handleReset = useCallback(() => {
@@ -231,211 +220,72 @@ const SavingStatement: React.FC = () => {
     printReportText(reportTextRef.current);
   }, []);
 
-  const labelCls = `fz-caption font-bold uppercase tracking-tight flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`;
 
   const { enabled, view, setView } = useReportViews('member-statement.saving');
   const spec = useSavingSpec(savingData);
 
+  const hasData = savingData !== null && savingData.transactions.length > 0;
+  const range = `${fromDate.format('DD MMM YYYY')} to ${toDate.format('DD MMM YYYY')}`;
+
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#10b981',
-          borderRadius: 6,
-          fontSize: 12,
-          colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-          colorBorder: isDark ? '#334155' : '#e2e8f0',
-        },
-      }}
-    >
-      <style>{`
-        .custom-scrollbar-emerald::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar-emerald::-webkit-scrollbar-track { background: ${isDark ? '#1e293b' : '#f8fafc'}; border-radius: 3px; }
-        .custom-scrollbar-emerald::-webkit-scrollbar-thumb { background: #6ee7b7; border-radius: 3px; }
-        .custom-scrollbar-emerald::-webkit-scrollbar-thumb:hover { background: #34d399; }
-
-        /* ── Dark-mode overrides (Settings palette, html.dark only) ── */
-        html.dark .svstmt-page { background-color: #000000 !important; background-image: none !important; }
-        html.dark .svstmt-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .svstmt-card,
-        html.dark .svstmt-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .svstmt-report-body { background-color: #1c1c1e !important; }
-        html.dark .svstmt-report-body pre { color: #f5f5f7 !important; }
-        html.dark .svstmt-page h1,
-        html.dark .svstmt-page h3,
-        html.dark .svstmt-page h4 { color: #f5f5f7 !important; }
-        html.dark .svstmt-page label { color: #8e8e93 !important; }
-        html.dark .svstmt-page .text-slate-400,
-        html.dark .svstmt-page .text-slate-500,
-        html.dark .svstmt-page .text-slate-600 { color: #8e8e93 !important; }
-        html.dark .svstmt-page .text-slate-300 { color: #71717a !important; }
-        html.dark .svstmt-page .ant-input,
-        html.dark .svstmt-page .ant-input-affix-wrapper,
-        html.dark .svstmt-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .svstmt-page .ant-input-affix-wrapper .ant-input { background-color: transparent !important; }
-        html.dark .svstmt-page .ant-picker input { color: #f5f5f7 !important; }
-        html.dark .svstmt-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-      `}</style>
-
-      <div className={`svstmt-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-emerald-50/20 to-slate-50'}`}>
-
-        {/* Header */}
-        <div className={`svstmt-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-1.5 rounded-lg text-white shadow-md">
-              <Wallet size={14} />
+    <ReportShell
+      className="svstmt-page"
+      title="Saving Statement"
+      desc="Savings account statement"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!reportText}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Member" icon={<User size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="svstmt-page-member">Member No.</label>
+              <MemberField id="svstmt-page-member" value={memberNo} onChange={setMemberNo} onSelect={handleMemberSelect} onSubmit={() => handleGenerate()} />
+            </div>
+            <input className="aw-input" value={memberName} readOnly placeholder="Selected member name" aria-label="Member name" />
+          </ParamCard>
+          <ParamCard title="Period" icon={<Calendar size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="svstmt-page-from">From</label>
+              <input id="svstmt-page-from" type="date" className="aw-input" value={fromDate.format('YYYY-MM-DD')} onChange={e => e.target.value && setFromDate(dayjs(e.target.value))} />
             </div>
             <div>
-              <h1 className={`text-xs font-black tracking-tight leading-none ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Saving Statement</h1>
-              <div className={`flex items-center gap-1 mt-0.5 fz-body font-bold uppercase tracking-wider leading-none ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
-                <Wallet size={8} className="text-emerald-500" /> Passbook View
-              </div>
+              <label className="aw-label" htmlFor="svstmt-page-to">To</label>
+              <input id="svstmt-page-to" type="date" className="aw-input" value={toDate.format('YYYY-MM-DD')} onChange={e => e.target.value && setToDate(dayjs(e.target.value))} />
             </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button icon={<RotateCcw size={11} />} size="small"
-              className="h-7 px-2 rounded-lg fz-body font-bold uppercase tracking-wide border-slate-200 hover:border-emerald-500 hover:text-emerald-600"
-              onClick={handleReset}>Reset</Button>
-            <Button icon={<Printer size={11} />} size="small"
-              className="h-7 px-2 rounded-lg fz-body font-bold uppercase tracking-wide border-slate-200 hover:border-emerald-500 hover:text-emerald-600"
-              onClick={handlePrint} disabled={!reportText}>Print</Button>
-          </div>
-        </div>
+            <OutputChoice value={outputType} onChange={setOutputType} id="svstmt-page-output" />
+            <button type="button" className="aw-btn aw-btn-primary" onClick={() => handleGenerate()} disabled={isLoading} style={{ width: '100%' }}>
+              <Search size={14} className={isLoading ? 'aw-spin' : undefined} /> {isLoading ? 'Loading…' : 'Generate'}
+            </button>
+          </ParamCard>
+          {hasData && <StatCards items={[{ label: 'Transactions', value: String(savingData ? savingData.transactions.length : 0), tone: 'muted' }]} />}
+        </>
+      }
+      footerLeft="Saving Statement"
+      footerRight={memberNo ? `Member ${memberNo}` : ''}
+    >
+      {hasData && view === 'bento' && <GenericBento spec={spec} />}
+      {hasData && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><GenericTerminal spec={spec} /></div>}
+      {hasData && view === 'editorial' && <GenericEditorial spec={spec} title="Saving Statement" subtitle={`${memberNo} · ${range}`} />}
 
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-2 flex gap-2">
-
-          {/* Sidebar */}
-          <div className="w-[220px] flex flex-col gap-2 shrink-0 overflow-y-auto custom-scrollbar-emerald">
-
-            {/* Member */}
-            <div className={`svstmt-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-emerald-200/60'}`}>
-              <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-2 py-1 flex items-center gap-1">
-                <User size={10} className="text-white" />
-                <h3 className="fz-body font-black text-white tracking-wide uppercase">Member</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <label className={labelCls}><User size={10} className="text-emerald-500" />Member No</label>
-                <Input.Search
-                  placeholder="Type member no..."
-                  value={memberNo}
-                  onChange={e => setMemberNo(e.target.value)}
-                  onSearch={() => setShowLookup(true)}
-                  className="h-8 fz-label font-semibold"
-                />
-                <label className={`${labelCls} mt-1`}><User size={10} className="text-emerald-500" />Member Name</label>
-                <Input value={memberName} readOnly placeholder="Selected member name" className="h-8 fz-label font-semibold" />
-              </div>
-            </div>
-
-            {/* Date Range */}
-            <div className={`svstmt-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-emerald-200/60'}`}>
-              <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-2 py-1 flex items-center gap-1">
-                <Calendar size={10} className="text-white" />
-                <h3 className="fz-body font-black text-white tracking-wide uppercase">Date Range</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <div>
-                  <label className={`fz-body font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>From</label>
-                  <DatePicker className="w-full h-7 fz-caption font-semibold" value={fromDate} onChange={v => v && setFromDate(v)} format="DD-MMM-YY" />
-                </div>
-                <div>
-                  <label className={`fz-body font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>To</label>
-                  <DatePicker className="w-full h-7 fz-caption font-semibold" value={toDate} onChange={v => v && setToDate(v)} format="DD-MMM-YY" />
-                </div>
-              </div>
-            </div>
-
-            {/* Output */}
-            <div className={`svstmt-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-emerald-200/60'}`}>
-              <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-2 py-1 flex items-center gap-1">
-                <FileText size={10} className="text-white" />
-                <h3 className="fz-body font-black text-white tracking-wide uppercase">Output</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <Radio.Group size="small" value={outputType} onChange={e => setOutputType(e.target.value)} className="w-full">
-                  <Radio.Button value="screen"  className="w-1/2 text-center fz-body font-bold">SCR</Radio.Button>
-                  <Radio.Button value="printer" className="w-1/2 text-center fz-body font-bold">PTR</Radio.Button>
-                </Radio.Group>
-                <Button
-                  type="primary" block size="small"
-                  icon={<Search size={11} />}
-                  onClick={handleGenerate}
-                  loading={isLoading}
-                  className="h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 font-black uppercase tracking-wider fz-body mt-1 shadow-lg"
-                >Generate</Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Report Panel */}
-          <div className={`svstmt-report-panel flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-emerald-200/60'}`}>
-            <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-3 py-1.5 flex items-center gap-1.5 shrink-0">
-              <div className="bg-white/20 p-1 rounded-md">
-                <FileText size={12} className="text-white" />
-              </div>
-              <div>
-                <h3 className="fz-small font-black text-white uppercase tracking-wide leading-none">Saving Statement</h3>
-                <p className="fz-body font-bold text-emerald-200 uppercase mt-0.5 tracking-tight leading-none">
-                  {memberNo ? `Member: ${memberNo}` : 'Enter member number'}
-                </p>
-              </div>
-            </div>
-
-            <div className={`svstmt-report-body flex-1 overflow-auto p-2 custom-scrollbar-emerald ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-emerald-50/10'}`}>
-              <Spin spinning={isLoading} tip="Loading..." size="small">
-                {reportText ? (
-                <>
-                <ProBar enabled={enabled} view={view} setView={setView} />
-                {view !== 'legacy' && (savingData !== null && savingData.transactions.length > 0 ? <ProBody view={view} spec={spec} title="Saving Statement" subtitle={`${memberNo} · ${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No transactions to show'}</p>)}
-                {view === 'legacy' && (
-                  <pre
-                    className="font-mono"
-                    style={{
-                      fontSize: '10px',
-                      lineHeight: 1.45,
-                      color: isDark ? '#e2e8f0' : '#1e293b',
-                      background: 'transparent',
-                      margin: 0,
-                      padding: '6px 4px',
-                      whiteSpace: 'pre',
-                    }}
-                  >
-                    {reportText}
-                  </pre>
-                )}
-                </>
-                ) : (
-                  <div className="py-32 text-center">
-                    <div className="w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                      <FileText className="text-4xl text-emerald-200" />
-                    </div>
-                    <h4 className="text-slate-400 font-black text-xs uppercase tracking-wider">No Data</h4>
-                    <p className="text-slate-300 fz-small mt-1 font-semibold">Select member and click Generate</p>
-                  </div>
-                )}
-              </Spin>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Member Lookup Modal */}
-      <Modal
-        open={showLookup}
-        onCancel={() => setShowLookup(false)}
-        footer={null}
-        width={950}
-        centered
-        destroyOnClose
-        styles={{ body: { padding: 0 } }}
-      >
-        <div className="p-2">
-          <MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} />
-        </div>
-      </Modal>
-    </ConfigProvider>
+      {view === 'legacy' && (
+        <LegacyDocument
+          title={`Saving Statement${memberNo ? ` · Member ${memberNo}` : ''}`}
+          meta={range}
+          text={reportText}
+          loading={isLoading}
+          small
+          empty={<ReportEmpty icon={<Wallet size={34} />} title="No Data" hint="Select member and click Generate" />}
+        />
+      )}
+      {view !== 'legacy' && !hasData && (
+        <ReportEmpty icon={<Wallet size={34} />} title={isLoading ? 'Loading…' : reportText ? 'Nothing to show' : 'No Data'} hint="Select member and click Generate" />
+      )}
+    </ReportShell>
   );
 };
 

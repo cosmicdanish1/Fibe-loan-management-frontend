@@ -21,6 +21,16 @@ export interface DashboardSummary {
   rdDues?: { members: number; expected: number; paid: number; paidMembers: number; partialMembers: number; unpaidMembers: number } | null;
 }
 
+/** Runs a dashboard load; if it fails (busy server, short network hiccup) waits a moment and tries once more before giving up. */
+export const loadWithRetry = async <T,>(run: () => Promise<T>, ok: (r: T) => boolean = () => true): Promise<T> => {
+  try {
+    const first = await run();
+    if (ok(first)) return first;
+  } catch { /* try once more below */ }
+  await new Promise(r => setTimeout(r, 1500));
+  return run();
+};
+
 export interface SummaryState { summary: DashboardSummary | null; loading: boolean; failed: boolean }
 
 /** Loads the one summary call that feeds most of the new widgets. */
@@ -28,7 +38,7 @@ export const useDashboardSummary = (): SummaryState => {
   const [state, setState] = useState<SummaryState>({ summary: null, loading: true, failed: false });
   useEffect(() => {
     let cancelled = false;
-    apiService.getDashboardSummary().then(res => {
+    loadWithRetry(() => apiService.getDashboardSummary(), r => !!(r.success && r.data)).then(res => {
       if (cancelled) return;
       if (res.success && res.data) setState({ summary: res.data as DashboardSummary, loading: false, failed: false });
       else setState({ summary: null, loading: false, failed: true });
@@ -111,17 +121,15 @@ export const CashPositionWidget: React.FC = () => {
   const [error, setError] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    const dates = Array.from({ length: 7 }, (_, i) => dayjs().subtract(6 - i, 'day').format('YYYY-MM-DD'));
-    Promise.all(dates.map(d => apiService.getCashBookReport(d).catch(() => null))).then(results => {
+    loadWithRetry(() => apiService.getDashboardCashTrend(7), r => !!(r.success && Array.isArray((r.data as any)?.data ?? r.data))).then(res => {
       if (cancelled) return;
-      const list = results.map((res, i) => {
-        const d: any = res && res.success ? ((res.data as any)?.data ?? res.data) : null;
-        return d && typeof d === 'object' && 'closingBalance' in d
-          ? { date: dates[i]!, opening: Number(d.openingBalance) || 0, closing: Number(d.closingBalance) || 0, receipts: Number(d.totalReceipts) || 0, payments: Number(d.totalPayments) || 0 }
-          : null;
-      }).filter((x): x is NonNullable<typeof x> => x !== null);
+      const rows: any[] = res && res.success ? ((res.data as any)?.data ?? res.data) : [];
+      const list = (Array.isArray(rows) ? rows : []).map(r => ({
+        date: String(r.date), opening: Number(r.opening) || 0, closing: Number(r.closing) || 0,
+        receipts: Number(r.receipts) || 0, payments: Number(r.payments) || 0,
+      }));
       if (list.length === 0) setError(true); else setDays(list);
-    });
+    }).catch(() => { if (!cancelled) setError(true); });
     return () => { cancelled = true; };
   }, []);
 

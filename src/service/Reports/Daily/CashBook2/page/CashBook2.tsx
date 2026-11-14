@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileText, RefreshCw, Printer, FileDown, Calendar, Search, Settings } from 'lucide-react';
-import { DatePicker, message, Spin } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
+import { DatePicker, message } from 'antd';
 import { apiService } from '../../../../../services/api';
 import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
@@ -22,26 +20,6 @@ const CashBook2: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<CashBook2Summary | null>(null);
   const { enabled, view, setView } = useReportViews(REPORT_ID);
-
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
-  const isDark = interfaceMode === 'dark';
-
-  // Legacy report-body colours (the body keeps its original look; only the shell uses the app kit)
-  const text      = isDark ? 'text-slate-100'                           : 'text-slate-800';
-  const muted     = isDark ? 'text-slate-400'                           : 'text-slate-500';
-  const subtle    = isDark ? 'text-slate-500'                           : 'text-slate-400';
-  const tblBdr    = isDark ? 'border-slate-600'                         : 'border-slate-200';
-  const tblHd     = isDark ? 'bg-slate-900/60'                          : 'bg-slate-100';
-  const tblHdTx   = isDark ? 'text-slate-300'                           : 'text-slate-600';
-  const rowEven   = isDark ? 'bg-slate-800'                             : 'bg-white';
-  const rowOdd    = isDark ? 'bg-slate-800/50'                          : 'bg-slate-50';
-  const rowHov    = isDark ? 'hover:bg-slate-700/30'                    : 'hover:bg-slate-100';
-  const totalRow  = isDark ? 'bg-slate-900/60 border-slate-500'         : 'bg-slate-200 border-slate-300';
-  const totalTx   = isDark ? 'text-slate-300'                           : 'text-slate-700';
-  const codeTx    = isDark ? 'text-slate-400'                           : 'text-slate-500';
-  const headTx    = isDark ? 'text-slate-200'                           : 'text-slate-700';
-  const summaryBg = isDark ? 'bg-slate-900/40'                          : 'bg-slate-50';
 
   useEffect(() => { loadData(); }, [selectedDate]);
 
@@ -149,91 +127,79 @@ const CashBook2: React.FC = () => {
 
           {/* Legacy report body: unchanged. It stays mounted (hidden) in the other views so Print always gives the legacy letterhead. */}
           <section className={`cashbook2-report-panel aw-card${view === 'legacy' ? '' : ' cb2-legacy-off'}`} style={!hasData && !loading ? { display: 'none' } : undefined}>
-            <Spin spinning={loading} tip="Loading...">
               {hasData && data ? (
-                <div className="cb2-print-report cashbook2-report-body font-mono text-xs">
-                  <div className={`text-center mb-3 border-b border-dashed pb-2 ${tblBdr}`}>
-                    <div className={`text-sm font-bold ${text}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                    <div className={`fz-caption ${muted}`}>Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+                <div className="cb2-print-report cashbook2-report-body font-mono fz-caption">
+                  <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                    <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited.</div>
+                    <div className="aw-meta">Avenue A, Sahakari Sadan, Sector-C, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
                   </div>
 
-                  <div className={`border rounded-lg overflow-hidden ${tblBdr}`}>
-                    <table className="cashbook2-table w-full text-xs">
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                    <table className="cashbook2-table aw-table">
                       <thead>
-                        <tr className={`border-b ${tblBdr} ${tblHd}`}>
-                          <th rowSpan={2} className={`text-left py-2 px-3 border-r font-bold w-20 align-bottom ${tblBdr} ${tblHdTx}`}>CODE</th>
-                          <th rowSpan={2} className={`cb2-wrap text-left py-2 px-3 border-r font-bold align-bottom ${tblBdr} ${tblHdTx}`}>HEAD NAME</th>
-                          <th colSpan={2} className={`text-center py-1 px-3 border-r font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'} ${tblBdr}`}>RECEIPT</th>
-                          <th colSpan={2} className={`text-center py-1 px-3 font-bold ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>PAYMENT</th>
+                        <tr>
+                          <th rowSpan={2}>Code</th>
+                          <th rowSpan={2} className="cb2-wrap">Head name</th>
+                          <th colSpan={2} className="is-center">Receipt</th>
+                          <th colSpan={2} className="is-center">Payment</th>
                         </tr>
-                        <tr className={`border-b ${tblBdr} ${tblHd}`}>
-                          <th className={`text-right py-1 px-3 border-r font-bold w-24 ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>CASH</th>
-                          <th className={`text-right py-1 px-3 border-r font-bold w-24 ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>TRANSFER</th>
-                          <th className={`text-right py-1 px-3 border-r font-bold w-24 ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>CASH</th>
-                          <th className={`text-right py-1 px-3 font-bold w-24 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>TRANSFER</th>
+                        <tr>
+                          <th className="is-right">Cash</th><th className="is-right">Transfer</th>
+                          <th className="is-right">Cash</th><th className="is-right">Transfer</th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.entries.map((entry, i) => (
-                          <tr key={i} className={`border-b border-slate-700/50 transition-colors ${rowHov} ${i % 2 === 0 ? rowEven : rowOdd}`}>
-                            <td className={`py-1 px-3 border-r font-semibold ${tblBdr} ${codeTx}`}>{entry.headCode}</td>
-                            <td className={`cb2-wrap py-1 px-3 border-r ${tblBdr} ${headTx}`}>{entry.headName}</td>
-                            <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                              {entry.receiptCash > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(entry.receiptCash)}</>) : ''}
-                            </td>
-                            <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                              {entry.receiptTransfer > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(entry.receiptTransfer)}</>) : ''}
-                            </td>
-                            <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>
-                              {entry.paymentCash > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(entry.paymentCash)}</>) : ''}
-                            </td>
-                            <td className={`text-right py-1 px-3 font-semibold ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>
-                              {entry.paymentTransfer > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(entry.paymentTransfer)}</>) : ''}
-                            </td>
+                          <tr key={i}>
+                            <td className="is-muted">{entry.headCode}</td>
+                            <td className="cb2-wrap">{entry.headName}</td>
+                            <td className="is-right is-success">{entry.receiptCash > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(entry.receiptCash)}</>) : ''}</td>
+                            <td className="is-right is-success">{entry.receiptTransfer > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(entry.receiptTransfer)}</>) : ''}</td>
+                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{entry.paymentCash > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(entry.paymentCash)}</>) : ''}</td>
+                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{entry.paymentTransfer > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(entry.paymentTransfer)}</>) : ''}</td>
                           </tr>
                         ))}
 
                         {/* Totals */}
-                        <tr className={`border-b-2 font-bold ${totalRow}`}>
-                          <td colSpan={2} className={`py-1.5 px-3 border-r ${tblBdr} ${totalTx}`}>TOTAL</td>
-                          <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{data.totalReceiptsCash > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalReceiptsCash)}</td>
-                          <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{data.totalReceiptsTransfer > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalReceiptsTransfer)}</td>
-                          <td className={`text-right py-1.5 px-3 border-r ${tblBdr} ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{data.totalPaymentsCash > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalPaymentsCash)}</td>
-                          <td className={`text-right py-1.5 px-3 ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{data.totalPaymentsTransfer > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalPaymentsTransfer)}</td>
+                        <tr>
+                          <td colSpan={2}><b>TOTAL</b></td>
+                          <td className="is-right"><b>{data.totalReceiptsCash > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalReceiptsCash)}</b></td>
+                          <td className="is-right"><b>{data.totalReceiptsTransfer > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalReceiptsTransfer)}</b></td>
+                          <td className="is-right"><b>{data.totalPaymentsCash > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalPaymentsCash)}</b></td>
+                          <td className="is-right"><b>{data.totalPaymentsTransfer > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalPaymentsTransfer)}</b></td>
                         </tr>
 
                         {/* Balance summary */}
-                        <tr className={`border-b ${tblBdr} ${summaryBg}`}>
-                          <td colSpan={4} className={`py-1 px-3 border-r ${tblBdr}`} />
-                          <td className={`text-center py-1 px-3 border-r font-bold fz-small ${tblBdr} ${muted}`}>Cash In Hand</td>
-                          <td className={`text-center py-1 px-3 border-r font-bold fz-small ${tblBdr} ${muted}`}>Saving Balance</td>
-                          <td className={`text-center py-1 px-3 font-bold fz-small ${muted}`}>Clearing</td>
+                        <tr>
+                          <td colSpan={4} />
+                          <td className="is-center is-muted">Cash In Hand</td>
+                          <td className="is-center is-muted">Saving Balance</td>
+                          <td className="is-center is-muted">Clearing</td>
                         </tr>
                         {[
-                          { label: 'Opening Balance :', v1: data.openingBalance, col: text, crdr: null },
-                          { label: 'Total Credit :', v1: data.totalReceipts, col: isDark ? 'text-emerald-300' : 'text-emerald-700', crdr: 'credit' as const },
-                          { label: 'Total :', v1: data.openingBalance + data.totalReceipts, col: text, crdr: null },
-                          { label: 'Total Debit :', v1: data.totalPayments, col: isDark ? 'text-rose-300' : 'text-rose-700', crdr: 'debit' as const },
-                        ].map(({ label, v1, col, crdr }, i) => (
-                          <tr key={i} className={`border-b ${tblBdr}`}>
-                            <td colSpan={4} className={`text-right py-1 px-3 border-r font-bold ${tblBdr} ${totalTx}`}>{label}</td>
-                            <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${col}`}>{crdr && v1 > 0 && <CrDrIndicator type={crdr} className="mr-1" />}{fmt(v1)}</td>
-                            <td className={`text-right py-1 px-3 border-r font-semibold ${tblBdr} ${subtle}`}>0.00</td>
-                            <td className={`text-right py-1 px-3 font-semibold ${subtle}`}>0.00</td>
+                          { label: 'Opening Balance :', v1: data.openingBalance, crdr: null },
+                          { label: 'Total Credit :', v1: data.totalReceipts, crdr: 'credit' as const },
+                          { label: 'Total :', v1: data.openingBalance + data.totalReceipts, crdr: null },
+                          { label: 'Total Debit :', v1: data.totalPayments, crdr: 'debit' as const },
+                        ].map(({ label, v1, crdr }, i) => (
+                          <tr key={i}>
+                            <td colSpan={4} className="is-right"><b>{label}</b></td>
+                            <td className="is-right">{crdr && v1 > 0 && <CrDrIndicator type={crdr} className="mr-1" />}{fmt(v1)}</td>
+                            <td className="is-right is-muted">0.00</td>
+                            <td className="is-right is-muted">0.00</td>
                           </tr>
                         ))}
-                        <tr className={`border-b-2 font-bold ${totalRow}`}>
-                          <td colSpan={4} className={`text-right py-1.5 px-3 border-r ${tblBdr} ${totalTx}`}>Closing Balance :</td>
-                          <td className={`text-right py-1.5 px-3 border-r font-black ${tblBdr} ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>{fmt(data.closingBalance)}</td>
-                          <td className={`text-right py-1.5 px-3 border-r font-semibold ${tblBdr} ${subtle}`}>0.00</td>
-                          <td className={`text-right py-1.5 px-3 font-semibold ${subtle}`}>0.00</td>
+                        <tr>
+                          <td colSpan={4} className="is-right"><b>Closing Balance :</b></td>
+                          <td className="is-right"><b>{fmt(data.closingBalance)}</b></td>
+                          <td className="is-right is-muted">0.00</td>
+                          <td className="is-right is-muted">0.00</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
               ) : null}
-            </Spin>
           </section>
 
           {!hasData && !loading && (
@@ -281,6 +247,8 @@ const CashBook2: React.FC = () => {
             width:7in; max-width:7in; padding:0.25in; font-size:10pt;
             background:white !important; color:black !important;
           }
+          /* Print is plain black on white whatever the screen theme. */
+          .cb2-print-report * { color:#000 !important; background:transparent !important; border-color:#999 !important; }
 
           /* An official statement's figures must never break mid-number —
              that's the "-1,01,76,954.0 / 0" wrap the user flagged. Default
@@ -293,25 +261,6 @@ const CashBook2: React.FC = () => {
           @page { margin:0.5in; size:A4 portrait; }
         }
 
-        /* ── Cash Book 2 — dark mode for the legacy body (app-wide Settings palette) ── */
-        html.dark .cashbook2-report-body { background-color: transparent !important; }
-        html.dark .cashbook2-page .bg-slate-800,
-        html.dark .cashbook2-page .bg-slate-700,
-        html.dark .cashbook2-page .bg-slate-700\\/60 { background-color: #1c1c1e !important; }
-        html.dark .cashbook2-page .bg-slate-900\\/50,
-        html.dark .cashbook2-page .bg-slate-900\\/60,
-        html.dark .cashbook2-page .bg-slate-900\\/40 { background-color: #0c0c0e !important; }
-        html.dark .cashbook2-page .border-slate-700,
-        html.dark .cashbook2-page .border-slate-600,
-        html.dark .cashbook2-page .border-slate-500 { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .cashbook2-page .text-slate-100,
-        html.dark .cashbook2-page .text-slate-200,
-        html.dark .cashbook2-page .text-slate-300 { color: #f5f5f7 !important; }
-        html.dark .cashbook2-page .text-slate-400,
-        html.dark .cashbook2-page .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .cashbook2-table thead tr { background-color: #1c1c1e !important; }
-        html.dark .cashbook2-table td,
-        html.dark .cashbook2-table th { border-color: rgba(255,255,255,.07) !important; }
       `}</style>
     </div>
   );

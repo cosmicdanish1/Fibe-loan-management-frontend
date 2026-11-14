@@ -159,6 +159,7 @@ export const ROUTES = {
     PREMATURE_INFORMATION_RD: '/utility/premature-information/rd',
     PREMATURE_INFORMATION_SB: '/utility/premature-information/sb',
     CALCULATOR: '/utility/calculator',
+    SOCIETY_CALCULATOR: '/utility/society-calculator',
     FIND: '/utility/find',
     MEMBER_BALANCE: '/utility/member-balance',
     MEMBER_BALANCE_LOOKUP: '/common/member-lookup',

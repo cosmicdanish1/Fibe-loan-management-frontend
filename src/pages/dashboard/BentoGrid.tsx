@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GripHorizontal, X, Image as ImageIcon } from 'lucide-react';
+import CardArtPicker, { type CardArtChoice } from './CardArtPicker';
 import type { RowLayout, CardLayout } from './dashboardLayout';
 import { useTranslation } from 'react-i18next';
 
@@ -22,10 +23,15 @@ interface BentoGridProps {
   editing: boolean;
   /** Customize mode: the × on a card. The card is switched off, not deleted; it can be added back. */
   onHide: (id: string) => void;
-  /** The chosen dashboard picture (null when there is none), the cards that show it inside, and the Customize-mode switch for one card. */
-  artUrl: string | null;
-  artCards: Set<string>;
-  onToggleArt: (id: string) => void;
+  /** Pictures inside cards. `pictureFor` gives a card's picture (null = none); `choiceFor` what it is set to; `onChoose` changes it. */
+  art: {
+    isDark: boolean;
+    pictureFor: (cardId: string) => string | null;
+    choiceFor: (cardId: string) => CardArtChoice;
+    onChoose: (cardId: string, choice: CardArtChoice) => void;
+    customAvailable: boolean;
+    customUrl: string | null;
+  };
   /** `commit` is false while a drag is in progress and true when it ends (time to save). */
   onChange: (rows: RowLayout[], commit: boolean) => void;
   renderCard: (id: string) => React.ReactNode;
@@ -63,7 +69,19 @@ const sameDest = (a: Dest | null, b: Dest | null) => JSON.stringify(a) === JSON.
 // Layout rules: every row is a CSS grid whose columns follow the card weights, and its height always
 // comes from the content. Nothing has a fixed pixel height, so one row can never run into the next.
 // The styles (and the narrow-window reflow) live in dashboard.css.
-const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, editing, onHide, artUrl, artCards, onToggleArt, onChange, renderCard }) => {
+const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, editing, onHide, art, onChange, renderCard }) => {
+  // Which card's picture picker is open (Customize mode).
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pickerFor) return undefined;
+    const close = (e: Event) => { if (!(e.target as HTMLElement).closest?.('.bento-art-pop, .bento-art-btn')) setPickerFor(null); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); setPickerFor(null); } };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', esc, true);
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', esc, true); };
+  }, [pickerFor]);
+  useEffect(() => { if (!editing) setPickerFor(null); }, [editing]);
+
   const { t } = useTranslation();
   const gridEl = useRef<HTMLDivElement | null>(null);
   const rowEls = useRef<Record<string, HTMLDivElement | null>>({});
@@ -243,36 +261,47 @@ const BentoGrid: React.FC<BentoGridProps> = ({ rows, hidden, editing, onHide, ar
             const dragging = dragId === card.id;
             const n = cellIndex++;
             const i = Math.min(n, 14);
-            const withArt = !!artUrl && artCards.has(card.id);
+            const picture = art.pictureFor(card.id);
+            const withArt = !!picture;
             return (
               <div
                 key={card.id}
                 className={`bento-cell${editing ? ' is-editing' : ''}${dragging ? ' is-dragging' : ''}${withArt ? ' has-art' : ''}`}
                 data-bento-cell={card.id}
-                style={{
-                  ['--i' as any]: i,
-                  // Each card shows a different part of the picture, so neighbouring cards do not look identical.
-                  ...(withArt ? { ['--card-art' as any]: `url("${artUrl}")`, ['--card-art-x' as any]: `${(n * 37) % 101}%` } : {}),
-                }}
+                style={{ ['--i' as any]: i }}
                 onPointerDown={editing ? e => startMove(e, card.id) : undefined}
                 aria-label={editing ? t('Drag to move this card') : undefined}
               >
+                {/* The picture layer sits behind the card and is clipped to its corners. Each card shows a
+                    different part of the picture, so neighbouring cards using the same one do not look identical. */}
+                {withArt && (
+                  <div className="bento-art" aria-hidden="true">
+                    <div className="bento-art-img" data-parallax-card style={{ backgroundImage: `url("${picture}")`, backgroundPosition: `${(n * 37) % 101}% 50%` }} />
+                    <div className="bento-art-veil" />
+                  </div>
+                )}
                 <div className="bento-inner">
                   {renderCard(card.id)}
                 </div>
 
                 {editing && <span className="bento-grip" aria-hidden><GripHorizontal size={12} /></span>}
 
-                {editing && !dragId && artUrl && (
+                {editing && !dragId && (
                   <button
                     type="button" className={`bento-art-btn${withArt ? ' is-on' : ''}`}
                     onPointerDown={e => e.stopPropagation()}
-                    onClick={() => onToggleArt(card.id)}
-                    aria-pressed={withArt}
-                    aria-label={withArt ? t('Remove the picture from this card') : t('Show the picture inside this card')}
+                    onClick={() => setPickerFor(p => (p === card.id ? null : card.id))}
+                    aria-expanded={pickerFor === card.id}
+                    aria-label={t('Choose the picture for this card')}
                   >
                     <ImageIcon size={13} />
                   </button>
+                )}
+                {editing && !dragId && pickerFor === card.id && (
+                  <CardArtPicker
+                    isDark={art.isDark} current={art.choiceFor(card.id)} customAvailable={art.customAvailable} customUrl={art.customUrl}
+                    onChoose={choice => { art.onChoose(card.id, choice); }}
+                  />
                 )}
 
                 {editing && !dragId && (

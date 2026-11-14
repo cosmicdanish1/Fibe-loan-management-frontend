@@ -1,25 +1,15 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Select, Button, ConfigProvider, Input, Pagination, Modal, theme as antdTheme } from 'antd';
-import {
-  Printer,
-  FileDown,
-  PiggyBank,
-  Building2,
-  Users,
-  Search,
-} from 'lucide-react';
+import { Printer, FileDown, PiggyBank, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../../services/api';
-import MemberLookup from '../../../../../../components/shared/MemberLookup/MemberLookup';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../../store';
+import MemberField from '../../../../../../components/shared/kit/MemberField';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import { csvCell } from '@/utils/csv';
-import { ProBar, ProBody } from '../../../../../../components/reports/views/ProIsland';
+import { ReportShell, ParamCard, StatCards, ReportEmpty } from '../../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../../components/reports/views/ReportViewSwitcher';
+import { GenericBento, GenericEditorial, GenericTerminal } from '../../../../../../components/reports/views/GenericPro';
 import { useReportViews } from '../../../../../../components/reports/views/reportViews';
 import { useInterestSpec } from '../views/interestPro';
-
-const { Option } = Select;
 
 interface InterestData {
   memberNo: string;
@@ -36,7 +26,6 @@ const InterestListCDMDSHRt: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const [selectedMemberNo, setSelectedMemberNo] = useState<string>('');
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
-  const [showLookupModal, setShowLookupModal] = useState<boolean>(false);
   const [selectedWing, setSelectedWing] = useState<string>('');
   const [accountType, setAccountType] = useState<string>('');
   const [financialYear, setFinancialYear] = useState<string>(`${currentYear - 2}-${currentYear - 1}`);
@@ -46,25 +35,6 @@ const InterestListCDMDSHRt: React.FC = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(100);
-
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
-
-  // Theme variables
-  const bg      = isDark ? 'bg-slate-900' : 'bg-slate-50';
-  const side    = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
-  const divider = isDark ? 'border-slate-700' : 'border-slate-200';
-  const text    = isDark ? 'text-slate-100' : 'text-slate-800';
-  const muted   = isDark ? 'text-slate-400' : 'text-slate-500';
-  const lbl     = isDark ? 'text-slate-300' : 'text-slate-700';
-  const tblHd   = isDark ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-800';
-  const tblBdr  = isDark ? 'border-slate-600' : 'border-slate-400';
-  const tblCBdr = isDark ? 'border-slate-600' : 'border-slate-300';
-  const tblTxt  = isDark ? 'text-slate-300' : 'text-slate-700';
-  const tblEmp  = isDark ? 'text-slate-200' : 'text-slate-800';
-  const rowHov  = isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50';
-  const tfoot   = isDark ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-800';
-  const pagerBg = isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-slate-50 border-slate-200';
 
   const years = useMemo(() => Array.from({ length: 6 }, (_, i) => {
     const start = currentYear - 3 + i;
@@ -143,7 +113,6 @@ const InterestListCDMDSHRt: React.FC = () => {
   const handleMemberLookup = (memberNo: string, memberName: string) => {
     setSelectedMemberNo(memberNo);
     setSelectedMemberName(memberName);
-    setShowLookupModal(false);
     setCurrentPage(1);
   };
 
@@ -231,334 +200,138 @@ const InterestListCDMDSHRt: React.FC = () => {
   const { enabled, view, setView } = useReportViews('yearly.interest-list');
   const spec = useInterestSpec(filteredData, financialYear);
 
+  const hasData = filteredData.length > 0;
+  const lastPage = Math.max(1, Math.ceil(filteredData.length / pageSize));
+
   return (
-    <ConfigProvider theme={{
-      algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      token: { colorPrimary: '#f59e0b', borderRadius: 8 },
-    }}>
-      <div className={`interest-cdmdshr-page h-screen flex flex-col font-sans overflow-hidden ${bg}`}>
-        <div className="interest-cdmdshr-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
-          <h1 className="fz-caption font-black text-white tracking-tight uppercase">5.3.3 Interest List</h1>
-        </div>
-        <div className="flex-1 flex overflow-hidden">
-
-        {/* Sidebar */}
-        <div className={`interest-cdmdshr-sidebar w-80 flex flex-col shrink-0 border-r ${side}`}>
-
-          {/* Header */}
-          <div className={`p-4 border-b ${divider}`}>
-            <div className="flex items-center gap-3">
-              <div className="bg-amber-600 p-2 rounded-lg text-white shadow-lg">
-                <PiggyBank size={18} />
-              </div>
-              <div>
-                <h1 className={`fz-heading font-black tracking-tight ${text}`}>5.3.3 Interest List</h1>
-                <div className={`flex items-center gap-1 mt-0.5 fz-label font-bold uppercase tracking-wider ${muted}`}>
-                  <Building2 size={10} className="text-amber-500" />
-                  CD / MD / SHR
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-
+    <ReportShell
+      className="interest-cdmdshr-page"
+      title="Interest List"
+      desc="CD / MD / Share interest distribution register"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!hasData}><FileDown size={14} /> CSV</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!hasData}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Parameters" icon={<PiggyBank size={14} />}>
             <div>
-              <label className={`block fz-label font-bold mb-1 ${lbl}`}>Member ID</label>
-              <div className="flex gap-1">
-                <input
-                  type="text"
-                  value={selectedMemberNo}
-                  onChange={e => {
-                    setSelectedMemberNo(e.target.value);
-                    if (!e.target.value) setSelectedMemberName('');
-                    setCurrentPage(1);
-                  }}
-                  placeholder="Member No."
-                  className={`flex-1 min-w-0 px-2 py-1.5 border-2 rounded fz-label font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                    isDark
-                      ? 'bg-slate-700 border-slate-500 text-slate-200 placeholder-slate-500 focus:border-blue-500'
-                      : 'bg-white border-blue-400 text-slate-800 placeholder-slate-400 focus:border-blue-600'
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowLookupModal(true)}
-                  className="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded fz-label font-black flex items-center gap-1 transition-all shadow-md whitespace-nowrap"
-                >
-                  <Search size={12} />
-                  <span>Search</span>
-                </button>
-              </div>
+              <label className="aw-label" htmlFor="il-member">Member ID</label>
+              <MemberField id="il-member" value={selectedMemberNo} onChange={v => { setSelectedMemberNo(v); if (!v) setSelectedMemberName(''); setCurrentPage(1); }} onSelect={(m: any) => handleMemberLookup(m.memberNo, m.memberName || m.name)} />
               {selectedMemberName && (
-                <div className={`mt-1.5 px-2 py-1.5 rounded border flex items-center justify-between gap-2 ${isDark ? 'bg-amber-900/20 border-amber-700' : 'bg-amber-50 border-amber-200'}`}>
-                  <div className="min-w-0">
-                    <div className={`fz-label font-bold truncate ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>{selectedMemberName}</div>
-                    <div className={`fz-label ${isDark ? 'text-amber-500' : 'text-amber-600'}`}>No: {selectedMemberNo}</div>
-                  </div>
-                  <button
-                    onClick={() => { setSelectedMemberNo(''); setSelectedMemberName(''); setCurrentPage(1); }}
-                    className={`text-xs shrink-0 ${isDark ? 'text-slate-400 hover:text-red-400' : 'text-slate-400 hover:text-red-500'}`}
-                  >✕</button>
-                </div>
+                <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span>{selectedMemberName} · No: {selectedMemberNo}</span>
+                  <button type="button" className="aw-icon-btn" aria-label="Clear member" onClick={() => { setSelectedMemberNo(''); setSelectedMemberName(''); setCurrentPage(1); }}>✕</button>
+                </p>
               )}
             </div>
-
             <div>
-              <label className={`block fz-label font-bold mb-1 ${lbl}`}>Search by Name / Number</label>
-              <Input
-                placeholder="Quick search..."
-                value={searchText}
-                onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }}
-                prefix={<Search size={14} className={muted} />}
-                className="h-9"
-                allowClear
-              />
+              <label className="aw-label" htmlFor="il-search">Search by name / number</label>
+              <input id="il-search" className="aw-input" placeholder="Quick search…" value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} />
             </div>
-
             <div>
-              <label className={`block fz-label font-bold mb-1 ${lbl}`}>Financial Year</label>
-              <Select value={financialYear} onChange={setFinancialYear} className="w-full h-9">
-                {years.map(y => <Option key={y} value={y}>{y}</Option>)}
-              </Select>
+              <label className="aw-label" htmlFor="il-fy">Financial year</label>
+              <select id="il-fy" className="aw-input" value={financialYear} onChange={e => setFinancialYear(e.target.value)}>
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
             </div>
-
             <div>
-              <label className={`block fz-label font-bold mb-1 ${lbl}`}>Account Type</label>
-              <Select
-                value={accountType || undefined}
-                onChange={v => { setAccountType(v ?? ''); setCurrentPage(1); }}
-                className="w-full h-9"
-                placeholder="All Types"
-                allowClear
-              >
-                <Option value="CD">Cumulative Deposit</Option>
-                <Option value="MD">Monthly Deposit</Option>
-                <Option value="SHARE">Share Capital</Option>
-                <Option value="DEPOSIT">Deposit</Option>
-              </Select>
+              <label className="aw-label" htmlFor="il-type">Account type</label>
+              <select id="il-type" className="aw-input" value={accountType} onChange={e => { setAccountType(e.target.value); setCurrentPage(1); }}>
+                <option value="">All types</option>
+                <option value="CD">Cumulative Deposit</option>
+                <option value="MD">Monthly Deposit</option>
+                <option value="SHARE">Share Capital</option>
+                <option value="DEPOSIT">Deposit</option>
+              </select>
             </div>
-
             <div>
-              <label className={`block fz-label font-bold mb-1 ${lbl}`}>Wing</label>
-              <Select
-                value={selectedWing || undefined}
-                onChange={v => setSelectedWing(v ?? '')}
-                className="w-full h-9"
-                placeholder="All Wings"
-                allowClear
-              >
-                {wings.map(w => <Option key={w.wingNo} value={w.wingNo}>{w.name}</Option>)}
-              </Select>
+              <label className="aw-label" htmlFor="il-wing">Wing</label>
+              <select id="il-wing" className="aw-input" value={selectedWing} onChange={e => setSelectedWing(e.target.value)}>
+                <option value="">All wings</option>
+                {wings.map(w => <option key={w.wingNo} value={w.wingNo}>{w.name}</option>)}
+              </select>
             </div>
+            <button type="button" className="aw-btn aw-btn-primary" onClick={fetchData} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Load interest data'}
+            </button>
+          </ParamCard>
+          <StatCards items={[
+            { label: 'Records', value: String(filteredData.length), tone: 'muted' },
+            { label: 'Total interest', value: `₹${formatCurrency(totals.totalInterest)}`, tone: 'warning' },
+          ]} />
+        </>
+      }
+      footerLeft="Interest List"
+      footerRight={`FY ${financialYear}`}
+    >
+      {hasData && view === 'bento' && <GenericBento spec={spec} />}
+      {hasData && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><GenericTerminal spec={spec} /></div>}
+      {hasData && view === 'editorial' && <GenericEditorial spec={spec} title="Interest Distribution List" subtitle={`FY ${financialYear}`} />}
 
-            <Button
-              type="primary"
-              onClick={fetchData}
-              loading={loading}
-              className="w-full h-10 bg-amber-600 hover:bg-amber-700 font-bold fz-body"
-              icon={<Search size={16} />}
-            >
-              {loading ? 'Loading...' : 'Load Interest Data'}
-            </Button>
+      {paginatedData.length > 0 && view === 'legacy' && (
+        <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">Interest Distribution Register</span>
+            <span className="aw-meta">FY {financialYear} • {filteredData.length} records</span>
           </div>
-
-          {/* Summary */}
-          <div className={`p-4 border-t space-y-2 ${divider}`}>
-            <div className={`p-3 rounded-lg border flex items-center justify-between ${isDark ? 'bg-amber-900/20 border-amber-800' : 'bg-amber-50 border-amber-200'}`}>
-              <div>
-                <div className={`fz-heading font-black ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>{filteredData.length}</div>
-                <div className={`fz-label font-bold uppercase ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Records</div>
+          <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+            <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+              <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited.</div>
+              <div className="aw-meta">Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+              <div className="aw-strong" style={{ marginTop: 6, letterSpacing: '.08em' }}>INTEREST DISTRIBUTION LIST — FY {financialYear}</div>
+              <div className="aw-meta">Generated: {dayjs().format('DD MMM YYYY hh:mm A')}</div>
+            </div>
+            <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+              <table className="aw-table">
+                <thead>
+                  <tr>
+                    <th>SR</th><th>Member no</th><th>Member name</th><th>Office</th><th>Type</th>
+                    <th className="is-right">Principal</th><th className="is-right">Interest</th><th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedData.map((r, i) => (
+                    <tr key={`${r.memberNo}-${r.fromDate}-${i}`}>
+                      <td className="is-muted">{(currentPage - 1) * pageSize + i + 1}</td>
+                      <td className="is-accent">{r.memberNo}</td>
+                      <td>{r.memberName}</td>
+                      <td className="is-muted">{r.officeName || '-'}</td>
+                      <td>{r.depositType || 'DEPOSIT'}</td>
+                      <td className="is-right">₹{formatCurrency(r.principalAmount)}</td>
+                      <td className="is-right is-success">{r.interestAmount > 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(r.interestAmount)}</td>
+                      <td>{dayjs(r.fromDate).format('DD/MM/YYYY')}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan={5}><b>Page: {paginatedData.length} records | Total: {filteredData.length} entries</b></td>
+                    <td className="is-right"><b>₹{formatCurrency(totals.totalPrincipal)}</b></td>
+                    <td className="is-right"><b>{totals.totalInterest > 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(totals.totalInterest)}</b></td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {filteredData.length > pageSize && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 12 }}>
+                <button type="button" className="aw-btn aw-btn-ghost" disabled={currentPage <= 1} onClick={() => setCurrentPage(currentPage - 1)} aria-label="Previous page"><ChevronLeft size={14} /></button>
+                <span className="aw-meta">{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length}</span>
+                <button type="button" className="aw-btn aw-btn-ghost" disabled={currentPage >= lastPage} onClick={() => setCurrentPage(currentPage + 1)} aria-label="Next page"><ChevronRight size={14} /></button>
+                <select className="aw-input" style={{ width: 'auto' }} value={pageSize} aria-label="Rows per page" onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}>
+                  {[50, 100, 200, 500].map(n => <option key={n} value={n}>{n} / page</option>)}
+                </select>
               </div>
-              <Users size={20} className={isDark ? 'text-amber-400' : 'text-amber-600'} />
-            </div>
-            <div className={`p-3 rounded-lg border ${isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
-              <div className={`fz-label font-bold uppercase ${muted}`}>Total Interest</div>
-              <div className={`fz-heading font-black flex items-center gap-1 ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
-                {totals.totalInterest > 0 && <CrDrIndicator type="credit" />}
-                ₹{formatCurrency(totals.totalInterest)}
-              </div>
-            </div>
+            )}
           </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-
-          {/* Top bar */}
-          <div className={`interest-cdmdshr-topbar2 px-4 py-3 shrink-0 border-b flex items-center justify-between ${side}`}>
-            <div>
-              <h2 className={`fz-heading font-black ${text}`}>Interest Distribution Register</h2>
-              <p className={`fz-label mt-0.5 ${muted}`}>
-                FY {financialYear} • {filteredData.length} records
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                icon={<FileDown size={16} />}
-                onClick={handleExportCSV}
-                disabled={filteredData.length === 0}
-                className="h-9 px-4 fz-body font-bold"
-              >
-                CSV
-              </Button>
-              <Button
-                icon={<Printer size={16} />}
-                onClick={handlePrint}
-                disabled={filteredData.length === 0}
-                className="h-9 px-4 fz-body font-bold"
-              >
-                Print
-              </Button>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="flex-1 p-4 overflow-auto">
-            <div className={`interest-cdmdshr-card rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mr-3" />
-                  <span className={`font-bold ${muted}`}>Loading interest data...</span>
-                </div>
-              ) : paginatedData.length > 0 ? (
-                <>
-                <ProBar enabled={enabled} view={view} setView={setView} />
-                {view !== 'legacy' && (filteredData.length > 0 ? <ProBody view={view} spec={spec} title="Interest Distribution List" subtitle={`FY ${financialYear}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No interest data to show'}</p>)}
-                {view === 'legacy' && (
-                <>
-                  {/* Company Header */}
-                  <div className={`text-center px-4 pt-4 pb-3 border-b border-dashed font-mono fz-label ${isDark ? 'bg-slate-900/30 border-slate-600' : 'bg-slate-50 border-slate-300'}`}>
-                    <div className={`fz-body font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                      Espat Karmchari Co-Operative Credit Society Limited.
-                    </div>
-                    <div className={`mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                      Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006
-                    </div>
-                    <div className={`fz-body font-bold mt-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                      INTEREST DISTRIBUTION LIST — FY {financialYear}
-                    </div>
-                    <div className={`${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                      Generated: {dayjs().format('DD MMM YYYY hh:mm A')}
-                    </div>
-                  </div>
-
-                  {/* Table */}
-                  <div className="overflow-x-auto">
-                    <table className={`w-full border-collapse border font-mono fz-label ${tblBdr}`}>
-                      <thead>
-                        <tr className={tblHd}>
-                          <th className={`border px-2 py-2 text-left font-bold uppercase ${tblBdr}`}>SR</th>
-                          <th className={`border px-2 py-2 text-left font-bold uppercase ${tblBdr}`}>Member No</th>
-                          <th className={`border px-2 py-2 text-left font-bold uppercase ${tblBdr}`}>Member Name</th>
-                          <th className={`border px-2 py-2 text-left font-bold uppercase ${tblBdr}`}>Office</th>
-                          <th className={`border px-2 py-2 text-left font-bold uppercase ${tblBdr}`}>Type</th>
-                          <th className={`border px-2 py-2 text-right font-bold uppercase ${tblBdr}`}>Principal</th>
-                          <th className={`border px-2 py-2 text-right font-bold uppercase ${tblBdr}`}>Interest</th>
-                          <th className={`border px-2 py-2 text-left font-bold uppercase ${tblBdr}`}>Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedData.map((r, i) => (
-                          <tr key={`${r.memberNo}-${r.fromDate}-${i}`} className={rowHov}>
-                            <td className={`border px-2 py-1 ${tblCBdr} ${tblTxt}`}>{(currentPage - 1) * pageSize + i + 1}</td>
-                            <td className={`border px-2 py-1 font-bold ${tblCBdr} ${tblEmp}`}>{r.memberNo}</td>
-                            <td className={`border px-2 py-1 font-bold ${tblCBdr} ${tblEmp}`}>{r.memberName}</td>
-                            <td className={`border px-2 py-1 ${tblCBdr} ${tblTxt}`}>{r.officeName || '-'}</td>
-                            <td className={`border px-2 py-1 font-bold uppercase ${tblCBdr} ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>{r.depositType || 'DEPOSIT'}</td>
-                            <td className={`border px-2 py-1 text-right font-bold ${tblCBdr} ${tblEmp}`}>₹{formatCurrency(r.principalAmount)}</td>
-                            <td className={`border px-2 py-1 text-right font-bold ${tblCBdr} ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
-                              {r.interestAmount > 0 && <CrDrIndicator type="credit" className="mr-1" />}
-                              ₹{formatCurrency(r.interestAmount)}
-                            </td>
-                            <td className={`border px-2 py-1 ${tblCBdr} ${tblTxt}`}>{dayjs(r.fromDate).format('DD/MM/YYYY')}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className={`font-bold ${tfoot}`}>
-                          <td colSpan={5} className={`border px-2 py-2 font-black uppercase ${tblBdr}`}>
-                            Page: {paginatedData.length} records | Total: {filteredData.length} entries
-                          </td>
-                          <td className={`border px-2 py-2 text-right font-black ${tblBdr}`}>
-                            ₹{formatCurrency(totals.totalPrincipal)}
-                          </td>
-                          <td className={`border px-2 py-2 text-right font-black ${tblBdr} ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
-                            {totals.totalInterest > 0 && <CrDrIndicator type="credit" className="mr-1" />}
-                            ₹{formatCurrency(totals.totalInterest)}
-                          </td>
-                          <td className={`border px-2 py-2 ${tblBdr}`} />
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-
-                  {/* Pagination */}
-                  {filteredData.length > pageSize && (
-                    <div className={`flex items-center justify-between px-4 py-3 border-t ${pagerBg}`}>
-                      <div className={`fz-label font-bold ${muted}`}>
-                        {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length}
-                      </div>
-                      <Pagination
-                        current={currentPage}
-                        pageSize={pageSize}
-                        total={filteredData.length}
-                        onChange={(p, ps) => { setCurrentPage(p); if (ps !== pageSize) setPageSize(ps); }}
-                        showSizeChanger
-                        showQuickJumper
-                        pageSizeOptions={['50', '100', '200', '500']}
-                        size="small"
-                      />
-                    </div>
-                  )}
-                </>
-                )}
-                </>
-              ) : (
-                <div className="text-center py-12">
-                  <PiggyBank size={48} className="text-slate-300 mx-auto mb-3" />
-                  <h3 className={`fz-body font-bold uppercase ${muted}`}>No Interest Data</h3>
-                  <p className={`fz-label mt-1 ${muted}`}>Select Financial Year and click Load Interest Data</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        </div>
-      </div>
-
-      {/* Member Lookup Modal — same as Member Master */}
-      <Modal
-        open={showLookupModal}
-        onCancel={() => setShowLookupModal(false)}
-        footer={null}
-        width={800}
-        styles={{ body: { padding: 0 } }}
-        closable={false}
-        destroyOnClose
-      >
-        <MemberLookup
-          isModal={true}
-          onSelect={(member) => handleMemberLookup(member.memberNo, member.memberName || member.name)}
-          onClose={() => setShowLookupModal(false)}
-        />
-      </Modal>
-
-      <style>{`
-        /* ── Interest List CD/MD/SHR — dark mode (reinforces the page's own isDark styling) ── */
-        html.dark .interest-cdmdshr-page { background-color: #000000 !important; }
-        html.dark .interest-cdmdshr-topbar { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .interest-cdmdshr-sidebar,
-        html.dark .interest-cdmdshr-topbar2,
-        html.dark .interest-cdmdshr-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .interest-cdmdshr-page label { color: #8e8e93 !important; }
-        html.dark .interest-cdmdshr-page .ant-select-selector,
-        html.dark .interest-cdmdshr-page .ant-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .interest-cdmdshr-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+        </section>
+      )}
+      {!hasData && (
+        <ReportEmpty icon={<PiggyBank size={34} />} title={loading ? 'Loading…' : 'No Interest Data'} hint="Select the financial year and click Load interest data" />
+      )}
+    </ReportShell>
   );
 };
 

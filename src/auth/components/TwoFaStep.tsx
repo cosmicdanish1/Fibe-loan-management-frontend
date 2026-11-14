@@ -87,7 +87,7 @@ const TwoFaStep: React.FC<Props> = ({ challenge, onComplete, onBack }) => {
   const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [useRecovery, setUseRecovery] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(true); // ES-205: ticked by default
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [setup, setSetup] = useState<{ secret: string; qrDataUrl: string } | null>(null);
@@ -170,7 +170,7 @@ const TwoFaStep: React.FC<Props> = ({ challenge, onComplete, onBack }) => {
           {challenge.rememberDays > 0 && !useRecovery && (
             <label className="aw-inline" style={{ gap: 8, cursor: 'pointer', alignItems: 'center', fontWeight: 600 }}>
               <input type="checkbox" checked={remember} onChange={() => setRemember((r) => !r)} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
-              {t('Remember this device for')} {challenge.rememberDays} days
+              {t('Don\x27t ask again on this computer for')} {challenge.rememberDays} {t('days')}
             </label>
           )}
           {error && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><div>{error}</div></div>}

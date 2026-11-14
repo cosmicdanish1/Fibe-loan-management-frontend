@@ -242,7 +242,7 @@ export interface FundManagement {
   interestChart: Array<{ monthlyContribution: number; yearlyInterest: number }>;
 }
 
-const initialData: BusinessRulesData = {
+export const initialData: BusinessRulesData = {
   // Regular Loan eligibility — mirrors REGULAR_LOAN_RULE_DEFAULTS on the backend
   regularLoanEligibility: {
     maxLimit: 1000000,

@@ -112,18 +112,18 @@ const MemberStatus: React.FC = () => {
         .ms-tile { text-align: left; background: var(--aw-surface); border: 1px solid var(--aw-border); border-radius: var(--aw-radius); padding: 12px 14px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
         .ms-tile:hover { border-color: var(--aw-border-strong); }
         .ms-tile[aria-selected="true"] { border-color: var(--aw-accent); box-shadow: 0 0 0 1px var(--aw-accent); }
-        .ms-tile b { display: block; font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-        .ms-tile span { display: block; font-size: 12px; color: var(--aw-muted); }
-        .ms-tile strong { display: block; font-size: 12.5px; margin-bottom: 2px; }
+        .ms-tile b { display: block; font-size: var(--type-section-title); line-height: 1.1; font-variant-numeric: tabular-nums; }
+        .ms-tile span { display: block; font-size: var(--type-supporting-size); color: var(--aw-muted); }
+        .ms-tile strong { display: block; font-size: var(--type-supporting-size); margin-bottom: 2px; }
         .ms-num { text-align: right; font-variant-numeric: tabular-nums; }
         .ms-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
         .ms-dialog { width: min(520px, 100%); background: var(--aw-surface); border: 1px solid var(--aw-border-strong); border-radius: var(--aw-radius); box-shadow: var(--aw-shadow-pop); padding: 18px; }
-        .ms-dialog h2 { margin: 0 0 4px; font-size: 16px; }
-        .ms-warn { margin: 10px 0; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--aw-warning, #c98a00) 14%, transparent); font-size: 13px; }
+        .ms-dialog h2 { margin: 0 0 4px; font-size: var(--type-panel-title); }
+        .ms-warn { margin: 10px 0; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--aw-warning, #c98a00) 14%, transparent); font-size: var(--type-body-size); }
         .ms-warn ul { margin: 6px 0 0; padding-left: 18px; }
         .ms-row-actions { display: flex; gap: 6px; justify-content: flex-end; }
         .ms-kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 18px; margin: 10px 0 4px; }
-        .ms-kv dt { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--aw-muted); }
+        .ms-kv dt { font-size: var(--type-supporting-size); text-transform: uppercase; letter-spacing: .04em; color: var(--aw-muted); }
         .ms-kv dd { margin: 2px 0 0; font-weight: 600; }
       `}</style>
 
@@ -176,14 +176,14 @@ const MemberStatus: React.FC = () => {
                 />
               </div>
               {showMonths && (
-                <label className="is-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                <label className="is-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 'var(--type-supporting-size)' }}>
                   {t('Retiring within')}
                   <select className="aw-input" style={{ width: 'auto' }} value={s.months} onChange={e => s.changeMonths(Number(e.target.value))}>
                     {[3, 6, 12, 18, 24, 36].map(m => <option key={m} value={m}>{t('{{1}} months', { 1: m })}</option>)}
                   </select>
                 </label>
               )}
-              <span className="is-muted" style={{ fontSize: 12, marginLeft: 'auto' }}>{t('{{1}} member{{2}}', { 1: s.total.toLocaleString('en-IN'), 2: s.total === 1 ? '' : 's' })}</span>
+              <span className="is-muted" style={{ fontSize: 'var(--type-supporting-size)', marginLeft: 'auto' }}>{t('{{1}} member{{2}}', { 1: s.total.toLocaleString('en-IN'), 2: s.total === 1 ? '' : 's' })}</span>
             </div>
 
             {s.error && <div className="aw-alert aw-alert-danger" role="alert"><AlertCircle size={16} /><span>{s.error}</span></div>}
@@ -235,7 +235,7 @@ const MemberStatus: React.FC = () => {
             {s.total > PAGE_SIZE && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
                 <button type="button" className="aw-btn aw-btn-ghost" disabled={s.page === 0 || s.loading} onClick={() => s.setPage(s.page - 1)}><ChevronLeft size={13} /> {t('Prev')}</button>
-                <span className="is-muted" style={{ fontSize: 12 }}>{t('{{1}} {{2}} of {{3}}', { 1: t('Page'), 2: s.page + 1, 3: lastPage + 1 })}</span>
+                <span className="is-muted" style={{ fontSize: 'var(--type-supporting-size)' }}>{t('{{1}} {{2}} of {{3}}', { 1: t('Page'), 2: s.page + 1, 3: lastPage + 1 })}</span>
                 <button type="button" className="aw-btn aw-btn-ghost" disabled={s.page >= lastPage || s.loading} onClick={() => s.setPage(s.page + 1)}>{t('Next')} <ChevronRight size={13} /></button>
               </div>
             )}
@@ -259,7 +259,7 @@ const MemberStatus: React.FC = () => {
             {found && (
               <div style={{ marginTop: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <strong style={{ fontSize: 16 }}>{found.name || t('Member')} ({found.memberNo})</strong>
+                  <strong style={{ fontSize: 'var(--type-panel-title)' }}>{found.name || t('Member')} ({found.memberNo})</strong>
                   <span className="aw-pill">{found.active ? t('Active') : t('Inactive')}</span>
                   {found.active && found.readyToInactivate && <span className="aw-pill">{t('Ready to mark inactive')}</span>}
                 </div>
@@ -281,9 +281,9 @@ const MemberStatus: React.FC = () => {
                   )}
                 </div>
 
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, margin: '18px 0 6px' }}><History size={13} /> {t('History')}</h3>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--type-body-size)', margin: '18px 0 6px' }}><History size={13} /> {t('History')}</h3>
                 {foundHistory.length === 0 ? (
-                  <p className="is-muted" style={{ fontSize: 12, margin: 0 }}>{t('No status changes recorded for this member.')}</p>
+                  <p className="is-muted" style={{ fontSize: 'var(--type-supporting-size)', margin: 0 }}>{t('No status changes recorded for this member.')}</p>
                 ) : (
                   <div className="aw-table-wrap">
                     <table className="aw-table" style={{ minWidth: 640 }}>
@@ -316,7 +316,7 @@ const MemberStatus: React.FC = () => {
         <div className="ms-overlay" role="dialog" aria-modal="true" onMouseDown={e => { if (e.target === e.currentTarget && !busy) setDialog(null); }}>
           <div className="ms-dialog">
             <h2>{dialog.kind === 'inactive' ? t('Mark member inactive') : t('Make member active again')}</h2>
-            <p className="is-muted" style={{ margin: '0 0 8px', fontSize: 13 }}>{t('{{1}} ({{2}}) · retirement {{3}} · RD {{4}}', { 1: dialog.info.name || t('Member'), 2: dialog.info.memberNo, 3: fmtDate(dialog.info.retirementDate), 4: inr(dialog.info.rdBalance) })}</p>
+            <p className="is-muted" style={{ margin: '0 0 8px', fontSize: 'var(--type-body-size)' }}>{t('{{1}} ({{2}}) · retirement {{3}} · RD {{4}}', { 1: dialog.info.name || t('Member'), 2: dialog.info.memberNo, 3: fmtDate(dialog.info.retirementDate), 4: inr(dialog.info.rdBalance) })}</p>
             {dialog.kind === 'inactive' && dialog.info.warnings.length > 0 && (
               <div className="ms-warn">
                 <strong><AlertTriangle size={14} style={{ verticalAlign: '-2px' }} /> {t('The inactive conditions are not all met')}</strong>
@@ -327,7 +327,7 @@ const MemberStatus: React.FC = () => {
                 </label>
               </div>
             )}
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, margin: '8px 0 4px' }}>{t('Reason')}</label>
+            <label style={{ display: 'block', fontSize: 'var(--type-supporting-size)', fontWeight: 600, margin: '8px 0 4px' }}>{t('Reason')}</label>
             <textarea
               className="aw-input" rows={3} style={{ width: '100%', resize: 'vertical' }}
               value={reason} onChange={e => setReason(e.target.value)} autoFocus

@@ -1,15 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import {
-  FileText, Search, Printer, FileDown, User, RotateCcw, ShieldCheck, BookOpen, Calendar, Users
-} from 'lucide-react';
-import { ConfigProvider, Button, DatePicker, Radio, Input, Modal, message, theme as antdTheme } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
+import { FileText, Search, Printer, FileDown, User, RotateCcw } from 'lucide-react';
+import { message } from 'antd';
 import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import { indianFinancialYearStart } from '@/utils/dates';
-import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
-import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import MemberField from '../../../../../components/shared/kit/MemberField';
+import { ReportShell, ParamCard, StatCards, OutputChoice, ReportEmpty, LegacyDocument } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { GenericBento, GenericEditorial, GenericTerminal } from '../../../../../components/reports/views/GenericPro';
 import { useReportViews } from '../../../../../components/reports/views/reportViews';
 import { useColumnarSpec } from '../views/columnarPro';
 
@@ -121,16 +119,11 @@ const MemberLedger: React.FC = () => {
   const [outputType, setOutputType] = useState<string>('screen');
   const [report, setReport] = useState<ColumnarLedger | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showLookup, setShowLookup] = useState(false);
 
   const handleMemberSelect = useCallback((member: any) => {
     setMemberNumber(member.memberNo || member.mbno || '');
     setMemberName(member.memberName || member.name || '');
-    setShowLookup(false);
   }, []);
-
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
 
   const fmtMoney = useCallback((n: number) =>
     new Intl.NumberFormat('en-IN', { maximumFractionDigits: 4 }).format(n || 0), []);
@@ -257,244 +250,71 @@ const MemberLedger: React.FC = () => {
   const { enabled, view, setView } = useReportViews('yearly.member-ledger');
   const spec = useColumnarSpec(report);
 
+  const range = `${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`;
+
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#0891b2',
-          borderRadius: 6,
-          fontSize: 12,
-          colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-          colorBorder: isDark ? '#334155' : '#e2e8f0',
-        },
-      }}
+    <ReportShell
+      className="member-ledger-page"
+      title="Member Ledger"
+      desc="Member detail ledger: shares, loans and compulsory deposit"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!report}><FileDown size={14} /> CSV</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!report}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Ledger" icon={<User size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="ml-member">Member No.</label>
+              <MemberField id="ml-member" value={memberNumber} onChange={setMemberNumber} onSelect={handleMemberSelect} onSubmit={() => generateReport()} />
+            </div>
+            <input className="aw-input" value={memberName} readOnly placeholder="Member name" aria-label="Member name" />
+            <div>
+              <label className="aw-label" htmlFor="ml-from">From date</label>
+              <input id="ml-from" type="date" className="aw-input" value={fromDate.format('YYYY-MM-DD')} onChange={e => e.target.value && setFromDate(dayjs(e.target.value))} />
+            </div>
+            <div>
+              <label className="aw-label" htmlFor="ml-to">To date</label>
+              <input id="ml-to" type="date" className="aw-input" value={toDate.format('YYYY-MM-DD')} onChange={e => e.target.value && setToDate(dayjs(e.target.value))} />
+            </div>
+            <OutputChoice value={outputType === 'printer' ? 'printer' : 'screen'} onChange={setOutputType} id="ml-output" />
+            <button type="button" className="aw-btn aw-btn-primary" onClick={() => generateReport()} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Generate'}
+            </button>
+          </ParamCard>
+          {report && (
+            <StatCards items={[
+              { label: 'Share', value: `₹${fmtMoney(report.closing.share)}`, tone: 'info' },
+              { label: 'CD', value: `₹${fmtMoney(report.closing.cd)}`, tone: 'info' },
+              { label: 'Reg. loan', value: `₹${fmtMoney(report.closing.ltl)}`, tone: 'muted' },
+              { label: 'Emerg. loan', value: `₹${fmtMoney(report.closing.emer)}`, tone: 'muted' },
+            ]} />
+          )}
+        </>
+      }
+      footerLeft="Member Ledger"
+      footerRight={memberNumber ? `Member ${memberNumber} · ${range}` : range}
     >
-      <style>{`
-        .custom-scrollbar-cyan::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar-cyan::-webkit-scrollbar-track { background: ${isDark ? '#0f172a' : '#f8fafc'}; border-radius: 3px; }
-        .custom-scrollbar-cyan::-webkit-scrollbar-thumb { background: ${isDark ? '#334155' : '#67e8f9'}; border-radius: 3px; }
-        .custom-scrollbar-cyan::-webkit-scrollbar-thumb:hover { background: ${isDark ? '#475569' : '#22d3ee'}; }
-
-        /* ── Member Ledger — dark mode (app-wide Settings palette) ── */
-        html.dark .member-ledger-page { background-color: #000000 !important; background-image: none !important; color: #f5f5f7 !important; }
-        html.dark .member-ledger-header { background-color: #0c0c0e !important; background-image: none !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .member-ledger-page .bg-slate-800,
-        html.dark .member-ledger-page .bg-slate-700 { background-color: #1c1c1e !important; }
-        html.dark .member-ledger-page .bg-slate-900,
-        html.dark .member-ledger-page .bg-slate-900\/40 { background-color: #1c1c1e !important; background-image: none !important; }
-        html.dark .member-ledger-page .border-slate-700,
-        html.dark .member-ledger-page .border-slate-600,
-        html.dark .member-ledger-page .border-white\/5 { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .member-ledger-page .text-slate-100,
-        html.dark .member-ledger-page .text-slate-200 { color: #f5f5f7 !important; }
-        html.dark .member-ledger-page .text-slate-400,
-        html.dark .member-ledger-page .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .member-ledger-page .text-slate-600 { color: #71717a !important; }
-        html.dark .member-ledger-page label { color: #8e8e93 !important; }
-        html.dark .member-ledger-preview { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .member-ledger-preview pre { color: #f5f5f7 !important; }
-        html.dark .member-ledger-page .ant-input,
-        html.dark .member-ledger-page .ant-input-affix-wrapper,
-        html.dark .member-ledger-page .ant-input-search .ant-input-group-addon .ant-btn,
-        html.dark .member-ledger-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .member-ledger-page .ant-input::placeholder,
-        html.dark .member-ledger-page .ant-picker input::placeholder { color: #71717a !important; }
-        html.dark .member-ledger-page .ant-picker input { color: #f5f5f7 !important; }
-        html.dark .member-ledger-page .ant-radio-button-wrapper { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
-        html.dark .member-ledger-page .ant-radio-button-wrapper-checked { color: #ffffff !important; }
-        html.dark .member-ledger-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-      `}</style>
-
-      <div className={`member-ledger-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-cyan-50/20 to-slate-50'}`}>
-        {/* Header */}
-        <div className={`member-ledger-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-cyan-600 to-cyan-700 p-1.5 rounded-lg text-white shadow-md">
-              <BookOpen size={14} />
-            </div>
-            <div>
-              <h1 className={`fz-label font-black tracking-tight leading-none ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Member Ledger</h1>
-              <div className={`flex items-center gap-1 mt-0.5 fz-caption font-bold uppercase tracking-wider leading-none ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
-                <ShieldCheck size={8} className="text-cyan-500" /> Member Detail Ledger
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <Button icon={<RotateCcw size={11} />} size="small"
-              className="h-7 px-2 rounded-lg fz-caption font-bold uppercase tracking-wide border-slate-200 hover:border-cyan-500 hover:text-cyan-600"
-              onClick={handleReset}>Reset</Button>
-            <Button icon={<Printer size={11} />} size="small"
-              className="h-7 px-2 rounded-lg fz-caption font-bold uppercase tracking-wide border-slate-200 hover:border-cyan-500 hover:text-cyan-600"
-              onClick={handlePrint} disabled={!report}>Print</Button>
-            <Button type="primary" icon={<FileDown size={11} />} size="small"
-              className="h-7 px-3 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 rounded-lg fz-caption font-bold uppercase tracking-wide shadow-md"
-              onClick={handleExportCSV} disabled={!report}>CSV</Button>
-          </div>
-        </div>
-
-        {/* Main */}
-        <div className="flex-1 overflow-hidden p-2 flex gap-2">
-          {/* Sidebar */}
-          <div className="w-[260px] flex flex-col gap-2 shrink-0 overflow-y-auto custom-scrollbar-cyan">
-            {/* Member */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-cyan-200/60'}`}>
-              <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-2 py-1 flex items-center gap-1">
-                <User size={10} className="text-white" />
-                <h3 className="fz-caption font-black text-white tracking-wide uppercase">Member</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <label className={`fz-caption font-bold uppercase tracking-tight flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  <User size={10} className="text-cyan-500" />
-                  Member No
-                </label>
-                <Input.Search
-                  placeholder="Type member no..."
-                  value={memberNumber}
-                  onChange={e => setMemberNumber(e.target.value)}
-                  onSearch={() => setShowLookup(true)}
-                  className="h-8 fz-label font-semibold"
-                />
-                <label className={`fz-caption font-bold uppercase tracking-tight flex items-center gap-1 mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  <User size={10} className="text-cyan-500" />
-                  Member Name
-                </label>
-                <Input
-                  value={memberName}
-                  readOnly
-                  placeholder="Selected member name"
-                  className="h-8 fz-label font-semibold"
-                />
-              </div>
-            </div>
-
-            {/* Date Range */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-cyan-200/60'}`}>
-              <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-2 py-1 flex items-center gap-1">
-                <Calendar size={10} className="text-white" />
-                <h3 className="fz-caption font-black text-white tracking-wide uppercase">Date Range</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <div>
-                  <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>From</label>
-                  <DatePicker className="w-full h-7 fz-caption font-semibold" value={fromDate} onChange={v => v && setFromDate(v)} format="DD-MMM-YY" />
-                </div>
-                <div>
-                  <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>To</label>
-                  <DatePicker className="w-full h-7 fz-caption font-semibold" value={toDate} onChange={v => v && setToDate(v)} format="DD-MMM-YY" />
-                </div>
-              </div>
-            </div>
-
-            {/* Output */}
-            <div className={`rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-cyan-200/60'}`}>
-              <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-2 py-1 flex items-center gap-1">
-                <FileText size={10} className="text-white" />
-                <h3 className="fz-caption font-black text-white tracking-wide uppercase">Output</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <div>
-                  <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Type</label>
-                  <Radio.Group size="small" value={outputType} onChange={e => setOutputType(e.target.value)} className="w-full">
-                    <Radio.Button value="screen" className="w-1/2 text-center fz-caption font-bold">SCR</Radio.Button>
-                    <Radio.Button value="printer" className="w-1/2 text-center fz-caption font-bold">PTR</Radio.Button>
-                  </Radio.Group>
-                </div>
-                <Button type="primary" block size="small" icon={<Search size={11} />} onClick={generateReport} loading={loading}
-                  className="h-8 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 font-black uppercase tracking-wider fz-caption mt-1 shadow-lg">
-                  Generate
-                </Button>
-              </div>
-            </div>
-
-            {/* Closing balances */}
-            {report && (
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: 'Share', val: report.closing.share },
-                  { label: 'CD', val: report.closing.cd },
-                  { label: 'Reg. Loan', val: report.closing.ltl },
-                  { label: 'Emerg. Loan', val: report.closing.emer },
-                ].map(s => (
-                  <div key={s.label} className={`rounded-lg p-2 shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-cyan-200/60'}`}>
-                    <div className={`fz-caption font-bold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{s.label}</div>
-                    <div className={`fz-label font-black font-mono ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>₹{fmtMoney(s.val)}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Report */}
-          <div className={`flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-cyan-200/60'}`}>
-            <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-3 py-1.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1.5">
-                <div className="bg-white/20 p-1 rounded-md shadow-sm"><FileText size={12} className="text-white" /></div>
-                <div>
-                  <h3 className="fz-caption font-black text-white uppercase tracking-wide leading-none">Detail Ledger</h3>
-                  <p className="fz-caption font-bold text-cyan-200 uppercase mt-0.5 tracking-tight leading-none">
-                    {fromDate.format('DD-MMM-YY')} - {toDate.format('DD-MMM-YY')}
-                  </p>
-                </div>
-              </div>
-              {report && <div className="fz-caption font-black text-white bg-white/20 px-2 py-0.5 rounded">{report.rows.length} Entries</div>}
-            </div>
-
-            <div className={`flex-1 overflow-auto p-3 custom-scrollbar-cyan ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-cyan-50/10'}`}>
-              {loading ? (
-                <div className="flex items-center justify-center py-20">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mr-3" />
-                  <span className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading ledger...</span>
-                </div>
-              ) : report ? (
-                <>
-                <ProBar enabled={enabled} view={view} setView={setView} />
-                {view !== 'legacy' && (report !== null ? <ProBody view={view} spec={spec} title="Member Detail Ledger" subtitle={`${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No ledger to show'}</p>)}
-                {view === 'legacy' && (
-                <div className={`member-ledger-preview font-mono rounded-lg border p-4 overflow-x-auto ${isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-[#fffff0] border-slate-300 text-slate-800'}`}>
-                  <pre style={{ fontFamily: "'Courier New', Courier, monospace", lineHeight: '1.4', fontSize: '12px' }} className="whitespace-pre">{reportText}</pre>
-                </div>
-                )}
-                </>
-              ) : (
-                <div className="py-32 text-center">
-                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner ${isDark ? 'bg-slate-800' : 'bg-cyan-50'}`}>
-                    <FileText className={`text-4xl ${isDark ? 'text-slate-600' : 'text-cyan-200'}`} />
-                  </div>
-                  <h4 className={`font-black fz-label uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No Data</h4>
-                  <p className={`fz-caption mt-1 font-semibold ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Select a member and generate</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-      <Modal
-        title={
-          <div className="flex items-center gap-2 py-1">
-            <div className="w-8 h-8 bg-cyan-600 rounded-lg flex items-center justify-center shadow-md">
-              <Users size={16} className="text-white" />
-            </div>
-            <div>
-              <div className="text-sm font-black text-slate-800">Member Lookup</div>
-              <div className="fz-caption text-slate-400 font-bold uppercase tracking-wide">Select Member</div>
-            </div>
-          </div>
-        }
-        open={showLookup}
-        onCancel={() => setShowLookup(false)}
-        footer={null}
-        width={950}
-        centered
-        destroyOnClose
-        styles={{ body: { padding: 0 } }}
-      >
-        <div className="p-2">
-          <MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} />
-        </div>
-      </Modal>
-    </ConfigProvider>
+      {report && view === 'bento' && <GenericBento spec={spec} />}
+      {report && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><GenericTerminal spec={spec} /></div>}
+      {report && view === 'editorial' && <GenericEditorial spec={spec} title="Member Detail Ledger" subtitle={range} />}
+      {view === 'legacy' && (
+        <LegacyDocument
+          title={`Detail Ledger — Member: ${memberNumber || 'N/A'}`}
+          meta={report ? `${report.rows.length} entries · ${range}` : range}
+          text={reportText}
+          loading={loading}
+          empty={<ReportEmpty icon={<FileText size={34} />} title="No Data" hint="Select a member and generate" />}
+        />
+      )}
+      {view !== 'legacy' && !report && (
+        <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Data'} hint="Select a member and generate" />
+      )}
+    </ReportShell>
   );
 };
 

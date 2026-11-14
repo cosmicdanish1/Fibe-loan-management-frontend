@@ -142,6 +142,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   // Utility Routes
   'PREMATURE_SB_AC': { route: '/utility/premature-information/sb', electronMethod: 'openNewWindow' },
   'CALCULATOR': { route: '/utility/calculator', electronMethod: 'openNewWindow' },
+  'SOCIETY_CALCULATOR': { route: '/utility/society-calculator', electronMethod: 'openNewWindow' },
   'FIND': { route: '/utility/find', electronMethod: 'openNewWindow' },
   'MEMBER_BALANCE': { route: '/utility/member-balance', electronMethod: 'openNewWindow' },
   'EMI_CHART': { route: '/utility/emi-chart', electronMethod: 'openNewWindow' },
@@ -189,7 +190,6 @@ export const ROUTE_TO_ACTION: Record<string, string> = {
   '/reports/member-statement/new-share-certificate': 'NEW_SHARE_CERTIFICATE',
   '/reports/member-statement/interest-certificate': 'INTEREST_CERTIFICATE',
   '/reports/member-statement/loan-nil-certificate': 'LOAN_NIL_CERTIFICATE',
-  '/reports/daily/cash-book-old': 'CASH_BOOK',
   '/masters/member-master': 'MEMBER_MASTER', // alias of /masters/member (same screen, same right)
   // Opened from the Loan Payment window (useLoanPayment.openSanctionWindow).
   '/loan-sanction': 'LOAN_PAYMENT',

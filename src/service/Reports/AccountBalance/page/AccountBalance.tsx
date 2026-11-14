@@ -1,30 +1,14 @@
 import React, { useState, useCallback, useRef } from 'react';
-import {
-  FileText,
-  Printer,
-  Search,
-  RotateCcw,
-  Wallet,
-  User,
-  Calendar,
-} from 'lucide-react';
-import {
-  ConfigProvider,
-  Button,
-  Spin,
-  Radio,
-  Input,
-  Modal,
-  message,
-  theme as antdTheme,
-} from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../store';
+import { Printer, Search, RotateCcw, Wallet, User, FileText } from 'lucide-react';
+import { message } from 'antd';
 import { apiService } from '../../../../services/api';
 import dayjs from 'dayjs';
-import MemberLookup from '../../../../components/shared/MemberLookup/MemberLookup';
-import { ProBar, ProBody } from '../../../../components/reports/views/ProIsland';
+import MemberField from '../../../../components/shared/kit/MemberField';
+import { ReportShell, ParamCard, StatCards, OutputChoice, ReportEmpty, LegacyDocument } from '../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../components/reports/views/ReportViewSwitcher';
+import { GenericBento, GenericEditorial, GenericTerminal } from '../../../../components/reports/views/GenericPro';
 import { useReportViews } from '../../../../components/reports/views/reportViews';
+import '../../../../components/reports/views/proViews.css';
 import { useBalanceSpec } from '../views/balancePro';
 
 // ── report layout ────────────────────────────────────────────────────────────
@@ -165,34 +149,22 @@ const printReportText = (text: string) => {
 
 // ── component ────────────────────────────────────────────────────────────────
 const AccountBalance: React.FC = () => {
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark =
-    interfaceMode === 'dark';
-
   const [fromNo,   setFromNo]   = useState('');
   const [fromName, setFromName] = useState('');
   const [toNo,     setToNo]     = useState('');
   const [toName,   setToName]   = useState('');
-  const [outputType, setOutputType] = useState('screen');
-  const [showLookup,   setShowLookup]   = useState(false);
-  const [lookupTarget, setLookupTarget] = useState<'from' | 'to'>('from');
+  const [outputType, setOutputType] = useState<'screen' | 'printer'>('screen');
   const [reportText, setReportText] = useState('');
   const [isLoading,  setIsLoading]  = useState(false);
   const [balanceRows, setBalanceRows] = useState<BalanceItem[]>([]);
   const reportTextRef = useRef('');
 
-  const openLookup = useCallback((target: 'from' | 'to') => {
-    setLookupTarget(target);
-    setShowLookup(true);
-  }, []);
-
-  const handleMemberSelect = useCallback((member: any) => {
-    const no   = member.memberNo || member.mbno || '';
+  const handleMemberSelect = useCallback((member: any, target: 'from' | 'to') => {
+    const no   = String(member.memberNo || member.mbno || '');
     const name = member.memberName || member.name || '';
-    if (lookupTarget === 'from') { setFromNo(no); setFromName(name); }
-    else                          { setToNo(no);   setToName(name);   }
-    setShowLookup(false);
-  }, [lookupTarget]);
+    if (target === 'from') { setFromNo(no); setFromName(name); }
+    else                   { setToNo(no);   setToName(name);   }
+  }, []);
 
   const handleReset = useCallback(() => {
     setFromNo(''); setFromName('');
@@ -248,228 +220,69 @@ const AccountBalance: React.FC = () => {
     printReportText(reportTextRef.current);
   }, []);
 
-  const labelCls = `fz-caption font-bold uppercase tracking-tight flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`;
-
   const { enabled, view, setView } = useReportViews('account-balance');
   const spec = useBalanceSpec(balanceRows, `${fromNo} to ${toNo}`);
+  const hasData = balanceRows.length > 0;
+  const rangeLabel = fromNo && toNo ? `${fromNo} – ${toNo}` : '';
 
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#0ea5e9',
-          borderRadius: 6,
-          fontSize: 12,
-          colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-          colorBorder: isDark ? '#334155' : '#e2e8f0',
-        },
-      }}
-    >
-      <style>{`
-        .custom-scrollbar-sky::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar-sky::-webkit-scrollbar-track { background: ${isDark ? '#1e293b' : '#f8fafc'}; border-radius: 3px; }
-        .custom-scrollbar-sky::-webkit-scrollbar-thumb { background: #7dd3fc; border-radius: 3px; }
-        .custom-scrollbar-sky::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
-      `}</style>
-
-      <div className={`account-balance-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-sky-50/20 to-slate-50'}`}>
-
-        {/* Header */}
-        <div className={`ab-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-sky-600 to-sky-700 p-1.5 rounded-lg text-white shadow-md">
-              <Wallet size={14} />
-            </div>
+    <ReportShell
+      className="account-balance-page"
+      title="Account Balance"
+      desc="Member balance report"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!reportText}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="From Member" icon={<User size={14} />}>
             <div>
-              <h1 className={`text-xs font-black tracking-tight leading-none ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Account Balance</h1>
-              <div className={`flex items-center gap-1 mt-0.5 fz-body font-bold uppercase tracking-wider leading-none ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
-                <Wallet size={8} className="text-sky-500" /> Member Balance Report
-              </div>
+              <label className="aw-label" htmlFor="ab-from">Member No.</label>
+              <MemberField id="ab-from" value={fromNo} onChange={setFromNo} onSelect={m => handleMemberSelect(m, 'from')} ariaLabel="From member number" />
             </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button icon={<RotateCcw size={11} />} size="small"
-              className="h-7 px-2 rounded-lg fz-body font-bold uppercase tracking-wide border-slate-200 hover:border-sky-500 hover:text-sky-600"
-              onClick={handleReset}>Reset</Button>
-            <Button icon={<Printer size={11} />} size="small"
-              className="h-7 px-2 rounded-lg fz-body font-bold uppercase tracking-wide border-slate-200 hover:border-sky-500 hover:text-sky-600"
-              onClick={handlePrint} disabled={!reportText}>Print</Button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-hidden p-2 flex gap-2">
-
-          {/* Sidebar */}
-          <div className="w-[220px] flex flex-col gap-2 shrink-0 overflow-y-auto custom-scrollbar-sky">
-
-            {/* From Member */}
-            <div className={`ab-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
-              <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
-                <User size={10} className="text-white" />
-                <h3 className="fz-body font-black text-white tracking-wide uppercase">From Member</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <label className={labelCls}><User size={10} className="text-sky-500" />Member No</label>
-                <Input.Search
-                  placeholder="Type member no..."
-                  value={fromNo}
-                  onChange={e => setFromNo(e.target.value)}
-                  onSearch={() => openLookup('from')}
-                  className="h-8 fz-label font-semibold"
-                />
-                <label className={`${labelCls} mt-1`}><User size={10} className="text-sky-500" />Member Name</label>
-                <Input value={fromName} readOnly placeholder="Selected member name" className="h-8 fz-label font-semibold" />
-              </div>
+            <input className="aw-input" value={fromName} readOnly placeholder="Selected member name" aria-label="From member name" />
+          </ParamCard>
+          <ParamCard title="To Member" icon={<User size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="ab-to">Member No.</label>
+              <MemberField id="ab-to" value={toNo} onChange={setToNo} onSelect={m => handleMemberSelect(m, 'to')} onSubmit={() => handleGenerate()} ariaLabel="To member number" />
             </div>
+            <input className="aw-input" value={toName} readOnly placeholder="Selected member name" aria-label="To member name" />
+          </ParamCard>
+          <ParamCard title="Output" icon={<FileText size={14} />}>
+            <OutputChoice value={outputType} onChange={setOutputType} id="ab-output" />
+            <button type="button" className="aw-btn aw-btn-primary" onClick={handleGenerate} disabled={isLoading} style={{ width: '100%' }}>
+              <Search size={14} className={isLoading ? 'aw-spin' : undefined} /> {isLoading ? 'Loading…' : 'Generate'}
+            </button>
+          </ParamCard>
+          {hasData && <StatCards items={[{ label: 'Members', value: String(balanceRows.length), tone: 'muted' }]} />}
+        </>
+      }
+      footerLeft="Account Balance"
+      footerRight={rangeLabel}
+    >
+      {hasData && view === 'bento' && <GenericBento spec={spec} />}
+      {hasData && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><GenericTerminal spec={spec} /></div>}
+      {hasData && view === 'editorial' && <GenericEditorial spec={spec} title="Account Balance" subtitle={`Members ${fromNo} to ${toNo}`} />}
 
-            {/* To Member */}
-            <div className={`ab-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
-              <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
-                <User size={10} className="text-white" />
-                <h3 className="fz-body font-black text-white tracking-wide uppercase">To Member</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <label className={labelCls}><User size={10} className="text-sky-500" />Member No</label>
-                <Input.Search
-                  placeholder="Type member no..."
-                  value={toNo}
-                  onChange={e => setToNo(e.target.value)}
-                  onSearch={() => openLookup('to')}
-                  className="h-8 fz-label font-semibold"
-                />
-                <label className={`${labelCls} mt-1`}><User size={10} className="text-sky-500" />Member Name</label>
-                <Input value={toName} readOnly placeholder="Selected member name" className="h-8 fz-label font-semibold" />
-              </div>
-            </div>
-
-            {/* Output */}
-            <div className={`ab-card rounded-lg overflow-hidden shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
-              <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-2 py-1 flex items-center gap-1">
-                <FileText size={10} className="text-white" />
-                <h3 className="fz-body font-black text-white tracking-wide uppercase">Output</h3>
-              </div>
-              <div className="p-2 space-y-1.5">
-                <Radio.Group size="small" value={outputType} onChange={e => setOutputType(e.target.value)} className="w-full">
-                  <Radio.Button value="screen"  className="w-1/2 text-center fz-body font-bold">SCR</Radio.Button>
-                  <Radio.Button value="printer" className="w-1/2 text-center fz-body font-bold">PTR</Radio.Button>
-                </Radio.Group>
-                <Button
-                  type="primary" block size="small"
-                  icon={<Search size={11} />}
-                  onClick={handleGenerate}
-                  loading={isLoading}
-                  className="h-8 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 font-black uppercase tracking-wider fz-body mt-1 shadow-lg"
-                >Generate</Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Report Panel */}
-          <div className={`ab-report-panel flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-sky-200/60'}`}>
-            <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-3 py-1.5 flex items-center gap-1.5 shrink-0">
-              <div className="bg-white/20 p-1 rounded-md">
-                <FileText size={12} className="text-white" />
-              </div>
-              <div>
-                <h3 className="fz-small font-black text-white uppercase tracking-wide leading-none">Account Balance</h3>
-                <p className="fz-body font-bold text-sky-200 uppercase mt-0.5 tracking-tight leading-none">
-                  {fromNo && toNo ? `${fromNo} – ${toNo}` : 'Enter member range'}
-                </p>
-              </div>
-            </div>
-
-            <div className={`flex-1 overflow-auto p-2 custom-scrollbar-sky ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-sky-50/10'}`}>
-              <Spin spinning={isLoading} tip="Loading..." size="small">
-                {reportText ? (
-                <>
-                <ProBar enabled={enabled} view={view} setView={setView} />
-                {view !== 'legacy' && (balanceRows.length > 0 ? <ProBody view={view} spec={spec} title="Account Balance" subtitle={`Members ${fromNo} to ${toNo}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No balances to show'}</p>)}
-                {view === 'legacy' && (
-                  <pre
-                    className="font-mono"
-                    style={{
-                      fontSize: '9px',
-                      lineHeight: 1.4,
-                      color: isDark ? '#e2e8f0' : '#1e293b',
-                      background: 'transparent',
-                      margin: 0,
-                      padding: '6px 4px',
-                      whiteSpace: 'pre',
-                    }}
-                  >
-                    {reportText}
-                  </pre>
-                )}
-                </>
-                ) : (
-                  <div className="py-32 text-center">
-                    <div className="w-20 h-20 bg-sky-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                      <Calendar className="text-4xl text-sky-200" />
-                    </div>
-                    <h4 className="text-slate-400 font-black text-xs uppercase tracking-wider">No Data</h4>
-                    <p className="text-slate-300 fz-small mt-1 font-semibold">Enter member range and click Generate</p>
-                  </div>
-                )}
-              </Spin>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Member Lookup Modal */}
-      <Modal
-        open={showLookup}
-        onCancel={() => setShowLookup(false)}
-        footer={null}
-        width={950}
-        centered
-        destroyOnClose
-        styles={{ body: { padding: 0 } }}
-      >
-        <div className="p-2">
-          <MemberLookup isModal={true} onSelect={handleMemberSelect} onClose={() => setShowLookup(false)} />
-        </div>
-      </Modal>
-
-      <style>{`
-        /* ── Account Balance — dark mode ── */
-        html.dark .account-balance-page { background-color: #000000 !important; color: #f5f5f7 !important; }
-        html.dark .ab-header { background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .ab-header h1 { color: #f5f5f7 !important; }
-        html.dark .ab-header .text-slate-100 { color: #f5f5f7 !important; }
-        html.dark .ab-header .text-slate-800 { color: #f5f5f7 !important; }
-        html.dark .ab-header .text-slate-400 { color: #8e8e93 !important; }
-        html.dark .ab-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .ab-report-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .account-balance-page .bg-slate-900\\/40 { background-color: rgba(255,255,255,.03) !important; }
-        html.dark .account-balance-page label { color: #8e8e93 !important; }
-        html.dark .account-balance-page .text-slate-400 { color: #8e8e93 !important; }
-        html.dark .account-balance-page .text-slate-300 { color: #71717a !important; }
-        html.dark .account-balance-page pre { color: #f5f5f7 !important; }
-        /* Antd inputs / buttons used on this page */
-        html.dark .account-balance-page .ant-input,
-        html.dark .account-balance-page .ant-input-affix-wrapper,
-        html.dark .account-balance-page input.ant-input {
-          background-color: rgba(255,255,255,.05) !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-        }
-        html.dark .account-balance-page .ant-input::placeholder { color: #71717a !important; }
-        html.dark .account-balance-page .ant-btn:not(.ant-btn-primary) {
-          background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
-        }
-        html.dark .account-balance-page .ant-radio-button-wrapper {
-          background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important;
-        }
-        html.dark .account-balance-page .ant-radio-button-wrapper-checked {
-          background-color: #0ea5e9 !important; color: #ffffff !important;
-        }
-        html.dark .ant-modal-content, html.dark .ant-modal-header {
-          background-color: #1c1c1e !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.08) !important;
-        }
-        html.dark .ant-modal-title { color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+      {view === 'legacy' && (
+        <LegacyDocument
+          title={`Account Balance${rangeLabel ? ` · ${rangeLabel}` : ''}`}
+          meta={hasData ? `${balanceRows.length} Members` : undefined}
+          text={reportText}
+          loading={isLoading}
+          small
+          empty={<ReportEmpty icon={<Wallet size={34} />} title="No Data" hint="Enter member range and click Generate" />}
+        />
+      )}
+      {view !== 'legacy' && !hasData && (
+        <ReportEmpty icon={<Wallet size={34} />} title={isLoading ? 'Loading…' : reportText ? 'No balances to show' : 'No Data'} hint="Enter member range and click Generate" />
+      )}
+    </ReportShell>
   );
 };
 

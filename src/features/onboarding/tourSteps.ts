@@ -52,7 +52,7 @@ export const TOUR_STEPS: TourStep[] = [
   { id: 'menu-utility', target: '[data-tour="menu-utility"]', doodle: 'underline',
     title: tLabel('Utility'), text: 'Handy tools. Stuck? Open Support Desk here to raise a ticket with the support team.',
     highlights: [
-      { action: 'CALCULATOR', label: tLabel('Calculator') }, { action: 'EMI_CHART', label: tLabel('EMI Chart') },
+      { action: 'CALCULATOR', label: tLabel('Calculator') }, { action: 'SOCIETY_CALCULATOR', label: tLabel('Society Calculator') }, { action: 'EMI_CHART', label: tLabel('EMI Chart') },
       { action: 'DATABASE_BACKUP', label: tLabel('Database BackUp') },
     ] },
   { id: 'search', target: '[data-tour="search"]', doodle: 'box',

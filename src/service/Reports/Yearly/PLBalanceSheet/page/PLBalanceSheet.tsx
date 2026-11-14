@@ -1,17 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { DatePicker, Button, ConfigProvider, Checkbox, Input, theme as antdTheme } from 'antd';
-import {
-  Printer,
-  Scale,
-  FileCheck,
-  Search,
-  Settings
-} from 'lucide-react';
+import { Printer, Scale, Search } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
+import { ReportShell, ParamCard, StatCards, ReportEmpty } from '../../../../../components/reports/views/ReportShell';
 import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
 import { useReportViews } from '../../../../../components/reports/views/reportViews';
 import '../../../../../components/reports/views/proViews.css';
@@ -45,7 +37,6 @@ interface FinancialOptions {
 }
 
 const PLBalanceSheet: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('1');
   const [data, setData] = useState<BalanceSheetData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [fromDate, setFromDate] = useState<Dayjs | null>(dayjs().startOf('year'));
@@ -57,8 +48,6 @@ const PLBalanceSheet: React.FC = () => {
     profitLossTransferAccount: ''
   });
 
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
   const { enabled, view, setView } = useReportViews('yearly.pl-balance-sheet');
   const bsSpec = useBsSpec(data ?? { liabilities: [], assets: [], totals: { totalLiabilities: 0, totalAssets: 0, difference: 0 } }, toDate?.format('DD MMM YYYY') ?? '');
 
@@ -102,7 +91,6 @@ const PLBalanceSheet: React.FC = () => {
 
   const handleShow = () => {
     fetchBalanceSheet();
-    setActiveTab('4'); // Switch to Balance Sheet tab
   };
 
   const handlePrint = async () => {
@@ -113,398 +101,141 @@ const PLBalanceSheet: React.FC = () => {
     window.print();
   };
 
+  // The legacy layout is what gets printed, so any other view switches to it first.
+  const handlePrintAny = () => {
+    if (view !== 'legacy') { setView('legacy'); setTimeout(() => window.print(), 250); return; }
+    handlePrint();
+  };
+
+  const asOn = toDate?.format('DD MMMM YYYY') ?? '';
+
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#7c3aed',
-          borderRadius: 8,
-          colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-          colorBorder: isDark ? '#334155' : '#e2e8f0',
-        },
-      }}
+    <ReportShell
+      className="plbs-page"
+      title="Balance Sheet"
+      desc="Espat Karmchari Co-Operative Credit Society Limited."
+      switcher={data ? <ReportViewSwitcher enabled={enabled} value={view} onChange={setView} /> : undefined}
+      actions={
+        <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrintAny} disabled={!data}><Printer size={14} /> Print</button>
+      }
+      aside={
+        <>
+          <ParamCard title="Parameters" icon={<Scale size={14} />}>
+            <div>
+              <label className="aw-label" htmlFor="plbs-from">From</label>
+              <input id="plbs-from" type="date" className="aw-input" value={fromDate ? fromDate.format('YYYY-MM-DD') : ''} onChange={e => setFromDate(e.target.value ? dayjs(e.target.value) : null)} />
+            </div>
+            <div>
+              <label className="aw-label" htmlFor="plbs-to">To (as on)</label>
+              <input id="plbs-to" type="date" className="aw-input" value={toDate ? toDate.format('YYYY-MM-DD') : ''} onChange={e => setToDate(e.target.value ? dayjs(e.target.value) : null)} />
+              <p className="aw-meta" style={{ marginTop: 4 }}>The date depends on the financial year.</p>
+            </div>
+            <label className="aw-check" title="Not supported by the balance sheet report yet" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="checkbox" checked={options.includeFinancialYrOpBal} disabled onChange={e => setOptions(prev => ({ ...prev, includeFinancialYrOpBal: e.target.checked }))} />
+              <span>Include financial year opening balance</span>
+            </label>
+            <div>
+              <span className="aw-label">Suppress accounts with</span>
+              <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                <input type="checkbox" checked={options.zeroClosingBalance} onChange={e => setOptions(prev => ({ ...prev, zeroClosingBalance: e.target.checked }))} />
+                <span>Zero closing balance</span>
+              </label>
+              <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input type="checkbox" checked={options.zeroTransactionAc} onChange={e => setOptions(prev => ({ ...prev, zeroTransactionAc: e.target.checked }))} />
+                <span>Zero transaction accounts</span>
+              </label>
+            </div>
+            <div>
+              <label className="aw-label" htmlFor="plbs-pl">Profit / loss transfer account</label>
+              <input id="plbs-pl" className="aw-input" value={options.profitLossTransferAccount} disabled title="Not supported by the balance sheet report yet" placeholder="Account name" onChange={e => setOptions(prev => ({ ...prev, profitLossTransferAccount: e.target.value }))} />
+              <p className="aw-meta" style={{ marginTop: 4 }}>Profit or loss is carried to the balance sheet in this ledger account.</p>
+            </div>
+            <button type="button" className="aw-btn aw-btn-primary" onClick={handleShow} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Show'}
+            </button>
+          </ParamCard>
+          {data && (
+            <StatCards items={[
+              { label: 'Total liabilities', value: `₹${formatCurrency(data.totals?.totalLiabilities || 0)}`, tone: 'muted' },
+              { label: 'Total assets', value: `₹${formatCurrency(data.totals?.totalAssets || 0)}`, tone: 'muted' },
+            ]} />
+          )}
+        </>
+      }
+      footerLeft="Balance Sheet"
+      footerRight={asOn ? `As on ${asOn}` : ''}
     >
-      <div className={`plbs-page h-screen flex font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+      {data && view === 'bento' && <div className="plbs-noprint"><ProBento spec={bsSpec} /></div>}
+      {data && view === 'terminal' && <div className="plbs-noprint" style={{ height: 'calc(100vh - 220px)', minHeight: 360 }}><ProTerm spec={bsSpec} /></div>}
+      {data && view === 'editorial' && <div className="plbs-noprint"><ProEd spec={bsSpec} subtitle={`As on ${asOn}`} /></div>}
 
-        {/* Main Content - Full Width Legacy Style */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className={`plbs-header border-b px-4 py-2 shrink-0 ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center gap-3">
-              <div className="bg-purple-600 p-2 rounded-lg text-white shadow-lg">
-                <Scale size={18} />
-              </div>
-              <div>
-                <h1 className={`fz-heading font-black tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited.</h1>
-                <div className="flex items-center gap-2 mt-0.5 fz-label font-bold text-slate-400 uppercase tracking-wider">
-                  <FileCheck size={10} className="text-purple-500" />
-                  Financial Statements
-                </div>
-              </div>
+      {data && view === 'legacy' && (
+        <section className="aw-card plbs-sheet" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: 'var(--aw-pad)' }}>
+            <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+              <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited.</div>
+              <div className="aw-meta">Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+              <div className="aw-strong" style={{ marginTop: 6, letterSpacing: '.08em' }}>BALANCE SHEET</div>
+              <div className="aw-meta">As on {asOn}</div>
             </div>
-          </div>
-
-          {/* Legacy Tab Interface */}
-          <div className="flex-1 p-2 overflow-auto">
-            <div className={`plbs-card rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-              
-              {/* Custom Tab Headers - Legacy Style */}
-              <div className={`border-b ${isDark ? 'border-slate-700 bg-slate-900/50' : 'border-slate-200 bg-slate-50'}`}>
-                <div className="flex">
-                  {[
-                    { key: '1', label: 'Step 1.' },
-                    { key: '2', label: '2. Trial Balance' },
-                    { key: '3', label: '3. Profit and Loss' },
-                    { key: '4', label: '4. Balance Sheet' }
-                  ].map((tab) => (
-                    <button
-                      key={tab.key}
-                      onClick={() => setActiveTab(tab.key)}
-                      className={`px-3 py-1.5 fz-label font-bold border-r transition-colors ${isDark ? 'border-slate-700' : 'border-slate-200'} ${
-                        activeTab === tab.key
-                          ? (isDark ? 'bg-slate-800 text-purple-400 border-b-2 border-purple-500' : 'bg-white text-purple-700 border-b-2 border-purple-600')
-                          : (isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100')
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tab Content */}
-              <div className="p-3">
-                
-                {/* Step 1 - Date Selection */}
-                {activeTab === '1' && (
-                  <div className="space-y-3">
-                    
-                    {/* Section 1 - DATE */}
-                    <div className={`border-2 rounded-lg p-3 ${isDark ? 'border-slate-600 bg-slate-700/40' : 'border-blue-300 bg-blue-50/30'}`}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-blue-600 text-white w-4 h-4 rounded-full flex items-center justify-center fz-label font-bold">1</span>
-                        <h3 className={`fz-label font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>DATE</h3>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className={`block fz-label font-bold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>From</label>
-                          <DatePicker
-                            value={fromDate}
-                            onChange={setFromDate}
-                            className="w-full h-8"
-                            format="DD-MMM-YYYY"
-                            placeholder="01-Nov-2019"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className={`block fz-label font-bold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>To</label>
-                          <DatePicker
-                            value={toDate}
-                            onChange={setToDate}
-                            className="w-full h-8"
-                            format="DD-MMM-YYYY"
-                            placeholder="31-Mar-2020"
-                          />
-                          <p className="fz-label text-slate-500 mt-0.5 italic">(Date depends on Fin'Yr)</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Section 2 - Include Financial Yr OpBal */}
-                    <div className={`border-2 rounded-lg p-3 ${isDark ? 'border-slate-600 bg-slate-700/40' : 'border-blue-300 bg-blue-50/30'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="bg-blue-600 text-white w-4 h-4 rounded-full flex items-center justify-center fz-label font-bold">2</span>
-                      </div>
-                      
-                      <Checkbox
-                        checked={options.includeFinancialYrOpBal}
-                        disabled
-                        title="Not supported by the balance sheet report yet"
-                        onChange={(e) => setOptions(prev => ({ ...prev, includeFinancialYrOpBal: e.target.checked }))}
-                        className="fz-label font-bold"
-                      >
-                        Include Financial Yr OpBal
-                      </Checkbox>
-                    </div>
-
-                    {/* Section 3 - Suppress A/c with */}
-                    <div className={`border-2 rounded-lg p-3 ${isDark ? 'border-slate-600 bg-slate-700/40' : 'border-blue-300 bg-blue-50/30'}`}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-blue-600 text-white w-4 h-4 rounded-full flex items-center justify-center fz-label font-bold">3</span>
-                        <h3 className={`fz-label font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Suppress A/c with</h3>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <Checkbox
-                          checked={options.zeroClosingBalance}
-                          onChange={(e) => setOptions(prev => ({ ...prev, zeroClosingBalance: e.target.checked }))}
-                          className="fz-label font-bold"
-                        >
-                          Zero Closing Balance
-                        </Checkbox>
-                        
-                        <Checkbox
-                          checked={options.zeroTransactionAc}
-                          onChange={(e) => setOptions(prev => ({ ...prev, zeroTransactionAc: e.target.checked }))}
-                          className="fz-label font-bold"
-                        >
-                          Zero Transaction A/c
-                        </Checkbox>
-                      </div>
-                    </div>
-
-                    {/* Section 4 - Profit/Loss Transfer */}
-                    <div className={`border-2 rounded-lg p-3 ${isDark ? 'border-slate-600 bg-slate-700/40' : 'border-blue-300 bg-blue-50/30'}`}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-blue-600 text-white w-4 h-4 rounded-full flex items-center justify-center fz-label font-bold">4</span>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <p className={`fz-label font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                          Profit/Loss will be transferred to<br />
-                          Balance Sheet in Ledger Account
-                        </p>
-                        
-                        <div className="border-b border-slate-300 pb-1">
-                          <Input
-                            value={options.profitLossTransferAccount}
-                            disabled
-                            title="Not supported by the balance sheet report yet"
-                            onChange={(e) => setOptions(prev => ({ ...prev, profitLossTransferAccount: e.target.value }))}
-                            className="border-none shadow-none p-0 fz-label"
-                            placeholder="Enter account name..."
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Show Button */}
-                    <div className="flex justify-end pt-2">
-                      <Button
-                        type="primary"
-                        className="bg-purple-600 hover:bg-purple-700 px-6 h-8 fz-label font-bold uppercase tracking-wider"
-                        onClick={handleShow}
-                        loading={loading}
-                      >
-                        Show
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Trial Balance Tab */}
-                {activeTab === '2' && (
-                  <div className="text-center py-12">
-                    <Settings size={48} className="text-slate-300 mx-auto mb-3" />
-                    <h3 className={`fz-body font-bold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Trial Balance</h3>
-                    <p className={`fz-label mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Click <strong>Show</strong> in Step 1 to generate</p>
-                  </div>
-                )}
-
-                {/* Profit and Loss Tab */}
-                {activeTab === '3' && (
-                  <div className="text-center py-12">
-                    <Settings size={48} className="text-slate-300 mx-auto mb-3" />
-                    <h3 className={`fz-body font-bold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Profit and Loss</h3>
-                    <p className={`fz-label mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Click <strong>Show</strong> in Step 1 to generate</p>
-                  </div>
-                )}
-
-                {/* Balance Sheet Tab */}
-                {activeTab === '4' && (
-                  <div>
-                    {loading ? (
-                      <div className="text-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-3"></div>
-                        <span className="text-slate-500 font-bold fz-body">Loading balance sheet...</span>
-                      </div>
-                    ) : data ? (
-                      <>
-                      <div className="app-window aw-embed plbs-noprint">
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        {view !== 'legacy' && (
-                          <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => { setView('legacy'); setTimeout(() => window.print(), 250); }}>Print (legacy layout)</button>
-                        )}
-                        <ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />
-                      </div>
-                      {view === 'bento' && <ProBento spec={bsSpec} />}
-                      {view === 'terminal' && <div style={{ height: 'calc(100vh - 220px)', minHeight: 360 }}><ProTerm spec={bsSpec} /></div>}
-                      {view === 'editorial' && <ProEd spec={bsSpec} subtitle={`As on ${toDate?.format('DD MMMM YYYY')}`} />}
-                      </div>
-                      {view === 'legacy' && (
-                      <div className="legacy-report-compact font-mono fz-label">
-                        {/* Company Header */}
-                        <div className="text-center mb-3 border-b border-dashed border-slate-300 pb-2">
-                          <div className={`fz-body font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                          <div className={`fz-label mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
-                          <div className={`fz-body font-bold mt-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>BALANCE SHEET</div>
-                          <div className={`fz-label ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>As on {toDate?.format('DD MMMM YYYY')}</div>
-                        </div>
-
-                        {/* Balance Sheet Layout - Two Columns */}
-                        <div className="grid grid-cols-2 gap-3">
-                          
-                          {/* Liabilities Column */}
-                          <div>
-                            <div className="border border-slate-400">
-                                <div className={`border-b border-slate-400 py-1 px-2 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                                <h4 className={`fz-label font-bold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>LIABILITIES</h4>
-                              </div>
-                              
-                              <table className="w-full fz-label">
-                                <tbody>
-                                  {data.liabilities && Array.isArray(data.liabilities) && data.liabilities.length > 0 ? data.liabilities.map((item) => (
-                                    <tr key={item.headCode} className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                                      <td className="py-1 px-2 font-medium">
-                                        <div className="flex flex-col">
-                                          <span className={`font-bold fz-label ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{item.headName}</span>
-                                          <span className={`fz-label ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{item.headCode}</span>
-                                        </div>
-                                      </td>
-                                      <td className={`py-1 px-2 text-right font-bold fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
-                                        {item.closingBalance !== 0 && <CrDrIndicator type="credit" className="mr-1 cr-dr-print-hide" />}
-                                        {formatCurrency(item.closingBalance)}
-                                      </td>
-                                    </tr>
-                                  )) : (
-                                    <tr>
-                                      <td colSpan={2} className="py-4 px-3 text-center text-slate-400 fz-label">
-                                        No liability data available
-                                      </td>
-                                    </tr>
-                                  )}
-
-                                  {/* Total Liabilities */}
-                                  <tr className={`border-t-2 border-slate-400 font-bold ${isDark ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                                    <td className={`py-1 px-2 uppercase tracking-wider font-black fz-label ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>TOTAL</td>
-                                    <td className={`py-1 px-2 text-right font-black fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
-                                      {!!(data.totals && data.totals.totalLiabilities) && <CrDrIndicator type="credit" className="mr-1 cr-dr-print-hide" />}
-                                      {data.totals && formatCurrency(data.totals.totalLiabilities || 0)}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-
-                          {/* Assets Column */}
-                          <div>
-                            <div className="border border-slate-400">
-                                <div className={`border-b border-slate-400 py-1 px-2 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                                <h4 className={`fz-label font-bold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>ASSETS</h4>
-                              </div>
-                              
-                              <table className="w-full fz-label">
-                                <tbody>
-                                  {data.assets && Array.isArray(data.assets) && data.assets.length > 0 ? data.assets.map((item) => (
-                                    <tr key={item.headCode} className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                                      <td className="py-1 px-2 font-medium">
-                                        <div className="flex flex-col">
-                                          <span className={`font-bold fz-label ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{item.headName}</span>
-                                          <span className={`fz-label ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{item.headCode}</span>
-                                        </div>
-                                      </td>
-                                      <td className={`py-1 px-2 text-right font-bold fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
-                                        {item.closingBalance !== 0 && <CrDrIndicator type="debit" className="mr-1 cr-dr-print-hide" />}
-                                        {formatCurrency(item.closingBalance)}
-                                      </td>
-                                    </tr>
-                                  )) : (
-                                    <tr>
-                                      <td colSpan={2} className="py-4 px-3 text-center text-slate-400 fz-label">
-                                        No asset data available
-                                      </td>
-                                    </tr>
-                                  )}
-
-                                  {/* Total Assets */}
-                                  <tr className={`border-t-2 border-slate-400 font-bold ${isDark ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                                    <td className={`py-1 px-2 uppercase tracking-wider font-black fz-label ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>TOTAL</td>
-                                    <td className={`py-1 px-2 text-right font-black fz-label ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
-                                      {!!(data.totals && data.totals.totalAssets) && <CrDrIndicator type="debit" className="mr-1 cr-dr-print-hide" />}
-                                      {data.totals && formatCurrency(data.totals.totalAssets || 0)}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Print Button */}
-                        <div className={`flex justify-end mt-3 pt-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                          <Button
-                            icon={<Printer size={14} />}
-                            className="h-7 px-3 fz-label font-bold"
-                            onClick={handlePrint}
-                          >
-                            Print
-                          </Button>
-                        </div>
-                      </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+              {([
+                { label: 'LIABILITIES', rows: data.liabilities, total: data.totals?.totalLiabilities, type: 'credit' as const, none: 'No liability data available' },
+                { label: 'ASSETS', rows: data.assets, total: data.totals?.totalAssets, type: 'debit' as const, none: 'No asset data available' },
+              ]).map(col => (
+                <div key={col.label} className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                  <table className="aw-table">
+                    <thead><tr><th colSpan={2}>{col.label}</th></tr></thead>
+                    <tbody>
+                      {Array.isArray(col.rows) && col.rows.length > 0 ? col.rows.map(item => (
+                        <tr key={item.headCode}>
+                          <td>
+                            <div className="aw-strong">{item.headName}</div>
+                            <div className="aw-meta">{item.headCode}</div>
+                          </td>
+                          <td className="is-right">
+                            {item.closingBalance !== 0 && <CrDrIndicator type={col.type} className="mr-1 cr-dr-print-hide" />}
+                            {formatCurrency(item.closingBalance)}
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan={2} className="is-muted" style={{ textAlign: 'center' }}>{col.none}</td></tr>
                       )}
-                      </>
-                    ) : (
-                      <div className="text-center py-12">
-                        <Search size={48} className="text-slate-300 mx-auto mb-3" />
-                        <h3 className="fz-body font-bold text-slate-400 uppercase tracking-wide">No Balance Sheet Data</h3>
-                        <p className="fz-label text-slate-400 mt-1">Configure settings in Step 1 and click Show</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                      <tr>
+                        <td><b>TOTAL</b></td>
+                        <td className="is-right">
+                          <b>{!!col.total && <CrDrIndicator type={col.type} className="mr-1 cr-dr-print-hide" />}{formatCurrency(col.total || 0)}</b>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      )}
 
-      {/* Print Styles */}
+      {!data && (
+        <ReportEmpty icon={<Scale size={34} />} title={loading ? 'Loading…' : 'No Balance Sheet Data'} hint="Set the dates and options, then click Show" />
+      )}
+
+      {/* Printing prints the legacy sheet only: the window chrome and the other views stay out of the paper copy. */}
       <style>{`
         @media print {
-          .ant-btn, .ant-picker, .ant-checkbox, .ant-input { display: none !important; }
-          body { margin: 0; padding: 20px; }
+          .plbs-page .aw-header, .plbs-page aside, .plbs-page .aw-footer, .plbs-noprint { display: none !important; }
+          .plbs-page, .plbs-page .aw-content, .plbs-page .plbs-sheet { background: #fff !important; color: #000 !important; box-shadow: none !important; border: 0 !important; }
+          .plbs-page .aw-content { padding: 0 !important; overflow: visible !important; }
+          .plbs-page { height: auto !important; overflow: visible !important; }
+          .plbs-page .aw-table-wrap { max-height: none !important; overflow: visible !important; }
+          .plbs-page .aw-table th, .plbs-page .aw-table td, .plbs-page .aw-meta, .plbs-page .aw-strong { color: #000 !important; background: #fff !important; }
           table { page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
           thead { display: table-header-group; }
-          tfoot { display: table-footer-group; }
           .cr-dr-print-hide { display: none !important; }
-          .plbs-noprint { display: none !important; }
         }
-        
-        .legacy-report-compact table {
-          border-collapse: collapse;
-        }
-        
-        .grid-cols-2 {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        /* ── PL Balance Sheet — dark mode (screen chrome; legacy report table already isDark-aware) ── */
-        html.dark .plbs-page { background-color: #000000 !important; }
-        html.dark .plbs-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .plbs-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .plbs-page .bg-slate-900\/50 { background-color: #0c0c0e !important; }
-        html.dark .plbs-page .bg-slate-700\/40,
-        html.dark .plbs-page .bg-slate-700 { background-color: #1c1c1e !important; }
-        html.dark .plbs-page .border-slate-600,
-        html.dark .plbs-page .border-slate-700 { border-color: rgba(255,255,255,.08) !important; }
-        html.dark .plbs-page .text-slate-100,
-        html.dark .plbs-page .text-slate-200,
-        html.dark .plbs-page .text-slate-300 { color: #f5f5f7 !important; }
-        html.dark .plbs-page .text-slate-400,
-        html.dark .plbs-page .text-slate-500 { color: #8e8e93 !important; }
-        html.dark .plbs-page label { color: #8e8e93 !important; }
-        html.dark .plbs-page .ant-picker,
-        html.dark .plbs-page .ant-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .plbs-page .ant-picker input { color: #f5f5f7 !important; }
-        html.dark .plbs-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
       `}</style>
-    </ConfigProvider>
+    </ReportShell>
   );
 };
 

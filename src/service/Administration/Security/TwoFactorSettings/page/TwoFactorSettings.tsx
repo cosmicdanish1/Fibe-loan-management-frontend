@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, ShieldCheck } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import TwoFaCard from '../../MyProfile/components/TwoFaCard';
+import LoanApprovalCard from '../../MyProfile/components/LoanApprovalCard';
 import ApprovalGuardsCard from '../components/ApprovalGuardsCard';
 import UsersPanel from '../components/UsersPanel';
 import PolicyPanel from '../components/PolicyPanel';
@@ -81,6 +82,7 @@ const TwoFactorSettings: React.FC = () => {
                     {t('A 6-digit code from the authenticator app on your phone, asked after your password when you sign in. The same code also lets you reset a forgotten password. Turn it on, scan your QR, and keep your recovery codes somewhere safe.')}
                   </p>
                   <TwoFaCard />
+                  <LoanApprovalCard />
                 </section>
               )}
               {tab === 'users' && access.canManageUsers && <UsersPanel isAdmin={access.isAdmin} onOpenPolicy={access.isAdmin ? () => setTab('policy') : undefined} />}

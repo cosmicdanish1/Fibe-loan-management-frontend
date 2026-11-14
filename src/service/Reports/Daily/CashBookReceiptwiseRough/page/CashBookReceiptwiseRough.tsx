@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Settings, RefreshCw, Printer, FileDown, Search, BookOpen, Calendar } from 'lucide-react';
-import { DatePicker, message, Spin } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
+import { DatePicker, message } from 'antd';
 import { apiService } from '../../../../../services/api';
 import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
 import { useReportViews } from '../../../../../components/reports/views/reportViews';
@@ -112,26 +110,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
   const printRef = useRef<HTMLDivElement>(null);
   const { enabled, view, setView } = useReportViews(REPORT_ID);
 
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
   // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
-  const isDark = interfaceMode === 'dark';
-
-  // Legacy report-body colours (the body keeps its original look; only the shell uses the app kit)
-  const muted     = isDark ? 'text-slate-400'                           : 'text-slate-500';
-  const subtle    = isDark ? 'text-slate-500'                           : 'text-slate-400';
-  const panelHdTx = isDark ? 'text-slate-300'                           : 'text-slate-700';
-  const contentBg = isDark ? 'bg-slate-900/60'                          : 'bg-slate-50';
-
-  // Monospace line colors
-  const lineDefault    = isDark ? 'text-slate-300'              : 'text-slate-700';
-  const lineDash       = isDark ? 'text-slate-600'              : 'text-slate-300';
-  const lineCompany    = isDark ? 'text-slate-400'              : 'text-slate-500';
-  const lineHeader     = isDark ? 'text-white font-bold'        : 'text-slate-900 font-bold';
-  const lineVoucher    = isDark ? 'text-indigo-300 font-bold'   : 'text-indigo-700 font-bold';
-  const lineMember     = isDark ? 'text-amber-300'              : 'text-amber-600';
-  const lineColHd      = isDark ? 'text-slate-400 font-semibold': 'text-slate-500 font-semibold';
-  const lineSummary    = isDark ? 'text-emerald-300 font-semibold': 'text-emerald-700 font-semibold';
-  const lineFooter     = isDark ? 'text-slate-500 italic'       : 'text-slate-400 italic';
 
   useEffect(() => { loadData(); }, [selectedDate]);
 
@@ -267,53 +246,43 @@ const CashBookReceiptwiseRough: React.FC = () => {
             {view === 'legacy' && (
               <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div className="aw-main-head">
-                  <span className={`text-xs font-extrabold uppercase tracking-wide ${panelHdTx}`}>
-                    Cash Book — {selectedDate.format('DD-MMM-YYYY')}
-                  </span>
-                  {data && (
-                    <span className={`fz-small font-mono ${subtle}`}>
-                      {data.vouchers.length} vouchers · {reportLines.length} lines
-                    </span>
-                  )}
+                  <span className="aw-card-title">Cash Book — {selectedDate.format('DD-MMM-YYYY')}</span>
+                  {data && <span className="aw-meta">{data.vouchers.length} vouchers · {reportLines.length} lines</span>}
                 </div>
 
                 {/* Monospace document area */}
-                <div className={`cbrr-preview-body p-4 ${contentBg}`} ref={printRef}>
-                  <Spin spinning={loading} tip="Loading...">
-                    {reportLines.length > 0 ? (
-                      <pre className={`font-mono text-[11.5px] leading-[1.55] whitespace-pre select-text w-fit mx-auto ${lineDefault}`}>
-                        {reportLines.map((line, i) => {
-                          const isDash = line.trim().startsWith('─') || line.trim().startsWith('-');
-                          const isVoucherNo = line.startsWith('Voucher No');
-                          const isMember = line.startsWith('Member No');
-                          const isHdr = line.trim() === 'CASH-BOOK' || line.includes('Cash Book For Date');
-                          const isSummary = line.includes('Opening Balance') || line.includes('Closing Balance') ||
-                            line.includes('Total Credit') || line.includes('Total Debit') || line.trim().startsWith('Total');
-                          const isFooter = line.startsWith('*');
-                          const isColHeader = line.trimStart().startsWith('S.No');
-                          const isCompany = i <= 3;
+                <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }} ref={printRef}>
+                  {reportLines.length > 0 ? (
+                    <pre className="font-mono fz-caption select-text" style={{ margin: '0 auto', width: 'fit-content', lineHeight: 1.55, whiteSpace: 'pre', color: 'var(--aw-text)' }}>
+                      {reportLines.map((line, i) => {
+                        const isDash = line.trim().startsWith('─') || line.trim().startsWith('-');
+                        const isVoucherNo = line.startsWith('Voucher No');
+                        const isMember = line.startsWith('Member No');
+                        const isHdr = line.trim() === 'CASH-BOOK' || line.includes('Cash Book For Date');
+                        const isSummary = line.includes('Opening Balance') || line.includes('Closing Balance') ||
+                          line.includes('Total Credit') || line.includes('Total Debit') || line.trim().startsWith('Total');
+                        const isFooter = line.startsWith('*');
+                        const isColHeader = line.trimStart().startsWith('S.No');
+                        const isCompany = i <= 3;
 
-                          let cls = lineDefault;
-                          if (isDash) cls = lineDash;
-                          else if (isCompany) cls = lineCompany;
-                          else if (isHdr) cls = lineHeader;
-                          else if (isVoucherNo) cls = lineVoucher;
-                          else if (isMember) cls = lineMember;
-                          else if (isColHeader) cls = lineColHd;
-                          else if (isSummary) cls = lineSummary;
-                          else if (isFooter) cls = lineFooter;
+                        let style: React.CSSProperties = {};
+                        if (isDash || isCompany || isFooter) style = { color: 'var(--aw-muted)', ...(isFooter ? { fontStyle: 'italic' } : {}) };
+                        else if (isHdr) style = { fontWeight: 700 };
+                        else if (isVoucherNo) style = { color: 'var(--aw-accent)', fontWeight: 700 };
+                        else if (isMember) style = { color: 'var(--aw-warning)' };
+                        else if (isColHeader) style = { color: 'var(--aw-muted)', fontWeight: 600 };
+                        else if (isSummary) style = { color: 'var(--aw-success)', fontWeight: 600 };
 
-                          return <span key={i} className={`block ${cls}`}>{line || ' '}</span>;
-                        })}
-                      </pre>
-                    ) : !loading ? (
-                      <div className="flex flex-col items-center justify-center h-64 gap-3">
-                        <BookOpen size={48} className={isDark ? 'text-slate-700' : 'text-slate-300'} />
-                        <p className={`text-sm font-bold uppercase tracking-wide ${muted}`}>No transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
-                        <p className={`text-xs ${subtle}`}>Try a date that has vouchers, e.g. <span className="text-indigo-500 font-mono">07-Feb-2024</span></p>
-                      </div>
-                    ) : null}
-                  </Spin>
+                        return <span key={i} style={{ display: 'block', ...style }}>{line || ' '}</span>;
+                      })}
+                    </pre>
+                  ) : !loading ? (
+                    <div className="aw-empty" style={{ padding: 32 }}>
+                      <BookOpen size={34} />
+                      <p className="aw-strong">No transactions on {selectedDate.format('DD-MMM-YYYY')}</p>
+                      <span className="aw-meta">Try a date that has vouchers</span>
+                    </div>
+                  ) : null}
                 </div>
               </section>
             )}
@@ -333,11 +302,6 @@ const CashBookReceiptwiseRough: React.FC = () => {
         <span>Cash Book · Transaction View</span>
         <span>{selectedDate.format('YYYYMMDD')}</span>
       </div>
-
-      <style>{`
-        /* ── Cash Book Receiptwise Rough — dark mode for the legacy body ── */
-        html.dark .cbrr-preview-body { background-color: #1c1c1e !important; }
-      `}</style>
     </div>
   );
 };

@@ -101,7 +101,7 @@ const GroupInsurance: React.FC = () => {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
         <button type="button" className="aw-btn aw-btn-ghost" disabled={page === 0 || busy} onClick={() => go(page - 1)}><ChevronLeft size={13} /> {t('Prev')}</button>
-        <span className="is-muted" style={{ fontSize: 12 }}>{t('{{1}} {{2}} of {{3}}', { 1: t('Page'), 2: page + 1, 3: last + 1 })}</span>
+        <span className="is-muted" style={{ fontSize: 'var(--type-supporting-size)' }}>{t('{{1}} {{2}} of {{3}}', { 1: t('Page'), 2: page + 1, 3: last + 1 })}</span>
         <button type="button" className="aw-btn aw-btn-ghost" disabled={page >= last || busy} onClick={() => go(page + 1)}>{t('Next')} <ChevronRight size={13} /></button>
       </div>
     );
@@ -117,19 +117,19 @@ const GroupInsurance: React.FC = () => {
     <div className="app-window">
       <style>{`
         .gi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; align-items: end; }
-        .gi-field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+        .gi-field label { display: block; font-size: var(--type-supporting-size); font-weight: 600; margin-bottom: 4px; }
         .gi-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 14px 0; }
         .gi-tile { background: var(--aw-surface); border: 1px solid var(--aw-border); border-radius: var(--aw-radius); padding: 11px 14px; }
-        .gi-tile strong { display: block; font-size: 12px; color: var(--aw-muted); font-weight: 600; }
-        .gi-tile b { display: block; font-size: 22px; line-height: 1.2; font-variant-numeric: tabular-nums; }
-        .gi-tile span { display: block; font-size: 11.5px; color: var(--aw-muted); }
+        .gi-tile strong { display: block; font-size: var(--type-supporting-size); color: var(--aw-muted); font-weight: 600; }
+        .gi-tile b { display: block; font-size: var(--type-section-title); line-height: 1.2; font-variant-numeric: tabular-nums; }
+        .gi-tile span { display: block; font-size: var(--type-supporting-size); color: var(--aw-muted); }
         .gi-num { text-align: right; font-variant-numeric: tabular-nums; }
-        .gi-warn { margin: 6px 0; padding: 9px 12px; border-radius: 8px; font-size: 13px; background: color-mix(in srgb, var(--aw-warning, #c98a00) 14%, transparent); }
+        .gi-warn { margin: 6px 0; padding: 9px 12px; border-radius: 8px; font-size: var(--type-body-size); background: color-mix(in srgb, var(--aw-warning, #c98a00) 14%, transparent); }
         .gi-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
         .gi-dialog { width: min(540px, 100%); background: var(--aw-surface); border: 1px solid var(--aw-border-strong); border-radius: var(--aw-radius); box-shadow: var(--aw-shadow-pop); padding: 18px; }
-        .gi-dialog h2 { margin: 0 0 6px; font-size: 16px; }
-        .gi-dialog ul { margin: 8px 0; padding-left: 18px; font-size: 13px; }
-        .gi-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
+        .gi-dialog h2 { margin: 0 0 6px; font-size: var(--type-panel-title); }
+        .gi-dialog ul { margin: 8px 0; padding-left: 18px; font-size: var(--type-body-size); }
+        .gi-check { display: flex; gap: 8px; align-items: flex-start; font-size: var(--type-body-size); }
       `}</style>
 
       <div className="aw-header aw-ambient">
@@ -188,7 +188,7 @@ const GroupInsurance: React.FC = () => {
                   </button>
                 </div>
               </div>
-              <p className="is-muted" style={{ margin: '12px 0 0', fontSize: 12.5 }}>
+              <p className="is-muted" style={{ margin: '12px 0 0', fontSize: 'var(--type-supporting-size)' }}>
                 {t('Only active members who have not retired are charged. Retired members are left out, and they are not counted in the split.')}
               </p>
             </section>
@@ -286,7 +286,7 @@ const GroupInsurance: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
                   <button type="button" className="aw-btn aw-btn-ghost" onClick={() => setOpenRun(null)}><ChevronLeft size={13} /> {t('All runs')}</button>
                   <strong>{openRun.fyLabel}</strong>
-                  <span className="is-muted" style={{ fontSize: 12 }}>voucher {openRun.voucherNo} · {inr(openRun.totalCharged)} from {openRun.chargedMembers.toLocaleString('en-IN')} members</span>
+                  <span className="is-muted" style={{ fontSize: 'var(--type-supporting-size)' }}>voucher {openRun.voucherNo} · {inr(openRun.totalCharged)} from {openRun.chargedMembers.toLocaleString('en-IN')} members</span>
                   <form onSubmit={e => { e.preventDefault(); setRunPage(0); fetchRun(openRun, 0, runSearch); }} className="aw-input-wrap has-icon" style={{ maxWidth: 260, flex: '1 1 180px', marginLeft: 'auto' }}>
                     <Search size={13} />
                     <input className="aw-input" aria-label={t('Search charges')} placeholder={t('Member no. or name, then Enter')} value={runSearch} onChange={e => setRunSearch(e.target.value)} />
@@ -309,13 +309,13 @@ const GroupInsurance: React.FC = () => {
         <div className="gi-overlay" role="dialog" aria-modal="true" onMouseDown={e => { if (e.target === e.currentTarget && !g.posting) setConfirmOpen(false); }}>
           <div className="gi-dialog">
             <h2>{t('Post group insurance')} {p.fyLabel}</h2>
-            <p className="is-muted" style={{ margin: 0, fontSize: 13 }}>{t('This cannot be repeated for the same year.')}</p>
+            <p className="is-muted" style={{ margin: 0, fontSize: 'var(--type-body-size)' }}>{t('This cannot be repeated for the same year.')}</p>
             <ul>
               <li>{t('{{1}} members will be charged, {{2}} {{3}}', { 1: s.membersCharged.toLocaleString('en-IN'), 2: inr(s.totalToCollect), 3: t('in total.') })}</li>
               <li>{t('{{1}} {{2}}: debit RD (L1004), credit Group Insurance (L1003).', { 1: t('One Journal voucher dated'), 2: fmtDate(p.postingDate) })}</li>
               <li>{t('{{1}} members will end with a negative RD ({{2}} in all). It is recovered when they next take a loan and from their first deposits of the new year.', { 1: s.goesNegative.toLocaleString('en-IN'), 2: inr(s.uncoveredTotal) })}</li>
             </ul>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, margin: '10px 0 4px' }}>{t('Type')} <strong>{p.fyLabel}</strong> {t('to confirm')}</label>
+            <label style={{ display: 'block', fontSize: 'var(--type-supporting-size)', fontWeight: 600, margin: '10px 0 4px' }}>{t('Type')} <strong>{p.fyLabel}</strong> {t('to confirm')}</label>
             <input className="aw-input" style={{ width: '100%' }} value={typed} onChange={e => setTyped(e.target.value)} autoFocus />
             {postError && <div className="aw-alert aw-alert-danger" role="alert" style={{ marginTop: 10 }}><AlertCircle size={16} /><span>{postError}</span></div>}
             <div className="aw-actions" style={{ justifyContent: 'flex-end', marginTop: 14 }}>

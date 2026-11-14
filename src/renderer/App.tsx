@@ -110,7 +110,6 @@ const PassBookPrinting = lazy(() => import('../service/Reports/PassBookPrinting/
 // Lazy load daily report components
 const CashBookReceiptwiseRough = lazy(() => import('../service/Reports/Daily/CashBookReceiptwiseRough/page/CashBookReceiptwiseRough'));
 // Lazy load more daily report components
-const CashBook = lazy(() => import('../service/Reports/Daily/CashBook/page/CashBook'));
 const CashBook2 = lazy(() => import('../service/Reports/Daily/CashBook2/page/CashBook2'));
 const DayBook = lazy(() => import('../service/Reports/Daily/DayBook/page/DayBook'));
 const DayBookSB = lazy(() => import('../service/Reports/Daily/DayBookSB/page/DayBookSB'));
@@ -136,9 +135,10 @@ const JournalTransferVoucher = lazy(() => import('../service/Reports/Monthly/Pri
 const PLBalanceSheet = lazy(() => import('../service/Reports/Yearly/PLBalanceSheet/page/PLBalanceSheet'));
 const VotersWithdrawalList = lazy(() => import('../service/Reports/Yearly/MembersList/VotersWithdrawalList/page/VotersWithdrawalList'));
 // Lazy load more yearly report components
+const InterestListCDMDSHRt = lazy(() => import('../service/Reports/Yearly/InterestList/InterestListCDMDSHRt/page/InterestListCDMDSHRt'));
+const ReportPro = lazy(() => import('../service/Reports/ReportPro/page/ReportPro'));
 const DividendReport = lazy(() => import('../service/Reports/Yearly/InterestList/DividendReport/page/DividendReport'));
 const DividendPaid = lazy(() => import('../service/Reports/Yearly/InterestList/DividendPaid/page/DividendPaid'));
-const InterestListCDMDSHRt = lazy(() => import('../service/Reports/Yearly/InterestList/InterestListCDMDSHRt/page/InterestListCDMDSHRt'));
 const DividendWarrant = lazy(() => import('../service/Reports/Yearly/InterestList/DividendWarrant/page/DividendWarrant'));
 const MemberLoanDetail = lazy(() => import('../service/Reports/Yearly/MemberLoanDetail/page/MemberLoanDetail'));
 const ShareWarrantPrinting = lazy(() => import('../service/Reports/Yearly/ShareWarrantPrinting/page/ShareWarrantPrinting'));
@@ -165,11 +165,11 @@ const ReportHeadOrder = lazy(() => import('../service/Reports/ReportHeadOrder/pa
 const MemberStatus = lazy(() => import('../service/Masters/MemberStatus/page/MemberStatus'));
 const GroupInsurance = lazy(() => import('../service/Administration/GroupInsurance/page/GroupInsurance'));
 const NotificationCentre = lazy(() => import('../service/Utility/NotificationCentre/page/NotificationCentre'));
-const ReportPro = lazy(() => import('../service/Reports/ReportPro/page/ReportPro'));
 
 // Lazy load Utility components
 const PrematureInformationSB = lazy(() => import('../service/Utility/PrematureInformation/SB/page/PrematureInformationSB'));
 const Calculator = lazy(() => import('../service/Utility/Calculator/page/Calculator'));
+const SocietyCalculator = lazy(() => import('../service/Utility/SocietyCalculator/page/SocietyCalculator'));
 const Find = lazy(() => import('../service/Utility/Find/page/Find'));
 const MemberBalance = lazy(() => import('../service/Utility/MemberBalance/page/MemberBalance'));
 const EMIChart = lazy(() => import('../service/Utility/EMIChart/page/EMIChart'));
@@ -368,7 +368,6 @@ const App: React.FC = () => {
                   <Route path="/reports/deposit-due-date-register" element={<DepositDueDateRegister />} />
 
                   {/* Reports - Account Reports */}
-                  <Route path="/reports/report-pro" element={<ReportPro />} />
                   <Route path="/reports/head-order" element={<ReportHeadOrder />} />
                   <Route path="/masters/member-status" element={<MemberStatus />} />
                   <Route path="/administration/group-insurance" element={<GroupInsurance />} />
@@ -386,7 +385,6 @@ const App: React.FC = () => {
                   {/* Reports - Daily */}
                   <Route path="/reports/daily/cash-book-receiptwise" element={<CashBookReceiptwiseRough />} />
                   <Route path="/reports/daily/cash-book" element={<CashBook2 />} />
-                  <Route path="/reports/daily/cash-book-old" element={<CashBook />} />
                   <Route path="/reports/daily/day-book" element={<DayBook />} />
                   <Route path="/reports/daily/day-book-cd" element={<DayBookSB filterType="cd" />} />
                   <Route path="/reports/daily/day-book-sb" element={<DayBookSB />} />
@@ -408,9 +406,10 @@ const App: React.FC = () => {
                   {/* Reports - Yearly */}
                   <Route path="/reports/yearly/pl-balance-sheet" element={<PLBalanceSheet />} />
                   <Route path="/reports/yearly/members/voters-withdrawal-list" element={<VotersWithdrawalList />} />
+                  <Route path="/reports/yearly/interest-list/cd-md-shrt" element={<InterestListCDMDSHRt />} />
+                  <Route path="/reports/report-pro" element={<ReportPro />} />
                   <Route path="/reports/yearly/interest-list/dividend-report" element={<DividendReport />} />
                   <Route path="/reports/yearly/interest-list/dividend-paid" element={<DividendPaid />} />
-                  <Route path="/reports/yearly/interest-list/cd-md-shrt" element={<InterestListCDMDSHRt />} />
                   <Route path="/reports/yearly/interest-list/dividend-warrant" element={<DividendWarrant />} />
 
                   <Route path="/reports/yearly/member-loan-detail" element={<MemberLoanDetail />} />
@@ -422,6 +421,7 @@ const App: React.FC = () => {
                   {/* Utility Routes */}
                   <Route path="/utility/premature-information/sb" element={<PrematureInformationSB />} />
                   <Route path="/utility/calculator" element={<Calculator />} />
+                  <Route path="/utility/society-calculator" element={<SocietyCalculator />} />
                   <Route path="/utility/find" element={<Find />} />
                   <Route path="/utility/member-balance" element={<MemberBalance />} />
                   <Route path="/utility/emi-chart" element={<EMIChart />} />

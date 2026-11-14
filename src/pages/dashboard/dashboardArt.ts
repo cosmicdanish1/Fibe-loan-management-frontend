@@ -31,12 +31,22 @@ export interface ArtCategory { id: string; label: string; desc: string; artworks
  *  - `enabled`: behind the top of the whole dashboard;
  *  - `cards`: inside these widget cards (chosen card by card in the dashboard's Customize mode).
  */
-export interface ArtConfig { enabled: boolean; art: string; cards: string[] }
+export interface ArtConfig {
+  enabled: boolean;
+  art: string;
+  cards: string[];
+  /** A card can use its own picture instead of `art`: card id → artwork id (or CUSTOM_ART). */
+  cardArt: Record<string, string>;
+  /** Pictures drift slower than the page when it is scrolled. */
+  parallax: boolean;
+  /** 0–100: how far they drift. */
+  parallaxStrength: number;
+}
 
 export const CUSTOM_ART = 'custom';
 export const ART_STORAGE_KEY = 'lms-dashboard-art';
 export const ART_CUSTOM_KEY = 'lms-dashboard-art-custom';
-export const DEFAULT_ART_CONFIG: ArtConfig = { enabled: false, art: 'japanese/01', cards: [] };
+export const DEFAULT_ART_CONFIG: ArtConfig = { enabled: false, art: 'japanese/01', cards: [], cardArt: {}, parallax: true, parallaxStrength: 40 };
 
 /** The banner shape every picture is shown in, and the size an imported picture is saved at. */
 export const ART_RATIO = 3;
@@ -85,6 +95,22 @@ export const resolvePicture = (config: ArtConfig, dark: boolean): string | null 
   return art ? artworkUrl(art, dark) : null;
 };
 
+/** The picture for one card: its own choice if it has one, else the default picture; null if there is none. */
+export const resolveCardPicture = (config: ArtConfig, cardId: string, dark: boolean): string | null => {
+  const own = config.cardArt[cardId];
+  if (own === CUSTOM_ART) return loadCustomArt();
+  if (own) { const a = artworks.get(own); if (a) return artworkUrl(a, dark); }
+  return resolvePicture(config, dark);
+};
+
+/** Thumbnail list for the per-card picker. */
+export const ART_CHOICES: { id: string; label: string; category: string; url: (dark: boolean) => string | null }[] =
+  ART_LIBRARY.flatMap(c => c.artworks.map((a, i) => ({
+    id: a.id, category: c.id,
+    label: c.artworks.length > 1 ? `${c.label} ${i + 1}` : c.label,
+    url: (dark: boolean) => artworkUrl(a, dark),
+  })));
+
 /** The picture to show behind the whole dashboard, or null when that is switched off. */
 export const resolveArt = (config: ArtConfig, dark: boolean): string | null =>
   (config.enabled ? resolvePicture(config, dark) : null);
@@ -94,7 +120,18 @@ export const loadArtConfig = (): ArtConfig => {
     const saved = JSON.parse(localStorage.getItem(ART_STORAGE_KEY) || '{}');
     const art = typeof saved?.art === 'string' && (saved.art === CUSTOM_ART || artworks.has(saved.art)) ? saved.art : DEFAULT_ART_CONFIG.art;
     const cards = Array.isArray(saved?.cards) ? saved.cards.filter((c: unknown): c is string => typeof c === 'string') : [];
-    return { enabled: saved?.enabled === true, art, cards };
+    const cardArt: Record<string, string> = {};
+    if (saved?.cardArt && typeof saved.cardArt === 'object') {
+      for (const [k, v] of Object.entries(saved.cardArt)) {
+        if (typeof v === 'string' && (v === CUSTOM_ART || artworks.has(v))) cardArt[k] = v;
+      }
+    }
+    const strength = Number(saved?.parallaxStrength);
+    return {
+      enabled: saved?.enabled === true, art, cards, cardArt,
+      parallax: saved?.parallax !== false,
+      parallaxStrength: Number.isFinite(strength) ? Math.min(100, Math.max(0, Math.round(strength))) : DEFAULT_ART_CONFIG.parallaxStrength,
+    };
   } catch {
     return DEFAULT_ART_CONFIG;
   }

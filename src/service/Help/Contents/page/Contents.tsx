@@ -64,6 +64,7 @@ const SECTIONS: HelpSection[] = [
   {
     id: '5', title: tLabel('Utilities & Tools'), icon: Settings,
     items: [
+      { title: tLabel('Society Calculator'), description: tLabel('What-if figures using the society rules: EMI, early closure, penalty, deposit interest, dividend'), icon: Calculator, body: 'Utility > Society Calculator. Work out the real society EMI, an early-closure amount with the month-by-month unpaid register, penalty, SB / FD / RD interest, eligibility and net payout, dividend, group insurance and the Saakh score. Nothing is saved and no member is needed. Every figure uses the live Business Rules shown at the top of the window.' },
       { title: tLabel('Calculator'), description: tLabel('Calculate loan EMI, interest rates, and maturity amounts'), icon: Calculator, body: 'A built-in calculator for EMI, maturity value and effective interest rate.' },
       { title: tLabel('Database Backup'), description: tLabel('Create and restore database backups for data safety'), icon: Database, body: 'Schedule automatic backups and restore from any saved snapshot in a few clicks.' },
       { title: tLabel('Communication Hub'), description: tLabel('Send SMS, WhatsApp, and email notifications to members'), icon: Mail, body: 'Send due reminders and statements via SMS, WhatsApp or email in bulk or one-off.' },

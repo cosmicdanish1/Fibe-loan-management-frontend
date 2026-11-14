@@ -88,10 +88,10 @@ const LoanConsolidationChainView: React.FC<Props> = ({
                 <ChainBento chain={chain} />
             ) : (
                 /* Legacy view: the chain, exactly as before */
-                <div className="flex flex-col" style={{ gap: 0 }}>
-                    <div style={{ fontSize: 12, color: 'var(--aw-muted)', marginBottom: 14 }}>
+                <div className="aw-stack">
+                    <p className="aw-meta">
                         Member <b>#{chain.mbno}</b> — {chain.loantype === 'ALN' ? 'Emergency Loan' : 'Regular Loan'} — {chain.chainLength} case{chain.chainLength === 1 ? '' : 's'} in this chain
-                    </div>
+                    </p>
 
                     {chain.links.map((link, i) => {
                         const prev = i > 0 ? chain.links[i - 1] : null;
@@ -100,82 +100,56 @@ const LoanConsolidationChainView: React.FC<Props> = ({
                         return (
                             <React.Fragment key={link.loancaseno}>
                                 {i > 0 && (
-                                    <div className="flex flex-col items-center" style={{ padding: '4px 0' }}>
-                                        <ArrowDown size={16} style={{ color: '#8b90a0' }} />
-                                        <div style={{
-                                            fontSize: 11.5, color: '#2563a8', background: '#eef5fc', border: '1px solid #bcd7ef',
-                                            borderRadius: 6, padding: '6px 12px', margin: '2px 0', fontFamily: "'IBM Plex Mono', monospace",
-                                        }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                                        <ArrowDown size={16} style={{ color: 'var(--aw-muted)' }} />
+                                        <span className="aw-pill tone-info">
                                             Settlement Amount from #{prev!.loancaseno}: ₹{fmt(oldBalance)} · Consolidated Loan Amount: ₹{fmt(link.loanAmt)}
-                                        </div>
+                                        </span>
                                     </div>
                                 )}
-                                <div
-                                    className="lcc-node"
-                                    style={{
-                                        background: link.isActive ? '#f2edfb' : '#fff',
-                                        border: `1.5px solid ${link.isActive ? '#7c3aed' : '#e4e6eb'}`,
-                                        borderRadius: 10, padding: '14px 16px',
-                                    }}
-                                >
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
+                                <section className="aw-card" style={link.isActive ? { borderColor: 'var(--aw-accent)', background: 'var(--aw-accent-soft)' } : undefined}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                             {link.isActive
-                                                ? <CheckCircle2 size={15} style={{ color: '#7c3aed' }} />
-                                                : <GitMerge size={15} style={{ color: '#8b90a0' }} />}
-                                            <span style={{ fontSize: 13.5, fontWeight: 700, color: link.isActive ? '#4c1d95' : '#1a1d29' }}>
-                                                Case #{link.loancaseno}
-                                            </span>
-                                            {link.isActive && (
-                                                <span style={{ fontSize: 10.5, fontWeight: 600, color: '#7c3aed', background: '#e9e0fb', borderRadius: 20, padding: '2px 9px' }}>
-                                                    ACTIVE — current head
-                                                </span>
-                                            )}
+                                                ? <CheckCircle2 size={15} style={{ color: 'var(--aw-accent)' }} />
+                                                : <GitMerge size={15} style={{ color: 'var(--aw-muted)' }} />}
+                                            <span className="aw-strong">Case #{link.loancaseno}</span>
+                                            {link.isActive && <span className="aw-pill tone-success">Active — current head</span>}
                                         </div>
-                                        <span style={{ fontSize: 11.5, color: '#8b90a0' }}>Disbursed {fmtDate(link.disbursementDate)}</span>
+                                        <span className="aw-meta">Disbursed {fmtDate(link.disbursementDate)}</span>
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                                        <div className="lcc-stat">
-                                            <div className="lcc-stat-label">{i === 0 ? 'Original Sanctioned Amount' : 'Consolidated Loan Amount'}</div>
-                                            <div className="lcc-stat-value">₹{fmt(link.loanAmt)}</div>
+                                        <div>
+                                            <span className="aw-label">{i === 0 ? 'Original Sanctioned Amount' : 'Consolidated Loan Amount'}</span>
+                                            <span className="aw-strong">₹{fmt(link.loanAmt)}</span>
                                         </div>
-                                        <div className="lcc-stat">
-                                            <div className="lcc-stat-label">{link.isActive ? 'Current Balance' : 'Settlement Amount'}</div>
-                                            <div className="lcc-stat-value" style={{ color: link.isActive ? '#dc2626' : '#1a1d29' }}>
+                                        <div>
+                                            <span className="aw-label">{link.isActive ? 'Current Balance' : 'Settlement Amount'}</span>
+                                            <span className="aw-strong" style={link.isActive ? { color: 'var(--aw-danger)' } : undefined}>
                                                 ₹{fmt(link.isActive ? link.currentBalance : link.contributedAtClosure)}
-                                            </div>
+                                            </span>
                                         </div>
-                                        <div className="lcc-stat">
-                                            <div className="lcc-stat-label">Status</div>
-                                            <div className="lcc-stat-value" style={{ fontSize: 12.5 }}>
+                                        <div>
+                                            <span className="aw-label">Status</span>
+                                            <span className="aw-strong">
                                                 {link.isActive
                                                     ? 'Open'
                                                     : <>Settled {fmtDate(link.closedDate)} → #{link.closedIntoLoancaseno}</>}
-                                            </div>
+                                            </span>
                                         </div>
                                     </div>
-                                </div>
+                                </section>
                             </React.Fragment>
                         );
                     })}
                     {chain.chainLength > 1 && (
-                        <p style={{ margin: '14px 0 0', fontSize: 11.5, color: 'var(--aw-muted)', lineHeight: 1.5 }}>
+                        <p className="aw-meta">
                             Settlement Amount is the value used to close the earlier loan. Net Disbursement Amount is not shown here because the existing report response does not include the final payout after interest and other deductions.
                         </p>
                     )}
                 </div>
             )}
 
-            <style>{`
-                .lcc-stat-label { font-size: 10.5px; color: #8b90a0; margin-bottom: 3px; }
-                .lcc-stat-value { font-size: 13.5px; font-weight: 600; color: #1a1d29; }
-
-                html.dark .lcc-stat-label { color: #8e8e93 !important; }
-                html.dark .lcc-stat-value { color: #f5f5f7 !important; }
-                html.dark .lcc-node[style*="background: rgb(255, 255, 255)"],
-                html.dark .lcc-node[style*="background:#fff"] { background: #1c1c1e !important; border-color: rgba(255,255,255,.12) !important; }
-                html.dark .lcc-node[style*="background: #f2edfb"] { background: rgba(167,139,250,.14) !important; border-color: rgba(167,139,250,.5) !important; }
-            `}</style>
         </ReportShell>
     );
 };

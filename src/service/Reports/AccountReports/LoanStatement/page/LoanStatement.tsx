@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Select, Popover, Checkbox } from 'antd';
+import { Select, Popover } from 'antd';
 import { User, Printer, FileDown, Search, Landmark, Columns3, RefreshCw, FileText } from 'lucide-react';
 import dayjs from 'dayjs';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
 import { useLoanStatement } from '../hooks/useLoanStatement';
 import MemberField from '../../../../../components/shared/kit/MemberField';
 import { ReportShell, ParamCard, StatCards, ReportEmpty } from '../../../../../components/reports/views/ReportShell';
@@ -138,9 +136,7 @@ const LoanStatement: React.FC = () => {
     const [inputMbno, setInputMbno] = useState('');
     const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>(loadVisibleColumns);
 
-    const { interfaceMode } = useSelector((state: RootState) => state.theme);
-    const isDark = interfaceMode === 'dark';
-    const { enabled, view, setView } = useReportViews('monthly.loan-statement');
+        const { enabled, view, setView } = useReportViews('monthly.loan-statement');
 
     const selectedLoan = activeLoans.find(l => l.loancaseno === selectedLoanCase);
     const shownColumns = ALL_COLUMNS.filter(c => visibleCols[c.key] !== false);
@@ -201,13 +197,13 @@ const LoanStatement: React.FC = () => {
         narration: r => r.narration,
     };
 
-    const CELL_CLASS: Record<string, string> = {
-        forMonth: 'text-slate-600',
-        interest: 'text-amber-700',
-        totalPaid: 'font-bold text-slate-800',
-        balanceAfter: 'font-semibold text-indigo-700',
-        receipt: 'text-slate-500',
-        narration: 'text-slate-500',
+    const CELL_STYLE: Record<string, React.CSSProperties> = {
+        forMonth: { color: 'var(--aw-muted)' },
+        interest: { color: 'var(--aw-warning)' },
+        totalPaid: { fontWeight: 700 },
+        balanceAfter: { color: 'var(--aw-accent)', fontWeight: 600 },
+        receipt: { color: 'var(--aw-muted)' },
+        narration: { color: 'var(--aw-muted)' },
     };
 
     const CELL_RENDER: Record<string, (r: (typeof rows)[number]) => React.ReactNode> = {
@@ -215,12 +211,12 @@ const LoanStatement: React.FC = () => {
         forMonth: r => `${MONTHS[r.payment_month]} ${r.payment_year}`,
         dueDate: r => r.due_date ? dayjs(r.due_date).format('DD-MM-YYYY') : '—',
         monthsLate: r => r.months_overdue > 0
-            ? <span className="text-red-600 font-semibold">{r.months_overdue}</span>
+            ? <span style={{ color: 'var(--aw-danger)', fontWeight: 600 }}>{r.months_overdue}</span>
             : '—',
         principal: r => `₹${fmt(r.principal_amount)}`,
         interest: r => `₹${fmt(r.interest_amount)}`,
         penal: r => r.penal_amount > 0
-            ? <span className="text-red-600 font-semibold">₹{fmt(r.penal_amount)}</span>
+            ? <span style={{ color: 'var(--aw-danger)', fontWeight: 600 }}>₹{fmt(r.penal_amount)}</span>
             : '—',
         totalPaid: r => `₹${fmt(r.payment_amount)}`,
         balanceAfter: r => `₹${fmt(r.remaining_balance)}`,
@@ -308,9 +304,9 @@ const LoanStatement: React.FC = () => {
                             trigger="click"
                             placement="bottomRight"
                             content={
-                                <div className="flex flex-col gap-1 w-40">
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: 160 }}>
                                     {ALL_COLUMNS.map(c => (
-                                        <Checkbox key={c.key} checked={visibleCols[c.key] !== false} onChange={() => toggleColumn(c.key)}>{c.label}</Checkbox>
+                                        <label key={c.key} style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={visibleCols[c.key] !== false} onChange={() => toggleColumn(c.key)} /><span>{c.label}</span></label>
                                     ))}
                                 </div>
                             }
@@ -325,53 +321,47 @@ const LoanStatement: React.FC = () => {
                             <ReportEmpty icon={<FileText size={34} />} title="No Transactions" hint={selectedLoanCase ? 'No repayments recorded yet for this loan.' : 'Choose a member and loan case on the left.'} />
                         ) : (
                                     <div className="print-area">
-                                        <div className="text-center mb-4 border-b border-dashed border-slate-300 pb-3">
-                                            <div className="fz-body font-bold text-slate-800">Espat Karmchari Co-Operative Credit Society Limited</div>
-                                            <div className="fz-caption text-slate-500">Loan Account Statement — Generated {dayjs().format('DD-MMM-YYYY h:mmA')}</div>
+                                        <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                                            <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited</div>
+                                            <div className="aw-meta">Loan Account Statement — Generated {dayjs().format('DD-MMM-YYYY h:mmA')}</div>
                                         </div>
 
                                         {selectedLoan && (
-                                            <div className="flex flex-wrap gap-x-8 gap-y-1 mb-4 fz-caption text-slate-600">
+                                            <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 28px', marginBottom: 12 }}>
                                                 <span>Member: <b>{memberName || mbno}</b></span>
                                                 <span>Loan Type: <b>{LOAN_TYPE_LABEL[selectedLoan.loantype] || selectedLoan.loantype}</b></span>
                                                 <span>Loan Amount: <b>₹{fmt(selectedLoan.loan_amt)}</b></span>
                                                 <span>EMI: <b>₹{fmt(selectedLoan.instal_amt)}</b></span>
                                                 <span>Tenure: <b>{selectedLoan.no_of_instal} months</b></span>
-                                            </div>
+                                            </p>
                                         )}
 
-                                        <table className="loan-stmt-table w-full fz-caption border-collapse">
-                                            <thead>
-                                                <tr className={`border-b-2 border-slate-400 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
-                                                    {shownColumns.map(c => (
-                                                        <th
-                                                            key={c.key}
-                                                            className={`${c.align === 'right' ? 'text-right' : 'text-left'} py-2 px-2 font-bold text-slate-700`}
-                                                        >
-                                                            {c.label}
-                                                        </th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {rows.map(r => (
-                                                    <tr key={r.id} className="border-b border-slate-100 hover:bg-indigo-50/30">
+                                        <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                                            <table className="aw-table">
+                                                <thead>
+                                                    <tr>
                                                         {shownColumns.map(c => (
-                                                            <td
-                                                                key={c.key}
-                                                                className={`py-1.5 px-2 ${c.align === 'right' ? 'text-right' : ''} ${CELL_CLASS[c.key] || 'text-slate-700'}`}
-                                                            >
-                                                                {CELL_RENDER[c.key]?.(r)}
-                                                            </td>
+                                                            <th key={c.key} className={c.align === 'right' ? 'is-right' : undefined}>{c.label}</th>
                                                         ))}
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-
-                                        <div className="mt-4 fz-caption text-slate-400 italic text-center">
-                                            * {rows.length} transaction(s) shown, oldest first is at the top of each installment's history
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map(r => (
+                                                        <tr key={r.id}>
+                                                            {shownColumns.map(c => (
+                                                                <td key={c.key} className={c.align === 'right' ? 'is-right' : undefined} style={CELL_STYLE[c.key]}>
+                                                                    {CELL_RENDER[c.key]?.(r)}
+                                                                </td>
+                                                            ))}
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
                                         </div>
+
+                                        <p className="aw-meta" style={{ textAlign: 'center', marginTop: 10, fontStyle: 'italic' }}>
+                                            * {rows.length} transaction(s) shown, oldest first is at the top of each installment's history
+                                        </p>
                                     </div>
                         )}
                     </div>
@@ -380,23 +370,6 @@ const LoanStatement: React.FC = () => {
             {view !== 'legacy' && !hasData && (
                 <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Transactions'} hint={selectedLoanCase ? 'No repayments recorded yet for this loan.' : 'Choose a member and loan case on the left.'} />
             )}
-
-            <style>{`
-                html.dark .loan-stmt-table thead tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.07) !important; }
-                html.dark .loan-stmt-table th { color: #8e8e93 !important; }
-                html.dark .loan-stmt-table td { border-color: rgba(255,255,255,.07) !important; color: #f5f5f7 !important; }
-                html.dark .loan-stmt-table tr.border-slate-100 { border-color: rgba(255,255,255,.07) !important; }
-                html.dark .loan-stmt-table tr:hover { background-color: rgba(255,255,255,.05) !important; }
-                html.dark .loan-stmt-table .text-slate-600,
-                html.dark .loan-stmt-table .text-slate-500,
-                html.dark .loan-stmt-table .text-slate-700 { color: #f5f5f7 !important; }
-                html.dark .loan-stmt-table .text-slate-800 { color: #ffffff !important; }
-                html.dark .loan-stmt-page .print-area .text-slate-700,
-                html.dark .loan-stmt-page .print-area .text-slate-800 { color: #f5f5f7 !important; }
-                html.dark .loan-stmt-page .print-area .text-slate-500,
-                html.dark .loan-stmt-page .print-area .text-slate-400 { color: #8e8e93 !important; }
-                html.dark .loan-stmt-page .print-area .border-dashed { border-color: rgba(255,255,255,.07) !important; }
-            `}</style>
         </ReportShell>
     );
 };

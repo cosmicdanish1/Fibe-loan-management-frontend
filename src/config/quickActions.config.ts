@@ -58,6 +58,7 @@ export const ALL_QUICK_ACTION_DEFS: QuickActionDef[] = [
   // ── Utility ───────────────────────────────────────────────────────────────
   { id: 'db-backup',         label: tLabel('DB Backup'),         route: '/utility/database-backup',                     iconName: 'Database',       colorCls: 'bg-slate-100 text-slate-600 border-slate-200',     category: 'Utility' },
   { id: 'calculator',        label: tLabel('Calculator'),        route: '/utility/calculator',                          iconName: 'Hash',           colorCls: 'bg-blue-50 text-blue-600 border-blue-100',         category: 'Utility' },
+  { id: 'society-calculator', label: tLabel('Society Calculator'), route: '/utility/society-calculator',          iconName: 'Calculator',     colorCls: 'bg-violet-50 text-violet-600 border-violet-100',   category: 'Utility' },
   { id: 'emi-chart',         label: tLabel('EMI Chart'),         route: '/utility/emi-chart',                           iconName: 'BarChart2',      colorCls: 'bg-indigo-50 text-indigo-600 border-indigo-100',   category: 'Utility' },
   { id: 'member-balance',    label: tLabel('Member Balance'),    route: '/utility/member-balance',                      iconName: 'Banknote',       colorCls: 'bg-emerald-50 text-emerald-600 border-emerald-100',category: 'Utility' },
   { id: 'comm-center',       label: tLabel('Comm. Center'),      route: '/utility/communication-center',                iconName: 'MessageSquare',  colorCls: 'bg-violet-50 text-violet-600 border-violet-100',   category: 'Utility' },

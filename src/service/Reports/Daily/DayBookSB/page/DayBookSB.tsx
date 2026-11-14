@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Settings, RefreshCw, Printer, FileDown, Search, PiggyBank, Calendar } from 'lucide-react';
-import { DatePicker, Spin, message } from 'antd';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
+import { DatePicker, message } from 'antd';
 import { apiService } from '../../../../../services/api';
 import { CrDrIndicator } from '../../../../../components/shared/CrDrIndicator';
 import { ReportShell, StatCards } from '../../../../../components/reports/views/ReportShell';
@@ -123,24 +121,7 @@ const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }
   const [data, setData] = useState<SBData | null>(null);
   const { enabled, view, setView } = useReportViews(filterType === 'cd' ? 'daily.day-book-cd' : 'daily.day-book-sb');
 
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
   // themeSlice normalises interfaceMode to 'light' | 'dark' (there is no 'system' value)
-  const isDark = interfaceMode === 'dark';
-
-  // Legacy report-body colours (the body keeps its original look; only the shell uses the app kit)
-  const text      = isDark ? 'text-slate-100'                           : 'text-slate-800';
-  const muted     = isDark ? 'text-slate-400'                           : 'text-slate-500';
-  const subtle    = isDark ? 'text-slate-500'                           : 'text-slate-400';
-  const tblBdr    = isDark ? 'border-slate-700/50'                      : 'border-slate-200';
-  const tblBdrFull= isDark ? 'border-slate-600'                         : 'border-slate-300';
-  const rowEven   = isDark ? 'bg-slate-800/80'                          : 'bg-white';
-  const rowOdd    = isDark ? 'bg-slate-800/40'                          : 'bg-slate-50/60';
-  const rowHov    = isDark ? 'hover:bg-slate-700/30'                    : 'hover:bg-sky-50/30';
-  const tblHd     = isDark ? 'bg-slate-700 text-slate-200'              : 'bg-slate-100 text-slate-700';
-  const totalRow  = isDark ? 'border-t-2 border-slate-500 bg-slate-700/60': 'border-t-2 border-slate-300 bg-slate-100';
-  const sumRowBg  = isDark ? 'bg-slate-800/60'                          : 'bg-white';
-  const sumLbl    = isDark ? 'text-slate-400'                           : 'text-slate-600';
-  const compBdr   = isDark ? 'border-b border-dashed border-slate-600'  : 'border-b border-dashed border-slate-300';
 
   useEffect(() => { loadData(); }, [selectedDate, filterType]);
 
@@ -264,96 +245,71 @@ const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }
             {data && <span className="aw-meta">{data.totalTransactions} entries</span>}
           </div>
           <div className="rpt-legacy-doc" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
-            <Spin spinning={loading} tip="Loading...">
               {hasData && data ? (
                 <div id="sb-print-area">
-                  {/* Company header */}
-                  <div className={`text-center mb-4 pb-3 ${compBdr}`}>
-                    <div className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                    <div className={`fz-caption ${muted}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                    <div className={`fz-small mt-0.5 ${subtle}`}>Day Book [{bookLabel}] for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
+                  <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                    <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited.</div>
+                    <div className="aw-meta">Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
+                    <div className="aw-meta">Day Book [{bookLabel}] for Date : {selectedDate.format('DD-MMM-YYYY')}</div>
                   </div>
 
-                  {/* Main table */}
-                  <div className="overflow-x-auto">
-                    <table className={`w-full fz-caption font-mono border-collapse border ${tblBdrFull}`}>
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                    <table className="aw-table">
                       <thead>
                         <tr>
-                          <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left w-12 align-bottom ${tblHd}`}>Tr No</th>
-                          <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left w-20 align-bottom ${tblHd}`}>A/C No.</th>
-                          <th rowSpan={2} className={`border ${tblBdrFull} px-2 py-1.5 text-left align-bottom ${tblHd}`}>A/C Name</th>
-                          <th colSpan={3} className={`border ${tblBdrFull} px-2 py-1 text-center font-bold ${isDark ? 'bg-sky-900/60 text-sky-300' : 'bg-sky-100 text-sky-700'}`}>Deposit</th>
-                          <th colSpan={3} className={`border ${tblBdrFull} px-2 py-1 text-center font-bold ${isDark ? 'bg-rose-900/40 text-rose-300' : 'bg-rose-100 text-rose-700'}`}>Withdrawal</th>
+                          <th rowSpan={2}>Tr no</th><th rowSpan={2}>A/C no.</th><th rowSpan={2}>A/C name</th>
+                          <th colSpan={3} className="is-center">Deposit</th>
+                          <th colSpan={3} className="is-center">Withdrawal</th>
                         </tr>
                         <tr>
-                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-sky-900/40 text-sky-300' : 'bg-sky-50 text-sky-600'}`}>Cash</th>
-                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-sky-900/40 text-sky-300' : 'bg-sky-50 text-sky-600'}`}>Transfer</th>
-                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-sky-900/40 text-sky-300' : 'bg-sky-50 text-sky-600'}`}>Total</th>
-                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-rose-900/30 text-rose-300' : 'bg-rose-50 text-rose-600'}`}>Cash</th>
-                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-rose-900/30 text-rose-300' : 'bg-rose-50 text-rose-600'}`}>Transfer</th>
-                          <th className={`border ${tblBdrFull} px-2 py-1 text-right w-24 ${isDark ? 'bg-rose-900/30 text-rose-300' : 'bg-rose-50 text-rose-600'}`}>Total</th>
+                          <th className="is-right">Cash</th><th className="is-right">Transfer</th><th className="is-right">Total</th>
+                          <th className="is-right">Cash</th><th className="is-right">Transfer</th><th className="is-right">Total</th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.entries.map((e, i) => (
-                          <tr key={i} className={`${tblBdr} border-b ${rowHov} transition-colors ${i % 2 === 0 ? rowEven : rowOdd}`}>
-                            <td className={`border ${tblBdr} px-2 py-0.5 ${muted}`}>{e.srNo}</td>
-                            <td className={`border ${tblBdr} px-2 py-0.5 text-amber-500 font-semibold`}>{e.accNo}</td>
-                            <td className={`border ${tblBdr} px-2 py-0.5 ${text}`}>{e.acName}</td>
-                            <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-sky-300' : 'text-sky-600'}`}>
-                              {e.depositCash > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash)}</>) : '0.00'}
-                            </td>
-                            <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-sky-400' : 'text-sky-500'}`}>
-                              {e.depositTransfer > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositTransfer)}</>) : '0.00'}
-                            </td>
-                            <td className={`border ${tblBdr} px-2 py-0.5 text-right font-semibold ${isDark ? 'text-sky-200' : 'text-sky-700'}`}>
-                              {(e.depositCash + e.depositTransfer) > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash + e.depositTransfer)}</>) : '0.00'}
-                            </td>
-                            <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>
-                              {e.withdrawalCash > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash)}</>) : '0.00'}
-                            </td>
-                            <td className={`border ${tblBdr} px-2 py-0.5 text-right ${isDark ? 'text-rose-400' : 'text-rose-500'}`}>
-                              {e.withdrawalTransfer > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalTransfer)}</>) : '0.00'}
-                            </td>
-                            <td className={`border ${tblBdr} px-2 py-0.5 text-right font-semibold ${isDark ? 'text-rose-200' : 'text-rose-700'}`}>
-                              {(e.withdrawalCash + e.withdrawalTransfer) > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash + e.withdrawalTransfer)}</>) : '0.00'}
-                            </td>
+                          <tr key={i}>
+                            <td className="is-muted">{e.srNo}</td>
+                            <td className="is-accent">{e.accNo}</td>
+                            <td>{e.acName}</td>
+                            <td className="is-right is-success">{e.depositCash > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash)}</>) : '0.00'}</td>
+                            <td className="is-right is-success">{e.depositTransfer > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositTransfer)}</>) : '0.00'}</td>
+                            <td className="is-right is-success">{(e.depositCash + e.depositTransfer) > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{fmt(e.depositCash + e.depositTransfer)}</>) : '0.00'}</td>
+                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{e.withdrawalCash > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash)}</>) : '0.00'}</td>
+                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{e.withdrawalTransfer > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalTransfer)}</>) : '0.00'}</td>
+                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{(e.withdrawalCash + e.withdrawalTransfer) > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{fmt(e.withdrawalCash + e.withdrawalTransfer)}</>) : '0.00'}</td>
                           </tr>
                         ))}
 
                         {/* Grand total */}
-                        <tr className={totalRow}>
-                          <td colSpan={3} className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black uppercase text-xs ${text}`}>TOTAL :-</td>
-                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-300' : 'text-sky-600'}`}>{data.totalDepositCash > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositCash)}</td>
-                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-400' : 'text-sky-500'}`}>{data.totalDepositTransfer > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositTransfer)}</td>
-                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-sky-200' : 'text-sky-700'}`}>{data.totalDeposit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDeposit)}</td>
-                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>{data.totalWithdrawalCash > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalCash)}</td>
-                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-400' : 'text-rose-500'}`}>{data.totalWithdrawalTransfer > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalTransfer)}</td>
-                          <td className={`border ${tblBdrFull} px-2 py-1.5 text-right font-black ${isDark ? 'text-rose-200' : 'text-rose-700'}`}>{data.totalWithdrawal > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawal)}</td>
+                        <tr>
+                          <td colSpan={3} className="is-right"><b>TOTAL :-</b></td>
+                          <td className="is-right"><b>{data.totalDepositCash > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositCash)}</b></td>
+                          <td className="is-right"><b>{data.totalDepositTransfer > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDepositTransfer)}</b></td>
+                          <td className="is-right"><b>{data.totalDeposit > 0 && <CrDrIndicator type="credit" className="mr-1" />}{fmt(data.totalDeposit)}</b></td>
+                          <td className="is-right"><b>{data.totalWithdrawalCash > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalCash)}</b></td>
+                          <td className="is-right"><b>{data.totalWithdrawalTransfer > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawalTransfer)}</b></td>
+                          <td className="is-right"><b>{data.totalWithdrawal > 0 && <CrDrIndicator type="debit" className="mr-1" />}{fmt(data.totalWithdrawal)}</b></td>
                         </tr>
 
                         {/* Summary rows */}
                         {[
-                          { label: `Opening Balance [${shortLabel}]`, value: fmtSigned(data.openingBalance), cls: text, crdr: null },
-                          { label: `Total Deposit [${shortLabel}]`, value: fmt(data.totalDeposit), cls: isDark ? 'text-sky-300' : 'text-sky-600', crdr: 'credit' as const },
-                          { label: `Total Cash In Hand [${shortLabel}]`, value: fmt(data.totalCashInHand), cls: text, crdr: null },
-                          { label: `Total Withdrawal [${shortLabel}]`, value: fmt(data.totalWithdrawal), cls: isDark ? 'text-rose-300' : 'text-rose-600', crdr: 'debit' as const },
-                          { label: `Closing Balance [${shortLabel}]`, value: fmtSigned(data.closingBalance), cls: data.closingBalance >= 0 ? (isDark ? 'text-sky-200' : 'text-sky-700') : (isDark ? 'text-rose-300' : 'text-rose-600'), crdr: null },
-                        ].map(({ label, value, cls, crdr }, i) => (
-                          <tr key={`sum-${i}`} className={`border-b ${tblBdr} ${sumRowBg}`}>
-                            <td colSpan={7} className={`border ${tblBdr} px-2 py-1 text-right text-xs font-bold ${sumLbl}`}>
-                              {label}
-                            </td>
-                            <td colSpan={2} className={`border ${tblBdr} px-2 py-1 text-right text-xs font-black ${cls}`}>{crdr && <CrDrIndicator type={crdr} className="mr-1" />}{value}</td>
+                          { label: `Opening Balance [${shortLabel}]`, value: fmtSigned(data.openingBalance), crdr: null },
+                          { label: `Total Deposit [${shortLabel}]`, value: fmt(data.totalDeposit), crdr: 'credit' as const },
+                          { label: `Total Cash In Hand [${shortLabel}]`, value: fmt(data.totalCashInHand), crdr: null },
+                          { label: `Total Withdrawal [${shortLabel}]`, value: fmt(data.totalWithdrawal), crdr: 'debit' as const },
+                          { label: `Closing Balance [${shortLabel}]`, value: fmtSigned(data.closingBalance), crdr: null },
+                        ].map(({ label, value, crdr }, i) => (
+                          <tr key={`sum-${i}`}>
+                            <td colSpan={7} className="is-right"><b>{label}</b></td>
+                            <td colSpan={2} className="is-right"><b>{crdr && <CrDrIndicator type={crdr} className="mr-1" />}{value}</b></td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
 
-                  <div className={`mt-3 fz-small italic ${subtle}`}>
-                    * Report As Per Data Available ..
-                  </div>
+                  <p className="aw-meta" style={{ marginTop: 10, fontStyle: 'italic' }}>* Report As Per Data Available ..</p>
                 </div>
               ) : !loading ? (
                 <div className="aw-empty" style={{ padding: 32 }}>
@@ -362,7 +318,6 @@ const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }
                   <span className="aw-meta">Try a date with {filterType === 'cd' ? 'compulsory deposit' : 'savings account'} activity</span>
                 </div>
               ) : null}
-            </Spin>
           </div>
         </section>
       )}

@@ -2,6 +2,24 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.11.0",
+      "date": "2026-11-15",
+      "title": "Society Calculator and rules profiles",
+      "new": [
+        "Society Calculator under Utility: what-if calculations for loan EMI, closure and penalty. Nothing is saved.",
+        "Modify Business Rules can export the rules to a file and import them back; an import only fills the screen and shows what would change, and nothing is stored until you click Save Rules.",
+        "Mobile Control Center has new Features and Security Audit panels.",
+        "A loan approval card in My Profile.",
+        "Dashboard cards can each have their own picture, chosen in Customize mode."
+      ],
+      "improved": [
+        "The Loan Position table folds its groups open and closed, with the loan summary and amount owed open first.",
+        "Dates are shown the same way on loan screens (05 Mar 2024) and never shift by a day.",
+        "Reports and certificate screens, the cash position card and the dashboard were refreshed."
+      ],
+      "fixed": []
+    },
+    {
       "version": "1.10.0",
       "date": "2026-11-13",
       "title": "A customisable dashboard and delayed-payroll handling",

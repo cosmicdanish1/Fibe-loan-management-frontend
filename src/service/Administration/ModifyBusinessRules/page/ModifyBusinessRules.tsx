@@ -1,13 +1,15 @@
 // page/ModifyBusinessRules.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
+  Upload, Download,
   IndianRupee, Calculator, ShieldCheck, Settings,
   Database, TrendingUp, Percent, Users, Building2,
   Save, Info, Trash2, Plus, X, Clock, RefreshCw,
 } from 'lucide-react';
 import { Select } from 'antd';
 import { useBusinessRules, BusinessRulesData, GeneralSettings, LoanType, RdSystemRules } from '../hook/useBusinessRules';
+import { buildProfileFile, parseProfileFile, PROFILE_MAX_BYTES, ProfileParseResult } from '../util/rulesProfile';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import { useTranslation } from 'react-i18next';
 import { showDialog4 as showDialog, notifyError } from '@/utils/dialog';
@@ -169,14 +171,14 @@ const ModifyBusinessRules: React.FC = () => {
   // Returns human-readable problems (empty = OK). Rates may not be negative, percentages are 0-100,
   // re-agreement min rate may not exceed max rate (0 = no limit), slot days are 1-31 (the Slot 1 window
   // may legitimately wrap the month end, e.g. the default 25-5, so start > end is allowed).
-  const validateRules = (): string[] => {
+  const validateRules = (rules: BusinessRulesData = businessRules): string[] => {
     const bad: string[] = [];
     const neg = (label: string, v: number | undefined) => { if (v !== undefined && (!Number.isFinite(v) || v < 0)) bad.push(`${label} cannot be negative`); };
     const pct = (label: string, v: number | undefined) => { if (v !== undefined && (!Number.isFinite(v) || v < 0 || v > 100)) bad.push(`${label} must be between 0 and 100`); };
     const loans: Array<[string, LoanType]> = [
-      ['Regular Loan', businessRules.regularLoan], ['Additional Loan', businessRules.additionalLoan],
-      ['Emergency Loan', businessRules.emergencyLoan], ['Grain Loan', businessRules.mediumTermLoan],
-      ['Loan On Deposit', businessRules.loanOnDeposit],
+      ['Regular Loan', rules.regularLoan], ['Additional Loan', rules.additionalLoan],
+      ['Emergency Loan', rules.emergencyLoan], ['Grain Loan', rules.mediumTermLoan],
+      ['Loan On Deposit', rules.loanOnDeposit],
     ];
     for (const [name, l] of loans) {
       neg(`${name} Max.Amount`, l.maxAmount);
@@ -189,17 +191,17 @@ const ModifyBusinessRules: React.FC = () => {
       // the divisor only matters when there is a same-month fee to divide (fee = percent x principal / divisor)
       if (l.sameMonthPenalDivisor !== undefined && (l.sameMonthPenalPercent ?? 0) > 0 && !(l.sameMonthPenalDivisor > 0)) bad.push(`${name} Same-Month Fee Divisor must be greater than 0 when a Same-Month Late Fee is set`);
     }
-    const el = businessRules.regularLoanEligibility;
+    const el = rules.regularLoanEligibility;
     neg('Max. Regular Loan Limit', el.maxLimit); pct('RD Req. (%)', el.rdPercent); pct('Share Req. (%)', el.sharePercent);
-    const lad = businessRules.loanAgainstDeposits;
+    const lad = rules.loanAgainstDeposits;
     pct('Loan Against Deposits Share Value (%)', lad.shareValue); pct('Loan Against Deposits FD (%)', lad.fdPercentage);
     neg('Loan Against Deposits Overall Limit', lad.overallLimit); neg('Loan Against Deposits Basic Pay', lad.basicPay);
-    const o = businessRules.others;
+    const o = rules.others;
     neg('Min. Membership (Months)', o.minMembership); neg('Min Share Amount', o.minShareAmt); neg('Max Share Amount', o.maxShareAmt); neg('Security Deposit', o.securityDep);
     if (o.maxShareAmt > 0 && o.minShareAmt > o.maxShareAmt) bad.push('Min Share Amount cannot exceed Max Share Amount');
-    neg('Min Balance For Saving A/c', businessRules.generalSettings.minBalanceForSavingAc);
-    neg('Working Charges Amount', businessRules.generalSettings.workingChargesAmount);
-    const fm = businessRules.fundManagement;
+    neg('Min Balance For Saving A/c', rules.generalSettings.minBalanceForSavingAc);
+    neg('Working Charges Amount', rules.generalSettings.workingChargesAmount);
+    const fm = rules.fundManagement;
     pct('Annual Fund Interest Rate (%)', fm.fundInterestRate); pct('Dividend Payout (%)', fm.dividendPercent); neg('Group Insurance Amount', fm.groupInsuranceAmount);
     pct('Fixed dividend rate (%)', fm.dividendFixedPercent); pct('Minimum dividend rate (%)', fm.dividendMinPercent); pct('Maximum dividend rate (%)', fm.dividendMaxPercent);
     if (fm.dividendFixedActive && !(fm.dividendFixedPercent > 0)) bad.push('Fixed dividend rate is switched on, so it must be more than 0');
@@ -211,18 +213,18 @@ const ModifyBusinessRules: React.FC = () => {
       neg(`Interest chart row ${i + 1} monthly contribution`, r.monthlyContribution);
       neg(`Interest chart row ${i + 1} yearly interest`, r.yearlyInterest);
     });
-    const rg = businessRules.loanReagreement;
+    const rg = rules.loanReagreement;
     neg('Re-agreement minimum installments paid', rg.minInstallmentsPaid); neg('Re-agreement minimum outstanding', rg.minOutstanding);
     neg('Re-agreement maximum tenure', rg.maxTenure); neg('Re-agreement maximum per loan', rg.maxPerLoan);
     pct('Re-agreement minimum rate (%)', rg.minRate); pct('Re-agreement maximum rate (%)', rg.maxRate);
     if (rg.maxRate > 0 && rg.minRate > rg.maxRate) bad.push('Re-agreement minimum rate cannot be greater than the maximum rate');
-    const sl = businessRules.loanSlotDelay;
+    const sl = rules.loanSlotDelay;
     for (const [label, d] of [['Slot 1 Window — From Day', sl.slot1StartDay], ['Slot 1 Window — To Day', sl.slot1EndDay]] as Array<[string, number]>) {
       if (!Number.isInteger(d) || d < 1 || d > 31) bad.push(`${label} must be a whole day between 1 and 31`);
     }
     neg('Slot 1 delay months', sl.slot1DelayMonths); neg('Slot 2 delay months', sl.slot2DelayMonths);
-    neg('Old EMI flag range', businessRules.oldEmiFlag.tolerance);
-    const rd = businessRules.rdSystem;
+    neg('Old EMI flag range', rules.oldEmiFlag.tolerance);
+    const rd = rules.rdSystem;
     neg('Minimum Monthly RD Amount', rd.minMonthlyAmount); pct('Opening-Balance Interest Rate (%)', rd.openingBalanceRate); neg('Min. Balance After Withdrawal', rd.minBalanceAfterWithdrawal);
     neg('RD min consecutive installments', rd.minConsecutiveInstallments); neg('RD max payment gap months', rd.maxPaymentGapMonths);
     neg('RD max missed installments', rd.maxMissedInstallments); neg('RD min regular after recovery', rd.minRegularAfterRecovery); neg('RD max arrears clearance months', rd.maxArrearsClearanceMonths);
@@ -250,6 +252,55 @@ const ModifyBusinessRules: React.FC = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  // ── Rules profile file: export / import (ES-540) ──
+  // Import only ever happens from this window. It reads the file, shows exactly what would change, and
+  // on confirm loads the values onto the screen. Saving stays a separate, deliberate click on Save Rules.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importPreview, setImportPreview] = useState<{ fileName: string; result: Extract<ProfileParseResult, { ok: true }> } | null>(null);
+
+  const handleExport = () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([buildProfileFile(businessRules)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `business-rules-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // let the same file be picked again later
+    if (!file) return;
+    if (file.size > PROFILE_MAX_BYTES) {
+      await showDialog('warning', t('Import Rules'), t('This file is too large to be a rules profile.'));
+      return;
+    }
+    const result = parseProfileFile(await file.text(), businessRules);
+    if (!result.ok) {
+      await showDialog('warning', t('Import Rules'), t('The file was not imported and nothing was changed.'), result.errors.slice(0, 15).join('\n') + (result.errors.length > 15 ? `\n...and ${result.errors.length - 15} more` : ''));
+      return;
+    }
+    setImportPreview({ fileName: file.name, result });
+  };
+
+  const handleApplyImport = async () => {
+    if (!importPreview) return;
+    if (!loaded) {
+      await showDialog('error', t('Rules Not Loaded'), t('The live business rules have not been loaded.'));
+      return;
+    }
+    // Import only fills the screen. Nothing is stored (and the application keeps using the old rules)
+    // until the operator clicks Save Rules, which runs the usual validation first.
+    const { merged, changes } = importPreview.result;
+    setBusinessRules(merged);
+    setImportPreview(null);
+    await showDialog('info', t('Rules Loaded From File'), t('{{1}} value(s) are now on the screen.', { 1: changes.length }), t('Check them, then click Save Rules to make them live. Until you save, the application keeps using the old rules.'));
   };
 
   usePageToolbarActions({
@@ -345,6 +396,13 @@ const ModifyBusinessRules: React.FC = () => {
           </p>
         </div>
         <div className="aw-actions">
+          <input ref={fileInputRef} type="file" accept=".json,application/json" onChange={handleImportFile} style={{ display: 'none' }} />
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={saving || loading || !loaded} className="aw-btn aw-btn-secondary" title={t('Load all rules from a profile file onto the screen (click Save Rules afterwards to make them live)')}>
+            <Upload size={13} /> {t('Import Rules')}
+          </button>
+          <button type="button" onClick={handleExport} disabled={saving || loading || !loaded} className="aw-btn aw-btn-secondary" title={t('Save the rules on screen to a profile file')}>
+            <Download size={13} /> {t('Export Rules')}
+          </button>
           <button type="button" onClick={handleSave} disabled={saving || loading || !loaded} className="aw-btn aw-btn-primary">
             {saving ? <RefreshCw size={13} className="aw-spin" /> : <Save size={13} />} {t('Save Rules')}
           </button>
@@ -843,6 +901,56 @@ const ModifyBusinessRules: React.FC = () => {
           <span>RULESET_V3.1.2</span>
         </span>
       </div>
+
+      {/* Import preview — nothing is saved until Apply */}
+      {importPreview && (
+        <div className="aw-modal-backdrop">
+          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Import Rules')} style={{ height: 'auto', maxHeight: '85vh', maxWidth: '44rem', display: 'flex', flexDirection: 'column' }}>
+            <div className="aw-stack" style={{ padding: 'var(--aw-pad)', overflow: 'hidden', minHeight: 0 }}>
+              <h2 className="aw-card-title">{t('Import Rules')}</h2>
+              <p className="aw-meta">
+                {importPreview.fileName}
+                {importPreview.result.meta.exportedAt ? ` · ${t('exported')} ${new Date(importPreview.result.meta.exportedAt).toLocaleString()}` : ''}
+              </p>
+              {importPreview.result.changes.length === 0 ? (
+                <p className="aw-strong">{t('This file matches the current rules. Nothing would change.')}</p>
+              ) : (
+                <>
+                  <p className="aw-strong">{t('{{1}} value(s) will change ({{2}} already match):', { 1: importPreview.result.changes.length, 2: importPreview.result.unchangedCount })}</p>
+                  <div style={{ overflow: 'auto', minHeight: 0, maxHeight: '50vh' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                      <thead>
+                        <tr style={{ textAlign: 'left' }}>
+                          <th style={{ padding: '4px 8px' }}>{t('Section')}</th>
+                          <th style={{ padding: '4px 8px' }}>{t('Setting')}</th>
+                          <th style={{ padding: '4px 8px' }}>{t('Now')}</th>
+                          <th style={{ padding: '4px 8px' }}>{t('From file')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importPreview.result.changes.map((c, i) => (
+                          <tr key={i} style={{ borderTop: '1px solid var(--aw-border, rgba(128,128,128,.25))' }}>
+                            <td style={{ padding: '4px 8px' }}>{c.group}</td>
+                            <td style={{ padding: '4px 8px' }}>{c.field}</td>
+                            <td style={{ padding: '4px 8px', wordBreak: 'break-all' }}>{c.from}</td>
+                            <td style={{ padding: '4px 8px', wordBreak: 'break-all', fontWeight: 600 }}>{c.to}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button type="button" onClick={() => setImportPreview(null)} className="aw-btn aw-btn-ghost">{t('Cancel')}</button>
+                <button type="button" onClick={handleApplyImport} disabled={importPreview.result.changes.length === 0} className="aw-btn aw-btn-primary">
+                  <Upload size={13} /> {t('Load Into Screen')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Loading / saving overlay */}
       {(loading || saving) && (

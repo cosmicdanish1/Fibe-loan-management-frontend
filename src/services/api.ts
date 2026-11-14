@@ -426,6 +426,21 @@ class ApiService {
   async twoFaDisable(password: string, code: string): Promise<void> {
     await this.req2fa('/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ password, code }) });
   }
+  async twoFaSetAlwaysAsk(alwaysAsk: boolean): Promise<void> {
+    await this.req2fa('/auth/2fa/prefs', { method: 'PUT', body: JSON.stringify({ alwaysAsk }) });
+  }
+  async twoFaForgetDevices(): Promise<{ forgotten: number }> {
+    return await this.req2fa('/auth/2fa/devices/forget', { method: 'POST' });
+  }
+  async twoFaLoanEnrolBegin(password: string): Promise<{ secret: string; otpauthUrl: string; qrDataUrl: string }> {
+    return await this.req2fa('/auth/2fa/loan/enroll/begin', { method: 'POST', body: JSON.stringify({ password }) });
+  }
+  async twoFaLoanEnrolConfirm(code: string): Promise<{ recoveryCodes: string[] }> {
+    return await this.req2fa('/auth/2fa/loan/enroll/confirm', { method: 'POST', body: JSON.stringify({ code }) });
+  }
+  async twoFaLoanDisable(password: string, code: string): Promise<void> {
+    await this.req2fa('/auth/2fa/loan/disable', { method: 'POST', body: JSON.stringify({ password, code }) });
+  }
   async twoFaRegenerate(code: string): Promise<{ recoveryCodes: string[] }> {
     return await this.req2fa('/auth/2fa/recovery/regenerate', { method: 'POST', body: JSON.stringify({ code }) });
   }
@@ -775,6 +790,11 @@ class ApiService {
   // Figures for the dashboard widgets (deposits, maturities, applications, members, demand) in one call.
   async getDashboardSummary(): Promise<ApiResponse> {
     return this.request('/dashboard-summary');
+  }
+
+  // Cash-in-hand opening / receipts / payments / closing for each of the last N days, in one query (dashboard Cash Position).
+  async getDashboardCashTrend(days = 7): Promise<ApiResponse> {
+    return this.request(`/dashboard-summary/cash-trend?days=${days}`);
   }
 
   async getMonthEndLoanReport(month: number, year: number): Promise<ApiResponse> {
@@ -1908,27 +1928,6 @@ class ApiService {
     return this.request(`/reports/lien-account-information?${params.toString()}`);
   }
 
-  async getAdHocReports(data: {
-    reportType: string;
-    fromDate?: string;
-    toDate?: string;
-    memberNo?: string;
-    accountType?: string;
-    customQuery?: string;
-    outputType?: string;
-  }): Promise<ApiResponse> {
-    const params = new URLSearchParams();
-    params.append('reportType', data.reportType);
-    if (data.fromDate) params.append('fromDate', data.fromDate);
-    if (data.toDate) params.append('toDate', data.toDate);
-    if (data.memberNo) params.append('memberNo', data.memberNo);
-    if (data.accountType) params.append('accountType', data.accountType);
-    if (data.customQuery) params.append('customQuery', data.customQuery);
-    if (data.outputType) params.append('outputType', data.outputType);
-
-    return this.request(`/reports/adhoc-reports?${params.toString()}`);
-  }
-
   async getPassBookPrinting(data: {
     memberNo: string;
     accountType?: string;
@@ -2241,40 +2240,6 @@ class ApiService {
     return this.request(`/reports/dividend-warrant${queryString ? '?' + queryString : ''}`);
   }
 
-  // Report Schedule Builder APIs
-  async createReportSchedule(
-    schedule_name: string,
-    template_name: string,
-    details: Array<{ particulars: string; code_from: string; code_to: string }>,
-    report_type: string = 'TRIAL',
-    id?: number
-  ): Promise<ApiResponse> {
-    return this.request('/reports/schedule', {
-      method: 'POST',
-      body: JSON.stringify({ schedule_name, template_name, details, report_type, id })
-    });
-  }
-
-  async executeReportSchedule(
-    scheduleId: number,
-    fromDate: string,
-    toDate: string,
-    financialYearStart: string
-  ): Promise<ApiResponse> {
-    return this.request('/reports/schedule/execute', {
-      method: 'POST',
-      body: JSON.stringify({ scheduleId, fromDate, toDate, financialYearStart })
-    });
-  }
-
-  async getAllReportSchedules(type?: string): Promise<ApiResponse> {
-    const queryString = type ? `?type=${type}` : '';
-    return this.request(`/reports/schedule${queryString}`);
-  }
-
-  async getReportScheduleDetails(id: number): Promise<ApiResponse> {
-    return this.request(`/reports/schedule/${id}`);
-  }
   // Analytics methods
   async getAnalyticsConfig(): Promise<ApiResponse> {
     return this.request('/analytics/config');
@@ -2374,6 +2339,16 @@ class ApiService {
   }
 
   // Calculator methods for enhanced loan calculations
+  // ── Society Calculator (ES-525): read-only what-if calculations, all maths runs on the server ──
+  async getSocietyCalculatorRules(): Promise<ApiResponse> {
+    return this.get('/society-calculator/rules');
+  }
+
+  /** kind = 'loan-emi' | 'closure' | 'penalty' | ... (one endpoint per tab). Nothing is saved. */
+  async societyCalculate(kind: string, body: Record<string, unknown>): Promise<ApiResponse> {
+    return this.post(`/society-calculator/${kind}`, body);
+  }
+
   async getLoanRates(): Promise<ApiResponse> {
     const response = await this.request('/utilities/calculator/loan-rates');
 

@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { DatePicker, Select, Spin } from 'antd';
+import { DatePicker, Select } from 'antd';
 import { Printer, FileDown, Settings, RefreshCw, FileText, Search } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
 import { MemberLookupInput, MemberLookupData } from '../../../../../components/shared/MemberLookup';
 import { csvCell } from '@/utils/csv';
 import { indianFinancialYearStart } from '@/utils/dates';
@@ -145,8 +143,6 @@ const NewLoanDisbursed: React.FC = () => {
   const [memberNo, setMemberNo] = useState<string>('');
   const [memberName, setMemberName] = useState<string>('');
 
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
   const { enabled, view, setView } = useReportViews('monthly.new-loan-disbursed');
 
   useEffect(() => {
@@ -363,118 +359,59 @@ const NewLoanDisbursed: React.FC = () => {
             <span className="aw-meta">{`${fromDate?.format('DD MMM YYYY')} - ${toDate?.format('DD MMM YYYY')}`}</span>
           </div>
           <div className="nld-page-preview-body" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
-            <Spin spinning={loading} tip="Loading..." size="small">
               {data.length > 0 ? (
-                <div className="legacy-report-compact font-mono fz-label">
-                  {/* Company Header */}
-                  <div className={`text-center mb-4 border-b border-dashed pb-3 ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
-                    <div className={`fz-body font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited</div>
-                    <div className={`fz-label ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
-                    <div className={`flex justify-between fz-label mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      <span>Reg No: A.R/DRG/1796</span>
-                      <span>Tel No: 0788-2298736</span>
-                    </div>
+                <div>
+                  <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                    <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited</div>
+                    <div className="aw-meta">Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+                    <div className="aw-meta" style={{ display: 'flex', justifyContent: 'space-between' }}><span>Reg No: A.R/DRG/1796</span><span>Tel No: 0788-2298736</span></div>
+                    <div className="aw-strong" style={{ marginTop: 8, letterSpacing: '.08em' }}>NEW LOAN DISBURSED REGISTER</div>
                   </div>
-
-                  {/* Report Header */}
-                  <div className={`flex justify-between fz-label mb-3 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    <div>Period: {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}</div>
-                    <div>Generated: {dayjs().format('DD-MMM-YYYY h:mmA')}</div>
-                  </div>
-
-                  <div className={`border-t border-b border-dashed py-2 text-center mb-4 ${isDark ? 'border-slate-600' : 'border-slate-400'}`}>
-                    <div className={`fz-body font-bold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>NEW LOAN DISBURSED REGISTER</div>
-                    {selectedLoanType && (
-                      <div className={`fz-label mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Loan Type: {loanTypes.find(t => t.code === selectedLoanType)?.name || selectedLoanType}</div>
-                    )}
-                    {memberNo && (
-                      <div className={`fz-label mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Member: {memberNo}{memberName ? ` - ${memberName}` : ''}</div>
-                    )}
-                  </div>
-
-                  {/* Legacy Table */}
-                  <div className={`border border-dashed ${isDark ? 'border-slate-600' : 'border-slate-400'}`}>
-                    <table className="w-full fz-label">
+                  <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 22px', marginBottom: 10 }}>
+                    <span><b>Period:</b> {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}</span>
+                    <span><b>Generated:</b> {dayjs().format('DD-MMM-YYYY h:mmA')}</span>
+                    {selectedLoanType && <span><b>Loan type:</b> {loanTypes.find(t => t.code === selectedLoanType)?.name || selectedLoanType}</span>}
+                    {memberNo && <span><b>Member:</b> {memberNo}{memberName ? ` - ${memberName}` : ''}</span>}
+                  </p>
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                    <table className="aw-table">
                       <thead>
-                        <tr className={`border-b border-dashed ${isDark ? 'border-slate-600 bg-slate-800' : 'border-slate-400 bg-slate-50'}`}>
-                          <th className={`text-left py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>SR</th>
-                          <th className={`text-left py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>MEMBER NO</th>
-                          <th className={`text-left py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>MEMBER NAME</th>
-                          <th className={`text-left py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>LOAN TYPE</th>
-                          <th className={`text-left py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>CASE NO</th>
-                          <th className={`text-right py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>AMOUNT</th>
-                          <th className={`text-left py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>DATE</th>
-                          <th className={`text-right py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>INSTALL AMT</th>
-                          <th className={`text-right py-2 px-2 font-bold border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>INSTALL</th>
-                          <th className={`text-right py-2 px-2 font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>RATE %</th>
-                        </tr>
+                        <tr><th>SR</th><th>Member no</th><th>Member name</th><th>Loan type</th><th>Case no</th><th className="is-right">Amount</th><th>Date</th><th className="is-right">Install amt</th><th className="is-right">Install</th><th className="is-right">Rate %</th></tr>
                       </thead>
                       <tbody>
                         {data.map((item, index) => (
-                          <tr key={item.key} className={`border-b border-dashed ${isDark ? 'border-slate-700 hover:bg-slate-700/50' : 'border-slate-200 hover:bg-emerald-50/30'}`}>
-                            <td className={`py-2 px-2 border-r border-dashed font-medium ${isDark ? 'text-slate-400 border-slate-700' : 'text-slate-600 border-slate-200'}`}>{index + 1}</td>
-                            <td className={`py-2 px-2 border-r border-dashed font-bold ${isDark ? 'text-slate-200 border-slate-700' : 'text-slate-800 border-slate-200'}`}>{item.memberNo}</td>
-                            <td className={`py-2 px-2 border-r border-dashed font-medium uppercase ${isDark ? 'text-slate-200 border-slate-700' : 'text-slate-800 border-slate-200'}`}>{item.memberName}</td>
-                            <td className={`py-2 px-2 border-r border-dashed ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded fz-label font-bold bg-emerald-100 text-emerald-700">
-                                {item.loanType}
-                              </span>
-                            </td>
-                            <td className={`py-2 px-2 border-r border-dashed font-bold ${isDark ? 'text-slate-300 border-slate-700' : 'text-slate-700 border-slate-200'}`}>{item.loanCaseNo}</td>
-                            <td className={`py-2 px-2 text-right border-r border-dashed ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                              <span className="text-emerald-500 font-black">{formatCurrency(item.loanAmount)}</span>
-                            </td>
-                            <td className={`py-2 px-2 font-medium border-r border-dashed ${isDark ? 'text-slate-300 border-slate-700' : 'text-slate-700 border-slate-200'}`}>
-                              {dayjs(item.disbursementDate).format('DD-MM-YYYY')}
-                            </td>
-                            <td className={`py-2 px-2 text-right font-medium border-r border-dashed ${isDark ? 'text-slate-300 border-slate-700' : 'text-slate-700 border-slate-200'}`}>
-                              {formatCurrency(item.installmentAmount)}
-                            </td>
-                            <td className={`py-2 px-2 text-right font-medium border-r border-dashed ${isDark ? 'text-slate-300 border-slate-700' : 'text-slate-700 border-slate-200'}`}>
-                              {item.installments}
-                            </td>
-                            <td className={`py-2 px-2 text-right font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{item.interestRate}%</td>
+                          <tr key={item.key}>
+                            <td className="is-muted">{index + 1}</td>
+                            <td className="is-accent">{item.memberNo}</td>
+                            <td>{item.memberName}</td>
+                            <td>{item.loanType}</td>
+                            <td>{item.loanCaseNo}</td>
+                            <td className="is-right is-success">{formatCurrency(item.loanAmount)}</td>
+                            <td>{dayjs(item.disbursementDate).format('DD-MM-YYYY')}</td>
+                            <td className="is-right">{formatCurrency(item.installmentAmount)}</td>
+                            <td className="is-right">{item.installments}</td>
+                            <td className="is-right">{item.interestRate}%</td>
                           </tr>
                         ))}
-                        
-                        {/* Total Row */}
-                        <tr className={`border-t-2 border-dashed border-slate-400 font-bold ${isDark ? 'bg-slate-800' : 'bg-emerald-50'}`}>
-                          <td colSpan={5} className={`py-2 px-2 text-right uppercase tracking-wider border-r border-dashed ${isDark ? 'text-slate-300 border-slate-600' : 'text-slate-700 border-slate-300'}`}>
-                            TOTAL ({totalLoans} LOANS)
-                          </td>
-                          <td className={`py-2 px-2 text-right border-r border-dashed ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
-                            <span className="text-emerald-600 font-black">{formatCurrency(totalAmount)}</span>
-                          </td>
-                          <td colSpan={4} className="py-2 px-2"></td>
+                        <tr>
+                          <td colSpan={5} className="is-right"><b>Total ({totalLoans} loans)</b></td>
+                          <td className="is-right"><b>{formatCurrency(totalAmount)}</b></td>
+                          <td colSpan={4}></td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-
-                  {/* Footer Note */}
-                  <div className="mt-4 fz-label text-slate-400 italic text-center">
-                    * Report generated as per available data in the system
-                  </div>
+                  <p className="aw-meta" style={{ textAlign: 'center', marginTop: 10, fontStyle: 'italic' }}>* Report generated as per available data in the system</p>
                 </div>
               ) : (
                 <ReportEmpty icon={<FileText size={34} />} title="No Data" hint="No disbursements found for the selected period" />
               )}
-            </Spin>
           </div>
         </section>
       )}
       {view !== 'legacy' && !(data.length > 0) && (
         <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Data'} hint="No disbursements found for the selected period" />
       )}
-
-      <style>{`
-        .nld-page .legacy-report-compact { max-width: 100%; margin: 0 auto; }
-        html.dark .nld-page .legacy-report-compact { color: #f5f5f7 !important; }
-        html.dark .nld-page .legacy-report-compact table,
-        html.dark .nld-page .legacy-report-compact th,
-        html.dark .nld-page .legacy-report-compact td,
-        html.dark .nld-page .legacy-report-compact tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.15) !important; color: #f5f5f7 !important; }
-      `}</style>
     </ReportShell>
   );
 };

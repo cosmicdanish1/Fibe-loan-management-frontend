@@ -1,42 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-    Select,
-    DatePicker,
-    Radio,
-    Button,
-    Spin,
-    Input,
-    Modal,
-    Pagination,
-    message,
-    ConfigProvider,
-    theme as antdTheme
-} from 'antd';
-import {
-    FileText,
-    Printer,
-    Search,
-    RotateCcw,
-    Calendar,
-    Building,
-    ArrowUpDown,
-    FileDown,
-    BookOpen,
-    ShieldCheck,
-    Users,
-    User
-} from 'lucide-react';
+import { message } from 'antd';
+import { FileText, Printer, Search, RotateCcw, FileDown, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
-import MemberLookup from '../../../../../components/shared/MemberLookup/MemberLookup';
+import MemberField from '../../../../../components/shared/kit/MemberField';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
 import { csvCell } from '@/utils/csv';
 import { escapeHtml } from '@/utils/html';
 import { indianFinancialYearStart } from '@/utils/dates';
 import { isFromAfterTo } from '@/utils/dates';
-import { ProBar, ProBody } from '../../../../../components/reports/views/ProIsland';
+import { ReportShell, ParamCard, StatCards, OutputChoice, ReportEmpty } from '../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../components/reports/views/ReportViewSwitcher';
+import { GenericBento, GenericEditorial, GenericTerminal } from '../../../../../components/reports/views/GenericPro';
 import { useReportViews } from '../../../../../components/reports/views/reportViews';
 import { useYearlySpec } from '../views/yearlyPro';
 
@@ -70,8 +45,6 @@ const YearlyMemberStatement: React.FC = () => {
     const [selectedOffice, setSelectedOffice] = useState<string>('');
     const [fromMemberNo, setFromMemberNo] = useState<string>('');
     const [toMemberNo, setToMemberNo] = useState<string>('');
-    const [showLookup, setShowLookup] = useState<boolean>(false);
-    const [lookupTarget, setLookupTarget] = useState<'from' | 'to'>('from');
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(20);
     const [outputType, setOutputType] = useState<string>('screen');
@@ -82,9 +55,6 @@ const YearlyMemberStatement: React.FC = () => {
         name: 'Espat Karmchari Co-Operative Credit Society Limited',
         address: 'Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006'
     });
-
-    const { interfaceMode } = useSelector((state: RootState) => state.theme);
-    const isDark = interfaceMode === 'dark';
 
     const sortOptions = [
         { label: 'Member No', value: 'MBNO' },
@@ -175,18 +145,6 @@ const YearlyMemberStatement: React.FC = () => {
         setCurrentPage(1);
         setPageSize(20);
     }, []);
-
-    const openLookup = useCallback((target: 'from' | 'to') => {
-        setLookupTarget(target);
-        setShowLookup(true);
-    }, []);
-
-    const handleMemberSelect = useCallback((member: any) => {
-        const no = member.memberNo || member.mbno || '';
-        if (lookupTarget === 'from') setFromMemberNo(no);
-        else setToMemberNo(no);
-        setShowLookup(false);
-    }, [lookupTarget]);
 
     const paginatedData = useMemo(
         () => statementData.slice((currentPage - 1) * pageSize, currentPage * pageSize),
@@ -323,462 +281,129 @@ const YearlyMemberStatement: React.FC = () => {
     const { enabled, view, setView } = useReportViews('yearly.yearly-member-statement');
     const spec = useYearlySpec(statementData, `${fromDate.format('DD MMM YYYY')} to ${toDate.format('DD MMM YYYY')}`);
 
+    const hasData = statementData.length > 0;
+    const range = `${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`;
+    const lastPage = Math.max(1, Math.ceil(statementData.length / pageSize));
+
     return (
-        <ConfigProvider
-            theme={{
-                algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-                token: {
-                    colorPrimary: '#7c3aed',
-                    borderRadius: 6,
-                    fontSize: 12,
-                    colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-                    colorBorder: isDark ? '#334155' : '#e2e8f0',
-                },
-            }}
-        >
-            <style>{`
-                @media print {
-                    @page { size: portrait; margin: 10mm; }
-                    body { background: white !important; }
-                    .no-print { display: none !important; }
-                    .print-show { display: block !important; }
-                }
-                .print-show { display: none; }
-                
-                .legacy-table-ultra {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-family: 'Courier New', monospace;
-                    font-size: 9px;
-                }
-                .legacy-table-ultra th {
-                    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-                    color: white;
-                    font-weight: 800;
-                    text-align: left;
-                    padding: 4px 6px;
-                    border: 1px solid #6d28d9;
-                    text-transform: uppercase;
-                    font-size: 8px;
-                    letter-spacing: 0.8px;
-                }
-                .legacy-table-ultra td {
-                    padding: 3px 6px;
-                    border: 1px dashed ${isDark ? '#334155' : '#e9d5ff'};
-                    font-size: 9px;
-                    color: ${isDark ? '#e2e8f0' : '#1e293b'};
-                }
-                .legacy-table-ultra tbody tr:hover {
-                    background: ${isDark ? '#312e54' : '#faf5ff'} !important;
-                }
-                .legacy-table-ultra .total-row {
-                    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%) !important;
-                    font-weight: 800;
-                    color: white;
-                    border: 2px solid #7c3aed !important;
-                }
-                .legacy-table-ultra .amount-positive {
-                    color: ${isDark ? '#34d399' : '#059669'};
-                    font-weight: 700;
-                }
-                .legacy-table-ultra .amount-negative {
-                    color: ${isDark ? '#f87171' : '#dc2626'};
-                    font-weight: 700;
-                }
-                
-                .custom-scrollbar-ultra::-webkit-scrollbar {
-                    width: 6px;
-                    height: 6px;
-                }
-                .custom-scrollbar-ultra::-webkit-scrollbar-track {
-                    background: ${isDark ? '#1e293b' : '#f8fafc'};
-                    border-radius: 3px;
-                }
-                .custom-scrollbar-ultra::-webkit-scrollbar-thumb {
-                    background: #c4b5fd;
-                    border-radius: 3px;
-                }
-                .custom-scrollbar-ultra::-webkit-scrollbar-thumb:hover {
-                    background: #a78bfa;
-                }
-
-                /* ── Yearly Member Statement — dark mode (reinforces the page's own isDark styling) ── */
-                html.dark .yearly-mstmt-page { background-color: #000000 !important; }
-                html.dark .yearly-mstmt-header { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .yearly-mstmt-card,
-                html.dark .yearly-mstmt-panel { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-                html.dark .yearly-mstmt-page .bg-slate-900\/40 { background-color: #0c0c0e !important; }
-                html.dark .yearly-mstmt-page .text-slate-100,
-                html.dark .yearly-mstmt-page .text-slate-200,
-                html.dark .yearly-mstmt-page .text-slate-300 { color: #f5f5f7 !important; }
-                html.dark .yearly-mstmt-page label { color: #8e8e93 !important; }
-                html.dark .yearly-mstmt-page .ant-input,
-                html.dark .yearly-mstmt-page .ant-input-affix-wrapper,
-                html.dark .yearly-mstmt-page .ant-input-search .ant-input-group-addon .ant-btn,
-                html.dark .yearly-mstmt-page .ant-select-selector,
-                html.dark .yearly-mstmt-page .ant-picker { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-                html.dark .yearly-mstmt-page .ant-picker input { color: #f5f5f7 !important; }
-                html.dark .yearly-mstmt-page .ant-radio-button-wrapper { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #8e8e93 !important; }
-                html.dark .yearly-mstmt-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-            `}</style>
-
-            <div className={`yearly-mstmt-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-purple-50/20 to-slate-50'}`}>
-                {/* Ultra-Compact Header */}
-                <div className={`yearly-mstmt-header px-3 py-1.5 flex items-center justify-between z-10 shadow-sm shrink-0 border-b no-print ${isDark ? 'bg-gradient-to-r from-slate-900 to-slate-900 border-white/5' : 'bg-white/90 backdrop-blur-sm border-slate-200/60'}`}>
-                    <div className="flex items-center gap-2">
-                        <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-1.5 rounded-lg text-white shadow-md">
-                            <BookOpen size={14} />
-                        </div>
-                        <div>
-                            <h1 className={`fz-label font-black tracking-tight leading-none ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Yearly Member Statement</h1>
-                            <div className="flex items-center gap-1 mt-0.5 fz-caption font-bold text-slate-400 uppercase tracking-wider leading-none">
-                                <ShieldCheck size={8} className="text-purple-500" /> Annual Summary
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                        <Button
-                            icon={<RotateCcw size={11} />}
-                            size="small"
-                            className="h-7 px-2 rounded-lg fz-caption font-bold uppercase tracking-wide border-slate-200 hover:border-purple-500 hover:text-purple-600"
-                            onClick={handleReset}
-                        >
-                            Reset
-                        </Button>
-                        <Button
-                            icon={<Printer size={11} />}
-                            size="small"
-                            className="h-7 px-2 rounded-lg fz-caption font-bold uppercase tracking-wide border-slate-200 hover:border-purple-500 hover:text-purple-600"
-                            onClick={handlePrint}
-                            disabled={statementData.length === 0}
-                        >
-                            Print
-                        </Button>
-                        <Button
-                            type="primary"
-                            icon={<FileDown size={11} />}
-                            size="small"
-                            className="h-7 px-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-lg fz-caption font-bold uppercase tracking-wide shadow-md"
-                            onClick={handleExportCSV}
-                            disabled={statementData.length === 0}
-                        >
-                            CSV
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Main Content */}
-                <div className="flex-1 overflow-hidden p-2 flex gap-2">
-
-                    {/* LEFT SIDEBAR: Ultra-Compact Filters (260px) */}
-                    <div className="w-[260px] flex flex-col gap-2 shrink-0 no-print overflow-y-auto custom-scrollbar-ultra">
-
-                        {/* Date Range */}
-                        <div className={`yearly-mstmt-card backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
-                            <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 flex items-center gap-1">
-                                <Calendar size={10} className="text-white" />
-                                <h3 className="fz-caption font-black text-white tracking-wide uppercase">Date Range</h3>
-                            </div>
-                            <div className="p-2 space-y-1.5">
-                                <div>
-                                    <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>From</label>
-                                    <DatePicker
-                                        className="w-full h-7 fz-caption font-semibold"
-                                        value={fromDate}
-                                        onChange={v => v && setFromDate(v)}
-                                        format="DD-MMM-YY"
-                                    />
-                                </div>
-                                <div>
-                                    <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>To</label>
-                                    <DatePicker
-                                        className="w-full h-7 fz-caption font-semibold"
-                                        value={toDate}
-                                        onChange={v => v && setToDate(v)}
-                                        format="DD-MMM-YY"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Filters */}
-                        <div className={`yearly-mstmt-card backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
-                            <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 flex items-center gap-1">
-                                <Building size={10} className="text-white" />
-                                <h3 className="fz-caption font-black text-white tracking-wide uppercase">Filters</h3>
-                            </div>
-                            <div className="p-2 space-y-1.5">
-                                <div>
-                                    <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Wing</label>
-                                    <Select
-                                        className="w-full fz-caption"
-                                        placeholder="Wing"
-                                        allowClear
-                                        {...(selectedWing ? { value: selectedWing } : {})}
-                                        onChange={setSelectedWing}
-                                        options={wings.map(w => ({ value: w.wingNo, label: `${w.wingNo} - ${w.name}` }))}
-                                        size="small"
-                                    />
-                                </div>
-                                <div>
-                                    <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Office</label>
-                                    <Select
-                                        className="w-full fz-caption"
-                                        placeholder="Office"
-                                        allowClear
-                                        {...(selectedOffice ? { value: selectedOffice } : {})}
-                                        onChange={setSelectedOffice}
-                                        options={offices.map(o => ({ value: o.officeNo, label: `${o.officeNo} - ${o.name}` }))}
-                                        size="small"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Member Range */}
-                        <div className={`yearly-mstmt-card backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
-                            <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 flex items-center gap-1">
-                                <Users size={10} className="text-white" />
-                                <h3 className="fz-caption font-black text-white tracking-wide uppercase">Member Range</h3>
-                            </div>
-                            <div className="p-2 space-y-1.5">
-                                <div>
-                                    <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>From</label>
-                                    <Input.Search
-                                        placeholder="Starting member"
-                                        value={fromMemberNo}
-                                        onChange={e => setFromMemberNo(e.target.value)}
-                                        onSearch={() => openLookup('from')}
-                                        className="h-7 fz-caption font-semibold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>To</label>
-                                    <Input.Search
-                                        placeholder="Ending member"
-                                        value={toMemberNo}
-                                        onChange={e => setToMemberNo(e.target.value)}
-                                        onSearch={() => openLookup('to')}
-                                        className="h-7 fz-caption font-semibold"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Options */}
-                        <div className={`yearly-mstmt-card backdrop-blur-sm border rounded-lg overflow-hidden shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-purple-200/60'}`}>
-                            <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 flex items-center gap-1">
-                                <ArrowUpDown size={10} className="text-white" />
-                                <h3 className="fz-caption font-black text-white tracking-wide uppercase">Options</h3>
-                            </div>
-                            <div className="p-2 space-y-1.5">
-                                <div>
-                                    <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Sort</label>
-                                    <Select
-                                        className="w-full fz-caption"
-                                        value={sortBy}
-                                        onChange={setSortBy}
-                                        options={sortOptions}
-                                        size="small"
-                                    />
-                                </div>
-                                <div>
-                                    <label className={`fz-caption font-bold uppercase tracking-tight block mb-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Output</label>
-                                    <Radio.Group
-                                        size="small"
-                                        value={outputType}
-                                        onChange={e => setOutputType(e.target.value)}
-                                        className="w-full"
-                                    >
-                                        <Radio.Button value="screen" className="w-1/2 text-center fz-caption font-bold">SCR</Radio.Button>
-                                        <Radio.Button value="printer" className="w-1/2 text-center fz-caption font-bold">PTR</Radio.Button>
-                                    </Radio.Group>
-                                </div>
-                                <Button
-                                    type="primary"
-                                    block
-                                    size="small"
-                                    icon={<Search size={11} />}
-                                    onClick={handleGenerate}
-                                    loading={loading}
-                                    className="h-8 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 font-black uppercase tracking-wider fz-caption mt-1 shadow-lg"
-                                >
-                                    Generate
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* RIGHT PANEL: Report */}
-                    <div className={`yearly-mstmt-panel flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white/95 backdrop-blur-sm border-purple-200/60'}`}>
-                        <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-1.5 flex items-center justify-between shrink-0 no-print">
-                            <div className="flex items-center gap-1.5">
-                                <div className="bg-white/20 p-1 rounded-md shadow-sm">
-                                    <FileText size={12} className="text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="fz-caption font-black text-white uppercase tracking-wide leading-none">Annual Statement</h3>
-                                    <p className="fz-caption font-bold text-purple-200 uppercase mt-0.5 tracking-tight leading-none">
-                                        {fromDate.format('DD-MMM-YY')} - {toDate.format('DD-MMM-YY')}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="fz-caption font-black text-white bg-white/20 px-2 py-0.5 rounded">
-                                {statementData.length} Records
-                            </div>
-                        </div>
-
-                        <div className={`flex-1 overflow-auto p-2 custom-scrollbar-ultra ${isDark ? 'bg-slate-900/40' : 'bg-gradient-to-br from-white to-purple-50/10'}`}>
-                            <Spin spinning={loading} tip="Loading..." size="small">
-                                {statementData && statementData.length > 0 ? (
+        <ReportShell
+            className="yearly-mstmt-page"
+            title="Yearly Member Statement"
+            desc="Annual summary of shares, deposits and loans"
+            switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+            actions={
                 <>
-                <ProBar enabled={enabled} view={view} setView={setView} />
-                {view !== 'legacy' && (statementData.length > 0 ? <ProBody view={view} spec={spec} title="Yearly Member Statement" subtitle={`${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}`} /> : <p className="aw-meta" style={{ padding: 12 }}>{'No statement data to show'}</p>)}
-                {view === 'legacy' && (
-                                    <div className="legacy-report-ultra font-mono">
-                                        {/* Print Header */}
-                                        <div className="print-show text-center mb-2 border-b-2 border-purple-600 pb-2">
-                                            <div className="fz-caption font-black text-slate-900">{societyInfo.name}</div>
-                                            <div className="fz-caption text-slate-600">{societyInfo.address}</div>
-                                            <div className="fz-caption font-black text-purple-700 mt-1">YEARLY MEMBER STATEMENT</div>
-                                            <div className="fz-caption text-slate-600">
-                                                {fromDate.format('DD-MMM-YYYY')} to {toDate.format('DD-MMM-YYYY')}
-                                            </div>
-                                        </div>
-
-                                        {/* Ultra-Compact Legacy Table */}
-                                        <table className="legacy-table-ultra">
-                                            <thead>
-                                                <tr>
-                                                    <th style={{ width: '6%' }}>SR</th>
-                                                    <th style={{ width: '11%' }}>MEMBER</th>
-                                                    <th style={{ width: '28%' }}>NAME</th>
-                                                    <th style={{ width: '13%', textAlign: 'right' }}>SHARES</th>
-                                                    <th style={{ width: '14%', textAlign: 'right' }}>CD BAL</th>
-                                                    <th style={{ width: '14%', textAlign: 'right' }}>REG LOAN</th>
-                                                    <th style={{ width: '14%', textAlign: 'right' }}>EMR LOAN</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {paginatedData.map((item, idx) => (
-                                                    <tr key={item.key}>
-                                                        <td style={{ textAlign: 'center', fontWeight: 600 }}>{(currentPage - 1) * pageSize + idx + 1}</td>
-                                                        <td style={{ fontWeight: 700 }}>{item.memberNo}</td>
-                                                        <td style={{ fontWeight: 600 }}>{item.memberName}</td>
-                                                                        <td style={{ textAlign: 'right' }} className="amount-positive">
-                                                            {parseFloat(item.shares || '0') !== 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
-                                                            ₹{formatCurrency(item.shares)}
-                                                        </td>
-                                                        <td style={{ textAlign: 'right' }} className="amount-positive">
-                                                            {parseFloat(item.compulsoryDeposit || '0') !== 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
-                                                            ₹{formatCurrency(item.compulsoryDeposit)}
-                                                        </td>
-                                                        <td style={{ textAlign: 'right' }} className="amount-negative">
-                                                            {parseFloat(item.regularLoan || '0') !== 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
-                                                            ₹{formatCurrency(item.regularLoan)}
-                                                        </td>
-                                                        <td style={{ textAlign: 'right' }} className="amount-negative">
-                                                            {parseFloat(item.emergencyLoan || '0') !== 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
-                                                            ₹{formatCurrency(item.emergencyLoan)}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                {/* Total Row */}
-                                                <tr className="total-row">
-                                                    <td colSpan={3} style={{ textAlign: 'right', fontWeight: 900, letterSpacing: '1px' }}>TOTAL:</td>
-                                                    <td style={{ textAlign: 'right', fontWeight: 900 }}>
-                                                        {totals.shares !== 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
-                                                        ₹{formatCurrency(totals.shares)}
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontWeight: 900 }}>
-                                                        {totals.cd !== 0 && <CrDrIndicator type="credit" className="mr-1 no-print" />}
-                                                        ₹{formatCurrency(totals.cd)}
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontWeight: 900 }}>
-                                                        {totals.regularLoan !== 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
-                                                        ₹{formatCurrency(totals.regularLoan)}
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontWeight: 900 }}>
-                                                        {totals.emergencyLoan !== 0 && <CrDrIndicator type="debit" className="mr-1 no-print" />}
-                                                        ₹{formatCurrency(totals.emergencyLoan)}
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-
-                                        {/* Pagination */}
-                                        {statementData.length > 0 && (
-                                            <div className="mt-3 flex justify-center no-print">
-                                                <Pagination
-                                                    current={currentPage}
-                                                    pageSize={pageSize}
-                                                    total={statementData.length}
-                                                    onChange={handlePageChange}
-                                                    onShowSizeChange={handlePageChange}
-                                                    showSizeChanger
-                                                    showQuickJumper
-                                                    pageSizeOptions={['20', '50', '100', '200']}
-                                                    showTotal={(total, range) => (
-                                                        <span className="fz-caption font-semibold">{range[0]}-{range[1]} of {total} records</span>
-                                                    )}
-                                                    size="small"
-                                                />
-                                            </div>
-                                        )}
-
-                                        {/* Print Footer */}
-                                        <div className="print-show mt-3 fz-caption text-slate-500 text-center border-t border-dashed border-slate-300 pt-1.5">
-                                            Generated: {dayjs().format('DD-MMM-YYYY HH:mm')} | System Report
-                                        </div>
-                                    </div>
-                )}
+                    <button type="button" className="aw-btn aw-btn-ghost" onClick={handleReset}><RotateCcw size={14} /> Reset</button>
+                    <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!hasData}><FileDown size={14} /> CSV</button>
+                    <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!hasData}><Printer size={14} /> Print</button>
                 </>
-                                ) : (
-                                    <div className="py-32 text-center">
-                                        <div className="w-20 h-20 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                                            <FileText className="text-4xl text-purple-200" />
-                                        </div>
-                                        <h4 className="text-slate-400 font-black fz-label uppercase tracking-wider">No Data</h4>
-                                        <p className="text-slate-300 fz-caption mt-1 font-semibold">Set filters and generate</p>
-                                    </div>
-                                )}
-                            </Spin>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Member Lookup Modal */}
-            <Modal
-                title={
-                    <div className="flex items-center gap-3 p-4 border-b border-slate-100">
-                        <div className="p-2 bg-purple-50 rounded-lg">
-                            <User size={20} className="text-purple-600" />
+            }
+            aside={
+                <>
+                    <ParamCard title="Statement" icon={<Users size={14} />}>
+                        <div>
+                            <label className="aw-label" htmlFor="yms-from-date">From date</label>
+                            <input id="yms-from-date" type="date" className="aw-input" value={fromDate.format('YYYY-MM-DD')} onChange={e => e.target.value && setFromDate(dayjs(e.target.value))} />
                         </div>
                         <div>
-                            <div className="fz-heading font-bold text-slate-800">Member Search Directory</div>
-                            <div className="fz-label text-slate-500 font-normal">Selecting for: {lookupTarget === 'from' ? 'Range Start' : 'Range End'}</div>
+                            <label className="aw-label" htmlFor="yms-to-date">To date</label>
+                            <input id="yms-to-date" type="date" className="aw-input" value={toDate.format('YYYY-MM-DD')} onChange={e => e.target.value && setToDate(dayjs(e.target.value))} />
+                        </div>
+                        <div>
+                            <label className="aw-label" htmlFor="yms-wing">Wing</label>
+                            <select id="yms-wing" className="aw-input" value={selectedWing} onChange={e => setSelectedWing(e.target.value)}>
+                                <option value="">All wings</option>
+                                {wings.map(w => <option key={w.wingNo} value={w.wingNo}>{w.wingNo} - {w.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="aw-label" htmlFor="yms-office">Office</label>
+                            <select id="yms-office" className="aw-input" value={selectedOffice} onChange={e => setSelectedOffice(e.target.value)}>
+                                <option value="">All offices</option>
+                                {offices.map(o => <option key={o.officeNo} value={o.officeNo}>{o.officeNo} - {o.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="aw-label" htmlFor="yms-mfrom">Member from</label>
+                            <MemberField id="yms-mfrom" value={fromMemberNo} onChange={setFromMemberNo} onSelect={(m: any) => setFromMemberNo(m.memberNo || m.mbno || '')} onSubmit={() => handleGenerate()} />
+                        </div>
+                        <div>
+                            <label className="aw-label" htmlFor="yms-mto">Member to</label>
+                            <MemberField id="yms-mto" value={toMemberNo} onChange={setToMemberNo} onSelect={(m: any) => setToMemberNo(m.memberNo || m.mbno || '')} onSubmit={() => handleGenerate()} />
+                        </div>
+                        <div>
+                            <label className="aw-label" htmlFor="yms-sort">Sort by</label>
+                            <select id="yms-sort" className="aw-input" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                                {sortOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                        </div>
+                        <OutputChoice value={outputType === 'printer' ? 'printer' : 'screen'} onChange={setOutputType} id="yms-output" />
+                        <button type="button" className="aw-btn aw-btn-primary" onClick={() => handleGenerate()} disabled={loading} style={{ width: '100%' }}>
+                            <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Generate'}
+                        </button>
+                    </ParamCard>
+                    {hasData && <StatCards items={[{ label: 'Records', value: String(statementData.length), tone: 'muted' }]} />}
+                </>
+            }
+            footerLeft="Yearly Member Statement"
+            footerRight={range}
+        >
+            {hasData && view === 'bento' && <GenericBento spec={spec} />}
+            {hasData && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><GenericTerminal spec={spec} /></div>}
+            {hasData && view === 'editorial' && <GenericEditorial spec={spec} title="Yearly Member Statement" subtitle={range} />}
+
+            {hasData && view === 'legacy' && (
+                <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div className="aw-main-head">
+                        <span className="aw-card-title">Annual Statement · {range}</span>
+                        <span className="aw-meta">{statementData.length} Records</span>
+                    </div>
+                    <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+                        <div className="aw-table-wrap">
+                            <table className="aw-table">
+                                <thead>
+                                    <tr>
+                                        <th className="is-center">SR</th><th>Member</th><th>Name</th>
+                                        <th className="is-right">Shares</th><th className="is-right">CD bal</th><th className="is-right">Reg loan</th><th className="is-right">Emr loan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedData.map((item, idx) => (
+                                        <tr key={item.key}>
+                                            <td className="is-center">{(currentPage - 1) * pageSize + idx + 1}</td>
+                                            <td className="is-accent">{item.memberNo}</td>
+                                            <td>{item.memberName}</td>
+                                            <td className="is-right is-success">{parseFloat(item.shares || '0') !== 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(item.shares)}</td>
+                                            <td className="is-right is-success">{parseFloat(item.compulsoryDeposit || '0') !== 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(item.compulsoryDeposit)}</td>
+                                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{parseFloat(item.regularLoan || '0') !== 0 && <CrDrIndicator type="debit" className="mr-1" />}₹{formatCurrency(item.regularLoan)}</td>
+                                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{parseFloat(item.emergencyLoan || '0') !== 0 && <CrDrIndicator type="debit" className="mr-1" />}₹{formatCurrency(item.emergencyLoan)}</td>
+                                        </tr>
+                                    ))}
+                                    <tr>
+                                        <td colSpan={3} className="is-right"><b>Total</b></td>
+                                        <td className="is-right"><b>{totals.shares !== 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(totals.shares)}</b></td>
+                                        <td className="is-right"><b>{totals.cd !== 0 && <CrDrIndicator type="credit" className="mr-1" />}₹{formatCurrency(totals.cd)}</b></td>
+                                        <td className="is-right"><b>{totals.regularLoan !== 0 && <CrDrIndicator type="debit" className="mr-1" />}₹{formatCurrency(totals.regularLoan)}</b></td>
+                                        <td className="is-right"><b>{totals.emergencyLoan !== 0 && <CrDrIndicator type="debit" className="mr-1" />}₹{formatCurrency(totals.emergencyLoan)}</b></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 12 }}>
+                            <button type="button" className="aw-btn aw-btn-ghost" disabled={currentPage <= 1} onClick={() => handlePageChange(currentPage - 1)} aria-label="Previous page"><ChevronLeft size={14} /></button>
+                            <span className="aw-meta">Page {currentPage} of {lastPage} · {statementData.length} records</span>
+                            <button type="button" className="aw-btn aw-btn-ghost" disabled={currentPage >= lastPage} onClick={() => handlePageChange(currentPage + 1)} aria-label="Next page"><ChevronRight size={14} /></button>
+                            <select className="aw-input" style={{ width: 'auto' }} value={pageSize} aria-label="Rows per page" onChange={e => handlePageChange(1, Number(e.target.value))}>
+                                {[20, 50, 100, 200].map(n => <option key={n} value={n}>{n} / page</option>)}
+                            </select>
                         </div>
                     </div>
-                }
-                open={showLookup}
-                onCancel={() => setShowLookup(false)}
-                footer={null}
-                width={950}
-                styles={{ body: { padding: 0 } }}
-                centered
-                destroyOnClose
-            >
-                <div className="p-2">
-                    <MemberLookup
-                        isModal={true}
-                        onSelect={handleMemberSelect}
-                        onClose={() => setShowLookup(false)}
-                    />
-                </div>
-            </Modal>
-        </ConfigProvider>
+                </section>
+            )}
+            {!hasData && (
+                <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Data'} hint="Set filters and generate" />
+            )}
+        </ReportShell>
     );
 };
 

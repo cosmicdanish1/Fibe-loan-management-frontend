@@ -18,6 +18,7 @@ const TwoFaCard: React.FC = () => {
   const [codes, setCodes] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   const refresh = useCallback(async () => {
     try { setStatus(await apiService.twoFaStatus()); } catch { setStatus(null); }
@@ -61,6 +62,22 @@ const TwoFaCard: React.FC = () => {
                 <button type="button" className="aw-btn aw-btn-danger aw-btn-sm" disabled={status.required} onClick={() => setView('disable')}
                   title={status.required ? t('Your administrator requires two-factor authentication') : undefined}><ShieldOff size={12} /> {t('Turn off')}</button>
               </div>
+              {status.rememberDays > 0 && (
+                <div className="aw-stack" style={{ gap: 6 }}>
+                  <label className="aw-inline" style={{ gap: 8, cursor: 'pointer', alignItems: 'center' }}>
+                    <input type="checkbox" checked={!!status.alwaysAsk} disabled={busy} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }}
+                      onChange={(e) => run(async () => { await apiService.twoFaSetAlwaysAsk(e.target.checked); await refresh(); })} />
+                    {t('Always ask me for the code at sign-in')}
+                  </label>
+                  <div className="aw-inline" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" disabled={busy}
+                      onClick={() => run(async () => { const r = await apiService.twoFaForgetDevices(); setNotice(r.forgotten > 0 ? t('Remembered computers forgotten. The next sign-in asks for the code.') : t('No remembered computers.')); })}>
+                      {t('Forget my remembered computers')}
+                    </button>
+                    {notice && <span className="aw-meta">{notice}</span>}
+                  </div>
+                </div>
+              )}
               {status.required && <span className="aw-meta">{t("Your administrator requires two-factor authentication, so it can't be turned off.")}</span>}
             </>
           ) : (

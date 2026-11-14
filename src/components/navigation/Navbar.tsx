@@ -258,6 +258,7 @@ const navConfig: NavItem[] = [
     items: [
       { title: tLabel('Premature Information Of Intt. (SB A/c)'), action: 'PREMATURE_SB_AC' },
       { title: tLabel('Calculator'), action: 'CALCULATOR' },
+      { title: tLabel('Society Calculator'), action: 'SOCIETY_CALCULATOR' },
       { title: tLabel('Find'), action: 'FIND' },
       { title: tLabel('Member Balance'), action: 'MEMBER_BALANCE' },
       { title: tLabel('EMI Chart'), action: 'EMI_CHART' },
@@ -407,6 +408,7 @@ const SEARCH_KEYWORDS: Record<string, string> = {
   COMMUNICATION_HUB: 'sms email whatsapp message send',
   SUPPORT_DESK: 'help bug issue ticket report problem',
   CALCULATOR: 'calc',
+  SOCIETY_CALCULATOR: 'calc calculator emi closure penalty interest dividend insurance what if estimate',
   MEMBER_LEDGER_REPORT: 'ledger statement',
   DEFAULTER_LIST: 'overdue npa arrears',
 };

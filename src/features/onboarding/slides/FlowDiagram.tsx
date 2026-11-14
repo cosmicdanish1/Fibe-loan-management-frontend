@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { prefersCalm } from '../calm';
+import { tLabel } from '../../../i18n';
 
 export interface FlowNode {
   title: string;
@@ -67,9 +68,9 @@ export const FlowDiagram: React.FC<{ nodes: FlowNode[]; columns?: number; label:
             <text className="ob-badge-n" x="22" y="28.5" textAnchor="middle">{i + 1}</text>
             <text className="ob-node-title" x="42" y="29">{n.title}</text>
             {n.lines.map((line, li) => (
-              <text key={li} className="ob-node-line" x="16" y={56 + li * 17}>{line}</text>
+              <text key={li} className="ob-node-line" x="16" y={56 + li * 17}>{tLabel(line)}</text>
             ))}
-            {n.where && <text className="ob-node-where" x="16" y={NH - 12}>{n.where}</text>}
+            {n.where && <text className="ob-node-where" x="16" y={NH - 12}>{n.where.split(' › ').map(p => tLabel(p)).join(' › ')}</text>}
           </g>
           </g>
         );

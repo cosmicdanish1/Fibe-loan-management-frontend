@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { DatePicker, Spin } from 'antd';
+import { DatePicker } from 'antd';
 import { Printer, FileDown, Settings, RefreshCw, FileText } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
 import { apiService } from '../../../../../services/api';
 import dayjs, { Dayjs } from 'dayjs';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
@@ -100,8 +98,6 @@ const CashBookMonthly: React.FC = () => {
   const [openingBalance, setOpeningBalance] = useState<number>(0);
   const [closingBalance, setClosingBalance] = useState<number>(0);
 
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
   const { enabled, view, setView } = useReportViews('monthly.cash-book');
 
   useEffect(() => {
@@ -278,100 +274,51 @@ const CashBookMonthly: React.FC = () => {
           <div className="aw-main-head">
             <span className="aw-card-title">Monthly Ledger · {monthLabel}</span>
           </div>
-          <div className="cbm-preview-body" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
-            <Spin spinning={loading} tip="Loading..." size="small">
+          <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
               {data.length > 0 ? (
-                <div className="legacy-report-compact fz-caption">
-                    {/* Company Header - Legacy Style */}
-                    <div className="text-center mb-4 pb-3" style={{ borderBottom: `2px solid ${isDark ? '#4b5563' : '#999'}` }}>
-                      <div className={`fz-body font-bold ${isDark ? 'text-indigo-400' : 'text-blue-700'}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                      <div className={`fz-caption ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
-                    </div>
-
-                    {/* Report Title */}
-                    <div className="text-center mb-3">
-                      <div className={`fz-caption font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                        Select For the Month: <span className={isDark ? 'text-indigo-400' : 'text-blue-700'}>{selectedMonth?.format('MMM-YYYY')}</span>
-                      </div>
-                    </div>
-
-                    {/* Legacy Table - Matching MSSQL Format */}
-                    <table className="w-full fz-caption border-collapse" style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>
+                <div>
+                  <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                    <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited.</div>
+                    <div className="aw-meta">Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006</div>
+                    <div className="aw-meta">For the month: <b>{selectedMonth?.format('MMM-YYYY')}</b></div>
+                  </div>
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                    <table className="aw-table">
                       <thead>
-                        <tr style={{ backgroundColor: isDark ? '#1f2937' : '#e8e8e8' }}>
-                          <th className={`text-left py-2 px-3 font-bold ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}`, width: '100px' }}>CODE</th>
-                          <th className={`text-left py-2 px-3 font-bold ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>HEAD NAME</th>
-                          <th className={`text-right py-2 px-3 font-bold ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}`, width: '150px' }}>RECEIPT</th>
-                          <th className={`text-right py-2 px-3 font-bold ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}`, width: '150px' }}>PAYMENT</th>
-                        </tr>
+                        <tr><th>Code</th><th>Head name</th><th className="is-right">Receipt</th><th className="is-right">Payment</th></tr>
                       </thead>
                       <tbody>
                         {data.map((item, idx) => (
-                          <tr key={idx} style={{ backgroundColor: isDark ? (idx % 2 === 0 ? '#1e293b' : '#0f172a') : (idx % 2 === 0 ? '#fff' : '#f9f9f9') }}>
-                            <td className={`py-1.5 px-3 font-semibold ${isDark ? 'text-indigo-400' : 'text-blue-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#ccc'}` }}>{item.code}</td>
-                            <td className={`py-1.5 px-3 font-semibold ${isDark ? 'text-indigo-400' : 'text-blue-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#ccc'}` }}>{item.headName}</td>
-                            <td className={`text-right py-1.5 px-3 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#ccc'}` }}>
-                              {item.receipt > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(item.receipt)}</>) : '0.00'}
-                            </td>
-                            <td className={`text-right py-1.5 px-3 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#ccc'}` }}>
-                              {item.payment > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(item.payment)}</>) : '0.00'}
-                            </td>
+                          <tr key={idx}>
+                            <td className="is-accent">{item.code}</td>
+                            <td>{item.headName}</td>
+                            <td className="is-right">{item.receipt > 0 ? (<><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(item.receipt)}</>) : '0.00'}</td>
+                            <td className="is-right">{item.payment > 0 ? (<><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(item.payment)}</>) : '0.00'}</td>
                           </tr>
                         ))}
-                        <tr style={{ backgroundColor: isDark ? '#1e293b' : '#fff' }}>
-                          <td colSpan={2} className="py-2 px-3" style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}></td>
-                          <td className={`text-right py-2 px-3 font-black fz-body ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>
-                            {totalReceipt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalReceipt)}
-                          </td>
-                          <td className={`text-right py-2 px-3 font-black fz-body ${isDark ? 'text-rose-400' : 'text-red-700'}`} style={{ border: `1px solid ${isDark ? '#374151' : '#999'}` }}>
-                            {totalPayment > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalPayment)}
-                          </td>
+                        <tr>
+                          <td colSpan={2}><b>Total</b></td>
+                          <td className="is-right"><b>{totalReceipt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalReceipt)}</b></td>
+                          <td className="is-right"><b>{totalPayment > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalPayment)}</b></td>
                         </tr>
                       </tbody>
                     </table>
-
-                    {/* Summary - Legacy Style */}
-                    <div className="mt-4">
-                      <table className="fz-caption ml-auto" style={{ width: 'auto' }}>
-                        <tbody>
-                          <tr>
-                            <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Opening Balance :</td>
-                            <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`} style={{ minWidth: '150px' }}>
-                              {formatCurrency(openingBalance)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Total Credit :</td>
-                            <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-rose-400' : 'text-red-700'}`}>
-                              {totalReceipt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalReceipt)}
-                            </td>
-                          </tr>
-                          <tr style={{ borderTop: `1px solid ${isDark ? '#374151' : '#999'}` }}>
-                            <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Total :</td>
-                            <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                              {formatCurrency(openingBalance + totalReceipt)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Total Debit :</td>
-                            <td className={`text-right py-1 px-4 font-bold ${isDark ? 'text-rose-400' : 'text-red-700'}`}>
-                              {totalPayment > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalPayment)}
-                            </td>
-                          </tr>
-                          <tr style={{ borderTop: `1px solid ${isDark ? '#374151' : '#999'}` }}>
-                            <td className={`text-right py-1 px-4 font-black ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Closing Balance :</td>
-                            <td className={`text-right py-1 px-4 font-black ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
-                              {formatCurrency(closingBalance)}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
                   </div>
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none', width: 'fit-content', marginLeft: 'auto', marginTop: 12 }}>
+                    <table className="aw-table">
+                      <tbody>
+                        <tr><td className="is-right">Opening balance</td><td className="is-right">{formatCurrency(openingBalance)}</td></tr>
+                        <tr><td className="is-right">Total credit</td><td className="is-right">{totalReceipt > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalReceipt)}</td></tr>
+                        <tr><td className="is-right">Total</td><td className="is-right">{formatCurrency(openingBalance + totalReceipt)}</td></tr>
+                        <tr><td className="is-right">Total debit</td><td className="is-right">{totalPayment > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalPayment)}</td></tr>
+                        <tr><td className="is-right"><b>Closing balance</b></td><td className="is-right"><b>{formatCurrency(closingBalance)}</b></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               ) : (
                 <ReportEmpty icon={<FileText size={34} />} title="No Transactions" hint={`No data for ${monthLabel}`} />
               )}
-            </Spin>
           </div>
         </section>
       )}
@@ -379,14 +326,6 @@ const CashBookMonthly: React.FC = () => {
         <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Transactions'} hint={`No data for ${monthLabel}`} />
       )}
 
-      <style>{`
-        .cbm-page .legacy-report-compact { max-width: 100%; margin: 0 auto; }
-        html.dark .cbm-page .legacy-report-compact { color: #f5f5f7 !important; }
-        html.dark .cbm-page .legacy-report-compact table,
-        html.dark .cbm-page .legacy-report-compact th,
-        html.dark .cbm-page .legacy-report-compact td,
-        html.dark .cbm-page .legacy-report-compact tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.15) !important; color: #f5f5f7 !important; }
-      `}</style>
     </ReportShell>
   );
 };

@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { DatePicker, Select, Spin } from 'antd';
+import { DatePicker, Select } from 'antd';
 import MemberField from '../../../../../components/shared/kit/MemberField';
 import { Printer, FileDown, Settings, RefreshCw, FileText, Search } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiService } from '../../../../../services/api';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
 import { CrDrIndicator } from '@/components/shared/CrDrIndicator';
 import { csvCell } from '@/utils/csv';
 import { isFromAfterTo } from '@/utils/dates';
@@ -120,8 +118,6 @@ const MemberLoanLedger: React.FC = () => {
   const [loanCases, setLoanCases] = useState<string[]>([]);
   const [openingBalance, setOpeningBalance] = useState<number>(0);
 
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
   const { enabled, view, setView } = useReportViews('monthly.member-loan-ledger');
 
   // Changing the member invalidates the selected loan case and the case list.
@@ -352,119 +348,57 @@ const MemberLoanLedger: React.FC = () => {
             <span className="aw-meta">{memberInfo ? `${memberInfo.memberName} · Case ${memberInfo.loanCaseNo}` : 'Select member and loan case'}</span>
           </div>
           <div className="mll-page-preview-body" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
-            <Spin spinning={loading} tip="Loading..." size="small">
               {data.length > 0 ? (
-                <div className="legacy-report-compact font-mono fz-label">
-                  {/* Company Header */}
-                  <div className="text-center mb-4 border-b border-dashed border-slate-300 pb-3">
-                    <div className={`fz-body font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited</div>
-                    <div className={`fz-label ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
-                    <div className={`flex justify-between fz-label mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      <span>Reg No: A.R/DRG/1796</span>
-                      <span>Tel No: 0788-2298736</span>
-                    </div>
+                <div>
+                  <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                    <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited</div>
+                    <div className="aw-meta">Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+                    <div className="aw-meta" style={{ display: 'flex', justifyContent: 'space-between' }}><span>Reg No: A.R/DRG/1796</span><span>Tel No: 0788-2298736</span></div>
+                    <div className="aw-strong" style={{ marginTop: 8, letterSpacing: '.08em' }}>MEMBER LOAN LEDGER</div>
                   </div>
-
-                  {/* Report Header */}
-                  <div className="flex justify-between fz-label mb-3 text-slate-600">
-                    <div>Period: {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}</div>
-                    <div>Generated: {dayjs().format('DD-MMM-YYYY h:mmA')}</div>
-                  </div>
-
-                  <div className="border-t border-b border-dashed border-slate-400 py-2 text-center mb-4">
-                    <div className="fz-body font-bold text-slate-800">MEMBER LOAN LEDGER</div>
-                    {memberInfo && (
-                      <div className="fz-label text-slate-600 mt-1">
-                        Member: {memberInfo.memberName} ({memberInfo.memberNo})
-                        {loanCaseNo && ` | Loan Case: ${loanCaseNo}`}
-                      </div>
-                    )}
-                    <div className="fz-label text-slate-600 mt-1">
-                      Opening Balance: <span className="font-bold">{formatCurrency(openingBalance)}</span>
-                    </div>
-                    <div className="fz-caption text-slate-500 mt-1 italic">
-                      Balance = outstanding principal; credit amount includes principal + interest + penalty.
-                    </div>
-                  </div>
-
-                  {/* Legacy Table */}
-                  <div className="border border-dashed border-slate-400">
-                    <table className="w-full fz-label">
+                  <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 22px', marginBottom: 6 }}>
+                    <span><b>Period:</b> {fromDate?.format('DD-MMM-YYYY')} to {toDate?.format('DD-MMM-YYYY')}</span>
+                    <span><b>Generated:</b> {dayjs().format('DD-MMM-YYYY h:mmA')}</span>
+                    {memberInfo && <span><b>Member:</b> {memberInfo.memberName} ({memberInfo.memberNo}){loanCaseNo && ` | Loan case: ${loanCaseNo}`}</span>}
+                    <span><b>Opening balance:</b> {formatCurrency(openingBalance)}</span>
+                  </p>
+                  <p className="aw-meta" style={{ fontStyle: 'italic', marginBottom: 10 }}>Balance = outstanding principal; credit amount includes principal + interest + penalty.</p>
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                    <table className="aw-table">
                       <thead>
-                        <tr className={`border-b border-dashed border-slate-400 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
-                          <th className="text-left py-2 px-2 font-bold text-slate-700 border-r border-dashed border-slate-300">DATE</th>
-                          <th className="text-left py-2 px-2 font-bold text-slate-700 border-r border-dashed border-slate-300">VOUCHER</th>
-                          <th className="text-left py-2 px-2 font-bold text-slate-700 border-r border-dashed border-slate-300">NARRATION</th>
-                          <th className="text-right py-2 px-2 font-bold text-slate-700 border-r border-dashed border-slate-300">DEBIT</th>
-                          <th className="text-right py-2 px-2 font-bold text-slate-700 border-r border-dashed border-slate-300">CREDIT</th>
-                          <th className="text-right py-2 px-2 font-bold text-slate-700">BALANCE</th>
-                        </tr>
+                        <tr><th>Date</th><th>Voucher</th><th>Narration</th><th className="is-right">Debit</th><th className="is-right">Credit</th><th className="is-right">Balance</th></tr>
                       </thead>
                       <tbody>
                         {data.map((item) => (
-                          <tr key={item.key} className="border-b border-dashed border-slate-200 hover:bg-blue-50/30 transition-colors">
-                            <td className="py-2 px-2 text-slate-700 border-r border-dashed border-slate-200 font-medium">
-                              {dayjs(item.date).format('DD-MM-YYYY')}
-                            </td>
-                            <td className="py-2 px-2 text-slate-800 border-r border-dashed border-slate-200 font-bold">{item.voucherNo}</td>
-                            <td className="py-2 px-2 text-slate-700 border-r border-dashed border-slate-200 font-medium">{item.narration}</td>
-                            <td className="py-2 px-2 text-right border-r border-dashed border-slate-200">
-                              {(item.type === 'DR' || item.type === 'D') && (
-                                <span className="text-rose-600 font-black inline-flex items-center"><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(item.amount)}</span>
-                              )}
-                            </td>
-                            <td className="py-2 px-2 text-right border-r border-dashed border-slate-200">
-                              {(item.type === 'CR' || item.type === 'C') && (
-                                <span className="text-emerald-600 font-black inline-flex items-center"><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(item.amount)}</span>
-                              )}
-                            </td>
-                            <td className="py-2 px-2 text-right text-blue-700 font-bold">{formatCurrency(item.balance)}</td>
+                          <tr key={item.key}>
+                            <td>{dayjs(item.date).format('DD-MM-YYYY')}</td>
+                            <td className="is-accent">{item.voucherNo}</td>
+                            <td>{item.narration}</td>
+                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}>{(item.type === 'DR' || item.type === 'D') && (<><CrDrIndicator type="debit" className="mr-1" />{formatCurrency(item.amount)}</>)}</td>
+                            <td className="is-right is-success">{(item.type === 'CR' || item.type === 'C') && (<><CrDrIndicator type="credit" className="mr-1" />{formatCurrency(item.amount)}</>)}</td>
+                            <td className="is-right">{formatCurrency(item.balance)}</td>
                           </tr>
                         ))}
-                        
-                        {/* Total Row */}
-                        <tr className={`border-t-2 border-dashed border-slate-400 font-bold ${isDark ? 'bg-slate-800' : 'bg-blue-50'}`}>
-                          <td colSpan={3} className="py-2 px-2 text-right text-slate-700 uppercase tracking-wider border-r border-dashed border-slate-300">
-                            TOTAL
-                          </td>
-                          <td className="py-2 px-2 text-right border-r border-dashed border-slate-300">
-                            <span className="text-rose-700 font-black inline-flex items-center">{totalDebits > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebits)}</span>
-                          </td>
-                          <td className="py-2 px-2 text-right border-r border-dashed border-slate-300">
-                            <span className="text-emerald-700 font-black inline-flex items-center">{totalCredits > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredits)}</span>
-                          </td>
-                          <td className="py-2 px-2 text-right">
-                            <span className="text-blue-700 font-black">{formatCurrency(closingBalance)}</span>
-                          </td>
+                        <tr>
+                          <td colSpan={3} className="is-right"><b>Total</b></td>
+                          <td className="is-right"><b>{totalDebits > 0 && <CrDrIndicator type="debit" className="mr-1" />}{formatCurrency(totalDebits)}</b></td>
+                          <td className="is-right"><b>{totalCredits > 0 && <CrDrIndicator type="credit" className="mr-1" />}{formatCurrency(totalCredits)}</b></td>
+                          <td className="is-right"><b>{formatCurrency(closingBalance)}</b></td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-
-                  {/* Footer Note */}
-                  <div className="mt-4 fz-label text-slate-400 italic text-center">
-                    * Report generated as per available data in the system
-                  </div>
+                  <p className="aw-meta" style={{ textAlign: 'center', marginTop: 10, fontStyle: 'italic' }}>* Report generated as per available data in the system</p>
                 </div>
               ) : (
                 <ReportEmpty icon={<FileText size={34} />} title="No Data" hint="No transactions found for the selected member and period" />
               )}
-            </Spin>
           </div>
         </section>
       )}
       {view !== 'legacy' && !(data.length > 0) && (
         <ReportEmpty icon={<FileText size={34} />} title={loading ? 'Loading…' : 'No Data'} hint="No transactions found for the selected member and period" />
       )}
-
-      <style>{`
-        .mll-page .legacy-report-compact { max-width: 100%; margin: 0 auto; }
-        html.dark .mll-page .legacy-report-compact { color: #f5f5f7 !important; }
-        html.dark .mll-page .legacy-report-compact table,
-        html.dark .mll-page .legacy-report-compact th,
-        html.dark .mll-page .legacy-report-compact td,
-        html.dark .mll-page .legacy-report-compact tr { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.15) !important; color: #f5f5f7 !important; }
-      `}</style>
     </ReportShell>
   );
 };

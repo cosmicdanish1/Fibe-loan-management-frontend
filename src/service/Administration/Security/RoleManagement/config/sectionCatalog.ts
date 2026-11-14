@@ -61,7 +61,7 @@ const SECTION_CATALOG: [string, string[]][] = [
     'Premature Info For SB A/c',
   ]],
   ['Utility', [
-    'Calculator', 'Find', 'Pass Book Printing', 'New Share Certificate', 'Interest Certificate',
+    'Calculator', 'Society Calculator', 'Find', 'Pass Book Printing', 'New Share Certificate', 'Interest Certificate',
     'Loan Nil Certificate', 'Share Certificate Printing', 'Fixed Deposit Certificate Printing',
     'Communication Hub', 'Notification Centre',
   ]],

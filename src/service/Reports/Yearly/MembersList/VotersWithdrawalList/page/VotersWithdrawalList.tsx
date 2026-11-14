@@ -1,27 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Button, ConfigProvider, Select, Pagination, theme as antdTheme } from 'antd';
-import { MemberLookupInput, MemberLookupData } from '../../../../../../components/shared/MemberLookup';
-import {
-  Users,
-  Printer,
-  FileDown,
-  Search,
-  Building2,
-  UserCheck,
-  UserMinus
-} from 'lucide-react';
+import { Users, Printer, FileDown, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../../services/api';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../../store';
+import MemberField from '../../../../../../components/shared/kit/MemberField';
+import { ReportShell, ParamCard, StatCards, ReportEmpty } from '../../../../../../components/reports/views/ReportShell';
+import ReportViewSwitcher from '../../../../../../components/reports/views/ReportViewSwitcher';
+import { GenericBento, GenericEditorial, GenericTerminal } from '../../../../../../components/reports/views/GenericPro';
 import { csvCell } from '@/utils/csv';
 import { escapeHtml } from '@/utils/html';
-import { ProBar, ProBody, useProRows } from '../../../../../../components/reports/views/ProIsland';
+import { useProRows } from '../../../../../../components/reports/views/ProIsland';
 import { useReportViews } from '../../../../../../components/reports/views/reportViews';
 import { useVotersSpec } from '../views/votersPro';
 import { showDialog3 as showDialog } from '@/utils/dialog';
-
-const { Option } = Select;
 
 interface MemberData {
   memberNo: string;
@@ -49,9 +39,6 @@ const VotersWithdrawalList: React.FC = () => {
   const [totalRecords, setTotalRecords] = useState<number>(0);
   const [searchText, setSearchText] = useState<string>('');
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
-
-  const { interfaceMode } = useSelector((state: RootState) => state.theme);
-  const isDark = interfaceMode === 'dark';
 
   // Load initial data and filters on mount
   useEffect(() => {
@@ -99,7 +86,7 @@ const VotersWithdrawalList: React.FC = () => {
     return extractRows(response);
   };
 
-  const handleMemberSelect = (memberNo: string, memberData?: MemberLookupData) => {
+  const handleMemberSelect = (memberNo: string, memberData?: { memberName?: string }) => {
     setSearchText(memberNo);
     setSelectedMemberName(memberData?.memberName || '');
     setCurrentPage(1);
@@ -273,413 +260,164 @@ const VotersWithdrawalList: React.FC = () => {
   const pro = useProRows<MemberData>(view !== 'legacy', `${selectedDivision}|${selectedBranch}|${selectedMemberList}|${sortBy}|${searchText}|${totalRecords}`, fetchAllRows);
   const spec = useVotersSpec(pro.rows, selectedMemberList.toLowerCase());
 
+  const hasData = data.length > 0;
+  const lastPage = Math.max(1, Math.ceil(totalRecords / pageSize));
+
+  // Same reload the page-size pager always did: a new size starts again at the first page.
+  const changePageSize = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+    setLoading(true);
+    apiService.getVotersList(
+      selectedDivision, selectedBranch, selectedMemberList, sortBy, newPageSize, 0, searchText
+    ).then(async response => {
+      if (response.success && response.data) {
+        const responseData = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setData(responseData);
+        if (response.metadata && response.metadata.totalCount) {
+          setTotalRecords(response.metadata.totalCount);
+        }
+        await showDialog('info', 'Success', `Loaded ${responseData.length} records`);
+      }
+      setLoading(false);
+    }).catch(async error => {
+      console.error('Error:', error);
+      await showDialog('error', 'Error', 'Failed to load data');
+      setLoading(false);
+    });
+  };
+
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#059669',
-          borderRadius: 8,
-          colorBgContainer: isDark ? '#1e293b' : '#ffffff',
-          colorBorder: isDark ? '#334155' : '#e2e8f0',
-        },
-      }}
-    >
-      <div className={`voters-withdrawal-page h-screen flex flex-col font-sans overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-        <div className="voters-withdrawal-topbar bg-gradient-to-r from-slate-900 to-slate-900 px-3 py-1.5 flex items-center shrink-0 shadow-lg border-b border-white/5">
-          <h1 className="fz-caption font-black text-white tracking-tight uppercase">5.2.1 Voters/Withdrawal List</h1>
-        </div>
-        <div className="flex-1 flex overflow-hidden">
-
-        {/* Compact Sidebar */}
-        <div className={`voters-withdrawal-sidebar w-80 flex flex-col shrink-0 border-r ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-          {/* Header */}
-          <div className={`p-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-            <div className="flex items-center gap-3">
-              <div className="bg-emerald-600 p-2 rounded-lg text-white shadow-lg">
-                <Users size={18} />
-              </div>
-              <div>
-                <h1 className={`fz-heading font-black tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>5.2.1 Voters/Withdrawal List</h1>
-                <div className="flex items-center gap-2 mt-0.5 fz-label font-bold text-slate-400 uppercase tracking-wider">
-                  <Building2 size={10} className="text-emerald-500" />
-                  Member Registry
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex-1 p-4 space-y-4 overflow-auto">
+    <ReportShell
+      className="voters-withdrawal-page"
+      title="Voters / Withdrawal List"
+      desc="Member registry: active and withdrawn members"
+      switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
+      actions={
+        <>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handleExportCSV} disabled={!hasData}><FileDown size={14} /> CSV</button>
+          <button type="button" className="aw-btn aw-btn-secondary" onClick={handlePrint} disabled={!hasData}><Printer size={14} /> Print</button>
+        </>
+      }
+      aside={
+        <>
+          <ParamCard title="Parameters" icon={<Users size={14} />}>
             <div>
-              <label className={`block fz-label font-bold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Member Search</label>
-              <MemberLookupInput
-                value={searchText}
-                onChange={handleMemberSelect}
-                placeholder="Type name or number to search..."
-              />
-              {selectedMemberName && (
-                <div className={`mt-1 fz-label font-semibold truncate ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                  {selectedMemberName}
-                </div>
-              )}
+              <label className="aw-label" htmlFor="vwl-member">Member search</label>
+              <MemberField id="vwl-member" value={searchText} onChange={setSearchText} onSelect={(m: any) => handleMemberSelect(String(m.memberNo || m.mbno || ''), { memberName: m.memberName || m.name })} onSubmit={v => { setCurrentPage(1); fetchData(1, v); }} placeholder="Type name or number" />
+              {selectedMemberName && <span className="aw-meta">{selectedMemberName}</span>}
               {searchText && (
-                <button
-                  onClick={() => { setSearchText(''); setSelectedMemberName(''); setCurrentPage(1); fetchData(1, ''); }}
-                  className={`mt-1 fz-label font-bold underline ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                  Clear filter
-                </button>
+                <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" onClick={() => { setSearchText(''); setSelectedMemberName(''); setCurrentPage(1); fetchData(1, ''); }}>Clear filter</button>
               )}
             </div>
-
             <div>
-              <label className={`block fz-label font-bold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Member Status</label>
-              <Select
-                value={selectedMemberList}
-                onChange={setSelectedMemberList}
-                className="w-full h-9"
-              >
-                <Option value="ACTIVE">Active Members</Option>
-                <Option value="INACTIVE">Withdrawn Members</Option>
-                <Option value="ALL">All Members</Option>
-              </Select>
+              <label className="aw-label" htmlFor="vwl-status">Member status</label>
+              <select id="vwl-status" className="aw-input" value={selectedMemberList} onChange={e => setSelectedMemberList(e.target.value)}>
+                <option value="ACTIVE">Active members</option>
+                <option value="INACTIVE">Withdrawn members</option>
+                <option value="ALL">All members</option>
+              </select>
             </div>
-
             <div>
-              <label className={`block fz-label font-bold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Division</label>
-              <Select
-                value={selectedDivision}
-                onChange={setSelectedDivision}
-                className="w-full h-9"
-                placeholder="All Divisions"
-                allowClear
-              >
-                {divisions.map(d => (
-                  <Option key={d} value={d}>{d}</Option>
-                ))}
-              </Select>
+              <label className="aw-label" htmlFor="vwl-div">Division</label>
+              <select id="vwl-div" className="aw-input" value={selectedDivision} onChange={e => setSelectedDivision(e.target.value)}>
+                <option value="">All divisions</option>
+                {divisions.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
             </div>
-
             <div>
-              <label className={`block fz-label font-bold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Branch</label>
-              <Select
-                value={selectedBranch}
-                onChange={setSelectedBranch}
-                className="w-full h-9"
-                placeholder="All Branches"
-                allowClear
-              >
-                {branches.map(b => (
-                  <Option key={b} value={b}>Office {b}</Option>
-                ))}
-              </Select>
+              <label className="aw-label" htmlFor="vwl-branch">Branch</label>
+              <select id="vwl-branch" className="aw-input" value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)}>
+                <option value="">All branches</option>
+                {branches.map(b => <option key={b} value={b}>Office {b}</option>)}
+              </select>
             </div>
-
             <div>
-              <label className={`block fz-label font-bold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Sort By</label>
-              <Select
-                value={sortBy}
-                onChange={setSortBy}
-                className="w-full h-9"
-              >
-                <Option value="MBNO">Member Number</Option>
-                <Option value="NAME">Name (A-Z)</Option>
-                <Option value="DOJ">Join Date</Option>
-              </Select>
+              <label className="aw-label" htmlFor="vwl-sort">Sort by</label>
+              <select id="vwl-sort" className="aw-input" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                <option value="MBNO">Member number</option>
+                <option value="NAME">Name (A-Z)</option>
+                <option value="DOJ">Join date</option>
+              </select>
             </div>
+            <button type="button" className="aw-btn aw-btn-primary" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={loading} style={{ width: '100%' }}>
+              <Search size={14} className={loading ? 'aw-spin' : undefined} /> {loading ? 'Loading…' : 'Load data'}
+            </button>
+          </ParamCard>
+          <StatCards items={[
+            { label: 'Active', value: String(totals.active), tone: 'success' },
+            { label: 'Withdrawn', value: String(totals.inactive), tone: 'danger' },
+            { label: 'Total records', value: String(totals.total), tone: 'muted' },
+          ]} />
+        </>
+      }
+      footerLeft="Voters / Withdrawal List"
+      footerRight={`${selectedMemberList.toLowerCase()} members`}
+    >
+      {hasData && view !== 'legacy' && !pro.ready && <p className="aw-meta" style={{ padding: 12 }}>{pro.loading ? 'Loading every member…' : 'No members to show'}</p>}
+      {hasData && pro.ready && view === 'bento' && <GenericBento spec={spec} />}
+      {hasData && pro.ready && view === 'terminal' && <div style={{ height: 'calc(100vh - 150px)', minHeight: 360 }}><GenericTerminal spec={spec} /></div>}
+      {hasData && pro.ready && view === 'editorial' && <GenericEditorial spec={spec} title="Voters / Withdrawal List" subtitle={`${selectedMemberList.toLowerCase()} members`} />}
 
-            <Button
-              type="primary"
-              onClick={() => {
-                setCurrentPage(1);
-                fetchData(1);
-              }}
-              loading={loading}
-              className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 font-bold fz-body"
-              icon={<Search size={16} />}
-            >
-              {loading ? 'Loading...' : 'Load Data'}
-            </Button>
+      {hasData && view === 'legacy' && (
+        <section className="aw-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="aw-main-head">
+            <span className="aw-card-title">Member Registry Report</span>
+            <span className="aw-meta">Showing {data.length} records • {selectedMemberList.toLowerCase()} members</span>
           </div>
-
-          {/* Summary Cards */}
-
-          <div className={`p-4 border-t space-y-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-            <div className="grid grid-cols-2 gap-3">
-              <div className={`p-3 rounded-lg border ${isDark ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-200'}`}>
-                <div className="flex items-center gap-2">
-                  <UserCheck size={16} className="text-emerald-500" />
-                  <div>
-                    <div className={`fz-heading font-black ${isDark ? 'text-emerald-400' : 'text-emerald-800'}`}>{totals.active}</div>
-                    <div className={`fz-label font-bold uppercase ${isDark ? 'text-emerald-500' : 'text-emerald-600'}`}>Active</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className={`p-3 rounded-lg border ${isDark ? 'bg-rose-900/30 border-rose-800' : 'bg-rose-50 border-rose-200'}`}>
-                <div className="flex items-center gap-2">
-                  <UserMinus size={16} className="text-rose-500" />
-                  <div>
-                    <div className={`fz-heading font-black ${isDark ? 'text-rose-400' : 'text-rose-800'}`}>{totals.inactive}</div>
-                    <div className={`fz-label font-bold uppercase ${isDark ? 'text-rose-500' : 'text-rose-600'}`}>Withdrawn</div>
-                  </div>
-                </div>
-              </div>
+          <div style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
+            <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+              <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited.</div>
+              <div className="aw-meta">Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+              <div className="aw-strong" style={{ marginTop: 6, letterSpacing: '.08em' }}>VOTERS/WITHDRAWAL LIST</div>
+              <div className="aw-meta">Status: {selectedMemberList} • Generated on {dayjs().format('DD MMMM YYYY')}</div>
             </div>
-
-            <div className={`p-3 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
-              <div className="text-center">
-                <div className={`fz-heading font-black ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{totals.total}</div>
-                <div className={`fz-label font-bold uppercase ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Total Records</div>
-              </div>
+            <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+              <table className="aw-table">
+                <thead>
+                  <tr>
+                    <th>SR</th><th>Member no</th><th>Member name</th><th>Designation</th><th>Office</th><th>Join date</th>
+                    <th className="is-right">Shares</th><th className="is-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((item, index) => (
+                    <tr key={`${item.memberNo}-${index}-${currentPage}`}>
+                      <td className="is-muted">{index + 1}</td>
+                      <td className="is-accent">{item.memberNo}</td>
+                      <td>{item.memberName}</td>
+                      <td className="is-muted">{item.designation || '-'}</td>
+                      <td className="is-muted">{item.officeName || '-'}</td>
+                      <td className="is-muted">{item.membershipDate ? dayjs(item.membershipDate).format('DD-MM-YYYY') : '-'}</td>
+                      <td className="is-right">₹{formatCurrency(item.shareBalance)}</td>
+                      <td className="is-center"><span className={`aw-pill tone-${item.isActive ? 'success' : 'danger'}`}>{item.isActive ? 'Active' : 'Withdrawn'}</span></td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan={6}><b>PAGE: {data.length} RECORDS | TOTAL: {totalRecords} | ACTIVE: {totals.active} | WITHDRAWN: {totals.inactive}</b></td>
+                    <td className="is-right"><b>₹{formatCurrency(totals.totalShares)}</b></td>
+                    <td className="is-center"><b>PAGE {currentPage}</b></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+            {totalRecords > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 12 }}>
+                <button type="button" className="aw-btn aw-btn-ghost" disabled={currentPage <= 1 || loading} onClick={() => fetchData(currentPage - 1)} aria-label="Previous page"><ChevronLeft size={14} /></button>
+                <span className="aw-meta">Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records</span>
+                <button type="button" className="aw-btn aw-btn-ghost" disabled={currentPage >= lastPage || loading} onClick={() => fetchData(currentPage + 1)} aria-label="Next page"><ChevronRight size={14} /></button>
+                <select className="aw-input" style={{ width: 'auto' }} value={pageSize} aria-label="Rows per page" onChange={e => changePageSize(Number(e.target.value))}>
+                  {[50, 100, 200, 500].map(n => <option key={n} value={n}>{n} / page</option>)}
+                </select>
+              </div>
+            )}
           </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className={`voters-withdrawal-mainbar px-4 py-3 shrink-0 border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className={`fz-heading font-black ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Member Registry Report</h2>
-                <p className={`fz-body mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Showing {data.length} records • {selectedMemberList.toLowerCase()} members
-                </p>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  icon={<FileDown size={16} />}
-                  onClick={handleExportCSV}
-                  disabled={data.length === 0}
-                  className="h-9 px-4 fz-body font-bold"
-                >
-                  CSV
-                </Button>
-                <Button
-                  icon={<Printer size={16} />}
-                  onClick={handlePrint}
-                  disabled={data.length === 0}
-                  className="h-9 px-4 fz-body font-bold"
-                >
-                  Print
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Legacy Report Table */}
-          <div className="flex-1 p-4 overflow-auto">
-            <div className={`voters-withdrawal-card rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-              
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mr-3"></div>
-                  <span className="text-slate-500 font-bold">Loading member data...</span>
-                </div>
-              ) : data.length > 0 ? (
-                <>
-                <ProBar enabled={enabled} view={view} setView={setView} />
-                {view !== 'legacy' && (pro.ready ? <ProBody view={view} spec={spec} title="Voters / Withdrawal List" subtitle={`${selectedMemberList.toLowerCase()} members`} /> : <p className="aw-meta" style={{ padding: 12 }}>{pro.loading ? 'Loading every member…' : 'No members to show'}</p>)}
-                {view === 'legacy' && (
-                <div className="legacy-report-compact font-mono fz-label">
-                  {/* Company Header */}
-                  <div className={`text-center mb-4 border-b border-dashed pb-3 p-4 ${isDark ? 'bg-slate-900/30 border-slate-700' : 'bg-slate-50 border-slate-300'}`}>
-                    <div className={`fz-body font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Espat Karmchari Co-Operative Credit Society Limited.</div>
-                    <div className={`fz-label mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
-                    <div className={`fz-body font-bold mt-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>VOTERS/WITHDRAWAL LIST</div>
-                    <div className={`fz-label ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Status: {selectedMemberList} • Generated on {dayjs().format('DD MMMM YYYY')}</div>
-                  </div>
-
-                  {/* Legacy Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-slate-400">
-                      <thead>
-                        <tr className={`${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                          <th className={`border px-2 py-2 text-left fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>SR</th>
-                          <th className={`border px-2 py-2 text-left fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>MEMBER NO</th>
-                          <th className={`border px-2 py-2 text-left fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>MEMBER NAME</th>
-                          <th className={`border px-2 py-2 text-left fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>DESIGNATION</th>
-                          <th className={`border px-2 py-2 text-left fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>OFFICE</th>
-                          <th className={`border px-2 py-2 text-left fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>JOIN DATE</th>
-                          <th className={`border px-2 py-2 text-right fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>SHARES</th>
-                          <th className={`border px-2 py-2 text-center fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>STATUS</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.map((item, index) => (
-                          <tr key={`${item.memberNo}-${index}-${currentPage}`} className={`transition-colors ${isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'}`}>
-                            <td className={`border px-2 py-1 fz-label ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-700'}`}>{index + 1}</td>
-                            <td className={`border px-2 py-1 fz-label font-bold ${isDark ? 'border-slate-700 text-slate-200' : 'border-slate-300 text-slate-800'}`}>{item.memberNo}</td>
-                            <td className={`border px-2 py-1 fz-label font-bold ${isDark ? 'border-slate-700 text-slate-200' : 'border-slate-300 text-slate-800'}`}>{item.memberName}</td>
-                            <td className={`border px-2 py-1 fz-label ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-700'}`}>{item.designation || '-'}</td>
-                            <td className={`border px-2 py-1 fz-label ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-700'}`}>{item.officeName || '-'}</td>
-                            <td className={`border px-2 py-1 fz-label ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-700'}`}>
-                              {item.membershipDate ? dayjs(item.membershipDate).format('DD-MM-YYYY') : '-'}
-                            </td>
-                            <td className={`border px-2 py-1 fz-label text-right font-bold ${isDark ? 'border-slate-700 text-slate-200' : 'border-slate-300 text-slate-800'}`}>
-                              ₹{formatCurrency(item.shareBalance)}
-                            </td>
-                            <td className={`border px-2 py-1 text-center ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
-                              <span className={`px-2 py-1 rounded fz-label font-bold uppercase ${
-                                item.isActive
-                                  ? (isDark ? 'bg-emerald-900/50 text-emerald-400' : 'bg-emerald-100 text-emerald-800')
-                                  : (isDark ? 'bg-rose-900/50 text-rose-400' : 'bg-rose-100 text-rose-800')
-                              }`}>
-                                {item.isActive ? 'ACTIVE' : 'WITHDRAWN'}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      
-                      {/* Summary Row */}
-                      <tfoot>
-                        <tr className={`font-bold ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                          <td colSpan={6} className={`border px-2 py-2 fz-label font-black uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>
-                            PAGE: {data.length} RECORDS | TOTAL: {totalRecords} | ACTIVE: {totals.active} | WITHDRAWN: {totals.inactive}
-                          </td>
-                          <td className={`border px-2 py-2 fz-label text-right font-black ${isDark ? 'border-slate-600 text-slate-100' : 'border-slate-400 text-slate-800'}`}>
-                            ₹{formatCurrency(totals.totalShares)}
-                          </td>
-                          <td className={`border px-2 py-2 text-center fz-label font-black ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>
-                            PAGE {currentPage}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-
-                  {/* Pagination Controls */}
-                  {totalRecords > 0 && (
-                    <div className={`flex items-center justify-between px-4 py-3 border-t ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                      <div className={`fz-label font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                        Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records
-                      </div>
-                      
-                      <Pagination
-                        current={currentPage}
-                        pageSize={pageSize}
-                        total={totalRecords}
-                        onChange={(page, newPageSize) => {
-                          if (newPageSize && newPageSize !== pageSize) {
-                            setPageSize(newPageSize);
-                            setCurrentPage(1);
-                            // Manually fetch with new page size
-                            const offset = 0;
-                            setLoading(true);
-                            apiService.getVotersList(
-                              selectedDivision,
-                              selectedBranch,
-                              selectedMemberList,
-                              sortBy,
-                              newPageSize,
-                              offset,
-                              searchText
-                            ).then(async response => {
-                              if (response.success && response.data) {
-                                const responseData = Array.isArray(response.data) ? response.data : response.data.data || [];
-                                setData(responseData);
-                                if (response.metadata && response.metadata.totalCount) {
-                                  setTotalRecords(response.metadata.totalCount);
-                                }
-                                await showDialog('info', 'Success', `Loaded ${responseData.length} records`);
-                              }
-                              setLoading(false);
-                            }).catch(async error => {
-                              console.error('Error:', error);
-                              await showDialog('error', 'Error', 'Failed to load data');
-                              setLoading(false);
-                            });
-                          } else {
-                            fetchData(page);
-                          }
-                        }}
-                        showSizeChanger
-                        showQuickJumper
-                        pageSizeOptions={['50', '100', '200', '500']}
-                        showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} records`}
-                        size="small"
-                        className="ant-pagination-compact"
-                      />
-                    </div>
-                  )}
-                </div>
-                )}
-                </>
-              ) : (
-                <div className="text-center py-12">
-                  <Users size={48} className="text-slate-300 mx-auto mb-3" />
-                  <h3 className="fz-body font-bold text-slate-400 uppercase tracking-wide">No Member Data</h3>
-                  <p className="fz-label text-slate-400 mt-1">Select filters and click Load Data to view records</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        </div>
-      </div>
-
-      {/* Print Styles */}
-      <style>{`
-        @media print {
-          .ant-btn, .ant-select, .ant-input, .ant-pagination { display: none !important; }
-          body { margin: 0; padding: 20px; }
-          table { page-break-inside: auto; }
-          tr { page-break-inside: avoid; page-break-after: auto; }
-          thead { display: table-header-group; }
-          tfoot { display: table-footer-group; }
-        }
-        
-        .legacy-report-compact table {
-          border-collapse: collapse;
-        }
-        
-        .ant-select-selector {
-          border-radius: 8px !important;
-          border: 1px solid #e2e8f0 !important;
-          font-weight: 600 !important;
-        }
-        
-        .ant-pagination-compact .ant-pagination-item {
-          border-radius: 6px !important;
-          font-weight: 600 !important;
-          font-size: 12px !important;
-        }
-        
-        .ant-pagination-compact .ant-pagination-item-active {
-          background: #059669 !important;
-          border-color: #059669 !important;
-        }
-        
-        .ant-pagination-compact .ant-pagination-item-active a {
-          color: white !important;
-        }
-        
-        .ant-pagination-compact .ant-select-selector {
-          font-size: 12px !important;
-          font-weight: 600 !important;
-        }
-        
-        .ant-pagination-compact .ant-pagination-options-quick-jumper input {
-          border-radius: 6px !important;
-          font-weight: 600 !important;
-        }
-
-        /* ── Voters/Withdrawal List — dark mode (reinforces the page's own isDark styling) ── */
-        html.dark .voters-withdrawal-page { background-color: #000000 !important; }
-        html.dark .voters-withdrawal-topbar { background-image: none !important; background-color: #0c0c0e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .voters-withdrawal-sidebar,
-        html.dark .voters-withdrawal-mainbar,
-        html.dark .voters-withdrawal-card { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; }
-        html.dark .voters-withdrawal-page label { color: #8e8e93 !important; }
-        html.dark .voters-withdrawal-page .ant-select-selector,
-        html.dark .voters-withdrawal-page .ant-input { background-color: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-        html.dark .voters-withdrawal-page .ant-btn:not(.ant-btn-primary) { background-color: #1c1c1e !important; border-color: rgba(255,255,255,.08) !important; color: #f5f5f7 !important; }
-      `}</style>
-    </ConfigProvider>
+        </section>
+      )}
+      {!hasData && (
+        <ReportEmpty icon={<Users size={34} />} title={loading ? 'Loading…' : 'No Member Data'} hint="Select filters and click Load data to view records" />
+      )}
+    </ReportShell>
   );
 };
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Spin } from 'antd';
 import { Printer, FileDown, Settings, RefreshCw, FileText, Search } from 'lucide-react';
 import { apiService } from '../../../../../services/api';
 import dayjs from 'dayjs';
@@ -380,95 +379,56 @@ const DefaulterList: React.FC = () => {
             <span className="aw-meta">Min balance ₹{fmt(minBalance)} · Page {currentPage} of {totalPages}</span>
           </div>
           <div className="dfl-report" style={{ padding: 'var(--aw-pad)', overflow: 'auto' }}>
-              <Spin spinning={loading} size="large">
                 {!loading && data.length === 0 ? (
-                  <div style={{ height: '100%', minHeight: 340, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#8a94a0' }}>
-                    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" style={{ marginBottom: 16, opacity: 0.5 }}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="1.4" /><path d="M14 2v6h6" stroke="currentColor" strokeWidth="1.4" /></svg>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#5b6572', marginBottom: 6 }}>No defaulters found</div>
-                    <div style={{ fontSize: 12.5, color: '#8a94a0', textAlign: 'center', maxWidth: 240 }}>Adjust the minimum balance filter to view defaulter data</div>
-                  </div>
+                  <ReportEmpty icon={<FileText size={34} />} title="No defaulters found" hint="Adjust the minimum balance filter to view defaulter data" />
                 ) : data.length > 0 ? (
                   <div>
-                    {/* Letterhead */}
-                    <div style={{ textAlign: 'center', paddingBottom: 16, marginBottom: 20, borderBottom: '1px solid rgba(19,37,63,0.1)' }}>
-                      <div className="dfl-serif" style={{ fontWeight: 700, fontSize: 16, color: '#13253f' }}>Espat Karmchari Co-Operative Credit Society Limited</div>
-                      <div style={{ fontSize: 12, color: '#5b6572', marginTop: 4 }}>Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
-                      <div style={{ fontSize: 11, color: '#8a94a0', marginTop: 3 }}>Reg No: A.R/DRG/1796 &nbsp;·&nbsp; Tel No: 0788-2298736</div>
+                    <div className="aw-stack" style={{ textAlign: 'center', gap: 2, marginBottom: 12 }}>
+                      <div className="aw-strong">Espat Karmchari Co-Operative Credit Society Limited</div>
+                      <div className="aw-meta">Avenue A, Sahakari Sadan, Sector-6, AT Post: Bhilai Nagar, Dist: DURG-490006</div>
+                      <div className="aw-meta">Reg No: A.R/DRG/1796 &nbsp;·&nbsp; Tel No: 0788-2298736</div>
+                      <div className="aw-strong" style={{ marginTop: 8, letterSpacing: '.08em' }}>DEFAULTER LIST REPORT</div>
+                      <div className="aw-meta">Minimum balance ₹{fmt(minBalance)} &nbsp;·&nbsp; Page {currentPage} of {totalPages}</div>
+                      <div className="aw-meta">Showing {rangeStart}–{rangeEnd} of {totalCount} records</div>
                     </div>
-
-                    <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                      <div className="dfl-serif" style={{ fontWeight: 700, fontSize: 14, letterSpacing: '0.05em', color: '#b3392c' }}>DEFAULTER LIST REPORT</div>
-                      <div style={{ fontSize: 12, color: '#5b6572', marginTop: 5 }}>Minimum balance ₹{fmt(minBalance)} &nbsp;·&nbsp; Page {currentPage} of {totalPages}</div>
-                      <div style={{ fontSize: 11, color: '#8a94a0', marginTop: 3 }}>Showing {rangeStart}–{rangeEnd} of {totalCount} records</div>
-                    </div>
-
-                    <table className="dfl-report-tbl" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, tableLayout: 'fixed' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1.5px solid rgba(19,37,63,0.16)', background: '#fbf5e8' }}>
-                          {[
-                            { label: 'SR', w: 28, align: 'left' as const },
-                            { label: 'MEMBER NO', w: 74, align: 'left' as const },
-                            { label: 'MEMBER NAME', w: undefined, align: 'left' as const },
-                            { label: 'TYPE', w: 42, align: 'left' as const },
-                            { label: 'CASE NO', w: 54, align: 'left' as const },
-                            { label: 'LOAN AMOUNT', w: 84, align: 'right' as const },
-                            { label: 'OUTSTANDING', w: 84, align: 'right' as const },
-                            { label: 'OVERDUE', w: 44, align: 'center' as const },
-                            { label: 'PENAL DUE', w: 68, align: 'right' as const },
-                          ].map(col => (
-                            <th key={col.label} style={{ textAlign: col.align, padding: '10px 10px', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.07em', color: '#8a7a56', width: col.w }}>
-                              {col.label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.map((r, i) => {
-                          const hasOverdue = (r.monthsOverdue || 0) > 0;
-                          const hasPenal = (r.penalDue || 0) > 0;
-                          return (
-                            <tr key={`${r.memberNo}-${r.loanCaseNo}`} style={{ borderBottom: '1px solid rgba(19,37,63,0.06)', background: i % 2 === 1 ? 'rgba(19,37,63,0.015)' : undefined }}>
-                              <td style={{ padding: '11px 10px', textAlign: 'center', color: '#8a94a0' }} className="dfl-mono">{rangeStart + i}</td>
-                              <td style={{ padding: '11px 10px', color: '#a6791f', fontWeight: 600 }} className="dfl-mono">{r.memberNo}</td>
-                              <td style={{ padding: '11px 10px', color: '#16202c', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.memberName}</td>
-                              <td style={{ padding: '11px 10px', color: '#5b6572', fontWeight: 600 }}>{r.loanType}</td>
-                              <td style={{ padding: '11px 10px', color: '#5b6572' }} className="dfl-mono">{r.loanCaseNo}</td>
-                              <td style={{ padding: '11px 10px', textAlign: 'right', color: '#16202c' }} className="dfl-mono">{fmt(Number(r.loanAmount) || 0)}</td>
-                              <td style={{ padding: '11px 10px', textAlign: 'right', fontWeight: 600, color: hasOverdue ? '#b3392c' : '#16202c' }} className="dfl-mono">{fmt(Number(r.balance) || 0)}</td>
-                              <td style={{ padding: '11px 10px', textAlign: 'center', fontWeight: 600, color: hasOverdue ? '#b8892f' : '#8a94a0' }}>{hasOverdue ? `${r.monthsOverdue}mo` : '—'}</td>
-                              <td style={{ padding: '11px 10px', textAlign: 'right', fontWeight: 600, color: hasPenal ? '#b3392c' : '#8a94a0' }} className="dfl-mono">{hasPenal ? fmt(Number(r.penalDue) || 0) : '—'}</td>
-                            </tr>
-                          );
-                        })}
-                        <tr style={{ borderTop: '2px solid #b8892f' }}>
-                          <td colSpan={5} style={{ padding: '14px 10px', textAlign: 'right', fontWeight: 700, fontSize: 12, letterSpacing: '0.04em', color: '#5b6572' }}>PAGE TOTAL</td>
-                          <td style={{ padding: '14px 10px', textAlign: 'right', fontWeight: 700, fontSize: 13, color: '#13253f' }} className="dfl-mono">{fmt(totalLoanAmount)}</td>
-                          <td style={{ padding: '14px 10px', textAlign: 'right', fontWeight: 700, fontSize: 13, color: '#b3392c' }} className="dfl-mono">{fmt(totalOutstanding)}</td>
-                          <td />
-                          <td style={{ padding: '14px 10px', textAlign: 'right', fontWeight: 700, fontSize: 13, color: '#b3392c' }} className="dfl-mono">{fmt(totalPenalDue)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    {/* Summary box */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
-                      <div style={{ background: '#fbf9f4', border: '1px solid rgba(19,37,63,0.08)', borderRadius: 10, padding: '14px 18px', minWidth: 270 }}>
-                        {[
-                          { label: 'Page records', value: `${data.length} of ${totalCount}`, red: false },
-                          { label: 'Page loan amount', value: `₹${fmt(totalLoanAmount)}`, red: false },
-                          { label: 'Page outstanding', value: `₹${fmt(totalOutstanding)}`, red: true, top: true },
-                          { label: 'Page penal due', value: `₹${fmt(totalPenalDue)}`, red: true },
-                        ].map(row => (
-                          <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 12, borderTop: row.top ? '1px solid rgba(19,37,63,0.08)' : undefined, marginTop: row.top ? 4 : undefined }}>
-                            <span style={{ color: '#5b6572' }}>{row.label}</span>
-                            <span className="dfl-mono" style={{ color: row.red ? '#b3392c' : '#16202c', fontWeight: row.red ? 700 : 600 }}>{row.value}</span>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                      <table className="aw-table">
+                        <thead>
+                          <tr>
+                            <th className="is-center">SR</th><th>Member no</th><th>Member name</th><th>Type</th><th>Case no</th>
+                            <th className="is-right">Loan amount</th><th className="is-right">Outstanding</th><th className="is-center">Overdue</th><th className="is-right">Penal due</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.map((r, i) => {
+                            const hasOverdue = (r.monthsOverdue || 0) > 0;
+                            const hasPenal = (r.penalDue || 0) > 0;
+                            return (
+                              <tr key={`${r.memberNo}-${r.loanCaseNo}`}>
+                                <td className="is-center is-muted">{rangeStart + i}</td>
+                                <td className="is-accent">{r.memberNo}</td>
+                                <td>{r.memberName}</td>
+                                <td className="is-muted">{r.loanType}</td>
+                                <td className="is-muted">{r.loanCaseNo}</td>
+                                <td className="is-right">{fmt(Number(r.loanAmount) || 0)}</td>
+                                <td className="is-right" style={hasOverdue ? { color: 'var(--aw-danger)' } : undefined}>{fmt(Number(r.balance) || 0)}</td>
+                                <td className="is-center" style={hasOverdue ? { color: 'var(--aw-warning)' } : undefined}>{hasOverdue ? `${r.monthsOverdue}mo` : '—'}</td>
+                                <td className="is-right" style={hasPenal ? { color: 'var(--aw-danger)' } : undefined}>{hasPenal ? fmt(Number(r.penalDue) || 0) : '—'}</td>
+                              </tr>
+                            );
+                          })}
+                          <tr>
+                            <td colSpan={5} className="is-right"><b>Page total</b></td>
+                            <td className="is-right"><b>{fmt(totalLoanAmount)}</b></td>
+                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}><b>{fmt(totalOutstanding)}</b></td>
+                            <td />
+                            <td className="is-right" style={{ color: 'var(--aw-danger)' }}><b>{fmt(totalPenalDue)}</b></td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 ) : null}
-              </Spin>
           </div>
           <div className="dfl-noprint aw-main-foot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <span className="aw-meta">Showing {rangeStart}–{rangeEnd} of {totalCount} defaulters</span>
@@ -487,14 +447,6 @@ const DefaulterList: React.FC = () => {
           </div>
         </section>
       )}
-
-      <style>{`
-        .dfl-serif { font-family: 'Source Serif 4', serif !important; }
-        .dfl-mono  { font-family: 'IBM Plex Mono', monospace !important; }
-        html.dark .dfl-report-tbl th { background: #0c0c0e !important; }
-        html.dark .dfl-report-tbl tr { background: transparent !important; }
-        html.dark .dfl-report-tbl td { color: #c8c3bc !important; border-color: rgba(255,255,255,.06) !important; }
-      `}</style>
     </ReportShell>
   );
 };
