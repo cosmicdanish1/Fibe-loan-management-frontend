@@ -253,16 +253,23 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                   type="text"
                   value={loanDetails.loanAmount}
                   onChange={(value: string) => {
-                    // Only allow numbers
-                    const numbersOnly = value.replace(/[^0-9]/g, '');
-                    onLoanDetailsChange('loanAmount', numbersOnly);
+                    // ES-505: keep the decimal point (one dot, at most 2 decimals); the old rule deleted the dot, so a pasted
+                    // 100.50 became 10050 (100 times too much). Commas and spaces from a pasted amount are dropped.
+                    // a sign or an exponent (-500, 1e5) is refused instead of being turned into another amount
+                    if (/[-+eE]/.test(value)) return;
+                    let cleaned = value.replace(/[^0-9.]/g, '');
+                    const firstDot = cleaned.indexOf('.');
+                    if (firstDot !== -1) {
+                      cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/./g, '').slice(0, 2);
+                    }
+                    onLoanDetailsChange('loanAmount', cleaned);
                   }}
                   required
                 />
                 {loanDetails.loanAmount && (
                   <div style={{ marginTop: 4 }}>
                     <p className="aw-strong" style={{ color: 'var(--aw-accent)' }}>
-                      {inr(parseInt(loanDetails.loanAmount || '0'))}
+                      {inr(parseFloat(loanDetails.loanAmount || '0') || 0)}
                     </p>
                     {loanDetails.loanType && (
                       <p className="aw-meta">

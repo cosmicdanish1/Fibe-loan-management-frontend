@@ -27,6 +27,10 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
         saveEnabled: canApply,
     });
 
+    // ES-556: with one EMI left the decision is the closure, not a re-agreement; show it as a pop-up, once per loan.
+    const [oneEmiDismissed, setOneEmiDismissed] = useState('');
+    const oneEmiLeft = (quote?.errors as any[] | undefined)?.find(e => e.code === 'ONE_EMI_LEFT');
+    const oneEmiKey = String(quote?.loan?.oldCaseNo ?? '');
     const neu = quote?.neu;
     const tenureErr = fieldError('tenure');
     const rateErr = fieldError('rate');
@@ -217,6 +221,15 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
                         <button type="button" className="aw-btn aw-btn-primary" disabled={saving || !canApply} onClick={async () => { const ok = await apply(); if (ok) setConfirmOpen(false); }}>
                             <Send size={13} /> {saving ? t('Applying…') : t('Confirm & apply')}
                         </button>
+                    </div>
+                </div>
+            </AwDialog>
+
+            <AwDialog open={!!oneEmiLeft && oneEmiDismissed !== oneEmiKey} title={t('Only one EMI left')} icon={<AlertTriangle size={14} />} onClose={() => setOneEmiDismissed(oneEmiKey)} maxWidth="30rem" compact>
+                <div className="aw-stack">
+                    <p className="aw-meta" style={{ lineHeight: 1.6 }}>{t('This loan has only one EMI left, so it cannot be re-agreed. If the member still wants a re-agreement, please contact support.')}</p>
+                    <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
+                        <button type="button" className="aw-btn" onClick={() => setOneEmiDismissed(oneEmiKey)}>{t('OK')}</button>
                     </div>
                 </div>
             </AwDialog>

@@ -24,8 +24,15 @@ interface Notice {
     acknowledgedAt?: string | null;
 }
 
+/** ES-551: one payment that brought in more than was due (older servers do not send this). */
+interface ExcessPayment {
+    id: number; paymentDate: string; receiptNo: string | null; source: string; amountReceived: number; dueCleared: number;
+    excessAmount: number; appliedAmount: number; unappliedAmount: number; installments: number[];
+}
+
 interface Position {
     asOf: string;
+    excessPayments?: ExcessPayment[];
     loan: {
         mbno: string; loancaseno: string; loantype: string; loanAmount: number; noOfInstalments: number;
         monthlyPrincipal: number; monthlyInterest: number; annualRate: number; startDate: string; firstDueMonth: string;
@@ -308,6 +315,25 @@ const LoanPositionPanel: React.FC<Props> = ({ mbno, loancaseno, loantype, showCl
                                             hint={s.aheadOrBehindInEmis !== null ? t('{{1}} EMIs', { 1: Math.abs(s.aheadOrBehindInEmis) }) : undefined} />
                                         <Row label={t('Finish at the scheduled pace')} value={monthYear(s.projectedFinish)}
                                             hint={s.monthsLeftAtScheduledPace !== null ? t('{{1}} months left (ledger balance)', { 1: s.monthsLeftAtScheduledPace }) : undefined} />
+                                        </>}
+                                    </>
+                                )}
+
+                                {(pos.excessPayments?.length ?? 0) > 0 && (
+                                    <>
+                                        {head('excess', t('Excess payments received'), pos.excessPayments!.length)}
+                                        {isOpen('excess') && <>
+                                        <Row label={t('Total received above what was due')}
+                                            value={inr(pos.excessPayments!.reduce((a, x) => a + x.excessAmount, 0))} tone="success"
+                                            hint={t('applied toward future installments')} />
+                                        {pos.excessPayments!.slice(0, 5).map(x => (
+                                            <Row key={x.id} label={`${dmy(x.paymentDate)}${x.receiptNo ? ` · ${x.receiptNo}` : ''}`}
+                                                value={inr(x.excessAmount)}
+                                                {...(x.unappliedAmount > 0.01 ? { tone: 'warning' as const } : {})}
+                                                hint={x.unappliedAmount > 0.01
+                                                    ? t('{{1}} not applied (more than the loan needed)', { 1: inr(x.unappliedAmount) })
+                                                    : x.installments.length ? t('installment{{2}} #{{1}}', { 1: x.installments.join(', #'), 2: x.installments.length === 1 ? '' : 's' }) : undefined} />
+                                        ))}
                                         </>}
                                     </>
                                 )}

@@ -898,6 +898,7 @@ const WINDOW_CONFIGS: Record<string, {
   '/utility/society-calculator': { title: 'Society Calculator', frameless: false, width: 1360, height: 860, resizable: true, alwaysOnTop: false, singleton: true },
   '/utility/find': { title: 'Find & Search', frameless: false, width: 1000, height: 700, resizable: true, alwaysOnTop: false, singleton: true },
   '/utility/member-balance': { title: 'Member Balance', frameless: false, width: 900, height: 700 },
+  '/utility/member-complete-detail': { title: 'Member Complete Detail', frameless: false, width: 1280, height: 860, resizable: true, singleton: false },
   '/utility/emi-chart': { title: 'EMI Chart', frameless: false, width: 800, height: 600 },
   '/utility/database-backup': { title: 'Database BackUp', frameless: false, width: 1200, height: 900 },
   '/utility/update-saving-interest': { title: 'Update Saving Intt.', frameless: false, width: 800, height: 600 },

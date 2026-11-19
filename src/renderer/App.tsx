@@ -172,6 +172,7 @@ const Calculator = lazy(() => import('../service/Utility/Calculator/page/Calcula
 const SocietyCalculator = lazy(() => import('../service/Utility/SocietyCalculator/page/SocietyCalculator'));
 const Find = lazy(() => import('../service/Utility/Find/page/Find'));
 const MemberBalance = lazy(() => import('../service/Utility/MemberBalance/page/MemberBalance'));
+const MemberCompleteDetail = lazy(() => import('../service/Utility/MemberCompleteDetail/page/MemberCompleteDetail'));
 const EMIChart = lazy(() => import('../service/Utility/EMIChart/page/EMIChart'));
 const DatabaseBackup = lazy(() => import('../service/Utility/DatabaseBackup/page/DatabaseBackup'));
 const UpdateSavingInterest = lazy(() => import('../service/Utility/UpdateSavingInterest/page/UpdateSavingInterest'));
@@ -424,6 +425,7 @@ const App: React.FC = () => {
                   <Route path="/utility/society-calculator" element={<SocietyCalculator />} />
                   <Route path="/utility/find" element={<Find />} />
                   <Route path="/utility/member-balance" element={<MemberBalance />} />
+                  <Route path="/utility/member-complete-detail" element={<MemberCompleteDetail />} />
                   <Route path="/utility/emi-chart" element={<EMIChart />} />
                   <Route path="/utility/database-backup" element={<DatabaseBackup />} />
                   <Route path="/utility/update-saving-interest" element={<UpdateSavingInterest />} />

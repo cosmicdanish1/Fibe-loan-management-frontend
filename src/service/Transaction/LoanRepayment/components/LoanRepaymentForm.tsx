@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, RefreshCw, Users, CreditCard, IndianRupee, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
+import { Search, RefreshCw, Users, CreditCard, IndianRupee, CheckCircle2, AlertCircle, FileText, Info } from 'lucide-react';
 import type { useLoanRepayment, UnpaidInstallment } from '../hooks/useLoanRepayment';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import MemberField from '@/components/shared/kit/MemberField';
@@ -82,7 +82,7 @@ function simulateWaterfall(paymentAmount: number, unpaidInstallments: UnpaidInst
 
 const LoanRepaymentForm: React.FC<Props> = ({
     form, activeLoans, dueStatus, dueStatusLoading, repaymentHistory, loading, historyLoading,
-    message, flagNotice, updateForm, handleMemberLookup, handleLoanSelect, handleSubmit, handleReset,
+    message, flagNotice, excessNotice, updateForm, handleMemberLookup, handleLoanSelect, handleSubmit, handleReset,
 }) => {
   const { t } = useTranslation();
     const [loanSearch, setLoanSearch] = useState('');
@@ -415,6 +415,14 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                     {message && (
                                         <div className={`aw-alert aw-fade-in ${message.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0 }} role="status">
                                             <span>{message.text}</span>
+                                        </div>
+                                    )}
+
+                                    {/* ES-551: this payment brought in more than was due. Informational; the money is already applied. */}
+                                    {excessNotice && (
+                                        <div className="aw-alert aw-alert-info aw-fade-in" style={{ marginBottom: 0 }} role="status">
+                                            <Info size={14} />
+                                            <span><strong>{t('Excess payment received.')}</strong> {excessNotice}</span>
                                         </div>
                                     )}
 

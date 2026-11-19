@@ -130,6 +130,9 @@ export interface ClosureQuote {
     currentMonthInGrace?: { installmentNo: number; dueDate: string; principalDue: number } | null;
     /** ES-522: true when the quote was calculated with the "delayed payroll principal is owed back" option ON. */
     adjustPayrollLag?: boolean;
+    /** ES-556: the quote closes on next month's outstanding (the awaited EMI is treated as already paid). */
+    nextMonth?: boolean;
+    nextMonthInfo?: { installmentNo: number | null; principal: number; wasInGrace: boolean } | null;
     /** ES-522: delayed payroll principal already returned to the member (tracked separately). */
     payrollLagRefunded?: number;
     /** ES-522: delayed payroll principal still owed back; deducted from what the member pays (0 when the option is off). */
@@ -197,6 +200,8 @@ export interface ClosureForm {
     applyRdShare: boolean;
     /** ES-522: treat the delayed predecessor-payroll principal as owed back to the member instead of reducing the loan. */
     adjustPayrollLag: boolean;
+    /** ES-556: close on NEXT month's outstanding; the closure waits in Past Transaction until the awaited EMI is received. */
+    nextMonth: boolean;
 }
 
 // Local calendar date (toISOString would give the UTC date, which is
@@ -218,6 +223,7 @@ const makeDefaultForm = (): ClosureForm => ({
     receiptNo: '',
     applyRdShare: true,
     adjustPayrollLag: false,
+    nextMonth: false,
 });
 
 export const useLoanEarlyClosure = () => {
@@ -225,6 +231,9 @@ export const useLoanEarlyClosure = () => {
     // Bumped on every quote request AND every input change that makes the
     // current quote stale, so late responses for old inputs are dropped.
     const quoteSeq = useRef(0);
+    // ES-556: read by fetchQuote so every existing quote call site keeps its signature
+    const nextMonthRef = useRef(false);
+    const [holdInfo, setHoldInfo] = useState<{ voucherNo: string; nextMonth: boolean; expectedMonth: string | null } | null>(null);
     const [activeLoans, setActiveLoans] = useState<ActiveLoan[]>([]);
     const [quote, setQuote] = useState<ClosureQuote | null>(null);
     const [quoteLoading, setQuoteLoading] = useState(false);
@@ -250,7 +259,8 @@ export const useLoanEarlyClosure = () => {
         if (key === 'adjustment' && !Number.isFinite(value as number)) return;
         // The quote was computed for the old inputs - invalidate it so Close
         // stays disabled until a fresh quote is fetched (Recalc).
-        if (key === 'closureDate' || key === 'adjustment' || key === 'selectedLoanCase' || key === 'applyRdShare' || key === 'adjustPayrollLag') {
+        if (key === 'closureDate' || key === 'adjustment' || key === 'selectedLoanCase' || key === 'applyRdShare' || key === 'adjustPayrollLag' || key === 'nextMonth') {
+            if (key === 'nextMonth') nextMonthRef.current = Boolean(value);
             quoteSeq.current++;
             setQuote(null);
             setQuoteLoading(false);
@@ -306,7 +316,7 @@ export const useLoanEarlyClosure = () => {
                 // across members, so without this a case-number collision
                 // with an unrelated member's loan can silently quote the
                 // wrong one.
-                body: JSON.stringify({ adjustment, closureDate, applyRdShare, mbno, adjustPayrollLag }),
+                body: JSON.stringify({ adjustment, closureDate, applyRdShare, mbno, adjustPayrollLag, nextMonth: nextMonthRef.current }),
             });
             if (!res.ok) throw new Error('Failed to load closure quote');
             const data = await res.json();
@@ -351,6 +361,13 @@ export const useLoanEarlyClosure = () => {
         if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, value);
     }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, fetchQuote]);
 
+    /** ES-556: close on next month's outstanding (the awaited EMI is treated as already paid) and re-quote. */
+    const toggleNextMonth = useCallback(async (value: boolean) => {
+        nextMonthRef.current = value;
+        setForm(prev => ({ ...prev, nextMonth: value }));
+        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag);
+    }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag, fetchQuote]);
+
     /** ES-522: record that (part of) the delayed payroll principal was already returned to the member, then re-quote. */
     const recordPayrollLagRefund = useCallback(async (principal: number, interest: number, voucherNo: string) => {
         if (!form.selectedLoanCase || !form.mbno) return;
@@ -391,7 +408,8 @@ export const useLoanEarlyClosure = () => {
         try {
             const base = await getApiBaseUrl();
             const token = localStorage.getItem('accessToken');
-            const url = `${base}/loans/early-closure/execute/${form.selectedLoanCase}`;
+            // ES-556: every money movement goes through Past Transaction: raise the early-closure voucher, do not post directly
+            const url = `${base}/loans/early-closure/hold/${form.selectedLoanCase}`;
             const init: RequestInit = {
                 method: 'POST',
                 headers: {
@@ -405,6 +423,7 @@ export const useLoanEarlyClosure = () => {
                     applyRdShare: form.applyRdShare,
                     mbno: form.mbno,
                     adjustPayrollLag: form.adjustPayrollLag,
+                    nextMonth: form.nextMonth,
                 }),
             };
             // ES-116: when the administrator has switched on "authenticator code" for Early Closure the
@@ -416,6 +435,7 @@ export const useLoanEarlyClosure = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Failed to close loan');
             setMessage({ type: 'success', text: data.message });
+            setHoldInfo({ voucherNo: data.voucherNo, nextMonth: Boolean(data.nextMonth), expectedMonth: data.expectedMonth ?? null });
             setClosed(true);
             await fetchMemberLoans(form.mbno);
         } catch (err: any) {
@@ -433,9 +453,13 @@ export const useLoanEarlyClosure = () => {
         setQuote(null);
         setMessage(null);
         setClosed(false);
+        setHoldInfo(null);
+        nextMonthRef.current = false;
     };
 
     return {
+        holdInfo,
+        toggleNextMonth,
         form,
         activeLoans,
         quote,

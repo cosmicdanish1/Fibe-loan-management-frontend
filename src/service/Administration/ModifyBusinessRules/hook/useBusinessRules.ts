@@ -102,6 +102,11 @@ export interface RegularLoanEligibility {
  */
 export interface EarlyClosureProtection {
   requireTypeConfirm: boolean;
+  /** ES-556: ON = an early closure waiting in Past Transaction is passed automatically when the awaited EMI is received
+   *  (OFF = the employee is only notified and passes it by hand). */
+  autoPass: boolean;
+  /** ES-555: OFF (default) = no grace period in a loan closure; ON = the closure month's EMI keeps the grace-day behaviour. */
+  graceEnabled: boolean;
 }
 
 /**
@@ -299,6 +304,8 @@ export const initialData: BusinessRulesData = {
   },
   earlyClosureProtection: {
     requireTypeConfirm: true,
+    autoPass: false,
+    graceEnabled: false,
   },
   // Society's original hardcoded values (loan-rb-schedule.util.ts).
   loanSlotDelay: {
@@ -492,6 +499,8 @@ export const useBusinessRules = () => {
           },
           earlyClosureProtection: {
             requireTypeConfirm: bool(d.RULE_EARLY_CLOSURE_REQUIRE_TYPE_CONFIRM, def.earlyClosureProtection.requireTypeConfirm),
+            autoPass: bool(d.RULE_EARLY_CLOSURE_AUTO_PASS, def.earlyClosureProtection.autoPass),
+            graceEnabled: bool(d.RULE_LOAN_CLOSURE_GRACE_ENABLED, def.earlyClosureProtection.graceEnabled),
           },
           loanSlotDelay: {
             slot1DelayMonths: num(d.RULE_LOAN_SLOT1_DELAY_MONTHS, def.loanSlotDelay.slot1DelayMonths),
@@ -650,6 +659,8 @@ export const useBusinessRules = () => {
 
         // Loan Early Closure protection
         RULE_EARLY_CLOSURE_REQUIRE_TYPE_CONFIRM: currentData.earlyClosureProtection.requireTypeConfirm,
+        RULE_EARLY_CLOSURE_AUTO_PASS: currentData.earlyClosureProtection.autoPass,
+        RULE_LOAN_CLOSURE_GRACE_ENABLED: currentData.earlyClosureProtection.graceEnabled,
 
         // Loan Slot delay months
         RULE_LOAN_SLOT1_DELAY_MONTHS: currentData.loanSlotDelay.slot1DelayMonths,

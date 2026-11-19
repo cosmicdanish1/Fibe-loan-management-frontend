@@ -38,6 +38,7 @@ export const API_ROUTES = {
         lookup: () => '/members/lookup',
         balance: (memberNo: string) => `/members/balance/${memberNo}`,
         details: (memberNo: string) => `/members/details/${memberNo}`,
+        completeDetail: (memberNo: string) => `/members/complete-detail/${memberNo}`,
         statistics: () => '/members/statistics',
     },
 

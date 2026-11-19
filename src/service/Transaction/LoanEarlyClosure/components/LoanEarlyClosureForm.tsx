@@ -41,7 +41,7 @@ const loadView = (): ClosureView => {
 const LoanEarlyClosureForm: React.FC<Props> = ({
     form, activeLoans, quote, quoteLoading, loading, message, closed, requireTypeConfirm,
     updateForm, handleMemberLookup, handleLoanSelect, recalculate, toggleApplyRdShare, toggleAdjustPayrollLag, recordPayrollLagRefund,
-    applySuggestedAdjustment, handleExecuteClosure, handleReset,
+    applySuggestedAdjustment, handleExecuteClosure, handleReset, holdInfo, toggleNextMonth,
 }) => {
   const { t } = useTranslation();
     const [showConfirm, setShowConfirm] = useState(false);
@@ -296,8 +296,13 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                         {closed ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <CheckCircle2 size={44} style={{ color: 'var(--aw-success)' }} />
-                                <strong className="aw-strong">{t('Loan Closed')}</strong>
+                                <strong className="aw-strong">{holdInfo ? t('Sent to Past Transaction') : t('Loan Closed')}</strong>
                                 <span className="aw-meta" style={{ maxWidth: 340 }}>{message?.text}</span>
+                                {holdInfo && holdInfo.nextMonth && (
+                                    <span className="aw-meta" style={{ maxWidth: 340 }}>
+                                        {t('It stays there until the next EMI is received, then it is passed (automatically if the setting is on, otherwise you are notified).')}
+                                    </span>
+                                )}
                             </div>
                         ) : quoteLoading ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
@@ -769,6 +774,27 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     </section>
                                 )}
 
+                                {/* ES-556: for a member who pays the EMI regularly (no NR). The employee decides from the payment pattern. */}
+                                {!closed && !selectedLoanIsClosed && (
+                                    <div className="aw-panel">
+                                        <div className="aw-stack" style={{ gap: 8 }}>
+                                            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+                                                <input type="checkbox" checked={form.nextMonth} onChange={e => toggleNextMonth(e.target.checked)}
+                                                    style={{ width: 20, height: 20, marginTop: 2, accentColor: 'var(--aw-accent)' }} />
+                                                <span>
+                                                    <span className="aw-strong" style={{ display: 'block' }}>{t("Close on next month's outstanding")}</span>
+                                                    <span className="aw-meta">{t("For a member who pays the EMI regularly and has no NR: this month's EMI is cut next month, so it is treated as already received. Interest is calculated on next month's outstanding principal. The closure waits in Past Transaction until that EMI arrives.")}</span>
+                                                </span>
+                                            </label>
+                                            {form.nextMonth && quote.nextMonthInfo && (
+                                                <span className="aw-meta aw-fade-in">
+                                                    {t('EMI principal treated as received: ₹{{1}}. Outstanding used: ₹{{2}}. No penalty is added.', { 1: fmt(quote.nextMonthInfo.principal), 2: fmt(quote.outstandingPrincipal) })}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* What the member pays and the one action, always in view at the bottom of the quote. */}
                                 {!closed && !selectedLoanIsClosed && (
                                     <div className="lec-actionbar">
@@ -782,7 +808,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                             </span>
                                         </div>
                                         <button type="button" onClick={() => setShowConfirm(true)} disabled={loading} className="aw-btn aw-btn-danger">
-                                            {loading ? t('Closing…') : t('Close Loan')}
+                                            {loading ? t('Sending…') : (form.nextMonth ? t('Hold in Past Transaction') : t('Send to Past Transaction'))}
                                         </button>
                                     </div>
                                 )}
@@ -829,8 +855,13 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                 compact
             >
                 <div className="aw-stack">
-                    <p className="aw-meta" style={{ lineHeight: 1.6 }}>{t('{{1}}{{2}} — including ones not yet due — and reduces its balance to zero. This cannot be undone from this screen. Confirm ₹{{3}} {{4}} {{5}}.', { 1: t('This settles every remaining installment on loan #'), 2: form.selectedLoanCase, 3: quote ? fmt(quote.payableByMember) : '—', 4: t('has actually been collected from the member before proceeding'), 5: quote?.rdShareAdjustment && quote.rdShareAdjustment.appliedFromRdShare > 0 &&
-                            ' ' + t('(₹{{1}} will also be applied from their RD/Share Value)', { 1: fmt(quote.rdShareAdjustment.appliedFromRdShare) }) })}</p>
+                    <p className="aw-meta" style={{ lineHeight: 1.6 }}>
+                        {form.nextMonth
+                            ? t("This raises the early-closure voucher for loan #{{1}} in Past Transaction, calculated on next month's outstanding. Nothing is posted until the awaited EMI is received and the voucher is passed. The amount is fixed now: ₹{{2}}.", { 1: form.selectedLoanCase, 2: quote ? fmt(quote.finalClosureAmount) : '—' })
+                            : t('This raises the early-closure voucher for loan #{{1}} in Past Transaction. Nothing is posted until the voucher is passed there. Closure amount: ₹{{2}}.', { 1: form.selectedLoanCase, 2: quote ? fmt(quote.finalClosureAmount) : '—' })}
+                        {quote?.rdShareAdjustment && quote.rdShareAdjustment.appliedFromRdShare > 0 &&
+                            ' ' + t('(₹{{1}} will also be applied from their RD/Share Value)', { 1: fmt(quote.rdShareAdjustment.appliedFromRdShare) })}
+                    </p>
                     {requireTypeConfirm && (
                         <div>
                             <label className="aw-label" htmlFor="lec-typed">

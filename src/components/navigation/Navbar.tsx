@@ -261,6 +261,7 @@ const navConfig: NavItem[] = [
       { title: tLabel('Society Calculator'), action: 'SOCIETY_CALCULATOR' },
       { title: tLabel('Find'), action: 'FIND' },
       { title: tLabel('Member Balance'), action: 'MEMBER_BALANCE' },
+      { title: tLabel('Member Complete Detail'), action: 'MEMBER_COMPLETE_DETAIL' },
       { title: tLabel('EMI Chart'), action: 'EMI_CHART' },
       { title: tLabel('Database BackUp'), action: 'DATABASE_BACKUP' },
       { title: tLabel('Update Saving Intt.'), action: 'UPDATE_SAVING_INTT' },

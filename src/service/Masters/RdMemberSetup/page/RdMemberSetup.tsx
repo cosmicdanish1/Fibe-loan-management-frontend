@@ -83,7 +83,7 @@ const RdMemberSetup: React.FC = () => {
                                             />
                                         </div>
                                         <p className="aw-meta" style={{ marginTop: 6 }}>
-                                            {t("Takes effect immediately (mid-year changes are allowed) — this financial year's earlier months keep whatever amount was in effect at the time.")}
+                                            {t("Mid-year changes are allowed. Each month uses the amount that was in effect on its due date, so a change saved after this month's due date starts with the next month.")}
                                         </p>
                                     </div>
 

@@ -145,6 +145,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'SOCIETY_CALCULATOR': { route: '/utility/society-calculator', electronMethod: 'openNewWindow' },
   'FIND': { route: '/utility/find', electronMethod: 'openNewWindow' },
   'MEMBER_BALANCE': { route: '/utility/member-balance', electronMethod: 'openNewWindow' },
+  'MEMBER_COMPLETE_DETAIL': { route: '/utility/member-complete-detail', electronMethod: 'openNewWindow' },
   'EMI_CHART': { route: '/utility/emi-chart', electronMethod: 'openNewWindow' },
   'DATABASE_BACKUP': { route: '/utility/database-backup', electronMethod: 'openNewWindow' },
   'UPDATE_SAVING_INTT': { route: '/utility/update-saving-interest', electronMethod: 'openNewWindow' },

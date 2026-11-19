@@ -162,6 +162,7 @@ export const ROUTES = {
     SOCIETY_CALCULATOR: '/utility/society-calculator',
     FIND: '/utility/find',
     MEMBER_BALANCE: '/utility/member-balance',
+    MEMBER_COMPLETE_DETAIL: '/utility/member-complete-detail',
     MEMBER_BALANCE_LOOKUP: '/common/member-lookup',
     EMI_CHART: '/utility/emi-chart',
     DATABASE_BACKUP: '/utility/database-backup',

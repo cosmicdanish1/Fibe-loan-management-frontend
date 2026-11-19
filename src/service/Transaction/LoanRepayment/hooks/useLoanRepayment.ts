@@ -77,6 +77,8 @@ export const useLoanRepayment = () => {
     const [historyLoading, setHistoryLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [flagNotice, setFlagNotice] = useState<string | null>(null);
+    // ES-551: shown when this payment brought in more than was due
+    const [excessNotice, setExcessNotice] = useState<string | null>(null);
 
     // Request-sequence guards: only the latest lookup of each kind may write state
     const loansSeq = useRef(0);
@@ -217,10 +219,22 @@ export const useLoanRepayment = () => {
             setMessage({ type: 'success', text: data.message });
             const flag = data.flag ?? data.data?.flag;
             setFlagNotice(flag?.message ?? null);
+            const ex = data.excess ?? data.data?.excess;
+            let excessText: string | null = null;
+            if (ex && Number(ex.excessAmount) > 0) {
+                const inr = (v: number) => `₹${Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+                const inst: number[] = Array.isArray(ex.installments) ? ex.installments : [];
+                excessText =
+                    `${inr(ex.excessAmount)} came in above what was due. ${inr(ex.appliedAmount)} was applied toward future installment${inst.length === 1 ? '' : 's'}${inst.length ? ` (#${inst.join(', #')})` : ''}.`
+                    + (Number(ex.unappliedAmount) > 0.01 ? ` ${inr(ex.unappliedAmount)} was more than the loan needed and was NOT applied.` : '');
+            }
+            setExcessNotice(null);
             // Refresh loans, due status and history after successful repayment
             await fetchMemberLoans(form.mbno);
             await fetchRepaymentHistory(form.mbno);
             await fetchDueStatus(form.selectedLoanCase);
+            // set last: the refresh above clears the other notices
+            setExcessNotice(excessText);
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
         } finally {
@@ -239,6 +253,7 @@ export const useLoanRepayment = () => {
         setRepaymentHistory([]);
         setMessage(null);
         setFlagNotice(null);
+        setExcessNotice(null);
     };
 
     return {
@@ -251,6 +266,7 @@ export const useLoanRepayment = () => {
         historyLoading,
         message,
         flagNotice,
+        excessNotice,
         updateForm,
         handleMemberLookup,
         handleLoanSelect,

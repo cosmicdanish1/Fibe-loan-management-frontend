@@ -16,6 +16,25 @@ import { showDialog4 as showDialog, notifyError } from '@/utils/dialog';
 
 type TabType = 'loanParameters' | 'generalSettings' | 'fundManagement' | 'rdSystem';
 
+/**
+ * Drop-in replacement for <NumInput>. Keeps the raw text while the
+ * user types so clearing the field (Backspace) does not snap back to "0".
+ * The parent still receives the normal change event and commits its number.
+ */
+const NumInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ value, onChange, onBlur, ...rest }) => {
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft !== null && (parseFloat(draft) || 0) === (Number(value) || 0) ? draft : value;
+  return (
+    <input
+      {...rest}
+      type="number"
+      value={shown}
+      onChange={e => { setDraft(e.target.value); onChange?.(e); }}
+      onBlur={e => { setDraft(null); onBlur?.(e); }}
+    />
+  );
+};
+
 const closeWindow = () => {
   const api = (window as any).electronAPI;
   if (api?.ipcRenderer?.send) api.ipcRenderer.send('window-close');
@@ -331,46 +350,46 @@ const ModifyBusinessRules: React.FC = () => {
       <div className="aw-two">
         <Field label={t('Max.Amount')} unused={unusedFields.maxAmount}>
           <IconInput icon={<IndianRupee size={13} />}>
-            <input type="number" step="0.01" value={data.maxAmount} onChange={e => updateLoanType(loanType, 'maxAmount', num(e.target.value))} className="aw-input" />
+            <NumInput step="0.01" value={data.maxAmount} onChange={e => updateLoanType(loanType, 'maxAmount', num(e.target.value))} className="aw-input" />
           </IconInput>
         </Field>
         <Field label={t('Rate (%)')} unused={unusedFields.rate}>
           <IconInput icon={<Percent size={13} />}>
-            <input type="number" step="0.01" value={data.rate} onChange={e => updateLoanType(loanType, 'rate', num(e.target.value))} className="aw-input" />
+            <NumInput step="0.01" value={data.rate} onChange={e => updateLoanType(loanType, 'rate', num(e.target.value))} className="aw-input" />
           </IconInput>
         </Field>
         <Field label={t('No.Of Install')} unused={unusedFields.installments}>
-          <input type="number" value={data.numberOfInstallments} onChange={e => updateLoanType(loanType, 'numberOfInstallments', int(e.target.value))} className="aw-input" />
+          <NumInput value={data.numberOfInstallments} onChange={e => updateLoanType(loanType, 'numberOfInstallments', int(e.target.value))} className="aw-input" />
         </Field>
         <Field label={t('No. Of Gr')} unused={unusedFields.guarantors}>
           <IconInput icon={<Users size={13} />}>
-            <input type="number" value={data.numberOfGuarantors} onChange={e => updateLoanType(loanType, 'numberOfGuarantors', int(e.target.value))} className="aw-input" />
+            <NumInput value={data.numberOfGuarantors} onChange={e => updateLoanType(loanType, 'numberOfGuarantors', int(e.target.value))} className="aw-input" />
           </IconInput>
         </Field>
         {data.penalRate !== undefined && (
           <Field label={t('Penal Rate (% p.a.)')} title={t('Annual rate for the monthly late penalty (Tier 2) on this loan type only.')}>
             <IconInput icon={<Percent size={13} />}>
-              <input type="number" step="0.01" value={data.penalRate} onChange={e => updateLoanType(loanType, 'penalRate', num(e.target.value))} className="aw-input" />
+              <NumInput step="0.01" value={data.penalRate} onChange={e => updateLoanType(loanType, 'penalRate', num(e.target.value))} className="aw-input" />
             </IconInput>
           </Field>
         )}
         {data.graceDays !== undefined && (
           <Field label={t('Grace Ends (Day of Month)')} title={t("Grace runs from the 1st through this day of an installment's own due month — not a day-count from its due date.")}>
             <IconInput icon={<Clock size={13} />}>
-              <input type="number" min={0} max={31} step="1" value={data.graceDays} onChange={e => updateLoanType(loanType, 'graceDays', parseInt(e.target.value, 10) || 0)} className="aw-input" />
+              <NumInput min={0} max={31} step="1" value={data.graceDays} onChange={e => updateLoanType(loanType, 'graceDays', parseInt(e.target.value, 10) || 0)} className="aw-input" />
             </IconInput>
           </Field>
         )}
         {data.sameMonthPenalPercent !== undefined && (
           <Field label={t('Same-Month Late Fee (%)')} title={t('Flat fee charged once grace expires but still within the same due month: (this % × unpaid principal) ÷ the divisor beside it.')}>
             <IconInput icon={<Percent size={13} />}>
-              <input type="number" min={0} step="0.01" value={data.sameMonthPenalPercent} onChange={e => updateLoanType(loanType, 'sameMonthPenalPercent', num(e.target.value))} className="aw-input" />
+              <NumInput min={0} step="0.01" value={data.sameMonthPenalPercent} onChange={e => updateLoanType(loanType, 'sameMonthPenalPercent', num(e.target.value))} className="aw-input" />
             </IconInput>
           </Field>
         )}
         {data.sameMonthPenalDivisor !== undefined && (
           <Field label={t('Same-Month Fee Divisor')} title={t('Divisor in the same-month late fee formula: (percentage × unpaid principal) ÷ this number.')}>
-            <input type="number" min={1} step="0.01" value={data.sameMonthPenalDivisor} onChange={e => updateLoanType(loanType, 'sameMonthPenalDivisor', num(e.target.value))} className="aw-input" />
+            <NumInput min={1} step="0.01" value={data.sameMonthPenalDivisor} onChange={e => updateLoanType(loanType, 'sameMonthPenalDivisor', num(e.target.value))} className="aw-input" />
           </Field>
         )}
       </div>
@@ -457,7 +476,7 @@ const ModifyBusinessRules: React.FC = () => {
                       { label: t('Basic Pay'), field: 'basicPay', step: '0.01', unused: NOT_USED },
                     ].map(f => (
                       <Field key={f.field} label={f.label} unused={f.unused}>
-                        <input type="number" step={f.step}
+                        <NumInput step={f.step}
                           value={(businessRules.loanAgainstDeposits as any)[f.field]}
                           onChange={e => setBusinessRules(prev => ({
                             ...prev,
@@ -478,13 +497,13 @@ const ModifyBusinessRules: React.FC = () => {
                 <div className="aw-stack">
                   <div style={gridAuto(170)}>
                     <Field label={t('Max. Regular Loan Limit')}>
-                      <input type="number" step="1" value={elig.maxLimit} onChange={e => updateEligibility({ maxLimit: num(e.target.value) })} className="aw-input" />
+                      <NumInput step="1" value={elig.maxLimit} onChange={e => updateEligibility({ maxLimit: num(e.target.value) })} className="aw-input" />
                     </Field>
                     <Field label={t('RD Req. (%)')}>
-                      <input type="number" step="0.01" value={elig.rdPercent} onChange={e => updateEligibility({ rdPercent: num(e.target.value) })} className="aw-input" />
+                      <NumInput step="0.01" value={elig.rdPercent} onChange={e => updateEligibility({ rdPercent: num(e.target.value) })} className="aw-input" />
                     </Field>
                     <Field label={t('Share Req. (%)')}>
-                      <input type="number" step="0.01" value={elig.sharePercent} onChange={e => updateEligibility({ sharePercent: num(e.target.value) })} className="aw-input" />
+                      <NumInput step="0.01" value={elig.sharePercent} onChange={e => updateEligibility({ sharePercent: num(e.target.value) })} className="aw-input" />
                     </Field>
                     <Field label={t('Shortfall Handling')}>
                       <Select
@@ -531,7 +550,7 @@ const ModifyBusinessRules: React.FC = () => {
               <Section icon={<Calculator size={14} />} title={t('Others & Penal Sector')}>
                 <div style={gridAuto(170)}>
                   <Field label={t('Min. Membership (Months)')} unused={NOT_USED}>
-                    <input type="number" value={businessRules.others.minMembership} onChange={e => updateOthers('minMembership', int(e.target.value))} className="aw-input" />
+                    <NumInput value={businessRules.others.minMembership} onChange={e => updateOthers('minMembership', int(e.target.value))} className="aw-input" />
                   </Field>
                   {/* Min./Max. CD Amt removed — dead legacy fields, never enforced by
                       any real validation. The real, enforced minimum is the RD System
@@ -542,7 +561,7 @@ const ModifyBusinessRules: React.FC = () => {
                     { label: t('Security Dep'), field: 'securityDep' },
                   ].map(item => (
                     <Field key={item.field} label={item.label} unused={NOT_USED}>
-                      <input type="number" step="0.01" value={(businessRules.others as any)[item.field]} onChange={e => updateOthers(item.field, num(e.target.value))} className="aw-input" />
+                      <NumInput step="0.01" value={(businessRules.others as any)[item.field]} onChange={e => updateOthers(item.field, num(e.target.value))} className="aw-input" />
                     </Field>
                   ))}
                 </div>
@@ -601,7 +620,7 @@ const ModifyBusinessRules: React.FC = () => {
                       { label: t('Average Interest Calculation Slot'), field: 'averageInterestCalculationSlot', type: 'int', unused: NOT_USED },
                     ].map(f => (
                       <Field key={f.field} label={f.label} unused={f.unused}>
-                        <input type="number" step={f.type === 'float' ? '0.01' : '1'}
+                        <NumInput step={f.type === 'float' ? '0.01' : '1'}
                           value={(gs as any)[f.field]}
                           onChange={e => updateGeneralSetting(f.field as keyof GeneralSettings, f.type === 'float' ? num(e.target.value) : int(e.target.value))}
                           className="aw-input" />
@@ -648,6 +667,22 @@ const ModifyBusinessRules: React.FC = () => {
                     earlyClosureProtection: { ...prev.earlyClosureProtection, requireTypeConfirm: val },
                   }))}
                 />
+                <ToggleRow
+                  label={t('Pass a held early closure automatically when its awaited EMI is received (off = notify only)')}
+                  checked={businessRules.earlyClosureProtection.autoPass}
+                  onChange={val => setBusinessRules(prev => ({
+                    ...prev,
+                    earlyClosureProtection: { ...prev.earlyClosureProtection, autoPass: val },
+                  }))}
+                />
+                <ToggleRow
+                  label={t("Apply the grace period in a loan closure (off = this month's EMI is always settled in the closure, with no penalty)")}
+                  checked={businessRules.earlyClosureProtection.graceEnabled}
+                  onChange={val => setBusinessRules(prev => ({
+                    ...prev,
+                    earlyClosureProtection: { ...prev.earlyClosureProtection, graceEnabled: val },
+                  }))}
+                />
               </Section>
 
               {/* Loan re-agreement (restructure) guard-rails. The member already holds the loan and the
@@ -657,22 +692,22 @@ const ModifyBusinessRules: React.FC = () => {
                   <p className="aw-meta">{t('Optional guard-rails for restructuring an active loan. 0 means no limit. The hard checks (loan active, no other open operation, valid term and rate) always apply.')}</p>
                   <div className="aw-two">
                     <Field label={t('Minimum installments paid before the first re-agreement')}>
-                      <input type="number" min={0} step="1" value={ra.minInstallmentsPaid} onChange={e => updateReagreement({ minInstallmentsPaid: int(e.target.value) })} className="aw-input" />
+                      <NumInput min={0} step="1" value={ra.minInstallmentsPaid} onChange={e => updateReagreement({ minInstallmentsPaid: int(e.target.value) })} className="aw-input" />
                     </Field>
                     <Field label={t('Minimum outstanding principal (₹)')}>
-                      <input type="number" min={0} step="1" value={ra.minOutstanding} onChange={e => updateReagreement({ minOutstanding: num(e.target.value) })} className="aw-input" />
+                      <NumInput min={0} step="1" value={ra.minOutstanding} onChange={e => updateReagreement({ minOutstanding: num(e.target.value) })} className="aw-input" />
                     </Field>
                     <Field label={t('Maximum tenure (months)')}>
-                      <input type="number" min={0} step="1" value={ra.maxTenure} onChange={e => updateReagreement({ maxTenure: int(e.target.value) })} className="aw-input" />
+                      <NumInput min={0} step="1" value={ra.maxTenure} onChange={e => updateReagreement({ maxTenure: int(e.target.value) })} className="aw-input" />
                     </Field>
                     <Field label={t('Maximum re-agreements per loan')}>
-                      <input type="number" min={0} step="1" value={ra.maxPerLoan} onChange={e => updateReagreement({ maxPerLoan: int(e.target.value) })} className="aw-input" />
+                      <NumInput min={0} step="1" value={ra.maxPerLoan} onChange={e => updateReagreement({ maxPerLoan: int(e.target.value) })} className="aw-input" />
                     </Field>
                     <Field label={t('Minimum rate (% p.a.)')}>
-                      <input type="number" min={0} step="0.01" value={ra.minRate} onChange={e => updateReagreement({ minRate: num(e.target.value) })} className="aw-input" />
+                      <NumInput min={0} step="0.01" value={ra.minRate} onChange={e => updateReagreement({ minRate: num(e.target.value) })} className="aw-input" />
                     </Field>
                     <Field label={t('Maximum rate (% p.a.)')}>
-                      <input type="number" min={0} step="0.01" value={ra.maxRate} onChange={e => updateReagreement({ maxRate: num(e.target.value) })} className="aw-input" />
+                      <NumInput min={0} step="0.01" value={ra.maxRate} onChange={e => updateReagreement({ maxRate: num(e.target.value) })} className="aw-input" />
                     </Field>
                   </div>
                   <ToggleRow label={t('Allow the new rate to be higher than the current rate')} checked={ra.allowRateIncrease} onChange={v => updateReagreement({ allowRateIncrease: v })} />
@@ -687,11 +722,11 @@ const ModifyBusinessRules: React.FC = () => {
                 <div className="aw-stack">
                   <div className="aw-two">
                     <Field label={t('Slot 1 Window — From Day')}>
-                      <input type="number" min={1} max={31} step="1" value={slot.slot1StartDay}
+                      <NumInput min={1} max={31} step="1" value={slot.slot1StartDay}
                         onChange={e => updateSlot({ slot1StartDay: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) })} className="aw-input" />
                     </Field>
                     <Field label={t('Slot 1 Window — To Day')}>
-                      <input type="number" min={1} max={31} step="1" value={slot.slot1EndDay}
+                      <NumInput min={1} max={31} step="1" value={slot.slot1EndDay}
                         onChange={e => updateSlot({ slot1EndDay: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) })} className="aw-input" />
                     </Field>
                   </div>
@@ -702,10 +737,10 @@ const ModifyBusinessRules: React.FC = () => {
                   </div>
                   <div className="aw-two">
                     <Field label={t('Slot 1 (day {{1}}) Delay', { 1: slotLabels.slot1 })}>
-                      <input type="number" min={0} step="1" value={slot.slot1DelayMonths} onChange={e => updateSlot({ slot1DelayMonths: int(e.target.value) })} className="aw-input" />
+                      <NumInput min={0} step="1" value={slot.slot1DelayMonths} onChange={e => updateSlot({ slot1DelayMonths: int(e.target.value) })} className="aw-input" />
                     </Field>
                     <Field label={t('Slot 2 (day {{1}}) Delay', { 1: slotLabels.slot2 })}>
-                      <input type="number" min={0} step="1" value={slot.slot2DelayMonths} onChange={e => updateSlot({ slot2DelayMonths: int(e.target.value) })} className="aw-input" />
+                      <NumInput min={0} step="1" value={slot.slot2DelayMonths} onChange={e => updateSlot({ slot2DelayMonths: int(e.target.value) })} className="aw-input" />
                     </Field>
                     {/* Governs both the EMI's constant monthly interest at disbursement
                         (frozen into instal_amt) and every early-closure line item.
@@ -727,7 +762,7 @@ const ModifyBusinessRules: React.FC = () => {
                         A payment / demand-file amount this close to the old EMI (but not equal) is
                         flagged "check this". Equal amounts are always matched within Rs 1. */}
                     <Field label={t('Old EMI Check Range (₹)')} hint={t('Flag amounts within this of the old EMI after a consolidation')}>
-                      <input type="number" min={0} step="1" value={businessRules.oldEmiFlag.tolerance}
+                      <NumInput min={0} step="1" value={businessRules.oldEmiFlag.tolerance}
                         onChange={e => setBusinessRules(prev => ({ ...prev, oldEmiFlag: { tolerance: Math.max(0, Number(e.target.value) || 0) } }))}
                         className="aw-input" />
                     </Field>
@@ -744,17 +779,17 @@ const ModifyBusinessRules: React.FC = () => {
                 <div style={gridAuto(240)}>
                   <Field label={t('Annual Fund Interest Rate (%)')} hint={t('Applied on opening balance annually')}>
                     <IconInput icon={<Percent size={13} />}>
-                      <input type="number" step="0.01" value={businessRules.fundManagement.fundInterestRate} onChange={e => updateFundManagement('fundInterestRate', num(e.target.value))} placeholder="0.00" className="aw-input" />
+                      <NumInput step="0.01" value={businessRules.fundManagement.fundInterestRate} onChange={e => updateFundManagement('fundInterestRate', num(e.target.value))} placeholder="0.00" className="aw-input" />
                     </IconInput>
                   </Field>
                   <Field label={t('Dividend Payout (%)')} hint={t('Percentage of share capital')}>
                     <IconInput icon={<TrendingUp size={13} />}>
-                      <input type="number" step="0.01" min={0} max={100} value={businessRules.fundManagement.dividendPercent} onChange={e => updateFundManagement('dividendPercent', num(e.target.value))} placeholder="0.00" className="aw-input" />
+                      <NumInput step="0.01" min={0} max={100} value={businessRules.fundManagement.dividendPercent} onChange={e => updateFundManagement('dividendPercent', num(e.target.value))} placeholder="0.00" className="aw-input" />
                     </IconInput>
                   </Field>
                   <Field label={t('Group Insurance Deduction (₹)')} hint={t('Fixed yearly deduction amount')}>
                     <IconInput icon={<ShieldCheck size={13} />}>
-                      <input type="number" value={businessRules.fundManagement.groupInsuranceAmount} onChange={e => updateFundManagement('groupInsuranceAmount', num(e.target.value))} placeholder="0" className="aw-input" />
+                      <NumInput value={businessRules.fundManagement.groupInsuranceAmount} onChange={e => updateFundManagement('groupInsuranceAmount', num(e.target.value))} placeholder="0" className="aw-input" />
                     </IconInput>
                   </Field>
                 </div>
@@ -774,7 +809,7 @@ const ModifyBusinessRules: React.FC = () => {
                         {t('Active')}
                       </label>
                       <IconInput icon={<Percent size={13} />}>
-                        <input type="number" step="0.01" min={0} max={100} value={businessRules.fundManagement[valueKey]} disabled={!businessRules.fundManagement[activeKey]}
+                        <NumInput step="0.01" min={0} max={100} value={businessRules.fundManagement[valueKey]} disabled={!businessRules.fundManagement[activeKey]}
                           onChange={e => updateFundManagement(valueKey, num(e.target.value))} placeholder="0.00" className="aw-input" aria-label={t(label)} />
                       </IconInput>
                     </Field>
@@ -810,11 +845,11 @@ const ModifyBusinessRules: React.FC = () => {
                           <tr key={idx}>
                             <td className="is-muted is-center">{idx + 1}</td>
                             <td className="has-input">
-                              <input type="number" aria-label={t('Slab {{1}} monthly contribution', { 1: idx + 1 })} value={row.monthlyContribution}
+                              <NumInput aria-label={t('Slab {{1}} monthly contribution', { 1: idx + 1 })} value={row.monthlyContribution}
                                 onChange={e => handleChartChange(idx, 'monthlyContribution', num(e.target.value))} placeholder="0" className="aw-input" />
                             </td>
                             <td className="has-input">
-                              <input type="number" step="0.01" aria-label={t('Slab {{1}} yearly interest', { 1: idx + 1 })} value={row.yearlyInterest}
+                              <NumInput step="0.01" aria-label={t('Slab {{1}} yearly interest', { 1: idx + 1 })} value={row.yearlyInterest}
                                 onChange={e => handleChartChange(idx, 'yearlyInterest', num(e.target.value))} placeholder="0.00" className="aw-input" />
                             </td>
                             <td className="is-center">
@@ -839,17 +874,17 @@ const ModifyBusinessRules: React.FC = () => {
                 <div style={gridAuto(240)}>
                   <Field label={t('Minimum Monthly RD Amount (₹)')} hint={t('Floor a member may select for their monthly RD contribution')}>
                     <IconInput icon={<IndianRupee size={13} />}>
-                      <input type="number" step="1" value={businessRules.rdSystem.minMonthlyAmount} onChange={e => updateRdSystem('minMonthlyAmount', num(e.target.value))} className="aw-input" />
+                      <NumInput step="1" value={businessRules.rdSystem.minMonthlyAmount} onChange={e => updateRdSystem('minMonthlyAmount', num(e.target.value))} className="aw-input" />
                     </IconInput>
                   </Field>
                   <Field label={t('Opening-Balance Interest Rate (%)')} hint={t('Annual rate on the opening balance timeline — frozen per financial year at closing')}>
                     <IconInput icon={<Percent size={13} />}>
-                      <input type="number" step="0.01" value={businessRules.rdSystem.openingBalanceRate} onChange={e => updateRdSystem('openingBalanceRate', num(e.target.value))} className="aw-input" />
+                      <NumInput step="0.01" value={businessRules.rdSystem.openingBalanceRate} onChange={e => updateRdSystem('openingBalanceRate', num(e.target.value))} className="aw-input" />
                     </IconInput>
                   </Field>
                   <Field label={t('Min. Balance After Withdrawal (₹)')} hint={t('A withdrawal must never take the balance below this')}>
                     <IconInput icon={<IndianRupee size={13} />}>
-                      <input type="number" step="1" value={businessRules.rdSystem.minBalanceAfterWithdrawal} onChange={e => updateRdSystem('minBalanceAfterWithdrawal', num(e.target.value))} className="aw-input" />
+                      <NumInput step="1" value={businessRules.rdSystem.minBalanceAfterWithdrawal} onChange={e => updateRdSystem('minBalanceAfterWithdrawal', num(e.target.value))} className="aw-input" />
                     </IconInput>
                   </Field>
                 </div>
@@ -867,7 +902,7 @@ const ModifyBusinessRules: React.FC = () => {
                       { label: t('Max. Arrears Clearance (Months)'), field: 'maxArrearsClearanceMonths' as const },
                     ]).map(item => (
                       <Field key={item.field} label={item.label}>
-                        <input type="number" step="1" value={businessRules.rdSystem[item.field]} onChange={e => updateRdSystem(item.field, parseInt(e.target.value, 10) || 0)} className="aw-input" />
+                        <NumInput step="1" value={businessRules.rdSystem[item.field]} onChange={e => updateRdSystem(item.field, parseInt(e.target.value, 10) || 0)} className="aw-input" />
                       </Field>
                     ))}
                   </div>
