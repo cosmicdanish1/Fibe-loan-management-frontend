@@ -12,7 +12,7 @@ const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
 const DividendCalculation: React.FC = () => {
   const { t } = useTranslation();
     const {
-        yearcode, setYearcode, dividendRate, setDividendRate, rateRules,
+        yearcode, setYearcode, years, dividendRate, setDividendRate, rateRules,
         preview, loading, committing, commitResult, error,
         loadPreview, commit,
         snapMonth, setSnapMonth, snapYear, setSnapYear, snapshotting, snapshotMessage, captureSnapshot,
@@ -21,6 +21,7 @@ const DividendCalculation: React.FC = () => {
 
     const totalDividend = preview ? preview.members.reduce((sum, m) => sum + m.dividendAmount, 0) : 0;
     const incompleteCount = preview ? preview.members.filter((m) => m.monthsFound < m.monthsExpected).length : 0;
+    const fyLabel = preview?.calculationLabel ?? (preview ? `${preview.calculationYear}-${String((preview.calculationYear + 1) % 100).padStart(2, '0')}` : '');
 
     return (
         <div className="app-window">
@@ -28,7 +29,7 @@ const DividendCalculation: React.FC = () => {
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Dividend Calculation')}</h1>
-                    <p className="aw-desc">{t('Total Product × Approved Rate ÷ 1200 — writes dividend_master only, never touches Share Value')}</p>
+                    <p className="aw-desc">{t("Works out each member's dividend for a financial year from the monthly share balances. It only records the dividend; it does not pay it or change anyone's Share Value.")}</p>
                 </div>
                 <div className="aw-actions">
                     <button type="button" onClick={() => loadPreview()} disabled={loading} className="aw-btn aw-btn-secondary">
@@ -86,9 +87,17 @@ const DividendCalculation: React.FC = () => {
                             <h2 className="aw-card-title">{t('Calculation')}</h2>
                         </div>
                         <div className="aw-inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12 }}>
-                            <div style={{ width: 140 }}>
-                                <label className="aw-label" htmlFor="dc-yearcode">{t('Year Code')}</label>
-                                <input id="dc-yearcode" type="number" value={yearcode} onChange={(e) => setYearcode(Number(e.target.value))} className="aw-input" />
+                            <div style={{ width: 180 }}>
+                                <label className="aw-label" htmlFor="dc-yearcode">{t('Financial Year')}</label>
+                                <Select
+                                    id="dc-yearcode"
+                                    className="aw-select"
+                                    popupClassName="aw-select-popup"
+                                    value={years.some((y) => y.yearcode === yearcode) ? yearcode : undefined}
+                                    placeholder={t('Choose a financial year')}
+                                    onChange={(v) => setYearcode(Number(v))}
+                                    options={years.map((y) => ({ value: y.yearcode, label: y.label }))}
+                                />
                             </div>
                             <div style={{ width: 160 }}>
                                 <label className="aw-label" htmlFor="dc-rate">{t('Dividend Rate (%)')}</label>
@@ -113,7 +122,7 @@ const DividendCalculation: React.FC = () => {
                     {commitResult && (
                         <div className="aw-alert aw-alert-success aw-fade-in" style={{ marginBottom: 0 }} role="status">
                             <CheckCircle2 size={15} />
-                            <span>{t('Committed dividend calculation for FY')} {commitResult.calculationYear} — {commitResult.membersCommitted} {t("member(s). Not yet credited to Share Value (that happens at the following year's close).")}</span>
+                            <span>{t('Committed dividend calculation for FY')} {commitResult.calculationLabel ?? commitResult.calculationYear} — {commitResult.membersCommitted} {t("member(s). Not yet credited to Share Value or paid: credit it at the next financial year's close (Dividend Credit) or pay it in cash (Dividend Payment).")}</span>
                         </div>
                     )}
 
@@ -122,14 +131,14 @@ const DividendCalculation: React.FC = () => {
                         <section className="aw-card">
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <Calculator size={28} />
-                                <strong className="aw-strong">{t('Set a year code and rate, then click Preview.')}</strong>
+                                <strong className="aw-strong">{t('Choose a financial year and a rate, then click Preview.')}</strong>
                             </div>
                         </section>
                     ) : preview.members.length === 0 ? (
                         <section className="aw-card">
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <Camera size={28} />
-                                <strong className="aw-strong">{t('No Share Capital snapshots found for FY')} {preview.calculationYear}-{String(preview.calculationYear + 1).slice(2)}.</strong>
+                                <strong className="aw-strong">{t('No Share Capital snapshots found for FY')} {fyLabel}.</strong>
                                 <span className="aw-meta">{t('Capture at least one month above first.')}</span>
                             </div>
                         </section>
@@ -137,8 +146,8 @@ const DividendCalculation: React.FC = () => {
                         <>
                             <div className="aw-stats aw-stats-3 aw-fade-in">
                                 <div className="aw-stat aw-stat-left">
-                                    <div className="aw-stat-label">{t('Calculation Year')}</div>
-                                    <div className="aw-stat-value">{preview.calculationYear}</div>
+                                    <div className="aw-stat-label">{t('Financial Year')}</div>
+                                    <div className="aw-stat-value">{fyLabel}</div>
                                 </div>
                                 <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}>
                                     <div className="aw-stat-label">{t('Members')}</div>
@@ -196,7 +205,7 @@ const DividendCalculation: React.FC = () => {
 
             <div className="aw-footer">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <Calculator size={12} /> {t("Committing here only records the calculation — crediting it into member Share Value is a separate step (Dividend Credit), run at the following year's close.")}
+                    <Calculator size={12} /> {t("Committing only records the calculation. Crediting it to Share Value (Dividend Credit, at the next financial year's close) or paying it in cash (Dividend Payment) are separate steps.")}
                 </span>
             </div>
             <AwDialog
@@ -210,7 +219,7 @@ const DividendCalculation: React.FC = () => {
                 <div className="aw-stack">
                     <p className="aw-meta" style={{ lineHeight: 1.6 }}>
                         <AlertTriangle size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4, color: 'var(--aw-warning)' }} />
-                        {t('This records the dividend calculation for FY')} {preview?.calculationYear} at {preview?.dividendRatePercent}% - {preview?.members.length ?? 0} member(s), total ₹{fmt(totalDividend)} - into the dividend register. Please confirm the rate and year are correct.
+                        {t('This records the dividend calculation for FY')} {fyLabel} at {preview?.dividendRatePercent}% - {preview?.members.length ?? 0} member(s), total ₹{fmt(totalDividend)} - into the dividend register. Please confirm the rate and year are correct.
                     </p>
                     <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
                         <button type="button" onClick={() => setShowConfirm(false)} className="aw-btn aw-btn-secondary">{t('Cancel')}</button>

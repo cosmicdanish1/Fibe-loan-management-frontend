@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import apiService from '../../../../services/api';
 
 export interface DividendCreditPreviewRow {
@@ -11,7 +11,9 @@ export interface DividendCreditPreviewRow {
 
 export interface DividendCreditPreview {
     creditYearcode: number;
+    creditLabel?: string;
     previousCalculationYear: number | null;
+    previousCalculationLabel?: string | null;
     members: DividendCreditPreviewRow[];
 }
 
@@ -24,6 +26,7 @@ export interface DividendCreditResult {
 
 export const useDividendCredit = () => {
     const [yearcode, setYearcodeRaw] = useState<number>(1);
+    const [years, setYears] = useState<Array<{ yearcode: number; label: string; fyStart: string; fyEnd: string }>>([]);
     const [preview, setPreview] = useState<DividendCreditPreview | null>(null);
     const [loading, setLoading] = useState(false);
     const [crediting, setCrediting] = useState(false);
@@ -42,10 +45,23 @@ export const useDividendCredit = () => {
         setYearcodeRaw(v);
     }, []);
 
+    // Financial years by their 2026-27 label; start on the one that contains today (else the newest)
+    useEffect(() => {
+        let cancelled = false;
+        apiService.getDividendFinancialYears().then((res) => {
+            if (cancelled || !res.success || !Array.isArray(res.data) || res.data.length === 0) return;
+            setYears(res.data);
+            const today = new Date().toISOString().slice(0, 10);
+            const current = res.data.find((y) => y.fyStart <= today && today <= y.fyEnd) ?? res.data[0];
+            if (current) setYearcodeRaw(current.yearcode);
+        });
+        return () => { cancelled = true; };
+    }, []);
+
     const loadPreview = useCallback(async (clearCreditResult: boolean = true) => {
         if (!Number.isInteger(yearcode) || yearcode <= 0) {
             setPreview(null);
-            setError('Enter a valid closing year code.');
+            setError('Choose the financial year that is closing.');
             return;
         }
         const seq = ++previewSeq.current;
@@ -93,5 +109,5 @@ export const useDividendCredit = () => {
         }
     }, [yearcode, loadPreview, preview]);
 
-    return { yearcode, setYearcode, preview, loading, crediting, creditResult, error, loadPreview, commit };
+    return { yearcode, setYearcode, years, preview, loading, crediting, creditResult, error, loadPreview, commit };
 };

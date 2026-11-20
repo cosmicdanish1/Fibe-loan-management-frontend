@@ -32,6 +32,8 @@ interface DividendData {
   shareAmount: number;
   dividendAmount: number;
   dividendRate: number;
+  status?: string;
+  isEstimate?: boolean;
 }
 
 const DividendReport: React.FC = () => {
@@ -63,8 +65,24 @@ const DividendReport: React.FC = () => {
     return `${start}-${start + 1}`;
   }).reverse(), [currentYear]);
 
+  // The rate comes from Business Rules (Fixed rate, else the proposed Dividend Payout %), not a hard-coded 10 (ES-598)
+  const [rateFromRules, setRateFromRules] = useState<string>('');
   useEffect(() => {
-    fetchData(1);
+    let cancelled = false;
+    (async () => {
+      let rate = dividendRate;
+      try {
+        const res: any = await apiService.getDividendRateRules();
+        const r = res?.data;
+        if (!cancelled && res?.success && r) {
+          if (r.fixed?.active && Number(r.fixed.value) > 0) { rate = Number(r.fixed.value); setRateFromRules(`Fixed at ${rate}% in Business Rules`); }
+          else if (Number(r.payoutPercent) > 0) { rate = Number(r.payoutPercent); setRateFromRules(`Dividend Payout % in Business Rules`); }
+          if (rate !== dividendRate) setDividendRate(rate);
+        }
+      } catch { /* keep the default */ }
+      if (!cancelled) fetchData(1, undefined, rate);
+    })();
+    return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Wing / Office options come from the master lists (not from report rows), so
@@ -110,7 +128,7 @@ const DividendReport: React.FC = () => {
   }, [selectedWing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // validateMember is memoised once; read the latest fetchData (current wing/office/year/rate) through a ref.
-  const fetchDataRef = useRef<(page?: number, searchValue?: string) => Promise<void>>(async () => {});
+  const fetchDataRef = useRef<(page?: number, searchValue?: string, rateOverride?: number) => Promise<void>>(async () => {});
 
   const validateMember = useCallback(async (mbno: string) => {
     if (!mbno.trim()) { setSelectedMemberName(''); return; }
@@ -141,8 +159,9 @@ const DividendReport: React.FC = () => {
     fetchData(1, member.memberNo);
   };
 
-  const fetchData = async (page: number = 1, searchValue?: string) => {
-    if (dividendRate <= 0 || dividendRate > 100) {
+  const fetchData = async (page: number = 1, searchValue?: string, rateOverride?: number) => {
+    const rate = rateOverride ?? dividendRate;
+    if (rate <= 0 || rate > 100) {
       await showDialog('warning', 'Warning', 'Please enter a valid dividend rate between 0.1% and 100%');
       return;
     }
@@ -155,7 +174,7 @@ const DividendReport: React.FC = () => {
         selectedWing,
         selectedOffice,
         financialYear,
-        dividendRate
+        rate
       );
 
       if (response && response.success) {
@@ -220,7 +239,7 @@ const DividendReport: React.FC = () => {
       return;
     }
 
-    const headers = ['SR', 'MEMBER NO', 'MEMBER NAME', 'DESIGNATION', 'WING', 'SHARE AMOUNT', 'DIVIDEND RATE', 'DIVIDEND AMOUNT'];
+    const headers = ['SR', 'MEMBER NO', 'MEMBER NAME', 'DESIGNATION', 'WING', 'SHARE AMOUNT', 'DIVIDEND RATE', 'DIVIDEND AMOUNT', 'STATUS'];
     const csvData = data.map((item, index) => [
       index + 1,
       item.memberNo,
@@ -228,8 +247,9 @@ const DividendReport: React.FC = () => {
       item.designation || '-',
       item.wing || '-',
       formatCurrency(item.shareAmount),
-      `${dividendRate}%`,
-      formatCurrency(item.dividendAmount)
+      `${item.dividendRate ?? dividendRate}%`,
+      formatCurrency(item.dividendAmount),
+      item.status || ''
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -242,6 +262,8 @@ const DividendReport: React.FC = () => {
     link.download = `dividend_report_${financialYear}_${dayjs().format('YYYY-MM-DD')}.csv`;
     link.click();
   };
+
+  const estimateCount = useMemo(() => data.filter(d => d.isEstimate).length, [data]);
 
   const totals = useMemo(() => ({
     total: data.length,
@@ -356,6 +378,9 @@ const DividendReport: React.FC = () => {
                 step={0.1}
                 prefix={<Percent size={14} />}
               />
+              <p className={`mt-1 fz-label ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {rateFromRules ? `${rateFromRules}. ` : ''}Used only for members whose dividend has not been calculated yet.
+              </p>
             </div>
 
             <div>
@@ -456,6 +481,12 @@ const DividendReport: React.FC = () => {
             </div>
           </div>
 
+          {estimateCount > 0 && (
+            <div className={`mx-4 mt-3 px-3 py-2 rounded-lg border fz-body font-semibold ${isDark ? 'bg-amber-900/20 border-amber-700 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-800'}`}>
+              {estimateCount} of {data.length} members show an ESTIMATE (today's share balance × the rate ÷ 100), not the official dividend. Run Dividend Calculation for this financial year to get the official figure.
+            </div>
+          )}
+
           {/* Legacy Report Table */}
           <div className="flex-1 p-4 overflow-auto">
             <div className={`dividend-report-card rounded-lg shadow-sm border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
@@ -492,6 +523,7 @@ const DividendReport: React.FC = () => {
                           <th className={`border px-2 py-2 text-right fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>SHARE AMOUNT</th>
                           <th className={`border px-2 py-2 text-center fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>RATE</th>
                           <th className={`border px-2 py-2 text-right fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>DIVIDEND</th>
+                          <th className={`border px-2 py-2 text-left fz-label font-bold uppercase ${isDark ? 'border-slate-600 text-slate-200' : 'border-slate-400 text-slate-800'}`}>STATUS</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -506,11 +538,14 @@ const DividendReport: React.FC = () => {
                               ₹{formatCurrency(item.shareAmount)}
                             </td>
                             <td className={`border px-2 py-1 fz-label text-center font-bold ${isDark ? 'border-slate-700 text-purple-400' : 'border-slate-300 text-purple-700'}`}>
-                              {dividendRate}%
+                              {item.dividendRate ?? dividendRate}%
                             </td>
                             <td className={`border px-2 py-1 fz-label text-right font-bold ${isDark ? 'border-slate-700 text-emerald-400' : 'border-slate-300 text-emerald-700'}`}>
                               {item.dividendAmount > 0 && <CrDrIndicator type="credit" className="mr-1" />}
                               ₹{formatCurrency(item.dividendAmount)}
+                            </td>
+                            <td className={`border px-2 py-1 fz-label font-bold ${item.isEstimate ? (isDark ? 'border-slate-700 text-amber-400' : 'border-slate-300 text-amber-700') : (isDark ? 'border-slate-700 text-slate-300' : 'border-slate-300 text-slate-700')}`}>
+                              {item.status || '-'}
                             </td>
                           </tr>
                         ))}
@@ -532,6 +567,7 @@ const DividendReport: React.FC = () => {
                             {totals.totalDividend > 0 && <CrDrIndicator type="credit" className="mr-1" />}
                             ₹{formatCurrency(totals.totalDividend)}
                           </td>
+                          <td className={`border px-2 py-2 ${isDark ? 'border-slate-600' : 'border-slate-400'}`} />
                         </tr>
                       </tfoot>
                     </table>

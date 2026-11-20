@@ -13,9 +13,12 @@ export interface DividendPreviewMember {
     dividendAmount: number;
 }
 
+export interface FinancialYearOption { yearcode: number; label: string; startYear: number; fyStart: string; fyEnd: string }
+
 export interface DividendPreview {
     yearcode: number;
     calculationYear: number;
+    calculationLabel?: string;
     dividendRatePercent: number;
     monthsExpected: number;
     members: DividendPreviewMember[];
@@ -31,7 +34,9 @@ export const useDividendCalculation = () => {
     const [preview, setPreview] = useState<DividendPreview | null>(null);
     const [loading, setLoading] = useState(false);
     const [committing, setCommitting] = useState(false);
-    const [commitResult, setCommitResult] = useState<{ success: boolean; calculationYear: number; membersCommitted: number } | null>(null);
+    const [commitResult, setCommitResult] = useState<{ success: boolean; calculationYear: number; calculationLabel?: string; membersCommitted: number } | null>(null);
+    // Financial years shown by their 2026-27 label; the year code stays an internal id
+    const [years, setYears] = useState<FinancialYearOption[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     const [snapMonth, setSnapMonth] = useState<number>(new Date().getMonth() + 1);
@@ -57,6 +62,19 @@ export const useDividendCalculation = () => {
         setDividendRateRaw(v);
     }, []);
 
+    // Load the financial years once and start on the one that contains today (else the newest)
+    useEffect(() => {
+        let cancelled = false;
+        apiService.getDividendFinancialYears().then((res) => {
+            if (cancelled || !res.success || !Array.isArray(res.data) || res.data.length === 0) return;
+            setYears(res.data);
+            const today = new Date().toISOString().slice(0, 10);
+            const current = res.data.find((y) => y.fyStart <= today && today <= y.fyEnd) ?? res.data[0];
+            if (current) setYearcodeRaw(current.yearcode);
+        });
+        return () => { cancelled = true; };
+    }, []);
+
     // Load the rules once; start from the fixed rate if there is one, else from Dividend Payout (%)
     useEffect(() => {
         let cancelled = false;
@@ -71,7 +89,7 @@ export const useDividendCalculation = () => {
     }, []);
 
     const validateParams = (): string | null => {
-        if (!Number.isInteger(yearcode) || yearcode <= 0) return 'Enter a valid year code.';
+        if (!Number.isInteger(yearcode) || yearcode <= 0) return 'Choose a financial year.';
         if (dividendRate === null || !Number.isFinite(dividendRate) || dividendRate <= 0 || dividendRate > 100) {
             return 'Dividend rate must be a number greater than 0 and at most 100.';
         }
@@ -153,7 +171,7 @@ export const useDividendCalculation = () => {
     }, [snapMonth, snapYear]);
 
     return {
-        yearcode, setYearcode, dividendRate, setDividendRate, rateRules,
+        yearcode, setYearcode, years, dividendRate, setDividendRate, rateRules,
         preview, loading, committing, commitResult, error,
         loadPreview, commit,
         snapMonth, setSnapMonth, snapYear, setSnapYear, snapshotting, snapshotMessage, captureSnapshot,

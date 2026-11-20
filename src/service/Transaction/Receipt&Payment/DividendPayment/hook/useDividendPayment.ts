@@ -96,7 +96,8 @@ export const useDividendPayment = (): DividendPaymentHookReturn => {
                 const entries: DividendEntry[] = response.data.map((item: any) => ({
                     key: item.id?.toString() || '',
                     id: item.id,
-                    wrNo: item.voucherNo || `DIV-${item.year}`,
+                    // the dividend's financial year (2026 -> 2026-27) instead of an internal "DIV-2026" code
+                    wrNo: item.voucherNo || `FY ${item.year}-${String((Number(item.year) + 1) % 100).padStart(2, '0')}`,
                     year: item.year,
                     shareAmount: parseFloat(item.shareAmount || 0),
                     balance: parseFloat(item.shareAmount || 0),

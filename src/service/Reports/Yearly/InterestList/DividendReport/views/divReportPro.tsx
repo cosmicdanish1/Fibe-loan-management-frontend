@@ -5,6 +5,7 @@ import { fmt, fmtShort } from '../../../../../../components/reports/views/format
 export interface DivRow {
   memberNo: string; memberName: string; wing: string; office: string; designation: string;
   shareAmount: number; dividendAmount: number; dividendRate: number;
+  status?: string; isEstimate?: boolean;
 }
 const num = (n: unknown) => Number(n) || 0;
 
@@ -26,6 +27,7 @@ export const useDivReportSpec = (rows: DivRow[], label: string): ProSpec<DivRow>
         { key: 'sh', label: 'SHARE', width: 'minmax(96px, .9fr)', num: true, render: r => <span className="cbv-num">{fmt(num(r.shareAmount))}</span>, sortValue: r => num(r.shareAmount) },
         { key: 'rt', label: 'RATE', width: '56px', num: true, render: r => `${r.dividendRate}%`, sortValue: r => num(r.dividendRate) },
         { key: 'dv', label: 'DIVIDEND', width: 'minmax(100px, 1fr)', num: true, render: r => <span className="cbv-num tone-success">{fmt(num(r.dividendAmount))}</span>, sortValue: r => num(r.dividendAmount) },
+        { key: 'st', label: 'STATUS', width: 'minmax(130px, 1.1fr)', render: r => <span className={r.isEstimate ? 'tone-warning' : undefined}>{r.status || '—'}</span>, sortValue: r => r.status || '' },
       ],
       searchText: r => `${r.memberNo} ${r.memberName} ${r.office} ${r.wing} ${r.designation}`,
       kpis: [
@@ -39,7 +41,7 @@ export const useDivReportSpec = (rows: DivRow[], label: string): ProSpec<DivRow>
         { title: 'Dividend by office', tone: 'success', rows: [...byOffice.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => ({ key: k, name: k, value: v })) },
         { title: 'Largest dividends', tone: 'accent', rows: [...rows].sort((a, b) => num(b.dividendAmount) - num(a.dividendAmount)).slice(0, 6).map((r, i) => ({ key: `${r.memberNo}-${i}`, name: r.memberName, value: num(r.dividendAmount) })) },
       ],
-      footer: ['TOTAL', String(rows.length), '', '', fmt(share), '', fmt(total)],
+      footer: ['TOTAL', String(rows.length), '', '', fmt(share), '', fmt(total), ''],
       tableTitle: 'All members',
       bentoLimit: 150,
       side: r => r && (
@@ -53,6 +55,7 @@ export const useDivReportSpec = (rows: DivRow[], label: string): ProSpec<DivRow>
             <div><dt>Share amount</dt><dd className="cbv-num">{fmt(num(r.shareAmount))}</dd></div>
             <div><dt>Rate</dt><dd>{r.dividendRate}%</dd></div>
             <div><dt>Dividend</dt><dd className="cbv-num tone-success">{fmt(num(r.dividendAmount))}</dd></div>
+            <div><dt>Status</dt><dd>{r.status || '—'}</dd></div>
           </dl>
         </>
       ),

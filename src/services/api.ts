@@ -1556,11 +1556,16 @@ class ApiService {
     return this.request('/dividend/calculation/rules');
   }
 
+  /** Financial years with 2026-27 style labels, newest first (year pickers on the dividend windows). */
+  async getDividendFinancialYears(): Promise<ApiResponse<Array<{ yearcode: number; label: string; startYear: number; fyStart: string; fyEnd: string }>>> {
+    return this.request('/dividend/calculation/years');
+  }
+
   async previewDividendCalculation(yearcode: number, dividendRate: number): Promise<ApiResponse<any>> {
     return this.request(`/dividend/calculation/preview?yearcode=${yearcode}&dividendRate=${dividendRate}`);
   }
 
-  async commitDividendCalculation(yearcode: number, dividendRate: number): Promise<ApiResponse<{ success: boolean; calculationYear: number; membersCommitted: number }>> {
+  async commitDividendCalculation(yearcode: number, dividendRate: number): Promise<ApiResponse<{ success: boolean; calculationYear: number; calculationLabel?: string; membersCommitted: number }>> {
     return this.request('/dividend/calculation/commit', {
       method: 'POST',
       body: JSON.stringify({ yearcode, dividendRate }),

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Select } from 'antd';
 import { Wallet, CheckCircle2, AlertTriangle, AlertCircle, RefreshCw, Search } from 'lucide-react';
 import AwDialog from '@/components/shared/kit/AwDialog';
 import { useAuth } from '../../../../auth/context/AuthContext';
@@ -13,7 +14,7 @@ const DividendCredit: React.FC = () => {
     const creditedBy = user?.username || 'admin';
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const { yearcode, setYearcode, preview, loading, crediting, creditResult, error, loadPreview, commit } = useDividendCredit();
+    const { yearcode, setYearcode, years, preview, loading, crediting, creditResult, error, loadPreview, commit } = useDividendCredit();
 
     const totalToCredit = preview ? preview.members.reduce((sum, m) => sum + m.dividendAmount, 0) : 0;
 
@@ -23,7 +24,7 @@ const DividendCredit: React.FC = () => {
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Dividend Credit')}</h1>
-                    <p className="aw-desc">{t("Applies the PRIOR financial year's already-calculated dividend into Share Value at this year's close")}</p>
+                    <p className="aw-desc">{t("At the close of a financial year, adds the previous financial year's calculated dividend to each member's Share Value. Members whose dividend was paid in cash are skipped.")}</p>
                 </div>
                 <div className="aw-actions">
                     <button type="button" onClick={() => loadPreview()} disabled={loading} className="aw-btn aw-btn-secondary">
@@ -44,11 +45,22 @@ const DividendCredit: React.FC = () => {
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Wallet size={14} /></span>
-                            <h2 className="aw-card-title">{t('Closing Year')}</h2>
+                            <h2 className="aw-card-title">{t('Closing Financial Year')}</h2>
                         </div>
-                        <div style={{ width: 200 }}>
-                            <label className="aw-label" htmlFor="dcr-year">{t('Closing Year Code')}</label>
-                            <input id="dcr-year" type="number" value={yearcode} onChange={(e) => setYearcode(Number(e.target.value))} className="aw-input" />
+                        <div style={{ width: 220 }}>
+                            <label className="aw-label" htmlFor="dcr-year">{t('Financial year that is closing')}</label>
+                            <Select
+                                id="dcr-year"
+                                className="aw-select"
+                                popupClassName="aw-select-popup"
+                                value={years.some((y) => y.yearcode === yearcode) ? yearcode : undefined}
+                                placeholder={t('Choose a financial year')}
+                                onChange={(v) => setYearcode(Number(v))}
+                                options={years.map((y) => ({ value: y.yearcode, label: y.label }))}
+                            />
+                            {preview?.previousCalculationLabel && (
+                                <span className="aw-meta">{t('Credits the dividend of FY')} {preview.previousCalculationLabel}</span>
+                            )}
                         </div>
                     </section>
 
@@ -76,21 +88,21 @@ const DividendCredit: React.FC = () => {
                         <section className="aw-card">
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <Search size={28} />
-                                <strong className="aw-strong">{t('Set the closing year code, then click Preview.')}</strong>
+                                <strong className="aw-strong">{t('Choose the closing financial year, then click Preview.')}</strong>
                             </div>
                         </section>
                     ) : preview.previousCalculationYear === null ? (
                         <section className="aw-card">
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <Wallet size={28} />
-                                <strong className="aw-strong">{t('{{1}} {{2}} — there is nothing to credit yet.', { 1: t('No financial year exists before year code'), 2: yearcode })}</strong>
+                                <strong className="aw-strong">{t('No financial year exists before {{1}}, so there is nothing to credit yet.', { 1: preview.creditLabel ?? yearcode })}</strong>
                             </div>
                         </section>
                     ) : preview.members.length === 0 ? (
                         <section className="aw-card">
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <Wallet size={28} />
-                                <strong className="aw-strong">{t('No uncredited dividend found for calculation year')} {preview.previousCalculationYear}.</strong>
+                                <strong className="aw-strong">{t('No uncredited dividend found for FY')} {preview.previousCalculationLabel ?? preview.previousCalculationYear}.</strong>
                                 <span className="aw-meta">{t("Either it was never calculated (see Dividend Calculation), or it's already been credited.")}</span>
                             </div>
                         </section>
@@ -99,7 +111,7 @@ const DividendCredit: React.FC = () => {
                             <div className="aw-stats aw-stats-3 aw-fade-in">
                                 <div className="aw-stat aw-stat-left">
                                     <div className="aw-stat-label">{t('Dividend calculated for FY')}</div>
-                                    <div className="aw-stat-value">{preview.previousCalculationYear}</div>
+                                    <div className="aw-stat-value">{preview.previousCalculationLabel ?? preview.previousCalculationYear}</div>
                                 </div>
                                 <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}>
                                     <div className="aw-stat-label">{t('Members')}</div>
