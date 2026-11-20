@@ -60,7 +60,7 @@ const VoucherPaymentForm: React.FC<VoucherPaymentHookReturn> = ({
     const fmt = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2 });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Voucher Payment')}</h1>
@@ -99,12 +99,12 @@ const VoucherPaymentForm: React.FC<VoucherPaymentHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Hash size={14} /></span>
-                            <h2 className="aw-card-title">{t('Voucher & Member')}</h2>
+                            <h2 className="aw-card-title">{t('Voucher & member')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'start' }}>
                             <div>
                                 <label className="aw-label" htmlFor="vp-no">{t('Voucher No')}</label>
-                                <input id="vp-no" value={formData.voucherNo} onChange={e => updateField('voucherNo', e.target.value)} placeholder={t('Auto...')} className="aw-input" style={{ fontFamily: 'monospace', fontWeight: 700 }} />
+                                <input id="vp-no" value={formData.voucherNo} onChange={e => updateField('voucherNo', e.target.value)} placeholder={t('Auto...')} className="aw-input" style={{ fontFamily: 'monospace', fontWeight: 600 }} />
                             </div>
                             <div>
                                 <label className="aw-label" htmlFor="vp-date">{t('Trans Date')}</label>
@@ -134,7 +134,7 @@ const VoucherPaymentForm: React.FC<VoucherPaymentHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Banknote size={14} /></span>
-                            <h2 className="aw-card-title">{t('Mode of Payment')}</h2>
+                            <h2 className="aw-card-title">{t('Mode of payment')}</h2>
                             <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
                                 <span className="aw-pill">{t('Actual Amt ₹{{1}}', { 1: fmt(totalAmount) })}</span>
                                 <span className={`aw-pill ${accountBalance < 0 ? 'tone-danger' : ''}`}>{formData.modeOfPay === 'bank' ? t('Bank Bal') : t('Cash Bal')} ₹{fmt(accountBalance)}</span>
@@ -180,7 +180,7 @@ const VoucherPaymentForm: React.FC<VoucherPaymentHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">{t('Transaction Breakdown')}</h2>
+                            <h2 className="aw-card-title">{t('Transaction breakdown')}</h2>
                             <button type="button" onClick={addRow} className="aw-btn aw-btn-secondary aw-btn-sm" style={{ marginLeft: 'auto' }}><Plus size={12} /> {t('Add Row')}</button>
                         </div>
                         <div className="aw-table-wrap" style={{ maxHeight: '38vh' }}>

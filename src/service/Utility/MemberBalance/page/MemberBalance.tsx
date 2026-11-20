@@ -155,7 +155,7 @@ const MemberBalance: React.FC = () => {
   }, [handleSearch]);
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* Header */}
       <div className="aw-header aw-ambient aw-noprint">
@@ -165,7 +165,7 @@ const MemberBalance: React.FC = () => {
         </div>
         <div className="aw-actions">
           {isLoading && (
-            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} role="status">
               <RefreshCw size={12} className="aw-spin" /> {t('Syncing Ledger...')}
             </span>
           )}
@@ -189,7 +189,7 @@ const MemberBalance: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Search size={14} /></span>
-                <h2 className="aw-card-title">{t('Member Lookup')}</h2>
+                <h2 className="aw-card-title">{t('Member lookup')}</h2>
               </div>
               <div className="aw-stack">
                 <div className="aw-input-wrap has-icon has-action">
@@ -216,14 +216,14 @@ const MemberBalance: React.FC = () => {
             {/* Member Profile */}
             {memberData && (
               <section className="aw-card aw-fade-in">
-                <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span className="aw-avatar"><User size={16} /></span>
                   <div className="min-w-0">
                     <p className="aw-strong" style={{ textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{memberData.memberName}</p>
                     <span className="aw-meta">{memberData.memberNo}</span>
                   </div>
                 </div>
-                <div className="aw-rows" style={{ marginTop: 6 }}>
+                <div className="aw-rows" style={{ marginTop: 8 }}>
                   <div className="aw-row">
                     <span className="aw-row-label">{t('Status')}</span>
                     <span className={`aw-pill ${memberData.isActive ? 'tone-success' : 'tone-danger'}`}>
@@ -231,11 +231,11 @@ const MemberBalance: React.FC = () => {
                     </span>
                   </div>
                   <div className="aw-row">
-                    <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={13} /> {t('Office')}</span>
+                    <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={13} /> {t('Office')}</span>
                     <span className="aw-row-value" style={{ textTransform: 'uppercase', textAlign: 'right' }}>{memberData.officeName}</span>
                   </div>
                   <div className="aw-row">
-                    <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><IndianRupee size={13} /> {t('Basic')}</span>
+                    <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><IndianRupee size={13} /> {t('Basic')}</span>
                     <span className="aw-row-value">₹{parseFloat(memberData.basicPay).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
@@ -247,7 +247,7 @@ const MemberBalance: React.FC = () => {
               <section className="aw-card aw-fade-in">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><PieChart size={14} /></span>
-                  <h2 className="aw-card-title">{t('Position Summary')}</h2>
+                  <h2 className="aw-card-title">{t('Position summary')}</h2>
                 </div>
                 <div className="aw-stack">
                   <div className="aw-stat aw-stat-left tone-success">
@@ -283,10 +283,10 @@ const MemberBalance: React.FC = () => {
           {/* Main Ledger Panel */}
           <section className="aw-card aw-main">
             <div className="aw-main-head aw-noprint">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="aw-card-icon"><FileText size={14} /></span>
                 <div>
-                  <h2 className="aw-card-title">{t('Global Ledger Stream')}</h2>
+                  <h2 className="aw-card-title">{t('Global ledger stream')}</h2>
                   {memberData && <p className="aw-meta">{t('Snapshot:')} {memberData.balanceDate}</p>}
                 </div>
               </div>
@@ -363,7 +363,7 @@ const MemberBalance: React.FC = () => {
             </div>
 
             <div className="aw-main-foot aw-noprint">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span><i className="aw-status-dot" />{t('Recon Online')}</span>
                 <span>{t('Integrity:')} <span style={{ color: 'var(--aw-success)' }}>{t('Verified')}</span></span>
               </div>

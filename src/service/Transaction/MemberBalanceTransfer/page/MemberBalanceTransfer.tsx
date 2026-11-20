@@ -153,7 +153,7 @@ const MemberBalanceTransfer: React.FC = () => {
   });
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Member Balance Transfer')}</h1>
@@ -176,7 +176,7 @@ const MemberBalanceTransfer: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><ArrowRightLeft size={14} /></span>
-              <h2 className="aw-card-title">{t('Transfer Heads')}</h2>
+              <h2 className="aw-card-title">{t('Transfer heads')}</h2>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'end' }}>
               <div>
@@ -211,7 +211,7 @@ const MemberBalanceTransfer: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Users size={14} /></span>
-              <h2 className="aw-card-title">{t('Member List')}</h2>
+              <h2 className="aw-card-title">{t('Member list')}</h2>
               {entries.length > 0 && <span className="aw-meta">{t('{{1}} members', { 1: entries.length })}</span>}
               <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
                 <span className="aw-pill tone-danger">{t('Total Debit')} {fmt(totals.totalDebit)}</span>
@@ -239,12 +239,12 @@ const MemberBalanceTransfer: React.FC = () => {
                   ) : entries.map(e => (
                     <tr key={e.srNo}>
                       <td className="is-muted">{e.srNo}</td>
-                      <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{e.mbno}</td>
+                      <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 600 }}>{e.mbno}</td>
                       <td>{e.name}</td>
                       <td className="is-right is-muted">{fmt(e.dbHeadBal)}</td>
                       <td className="is-right is-muted">{fmt(e.crHeadBal)}</td>
-                      <td className="is-right is-danger" style={{ fontWeight: 700 }}>{fmt(e.dbAmt)}</td>
-                      <td className="is-right is-success" style={{ fontWeight: 700 }}>{fmt(e.crAmt)}</td>
+                      <td className="is-right is-danger" style={{ fontWeight: 600 }}>{fmt(e.dbAmt)}</td>
+                      <td className="is-right is-success" style={{ fontWeight: 600 }}>{fmt(e.crAmt)}</td>
                       <td className="is-right is-warning">{e.exCrAmt > 0 ? fmt(e.exCrAmt) : ''}</td>
                     </tr>
                   ))}

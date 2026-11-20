@@ -180,7 +180,7 @@ const CashBookReceiptwiseRough: React.FC = () => {
   const hasData = Boolean(data?.vouchers?.length);
 
   return (
-    <div className="app-window cbrr-page">
+    <div className="app-window aw-calm cbrr-page">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">Cash-Book (Transaction)</h1>

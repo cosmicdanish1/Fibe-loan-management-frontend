@@ -90,13 +90,13 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
   const selectedLabel = selectedUserLevel ? (userLevels.find(l => l.value === selectedUserLevel)?.label || 'Selected') : 'None Selected';
 
   return (
-    <div className={`app-window ${className}`}>
+    <div className={`app-window aw-calm ${className}`}>
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Role Governance')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Building2 size={12} /> {t('Default Access Matrix')}
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Building2 size={12} /> {t('Default access matrix')}
           </p>
         </div>
         <div className="aw-actions">
@@ -157,7 +157,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
                 </div>
               </div>
 
-              <div className="aw-inline" style={{ gap: 6 }}>
+              <div className="aw-inline" style={{ gap: 8 }}>
                 <button type="button" onClick={toggleOnlyGranted} aria-pressed={onlyGranted} className="aw-chip">
                   {t('Granted only')}
                 </button>
@@ -198,7 +198,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
                   <span className="aw-strong" style={{ color: 'var(--aw-accent)' }}>{section.on}</span>
                   <span className="aw-meta">/ {section.total}</span>
                   <span className="aw-bar-track"><span style={{ width: `${pct}%` }} /></span>
-                  <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
+                  <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 8 }}>
                     <button type="button" onClick={(e) => { e.stopPropagation(); section.grant(); }} className="aw-btn aw-btn-secondary aw-btn-sm">{t('All')}</button>
                     <button type="button" onClick={(e) => { e.stopPropagation(); section.revoke(); }} className="aw-btn aw-btn-secondary aw-btn-sm">{t('None')}</button>
                   </span>
@@ -235,7 +235,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <ShieldCheck size={12} /> {t('Policy:')} <strong style={{ color: 'var(--aw-text)' }}>{selectedLabel}</strong>
         </span>
         <span>{t('Granted')} <strong style={{ color: 'var(--aw-accent)' }}>{selected}</strong> · {t('Total')} <strong style={{ color: 'var(--aw-text)' }}>{total}</strong></span>
@@ -244,7 +244,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({ className = '' }) => {
       {/* ── Create role dialog ── */}
       <AwDialog
         open={isCreateModalOpen}
-        title={t('New Role Level')}
+        title={t('New role level')}
         icon={<ShieldCheck size={14} />}
         onClose={() => { setIsCreateModalOpen(false); setNewRoleName(''); }}
         maxWidth="24rem"

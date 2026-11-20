@@ -233,7 +233,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                   }))}
                 />
                 {isLoadingLoanCases && (
-                  <p className="aw-meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <p className="aw-meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <RefreshCw size={11} className="aw-spin" /> {t('Loading...')}
                   </p>
                 )}
@@ -331,7 +331,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
               </dl>
 
               <div>
-                <p className="aw-label">{t('Financial Summary')}</p>
+                <p className="aw-label">{t('Financial summary')}</p>
                 <div className="aw-stats aw-stats-3">
                   <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-accent)' }}>
                     <div className="aw-stat-label">{t('Shares')}</div>
@@ -350,7 +350,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
 
               {(selectedMember.presentAddress || selectedMember.permanentAddress) && (
                 <div className="aw-panel">
-                  <p className="aw-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={12} /> {t('Address')}</p>
+                  <p className="aw-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><MapPin size={12} /> {t('Address')}</p>
                   <p className="aw-strong" style={{ fontWeight: 500 }}>{selectedMember.presentAddress || selectedMember.permanentAddress}</p>
                 </div>
               )}
@@ -378,7 +378,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                 <h2 className="aw-card-title">{t('Loan Against RD')}</h2>
                 <span style={{ marginLeft: 'auto' }}>
                   {isCheckingEligibility && !isRdPanel ? (
-                    <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       <RefreshCw size={11} className="aw-spin" /> {t('Checking...')}
                     </span>
                   ) : isRdPanel ? (
@@ -444,10 +444,10 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                <h2 className="aw-card-title">{t('Regular Loan Eligibility')}</h2>
+                <h2 className="aw-card-title">{t('Regular loan eligibility')}</h2>
                 <span style={{ marginLeft: 'auto' }}>
                   {isCheckingEligibility ? (
-                    <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       <RefreshCw size={11} className="aw-spin" /> {t('Checking...')}
                     </span>
                   ) : (
@@ -512,7 +512,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><FileText size={14} /></span>
-                <h2 className="aw-card-title">{t('Pending Applications')}</h2>
+                <h2 className="aw-card-title">{t('Pending applications')}</h2>
                 <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('{{1}} open', { 1: memberLoanCases.length })}</span>
               </div>
               {memberLoanCases.length === 0 ? (
@@ -553,7 +553,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
         <section className="aw-card aw-fade-in" style={{ flex: 'none' }}>
           <div className="aw-card-head">
             <span className="aw-card-icon"><Users size={14} /></span>
-            <h2 className="aw-card-title">{t('Surety Details')}</h2>
+            <h2 className="aw-card-title">{t('Surety details')}</h2>
             <span className="aw-meta">{t('(max 2 sureties)')}</span>
           </div>
           <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>

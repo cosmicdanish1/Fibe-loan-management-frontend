@@ -72,7 +72,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
     const bankBal = formData.bankBal || 0;
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Receipt')}</h1>
@@ -111,7 +111,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Users size={14} /></span>
-                            <h2 className="aw-card-title">{t('Member Details')}</h2>
+                            <h2 className="aw-card-title">{t('Member details')}</h2>
                             <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8 }}>
                                 <label className="aw-label" htmlFor="rc-month" style={{ margin: 0 }}>{t('Month')}</label>
                                 <Select id="rc-month" value={formData.month} onChange={v => updateField('month', v)}
@@ -171,7 +171,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Banknote size={14} /></span>
-                            <h2 className="aw-card-title">{t('Mode of Payment')}</h2>
+                            <h2 className="aw-card-title">{t('Mode of payment')}</h2>
                             <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
                                 <span className="aw-pill">{t('Actual Amt ₹{{1}}', { 1: fmt(totalAmount) })}</span>
                                 <span className={`aw-pill ${bankBal < 0 ? 'tone-danger' : ''}`}>{formData.modeOfPay === 'bank' ? t('Bank Bal') : t('Cash Bal')} ₹{fmt(bankBal)}</span>
@@ -215,7 +215,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">{t('Receipt Breakdown')}</h2>
+                            <h2 className="aw-card-title">{t('Receipt breakdown')}</h2>
                             <button type="button" onClick={addRow} className="aw-btn aw-btn-secondary aw-btn-sm" style={{ marginLeft: 'auto' }}><Plus size={12} /> {t('Add Row')}</button>
                         </div>
                         <div className="aw-table-wrap" style={{ maxHeight: '38vh' }}>

@@ -21,7 +21,7 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Modify Short Recovery')}</h1>
@@ -39,7 +39,7 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Layers size={14} /></span>
-                            <h2 className="aw-card-title">{t('Select Wing')}</h2>
+                            <h2 className="aw-card-title">{t('Select wing')}</h2>
                         </div>
                         <div style={{ maxWidth: 420 }}>
                             <label className="aw-label" htmlFor="msr-wing">{t('Wing')}</label>
@@ -55,7 +55,7 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
                             <h2 className="aw-card-title">{t('Navigation')}</h2>
                             <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('{{1}} record(s)', { 1: total })}</span>
                         </div>
-                        <div className="aw-inline" style={{ gap: 6 }}>
+                        <div className="aw-inline" style={{ gap: 8 }}>
                             <button type="button" className="aw-icon-btn" onClick={() => setCurrentIndex(0)} disabled={currentIndex === 0} aria-label={t('First record')} data-tip={t('First')} data-tip-pos="bottom"><ChevronsLeft size={15} /></button>
                             <button type="button" className="aw-icon-btn" onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))} disabled={currentIndex === 0} aria-label={t('Previous record')} data-tip={t('Previous')} data-tip-pos="bottom"><ChevronLeft size={15} /></button>
                             <span className="aw-pill" style={{ minWidth: 96, justifyContent: 'center' }}>{total > 0 ? `${currentIndex + 1} / ${total}` : '—'}</span>
@@ -67,7 +67,7 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">{t('Short Recovery Records')}</h2>
+                            <h2 className="aw-card-title">{t('Short recovery records')}</h2>
                             {selectedRecord && <span className="aw-pill tone-info" style={{ marginLeft: 'auto' }}>{t('Selected:')} {selectedRecord.memberNo}</span>}
                         </div>
                         <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 480px)', minHeight: 180 }}>
@@ -89,8 +89,8 @@ const ModifyShortRecoveryForm: React.FC<ModifyShortRecoveryHookReturn> = ({
                                     ) : shortRecoveryList.map(record => (
                                         <tr key={record.id} className="is-clickable" aria-selected={selectedRecord?.id === record.id}
                                             onClick={() => handleSelectRecord(record)}>
-                                            <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{record.memberNo}</td>
-                                            <td style={{ fontWeight: 700, textTransform: 'uppercase' }}>{record.memberName}</td>
+                                            <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 600 }}>{record.memberNo}</td>
+                                            <td style={{ fontWeight: 600, textTransform: 'uppercase' }}>{record.memberName}</td>
                                             <td className="is-muted">{record.recoveryType}</td>
                                             <td className="is-right">{record.expectedAmount.toLocaleString()}</td>
                                             <td className="is-right is-success">{record.recoveredAmount.toLocaleString()}</td>

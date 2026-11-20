@@ -87,11 +87,12 @@ const LoanRepaymentForm: React.FC<Props> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm aw-tint">
             {/* ── Header ── */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">{t('Loan Repayment')}</h1>
+                    <div className="aw-crumb">{t('Transaction')}</div>
+                    <h1 className="aw-title">{t('NR Repayment')}</h1>
                     <p className="aw-desc">{t("Collect the installments that are due now. The payment is posted when it is passed in Past Transaction.")}</p>
                 </div>
                 <div className="aw-actions">
@@ -108,13 +109,13 @@ const LoanRepaymentForm: React.FC<Props> = ({
             </div>
 
             <div className="aw-content">
-                <div className="aw-split aw-split-form" style={{ height: 'auto', gridTemplateColumns: 'minmax(320px, 4fr) minmax(0, 8fr)', alignItems: 'start' }}>
+                <div className="lr-layout">
 
-                    {/* ── Left column ── */}
-                    <div className="aw-stack" style={{ minWidth: 0 }}>
+                    {/* ── Rail: who and which loan ── */}
+                    <aside className="lr-rail">
 
                         {/* ① Member */}
-                        <section className="aw-card">
+                        <section id="lr-member" className="aw-card">
                             <div className="aw-card-head">
                                 <span className="aw-card-icon"><Users size={14} /></span>
                                 <h2 className="aw-card-title">{t('Member')}</h2>
@@ -150,17 +151,17 @@ const LoanRepaymentForm: React.FC<Props> = ({
 
                         {/* ② Loan list */}
                         {activeLoans.length > 0 && (
-                            <section className="aw-card aw-fade-in">
+                            <section id="lr-loan" className="aw-card aw-fade-in">
                                 <div className="aw-card-head">
                                     <span className="aw-card-icon"><CreditCard size={14} /></span>
-                                    <h2 className="aw-card-title">{t('Select Loan')}</h2>
+                                    <h2 className="aw-card-title">{t('Select loan')}</h2>
                                     <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('{{1}} loan{{2}}', { 1: filteredLoans.length, 2: filteredLoans.length !== 1 ? 's' : '' })}</span>
                                 </div>
                                 <div className="aw-input-wrap has-icon">
                                     <Search size={13} />
                                     <input type="text" value={loanSearch} onChange={e => setLoanSearch(e.target.value)} placeholder={t('Search by case no.')} aria-label={t('Search by case number')} className="aw-input" />
                                 </div>
-                                <div className="aw-stack" style={{ gap: 6, maxHeight: 220, overflowY: 'auto' }} role="radiogroup" aria-label={t('Active loans')}>
+                                <div className="aw-stack" style={{ gap: 8, maxHeight: 220, overflowY: 'auto' }} role="radiogroup" aria-label={t('Active loans')}>
                                     {filteredLoans.map(loan => {
                                         const selected = form.selectedLoanCase === loan.loancaseno;
                                         return (
@@ -171,7 +172,7 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                                 aria-checked={selected}
                                                 onClick={() => handleLoanSelect(loan.loancaseno)}
                                                 className="aw-right-cell"
-                                                style={{ flexDirection: 'column', alignItems: 'stretch', gap: 2, padding: '9px 10px', border: `1px solid ${selected ? 'var(--aw-accent)' : 'var(--aw-border)'}` }}
+                                                style={{ flexDirection: 'column', alignItems: 'stretch', gap: 2, padding: '8px 12px', border: `1px solid ${selected ? 'var(--aw-accent)' : 'var(--aw-border)'}` }}
                                             >
                                                 <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                                                     <span className="aw-strong">{LOAN_TYPE_LABEL[loan.loantype] || loan.loantype}</span>
@@ -185,23 +186,93 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                         );
                                     })}
                                     {filteredLoans.length === 0 && loanSearch && (
-                                        <p className="aw-meta" style={{ textAlign: 'center', padding: '10px 4px' }}>{t('No loans match "')}{loanSearch}"</p>
+                                        <p className="aw-meta" style={{ textAlign: 'center', padding: '12px 4px' }}>{t('No loans match "')}{loanSearch}"</p>
                                     )}
                                 </div>
                             </section>
                         )}
 
+                        {message && !form.selectedLoanCase && (
+                            <div className={`aw-alert aw-fade-in ${message.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0 }} role="status">
+                                <span>{message.text}</span>
+                            </div>
+                        )}
+                    </aside>
+
+                    {/* ── Main: what is due, the payment, and the working ── */}
+                    <main className="lr-main">
+
+                        {/* What is due now: one row per installment, with totals */}
+                        {form.selectedLoanCase && dueStatus && (
+                            <section id="lr-dues" className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon" style={{ color: unpaid.length ? 'var(--aw-warning)' : undefined }}><AlertCircle size={14} /></span>
+                                    <h2 className="aw-card-title">
+                                        {unpaid.length > 0 ? t('{{1}} installment(s) due — oldest recovered first', { 1: unpaid.length }) : t('Nothing due')}
+                                    </h2>
+                                    {unpaid.length > 0 && <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-warning)' }}>₹{fmt(totalDue)}</span>}
+                                </div>
+                                {unpaid.length > 0 && (
+                                    <div className="aw-table-wrap" style={{ maxHeight: 360 }}>
+                                        <table className="aw-table" style={{ minWidth: 760 }}>
+                                            <thead>
+                                                <tr>
+                                                    <th>{t('Inst. No.')}</th>
+                                                    <th className="is-right">EMI</th>
+                                                    <th>{t('Due date')}</th>
+                                                    <th className="is-right">{t('Principal due')}</th>
+                                                    <th className="is-right">{t('Interest due')}</th>
+                                                    <th className="is-right">{t('Penalty due')}</th>
+                                                    <th>{t('Penalty tier')}</th>
+                                                    <th>{t('Overdue')}</th>
+                                                    <th className="is-right">{t('Total due')}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {unpaid.map(inst => (
+                                                    <tr key={inst.installmentNo}>
+                                                        <td>{inst.installmentNo}</td>
+                                                        <td className="is-right">₹{fmt(inst.emiAmount)}</td>
+                                                        <td className="is-muted">{fmtDate(inst.dueDate)}</td>
+                                                        <td className="is-right">₹{fmt(inst.principalDue)}</td>
+                                                        <td className="is-right">₹{fmt(inst.interestDue)}</td>
+                                                        <td className="is-right is-danger">{inst.penalDue > 0 ? `₹${fmt(inst.penalDue)}` : '—'}</td>
+                                                        <td className="is-muted">{t(TIER_LABEL[inst.tier] || '—')}</td>
+                                                        <td className={inst.monthsOverdue > 0 ? 'is-danger' : 'is-muted'}>{inst.monthsOverdue > 0 ? t('{{1}} mo', { 1: inst.monthsOverdue }) : t('Current')}</td>
+                                                        <td className="is-right aw-strong">₹{fmt(inst.principalDue + inst.interestDue + inst.penalDue)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr style={{ fontWeight: 600 }}>
+                                                    <td>{t('Total')}</td>
+                                                    <td className="is-right">₹{fmt(dueStatus.totalEmi)}</td>
+                                                    <td />
+                                                    <td className="is-right">₹{fmt(dueStatus.totalPrincipalDue)}</td>
+                                                    <td className="is-right">₹{fmt(dueStatus.totalInterestDue)}</td>
+                                                    <td className="is-right is-danger">₹{fmt(dueStatus.totalPenalDue)}</td>
+                                                    <td />
+                                                    <td />
+                                                    <td className="is-right">₹{fmt(dueStatus.totalDue)}</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                )}
+                            </section>
+                        )}
+
                         {/* ③ Payment details */}
                         {form.selectedLoanCase && (
-                            <section className="aw-card aw-fade-in">
+                            <section id="lr-pay" className="aw-card aw-fade-in">
                                 <div className="aw-card-head">
                                     <span className="aw-card-icon"><IndianRupee size={14} /></span>
-                                    <h2 className="aw-card-title">{t('Payment Details')}</h2>
+                                    <h2 className="aw-card-title">{t('Payment details')}</h2>
                                 </div>
 
                                 <div className="aw-stack">
                                     {selectedLoan && (
-                                        <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 16px' }}>
+                                        <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px' }}>
                                             <span>{t('Original:')} <strong style={{ color: 'var(--aw-text)' }}>₹{fmt(selectedLoan.loan_amt)}</strong></span>
                                             <span>{t('Balance:')} <strong style={{ color: 'var(--aw-danger)' }}>₹{fmt(selectedLoan.balance)}</strong></span>
                                             {dueStatus && <span>{t('Paid:')} <strong style={{ color: 'var(--aw-text)' }}>{t('{{1}} of {{2}}', { 1: dueStatus.paidInstallments, 2: dueStatus.totalInstallments })}</strong></span>}
@@ -217,7 +288,7 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                     )}
 
                                     {dueStatusLoading ? (
-                                        <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><RefreshCw size={12} className="aw-spin" /> {t('Checking outstanding dues…')}</p>
+                                        <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><RefreshCw size={12} className="aw-spin" /> {t('Checking outstanding dues…')}</p>
                                     ) : dueStatus && unpaid.length === 0 ? (
                                         <div className="aw-alert aw-alert-success" style={{ marginBottom: 0 }}>
                                             <CheckCircle2 size={15} />
@@ -252,7 +323,7 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                         <p className="aw-meta" style={{ marginTop: 4 }}>
                                             {t('Up to ₹{{1}} (everything due). It is applied penalty, then interest, then principal, oldest installment first.', { 1: fmt(totalDue) })}
                                         </p>
-                                        {planError && <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 700 }} role="alert">{planError}</p>}
+                                        {planError && <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 600 }} role="alert">{planError}</p>}
                                     </div>
                                     <div className="aw-two">
                                         <div>
@@ -309,84 +380,14 @@ const LoanRepaymentForm: React.FC<Props> = ({
                             </section>
                         )}
 
-                        {message && !form.selectedLoanCase && (
-                            <div className={`aw-alert aw-fade-in ${message.type === 'success' ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0 }} role="status">
-                                <span>{message.text}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* ── Right column ── */}
-                    <div className="aw-stack" style={{ minWidth: 0 }}>
-
-                        {/* What is due now: one row per installment, with totals */}
-                        {form.selectedLoanCase && dueStatus && (
-                            <section className="aw-card aw-fade-in">
-                                <div className="aw-card-head">
-                                    <span className="aw-card-icon" style={{ color: unpaid.length ? 'var(--aw-warning)' : undefined }}><AlertCircle size={14} /></span>
-                                    <h2 className="aw-card-title">
-                                        {unpaid.length > 0 ? t('{{1}} installment(s) due — oldest recovered first', { 1: unpaid.length }) : t('Nothing due')}
-                                    </h2>
-                                    {unpaid.length > 0 && <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-warning)' }}>₹{fmt(totalDue)}</span>}
-                                </div>
-                                {unpaid.length > 0 && (
-                                    <div className="aw-table-wrap" style={{ maxHeight: 360 }}>
-                                        <table className="aw-table" style={{ minWidth: 760 }}>
-                                            <thead>
-                                                <tr>
-                                                    <th>{t('Inst. No.')}</th>
-                                                    <th className="is-right">EMI</th>
-                                                    <th>{t('Due date')}</th>
-                                                    <th className="is-right">{t('Principal due')}</th>
-                                                    <th className="is-right">{t('Interest due')}</th>
-                                                    <th className="is-right">{t('Penalty due')}</th>
-                                                    <th>{t('Penalty tier')}</th>
-                                                    <th>{t('Overdue')}</th>
-                                                    <th className="is-right">{t('Total due')}</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {unpaid.map(inst => (
-                                                    <tr key={inst.installmentNo}>
-                                                        <td>{inst.installmentNo}</td>
-                                                        <td className="is-right">₹{fmt(inst.emiAmount)}</td>
-                                                        <td className="is-muted">{fmtDate(inst.dueDate)}</td>
-                                                        <td className="is-right">₹{fmt(inst.principalDue)}</td>
-                                                        <td className="is-right">₹{fmt(inst.interestDue)}</td>
-                                                        <td className="is-right is-danger">{inst.penalDue > 0 ? `₹${fmt(inst.penalDue)}` : '—'}</td>
-                                                        <td className="is-muted">{t(TIER_LABEL[inst.tier] || '—')}</td>
-                                                        <td className={inst.monthsOverdue > 0 ? 'is-danger' : 'is-muted'}>{inst.monthsOverdue > 0 ? t('{{1}} mo', { 1: inst.monthsOverdue }) : t('Current')}</td>
-                                                        <td className="is-right aw-strong">₹{fmt(inst.principalDue + inst.interestDue + inst.penalDue)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                            <tfoot>
-                                                <tr style={{ fontWeight: 700 }}>
-                                                    <td>{t('Total')}</td>
-                                                    <td className="is-right">₹{fmt(dueStatus.totalEmi)}</td>
-                                                    <td />
-                                                    <td className="is-right">₹{fmt(dueStatus.totalPrincipalDue)}</td>
-                                                    <td className="is-right">₹{fmt(dueStatus.totalInterestDue)}</td>
-                                                    <td className="is-right is-danger">₹{fmt(dueStatus.totalPenalDue)}</td>
-                                                    <td />
-                                                    <td />
-                                                    <td className="is-right">₹{fmt(dueStatus.totalDue)}</td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-                                )}
-                            </section>
-                        )}
-
                         {/* How the typed amount will be applied (worked out by the server) */}
                         {form.selectedLoanCase && plan && plan.rows.length > 0 && !planError && (
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head">
                                     <span className="aw-card-icon"><CheckCircle2 size={14} /></span>
-                                    <h2 className="aw-card-title">{t('This Payment Will Cover')}</h2>
+                                    <h2 className="aw-card-title">{t('This payment will cover')}</h2>
                                 </div>
-                                <div className="aw-stack" style={{ gap: 6 }}>
+                                <div className="aw-stack" style={{ gap: 8 }}>
                                     {plan.rows.map(r => {
                                         const inst = unpaid.find(u => u.installmentNo === r.installmentNo);
                                         const settled = !!inst && r.principal >= inst.principalDue - 0.005 && r.interest >= inst.interestDue - 0.005 && r.penal >= inst.penalDue - 0.005;
@@ -465,7 +466,7 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                     <span className="aw-card-icon"><FileText size={14} /></span>
                                     <div>
                                         <h2 className="aw-card-title">
-                                            {t('Repayment History')}
+                                            {t('Repayment history')}
                                             {form.selectedLoanCase && !showAllHistory && <span style={{ color: 'var(--aw-muted)', fontWeight: 500 }}> — Loan #{form.selectedLoanCase}</span>}
                                         </h2>
                                         {form.memberName && <p className="aw-meta">{form.memberName} — #{form.mbno}</p>}
@@ -522,9 +523,16 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                 )}
                             </section>
                         )}
-                    </div>
+                    </main>
                 </div>
             </div>
+
+            <style>{`
+        .lr-layout { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; max-width: 1440px; }
+        .lr-rail { flex: 1 1 300px; max-width: 340px; display: flex; flex-direction: column; gap: var(--aw-gap); position: sticky; top: 0; max-height: calc(100vh - var(--aw-pad) * 2); overflow-y: auto; overflow-x: hidden; padding: 2px; margin: -2px; }
+        .lr-main { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: var(--aw-gap); }
+        @media (max-width: 900px) { .lr-rail { position: static; flex-basis: 100%; max-width: none; max-height: none; overflow: visible; } }
+      `}</style>
         </div>
     );
 };

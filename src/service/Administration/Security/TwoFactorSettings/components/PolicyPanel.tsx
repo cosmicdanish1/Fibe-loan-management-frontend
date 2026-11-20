@@ -86,7 +86,7 @@ const PolicyPanel: React.FC = () => {
             <option value="optional">{t('Optional')}</option>
             <option value="all">{t('Required for everyone')}</option>
           </select>
-          <p className="aw-meta" style={{ marginTop: 6 }}>{POLICY_HELP[s.policy]}</p>
+          <p className="aw-meta" style={{ marginTop: 8 }}>{POLICY_HELP[s.policy]}</p>
         </div>
         <div>
           <label className="aw-label" htmlFor="tf-login">{t('Sign-in code')}</label>
@@ -95,7 +95,7 @@ const PolicyPanel: React.FC = () => {
               onChange={() => set('loginCode', s.loginCode === false)} />
             {t('Ask for the authenticator code when signing in')}
           </label>
-          <p className="aw-meta" style={{ marginTop: 6 }}>
+          <p className="aw-meta" style={{ marginTop: 8 }}>
             {t('Untick to sign in with username and password only. Forgot-password codes and approver codes keep working.')}
           </p>
         </div>
@@ -123,12 +123,12 @@ const PolicyPanel: React.FC = () => {
           <div>
             <label className="aw-label" htmlFor="tf-remember">{t('Remember this device (days)')}</label>
             <input id="tf-remember" className="aw-input" type="number" min={0} max={365} value={Number.isNaN(s.rememberDays) ? '' : s.rememberDays} onChange={(e) => set('rememberDays', num(e.target.value))} />
-            <p className="aw-meta" style={{ marginTop: 6 }}>{t('0 = a code is asked at every sign-in.')}</p>
+            <p className="aw-meta" style={{ marginTop: 8 }}>{t('0 = a code is asked at every sign-in.')}</p>
           </div>
           <div>
             <label className="aw-label" htmlFor="tf-monthly">{t('Ask for a code at least every (days)')}</label>
             <input id="tf-monthly" className="aw-input" type="number" min={0} max={365} value={Number.isNaN(s.monthlyCheckDays) ? '' : s.monthlyCheckDays} onChange={(e) => set('monthlyCheckDays', num(e.target.value))} />
-            <p className="aw-meta" style={{ marginTop: 6 }}>{t('Even on a remembered device. 0 = never.')}</p>
+            <p className="aw-meta" style={{ marginTop: 8 }}>{t('Even on a remembered device. 0 = never.')}</p>
           </div>
         </div>
       </details>

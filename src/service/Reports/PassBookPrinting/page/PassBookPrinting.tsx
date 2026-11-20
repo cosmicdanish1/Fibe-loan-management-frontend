@@ -513,7 +513,7 @@ const PassBookPrinting: React.FC = () => {
 
   return (
     <ReportShell
-      className="pbp-page"
+      className="pbp-page aw-calm"
       title="Pass Book Printing"
       desc="Enter a member number to load the passbook tracking details"
       actions={
@@ -647,7 +647,7 @@ const PassBookPrinting: React.FC = () => {
               </div>
             </section>
           ) : (
-            <p className="aw-meta" style={{ textAlign: 'center', color: 'var(--aw-success)', fontWeight: 700 }}>All transactions have been printed</p>
+            <p className="aw-meta" style={{ textAlign: 'center', color: 'var(--aw-success)', fontWeight: 600 }}>All transactions have been printed</p>
           )}
         </>
       )}
@@ -667,7 +667,7 @@ const PassBookPrinting: React.FC = () => {
               {!savingPreset ? (
                 <button type="button" className="aw-btn aw-btn-secondary" onClick={() => { setNewPresetName(selectedPreset || ''); setSavingPreset(true); }}><Save size={14} /> Save as preset</button>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
                   <input
                     autoFocus
                     className="aw-input"
@@ -685,7 +685,7 @@ const PassBookPrinting: React.FC = () => {
                 <button type="button" className="aw-btn aw-btn-ghost" onClick={deleteSelectedPreset} aria-label="Delete this preset" title="Delete this preset"><Trash2 size={14} /></button>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
               {([
                 { label: 'Page width (in)', key: 'widthIn', step: 0.1, min: 2 },
                 { label: 'Page height (in)', key: 'heightIn', step: 0.1, min: 2 },
@@ -725,7 +725,7 @@ const PassBookPrinting: React.FC = () => {
               Content prints from the top of the inserted book; the dashed line in the preview marks where the passbook page (fold) ends.
               {previewPages.length > 1 && ' Pages print one at a time — you will be asked to flip the passbook between pages.'}
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap', borderTop: '1px solid var(--aw-border)', paddingTop: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap', borderTop: '1px solid var(--aw-border)', paddingTop: 12 }}>
               <div style={{ marginRight: 'auto' }}>
                 <label className="aw-label" htmlFor="pbp-printer">Printer</label>
                 <select

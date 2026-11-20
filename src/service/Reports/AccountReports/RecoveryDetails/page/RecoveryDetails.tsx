@@ -200,7 +200,7 @@ const RecoveryDetails: React.FC = () => {
 
   return (
     <ReportShell
-      className="rd-page"
+      className="rd-page aw-calm"
       title="Recovery Details"
       desc="Monthly demand statement"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

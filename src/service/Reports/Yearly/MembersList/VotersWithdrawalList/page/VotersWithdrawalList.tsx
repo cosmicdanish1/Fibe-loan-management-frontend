@@ -289,7 +289,7 @@ const VotersWithdrawalList: React.FC = () => {
 
   return (
     <ReportShell
-      className="voters-withdrawal-page"
+      className="voters-withdrawal-page aw-calm"
       title="Voters / Withdrawal List"
       desc="Member registry: active and withdrawn members"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

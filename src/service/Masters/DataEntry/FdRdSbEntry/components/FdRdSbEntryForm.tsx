@@ -59,7 +59,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('FD / RD / SB Entry')}</h1>
@@ -107,7 +107,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Database size={14} /></span>
-                            <h2 className="aw-card-title">{t('Transaction Details')}</h2>
+                            <h2 className="aw-card-title">{t('Transaction details')}</h2>
                             <span className="aw-pill tone-info" style={{ marginLeft: 'auto' }}>{activeType.accType} / {activeType.code}</span>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 'var(--aw-gap)' }}>
@@ -131,7 +131,7 @@ const FdRdSbEntryForm: React.FC<FdRdSbEntryHookReturn> = ({
                             <div>
                                 <label className="aw-label" htmlFor="fd-amount">{t('Amount')}</label>
                                 <input id="fd-amount" type="number" value={formData.amount} onChange={e => updateField('amount', e.target.value)}
-                                    placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
+                                    placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 600 }} />
                             </div>
                             <div>
                                 <label className="aw-label" htmlFor="fd-receipt">{t('Receipt / Voucher No')}</label>

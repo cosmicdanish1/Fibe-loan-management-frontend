@@ -124,7 +124,7 @@ const ShareWarrantPrinting: React.FC = () => {
 
   return (
     <ReportShell
-      className="share-warrant-page"
+      className="share-warrant-page aw-calm"
       title="Share Warrant Printing"
       desc="Share capital warrants for a member range"
       actions={

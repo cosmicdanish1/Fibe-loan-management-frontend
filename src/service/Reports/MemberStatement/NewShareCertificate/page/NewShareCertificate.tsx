@@ -152,7 +152,7 @@ const NewShareCertificate: React.FC = () => {
 
   return (
     <ReportShell
-      className="newshare-page"
+      className="newshare-page aw-calm"
       title="Share Certificate"
       desc="New share certificate for a member"
       actions={

@@ -180,7 +180,7 @@ const AccountClosingRegister: React.FC = () => {
 
   return (
     <ReportShell
-      className="acr-page"
+      className="acr-page aw-calm"
       title="Account Closing Register"
       desc="Closed accounts report"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

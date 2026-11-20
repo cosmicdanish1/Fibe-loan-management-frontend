@@ -360,7 +360,7 @@ const HeadAdditionModification: React.FC = () => {
   };
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
@@ -378,7 +378,7 @@ const HeadAdditionModification: React.FC = () => {
             {rebuilding ? t('Building…') : t('Build Tree')}
           </button>
           <button type="button" onClick={() => openAdd()} disabled={loading} className="aw-btn aw-btn-primary">
-            <Plus size={13} /> {t('Add Head')}
+            <Plus size={13} /> {t('Add head')}
           </button>
           <button
             type="button"
@@ -462,7 +462,7 @@ const HeadAdditionModification: React.FC = () => {
                     if (isSection) {
                       const st = sectionTotals[e.code] ?? { opening: 0, debit: 0, credit: 0, balance: 0 };
                       const open = expandedSections.has(e.code);
-                      const cellStyle: React.CSSProperties = { background: `color-mix(in srgb, ${tone} 12%, var(--aw-surface))`, color: tone, fontWeight: 700 };
+                      const cellStyle: React.CSSProperties = { background: `color-mix(in srgb, ${tone} 12%, var(--aw-surface))`, color: tone, fontWeight: 600 };
                       return (
                         <tr key={e.code}>
                           <td className="is-center" style={cellStyle}>
@@ -515,7 +515,7 @@ const HeadAdditionModification: React.FC = () => {
                           />
                         </td>
                         <td style={{ ...rowBg, paddingLeft: 28 }}>
-                          <span style={{ color: tone, fontWeight: 700, marginRight: 8 }}>{e.code}</span>
+                          <span style={{ color: tone, fontWeight: 600, marginRight: 8 }}>{e.code}</span>
                           <span className="aw-meta" style={{ marginRight: 8, display: 'inline' }}>—</span>
                           {e.headName}
                         </td>
@@ -557,7 +557,7 @@ const HeadAdditionModification: React.FC = () => {
                   <tr>
                     <td />
                     <td>
-                      {t('Grand Total')} <span className="aw-meta" style={{ marginLeft: 6 }}>{t('{{1}} accounts', { 1: leafCount })}</span>
+                      {t('Grand total')} <span className="aw-meta" style={{ marginLeft: 6 }}>{t('{{1}} accounts', { 1: leafCount })}</span>
                     </td>
                     <td className="is-right">{grandTotals.opening !== 0 ? fmt(grandTotals.opening) : '—'}</td>
                     <td className="is-right is-danger">{grandTotals.debit !== 0 ? fmt(grandTotals.debit) : '—'}</td>

@@ -207,16 +207,16 @@ const PLYearEndProcessContent: React.FC = () => {
   });
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
-          <p className="aw-meta" style={{ textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('Administration / Financial Year')}</p>
+          <p className="aw-meta">{t('Administration / Financial Year')}</p>
           <h1 className="aw-title">{t('P&L Year End Process')}</h1>
         </div>
         <div className="aw-actions">
           <span className={`aw-pill tone-${isClosed ? 'success' : 'warning'}`}>
-            <i className="aw-status-dot" style={{ marginRight: 5, background: isClosed ? 'var(--aw-success)' : 'var(--aw-warning)' }} />
+            <i className="aw-status-dot" style={{ marginRight: 8, background: isClosed ? 'var(--aw-success)' : 'var(--aw-warning)' }} />
             {t('Year end')} {isClosed ? 'posted' : t('not posted')}
           </span>
           <button type="button" onClick={() => fy && fetchPreview(fy.yearCode)} disabled={!fy} className="aw-btn aw-btn-secondary">
@@ -333,8 +333,8 @@ const PLYearEndProcessContent: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Financial Year Management')}</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Verified Protocol')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> {t('Financial Year Management')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><ShieldCheck size={12} /> {t('Verified Protocol')}</span>
       </div>
     </div>
   );

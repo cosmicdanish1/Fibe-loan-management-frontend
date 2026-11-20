@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Save, RotateCcw, PenTool, Upload as UploadIcon, X as XIcon, CheckCircle2, User, Camera, RefreshCw } from 'lucide-react';
+import { Search, Calendar, RotateCcw, Phone, Briefcase, Wallet, MapPin, Users, FileText, Check, PenTool, Upload as UploadIcon, X as XIcon, CheckCircle2, User, Camera, RefreshCw } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import apiService from '../../../../services/api';
 import { getApiBaseUrlSync } from '../../../../services/apiVersionConfig';
 import { useMemberForm } from '../Hook/useMemberForm';
-import { Select as AntSelect } from 'antd';
+import { Select as AntSelect, DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import MemberLookupDialog from '../../../../components/shared/kit/MemberLookupDialog';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import type { RootState } from '../../../../store';
@@ -40,6 +41,44 @@ const MemberSelect: React.FC<MemberSelectProps> = ({ value, onChange, children, 
     />
   );
 };
+
+
+// Date field: the same themed calendar the reports use (Cash Book etc.). The form keeps dates as YYYY-MM-DD text.
+type MemberDateProps = {
+  value: string;
+  onChange: (value: string) => void;
+  ariaLabel: string;
+  disableFuture?: boolean;
+};
+
+const MemberDate: React.FC<MemberDateProps> = ({ value, onChange, ariaLabel, disableFuture = false }) => {
+  const parsed = value ? dayjs(value) : null;
+  return (
+    <DatePicker
+      value={parsed && parsed.isValid() ? parsed : null}
+      onChange={(d) => onChange(d ? d.format('YYYY-MM-DD') : '')}
+      format={['DD-MMM-YYYY', 'DD-MM-YYYY', 'DD/MM/YYYY']}
+      placeholder="DD-MMM-YYYY"
+      aria-label={ariaLabel}
+      className="aw-picker"
+      popupClassName="aw-select-popup"
+      suffixIcon={<Calendar size={14} />}
+      {...(disableFuture ? { disabledDate: (d: dayjs.Dayjs) => d.isAfter(dayjs(), 'day') } : {})}
+      allowClear
+    />
+  );
+};
+
+// The sections of the form, in order. The rail on the left lists them and scrolls to them.
+const MM_SECTIONS = [
+  { id: 's-identity', label: 'Member identity' },
+  { id: 's-contact', label: 'Contact & ID' },
+  { id: 's-employment', label: 'Employment' },
+  { id: 's-money', label: 'Contribution & insurance' },
+  { id: 's-address', label: 'Address & status' },
+  { id: 's-org', label: 'Organization & nominee' },
+  { id: 's-docs', label: 'Documents & media' },
+] as const;
 
 const MemberMaster: React.FC = () => {
   const { t } = useTranslation();
@@ -494,10 +533,6 @@ const MemberMaster: React.FC = () => {
         gross_salary: parseFloat(formData.monthlyContribution) || 0,
         basic_pay: parseFloat(formData.basicPay) || 0,
         compulsory_deposit: parseFloat(formData.compulsatoryDeposit) || 0,
-        // Only meaningful for a new member — RD auto-starts using the
-        // Compulsory Deposit amount as the monthly RD contribution unless
-        // unchecked (see the checkbox next to that field).
-        startRd: formData.startRd,
         username: (() => {
           try { return JSON.parse(localStorage.getItem('user') || '{}')?.username || 'system'; }
           catch { return 'system'; }
@@ -790,6 +825,48 @@ const MemberMaster: React.FC = () => {
     }
   };
 
+  const setInsured = (isInsured: boolean) => {
+    handleInputChange('isInsured', isInsured);
+    if (!isInsured) handleInputChange('amountOfInsurance', '0');
+  };
+
+  const [activeSection, setActiveSection] = useState<string>(MM_SECTIONS[0].id);
+  const scrollToSection = (id: string) => {
+    setActiveSection(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  // Highlight the section being read in the rail.
+  useEffect(() => {
+    const root = document.querySelector('.mm-form .aw-content');
+    const els = MM_SECTIONS.map((x) => document.getElementById(x.id)).filter((el): el is HTMLElement => !!el);
+    if (!root || !els.length || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver((entries) => {
+      const first = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (first) setActiveSection(first.target.id);
+    }, { root, rootMargin: '-10% 0px -70% 0px' });
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const hasValue = (...values: unknown[]) => values.some((v) => v !== '' && v !== null && v !== undefined && v !== 0 && v !== '0' && v !== false);
+  const sectionDone: Record<string, boolean> = {
+    's-identity': !!(formData.firstName?.trim() && formData.lastName?.trim()),
+    's-contact': hasValue(formData.mobileNumber, formData.email, formData.panCardNo, formData.aadharNo),
+    's-employment': hasValue(formData.srNoEpfPfNo, formData.designation, formData.department, formData.branchMsNo, formData.membershipDate, formData.retirementDate, formData.frsNumber),
+    's-money': hasValue(formData.basicPay, formData.monthlyContribution, formData.shareAmt, formData.isInsured),
+    's-address': hasValue(formData.homeAddress, formData.dateOfWithdrawRetire),
+    's-org': !!(formData.divisionRo && formData.branch),
+    's-docs': kycDocuments.length > 0 || !!savedSigUrl || !!(mediaSavedUrls.doc_front || mediaSavedUrls.doc_back),
+  };
+  const missingRequired = [
+    !formData.firstName?.trim() && t('First name'),
+    !formData.lastName?.trim() && t('Last name'),
+    !formData.divisionRo?.trim() && t('Division/RO'),
+  ].filter(Boolean) as string[];
+  const requiredTotal = 3;
+  const nameParts = [formData.firstName, formData.middleName, formData.lastName].map((x) => (x || '').toString().trim()).filter(Boolean);
+  const displayName = nameParts.length ? [formData.title, ...nameParts].filter(Boolean).join(' ') : '';
+
   usePageToolbarActions({
     onSave: handleSave,
     saveLabel: isSaving ? 'Saving…' : formData.memberNumber ? 'Update' : 'Create',
@@ -799,12 +876,18 @@ const MemberMaster: React.FC = () => {
   return (
     <div className="app-window mm-form">
       {/* Header */}
-      <div className="aw-header aw-ambient">
+      <div className="aw-header">
         <div className="min-w-0">
+          <div className="mm-crumb">{t('Masters')}</div>
           <h1 className="aw-title">{t('Member Master')}</h1>
-          <p className="aw-desc">{t('Create and manage member information.')}</p>
         </div>
-        {formData.memberNumber ? <MobileAccessBadge memberNo={String(formData.memberNumber)} /> : null}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="mm-mode"><span className="mm-mode-dot" aria-hidden="true" />{formData.memberNumber ? t('Editing member') : t('New member')}</span>
+          {formData.memberNumber ? <MobileAccessBadge memberNo={String(formData.memberNumber)} /> : null}
+          <button type="button" onClick={handleReset} disabled={isSaving} className="aw-btn aw-btn-secondary">
+            <RotateCcw className="w-3 h-3" /> <span>{t('Reset')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Notification */}
@@ -824,9 +907,9 @@ const MemberMaster: React.FC = () => {
                   ))}
                 </div>
               )}
-              {!notification.detail && (
+              {!notification.detail && notification.type === 'error' && (
                 <div className="fz-label mt-1 whitespace-pre-line">
-                  {notification.message}
+                  {t('Please review the form and try again.')}
                 </div>
               )}
             </div>
@@ -834,7 +917,7 @@ const MemberMaster: React.FC = () => {
               onClick={() => setNotification(null)}
               className="aw-icon-btn is-sm" aria-label={t('Close')}
             >
-              ✕
+              <XIcon size={14} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -842,108 +925,130 @@ const MemberMaster: React.FC = () => {
 
       {/* Main Content */}
       <div className="aw-content">
-        <div className="mm-content-inner aw-stack">
-          {/* Identity Card */}
-          <div className="mm-section aw-card">
-            <div className="aw-card-head">
-              <span className="aw-card-icon mm-section-number" aria-hidden="true">01</span>
-              <h2 className="aw-card-title">{t('Member identity')}</h2>
-            </div>
-            {/* Top Row: Avatar, Member Number, Search, Active */}
-            <div className="mm-record-toolbar flex flex-row flex-wrap items-center gap-2 mb-2">
-              {/* Circular profile photo (with initials-avatar fallback) */}
-              <div className="relative group shrink-0">
-                <input id="photo-profile-header" type="file" accept="image/jpeg,image/png" className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoSelect('profile', f); e.target.value = ''; }} />
-                {(mediaPreviews.profile || mediaSavedUrls.profile) ? (
-                  <img
-                    src={mediaPreviews.profile || mediaSavedUrls.profile}
-                    alt={t('Profile')}
-                    onClick={() => document.getElementById('photo-profile-header')?.click()}
-                    onError={() => { if (!mediaQueue.profile) setMediaSavedUrls(p => { const n = { ...p }; delete n.profile; return n; }); }}
-                    className="mm-avatar w-11 h-11 rounded-full object-cover cursor-pointer transition-transform group-hover:scale-105"
-                  />
-                ) : (
-                  <div
-                    onClick={() => document.getElementById('photo-profile-header')?.click()}
-                    className="mm-avatar mm-avatar-initials w-11 h-11 rounded-full cursor-pointer flex items-center justify-center uppercase transition-transform group-hover:scale-105"
-                  >
-                    {((formData.firstName?.[0] || '') + (formData.lastName?.[0] || '')) || <User size={18} />}
-                  </div>
-                )}
-                <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
-                  <Camera size={13} />
-                </div>
-                {mediaQueue.profile && <span className="mm-queued mm-queued-badge absolute -bottom-1 left-1/2 -translate-x-1/2 px-1 rounded whitespace-nowrap">{t('on save')}</span>}
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <label className="aw-label mm-inline-label">{t('Member No')}</label>
-                <input
-                  type="text"
-                  value={formData.memberNumber}
-                  onChange={(e) => handleInputChange('memberNumber', e.target.value)}
-                  className="aw-input mm-memberno"
-                  placeholder={t('Auto')}
-                />
-                <button
-                  onClick={handleSearchClick}
-                  disabled={isLoadingMember}
-                  className="aw-btn aw-btn-secondary"
-                >
-                  {isLoadingMember ? (
-                    <RefreshCw size={12} className="aw-spin" />
+        <div className="mm-content-inner mm-layout">
+          <aside className="mm-rail" aria-label={t('Member summary')}>
+            <div className="mm-rail-card">
+              <div className="mm-rail-who">
+                {/* Circular profile photo (with initials-avatar fallback) */}
+                <div className="relative group shrink-0">
+                  <input id="photo-profile-header" type="file" accept="image/jpeg,image/png" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoSelect('profile', f); e.target.value = ''; }} />
+                  {(mediaPreviews.profile || mediaSavedUrls.profile) ? (
+                    <img
+                      src={mediaPreviews.profile || mediaSavedUrls.profile}
+                      alt={t('Profile')}
+                      onClick={() => document.getElementById('photo-profile-header')?.click()}
+                      onError={() => { if (!mediaQueue.profile) setMediaSavedUrls(p => { const n = { ...p }; delete n.profile; return n; }); }}
+                      className="mm-avatar rounded-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+                    />
                   ) : (
-                    <Search className="w-3 h-3" />
+                    <div
+                      onClick={() => document.getElementById('photo-profile-header')?.click()}
+                      className="mm-avatar mm-avatar-initials rounded-full cursor-pointer flex items-center justify-center uppercase transition-transform group-hover:scale-105"
+                    >
+                      {((formData.firstName?.[0] || '') + (formData.lastName?.[0] || '')) || <User size={20} />}
+                    </div>
                   )}
-                  <span>{isLoadingMember ? t('Load') : t('Search')}</span>
-                </button>
-                <button
-                  onClick={() => document.getElementById('kyc-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                  className="aw-btn aw-btn-secondary"
-                  data-tip={t('Jump to KYC Documents')} data-tip-pos="bottom"
-                >
-                  <UploadIcon className="w-3 h-3" /> <span>{t('KYC Docs')}</span>
-                </button>
+                  <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
+                    <Camera size={14} />
+                  </div>
+                  {mediaQueue.profile && <span className="mm-queued mm-queued-badge absolute -bottom-1 left-1/2 -translate-x-1/2 px-1 rounded whitespace-nowrap">{t('on save')}</span>}
+                </div>
+                <div className="min-w-0">
+                  <div className="mm-rail-name">{displayName || t('New member')}</div>
+                  <div className="aw-meta">{t('Click the photo to change it')}</div>
+                </div>
               </div>
 
-              <span className={`mm-record-mode aw-pill ${formData.memberNumber ? 'tone-success' : ''}`}>
-                {formData.memberNumber ? t('Editing member') : t('New member')}
-              </span>
+              <div className="mm-rail-field">
+                <label className="aw-label" htmlFor="mm-member-no">{t('Member No')}</label>
+                <div className="flex gap-2">
+                  <input
+                    id="mm-member-no"
+                    type="text"
+                    value={formData.memberNumber}
+                    onChange={(e) => handleInputChange('memberNumber', e.target.value)}
+                    className="aw-input mm-memberno"
+                    placeholder={t('Auto')}
+                  />
+                  <button
+                    onClick={handleSearchClick}
+                    disabled={isLoadingMember}
+                    className="aw-btn aw-btn-secondary"
+                  >
+                    {isLoadingMember ? (
+                      <RefreshCw size={12} className="aw-spin" />
+                    ) : (
+                      <Search className="w-3 h-3" />
+                    )}
+                    <span>{isLoadingMember ? t('Load') : t('Search')}</span>
+                  </button>
+                </div>
+              </div>
 
-              <div className="ml-auto flex items-center gap-1.5">
-                <div
-                  onClick={() => handleInputChange('isActive', !formData.isActive)}
-                  role="checkbox"
-                  aria-checked={formData.isActive}
-                  className={`mm-active-toggle ${formData.isActive ? 'is-on' : ''}`} tabIndex={0} onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); handleInputChange('isActive', !formData.isActive); } }}
-                >
-                  <span className="mm-dot" aria-hidden="true" />
-                  <span className="mm-active-label">{formData.isActive ? t('Active') : t('Inactive')}</span>
+              <div className="mm-rail-active">
+                <div>
+                  <div className="mm-rail-title">{t('Active member')}</div>
+                  <div className="aw-meta">{formData.isActive ? t('Active') : t('Inactive')}</div>
                 </div>
                 <button
                   type="button"
-                  onClick={handleReset}
-                  disabled={isSaving}
-                  className="aw-btn aw-btn-secondary"
+                  role="switch"
+                  aria-checked={!!formData.isActive}
+                  aria-label={t('Active member')}
+                  onClick={() => handleInputChange('isActive', !formData.isActive)}
+                  className={`mm-switch ${formData.isActive ? 'is-on' : ''}`}
                 >
-                  <RotateCcw className="w-3 h-3" /> <span>{t('Reset')}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="aw-btn aw-btn-primary"
-                >
-                  {isSaving ? <RefreshCw size={12} className="aw-spin" /> : <Save className="w-3 h-3" />}
-                  <span>{isSaving ? t('Saving…') : formData.memberNumber ? t('Update') : t('Create')}</span>
+                  <span className="mm-switch-knob" aria-hidden="true" />
                 </button>
               </div>
             </div>
 
-            {/* Name Fields Row */}
-            <div className="grid grid-cols-12 gap-2">
-              <div className="col-span-2">
+            <nav className="mm-rail-card mm-nav" aria-label={t('Sections')}>
+              {MM_SECTIONS.map((sec) => (
+                <button
+                  key={sec.id}
+                  type="button"
+                  onClick={() => scrollToSection(sec.id)}
+                  aria-current={activeSection === sec.id ? 'true' : undefined}
+                  className="mm-nav-item"
+                >
+                  <span className={`mm-nav-mark ${sectionDone[sec.id] ? 'is-done' : ''}`} aria-hidden="true">
+                    {sectionDone[sec.id] ? <Check size={12} strokeWidth={3} /> : null}
+                  </span>
+                  <span className="min-w-0">{t(sec.label)}</span>
+                </button>
+              ))}
+            </nav>
+
+            <div className="mm-rail-card">
+              <div className="flex justify-between mm-rail-title">
+                <span>{t('Required fields')}</span>
+                <span>{requiredTotal - missingRequired.length} / {requiredTotal}</span>
+              </div>
+              <div className="mm-progress" role="progressbar" aria-valuemin={0} aria-valuemax={requiredTotal} aria-valuenow={requiredTotal - missingRequired.length}>
+                <div className="mm-progress-bar" style={{ width: `${((requiredTotal - missingRequired.length) / requiredTotal) * 100}%` }} />
+              </div>
+              <div className="aw-meta" style={{ marginTop: 8 }}>
+                {missingRequired.length ? `${t('Still empty')}: ${missingRequired.join(', ')}` : t('All required fields are filled')}
+              </div>
+            </div>
+          </aside>
+
+          <main className="mm-main">
+          {/* Identity */}
+          <div id="s-identity" className="mm-section aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon" aria-hidden="true"><User size={18} /></span>
+              <div className="min-w-0">
+                <h2 className="aw-card-title">{t('Member identity')}</h2>
+                <p className="mm-card-desc">{t('Name and personal details as they appear on records')}</p>
+              </div>
+            </div>
+
+            {/* Name and personal details: four equal columns per row */}
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Title')}</label>
                 <MemberSelect
                   ariaLabel="Title"
@@ -977,7 +1082,7 @@ const MemberMaster: React.FC = () => {
                   placeholder={t('Enter middle name')}
                 />
               </div>
-              <div className="col-span-4">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Last Name *')}</label>
                 <input
                   type="text"
@@ -988,9 +1093,8 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
             </div>
-            {/* Father's Name Row */}
-            <div className="grid grid-cols-12 gap-2 mt-2">
-              <div className="col-span-12">
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-3">
                 <label className="aw-label">{t("Father's Name")}</label>
                 <input
                   type="text"
@@ -1000,19 +1104,7 @@ const MemberMaster: React.FC = () => {
                   placeholder={t("Enter father's name")}
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Personal & Employment Details Card */}
-          <div className="mm-section aw-card">
-            <div className="aw-card-head">
-              <span className="aw-card-icon mm-section-number" aria-hidden="true">02</span>
-              <h2 className="aw-card-title">{t('Personal & employment')}</h2>
-            </div>
-
-            {/* Row 1: Gender, DOB, Age, Monthly Contribution, Compulsary Deposit */}
-            <div className="grid grid-cols-12 gap-2 mb-2">
-              <div className="col-span-2">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Gender')}</label>
                 <div className="flex gap-1.5" role="radiogroup" aria-label={t('Gender')}>
                   <div
@@ -1033,13 +1125,13 @@ const MemberMaster: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Date Of Birth')}</label>
-                <input
-                  type="date"
+                <MemberDate
+                  ariaLabel="Date of birth"
+                  disableFuture
                   value={formData.dateOfBirth}
-                  onChange={(e) => {
-                    const dob = e.target.value;
+                  onChange={(dob) => {
                     handleInputChange('dateOfBirth', dob);
 
                     // Auto-calculate age when DOB changes
@@ -1056,10 +1148,9 @@ const MemberMaster: React.FC = () => {
                       handleInputChange('age', age);
                     }
                   }}
-                  className="aw-input"
                 />
               </div>
-              <div className="col-span-1">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Age')}</label>
                 <input
                   type="number"
@@ -1070,58 +1161,74 @@ const MemberMaster: React.FC = () => {
                   title={t('Age is auto-calculated from Date of Birth')}
                 />
               </div>
-              <div className="col-span-3">
-                <label className="aw-label">{t('Monthly Contrib.')}</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.monthlyContribution}
-                  onChange={(e) => handleInputChange('monthlyContribution', e.target.value)}
-                  className="aw-input"
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="col-span-4">
-                <label className="aw-label">{t('Compulsary Dep.')}</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.compulsatoryDeposit}
-                  onChange={(e) => handleInputChange('compulsatoryDeposit', e.target.value)}
-                  className="aw-input"
-                  placeholder="0.00"
-                  disabled={!!formData.memberNumber}
-                  title={formData.memberNumber ? t('The starting RD/CD amount is fixed once the member is created.') : undefined}
-                />
-                {/* RD starts automatically for a new member using this amount
-                    as their monthly RD contribution — defaults to the
-                    configured RD minimum, editable, and skippable via this
-                    checkbox for a member who shouldn't have RD started yet.
-                    ES-575: for an EXISTING member this field changes nothing real, so it is read-only; the monthly
-                    amount is changed in RD/CD Member Setup and money is received in RD/CD Repayment. */}
-                {formData.memberNumber ? (
-                  <span className="aw-meta" style={{ display: 'block', marginTop: 4 }}>
-                    {t('To change the monthly RD/CD amount use RD/CD Member Setup; to receive money use RD/CD Repayment.')}
-                  </span>
-                ) : (
-                  <label className="flex items-center gap-1 mt-1 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={formData.startRd}
-                      onChange={(e) => handleInputChange('startRd', e.target.checked)}
-                      style={{ accentColor: 'var(--aw-accent)' }}
-                    />
-                    <span className="aw-meta">{t('Start RD/CD monthly amount for this member')}</span>
-                  </label>
-                )}
+            </div>
+          </div>
+
+          {/* Contact & ID */}
+          <div id="s-contact" className="mm-section aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon" aria-hidden="true"><Phone size={18} /></span>
+              <div className="min-w-0">
+                <h2 className="aw-card-title">{t('Contact & ID')}</h2>
+                <p className="mm-card-desc">{t('How to reach the member and the numbers that identify them')}</p>
               </div>
             </div>
 
-            {/* Row 2: Sr.No, Designation, Basic Pay, ShareAmt, Insurance */}
-            <div className="grid grid-cols-12 gap-2 mb-2">
-              <div className="col-span-2">
+            {/* The separate landline "Phone Number" field was removed: it had no column in member_master and was
+                silently discarded on every save. Adding one needs a deliberate schema decision. */}
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-3">
+                <label className="aw-label">{t('Mobile No')}</label>
+                <input type="tel" value={formData.mobileNumber}
+                  onChange={(e) => handleInputChange('mobileNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className="aw-input"
+                  placeholder={'10 ' + t('digits (starts 6-9)')}
+                  maxLength={10} />
+              </div>
+              <div className="col-span-3">
+                <label className="aw-label">{t('Email Address')}</label>
+                <input type="email" value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className="aw-input"
+                  placeholder={t('member@example.com')} />
+              </div>
+              <div className="col-span-3">
+                <label className="aw-label">{t('PanCard No')}</label>
+                <input
+                  type="text"
+                  value={formData.panCardNo}
+                  onChange={(e) => handleInputChange('panCardNo', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
+                  className="aw-input"
+                  placeholder="ABCDE1234F"
+                  maxLength={10}
+                />
+              </div>
+              <div className="col-span-3">
+                <label className="aw-label">{t('Aadhar No')}</label>
+                <input
+                  type="text"
+                  value={formData.aadharNo}
+                  onChange={(e) => handleInputChange('aadharNo', e.target.value.replace(/\D/g, '').slice(0, 12))}
+                  className="aw-input"
+                  placeholder={'12 ' + t('digits')}
+                  maxLength={12}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Employment */}
+          <div id="s-employment" className="mm-section aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon" aria-hidden="true"><Briefcase size={18} /></span>
+              <div className="min-w-0">
+                <h2 className="aw-card-title">{t('Employment')}</h2>
+                <p className="mm-card-desc">{t('Where the member works and since when')}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Sr.No/EPF/P.NO')}</label>
                 <input
                   type="text"
@@ -1130,7 +1237,7 @@ const MemberMaster: React.FC = () => {
                   className="aw-input"
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Designation')}</label>
                 <MemberSelect
                   ariaLabel="Designation"
@@ -1417,7 +1524,60 @@ const MemberMaster: React.FC = () => {
                   <option value="W./ATTDT">W./ATTDT</option>
                 </MemberSelect>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-3">
+                <label className="aw-label">{t('Department')}</label>
+                <input
+                  type="text"
+                  value={formData.department}
+                  onChange={(e) => handleInputChange('department', e.target.value)}
+                  className="aw-input"
+                />
+              </div>
+              <div className="col-span-3">
+                <label className="aw-label">{t('Branch MS No')}</label>
+                <input
+                  type="text"
+                  value={formData.branchMsNo}
+                  onChange={(e) => handleInputChange('branchMsNo', e.target.value)}
+                  className="aw-input"
+                  placeholder={t('Branch MS')}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-4">
+                <label className="aw-label">{t('Membership Date')}</label>
+                <MemberDate ariaLabel="Membership date" value={formData.membershipDate} onChange={(v) => handleInputChange('membershipDate', v)} />
+              </div>
+              <div className="col-span-4">
+                <label className="aw-label">{t('Retirement Date')}</label>
+                <MemberDate ariaLabel="Retirement date" value={formData.retirementDate} onChange={(v) => handleInputChange('retirementDate', v)} />
+              </div>
+              <div className="col-span-4">
+                <label className="aw-label">{t('F.R.S. Number')}</label>
+                <input
+                  type="text"
+                  value={formData.frsNumber}
+                  onChange={(e) => handleInputChange('frsNumber', e.target.value)}
+                  className="aw-input"
+                  placeholder={t('FRS No')}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contribution & insurance */}
+          <div id="s-money" className="mm-section aw-card">
+            <div className="aw-card-head">
+              <span className="aw-card-icon" aria-hidden="true"><Wallet size={18} /></span>
+              <div className="min-w-0">
+                <h2 className="aw-card-title">{t('Contribution & insurance')}</h2>
+                <p className="mm-card-desc">{t('Pay, monthly amounts and group insurance cover')}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Basic Pay')}</label>
                 <input
                   type="number"
@@ -1429,7 +1589,42 @@ const MemberMaster: React.FC = () => {
                   placeholder="0.00"
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-3">
+                <label className="aw-label">{t('Monthly Contrib.')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.monthlyContribution}
+                  onChange={(e) => handleInputChange('monthlyContribution', e.target.value)}
+                  className="aw-input"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="col-span-3">
+                <label className="aw-label">{t('Compulsory Dep.')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.compulsatoryDeposit}
+                  onChange={(e) => handleInputChange('compulsatoryDeposit', e.target.value)}
+                  className="aw-input"
+                  placeholder="0.00"
+                  disabled={!!formData.memberNumber}
+                  title={formData.memberNumber ? t('The starting RD/CD amount is fixed once the member is created.') : undefined}
+                />
+                {/* RD always starts automatically for a new member using this amount
+                    as their monthly RD contribution (no opt-out checkbox).
+                    ES-575:for an EXISTING member this field changes nothing real, so it is read-only; the monthly
+                    amount is changed in RD/CD Member Setup and money is received in RD/CD Repayment. */}
+                {formData.memberNumber ? (
+                  <span className="aw-meta" style={{ display: 'block', marginTop: 4 }}>
+                    {t('To change the monthly RD/CD amount use RD/CD Member Setup; to receive money use RD/CD Repayment.')}
+                  </span>
+                ) : null}
+              </div>
+              <div className="col-span-3">
                 <label className="aw-label">{t('ShareAmt')}</label>
                 <input
                   type="number"
@@ -1441,26 +1636,20 @@ const MemberMaster: React.FC = () => {
                   placeholder="0.00"
                 />
               </div>
-              <div className="col-span-2 flex items-end">
-                <div
-                  onClick={() => {
-                    const isInsured = !formData.isInsured;
-                    handleInputChange('isInsured', isInsured);
-                    if (!isInsured) {
-                      handleInputChange('amountOfInsurance', '0');
-                    }
-                  }}
-                  role="checkbox"
-                  aria-checked={formData.isInsured}
-                  className="flex items-center gap-1.5 py-1 cursor-pointer select-none"
-                >
-                  <div className={`mm-check ${formData.isInsured ? 'is-on' : ''}`}>
-                    {formData.isInsured && '✓'}
-                  </div>
-                  <span className="aw-meta">{t('Insured')}</span>
-                </div>
+            </div>
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-6">
+                <label className="aw-label">{t('Insured')}</label>
+                <label className="mm-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={formData.isInsured}
+                    onChange={(e) => setInsured(e.target.checked)}
+                  />
+                  <span>{t('Member is insured')}</span>
+                </label>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-6">
                 <label className="aw-label" style={formData.isInsured ? undefined : { opacity: 0.55 }}>
                   {t('Insurance Amt')} {formData.isInsured && <span style={{ color: 'var(--aw-danger)' }}>*</span>}
                 </label>
@@ -1482,99 +1671,20 @@ const MemberMaster: React.FC = () => {
                 )}
               </div>
             </div>
-
-            {/* Row 3: Membership Date, Retirement Date, Department */}
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="aw-label">{t('Membership Date')}</label>
-                <input
-                  type="date"
-                  value={formData.membershipDate}
-                  onChange={(e) => handleInputChange('membershipDate', e.target.value)}
-                  className="aw-input"
-                />
-              </div>
-              <div>
-                <label className="aw-label">{t('Retirement Date')}</label>
-                <input
-                  type="date"
-                  value={formData.retirementDate}
-                  onChange={(e) => handleInputChange('retirementDate', e.target.value)}
-                  className="aw-input"
-                />
-              </div>
-              <div>
-                <label className="aw-label">{t('Department')}</label>
-                <input
-                  type="text"
-                  value={formData.department}
-                  onChange={(e) => handleInputChange('department', e.target.value)}
-                  className="aw-input"
-                />
-              </div>
-            </div>
-
-            {/* Row 4: PanCard, Aadhar, Phone, FRS, BranchMS */}
-            <div className="grid grid-cols-12 gap-2 mt-2">
-              <div className="col-span-2">
-                <label className="aw-label">{t('PanCard No')}</label>
-                <input
-                  type="text"
-                  value={formData.panCardNo}
-                  onChange={(e) => handleInputChange('panCardNo', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
-                  className="aw-input"
-                  placeholder="ABCDE1234F"
-                  maxLength={10}
-                />
-              </div>
-              <div className="col-span-3">
-                <label className="aw-label">{t('Aadhar No')}</label>
-                <input
-                  type="text"
-                  value={formData.aadharNo}
-                  onChange={(e) => handleInputChange('aadharNo', e.target.value.replace(/\D/g, '').slice(0, 12))}
-                  className="aw-input"
-                  placeholder={'12 ' + t('digits')}
-                  maxLength={12}
-                />
-              </div>
-              {/* BUG FIX 15: removed the "Phone Number" (landline/STD) field — it was captured
-                  and validated but had no matching column in member_master, so it was silently
-                  discarded on every save. No landline column exists to wire it to; adding one
-                  needs a deliberate decision, not a silent schema change. */}
-              <div className="col-span-2">
-                <label className="aw-label">{t('F.R.S. Number')}</label>
-                <input
-                  type="text"
-                  value={formData.frsNumber}
-                  onChange={(e) => handleInputChange('frsNumber', e.target.value)}
-                  className="aw-input"
-                  placeholder={t('FRS No')}
-                />
-              </div>
-              <div className="col-span-3">
-                <label className="aw-label">{t('Branch MS No')}</label>
-                <input
-                  type="text"
-                  value={formData.branchMsNo}
-                  onChange={(e) => handleInputChange('branchMsNo', e.target.value)}
-                  className="aw-input"
-                  placeholder={t('Branch MS')}
-                />
-              </div>
-            </div>
           </div>
 
-          {/* Address & Status Details Card */}
-          <div className="mm-section aw-card">
+          {/* Address & status */}
+          <div id="s-address" className="mm-section aw-card">
             <div className="aw-card-head">
-              <span className="aw-card-icon mm-section-number" aria-hidden="true">03</span>
-              <h2 className="aw-card-title">{t('Address & status')}</h2>
+              <span className="aw-card-icon" aria-hidden="true"><MapPin size={18} /></span>
+              <div className="min-w-0">
+                <h2 className="aw-card-title">{t('Address & status')}</h2>
+                <p className="mm-card-desc">{t('Where the member lives and their standing in the society')}</p>
+              </div>
             </div>
 
-            {/* Row 1: Home Address, Status, Date Withdrawl/Retire */}
-            <div className="grid grid-cols-12 gap-2 mb-2">
-              <div className="col-span-6">
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-12">
                 <label className="aw-label">{t('Home Address')}</label>
                 <textarea
                   value={formData.homeAddress}
@@ -1583,6 +1693,8 @@ const MemberMaster: React.FC = () => {
                   placeholder={t('Enter complete home address...')}
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-12 mm-row">
               <div className="col-span-3">
                 <label className="aw-label">{t('Status')}</label>
                 <MemberSelect
@@ -1592,27 +1704,18 @@ const MemberMaster: React.FC = () => {
                 >
                   <option value="Regular">{t('Regular')}</option>
                   <option value="Retire">{t('Retire')}</option>
-                  <option value="Withdrawl">{t('Withdrawl')}</option>
+                  <option value="Withdrawl">{t('Withdrawal')}</option>
                   <option value="Expire">{t('Expire')}</option>
                 </MemberSelect>
               </div>
               <div className="col-span-3">
-                <label className="aw-label">{t('Date Withdrawl/Retire')}</label>
-                <input
-                  type="date"
-                  value={formData.dateOfWithdrawRetire}
-                  onChange={(e) => handleInputChange('dateOfWithdrawRetire', e.target.value)}
-                  className="aw-input"
-                />
+                <label className="aw-label">{t('Date Withdrawal/Retirement')}</label>
+                <MemberDate ariaLabel="Date of withdrawal or retirement" value={formData.dateOfWithdrawRetire} onChange={(v) => handleInputChange('dateOfWithdrawRetire', v)} />
               </div>
-            </div>
-
-            {/* Row 2: Cast Category and Member Type */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="aw-label">{t('Cast Category')}</label>
+              <div className="col-span-3">
+                <label className="aw-label">{t('Caste Category')}</label>
                 <MemberSelect
-                  ariaLabel="Cast Category"
+                  ariaLabel="Caste Category"
                   value={formData.castCategory}
                   onChange={(value) => handleInputChange('castCategory', value)}
                 >
@@ -1626,7 +1729,7 @@ const MemberMaster: React.FC = () => {
                   ))}
                 </MemberSelect>
               </div>
-              <div>
+              <div className="col-span-3">
                 <label className="aw-label">{t('Member Type')}</label>
                 <MemberSelect
                   ariaLabel="Member Type"
@@ -1643,16 +1746,18 @@ const MemberMaster: React.FC = () => {
             </div>
           </div>
 
-          {/* Organization & Nominee Details Card */}
-          <div className="mm-section aw-card">
+          {/* Organization & nominee */}
+          <div id="s-org" className="mm-section aw-card">
             <div className="aw-card-head">
-              <span className="aw-card-icon mm-section-number" aria-hidden="true">04</span>
-              <h2 className="aw-card-title">{t('Organization & nominee')}</h2>
+              <span className="aw-card-icon" aria-hidden="true"><Users size={18} /></span>
+              <div className="min-w-0">
+                <h2 className="aw-card-title">{t('Organization & nominee')}</h2>
+                <p className="mm-card-desc">{t('Division, branch and who receives benefits')}</p>
+              </div>
             </div>
 
-            {/* Division/RO and Branch */}
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <div>
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-6">
                 <label className="aw-label">{t('Division/RO *')}</label>
                 <MemberSelect
                   ariaLabel="Division/RO"
@@ -1662,7 +1767,7 @@ const MemberMaster: React.FC = () => {
                   <option value="1-BHILAI">BHILAI</option>
                 </MemberSelect>
               </div>
-              <div>
+              <div className="col-span-6">
                 <label className="aw-label">{t('Branch')}</label>
                 <MemberSelect
                   ariaLabel="Branch"
@@ -1679,9 +1784,7 @@ const MemberMaster: React.FC = () => {
                 </MemberSelect>
               </div>
             </div>
-
-            {/* Nominee Section */}
-            <div className="grid grid-cols-12 gap-2">
+            <div className="grid grid-cols-12 mm-row">
               <div className="col-span-3">
                 <label className="aw-label">{t("Nominee's Name")}</label>
                 <input
@@ -1700,7 +1803,7 @@ const MemberMaster: React.FC = () => {
                   className="aw-input"
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Relation')}</label>
                 <MemberSelect
                   ariaLabel="Relation"
@@ -1720,16 +1823,13 @@ const MemberMaster: React.FC = () => {
                   <option value="Nephew">{t('Nephew')}</option>
                 </MemberSelect>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-3">
                 <label className="aw-label">{t('Declaration Date')}</label>
-                <input
-                  type="date"
-                  value={formData.declarationDate}
-                  onChange={(e) => handleInputChange('declarationDate', e.target.value)}
-                  className="aw-input"
-                />
+                <MemberDate ariaLabel="Declaration date" value={formData.declarationDate} onChange={(v) => handleInputChange('declarationDate', v)} />
               </div>
-              <div className="col-span-2">
+            </div>
+            <div className="grid grid-cols-12 mm-row">
+              <div className="col-span-12">
                 <label className="aw-label">{t('Remarks')}</label>
                 <input
                   type="text"
@@ -1739,32 +1839,15 @@ const MemberMaster: React.FC = () => {
                 />
               </div>
             </div>
-
           </div>
 
           {/* Documents & Media Card */}
-          <div className="mm-section aw-card">
+          <div id="s-docs" className="mm-section aw-card">
             <div className="aw-card-head">
-              <span className="aw-card-icon mm-section-number" aria-hidden="true">05</span>
-              <h2 className="aw-card-title">{t('Documents & media')}</h2>
-            </div>
-
-            {/* Mobile + Email */}
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <div>
-                <label className="aw-label">{t('Mobile No')}</label>
-                <input type="tel" value={formData.mobileNumber}
-                  onChange={(e) => handleInputChange('mobileNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  className="aw-input"
-                  placeholder={'10 ' + t('digits (starts 6-9)')}
-                  maxLength={10} />
-              </div>
-              <div>
-                <label className="aw-label">{t('Email Address')}</label>
-                <input type="email" value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="aw-input"
-                  placeholder={t('member@example.com')} />
+              <span className="aw-card-icon" aria-hidden="true"><FileText size={18} /></span>
+              <div className="min-w-0">
+                <h2 className="aw-card-title">{t('Documents & media')}</h2>
+                <p className="mm-card-desc">{t('ID photos, KYC papers and signature')}</p>
               </div>
             </div>
 
@@ -1926,6 +2009,7 @@ const MemberMaster: React.FC = () => {
             </div>
           </div>
 
+          </main>
         </div>
       </div>
       {/* Member Lookup */}
@@ -1940,16 +2024,67 @@ const MemberMaster: React.FC = () => {
           have are defined below: the form grid spacing, the photo / KYC / signature pieces and the Active switch. */}
       <style>{`
         .mm-content-inner { max-width: 1440px; width: 100%; margin: 0 auto; }
-        .mm-form .mm-section > .grid { column-gap: calc(13px * var(--ui-density, 1)); row-gap: calc(11px * var(--ui-density, 1)); margin-bottom: 0; }
-        .mm-form .mm-section > .grid + .grid { margin-top: calc(11px * var(--ui-density, 1)); }
+        /* Layout: member rail on the left, section panels on the right */
+        .mm-form { --mm-page: color-mix(in srgb, var(--aw-accent) 5%, #eceff5); --mm-edge: #e2e6ee; --mm-shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 10px 28px -12px rgba(16, 24, 40, .14); }
+        html.dark .mm-form { --mm-page: color-mix(in srgb, var(--aw-accent) 6%, #0a0d12); --mm-edge: rgba(255, 255, 255, .09); --mm-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 28px -12px rgba(0, 0, 0, .5); }
+        html.no-shadows .mm-form { --mm-shadow: none; }
+        .mm-form { background: var(--mm-page); }
+        .mm-form .aw-header { background: var(--aw-surface); border-bottom: 1px solid var(--mm-edge); padding-top: 16px; padding-bottom: 16px; }
+        .mm-form .aw-content { padding: 28px calc(var(--aw-pad) * 2.2) 56px; }
+        .mm-crumb { font-size: calc(var(--type-body-size) - 1px); color: var(--aw-muted); margin-bottom: 2px; }
+        .mm-mode { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 999px; background: color-mix(in srgb, var(--aw-accent) 10%, var(--aw-surface)); color: var(--aw-text); font-size: var(--type-label-size); font-weight: 600; }
+        .mm-mode-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aw-accent); }
+        .mm-layout { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; max-width: 1280px; }
+        .mm-rail { flex: 1 1 260px; max-width: 300px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; }
+        .mm-main { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+        .mm-rail-card, .mm-form .mm-section { background: var(--aw-surface); border: 1px solid var(--mm-edge); border-radius: 16px; box-shadow: var(--mm-shadow); }
+        .mm-rail-card { padding: 18px; }
+        .mm-form .mm-section { padding: 26px 28px 28px; }
+        .mm-form .mm-section .aw-card-head { gap: 14px; padding-bottom: 20px; margin-bottom: 22px; border-bottom: 1px solid var(--mm-edge); }
+        .mm-form .mm-section .aw-card-icon { width: 40px; height: 40px; border-radius: 12px; }
+        .mm-form .mm-section .aw-card-title { font-size: calc(var(--type-panel-title) + 3px); }
+        .mm-card-desc { margin: 2px 0 0; font-size: calc(var(--type-body-size) - 1px); color: var(--aw-muted); }
+        .mm-rail-who { display: flex; align-items: center; gap: 14px; }
+        .mm-rail .mm-avatar { width: 56px; height: 56px; font-size: 18px; }
+        .mm-rail-name { font-size: calc(var(--type-body-size) + 2px); font-weight: 700; line-height: 1.25; color: var(--aw-text); overflow-wrap: anywhere; }
+        .mm-rail-title { font-size: var(--type-field-size); font-weight: 600; color: var(--aw-text); }
+        .mm-rail-field { margin-top: 18px; }
+        .mm-rail .mm-memberno { width: auto; flex: 1; min-width: 0; }
+        .mm-rail-active { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--mm-edge); }
+        .mm-switch { width: 44px; height: 26px; flex: none; padding: 3px; border: 0; border-radius: 999px; cursor: pointer; background: var(--aw-border-strong); display: flex; justify-content: flex-start; transition: background-color .2s var(--aw-ease) !important; }
+        .mm-switch.is-on { background: var(--aw-accent); justify-content: flex-end; }
+        .mm-switch-knob { width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+        .mm-switch:focus-visible, .mm-nav-item:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+        .mm-nav { padding: 10px; display: flex; flex-direction: column; gap: 2px; }
+        .mm-nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--aw-text); font: inherit; font-size: var(--type-field-size); font-weight: 500; text-align: left; cursor: pointer; }
+        .mm-nav-item:hover { background: var(--aw-surface-muted); }
+        .mm-nav-item[aria-current="true"] { background: color-mix(in srgb, var(--aw-accent) 10%, var(--aw-surface)); font-weight: 600; }
+        .mm-nav-mark { width: 22px; height: 22px; flex: none; border-radius: 50%; border: 2px solid var(--aw-border-strong); box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+        .mm-nav-mark.is-done { background: var(--aw-accent); border-color: var(--aw-accent); }
+        .mm-progress { height: 6px; border-radius: 999px; background: var(--aw-border-strong); margin-top: 10px; overflow: hidden; }
+        .mm-progress-bar { height: 100%; background: var(--aw-accent); transition: width .25s var(--aw-ease); }
+        /* Fields: sentence-case labels, 40px controls */
+        .mm-form .aw-label { text-transform: none; letter-spacing: 0; font-size: calc(var(--type-body-size) - 1px); font-weight: 600; color: var(--aw-text); margin-bottom: 6px; }
+        .mm-form .aw-input, .mm-form .aw-select .ant-select-selector { min-height: 40px; border-radius: 10px; font-weight: 500; background: var(--aw-surface); border-color: var(--aw-border-strong); }
+        .mm-form .aw-picker.ant-picker { min-height: 40px; border-radius: 10px; background: var(--aw-surface); border-color: var(--aw-border-strong); }
+        .mm-form .aw-picker input { font-weight: 500; }
+        .mm-form .aw-input:disabled, .mm-form .mm-auto { background: var(--aw-surface-muted); }
+        .mm-form .mm-gender-option { min-height: 40px; }
+        @media (max-width: 900px) { .mm-rail { position: static; flex: 1 1 100%; max-width: none; } .mm-form .aw-content { padding: 20px 16px 40px; } .mm-form .mm-section { padding: 20px; } }
+        .mm-form .mm-checkbox { display: flex; align-items: center; gap: 10px; min-height: var(--aw-control-h); padding: 0 12px; border: 1px solid var(--aw-border-strong); border-radius: var(--aw-radius); background: var(--aw-surface); cursor: pointer; user-select: none; font-size: var(--type-field-size); font-weight: 600; color: var(--aw-text); }
+        .mm-form .mm-checkbox:hover { border-color: color-mix(in srgb, var(--aw-accent) 45%, var(--aw-border-strong)); }
+        .mm-form .mm-checkbox input { width: 16px; height: 16px; margin: 0; accent-color: var(--aw-accent); cursor: pointer; }
+        .mm-form .mm-checkbox:has(input:checked) { border-color: var(--aw-accent); background: var(--aw-accent-soft); }
+        .mm-form .mm-checkbox:focus-within { outline: 3px solid var(--aw-focus); outline-offset: 1px; }
+
+                .mm-form .mm-section > .grid { column-gap: calc(16px * var(--ui-density, 1)); row-gap: calc(18px * var(--ui-density, 1)); align-items: start; margin-bottom: 0; }
+                .mm-form .mm-section > .grid + .grid { margin-top: calc(18px * var(--ui-density, 1)); }
         .mm-form .mm-textarea { height: auto; min-height: 64px; padding-top: 7px; resize: none; }
         .mm-form .mm-auto { background: var(--aw-surface-muted); color: var(--aw-muted); }
         .mm-form .mm-kyc-select { min-width: 160px; }
         .mm-form .mm-accent-text { color: var(--aw-accent); }
 
         /* Record bar: photo, member no, search, mode, Active, Reset, Save */
-        .mm-record-toolbar { padding-bottom: 11px; margin-bottom: 12px; border-bottom: 1px solid var(--aw-border); gap: 8px; }
-        .mm-form .mm-inline-label { margin: 0; white-space: nowrap; }
         .mm-form .mm-memberno { width: 110px; }
         .mm-form .mm-avatar { border: 1px solid var(--aw-border); box-shadow: var(--aw-shadow); }
         .mm-form .mm-avatar-initials { background: var(--aw-accent); color: #fff; font-weight: 700; font-size: calc(var(--type-body-size) - 1px); }
@@ -1957,20 +2092,6 @@ const MemberMaster: React.FC = () => {
         .mm-form .mm-queued::before { content: '↑ '; }
         .mm-form .mm-queued-badge { background: var(--aw-surface); box-shadow: var(--aw-shadow); }
         .mm-form .mm-saved { color: var(--aw-success); font-size: calc(var(--type-label-size) + 1px); font-weight: 700; }
-        .mm-form .mm-active-toggle {
-          display: inline-flex; align-items: center; gap: 7px; min-height: calc(var(--aw-control-h) - 2px); padding: 0 13px; border-radius: 999px; cursor: pointer; user-select: none;
-          border: 1px solid var(--aw-border-strong); background: var(--aw-surface-muted); color: var(--aw-muted); font-size: var(--type-label-size); font-weight: 700;
-          transition: background-color .2s var(--aw-ease), border-color .2s var(--aw-ease), color .2s var(--aw-ease) !important; transition-duration: .2s !important;
-        }
-        .mm-form .mm-active-toggle .mm-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aw-muted); }
-        .mm-form .mm-active-toggle.is-on { color: var(--aw-success); border-color: color-mix(in srgb, var(--aw-success) 35%, transparent); background: color-mix(in srgb, var(--aw-success) 10%, var(--aw-surface)); }
-        .mm-form .mm-active-toggle.is-on .mm-dot { background: var(--aw-success); }
-        .mm-form .mm-active-toggle:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
-        .mm-form .mm-gender-option { min-height: calc(var(--aw-control-h) - 2px); }
-
-        /* Insured box */
-        .mm-form .mm-check { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; border: 1px solid var(--aw-border-strong); background: var(--aw-surface-muted); color: #fff; font-size: 12px; font-weight: 700; }
-        .mm-form .mm-check.is-on { background: var(--aw-accent); border-color: var(--aw-accent); }
 
         /* Photos, KYC and signature */
         .mm-form .mm-subcard { padding: 10px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface-muted); }
@@ -1992,7 +2113,6 @@ const MemberMaster: React.FC = () => {
         /* Message after Create / Update / Load: top-right, above everything */
         .mm-form .mm-toast { position: fixed; top: 16px; right: 16px; z-index: 50; min-width: 320px; max-width: 420px; margin: 0; box-shadow: var(--aw-shadow-pop); }
 
-        @media (max-width: 1050px) { .mm-record-toolbar { gap: 6px; } }
         @media (max-width: 720px) {
           .mm-section > .grid.grid-cols-12 > div { grid-column: span 6 / span 6; }
           .mm-section > .grid.grid-cols-12 > .col-span-12, .mm-section > .grid.grid-cols-12 > .col-span-6 { grid-column: span 12 / span 12; }

@@ -190,7 +190,7 @@ const Calculator: React.FC = () => {
   const selectedType = selectedLoanType !== 'custom' ? loanTypes.find(l => l.code === selectedLoanType) : undefined;
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* Header */}
       <div className="aw-header aw-ambient">
@@ -200,7 +200,7 @@ const Calculator: React.FC = () => {
         </div>
         <div className="aw-actions">
           {loading && (
-            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} role="status">
               <RefreshCw size={12} className="aw-spin" /> {t('Loading...')}
             </span>
           )}
@@ -285,7 +285,7 @@ const Calculator: React.FC = () => {
                 {ratesNotice && <p className="aw-muted" role="alert" style={{ color: 'var(--aw-warning)' }}>{ratesNotice}</p>}
                 {selectedType && (
                   <div className="aw-panel aw-fade-in">
-                    <p className="aw-muted" style={{ marginBottom: 6 }}>{selectedType.description}</p>
+                    <p className="aw-muted" style={{ marginBottom: 8 }}>{selectedType.description}</p>
                     <div className="aw-row-value" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--aw-accent)' }}>
                       <span>{t('Max:')} {formatCurrency(selectedType.maxAmount)}</span>
                       <span>{selectedType.maxTenure}M</span>
@@ -384,7 +384,7 @@ const Calculator: React.FC = () => {
                 {activeTab === 'schedule' && (
                   <div className="aw-fade-in">
                     <div className="aw-stat-head" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                         <BarChart3 size={14} style={{ color: 'var(--aw-accent)' }} />
                         <span className="aw-stat-label">{t('Amortization Schedule')}</span>
                       </span>
@@ -467,7 +467,7 @@ const Calculator: React.FC = () => {
 
             {/* Footer bar inside workspace */}
             <div className="aw-main-foot">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span>{t('Computation:')} <span style={{ color: 'var(--aw-text)' }}>{t('Dynamic')}</span></span>
                 <span>{t('Audit:')} <span style={{ color: 'var(--aw-success)' }}>{t('Verified')}</span></span>
               </div>
@@ -481,11 +481,11 @@ const Calculator: React.FC = () => {
       {/* Member Lookup Modal */}
       {showMemberLookup && (
         <div className="aw-modal-backdrop" onClick={() => setShowMemberLookup(false)}>
-          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Select Member')} onClick={(e) => e.stopPropagation()}>
+          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Select member')} onClick={(e) => e.stopPropagation()}>
             <div className="aw-modal-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="aw-card-icon"><User size={14} /></span>
-                <h2 className="aw-card-title">{t('Select Member')}</h2>
+                <h2 className="aw-card-title">{t('Select member')}</h2>
               </div>
               <button type="button" onClick={() => setShowMemberLookup(false)} className="aw-icon-btn" aria-label={t('Close')}>
                 <X size={15} />

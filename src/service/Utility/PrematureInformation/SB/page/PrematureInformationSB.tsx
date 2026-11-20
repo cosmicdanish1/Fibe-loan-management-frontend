@@ -147,7 +147,7 @@ const PrematureInformationSB: React.FC = () => {
   , []);
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* Header */}
       <div className="aw-header aw-ambient">
@@ -178,7 +178,7 @@ const PrematureInformationSB: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><User size={14} /></span>
-              <h2 className="aw-card-title">{t('Member Selection')}</h2>
+              <h2 className="aw-card-title">{t('Member selection')}</h2>
             </div>
             <div className="aw-stack">
               <div>

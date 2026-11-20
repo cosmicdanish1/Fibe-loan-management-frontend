@@ -45,7 +45,7 @@ const TwoFactorSettings: React.FC = () => {
   const index = Math.max(0, tabs.findIndex((x) => x.key === tab));
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Two-Factor & Approvals')}</h1>

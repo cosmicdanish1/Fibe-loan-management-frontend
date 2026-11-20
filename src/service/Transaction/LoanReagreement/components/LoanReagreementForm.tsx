@@ -101,7 +101,7 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
     const activeTab = tabList.find(x => x.id === tab)?.id ?? tabList[0]?.id;
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Loan Re-agreement')}</h1>
@@ -148,7 +148,7 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head"><span className="aw-card-icon"><CreditCard size={14} /></span><h2 className="aw-card-title">{t('Active loans')}</h2>
                                     <span className="aw-meta" style={{ marginLeft: 'auto' }}>{loans.length}</span></div>
-                                <div className="aw-stack" style={{ gap: 6 }} role="radiogroup" aria-label={t('Active loans')}>
+                                <div className="aw-stack" style={{ gap: 8 }} role="radiogroup" aria-label={t('Active loans')}>
                                     {loans.map(l => {
                                         const isSel = selected?.loanCaseNo === l.loanCaseNo && selected?.loanType === l.loanType;
                                         return (
@@ -171,7 +171,7 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
                         {selected && !selected.openReagreement && (
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head"><span className="aw-card-icon"><FileSignature size={14} /></span>
-                                    <h2 className="aw-card-title">{t('New Terms')}</h2></div>
+                                    <h2 className="aw-card-title">{t('New terms')}</h2></div>
                                 <div className="aw-stack">
                                     <div>
                                         <label className="aw-label" htmlFor="lra-n">{t('Number of installments (tenure)')} <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
@@ -233,7 +233,7 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
                                             <p className="aw-meta" style={{ margin: '4px 0' }}>{STATUS_LABEL[r.status]}</p>
                                             <p className="aw-meta" style={{ margin: 0 }}>Case #{r.oldLoanCaseNo} → <strong>#{r.newLoanCaseNo}</strong> · {r.neu.installments} {t('inst. @')} {r.neu.rate}% · EMI ₹{fmtMoney(r.neu.monthlyInstallment)}</p>
                                             <p className="aw-meta" style={{ margin: '2px 0 6px' }}>{t('Applied')} {fmtDate(r.applicationDate)}{r.voucherNo ? ` · voucher ${r.voucherNo}` : ''}</p>
-                                            <span className="aw-btn-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+                                            <span className="aw-btn-row" style={{ flexWrap: 'wrap', gap: 8 }}>
                                                 <ReagreementDocumentActions id={r.id} draft baseName={r.reagreementNo} />
                                                 {r.status !== 'VOUCHERED' && (
                                                     <button type="button" className="aw-btn aw-btn-danger aw-btn-sm" onClick={() => { setCancelTarget(r); setCancelReason(''); }}>{t('Cancel')}</button>
@@ -252,7 +252,7 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileSignature size={14} /></span>
                             <div>
-                                <h2 className="aw-card-title">{t('Re-agreement Quote')}</h2>
+                                <h2 className="aw-card-title">{t('Re-agreement quote')}</h2>
                                 {selected && (
                                     <p className="aw-meta">
                                         {memberName}{mbno && ` — #${mbno}`} — {TYPE_LABEL[selected.loanType] || selected.loanType} #{selected.loanCaseNo}

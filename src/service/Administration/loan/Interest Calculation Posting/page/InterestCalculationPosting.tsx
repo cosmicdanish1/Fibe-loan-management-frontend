@@ -35,7 +35,7 @@ const InterestCalculationPosting: React.FC = () => {
 
   usePageToolbarActions({
     onSave: handlePost,
-    saveLabel: 'Post Transaction',
+    saveLabel: 'Post transaction',
     saveEnabled: !postDisabled,
   });
 
@@ -51,12 +51,12 @@ const InterestCalculationPosting: React.FC = () => {
   };
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Interest Calculation & Posting')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Calculator size={12} /> {t('Daily Balance Method · Ledger Auto-Post')}
             <span className="aw-pill" style={{ marginLeft: 4 }}>v3.0</span>
           </p>
@@ -67,7 +67,7 @@ const InterestCalculationPosting: React.FC = () => {
           </button>
           <button type="button" onClick={handlePost} disabled={postDisabled} className="aw-btn aw-btn-primary">
             {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <Send size={13} />}
-            {t('Post Transaction')}
+            {t('Post transaction')}
           </button>
           <button
             type="button"
@@ -92,7 +92,7 @@ const InterestCalculationPosting: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Calculator size={14} /></span>
-                <h2 className="aw-card-title">{t('Calculation Scope')}</h2>
+                <h2 className="aw-card-title">{t('Calculation scope')}</h2>
               </div>
               <div className="aw-form-3">
                 <div>
@@ -137,8 +137,8 @@ const InterestCalculationPosting: React.FC = () => {
                 ) : (
                   <div>
                     <span className="aw-label">{t('Annual Rate')}</span>
-                    <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', gap: 6, height: 'var(--aw-control-h)', padding: '0 10px' }}>
-                      <TrendingUp size={13} style={{ color: 'var(--aw-accent)' }} />
+                    <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', gap: 6, height: 'var(--aw-control-h)', padding: '0 12px' }}>
+                      <TrendingUp size={13} />
                       <span className="aw-strong">{t('Rate from Business Rules')}</span>
                     </div>
                   </div>
@@ -195,7 +195,7 @@ const InterestCalculationPosting: React.FC = () => {
                       </button>
                     </div>
                     {formData.memberName && (
-                      <p className="aw-strong aw-fade-in" style={{ marginTop: 6, color: 'var(--aw-accent)' }}>{formData.memberName}</p>
+                      <p className="aw-strong aw-fade-in" style={{ marginTop: 8, color: 'var(--aw-accent)' }}>{formData.memberName}</p>
                     )}
                   </div>
                 ) : isYearly ? (
@@ -230,13 +230,13 @@ const InterestCalculationPosting: React.FC = () => {
               </div>
               <div className="aw-stack">
                 <dl className="aw-facts" style={{ gridTemplateColumns: '1fr' }}>
-                  <div><dt>{t('GL Head')}</dt><dd style={{ color: 'var(--aw-success)' }}>{glHead}</dd></div>
+                  <div><dt>{t('GL Head')}</dt><dd>{glHead}</dd></div>
                 </dl>
                 <button type="button" onClick={handlePrintList} disabled={isLoading} className="aw-btn aw-btn-secondary" style={{ width: '100%' }}>
                   {isLoading ? <RefreshCw size={13} className="aw-spin" /> : <FileText size={13} />}
-                  {t('Preview Interest List')}
+                  {t('Preview interest list')}
                 </button>
-                <p className="aw-meta" style={{ textAlign: 'center' }}>{t('Preview records · then click Post Transaction')}</p>
+                <p className="aw-meta" style={{ textAlign: 'center' }}>{t('Preview records · then click Post transaction')}</p>
               </div>
             </section>
           </div>
@@ -245,10 +245,10 @@ const InterestCalculationPosting: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Database size={14} /></span>
-              <h2 className="aw-card-title">{t('Interest Preview Records')}</h2>
+              <h2 className="aw-card-title">{t('Interest preview records')}</h2>
               {memberRecords.length > 0 && <span className="aw-pill">{memberRecords.length} {t('Records')}</span>}
               {isLoading && (
-                <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <RefreshCw size={12} className="aw-spin" /> {t('Processing...')}
                 </span>
               )}
@@ -269,7 +269,7 @@ const InterestCalculationPosting: React.FC = () => {
               <div className="aw-empty" style={{ padding: 32 }}>
                 <Search size={26} />
                 <strong className="aw-strong">{t('No records loaded')}</strong>
-                <span className="aw-meta">{t('Set parameters and click Preview Interest List')}</span>
+                <span className="aw-meta">{t('Set parameters and click Preview interest list')}</span>
               </div>
             ) : null}
           </section>

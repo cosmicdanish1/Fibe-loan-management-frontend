@@ -36,7 +36,7 @@ const CastCategoryForm: React.FC<CastCategoryHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
 
             {/* Header */}
             <div className="aw-header aw-ambient">
@@ -65,8 +65,8 @@ const CastCategoryForm: React.FC<CastCategoryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Tag size={14} /></span>
-                            <h2 className="aw-card-title">{t('Add / Edit Category')}</h2>
-                            <span className={`aw-pill ${isEditing ? 'tone-warning' : 'tone-success'}`} style={{ marginLeft: 'auto', textTransform: 'uppercase' }}>
+                            <h2 className="aw-card-title">{t('Add / edit category')}</h2>
+                            <span className={`aw-pill ${isEditing ? 'tone-warning' : 'tone-success'}`} style={{ marginLeft: 'auto' }}>
                                 {isEditing ? t('Editing #{{1}}', { 1: data.categoryCode }) : t('New Entry')}
                             </span>
                         </div>
@@ -99,7 +99,7 @@ const CastCategoryForm: React.FC<CastCategoryHookReturn> = ({
                     {/* ── List ── */}
                     <section className="aw-card aw-main">
                         <div className="aw-main-head">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <span className="aw-card-icon"><Users size={14} /></span>
                                 <h2 className="aw-card-title">{t('Categories')}</h2>
                             </div>
@@ -150,8 +150,8 @@ const CastCategoryForm: React.FC<CastCategoryHookReturn> = ({
 
             {/* Footer */}
             <div className="aw-footer">
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Cast Category Registry')}</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> {t('Cast Category Registry')}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
             </div>
 
         </div>

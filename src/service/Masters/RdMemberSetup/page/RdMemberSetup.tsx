@@ -27,14 +27,14 @@ const RdMemberSetup: React.FC = () => {
     };
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">{t('RD Member Setup')}</h1>
+                    <h1 className="aw-title">{t('RD/CD Member Setup')}</h1>
                     <p className="aw-desc">{t("Set a member's monthly RD contribution for the current financial year")}</p>
                 </div>
                 {yearLabel && (
-                    <span className="aw-pill" style={{ gap: 6 }}><Calendar size={12} /> {yearLabel}</span>
+                    <span className="aw-pill" style={{ gap: 8 }}><Calendar size={12} /> {yearLabel}</span>
                 )}
             </div>
 
@@ -65,7 +65,7 @@ const RdMemberSetup: React.FC = () => {
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head">
                                     <span className="aw-card-icon"><Wallet size={14} /></span>
-                                    <h2 className="aw-card-title">{t('Monthly RD Amount')}</h2>
+                                    <h2 className="aw-card-title">{t('Monthly RD amount')}</h2>
                                 </div>
                                 <div className="aw-stack">
                                     <p className="aw-muted">
@@ -82,7 +82,7 @@ const RdMemberSetup: React.FC = () => {
                                                 className="aw-input"
                                             />
                                         </div>
-                                        <p className="aw-meta" style={{ marginTop: 6 }}>
+                                        <p className="aw-meta" style={{ marginTop: 8 }}>
                                             {t("The first amount set for a member counts from the start of this month. Later changes are allowed: each month uses the amount that was in effect on its due date, so a change saved after this month's due date starts with the next month.")}
                                         </p>
                                     </div>
@@ -104,7 +104,7 @@ const RdMemberSetup: React.FC = () => {
                     {mbno && (
                         <section className="aw-card aw-main aw-fade-in">
                             <div className="aw-main-head">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <span className="aw-card-icon"><History size={14} /></span>
                                     <h2 className="aw-card-title">{t('Amount History — {{1}}', { 1: yearLabel })}</h2>
                                 </div>

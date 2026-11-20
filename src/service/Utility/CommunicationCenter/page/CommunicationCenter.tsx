@@ -207,7 +207,7 @@ const CommunicationCenter: React.FC = () => {
   const closeChannelPicker = () => { setShowChannelPicker(false); setPendingSendAction(null); };
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
@@ -220,7 +220,7 @@ const CommunicationCenter: React.FC = () => {
         </div>
         <div className="aw-actions">
           {loading && (
-            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} role="status">
               <RefreshCw size={12} className="aw-spin" /> {t('Loading...')}
             </span>
           )}
@@ -311,7 +311,7 @@ const CommunicationCenter: React.FC = () => {
                     </div>
                     {form.memberName && <div className="aw-strong" style={{ marginTop: 4, color: 'var(--aw-accent)' }}>{form.memberName}</div>}
                   </div>
-                  <div className="aw-two" style={{ gap: 10 }}>
+                  <div className="aw-two" style={{ gap: 12 }}>
                     <div>
                       <label className="aw-label" htmlFor="ch-channel">{t('Channel')}</label>
                       <Select id="ch-channel" value={form.channel} onChange={v => setForm(p => ({ ...p, channel: v }))} className="aw-select" popupClassName="aw-select-popup"
@@ -342,7 +342,7 @@ const CommunicationCenter: React.FC = () => {
             <div className="aw-main-head">
               <div className="aw-toolbar">
                 <span className="aw-card-icon"><Inbox size={14} /></span>
-                <h2 className="aw-card-title">{t('Message Queue')}</h2>
+                <h2 className="aw-card-title">{t('Message queue')}</h2>
                 <span className="aw-pill">{filtered.length}</span>
                 <div className="aw-input-wrap has-icon" style={{ width: 170 }}>
                   <Search size={13} />
@@ -443,7 +443,7 @@ const CommunicationCenter: React.FC = () => {
 
             {/* Footer summary */}
             <div className="aw-main-foot">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ color: 'var(--aw-success)' }}><i className="aw-status-dot" />LIVE</span>
                 <span>{t('{{1}} of {{2}} messages {{3}} {{4}}', { 1: filtered.length, 2: logs.length, 3: searchText && ` · "${searchText}"`, 4: ' · ' + t('Auto-refresh 30s') })}</span>
               </div>
@@ -460,11 +460,11 @@ const CommunicationCenter: React.FC = () => {
       {/* Member Lookup Modal */}
       {showLookup && (
         <div className="aw-modal-backdrop" onClick={() => setShowLookup(false)}>
-          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Member Lookup')} style={{ maxWidth: '62rem' }} onClick={e => e.stopPropagation()}>
+          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Member lookup')} style={{ maxWidth: '62rem' }} onClick={e => e.stopPropagation()}>
             <div className="aw-modal-head">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="aw-card-icon"><Search size={14} /></span>
-                <h2 className="aw-card-title">{t('Member Lookup')}</h2>
+                <h2 className="aw-card-title">{t('Member lookup')}</h2>
               </div>
               <button type="button" onClick={() => setShowLookup(false)} className="aw-icon-btn" aria-label={t('Close')} data-tip={t('Close')} data-tip-pos="bottom-end">
                 <X size={15} />
@@ -480,12 +480,12 @@ const CommunicationCenter: React.FC = () => {
       {/* Channel Selection Modal */}
       {showChannelPicker && (
         <div className="aw-modal-backdrop" onClick={closeChannelPicker}>
-          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Choose Delivery Channel')}
+          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Choose delivery channel')}
             style={{ maxWidth: '27rem', height: 'auto', maxHeight: '90%' }} onClick={e => e.stopPropagation()}>
             <div className="aw-modal-head">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="aw-card-icon"><Send size={14} /></span>
-                <h2 className="aw-card-title" style={{ textTransform: 'uppercase' }}>{t('Choose Delivery Channel')}</h2>
+                <h2 className="aw-card-title" style={{ textTransform: 'uppercase' }}>{t('Choose delivery channel')}</h2>
               </div>
               <button type="button" onClick={closeChannelPicker} className="aw-icon-btn" aria-label={t('Close')} data-tip={t('Close')} data-tip-pos="bottom-end">
                 <X size={15} />

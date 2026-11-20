@@ -69,7 +69,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
 
             {/* Header */}
             <div className="aw-header aw-ambient">
@@ -98,7 +98,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><User size={14} /></span>
-                            <h2 className="aw-card-title">{t('Member Details')}</h2>
+                            <h2 className="aw-card-title">{t('Member details')}</h2>
                             {(data.firstName || data.lastName) && (
                                 <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-accent)' }}>
                                     {[data.prefix, data.firstName, data.middleName, data.lastName].filter(Boolean).join(' ')}
@@ -144,7 +144,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Landmark size={14} /></span>
-                            <h2 className="aw-card-title">{t('Account Details')}</h2>
+                            <h2 className="aw-card-title">{t('Account details')}</h2>
                         </div>
                         <div className="aw-form-3">
                             <div>
@@ -180,9 +180,9 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                     {/* ── Nominee Details ── */}
                     <section className="aw-card aw-main">
                         <div className="aw-main-head">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <span className="aw-card-icon"><Users size={14} /></span>
-                                <h2 className="aw-card-title">{t('Nominee Details')}</h2>
+                                <h2 className="aw-card-title">{t('Nominee details')}</h2>
                             </div>
                             <button type="button" onClick={addNominee} className="aw-btn aw-btn-secondary aw-btn-sm">
                                 <Plus size={12} /> {t('Add Nominee')}
@@ -241,7 +241,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
 
                     {/* ── Special Instructions ── */}
                     <section className="aw-card">
-                        <label className="aw-label" htmlFor="sa-instructions" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <label className="aw-label" htmlFor="sa-instructions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <Info size={12} /> {t('Special Instructions')}
                         </label>
                         <textarea id="sa-instructions" value={data.specialInstructions}
@@ -258,7 +258,7 @@ const SavingAccountForm: React.FC<SavingAccountHookReturn> = ({
                     <Building2 size={12} /> {t('Saving Account Registry')}
                     <span style={{ opacity: .5 }}>·</span> {t('Authorized')}
                 </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
             </div>
 
         </div>

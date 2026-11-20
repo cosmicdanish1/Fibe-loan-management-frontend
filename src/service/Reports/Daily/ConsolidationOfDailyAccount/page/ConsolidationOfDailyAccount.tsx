@@ -311,7 +311,7 @@ const ConsolidationOfDailyAccount: React.FC = () => {
 
   return (
     <ReportShell
-      className="cda-page"
+      className="cda-page aw-calm"
       title="Consolidation Of Daily A/c"
       desc="Account head summary"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

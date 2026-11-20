@@ -254,7 +254,7 @@ const MemberLedger: React.FC = () => {
 
   return (
     <ReportShell
-      className="member-ledger-page"
+      className="member-ledger-page aw-calm"
       title="Member Ledger"
       desc="Member detail ledger: shares, loans and compulsory deposit"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

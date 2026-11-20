@@ -190,7 +190,7 @@ const MemberLoanDetail: React.FC = () => {
 
   return (
     <ReportShell
-      className="member-loan-detail-page"
+      className="member-loan-detail-page aw-calm"
       title="Member Loan Detail"
       desc="Loan register by member range and loan type"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

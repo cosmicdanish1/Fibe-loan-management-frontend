@@ -11,8 +11,8 @@ interface TabNavigationProps {
 const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange }) => {
   const { t } = useTranslation();
   const tabs = [
-    { id: 'loan-details' as const, label: t('Loan Details') },
-    { id: 'nominee-details' as const, label: t('Nominee Details') },
+    { id: 'loan-details' as const, label: t('Loan details') },
+    { id: 'nominee-details' as const, label: t('Nominee details') },
     { id: 'loan-against-deposit' as const, label: t('Loan Against RD') }
   ];
 

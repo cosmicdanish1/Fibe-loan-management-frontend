@@ -191,7 +191,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
   const inr = (n: any) => `₹${Number(n).toLocaleString('en-IN')}`;
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
@@ -220,7 +220,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Wallet size={14} /></span>
-                <h2 className="aw-card-title">{t('Interest Scope')}</h2>
+                <h2 className="aw-card-title">{t('Interest scope')}</h2>
               </div>
               <div className="aw-two">
                 <div className="aw-stack">
@@ -280,7 +280,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                         className={`aw-input ${errors.rate ? 'is-invalid' : ''}`}
                       />
                     </div>
-                    {errors.rate && <p className="aw-meta" style={{ color: 'var(--aw-danger)', marginTop: 4, fontWeight: 700 }}>{errors.rate}</p>}
+                    {errors.rate && <p className="aw-meta" style={{ color: 'var(--aw-danger)', marginTop: 4, fontWeight: 600 }}>{errors.rate}</p>}
                   </div>
                   <div>
                     <label className="aw-label" htmlFor="ic-min">{t('Min Calculation Amount')}</label>
@@ -304,7 +304,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
             <section className="aw-card" style={{ alignSelf: 'start' }}>
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Send size={14} /></span>
-                <h2 className="aw-card-title">{t('Finalize Transaction')}</h2>
+                <h2 className="aw-card-title">{t('Finalize transaction')}</h2>
               </div>
               <div className="aw-stack">
                 <div>
@@ -332,7 +332,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
                 </button>
                 {showCrystalReport && (
                   <button type="button" onClick={handleCrystalReport} disabled={disabled} className="aw-btn aw-btn-secondary" style={{ width: '100%' }}>
-                    <FileText size={13} /> {t('Generate Report')}
+                    <FileText size={13} /> {t('Generate report')}
                   </button>
                 )}
               </div>
@@ -344,13 +344,13 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
             <div className="aw-card-head">
               <span className="aw-card-icon"><List size={14} /></span>
               <div>
-                <h2 className="aw-card-title">{t('Calculation Breakdown')}</h2>
+                <h2 className="aw-card-title">{t('Calculation breakdown')}</h2>
                 <p className="aw-meta">{t('Detailed ledger analysis')}</p>
               </div>
               <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 {calculationResult && <span className="aw-pill tone-success"><CheckCircle2 size={11} style={{ marginRight: 4 }} />{t('Ready')}</span>}
                 {isCalculating && (
-                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                     <RefreshCw size={12} className="aw-spin" /> {t('Analyzing...')}
                   </span>
                 )}
@@ -390,7 +390,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
             ) : (
               <div className="aw-empty" style={{ padding: 40 }}>
                 <TrendingUp size={28} />
-                <strong className="aw-strong">{t('No Analysis Performed')}</strong>
+                <strong className="aw-strong">{t('No analysis performed')}</strong>
                 <span className="aw-meta">{t('Configure parameters and click "Run Analysis"')}</span>
               </div>
             )}

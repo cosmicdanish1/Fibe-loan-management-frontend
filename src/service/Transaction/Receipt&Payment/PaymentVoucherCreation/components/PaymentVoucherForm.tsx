@@ -53,7 +53,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             {/* ── Header ── */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
@@ -98,7 +98,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'end' }}>
                             <div>
                                 <label className="aw-label" htmlFor="pvc-no">{t('Voucher No.')}</label>
-                                <input id="pvc-no" value={formData.voucherNo} onChange={e => updateField('voucherNo', e.target.value)} placeholder={t('Auto...')} className="aw-input" style={{ fontFamily: 'monospace', fontWeight: 700 }} />
+                                <input id="pvc-no" value={formData.voucherNo} onChange={e => updateField('voucherNo', e.target.value)} placeholder={t('Auto...')} className="aw-input" style={{ fontFamily: 'monospace', fontWeight: 600 }} />
                             </div>
                             <div>
                                 <label className="aw-label" htmlFor="pvc-date">{t('Trans Date')}</label>
@@ -140,7 +140,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                                 <div className="aw-input-wrap has-action">
                                     <input id="pvc-member" value={formData.memberNo} onChange={e => updateField('memberNo', e.target.value)}
                                         onKeyDown={e => { if (e.key === 'PageUp') { e.preventDefault(); setShowLookup(true); } }}
-                                        className="aw-input" style={{ fontFamily: 'monospace', fontWeight: 700 }} />
+                                        className="aw-input" style={{ fontFamily: 'monospace', fontWeight: 600 }} />
                                     <button type="button" className="aw-input-action" onClick={() => setShowLookup(true)} aria-label={t('Member lookup')} data-tip={t('Member lookup')} data-tip-pos="top-end">
                                         <Search size={13} />
                                     </button>
@@ -160,7 +160,7 @@ const PaymentVoucherForm: React.FC<PaymentVoucherHookReturn> = ({
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Plus size={14} /></span>
                             <h2 className="aw-card-title">{t('Transactions')}</h2>
-                            <span className="aw-inline" style={{ marginLeft: 'auto', gap: 10 }}>
+                            <span className="aw-inline" style={{ marginLeft: 'auto', gap: 12 }}>
                                 <span className="aw-pill">{t('Total Amount')} {totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                 <button type="button" onClick={addRow} className="aw-btn aw-btn-secondary aw-btn-sm"><Plus size={12} /> {t('Add Row')}</button>
                             </span>

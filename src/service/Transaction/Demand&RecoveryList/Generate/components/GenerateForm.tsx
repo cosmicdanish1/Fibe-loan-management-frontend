@@ -36,7 +36,7 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
     );
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Demand Generation')}</h1>
@@ -50,7 +50,7 @@ const GenerateForm: React.FC<GenerateHookReturn> = ({
             </div>
 
             <div className="aw-content">
-                <div className="aw-stack" style={{ maxWidth: 760 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'start', maxWidth: 1120 }}>
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><CalendarDays size={14} /></span>

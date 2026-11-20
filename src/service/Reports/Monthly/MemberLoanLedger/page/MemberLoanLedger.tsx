@@ -295,7 +295,7 @@ const MemberLoanLedger: React.FC = () => {
 
   return (
     <ReportShell
-      className="mll-page"
+      className="mll-page aw-calm"
       title="Member Loan Ledger"
       desc="Loan ledger of one member and loan case"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

@@ -176,7 +176,7 @@ const About: React.FC = () => {
   const nodeVersion = systemInfo?.nodeVersion ?? 'v22.17.0';
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('About System')}</h1>
@@ -226,7 +226,7 @@ const About: React.FC = () => {
                 {CONTACT.map(row => (
                   <div key={row.label} className="aw-row">
                     <span className="aw-meta">{row.label}</span>
-                    {row.href ? <a href={row.href} style={{ fontWeight: 700, color: 'var(--aw-accent)' }}>{row.value}</a> : <strong>{row.value}</strong>}
+                    {row.href ? <a href={row.href} style={{ fontWeight: 600, color: 'var(--aw-accent)' }}>{row.value}</a> : <strong>{row.value}</strong>}
                   </div>
                 ))}
               </div>

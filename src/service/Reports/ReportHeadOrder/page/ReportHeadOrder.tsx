@@ -259,7 +259,7 @@ const ReportHeadOrder: React.FC = () => {
   };
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <style>{`
         .rho-head, .rho-row { display: grid; grid-template-columns: ${COLS}; align-items: center; column-gap: 8px; padding: 0 12px; box-sizing: border-box; }
         .rho-head { height: 36px; position: sticky; top: 0; z-index: 3; background: var(--aw-surface-muted); border-bottom: 1px solid var(--aw-border-strong);
@@ -279,7 +279,7 @@ const ReportHeadOrder: React.FC = () => {
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">Report Head Order</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ListOrdered size={12} /> Order in which account heads print on reports
           </p>
         </div>
@@ -313,7 +313,7 @@ const ReportHeadOrder: React.FC = () => {
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
-            <span className="is-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+            <span className="is-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
               <Info size={12} />
               {searching
                 ? 'Clear the search to drag. You can still type a position number or use the arrows.'

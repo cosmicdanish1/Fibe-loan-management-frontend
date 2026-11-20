@@ -50,7 +50,7 @@ const NomineeDetailsTab: React.FC<NomineeDetailsTabProps> = ({
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <h2 className="aw-card-title">{t('Nominee Details')}</h2>
+        <h2 className="aw-card-title">{t('Nominee details')}</h2>
         <p className="aw-desc">{t('Add nominee information for the loan application')}</p>
       </div>
       <DataTable

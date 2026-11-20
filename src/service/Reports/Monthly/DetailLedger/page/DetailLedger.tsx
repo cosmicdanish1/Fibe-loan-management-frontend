@@ -265,7 +265,7 @@ const DetailLedger: React.FC = () => {
 
   return (
     <ReportShell
-      className="dtl-page"
+      className="dtl-page aw-calm"
       title="Detail Ledger"
       desc="Transactions of one account head"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

@@ -137,12 +137,12 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
   const handleClear = () => setFormData({ userName: '', loginDate: '', loginTime: '' });
 
   return (
-    <div className={`app-window ${className}`}>
+    <div className={`app-window aw-calm ${className}`}>
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Session Manager')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Building2 size={12} /> {t('Administrative Override')}
           </p>
         </div>
@@ -167,9 +167,9 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><UserX size={14} /></span>
-              <h2 className="aw-card-title">{t('Session Parameters')}</h2>
+              <h2 className="aw-card-title">{t('Session parameters')}</h2>
               <button type="button" onClick={handleShowUsers} disabled={isLoading} className="aw-btn aw-btn-secondary aw-btn-sm" style={{ marginLeft: 'auto' }}>
-                <Search size={12} /> {t('Peek Active')}
+                <Search size={12} /> {t('Peek active')}
               </button>
             </div>
             <div className="aw-stack">
@@ -193,14 +193,14 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
 
               <div className="aw-two">
                 <div>
-                  <label className="aw-label" htmlFor="lo-date" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <label className="aw-label" htmlFor="lo-date" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Calendar size={11} /> {t('Login Date')}
                   </label>
                   <input id="lo-date" type="date" value={formData.loginDate}
                     onChange={e => updateField('loginDate', e.target.value)} className="aw-input" />
                 </div>
                 <div>
-                  <label className="aw-label" htmlFor="lo-time" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <label className="aw-label" htmlFor="lo-time" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Clock size={11} /> {t('Session Start')}
                   </label>
                   <input id="lo-time" type="time" value={formData.loginTime}
@@ -215,7 +215,7 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Activity size={14} /></span>
-                <h2 className="aw-card-title">{t('Active Sessions')}</h2>
+                <h2 className="aw-card-title">{t('Active sessions')}</h2>
                 <span className="aw-pill" style={{ marginLeft: 'auto' }}>{activeSessions.length}</span>
               </div>
               <div className="aw-table-wrap" style={{ maxHeight: '38vh' }}>
@@ -252,7 +252,7 @@ const LogoutUser: React.FC<LogoutUserProps> = ({ className = '' }) => {
                   </tbody>
                 </table>
               </div>
-              <p className="aw-meta" style={{ marginTop: 6 }}>{t('Click a row to select that session.')}</p>
+              <p className="aw-meta" style={{ marginTop: 8 }}>{t('Click a row to select that session.')}</p>
             </section>
           )}
         </div>

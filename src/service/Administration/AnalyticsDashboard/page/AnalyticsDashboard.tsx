@@ -156,7 +156,7 @@ const AnalyticsDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Analytics Hub — {{1}}', { 1: section })}</h1>
@@ -192,15 +192,15 @@ const AnalyticsDashboard: React.FC = () => {
               <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
                 <div>
                   <p className="aw-label" style={{ margin: 0 }}>{t('Total sessions')}</p>
-                  <div className="aw-inline" style={{ alignItems: 'flex-end', gap: 10, marginTop: 8 }}>
-                    <span style={{ fontSize: 'calc(var(--type-body-size) + 28px)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>1,247</span>
+                  <div className="aw-inline" style={{ alignItems: 'flex-end', gap: 12, marginTop: 8 }}>
+                    <span style={{ fontSize: 'calc(var(--type-body-size) + 28px)', fontWeight: 600, lineHeight: 1, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>1,247</span>
                     <span className="aw-pill tone-success"><ArrowUp size={10} strokeWidth={3} /> 12%</span>
                   </div>
-                  <p className="aw-meta" style={{ marginTop: 6 }}>vs. 1,113 in the previous period</p>
+                  <p className="aw-meta" style={{ marginTop: 8 }}>vs. 1,113 in the previous period</p>
                 </div>
                 <div className="aw-inline" style={{ gap: 16, paddingTop: 4 }}>
-                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--aw-accent)' }} />{t('Sessions')}</span>
-                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: TONE_USERS }} />{t('Users')}</span>
+                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--aw-accent)' }} />{t('Sessions')}</span>
+                  <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: TONE_USERS }} />{t('Users')}</span>
                 </div>
               </div>
 
@@ -247,12 +247,12 @@ const AnalyticsDashboard: React.FC = () => {
             <div className="aw-stack">
               <section className="aw-card">
                 <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="aw-inline" style={{ alignItems: 'center', gap: 10 }}>
+                  <span className="aw-inline" style={{ alignItems: 'center', gap: 12 }}>
                     <span className="aw-card-icon"><Activity size={15} /></span>
-                    <span className="aw-meta" style={{ fontWeight: 700 }}>{t('Active now')}</span>
+                    <span className="aw-meta" style={{ fontWeight: 600 }}>{t('Active now')}</span>
                   </span>
                   <span className="aw-inline" style={{ alignItems: 'baseline', gap: 7 }}>
-                    <span style={{ fontSize: 'calc(var(--type-body-size) + 12px)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>89</span>
+                    <span style={{ fontSize: 'calc(var(--type-body-size) + 12px)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>89</span>
                     <strong style={{ color: 'var(--aw-success)' }}>+5%</strong>
                   </span>
                 </div>
@@ -324,7 +324,7 @@ const AnalyticsDashboard: React.FC = () => {
                       <span className="aw-meta" style={{ width: 12 }}>{i + 1}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.page}</div>
-                        <div className="aw-bar" style={{ height: 4, marginTop: 6 }}><span style={{ width: `${((p.visits / 342) * 100).toFixed(0)}%` }} /></div>
+                        <div className="aw-bar" style={{ height: 4, marginTop: 8 }}><span style={{ width: `${((p.visits / 342) * 100).toFixed(0)}%` }} /></div>
                       </div>
                       <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{p.visits}</strong>
                     </div>
@@ -358,7 +358,7 @@ const AnalyticsDashboard: React.FC = () => {
 
               <div className="aw-row" style={{ borderBottom: 0, borderTop: '1px solid var(--aw-border)', paddingTop: 10 }}>
                 <span className="aw-meta">{t('Avg. session 18.5 min')}</span>
-                <a href="#" onClick={(e) => e.preventDefault()} style={{ fontWeight: 700, color: 'var(--aw-accent)' }}>{t('View report')}</a>
+                <a href="#" onClick={(e) => e.preventDefault()} style={{ fontWeight: 600, color: 'var(--aw-accent)' }}>{t('View report')}</a>
               </div>
             </section>
           </div>

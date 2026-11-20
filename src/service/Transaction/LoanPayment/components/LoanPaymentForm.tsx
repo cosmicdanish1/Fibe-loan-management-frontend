@@ -50,12 +50,12 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             {/* ── Header ── */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Loan Payment')}{reagreement && <span className="aw-pill tone-warning" style={{ marginLeft: 10 }}>RE-AGREEMENT</span>}</h1>
-                    <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <ShieldCheck size={12} /> {reagreement ? t('Loan Re-agreement — collect NR interest and penalty (no payout)') : t('Loan Disbursement')}
                     </p>
                 </div>
@@ -79,7 +79,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Hash size={14} /></span>
-                            <h2 className="aw-card-title">{t('Loan Case')}</h2>
+                            <h2 className="aw-card-title">{t('Loan case')}</h2>
                         </div>
                         <div className="aw-inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12 }}>
                             <div style={{ width: 200 }}>
@@ -109,7 +109,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                     options={loanCases.map(loan => ({ value: loan.loanCaseNo, label: `${loan.loanCaseNo}  ${loan.memberName}${loan.applicationKind === 'REAGREEMENT' ? '  [RE-AGREEMENT]' : ''}` }))} />
                             </div>
                             {formData.noOfInstallments && (
-                                <span className="aw-inline aw-fade-in" style={{ gap: 6 }}>
+                                <span className="aw-inline aw-fade-in" style={{ gap: 8 }}>
                                     <span className="aw-pill">{t('Inst.')} {formData.noOfInstallments}</span>
                                     <span className="aw-pill tone-success">{t('Amt ₹{{1}}', { 1: installmentAmt })}</span>
                                 </span>
@@ -134,7 +134,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                                 <div><dt>{t('New EMI')}</dt><dd className="aw-strong">₹{Number(reagreement.neu?.monthlyInstallment || 0).toLocaleString('en-IN')}</dd></div>
                                 <div><dt>{t('Closure interest carried')}</dt><dd>₹{Number(reagreement.position?.apInterest || 0).toLocaleString('en-IN')}</dd></div>
                             </dl>
-                            <p className="aw-meta" style={{ marginTop: 6 }}>{t('No money is paid out. The member pays only the NR interest and penalty below; save the voucher, then pass it in Pass Transactions. Use “Sanction Loan Amount” to change the tenure or rate (the principal is locked).')}</p>
+                            <p className="aw-meta" style={{ marginTop: 8 }}>{t('No money is paid out. The member pays only the NR interest and penalty below; save the voucher, then pass it in Pass Transactions. Use “Sanction Loan Amount” to change the tenure or rate (the principal is locked).')}</p>
                         </section>
                     )}
 
@@ -160,7 +160,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Banknote size={14} /></span>
-                            <h2 className="aw-card-title">{t('Mode of Payment')}</h2>
+                            <h2 className="aw-card-title">{t('Mode of payment')}</h2>
                             <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
                                 <span className="aw-pill tone-success">
                                     {reagreement ? t('Amount to collect') : t('Actual Amount')} ₹{(reagreement ? actualAmount : (actualAmount > 0 ? actualAmount : parseFloat(formData.sanctionLoanAmount) || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -211,7 +211,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
                             <div>
-                                <h2 className="aw-card-title">{t('Transaction Breakdown')}</h2>
+                                <h2 className="aw-card-title">{t('Transaction breakdown')}</h2>
                                 <p className="aw-meta">{t('{{1}} row(s)', { 1: data.length })}</p>
                             </div>
                             {!reagreement && (
@@ -334,7 +334,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                     {formData.loanCaseNo && <span>· {t('Case:')} <strong style={{ color: 'var(--aw-accent)' }}>{formData.loanCaseNo}</strong></span>}
                     {formData.memberNo && <span>· {t('Member:')} {formData.memberNo}</span>}
                 </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
             </div>
 
             {/* ── Sanction Authorization dialog ── */}
@@ -351,7 +351,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                             <label className="aw-label" htmlFor="lp-m-amt">{t('Approved Sanction (₹)')}</label>
                             <div className="aw-input-wrap has-icon">
                                 <IndianRupee size={13} />
-                                <input id="lp-m-amt" className="aw-input" style={{ color: 'var(--aw-success)', fontWeight: 700 }} value={modalData.sanctionedAmount}
+                                <input id="lp-m-amt" className="aw-input" style={{ color: 'var(--aw-success)', fontWeight: 600 }} value={modalData.sanctionedAmount}
                                     onChange={e => updateModalField('sanctionedAmount', e.target.value)} />
                             </div>
                         </div>

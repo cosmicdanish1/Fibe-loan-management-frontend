@@ -36,7 +36,7 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
 
             {/* Header */}
             <div className="aw-header aw-ambient">
@@ -65,8 +65,8 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Briefcase size={14} /></span>
-                            <h2 className="aw-card-title">{t('Designation Details')}</h2>
-                            <span className={`aw-pill ${isExisting ? 'tone-warning' : 'tone-success'}`} style={{ marginLeft: 'auto', textTransform: 'uppercase' }}>
+                            <h2 className="aw-card-title">{t('Designation details')}</h2>
+                            <span className={`aw-pill ${isExisting ? 'tone-warning' : 'tone-success'}`} style={{ marginLeft: 'auto' }}>
                                 {isExisting ? t('Editing {{1}}', { 1: formData.code }) : t('New Entry')}
                             </span>
                         </div>
@@ -113,7 +113,7 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                     {/* ── List ── */}
                     <section className="aw-card aw-main">
                         <div className="aw-main-head">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <span className="aw-card-icon"><Building2 size={14} /></span>
                                 <h2 className="aw-card-title">{t('Designations')}</h2>
                             </div>
@@ -170,7 +170,7 @@ const DesignationForm: React.FC<DesignationHookReturn> = ({
                     <Building2 size={12} /> {t('Designation Registry')}
                     {formData.name && <span style={{ color: 'var(--aw-accent)' }}>· {formData.name}</span>}
                 </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
             </div>
 
         </div>

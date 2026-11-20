@@ -155,13 +155,13 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
   });
 
   return (
-    <div className={`app-window ${className}`}>
+    <div className={`app-window aw-calm ${className}`}>
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Financial Year Closing')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <CalendarRange size={12} /> {t('Fiscal Period Finalization')}
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CalendarRange size={12} /> {t('Fiscal period finalization')}
           </p>
         </div>
         <div className="aw-actions">
@@ -206,7 +206,7 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Plus size={14} /></span>
-                <h2 className="aw-card-title">{t('No Financial Year Set Up Yet')}</h2>
+                <h2 className="aw-card-title">{t('No financial year set up yet')}</h2>
               </div>
               <div className="aw-stack">
                 <p className="aw-meta" style={{ lineHeight: 1.5 }}>
@@ -243,26 +243,26 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
               <section className="aw-card aw-fade-in">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><CalendarRange size={14} /></span>
-                  <h2 className="aw-card-title">{t('Current Financial Year')}</h2>
+                  <h2 className="aw-card-title">{t('Current financial year')}</h2>
                   <span className={`aw-pill tone-${fy.isAlreadyClosed ? 'success' : 'warning'}`} style={{ marginLeft: 'auto' }}>
-                    <i className="aw-status-dot" style={{ marginRight: 5, background: fy.isAlreadyClosed ? 'var(--aw-success)' : 'var(--aw-warning)' }} />
+                    <i className="aw-status-dot" style={{ marginRight: 8, background: fy.isAlreadyClosed ? 'var(--aw-success)' : 'var(--aw-warning)' }} />
                     {fy.isAlreadyClosed ? t('Year Closed') : t('Active Year')}
                   </span>
                 </div>
 
                 <dl className="aw-facts">
                   <div>
-                    <dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={11} /> {t('Start Date')}</dt>
+                    <dt style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Clock size={11} /> {t('Start Date')}</dt>
                     <dd>{fy.startDate || '—'}</dd>
                   </div>
                   <div>
-                    <dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={11} /> {t('End Date')}</dt>
+                    <dt style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Calendar size={11} /> {t('End Date')}</dt>
                     <dd>{fy.endDate || '—'}</dd>
                   </div>
                 </dl>
 
-                <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--aw-border)' }}>
-                  <ShieldCheck size={12} /> {t('Audit Verified')}
+                <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--aw-border)' }}>
+                  <ShieldCheck size={12} /> {t('Audit verified')}
                 </p>
               </section>
 
@@ -278,8 +278,8 @@ const FinancialYearClosing: React.FC<{ className?: string }> = ({ className = ''
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Financial Year Management')}</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Verified Protocol')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> {t('Financial Year Management')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><ShieldCheck size={12} /> {t('Verified Protocol')}</span>
       </div>
     </div>
   );

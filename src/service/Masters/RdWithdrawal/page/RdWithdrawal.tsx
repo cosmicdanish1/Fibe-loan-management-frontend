@@ -37,14 +37,14 @@ const RdWithdrawal: React.FC = () => {
     const overLimit = maxWithdrawable !== null && amount > maxWithdrawable;
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('RD/CD Withdrawal')}</h1>
                     <p className="aw-desc">{t("Withdraw from a member's RD/CD balance. The cash paid out is booked with a CD payment voucher.")}</p>
                 </div>
                 {yearLabel && (
-                    <span className="aw-pill" style={{ gap: 6 }}><Calendar size={12} /> {yearLabel}</span>
+                    <span className="aw-pill" style={{ gap: 8 }}><Calendar size={12} /> {yearLabel}</span>
                 )}
             </div>
 
@@ -107,7 +107,7 @@ const RdWithdrawal: React.FC = () => {
                                             />
                                         </div>
                                         {overLimit && (
-                                            <p className="aw-meta aw-fade-in" style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginTop: 6, color: 'var(--aw-danger)' }}>
+                                            <p className="aw-meta aw-fade-in" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 8, color: 'var(--aw-danger)' }}>
                                                 <AlertTriangle size={13} style={{ flex: 'none', marginTop: 2 }} />
                                                 {t('Exceeds the maximum withdrawable amount — the minimum balance requirement would be breached.')}
                                             </p>
@@ -136,7 +136,7 @@ const RdWithdrawal: React.FC = () => {
                     {mbno && (
                         <section className="aw-card aw-main aw-fade-in">
                             <div className="aw-main-head">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <span className="aw-card-icon"><History size={14} /></span>
                                     <h2 className="aw-card-title">{t('Interest Timeline — {{1}}', { 1: yearLabel })}</h2>
                                 </div>

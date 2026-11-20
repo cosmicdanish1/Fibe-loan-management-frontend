@@ -30,7 +30,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Import Demand')}</h1>
@@ -50,14 +50,14 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileSpreadsheet size={14} /></span>
-                            <h2 className="aw-card-title">{t('Import Configuration')}</h2>
+                            <h2 className="aw-card-title">{t('Import configuration')}</h2>
                             {recordCount > 0 && (
                                 <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
                                     <span className="aw-pill" title={t('Import strictness from Modify Business Rules')}>{strictness === 'STRICT' ? t('Strict') : t('Standard')}</span>
                                     <span className="aw-pill">{t('{{1}} Record(s)', { 1: recordCount })}</span>
                                     {validCount > 0 && <span className="aw-pill tone-success"><CheckCircle2 size={11} /> {validCount} {t('Valid')}</span>}
                                     {errorCount > 0 && <span className="aw-pill tone-danger"><AlertCircle size={11} /> {errorCount} {t('Error')}</span>}
-                                    {flaggedCount > 0 && <span className="aw-pill tone-warning"><AlertCircle size={11} /> {flaggedCount} {t('Need Checking')}</span>}
+                                    {flaggedCount > 0 && <span className="aw-pill tone-warning"><AlertCircle size={11} /> {flaggedCount} {t('Need checking')}</span>}
                                 </span>
                             )}
                         </div>
@@ -96,7 +96,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileSpreadsheet size={14} /></span>
-                            <h2 className="aw-card-title">{t('Demand Preview')}</h2>
+                            <h2 className="aw-card-title">{t('Demand preview')}</h2>
                         </div>
                         {isImporting ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
@@ -107,10 +107,10 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                         ) : previewData.length === 0 ? (
                             <div className="aw-empty" style={{ padding: 32 }}>
                                 <FileSpreadsheet size={32} />
-                                <p className="aw-strong">{t('No Data Loaded')}</p>
+                                <p className="aw-strong">{t('No data loaded')}</p>
                                 <span className="aw-meta">{t('Select Branch, Month, Year and click "Import Demand" to load an Excel file')}</span>
                                 <div className="aw-panel aw-panel-dashed" style={{ textAlign: 'left', maxWidth: 520 }}>
-                                    <span className="aw-label">{t('Expected Excel Format')}</span>
+                                    <span className="aw-label">{t('Expected Excel format')}</span>
                                     <p className="aw-meta">YYMM | CODE | H.O.NO. (or MS.NO.) | PS.NO. | NAME | TOTAL | F/D (or R/D) | R/LOAN | E/LOAN | INTT. | F.R.S.-1 | F.R.S.-2</p>
                                 </div>
                             </div>
@@ -136,10 +136,10 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                                             <tr key={row.key}>
                                                 <td className="is-muted">{row.rowNo ?? ''}</td>
                                                 <td className="is-muted" style={{ fontFamily: 'monospace' }}>{row.honoGiven ?? ''}</td>
-                                                <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{row.memberId}</td>
+                                                <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 600 }}>{row.memberId}</td>
                                                 <td style={{ fontFamily: 'monospace' }}>{row.psNo ?? ''}</td>
-                                                <td style={{ fontWeight: 700, textTransform: 'uppercase' }}>{row.memberName}</td>
-                                                <td className="is-right" style={{ fontWeight: 700 }}>{row.totalDemand || ''}</td>
+                                                <td style={{ fontWeight: 600, textTransform: 'uppercase' }}>{row.memberName}</td>
+                                                <td className="is-right" style={{ fontWeight: 600 }}>{row.totalDemand || ''}</td>
                                                 <td className="is-right">{row.cdAmount || ''}</td>
                                                 <td className="is-right is-info">{row.rlnAmount || ''}</td>
                                                 <td className="is-right is-warning">{row.alnAmount || ''}</td>

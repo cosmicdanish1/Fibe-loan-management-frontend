@@ -301,7 +301,7 @@ const NewLoanDisbursed: React.FC = () => {
 
   return (
     <ReportShell
-      className="nld-page"
+      className="nld-page aw-calm"
       title="New Loan Disbursed"
       desc="Loans disbursed in a period"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

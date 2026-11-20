@@ -247,7 +247,7 @@ const MemberStatement: React.FC = () => {
 
   return (
     <ReportShell
-      className="memstmt-page"
+      className="memstmt-page aw-calm"
       title="Member Statement"
       desc="Account summary of a member"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

@@ -60,7 +60,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
     const closeLookup = () => { setShowLookupModal(false); setLookupRowKey(null); };
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Journal / Transfer Entry')}</h1>
@@ -81,7 +81,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Hash size={14} /></span>
-                            <h2 className="aw-card-title">{t('Journal Entry')}</h2>
+                            <h2 className="aw-card-title">{t('Journal entry')}</h2>
                             <span className="aw-meta" style={{ marginLeft: 'auto' }}>{dayjs().format('DD-MMM-YY')}</span>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1.2fr) repeat(3, minmax(130px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'end' }}>
@@ -139,7 +139,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">{t('Ledger Matrix')}</h2>
+                            <h2 className="aw-card-title">{t('Ledger matrix')}</h2>
                             <span className="aw-meta">{t('{{1}} row(s)', { 1: data.length })}</span>
                             <button type="button" onClick={addRow} className="aw-btn aw-btn-secondary aw-btn-sm" style={{ marginLeft: 'auto' }}><Plus size={12} /> {t('Add Row')}</button>
                         </div>
@@ -172,7 +172,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                                                 <td className="has-input is-accent">
                                                     <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" aria-label={t('Select member')}
                                                         onClick={() => { setLookupRowKey(record.key); setShowLookupModal(true); }}
-                                                        style={{ fontFamily: 'monospace', fontWeight: 700, width: '100%', justifyContent: 'flex-start', gap: 6 }}>
+                                                        style={{ fontFamily: 'monospace', fontWeight: 600, width: '100%', justifyContent: 'flex-start', gap: 8 }}>
                                                         <Search size={12} /> {record.mbno || t('Select…')}
                                                     </button>
                                                 </td>
@@ -225,7 +225,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">{t('Narration & Cheque')}</h2>
+                            <h2 className="aw-card-title">{t('Narration & cheque')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 1fr) 220px', gap: 'var(--aw-gap)', alignItems: 'start' }}>
                             <div>

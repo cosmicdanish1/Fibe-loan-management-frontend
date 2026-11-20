@@ -114,7 +114,7 @@ const GroupInsurance: React.FC = () => {
   ];
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <style>{`
         .gi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; align-items: end; }
         .gi-field label { display: block; font-size: var(--type-supporting-size); font-weight: 600; margin-bottom: 4px; }
@@ -135,7 +135,7 @@ const GroupInsurance: React.FC = () => {
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Group Insurance')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ShieldCheck size={12} /> {t('Yearly lump sum split over active members and deducted from RD at year end')}
           </p>
         </div>
@@ -227,7 +227,7 @@ const GroupInsurance: React.FC = () => {
                 {s.noBalanceRow > 0 && <div className="gi-warn">{s.noBalanceRow.toLocaleString('en-IN')} {t('charged members have no balance record yet; one is created with a negative RD.')}</div>}
 
                 <section className="aw-card" style={{ marginTop: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
                     <div className="aw-chips" role="radiogroup" aria-label={t('Show')}>
                       {filters.map(f => (
                         <button key={f.id} type="button" role="radio" aria-checked={g.filter === f.id} className="aw-chip" onClick={() => g.changeFilter(f.id)}>{f.label}</button>
@@ -283,7 +283,7 @@ const GroupInsurance: React.FC = () => {
             )}
             {openRun && (
               <section className="aw-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
                   <button type="button" className="aw-btn aw-btn-ghost" onClick={() => setOpenRun(null)}><ChevronLeft size={13} /> {t('All runs')}</button>
                   <strong>{openRun.fyLabel}</strong>
                   <span className="is-muted" style={{ fontSize: 'var(--type-supporting-size)' }}>voucher {openRun.voucherNo} · {inr(openRun.totalCharged)} from {openRun.chargedMembers.toLocaleString('en-IN')} members</span>

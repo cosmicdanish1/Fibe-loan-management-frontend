@@ -145,7 +145,7 @@ const PassbookParameterSetting: React.FC = () => {
 
   const TABS = [
     { id: 'bank',   label: t('Identity'),     icon: <Building2 size={14} /> },
-    { id: 'page',   label: t('Page Layout'),  icon: <Layers size={14} /> },
+    { id: 'page',   label: t('Page layout'),  icon: <Layers size={14} /> },
     { id: 'detail', label: t('Transactions'), icon: <Layout size={14} /> },
     { id: 'first',  label: t('First Page'),   icon: <FileText size={14} /> },
   ];
@@ -183,7 +183,7 @@ const PassbookParameterSetting: React.FC = () => {
   );
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
@@ -255,7 +255,7 @@ const PassbookParameterSetting: React.FC = () => {
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Layers size={14} /></span>
                 <div>
-                  <h2 className="aw-card-title">{t('Page Layout')}</h2>
+                  <h2 className="aw-card-title">{t('Page layout')}</h2>
                   <p className="aw-meta">{t('Page dimensions and line configuration')}</p>
                 </div>
               </div>
@@ -278,7 +278,7 @@ const PassbookParameterSetting: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Layout size={14} /></span>
-                <h2 className="aw-card-title">{t('Transaction Columns')}</h2>
+                <h2 className="aw-card-title">{t('Transaction columns')}</h2>
                 <input
                   value={params.detailPageSetting.bankFormat}
                   onChange={e => setParams(prev => ({ ...prev, detailPageSetting: { ...prev.detailPageSetting, bankFormat: e.target.value } }))}
@@ -318,7 +318,7 @@ const PassbookParameterSetting: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><FileText size={14} /></span>
-                <h2 className="aw-card-title">{t('First Page Fields')}</h2>
+                <h2 className="aw-card-title">{t('First page fields')}</h2>
                 <input
                   value={params.firstPageSetting.formatForBank}
                   onChange={e => setParams(prev => ({ ...prev, firstPageSetting: { ...prev.firstPageSetting, formatForBank: e.target.value } }))}
@@ -358,11 +358,11 @@ const PassbookParameterSetting: React.FC = () => {
       </div>
 
       {/* Find dialog */}
-      <AwDialog open={showFindModal} title={t('Select Passbook Template')} icon={<Search size={14} />} onClose={() => setShowFindModal(false)} maxWidth="30rem">
+      <AwDialog open={showFindModal} title={t('Select passbook template')} icon={<Search size={14} />} onClose={() => setShowFindModal(false)} maxWidth="30rem">
         {templates.length === 0 ? (
           <div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">{t('No templates found')}</span></div>
         ) : (
-          <div className="aw-stack" style={{ gap: 6 }}>
+          <div className="aw-stack" style={{ gap: 8 }}>
             {templates.map((t: any, i: number) => (
               <button
                 key={t.id ?? i}

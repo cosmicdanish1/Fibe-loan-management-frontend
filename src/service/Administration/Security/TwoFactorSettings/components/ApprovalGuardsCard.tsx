@@ -108,12 +108,12 @@ const ApprovalGuardsCard: React.FC = () => {
       )}
 
       <div className="aw-panel" style={{ textAlign: 'left' }}>
-        <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div>
             <p className="aw-strong">{t('Approvers ({{1}} active)', { 1: activeCount })}</p>
             <span className="aw-meta">{t('An approver counts once they hold the right')} <em>and</em> {t('have set up their authenticator.')}</span>
           </div>
-          <div className="aw-inline" style={{ gap: 6, alignItems: 'center' }}>
+          <div className="aw-inline" style={{ gap: 8, alignItems: 'center' }}>
             <select className="aw-select" aria-label={t('Add approver')} value={pick} onChange={(e) => setPick(e.target.value)} style={{ minWidth: 190 }}>
               <option value="">{t('Add an approver…')}</option>
               {candidates.map((u) => (
@@ -155,12 +155,12 @@ const ApprovalGuardsCard: React.FC = () => {
         </label>
       </div>
 
-      <div className="aw-stack" style={{ gap: 10 }}>
+      <div className="aw-stack" style={{ gap: 12 }}>
         {actions.map((a) => {
           const on = !!guards[a.key]?.enabled;
           return (
             <div key={a.key} className="aw-panel" style={{ textAlign: 'left' }}>
-              <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+              <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                 <div>
                   <p className="aw-strong">{a.label}</p>
                   <span className="aw-meta">{a.hint}</span>

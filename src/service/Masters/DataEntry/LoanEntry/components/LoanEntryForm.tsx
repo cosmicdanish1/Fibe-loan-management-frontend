@@ -44,7 +44,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
     const nameLine = (name: string) => name ? <p className="aw-strong aw-fade-in" style={{ marginTop: 4, color: 'var(--aw-accent)' }}>{name}</p> : null;
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Loan Entry')}</h1>
@@ -65,7 +65,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Users size={14} /></span>
-                            <h2 className="aw-card-title">{t('Member & Loan Type')}</h2>
+                            <h2 className="aw-card-title">{t('Member & loan type')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'start' }}>
                             <div>
@@ -87,7 +87,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                         <section className="aw-card aw-fade-in">
                             <div className="aw-card-head">
                                 <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                                <h2 className="aw-card-title">{t('5% Eligibility Rules')}</h2>
+                                <h2 className="aw-card-title">{t('5% eligibility rules')}</h2>
                                 {isCheckingEligibility ? (
                                     <span className="aw-pill" style={{ marginLeft: 'auto' }}><RotateCcw size={11} className="aw-spin" /> {t('Checking...')}</span>
                                 ) : eligibilityStatus?.isEligible ? (
@@ -126,7 +126,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><IndianRupee size={14} /></span>
-                            <h2 className="aw-card-title">{t('Loan Details')}</h2>
+                            <h2 className="aw-card-title">{t('Loan details')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--aw-gap)' }}>
                             <div>
@@ -134,7 +134,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                                 <div className="aw-input-wrap has-icon">
                                     <IndianRupee size={13} />
                                     <input id="le-amount" type="number" value={formData.loanAmount} onChange={e => updateField('loanAmount', e.target.value)}
-                                        placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
+                                        placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 600 }} />
                                 </div>
                             </div>
                             <div>
@@ -152,7 +152,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                                 <div className="aw-input-wrap has-icon">
                                     <IndianRupee size={13} />
                                     <input id="le-instamt" type="number" value={formData.instalAmt} onChange={e => updateField('instalAmt', e.target.value)}
-                                        placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
+                                        placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 600 }} />
                                 </div>
                             </div>
                             <div>
@@ -178,7 +178,7 @@ const LoanEntryForm: React.FC<LoanEntryHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Users size={14} /></span>
-                            <h2 className="aw-card-title">{t('Guarantors (Surety)')}</h2>
+                            <h2 className="aw-card-title">{t('Guarantors (surety)')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'start' }}>
                             <div>

@@ -225,11 +225,11 @@ const SystemUpdate: React.FC = () => {
   const canApply = !!status?.canSelfUpdate && !!pending && confirmText.trim().toUpperCase() === CONFIRM_WORD && !applying;
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('System Update')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ServerCog size={12} /> {t('Update the server software from a release file. A database backup is taken first.')}
           </p>
         </div>
@@ -325,7 +325,7 @@ const SystemUpdate: React.FC = () => {
                       </div>
                     )}
                     {job?.state === 'downloading' && (
-                      <p className="aw-muted" style={{ margin: '12px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <p className="aw-muted" style={{ margin: '12px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <UploadCloud size={14} /> {t('Downloading')} {job.version}: {sizeLabel(job.received)}{job.total ? ` of ${sizeLabel(job.total)}` : ''}…
                       </p>
                     )}
@@ -345,7 +345,7 @@ const SystemUpdate: React.FC = () => {
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
                 />
                 {uploading && (
-                  <p className="aw-muted" style={{ margin: '12px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <p className="aw-muted" style={{ margin: '12px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <UploadCloud size={14} /> {t('Uploading and checking, this can take a few minutes for a large file…')}
                   </p>
                 )}
@@ -365,7 +365,7 @@ const SystemUpdate: React.FC = () => {
                   Checksum (compare with the <strong>.sha256</strong> file next to the release you downloaded):
                 </p>
                 <code style={{ display: 'block', wordBreak: 'break-all', fontSize: 12 }}>{pending.sha256}</code>
-                <button type="button" className="aw-btn aw-btn-ghost" style={{ marginTop: 6 }} onClick={() => copy(pending.sha256)}>{t('Copy checksum')}</button>
+                <button type="button" className="aw-btn aw-btn-ghost" style={{ marginTop: 8 }} onClick={() => copy(pending.sha256)}>{t('Copy checksum')}</button>
 
                 <div className="aw-alert aw-alert-warning" style={{ margin: '16px 0 12px' }}>
                   <AlertCircle size={16} />

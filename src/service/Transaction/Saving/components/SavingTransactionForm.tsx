@@ -41,7 +41,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
     const isDeposit = formData.transactionType === 'deposit';
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Saving Voucher')}</h1>
@@ -102,7 +102,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                         popupClassName="aw-select-popup"
                                         popupMatchSelectWidth={360}
                                     >
-                                        <input id="sv-acc" placeholder={t('Enter or pick an account number...')} style={{ fontFamily: 'monospace', fontWeight: 700 }} />
+                                        <input id="sv-acc" placeholder={t('Enter or pick an account number...')} style={{ fontFamily: 'monospace', fontWeight: 600 }} />
                                     </AutoComplete>
                                     {isLoadingAccount && <span className="aw-input-action" aria-hidden><span className="aw-spin" /></span>}
                                 </div>
@@ -119,7 +119,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><IndianRupee size={14} /></span>
-                            <h2 className="aw-card-title">{t('Account Balances')}</h2>
+                            <h2 className="aw-card-title">{t('Account balances')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--aw-gap)' }}>
                             {[
@@ -157,7 +157,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                 <label className="aw-label" htmlFor="sv-amt">{t('Amount (₹)')} <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
                                 <input id="sv-amt" type="number" value={formData.amount} onChange={e => updateField('amount', e.target.value)}
                                     placeholder="0.00" className="aw-input is-right"
-                                    style={{ fontWeight: 700, color: isDeposit ? 'var(--aw-success)' : 'var(--aw-danger)' }} />
+                                    style={{ fontWeight: 600, color: isDeposit ? 'var(--aw-success)' : 'var(--aw-danger)' }} />
                             </div>
                         </div>
                     </section>
@@ -165,7 +165,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Banknote size={14} /></span>
-                            <h2 className="aw-card-title">{t('Mode of Payment')}</h2>
+                            <h2 className="aw-card-title">{t('Mode of payment')}</h2>
                             <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
                                 <span className="aw-pill">{t('Actual Amt ₹{{1}}', { 1: formData.actualAmount.toFixed(2) })}</span>
                                 <span className={`aw-pill ${formData.bankBal < 0 ? 'tone-danger' : ''}`}>{formData.paymentMode === 'bank' ? t('Bank Bal') : t('Cash Bal')} ₹{fmt(formData.bankBal)}</span>
@@ -212,7 +212,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">{t('Transaction History')}</h2>
+                            <h2 className="aw-card-title">{t('Transaction history')}</h2>
                         </div>
                         <div className="aw-table-wrap" style={{ maxHeight: '30vh' }}>
                             <table className="aw-table">
@@ -235,7 +235,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                                             <td style={{ fontFamily: 'monospace' }}>{r.transDate}</td>
                                             <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{r.voucherNo}</td>
                                             <td className="is-muted" style={{ fontFamily: 'monospace' }}>{r.accType}</td>
-                                            <td className={r.transType === 'CR' ? 'is-success' : 'is-danger'} style={{ fontWeight: 700 }}>{r.transType}</td>
+                                            <td className={r.transType === 'CR' ? 'is-success' : 'is-danger'} style={{ fontWeight: 600 }}>{r.transType}</td>
                                             <td className="is-right">₹{r.amount.toFixed(2)}</td>
                                         </tr>
                                     ))}
@@ -248,7 +248,7 @@ const SavingTransactionForm: React.FC<SavingTransactionHookReturn> = ({
                         <section className="aw-card">
                             <div className="aw-card-head">
                                 <span className="aw-card-icon"><Building2 size={14} /></span>
-                                <h2 className="aw-card-title">{t('Account Operations')}</h2>
+                                <h2 className="aw-card-title">{t('Account operations')}</h2>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--aw-gap)' }}>
                                 <div>

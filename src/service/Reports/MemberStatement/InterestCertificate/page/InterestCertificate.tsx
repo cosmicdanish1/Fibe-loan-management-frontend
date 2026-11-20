@@ -156,7 +156,7 @@ const InterestCertificate: React.FC = () => {
 
   return (
     <ReportShell
-      className="intcert-page"
+      className="intcert-page aw-calm"
       title="Interest Certificate"
       desc="Interest paid to a member in a financial year"
       actions={

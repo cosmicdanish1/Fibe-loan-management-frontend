@@ -205,7 +205,7 @@ const InterestListCDMDSHRt: React.FC = () => {
 
   return (
     <ReportShell
-      className="interest-cdmdshr-page"
+      className="interest-cdmdshr-page aw-calm"
       title="Interest List"
       desc="CD / MD / Share interest distribution register"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

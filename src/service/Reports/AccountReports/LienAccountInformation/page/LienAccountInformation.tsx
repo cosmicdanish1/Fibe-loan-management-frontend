@@ -146,7 +146,7 @@ const LienAccountInformation: React.FC = () => {
 
   return (
     <ReportShell
-      className="lai-page"
+      className="lai-page aw-calm"
       title="Lien Account Information"
       desc="Secured accounts"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

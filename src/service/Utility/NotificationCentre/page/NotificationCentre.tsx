@@ -80,7 +80,7 @@ const NotificationCentre: React.FC = () => {
   );
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <style>{`
         .nc-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 14px; align-items: start; }
         @media (max-width: 820px) { .nc-layout { grid-template-columns: 1fr; } }
@@ -112,7 +112,7 @@ const NotificationCentre: React.FC = () => {
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Notification Centre')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Bell size={12} /> {t("Everything that needs a person's attention, in one place")}
           </p>
         </div>
@@ -157,7 +157,7 @@ const NotificationCentre: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, marginLeft: 'auto' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, marginLeft: 'auto' }}>
                 <input type="checkbox" checked={n.unreadOnly} onChange={e => n.setUnreadOnly(e.target.checked)} /> {t('Unread only')}
               </label>
               <div className="aw-chips" role="radiogroup" aria-label={t('Show')}>

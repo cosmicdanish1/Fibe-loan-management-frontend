@@ -51,7 +51,7 @@ const EMPTY: TransferData = {
 };
 
 const errLine = (msg?: string) => msg
-  ? <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 700 }}>{msg}</p>
+  ? <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 600 }}>{msg}</p>
   : null;
 
 const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => {
@@ -187,7 +187,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
   // ── Success Screen ──
   if (showSuccess && lastTransfer) {
     return (
-      <div className={`app-window ${className}`}>
+      <div className={`app-window aw-calm ${className}`}>
         <div style={{ margin: 'auto', width: '100%', maxWidth: 440, padding: 16 }}>
           <section className="aw-card aw-fade-in">
             <div className="aw-empty" style={{ padding: '12px 0 4px' }}>
@@ -210,7 +210,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
 
   // ── Main Form ──
   return (
-    <div className={`app-window ${className}`}>
+    <div className={`app-window aw-calm ${className}`}>
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
@@ -244,7 +244,7 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Database size={14} /></span>
                 <h2 className="aw-card-title">{t('Transfer details')}</h2>
-                <span className="aw-meta" style={{ marginLeft: 'auto', textTransform: 'uppercase', letterSpacing: '.06em' }}>{t('Step 1 of 2')}</span>
+                <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('Step 1 of 2')}</span>
               </div>
 
               <div className="aw-two">
@@ -362,8 +362,8 @@ const BalanceTransfer: React.FC<BalanceTransferProps> = ({ className = '' }) => 
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Financial Systems')}</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Verified protocol · Session secured')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> {t('Financial Systems')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><ShieldCheck size={12} /> {t('Verified protocol · Session secured')}</span>
       </div>
 
       {/* Confirm dialog */}

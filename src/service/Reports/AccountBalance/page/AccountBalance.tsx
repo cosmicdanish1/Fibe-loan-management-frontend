@@ -227,7 +227,7 @@ const AccountBalance: React.FC = () => {
 
   return (
     <ReportShell
-      className="account-balance-page"
+      className="account-balance-page aw-calm"
       title="Account Balance"
       desc="Member balance report"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

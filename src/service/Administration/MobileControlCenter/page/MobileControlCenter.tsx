@@ -37,11 +37,11 @@ const MobileControlCenter: React.FC = () => {
   const current = tabs.find((x) => x.id === tab)!;
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Mobile Control Center')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Smartphone size={12} /> {t('Run the Fibe Mobile member app: activate members, reset access, check requests')}
           </p>
         </div>

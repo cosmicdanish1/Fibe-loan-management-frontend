@@ -150,7 +150,7 @@ const ShareCertificate: React.FC = () => {
 
   return (
     <ReportShell
-      className="share-cert-page"
+      className="share-cert-page aw-calm"
       title="Share Certificate"
       desc="Membership certificate"
       actions={

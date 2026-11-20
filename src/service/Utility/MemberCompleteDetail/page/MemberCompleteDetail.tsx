@@ -227,7 +227,7 @@ const MemberCompleteDetail: React.FC = () => {
   };
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient aw-noprint">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Member Complete Detail')}</h1>
@@ -248,7 +248,7 @@ const MemberCompleteDetail: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Search size={14} /></span>
-                <h2 className="aw-card-title">{t('Member Lookup')}</h2>
+                <h2 className="aw-card-title">{t('Member lookup')}</h2>
               </div>
               <div className="aw-stack">
                 <div className="aw-input-wrap has-icon has-action">
@@ -269,7 +269,7 @@ const MemberCompleteDetail: React.FC = () => {
 
             {data && (
               <section className="aw-card aw-fade-in">
-                <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="aw-panel aw-panel-accent" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span className="aw-avatar"><User size={16} /></span>
                   <div className="min-w-0">
                     <p className="aw-strong" style={{ textTransform: 'uppercase' }}>{data.personal?.full_name || data.personal?.f_name}</p>

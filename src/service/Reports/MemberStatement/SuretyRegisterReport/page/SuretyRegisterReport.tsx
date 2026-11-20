@@ -195,7 +195,7 @@ const SuretyRegisterReport: React.FC = () => {
 
   return (
     <ReportShell
-      className="suretyreg-page"
+      className="suretyreg-page aw-calm"
       title="Surety Register"
       desc="Guarantor report"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

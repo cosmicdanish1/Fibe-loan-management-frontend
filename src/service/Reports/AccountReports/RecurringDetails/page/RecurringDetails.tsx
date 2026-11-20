@@ -196,7 +196,7 @@ const RecurringDetails: React.FC = () => {
 
   return (
     <ReportShell
-      className="recurring-details-page"
+      className="recurring-details-page aw-calm"
       title="Recurring Details"
       desc="RD accounts statement"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

@@ -46,19 +46,48 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
         group.count++;
     });
 
-    const getSpan = (record: any): { rowSpan: number } => {
-        const group = voucherGroups[record.voucherNo];
-        if (!group) return { rowSpan: 1 };
-        if (record.key === group.firstKey) return { rowSpan: group.count };
-        return { rowSpan: 0 };
-    };
-
     const pendingCount = Object.keys(voucherGroups).length;
+
+    // One block per voucher: its header (who / how paid / actions) and its posting lines underneath
+    const groups: { voucherNo: string; head: any; rows: any[] }[] = [];
+    dataWithKeys.forEach((row: any) => {
+        const last = groups[groups.length - 1];
+        if (last && last.voucherNo === row.voucherNo) last.rows.push(row);
+        else groups.push({ voucherNo: row.voucherNo, head: row, rows: [row] });
+    });
 
     const money = (v: number) => `₹${v.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
+            <style>{`
+.pt-list { display: flex; flex-direction: column; gap: 12px; padding: 12px; max-height: calc(100vh - 280px); min-height: 200px; overflow: auto; }
+.pt-voucher { border: 1px solid var(--aw-border); border-radius: 12px; background: var(--aw-surface, transparent); overflow: hidden; flex: none; }
+.pt-voucher.is-reagreement { border-color: color-mix(in srgb, var(--aw-warning, #b86e00) 45%, var(--aw-border)); }
+.pt-vhead { display: grid; grid-template-columns: minmax(180px, 1.1fr) minmax(160px, 1.2fr) minmax(170px, 1.2fr) auto auto; align-items: center; gap: 16px; padding: 12px 16px; background: color-mix(in srgb, var(--aw-text) 3%, transparent); border-bottom: 1px solid var(--aw-border); }
+.pt-id { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pt-vno { font-family: monospace; font-weight: 600; font-size: var(--type-body-size); color: var(--aw-accent); }
+.pt-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pt-chip { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 10px; font-size: var(--type-supporting-size); border: 1px solid var(--aw-border); color: var(--aw-muted); }
+.pt-chip.is-ok { color: var(--aw-success); border-color: color-mix(in srgb, var(--aw-success) 40%, transparent); }
+.pt-chip.is-wait { color: var(--aw-warning); border-color: color-mix(in srgb, var(--aw-warning) 40%, transparent); }
+.pt-who { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pt-who strong { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-who span, .pt-cheque { font-size: var(--type-supporting-size); color: var(--aw-muted); }
+.pt-cheque { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pt-cheque span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-cheque b { color: var(--aw-text); font-weight: 600; font-family: monospace; }
+.pt-total { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.pt-total span { font-size: var(--type-supporting-size); color: var(--aw-muted); }
+.pt-total b { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pt-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.pt-lines { width: 100%; }
+.pt-lines td:last-child { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-drcr { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 20px; padding: 0 8px; border-radius: 10px; font-size: var(--type-supporting-size); font-weight: 600; }
+.pt-drcr.is-cr { color: var(--aw-success); background: color-mix(in srgb, var(--aw-success) 12%, transparent); }
+.pt-drcr.is-dr { color: var(--aw-danger); background: color-mix(in srgb, var(--aw-danger) 12%, transparent); }
+@media (max-width: 1100px) { .pt-vhead { grid-template-columns: 1fr 1fr; } .pt-total, .pt-actions { align-items: flex-start; justify-content: flex-start; } }
+            `}</style>
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Pass Transactions')}</h1>
@@ -78,7 +107,7 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">{t('Pending Voucher Registry')}</h2>
+                            <h2 className="aw-card-title">{t('Pending voucher registry')}</h2>
                             {pendingCount > 0 && <span className="aw-pill tone-warning">{pendingCount} {t('awaiting authorization')}</span>}
                             <span className="aw-meta">{t('{{1}} record(s)', { 1: filteredData.length })}</span>
                             <div className="aw-input-wrap has-icon" style={{ marginLeft: 'auto', width: 280 }}>
@@ -93,77 +122,84 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                             </div>
                         </div>
 
-                        <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 300px)', minHeight: 200 }}>
-                            <table className="aw-table" style={{ minWidth: 1500 }}>
-                                <thead>
-                                    <tr>
-                                        <th>{t('Tr. No.')}</th>
-                                        <th>{t('Vchr No.')}</th>
-                                        <th>{t('MB No.')}</th>
-                                        <th>{t('Name')}</th>
-                                        <th className="is-center">{t('Acc')}</th>
-                                        <th>{t('Head')}</th>
-                                        <th>{t('Trans Type')}</th>
-                                        <th className="is-right">{t('Trans Amount')}</th>
-                                        <th className="is-center">{t('Vchr Typ')}</th>
-                                        <th>{t('Cheque No.')}</th>
-                                        <th>{t('Cheque Date')}</th>
-                                        <th className="is-right">{t('Cheque Amt')}</th>
-                                        <th>{t('Bank')}</th>
-                                        <th className="is-center">{t('Pass Flag')}</th>
-                                        <th>{t('Narration')}</th>
-                                        <th className="is-center">{t('Action')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {isLoading && dataWithKeys.length === 0 ? (
-                                        <tr><td colSpan={16}><div className="aw-empty" style={{ padding: 28 }}><span className="aw-spin" /></div></td></tr>
-                                    ) : dataWithKeys.length === 0 ? (
-                                        <tr><td colSpan={16}>
-                                            <div className="aw-empty" style={{ padding: 32 }}>
-                                                <CheckCircle2 size={28} />
-                                                <span className="aw-meta">{t('All caught up — no pending transactions')}</span>
+                        <div className="pt-list">
+                            {isLoading && groups.length === 0 ? (
+                                <div className="aw-empty" style={{ padding: 28 }}><span className="aw-spin" /></div>
+                            ) : groups.length === 0 ? (
+                                <div className="aw-empty" style={{ padding: 32 }}>
+                                    <CheckCircle2 size={28} />
+                                    <span className="aw-meta">{t('All caught up — no pending transactions')}</span>
+                                </div>
+                            ) : groups.map(({ voucherNo, head, rows }) => {
+                                const busy = busyVouchers.includes(voucherNo);
+                                const isRa = head.kind === 'REAGREEMENT';
+                                return (
+                                    <article key={voucherNo} className={`pt-voucher${isRa ? ' is-reagreement' : ''}`}>
+                                        <header className="pt-vhead">
+                                            <div className="pt-id">
+                                                <span className="pt-vno">{voucherNo}</span>
+                                                <span className="pt-chips">
+                                                    {isRa && <span className="aw-pill tone-warning">RE-AGREEMENT</span>}
+                                                    <span className="pt-chip" title={t('Vchr Typ')}>{head.vchrType || 'P'}</span>
+                                                    <span className={`pt-chip ${head.passFlag === 'Y' ? 'is-ok' : 'is-wait'}`} title={t('Pass Flag')}>{t('Pass Flag')} {head.passFlag || 'N'}</span>
+                                                </span>
                                             </div>
-                                        </td></tr>
-                                    ) : dataWithKeys.map((record: any) => {
-                                        const span = getSpan(record).rowSpan;
-                                        return (
-                                            <tr key={record.key}>
-                                                <td className="is-muted" style={{ fontFamily: 'monospace' }}>{record.trNo || '—'}</td>
-                                                {span > 0 && <td rowSpan={span} className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{record.voucherNo}</td>}
-                                                {span > 0 && <td rowSpan={span} style={{ fontFamily: 'monospace', fontWeight: 700 }}>{record.memberNo}</td>}
-                                                {span > 0 && <td rowSpan={span} style={{ fontWeight: 700, textTransform: 'uppercase' }} title={record.memberName}>{record.memberName}</td>}
-                                                <td className="is-center">{record.noOfAcc}</td>
-                                                <td className="is-accent" style={{ fontWeight: 700 }}>{record.kind === 'REAGREEMENT' && <span className="aw-pill tone-warning" style={{ marginRight: 6 }}>RE-AGREEMENT</span>}{record.head}</td>
-                                                <td className={record.transType === 'CR' ? 'is-success' : 'is-danger'} style={{ fontWeight: 700 }}>{record.transType}</td>
-                                                <td className="is-right" style={{ fontWeight: 700 }}>{money(record.amount)}</td>
-                                                <td className="is-center">{record.vchrType || 'P'}</td>
-                                                <td className="is-muted" style={{ fontFamily: 'monospace' }}>{record.chequeNo || '—'}</td>
-                                                <td className="is-muted" style={{ fontFamily: 'monospace' }}>{record.chequeDate ? dayjs(record.chequeDate).format('DD/MM/YY') : '—'}</td>
-                                                <td className="is-right is-muted">{record.chequeAmount ? money(record.chequeAmount) : '—'}</td>
-                                                <td className="is-muted" title={record.bankName}>{record.bankName || '—'}</td>
-                                                <td className={`is-center ${record.passFlag === 'Y' ? 'is-success' : 'is-warning'}`} style={{ fontWeight: 700 }}>{record.passFlag || 'N'}</td>
-                                                <td className="is-muted" title={record.narration} style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{record.narration || '—'}</td>
-                                                {span > 0 && (
-                                                    <td rowSpan={span} className="is-center">
-                                                        <div className="aw-btn-row" style={{ justifyContent: 'center' }}>
-                                                            <button type="button" onClick={() => (record.kind === 'REAGREEMENT' ? setDetail(record) : setLinesOf(record))} className="aw-btn aw-btn-secondary aw-btn-sm">
-                                                                <Eye size={12} /> {t('Details')}
-                                                            </button>
-                                                            <button type="button" onClick={() => handleDelete(record.voucherNo)} disabled={busyVouchers.includes(record.voucherNo)} className="aw-btn aw-btn-danger aw-btn-sm">
-                                                                <Trash2 size={12} /> {t('Reject')}
-                                                            </button>
-                                                            <button type="button" onClick={() => handlePass(record.voucherNo)} disabled={busyVouchers.includes(record.voucherNo)} className="aw-btn aw-btn-primary aw-btn-sm">
-                                                                <CheckCircle2 size={12} /> {t('Pass')}
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                )}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                            <div className="pt-who">
+                                                <strong title={head.memberName}>{head.memberName || '—'}</strong>
+                                                <span>{t('MB No.')} {head.memberNo || '—'}</span>
+                                            </div>
+                                            <div className="pt-cheque">
+                                                {head.chequeNo || head.bankName ? (
+                                                    <>
+                                                        <span>{t('Cheque No.')} <b>{head.chequeNo || '—'}</b></span>
+                                                        <span>{head.chequeDate ? dayjs(head.chequeDate).format('DD/MM/YY') : '—'}{head.chequeAmount ? ` · ${money(head.chequeAmount)}` : ''}</span>
+                                                        <span title={head.bankName}>{head.bankName || '—'}</span>
+                                                    </>
+                                                ) : <span className="is-muted">—</span>}
+                                            </div>
+                                            <div className="pt-total">
+                                                <span>{t('Trans Amount')}</span>
+                                                <b>{money(Number(head.voucherAmount ?? rows.reduce((a: number, r: any) => a + (Number(r.amount) || 0), 0)))}</b>
+                                            </div>
+                                            <div className="pt-actions">
+                                                <button type="button" onClick={() => (isRa ? setDetail(head) : setLinesOf(head))} className="aw-btn aw-btn-secondary aw-btn-sm">
+                                                    <Eye size={12} /> {t('Details')}
+                                                </button>
+                                                <button type="button" onClick={() => handleDelete(voucherNo)} disabled={busy} className="aw-btn aw-btn-danger aw-btn-sm">
+                                                    <Trash2 size={12} /> {t('Reject')}
+                                                </button>
+                                                <button type="button" onClick={() => handlePass(voucherNo)} disabled={busy} className="aw-btn aw-btn-primary aw-btn-sm">
+                                                    <CheckCircle2 size={12} /> {t('Pass')}
+                                                </button>
+                                            </div>
+                                        </header>
+                                        <table className="aw-table pt-lines">
+                                            <thead>
+                                                <tr>
+                                                    <th>{t('Tr. No.')}</th>
+                                                    <th>{t('Head')}</th>
+                                                    <th className="is-center">{t('Acc')}</th>
+                                                    <th className="is-center">{t('Trans Type')}</th>
+                                                    <th className="is-right">{t('Trans Amount')}</th>
+                                                    <th>{t('Narration')}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {rows.map((record: any) => (
+                                                    <tr key={record.key}>
+                                                        <td className="is-muted" style={{ fontFamily: 'monospace' }}>{record.trNo || '—'}</td>
+                                                        <td className="is-accent" style={{ fontWeight: 600 }}>{record.head}</td>
+                                                        <td className="is-center is-muted">{record.noOfAcc || '—'}</td>
+                                                        <td className="is-center"><span className={`pt-drcr ${record.transType === 'CR' ? 'is-cr' : 'is-dr'}`}>{record.transType}</span></td>
+                                                        <td className="is-right" style={{ fontWeight: 600 }}>{money(record.amount)}</td>
+                                                        <td className="is-muted" title={record.narration}>{record.narration || '—'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </article>
+                                );
+                            })}
                         </div>
                     </section>
                 </div>
@@ -221,11 +257,11 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                                         <tr key={i}>
                                             <td className="is-muted">{l.srNo}</td>
                                             <td className="is-muted" style={{ fontFamily: 'monospace' }}>{l.trNo || '—'}</td>
-                                            <td className="is-accent" style={{ fontWeight: 700 }}>{[l.code, l.headName].filter(Boolean).join(' - ') || '—'}</td>
-                                            <td className={cr ? 'is-success' : 'is-danger'} style={{ fontWeight: 700 }}>{cr ? 'CR' : 'DR'}</td>
+                                            <td className="is-accent" style={{ fontWeight: 600 }}>{[l.code, l.headName].filter(Boolean).join(' - ') || '—'}</td>
+                                            <td className={cr ? 'is-success' : 'is-danger'} style={{ fontWeight: 600 }}>{cr ? 'CR' : 'DR'}</td>
                                             <td className="is-muted">{[l.accType, l.accNo].filter(Boolean).join(' ') || '—'}</td>
                                             <td className="is-muted">{l.name || '—'}</td>
-                                            <td className="is-right" style={{ fontWeight: 700 }}>{money(Number(l.amount) || 0)}</td>
+                                            <td className="is-right" style={{ fontWeight: 600 }}>{money(Number(l.amount) || 0)}</td>
                                         </tr>
                                     );
                                 })}

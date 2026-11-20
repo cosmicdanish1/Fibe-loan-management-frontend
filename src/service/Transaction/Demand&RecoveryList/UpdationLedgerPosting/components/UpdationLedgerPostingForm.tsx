@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Select } from 'antd';
-import { BookOpenCheck, RotateCcw, X, Send } from 'lucide-react';
+import { BookOpenCheck, RotateCcw, X, Send, CheckCircle2, XCircle } from 'lucide-react';
 import { UpdationLedgerPostingHookReturn } from '../interface/UpdationLedgerPostingInterfaces';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
 }) => {
   const { t } = useTranslation();
     const totalsMatch = grandTotalSend > 0 && grandTotalSend === grandTotalReceived;
-    const rowHead: React.CSSProperties = { fontWeight: 700 };
+    const rowHead: React.CSSProperties = { fontWeight: 600 };
 
     usePageToolbarActions({
         onSave: handlePosting,
@@ -27,7 +27,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Updation / Ledger Posting')}</h1>
@@ -47,7 +47,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><BookOpenCheck size={14} /></span>
-                            <h2 className="aw-card-title">{t('Posting Selection')}</h2>
+                            <h2 className="aw-card-title">{t('Posting selection')}</h2>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'end' }}>
                             <div>
@@ -80,7 +80,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                         </div>
                         <div className="aw-inline" style={{ gap: 'var(--aw-gap)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                             <div>
-                                <span className="aw-label">{t('Mode of Receipt')}</span>
+                                <span className="aw-label">{t('Mode of receipt')}</span>
                                 <div className="aw-seg" role="tablist" style={{ width: 280, ['--seg-index' as any]: Math.max(0, MODES.indexOf(formData.modeOfReceipt)), ['--seg-count' as any]: MODES.length }}>
                                     {MODES.map(m => (
                                         <button key={m} type="button" role="tab" aria-selected={formData.modeOfReceipt === m} onClick={() => updateField('modeOfReceipt', m)}>{m}</button>
@@ -88,7 +88,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                                 </div>
                             </div>
                             <button type="button" onClick={handleLoad} disabled={isLoading} className="aw-btn aw-btn-secondary">
-                                {isLoading ? <RotateCcw size={13} className="aw-spin" /> : <BookOpenCheck size={13} />} {isLoading ? t('Loading...') : t('Load Data')}
+                                {isLoading ? <RotateCcw size={13} className="aw-spin" /> : <BookOpenCheck size={13} />} {isLoading ? t('Loading...') : t('Load data')}
                             </button>
                         </div>
 
@@ -98,8 +98,8 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                                 <span className="aw-pill">{t('Demand Send ₹{{1}}', { 1: grandTotalSend.toLocaleString('en-IN') })}</span>
                                 <span className={`aw-pill ${grandTotalReceived === grandTotalSend ? 'tone-success' : 'tone-danger'}`}>{t('Demand Received ₹{{1}}', { 1: grandTotalReceived.toLocaleString('en-IN') })}</span>
                                 {grandTotalShort > 0 && <span className="aw-pill tone-danger">{t('Short ₹{{1}}', { 1: grandTotalShort.toLocaleString('en-IN') })}</span>}
-                                {totalsMatch && <span className="aw-pill tone-success">✓ {t('Totals Match — Ready to Post')}</span>}
-                                {grandTotalSend > 0 && !totalsMatch && <span className="aw-pill tone-danger">✗ {t('Totals Do Not Match')}</span>}
+                                {totalsMatch && <span className="aw-pill tone-success"><CheckCircle2 size={11} style={{ marginRight: 5 }} /> {t('Totals match — ready to post')}</span>}
+                                {grandTotalSend > 0 && !totalsMatch && <span className="aw-pill tone-danger"><XCircle size={11} style={{ marginRight: 5 }} /> {t('Totals do not match')}</span>}
                             </div>
                         )}
                     </section>
@@ -107,7 +107,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><BookOpenCheck size={14} /></span>
-                            <h2 className="aw-card-title">{t('Demand Data')}</h2>
+                            <h2 className="aw-card-title">{t('Demand data')}</h2>
                         </div>
                         {isLoading ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
@@ -117,7 +117,7 @@ const UpdationLedgerPostingForm: React.FC<UpdationLedgerPostingHookReturn> = ({
                         ) : memberGroups.length === 0 ? (
                             <div className="aw-empty" style={{ padding: 32 }}>
                                 <BookOpenCheck size={32} />
-                                <p className="aw-strong">{t('No Data Loaded')}</p>
+                                <p className="aw-strong">{t('No data loaded')}</p>
                                 <span className="aw-meta">{t('Select Month, Year, Branch and click "Load Data"')}</span>
                             </div>
                         ) : (

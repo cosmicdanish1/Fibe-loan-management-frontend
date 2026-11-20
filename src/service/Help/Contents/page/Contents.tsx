@@ -118,7 +118,7 @@ const Contents: React.FC = () => {
   const isOpen = (id: string) => q ? true : !!openIds[id];
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Help Contents')}</h1>
@@ -158,7 +158,7 @@ const Contents: React.FC = () => {
                 <h2 className="aw-card-title">{t('Need help?')}</h2>
               </div>
               <div className="aw-rows">
-                <div className="aw-row"><span className="aw-meta"><Mail size={12} /> {t('Email')}</span><a href="mailto:thekovain@gmail.com" style={{ fontWeight: 700, color: 'var(--aw-accent)' }}>thekovain@gmail.com</a></div>
+                <div className="aw-row"><span className="aw-meta"><Mail size={12} /> {t('Email')}</span><a href="mailto:thekovain@gmail.com" style={{ fontWeight: 600, color: 'var(--aw-accent)' }}>thekovain@gmail.com</a></div>
                 <div className="aw-row"><span className="aw-meta"><Phone size={12} /> {t('Phone')}</span><strong>+91 7692829866</strong></div>
                 <div className="aw-row"><span className="aw-meta"><CheckCircle2 size={12} /> {t('Support')}</span><strong>{t('24/7 available')}</strong></div>
               </div>
@@ -182,7 +182,7 @@ const Contents: React.FC = () => {
               return (
                 <div key={section.id} className="aw-panel" style={{ padding: 0, overflow: 'hidden' }}>
                   <button type="button" onClick={() => toggleSection(section.id)} aria-expanded={open}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'transparent', border: 0, cursor: 'pointer', font: 'inherit', color: 'inherit', textAlign: 'left' }}>
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'transparent', border: 0, cursor: 'pointer', font: 'inherit', color: 'inherit', textAlign: 'left' }}>
                     <ChevronRight size={14} style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .26s cubic-bezier(.32,.72,0,1)' }} />
                     <span className="aw-card-icon"><SecIcon size={13} /></span>
                     <strong style={{ flex: 1 }}>{section.title}</strong>
@@ -196,7 +196,7 @@ const Contents: React.FC = () => {
                         const ItemIcon = item.icon;
                         return (
                           <button key={item.title} type="button" onClick={() => setModal({ sectionId: section.id, index: origIdx })}
-                            className="aw-panel" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, textAlign: 'left', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
+                            className="aw-panel" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
                             <span style={{ color: 'var(--aw-accent)', marginTop: 2 }}><ItemIcon size={14} /></span>
                             <span style={{ flex: 1 }}>
                               <strong>{item.title}</strong>

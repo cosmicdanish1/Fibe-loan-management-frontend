@@ -21,7 +21,7 @@ const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Change Member Office')}</h1>
@@ -37,7 +37,7 @@ const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
             </div>
 
             <div className="aw-content">
-                <div className="aw-stack" style={{ maxWidth: 820 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 'var(--aw-gap)', alignItems: 'start', maxWidth: 1120 }}>
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><CalendarDays size={14} /></span>
@@ -75,20 +75,20 @@ const ChangeMemberOfficeForm: React.FC<ChangeMemberOfficeHookReturn> = ({
                         </div>
                     </section>
 
-                    <section className="aw-card aw-panel-accent">
+                    <section className="aw-card aw-panel-accent" style={{ gridColumn: '1 / -1' }}>
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><ArrowRightLeft size={14} /></span>
-                            <h2 className="aw-card-title">{t('Change To New Branch')}</h2>
+                            <h2 className="aw-card-title">{t('Change to new branch')}</h2>
                         </div>
                         <div>
-                            <label className="aw-label" htmlFor="cmo-new">{t('New Branch')}</label>
+                            <label className="aw-label" htmlFor="cmo-new">{t('New branch')}</label>
                             <Select id="cmo-new" value={(formData.newBranchNo || undefined) as string} onChange={(v) => updateField('newBranchNo', v)}
                                 className="aw-select" popupClassName="aw-select-popup" placeholder={t('Select New Branch...')}
                                 options={offices.map(o => ({ value: o.officeId, label: `${o.officeName} (${o.officeId})` }))} />
                         </div>
                     </section>
 
-                    <p className="aw-meta" style={{ textAlign: 'center', fontStyle: 'italic' }}>{t('Total Divisions & Branches (N) 1 1 1')}</p>
+                    <p className="aw-meta" style={{ textAlign: 'center', gridColumn: '1 / -1' }}>{t('Total Divisions & Branches (N) 1 1 1')}</p>
                 </div>
             </div>
 

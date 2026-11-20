@@ -192,7 +192,7 @@ const DayBookSB: React.FC<{ filterType?: 'sb' | 'cd' }> = ({ filterType = 'sb' }
 
   return (
     <ReportShell
-      className="dbsb-page"
+      className="dbsb-page aw-calm"
       title={`Day Book [${bookLabel}]`}
       desc={filterType === 'cd' ? 'Compulsory deposit ledger' : 'Savings bank ledger'}
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

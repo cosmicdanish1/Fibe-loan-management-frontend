@@ -177,7 +177,7 @@ const DayBook: React.FC<{ filterType?: 'all' | 'cd' | 'sb' }> = ({ filterType = 
   };
 
   return (
-    <div className="app-window db-page">
+    <div className="app-window aw-calm db-page">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">Day Book{titleSuffix}</h1>

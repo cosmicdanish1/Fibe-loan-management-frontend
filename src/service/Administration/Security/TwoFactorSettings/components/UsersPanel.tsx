@@ -105,7 +105,7 @@ const UsersPanel: React.FC<{ isAdmin: boolean; onOpenPolicy?: (() => void) | und
                     : <span className="aw-pill">{t('Not set up')}</span>}
                 </td>
                 <td>
-                  <label className="aw-inline" style={{ gap: 6, cursor: 'pointer', alignItems: 'center' }}>
+                  <label className="aw-inline" style={{ gap: 8, cursor: 'pointer', alignItems: 'center' }}>
                     <input type="checkbox" role="switch" aria-label={'Require 2FA for ' + u.username} title={u.required && !u.requiredFlag ? t('Locked: the policy requires 2FA for everyone') : undefined} checked={u.required}
                       disabled={u.required && !u.requiredFlag /* required for everyone by policy */}
                       style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }}
@@ -119,7 +119,7 @@ const UsersPanel: React.FC<{ isAdmin: boolean; onOpenPolicy?: (() => void) | und
                   </label>
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <div className="aw-inline" style={{ justifyContent: 'flex-end', gap: 6 }}>
+                  <div className="aw-inline" style={{ justifyContent: 'flex-end', gap: 8 }}>
                     {isAdmin && !isAdminLevel(u.level) && (
                       <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => setPwFor(u)}>
                         <KeyRound size={12} /> {t('Reset password')}
@@ -168,7 +168,7 @@ const UsersPanel: React.FC<{ isAdmin: boolean; onOpenPolicy?: (() => void) | und
       {/* Three choices: sign out now, at their next sign-in, or do nothing */}
       <AwDialog open={!!ask} title={t('Require 2FA')} onClose={() => setAsk(null)} icon={<UserCheck size={14} />} maxWidth="28rem" compact>
         {ask && (
-          <div className="aw-stack" style={{ gap: 10 }}>
+          <div className="aw-stack" style={{ gap: 12 }}>
             <p className="aw-meta"><strong>{ask.username}</strong> {t('will have to set up 2FA. When should it start?')}</p>
             <button type="button" className="aw-btn aw-btn-danger" style={{ justifyContent: 'flex-start' }}
               onClick={() => { const u = ask; setAsk(null); void act(() => apiService.twoFaSetRequired(u.userid, true, true), `${u.username} was signed out and must set up 2FA when signing in again`); }}>

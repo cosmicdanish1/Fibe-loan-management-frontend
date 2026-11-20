@@ -77,7 +77,7 @@ const openReport = (report: ReportCard) => {
 
 const ReportPro: React.FC = () => (
   <ReportShell
-    className="report-pro-page"
+    className="report-pro-page aw-calm"
     title="Legacy report workspace"
     desc="One place for the recovery, member, FRS and migration outputs currently maintained as separate Excel and CSV files."
     footerLeft="Report Pro"

@@ -72,7 +72,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
     ];
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
 
             {/* Header */}
             <div className="aw-header aw-ambient">
@@ -101,7 +101,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Users size={14} /></span>
-                            <h2 className="aw-card-title">{t('Member Selection')}</h2>
+                            <h2 className="aw-card-title">{t('Member selection')}</h2>
                             {memberTotal > 0 && (
                                 <span className="aw-pill" style={{ marginLeft: 'auto' }}>
                                     {memberIndex > 0 ? `${memberIndex} / ${memberTotal}` : t('{{1}} members', { 1: memberTotal })}
@@ -160,7 +160,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                     </div>
                                 </div>
                                 {memberName && (
-                                    <div className="aw-strong aw-fade-in" style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, color: 'var(--aw-accent)' }}>
+                                    <div className="aw-strong aw-fade-in" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, color: 'var(--aw-accent)' }}>
                                         <Users size={13} /> {memberName}
                                     </div>
                                 )}
@@ -214,7 +214,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                     <span className="aw-card-icon"><TrendingDown size={14} /></span>
                                     <h2 className="aw-card-title">{l.title}</h2>
                                 </div>
-                                <div className="aw-two" style={{ gap: 10 }}>
+                                <div className="aw-two" style={{ gap: 12 }}>
                                     <div>
                                         <label className="aw-label">{t('Op. Balance')}</label>
                                         <AmtInput value={formData[l.op]} onChange={upd(l.op)} readOnly label={t('{{1}} opening balance', { 1: l.title })} />
@@ -237,7 +237,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                     <Building2 size={12} /> {t('Modify Balance Registry')}
                     {memberName && <span style={{ color: 'var(--aw-accent)' }}>· {memberName}</span>}
                 </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--aw-accent)' }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
             </div>
 
         </div>

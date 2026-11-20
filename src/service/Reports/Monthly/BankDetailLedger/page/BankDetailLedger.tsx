@@ -276,7 +276,7 @@ const BankDetailLedger: React.FC = () => {
 
   return (
     <ReportShell
-      className="bdl-page"
+      className="bdl-page aw-calm"
       title="Bank Detail Ledger"
       desc="Transactions of one bank account"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

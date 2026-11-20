@@ -261,7 +261,7 @@ const ReceiptPaymentVoucher: React.FC = () => {
 
   return (
     <ReportShell
-      className="rpv-page"
+      className="rpv-page aw-calm"
       title="Receipt / Payment Voucher"
       desc="Find a saved voucher and print it"
       actions={

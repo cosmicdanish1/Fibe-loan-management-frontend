@@ -8,7 +8,7 @@ import {
   IndianRupee, Calendar, Award,
   XCircle, Info, Lightbulb,
   CreditCard, Building2, RotateCcw, ChevronRight,
-  Star, Zap, Sparkles, X, RefreshCw,
+  Star, Zap, Sparkles, X, RefreshCw, Gem, Medal, AlertTriangle,
 } from 'lucide-react';
 import MemberField from '@/components/shared/kit/MemberField';
 import { useSaakhScore, type FactorScore } from '../hook/useSaakhScore';
@@ -23,11 +23,11 @@ const closeWindow = () => {
 
 // ── Tier config (colours come from the theme tokens) ─────────────────────────
 const TIER_CONFIG = {
-  Platinum: { color: 'var(--aw-info)', label: tLabel('Platinum'), emoji: '💎', tone: 'info' },
-  Gold: { color: 'var(--aw-warning)', label: tLabel('Gold'), emoji: '🥇', tone: 'warning' },
-  Silver: { color: 'var(--aw-muted)', label: tLabel('Silver'), emoji: '🥈', tone: 'muted' },
-  Bronze: { color: 'var(--aw-warning)', label: tLabel('Bronze'), emoji: '🥉', tone: 'warning' },
-  Critical: { color: 'var(--aw-danger)', label: tLabel('Critical'), emoji: '⚠️', tone: 'danger' },
+  Platinum: { color: 'var(--aw-info)', label: tLabel('Platinum'), icon: Gem, tone: 'info' },
+  Gold: { color: 'var(--aw-warning)', label: tLabel('Gold'), icon: Medal, tone: 'warning' },
+  Silver: { color: 'var(--aw-muted)', label: tLabel('Silver'), icon: Medal, tone: 'muted' },
+  Bronze: { color: 'var(--aw-warning)', label: tLabel('Bronze'), icon: Medal, tone: 'warning' },
+  Critical: { color: 'var(--aw-danger)', label: tLabel('Critical'), icon: AlertTriangle, tone: 'danger' },
 } as const;
 
 // ── Animated count-up number ─────────────────────────────────────────────────
@@ -91,14 +91,14 @@ const ScoreGauge: React.FC<{ score: number; tier: keyof typeof TIER_CONFIG }> = 
           />
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: 38, fontWeight: 800, lineHeight: 1, color: tc.color, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 38, fontWeight: 600, lineHeight: 1, color: tc.color, fontVariantNumeric: 'tabular-nums' }}>
             <CountUp value={score} duration={1500} />
           </span>
-          <span className="aw-meta" style={{ textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 4 }}>{t('out of 10')}</span>
+          <span className="aw-meta" style={{ marginTop: 4 }}>{t('out of 10')}</span>
         </div>
       </div>
-      <span className={`aw-pill tone-${tc.tone}`} style={{ padding: '4px 14px', fontSize: 'var(--type-body-size)', letterSpacing: '.12em', textTransform: 'uppercase' }}>
-        {tc.emoji} {tc.label}
+      <span className={`aw-pill tone-${tc.tone}`} style={{ padding: '4px 16px', fontSize: 'var(--type-body-size)' }}>
+        <tc.icon size={14} style={{ marginRight: 8 }} /> {tc.label}
       </span>
     </div>
   );
@@ -134,7 +134,7 @@ const EligibilityBadge: React.FC<{ eligible: 'YES' | 'CONDITIONAL' | 'NO' }> = (
   return (
     <div className={`aw-alert aw-alert-${cfg.tone === 'danger' ? 'danger' : cfg.tone}`} style={{ marginBottom: 0, alignItems: 'center', padding: '12px 16px' }}>
       {cfg.icon}
-      <span style={{ textTransform: 'uppercase', letterSpacing: '.06em' }}>{cfg.text}</span>
+      <span>{cfg.text}</span>
     </div>
   );
 };
@@ -172,12 +172,12 @@ const SaakhScore: React.FC = () => {
   };
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Saakh Score')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Star size={12} /> {t('Member Financial Health Index · 0–10')}
           </p>
         </div>
@@ -275,12 +275,12 @@ const SaakhScore: React.FC = () => {
                     </div>
 
                     <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 16 }}>
-                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={11} /> {t('Member Since')}</dt><dd>{data.membershipDate || '—'}</dd></div>
-                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Award size={11} /> {t('Tenure')}</dt><dd>{t('{{1}} yr{{2}}', { 1: data.tenureYears, 2: data.tenureYears !== 1 ? 's' : '' })}</dd></div>
-                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 5 }}><CreditCard size={11} /> {t('Active Loans')}</dt><dd>{data.totalActiveLoans}</dd></div>
+                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Calendar size={11} /> {t('Member Since')}</dt><dd>{data.membershipDate || '—'}</dd></div>
+                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Award size={11} /> {t('Tenure')}</dt><dd>{t('{{1}} yr{{2}}', { 1: data.tenureYears, 2: data.tenureYears !== 1 ? 's' : '' })}</dd></div>
+                      <div><dt style={{ display: 'flex', alignItems: 'center', gap: 8 }}><CreditCard size={11} /> {t('Active Loans')}</dt><dd>{data.totalActiveLoans}</dd></div>
                     </dl>
 
-                    <p style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', color: data.totalScore >= 7 ? 'var(--aw-success)' : data.totalScore >= 5 ? 'var(--aw-warning)' : 'var(--aw-danger)' }}>
+                    <p style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, fontWeight: 600, color: data.totalScore >= 7 ? 'var(--aw-success)' : data.totalScore >= 5 ? 'var(--aw-warning)' : 'var(--aw-danger)' }}>
                       {data.totalScore >= 7 ? <TrendingUp size={14} /> : data.totalScore >= 5 ? <Minus size={14} /> : <TrendingDown size={14} />}
                       {data.totalScore >= 7 ? t('Strong Profile') : data.totalScore >= 5 ? t('Moderate Risk') : t('High Risk')}
                     </p>
@@ -294,7 +294,7 @@ const SaakhScore: React.FC = () => {
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><Sparkles size={14} /></span>
-                  <h2 className="aw-card-title">{t('Score Breakdown')}</h2>
+                  <h2 className="aw-card-title">{t('Score breakdown')}</h2>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--aw-gap)' }}>
                   {data.factors.map((f) => <FactorCard key={f.name} f={f} />)}
@@ -306,7 +306,7 @@ const SaakhScore: React.FC = () => {
                 <section className="aw-card">
                   <div className="aw-card-head">
                     <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                    <h2 className="aw-card-title">{t('Loan Eligibility Decision')}</h2>
+                    <h2 className="aw-card-title">{t('Loan eligibility decision')}</h2>
                   </div>
                   <div className="aw-stack">
                     <EligibilityBadge eligible={data.eligibility.eligible} />
@@ -314,11 +314,11 @@ const SaakhScore: React.FC = () => {
                     {data.eligibility.eligible !== 'NO' && data.eligibility.recommendedAmount > 0 && (
                       <div className="aw-two">
                         <div className="aw-stat">
-                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><IndianRupee size={11} /> {t('Recommended Amt')}</div>
+                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><IndianRupee size={11} /> {t('Recommended Amt')}</div>
                           <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 5px)' }}>₹<CountUp value={data.eligibility.recommendedAmount} format duration={1300} /></div>
                         </div>
                         <div className="aw-stat">
-                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><Calendar size={11} /> {t('Tenure')}</div>
+                          <div className="aw-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Calendar size={11} /> {t('Tenure')}</div>
                           <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 5px)' }}>{t('{{1}} months', { 1: data.eligibility.recommendedTenure })}</div>
                         </div>
                       </div>
@@ -329,7 +329,7 @@ const SaakhScore: React.FC = () => {
                 <section className="aw-card">
                   <div className="aw-card-head">
                     <span className="aw-card-icon"><IndianRupee size={14} /></span>
-                    <h2 className="aw-card-title">{t('Financial Snapshot')}</h2>
+                    <h2 className="aw-card-title">{t('Financial snapshot')}</h2>
                   </div>
                   <div className="aw-rows">
                     {[
@@ -346,7 +346,7 @@ const SaakhScore: React.FC = () => {
                     ))}
                     {data.guarantorInfo.isGuarantorForCount > 0 && (
                       <div className="aw-row">
-                        <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Guarantor for')}</span>
+                        <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><ShieldCheck size={12} /> {t('Guarantor for')}</span>
                         <span className="aw-row-value" style={{ color: data.guarantorInfo.guarantorLoansHealthy ? 'var(--aw-success)' : 'var(--aw-warning)' }}>{t('{{1}} member{{2}}', { 1: data.guarantorInfo.isGuarantorForCount, 2: data.guarantorInfo.isGuarantorForCount !== 1 ? 's' : '' })}</span>
                       </div>
                     )}
@@ -397,11 +397,11 @@ const SaakhScore: React.FC = () => {
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><Lightbulb size={14} /></span>
-                  <h2 className="aw-card-title">{t('Score Improvement Tips')}</h2>
+                  <h2 className="aw-card-title">{t('Score improvement tips')}</h2>
                 </div>
                 <div className="aw-stack" style={{ gap: 8 }}>
                   {data.improvementTips.map((tip, i) => (
-                    <p key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontWeight: 500, lineHeight: 1.5 }}>
+                    <p key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontWeight: 500, lineHeight: 1.5 }}>
                       <ChevronRight size={14} style={{ marginTop: 3, flex: 'none', color: 'var(--aw-accent)' }} />
                       <span>{tip}</span>
                     </p>
@@ -414,8 +414,8 @@ const SaakhScore: React.FC = () => {
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Saakh Score Engine v1.0')}</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Info size={12} /> {t('Score is indicative — committee decision is final')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> {t('Saakh Score Engine v1.0')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Info size={12} /> {t('Score is indicative — committee decision is final')}</span>
       </div>
     </div>
   );

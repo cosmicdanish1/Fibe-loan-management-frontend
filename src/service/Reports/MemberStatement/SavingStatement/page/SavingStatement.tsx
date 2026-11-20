@@ -229,7 +229,7 @@ const SavingStatement: React.FC = () => {
 
   return (
     <ReportShell
-      className="svstmt-page"
+      className="svstmt-page aw-calm"
       title="Saving Statement"
       desc="Savings account statement"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

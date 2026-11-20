@@ -57,7 +57,7 @@ const StatCard = ({ title, value, icon: Icon, tone, subtitle }: any) => (
     <div className="aw-inline" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
       <div>
         <p className="aw-label" style={{ margin: 0 }}>{title}</p>
-        <p style={{ fontSize: 'calc(var(--type-body-size) + 18px)', fontWeight: 700, lineHeight: 1.1, marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+        <p style={{ fontSize: 'calc(var(--type-body-size) + 18px)', fontWeight: 600, lineHeight: 1.1, marginTop: 8, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
         {subtitle && <p className="aw-meta" style={{ marginTop: 4 }}>{subtitle}</p>}
       </div>
       <span className="aw-card-icon" style={{ width: 40, height: 40, ['--aw-accent' as any]: tone, ['--aw-accent-soft' as any]: `color-mix(in srgb, ${tone} 14%, transparent)` }}>
@@ -96,7 +96,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="aw-card" style={{ padding: 10, fontSize: 12, boxShadow: 'var(--aw-shadow)' }}>
         {label !== undefined && (
-          <p className="aw-meta" style={{ fontWeight: 700, borderBottom: '1px solid var(--aw-border)', paddingBottom: 4, marginBottom: 6 }}>{label}</p>
+          <p className="aw-meta" style={{ fontWeight: 600, borderBottom: '1px solid var(--aw-border)', paddingBottom: 4, marginBottom: 8 }}>{label}</p>
         )}
         {payload.map((p: any, index: number) => (
           <div key={index} className="aw-inline" style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -192,11 +192,11 @@ const FullScreenAnalytics: React.FC = () => {
     : [];
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Live Ops Center')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Globe size={11} />
             {loadError
               ? <span style={{ color: 'var(--aw-danger)' }}>{t('Not connected - {{1}}', { 1: loadError })}</span>
@@ -262,7 +262,7 @@ const FullScreenAnalytics: React.FC = () => {
                         verticalAlign="bottom"
                         height={36}
                         iconType="circle"
-                        formatter={(value) => <span className="aw-meta" style={{ fontWeight: 700, textTransform: 'uppercase' }}>{value}</span>}
+                        formatter={(value) => <span className="aw-meta" style={{ fontWeight: 600 }}>{value}</span>}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -293,7 +293,7 @@ const FullScreenAnalytics: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Users size={14} /></span>
-                <h2 className="aw-card-title">{t('User Activity ({{1}})', { 1: selectedTimeRange })}</h2>
+                <h2 className="aw-card-title">{t('User activity ({{1}})', { 1: selectedTimeRange })}</h2>
               </div>
               {users.length === 0 ? (
                 <div style={{ height: 200 }}><NoData /></div>

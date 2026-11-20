@@ -22,7 +22,7 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
 }) => {
   const { t } = useTranslation();
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Print Members Demand List')}</h1>
@@ -30,7 +30,7 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                 </div>
                 <div className="aw-actions">
                     <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> {t('Reset')}</button>
-                    <button type="button" onClick={handleExport} className="aw-btn aw-btn-primary"><FileOutput size={13} /> {t('Export To Details')}</button>
+                    <button type="button" onClick={handleExport} className="aw-btn aw-btn-primary"><FileOutput size={13} /> {t('Export to details')}</button>
                     <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Exit')}</button>
                 </div>
             </div>
@@ -40,7 +40,7 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><Printer size={14} /></span>
-                            <h2 className="aw-card-title">{t('Print Configuration')}</h2>
+                            <h2 className="aw-card-title">{t('Print configuration')}</h2>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--aw-gap)' }}>
@@ -70,12 +70,12 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                                     className="aw-select" popupClassName="aw-select-popup" options={YEARS.map(y => ({ value: y, label: y }))} />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="pmd-sort">{t('Sort By')}</label>
+                                <label className="aw-label" htmlFor="pmd-sort">{t('Sort by')}</label>
                                 <Select id="pmd-sort" value={formData.sortBy} onChange={(v) => updateField('sortBy', v)}
                                     className="aw-select" popupClassName="aw-select-popup" options={SORTS.map(s => ({ value: s, label: s }))} />
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="pmd-pages">{t('Total Pages')}</label>
+                                <label className="aw-label" htmlFor="pmd-pages">{t('Total pages')}</label>
                                 <input id="pmd-pages" value="*" readOnly className="aw-input" />
                             </div>
                         </div>
@@ -110,7 +110,7 @@ const PrintMembersDemandListForm: React.FC<PrintMembersDemandListHookReturn> = (
                         <div className="aw-empty" style={{ padding: 40 }}>
                             <Printer size={40} />
                             <p className="aw-strong">{t('Report Preview')}</p>
-                            <span className="aw-meta">{t('Select parameters and click Export To Details')}</span>
+                            <span className="aw-meta">{t('Select parameters and click Export to details')}</span>
                         </div>
                     </section>
                 </div>

@@ -68,7 +68,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                 </div>
                 <div className="aw-strong" style={{ marginTop: 4, minHeight: 18 }}>{name || '-'}</div>
                 <div className="aw-meta" style={{ minHeight: 18 }}>{office || '-'}</div>
-                <div className="aw-row" style={{ marginTop: 6, paddingBottom: 0 }}>
+                <div className="aw-row" style={{ marginTop: 8, paddingBottom: 0 }}>
                     <span className="aw-row-label">{t('Loan Bal')}</span>
                     <span className="aw-row-value" style={{ color: 'var(--aw-danger)' }}>{bal ? formatCurrency(bal) : '-'}</span>
                 </div>
@@ -79,12 +79,12 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
     const applied10 = formatCurrency((parseFloat(loanDetails.appliedAmount) || 0) * 0.10).replace('₹', '');
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             {/* ── Header ── */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Loan Sanction Console')}{reagreement && <span className="aw-pill tone-warning" style={{ marginLeft: 10 }}>RE-AGREEMENT</span>}</h1>
-                    <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <ShieldCheck size={12} /> {t('Executive Authority')}
                     </p>
                 </div>
@@ -107,7 +107,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">{t('Loan Case No')}</h2>
+                            <h2 className="aw-card-title">{t('Loan case no')}</h2>
                         </div>
                         <Select
                             id="ls-case"
@@ -135,8 +135,8 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                                 <section className="aw-card">
                                     <div className="aw-card-head">
                                         <span className="aw-card-icon"><User size={14} /></span>
-                                        <h2 className="aw-card-title">{t('Applicant Profile')}</h2>
-                                        <span className="aw-pill" style={{ marginLeft: 'auto', textTransform: 'uppercase' }}>{loanDetails.loanType}</span>
+                                        <h2 className="aw-card-title">{t('Applicant profile')}</h2>
+                                        <span className="aw-pill" style={{ marginLeft: 'auto' }}>{loanDetails.loanType}</span>
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--aw-gap)' }}>
                                         <Fact label={t('Member No')}>{loanDetails.memberNo}</Fact>
@@ -157,7 +157,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                                 <section className="aw-card">
                                     <div className="aw-card-head">
                                         <span className="aw-card-icon"><Users size={14} /></span>
-                                        <h2 className="aw-card-title">{t('Surety Obligations')}</h2>
+                                        <h2 className="aw-card-title">{t('Surety obligations')}</h2>
                                     </div>
                                     <div className="aw-two">
                                         {surety(1)}
@@ -194,13 +194,13 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
                                 <section className="aw-card">
                                     <div className="aw-card-head">
                                         <span className="aw-card-icon"><Scale size={14} /></span>
-                                        <h2 className="aw-card-title">{t('Approval Parameters')}</h2>
+                                        <h2 className="aw-card-title">{t('Approval parameters')}</h2>
                                     </div>
                                     <div className="aw-stack">
                                         <div>
                                             <label className="aw-label" htmlFor="ls-amt">{reagreement ? t('Principal carried over (locked)') : t('Sanction Amount')}</label>
                                             <div className="aw-input-wrap has-action">
-                                                <input id="ls-amt" className="aw-input" style={{ color: 'var(--aw-success)', fontWeight: 700 }} value={sanctionDetails.sanctionedAmount}
+                                                <input id="ls-amt" className="aw-input" style={{ color: 'var(--aw-success)', fontWeight: 600 }} value={sanctionDetails.sanctionedAmount}
                                                     readOnly={!!reagreement}
                                                     onChange={(e) => updateSanctionField('sanctionedAmount', e.target.value)} />
                                                 <span className="aw-meta" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>INR</span>
@@ -278,7 +278,7 @@ const LoanSanctionForm: React.FC<LoanSanctionHookReturn> = ({
 
             <div className="aw-footer">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> {t('Credit Approval Dept · Auth Level: EXECUTIVE')}</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Secure Transaction')}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><ShieldCheck size={12} /> {t('Secure Transaction')}</span>
             </div>
         </div>
     );

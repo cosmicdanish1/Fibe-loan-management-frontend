@@ -42,7 +42,7 @@ export const HOW_IT_WORKS_SLIDES: Slide[] = [
         { title: tLabel('Apply'), lines: ['Limits and eligibility', 'are checked'], where: 'Administration › Loan' },
         { title: tLabel('Sanction'), lines: ['Terms are agreed and a', 'fixed monthly EMI set'], where: 'From Loan Payment' },
         { title: tLabel('Pay out'), lines: ['The amount is paid and', 'the schedule is created'], where: 'Transaction › Loan Payment' },
-        { title: tLabel('Repay'), lines: ['Monthly through the', 'demand list, or by hand'], where: 'Loan Repayment' },
+        { title: tLabel('Repay'), lines: ['Monthly through the', 'demand list, or by hand'], where: 'NR Repayment' },
         { title: tLabel('Close'), lines: ['Pay it off early, or', 'restructure with a new', 'agreement'], where: 'Early Closure / Re-agreement' },
       ]} />
     ),
@@ -70,7 +70,7 @@ export const HOW_IT_WORKS_SLIDES: Slide[] = [
     subtitle: tLabel('Saving a little every month'),
     body: (
       <FlowDiagram label={tLabel('Recurring deposit')} nodes={[
-        { title: tLabel('Set up'), lines: ['Open the RD with a', 'monthly amount'], where: 'Masters › RD Member Setup' },
+        { title: tLabel('Set up'), lines: ['Open the RD with a', 'monthly amount'], where: 'Masters › RD/CD Member Setup' },
         { title: tLabel('Instalments'), lines: ['Collected each month', 'with the demand'], where: 'Demand / Recovery List' },
         { title: tLabel('Interest'), lines: ['Interest is calculated', 'and posted'], where: 'Interest Calculation' },
         { title: tLabel('Withdraw'), lines: ['Take money out, keeping', 'the minimum balance'], where: 'Masters › RD Withdrawal' },

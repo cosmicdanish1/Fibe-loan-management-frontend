@@ -96,14 +96,14 @@ const RdRepayment: React.FC = () => {
     const statStyle = (tone: string): React.CSSProperties => ({ ['--aw-tone' as any]: tone, textAlign: 'left' });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('RD/CD Repayment')}</h1>
                     <p className="aw-desc">{t("Record a member's monthly RD/CD payment at the counter")}</p>
                 </div>
                 {yearLabel && (
-                    <span className="aw-pill" style={{ gap: 6 }}><Calendar size={12} /> {yearLabel}</span>
+                    <span className="aw-pill" style={{ gap: 8 }}><Calendar size={12} /> {yearLabel}</span>
                 )}
             </div>
 
@@ -203,7 +203,7 @@ const RdRepayment: React.FC = () => {
                                                     style={isNow ? { background: 'var(--aw-accent-soft)' } : undefined}>
                                                     <td>
                                                         {MONTH_NAMES[row.installmentMonth]} {row.installmentYear}
-                                                        {isNow && <span className="aw-meta" style={{ marginLeft: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em' }}>{t('current')}</span>}
+                                                        {isNow && <span className="aw-meta" style={{ marginLeft: 8, fontWeight: 600 }}>{t('current')}</span>}
                                                     </td>
                                                     <td className="is-muted">{shortDate(row.dueDate)}</td>
                                                     <td className={`is-right${amountNotSet && row.expectedAmount === 0 ? ' is-muted' : ''}`}>

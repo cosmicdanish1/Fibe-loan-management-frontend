@@ -111,11 +111,11 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
   );
 
   const errLine = (msg?: string) => msg
-    ? <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}><AlertCircle size={12} />{msg}</p>
+    ? <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><AlertCircle size={12} />{msg}</p>
     : null;
 
   return (
-    <div className={`app-window ${className}`}>
+    <div className={`app-window aw-calm ${className}`}>
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
@@ -192,7 +192,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
                         />
                       ))}
                     </div>
-                    <span className="aw-meta" style={{ color: STRENGTH_TONES[pwStrength], fontWeight: 700 }}>{t(STRENGTH_LABELS[pwStrength] ?? '')}</span>
+                    <span className="aw-meta" style={{ color: STRENGTH_TONES[pwStrength], fontWeight: 600 }}>{t(STRENGTH_LABELS[pwStrength] ?? '')}</span>
                   </div>
                 )}
                 {errLine(errors.newPassword)}
@@ -203,7 +203,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
                 {(errors.confirmPassword || pwMatch !== null) && (
                   (errors.confirmPassword || pwMatch === false)
                     ? errLine(errors.confirmPassword || t('Passwords do not match'))
-                    : <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={12} />{t('Passwords match')}</p>
+                    : <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={12} />{t('Passwords match')}</p>
                 )}
               </div>
 

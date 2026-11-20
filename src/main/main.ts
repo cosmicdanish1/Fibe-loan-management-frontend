@@ -809,7 +809,7 @@ const WINDOW_CONFIGS: Record<string, {
   '/transaction/saving': { title: 'Saving [Receipt -- Payment]', frameless: false, width: 1000, height: 750 },
   '/transaction/journal-transfer': { title: 'Journal / Transfer Entry', frameless: false, width: 1000, height: 750 },
   '/transaction/loan-payment': { title: 'Loan Payment', frameless: false, width: 900, height: 700 },
-  '/transaction/loan-repayment': { title: 'Loan Repayment', frameless: false, width: 1100, height: 750 },
+  '/transaction/loan-repayment': { title: 'NR Repayment', frameless: false, width: 1100, height: 750 },
   '/transaction/loan-sanction': { title: 'Loan Sanction', frameless: false, width: 1200, height: 800 },
   '/loan-sanction': { title: 'Loan Sanction', frameless: false, width: 1200, height: 800 },
   '/transaction/compulsory-deposit': { title: 'RD/CD Transaction', frameless: false, width: 1000, height: 750 },

@@ -37,13 +37,13 @@ const MemberRow = React.memo(({ memberNo, memberName, currentBalance, postAmount
     const ariaLabel = t('Post amount for member {{1}}', { 1: memberNo });
     return (
     <tr>
-        <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{memberNo}</td>
+        <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 600 }}>{memberNo}</td>
         <td title={memberName}>{memberName}</td>
         <td className="is-right is-success">₹{Number(currentBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
         <td className="has-input">
             <input aria-label={ariaLabel} value={postAmount} inputMode="decimal" maxLength={12}
                 onChange={e => onChange(memberNo, cleanAmount(e.target.value))}
-                placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
+                placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 600 }} />
         </td>
     </tr>
     );
@@ -74,7 +74,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
     });
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('RD/CD Transaction')}</h1>
@@ -98,7 +98,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
-                            <h2 className="aw-card-title">{t('Deposit Configuration')}</h2>
+                            <h2 className="aw-card-title">{t('Deposit configuration')}</h2>
                             <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('{{1}} member(s)', { 1: members.length })}</span>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 0.6fr) minmax(220px, 1fr) minmax(220px, 1fr)', gap: 'var(--aw-gap)', alignItems: 'end' }}>
@@ -107,7 +107,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                                 <div className="aw-input-wrap has-icon">
                                     <IndianRupee size={13} />
                                     <input id="cd-amount" value={formData.amount} inputMode="decimal" maxLength={12} onChange={e => updateField('amount', cleanAmount(e.target.value))}
-                                        placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
+                                        placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 600 }} />
                                 </div>
                             </div>
                             <div>
@@ -135,7 +135,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                     <section className="aw-card">
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><LayoutGrid size={14} /></span>
-                            <h2 className="aw-card-title">{t('Member Distribution Matrix')}</h2>
+                            <h2 className="aw-card-title">{t('Member distribution matrix')}</h2>
                             <span className="aw-pill" style={{ marginLeft: 'auto' }}>{t('Distributed ₹{{1}}', { 1: distributedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}</span>
                         </div>
                         <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 380px)', minHeight: 180 }}>

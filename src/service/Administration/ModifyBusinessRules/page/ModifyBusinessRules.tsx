@@ -552,7 +552,7 @@ const ModifyBusinessRules: React.FC = () => {
         </div>
       </Card>
 
-      <Card icon={<TrendingUp size={14} />} title={t('Loan Against Deposits')} hint={t("The share of a member's RD that can be borrowed against.")}>
+      <Card icon={<TrendingUp size={14} />} title={t('Loan against deposits')} hint={t("The share of a member's RD that can be borrowed against.")}>
         <Row label={t('FD (%) — borrowable share of RD')} help={t('Used by Loan Against RD when the limit is checked.')} path="loanAgainstDeposits.fdPercentage">
           <RuleNum path="loanAgainstDeposits.fdPercentage" step="0.01" value={businessRules.loanAgainstDeposits.fdPercentage}
             onValue={v => setBusinessRules(prev => ({ ...prev, loanAgainstDeposits: { ...prev.loanAgainstDeposits, fdPercentage: v } }))} aria-label={t('FD (%)')} />
@@ -563,7 +563,7 @@ const ModifyBusinessRules: React.FC = () => {
       <div className="aw-alert aw-alert-info" style={{ marginBottom: 0 }}>
         <Info size={15} />
         <span>
-          <strong style={{ textTransform: 'uppercase', letterSpacing: '.04em' }}>{t('Policy Notice:')} </strong>
+          <strong>{t('Policy Notice:')} </strong>
           {t('These rules define the financial compliance and operational framework. Changes are applied in real-time to all session calculations. Ensure all parameters align with the latest board resolutions before synchronization.')}
         </span>
       </div>
@@ -584,7 +584,7 @@ const ModifyBusinessRules: React.FC = () => {
         <RuleNum path="regularLoanEligibility.sharePercent" step="0.01" value={elig.sharePercent} onValue={v => updateEligibility({ sharePercent: v })} />
         <span className="br-unit">%</span>
       </Row>
-      <Row label={t('Shortfall Handling')} path="regularLoanEligibility.shortfallMode">
+      <Row label={t('Shortfall handling')} path="regularLoanEligibility.shortfallMode">
         <Select className={`aw-select${changed.has('regularLoanEligibility.shortfallMode') ? ' is-chg' : ''}`} popupClassName="aw-select-popup" value={elig.shortfallMode}
           onChange={(v) => updateEligibility({ shortfallMode: v as any })}
           options={[
@@ -593,7 +593,7 @@ const ModifyBusinessRules: React.FC = () => {
             { value: 'IGNORE', label: t('Ignore (no deduction)') },
           ]} />
       </Row>
-      <Row label={t('Limit Calculation')} path="regularLoanEligibility.limitCalc">
+      <Row label={t('Limit calculation')} path="regularLoanEligibility.limitCalc">
         <Select className={`aw-select${changed.has('regularLoanEligibility.limitCalc') ? ' is-chg' : ''}`} popupClassName="aw-select-popup" value={elig.limitCalc}
           onChange={(v) => updateEligibility({ limitCalc: v as any })}
           options={[
@@ -717,7 +717,7 @@ const ModifyBusinessRules: React.FC = () => {
   );
 
   const renderClosure = () => (
-    <Card icon={<ShieldCheck size={14} />} title={t('Loan Early Closure Protection')}>
+    <Card icon={<ShieldCheck size={14} />} title={t('Loan early closure protection')}>
       <SwitchRow label={t('Require typing the loan case number to confirm before executing')} path="earlyClosureProtection.requireTypeConfirm" checked={businessRules.earlyClosureProtection.requireTypeConfirm}
         onChange={val => setBusinessRules(prev => ({ ...prev, earlyClosureProtection: { ...prev.earlyClosureProtection, requireTypeConfirm: val } }))} />
       <SwitchRow label={t('Pass a held early closure automatically when its awaited EMI is received')} help={t('Off = notify only.')} path="earlyClosureProtection.autoPass" checked={businessRules.earlyClosureProtection.autoPass}
@@ -741,7 +741,7 @@ const ModifyBusinessRules: React.FC = () => {
   );
 
   const renderRdCore = () => (
-    <Card icon={<IndianRupee size={14} />} title={t('Core RD Settings')}>
+    <Card icon={<IndianRupee size={14} />} title={t('Core RD settings')}>
       <Row label={t('Minimum Monthly RD Amount (₹)')} help={t('Floor a member may select for their monthly RD contribution')} path="rdSystem.minMonthlyAmount"><RuleNum path="rdSystem.minMonthlyAmount" step="1" value={rdRules.minMonthlyAmount} onValue={v => updateRdSystem('minMonthlyAmount', v)} /><span className="br-unit">₹</span></Row>
       <Row label={t('Opening-Balance Interest Rate (%)')} help={t('Annual rate on the opening balance timeline — frozen per financial year at closing')} path="rdSystem.openingBalanceRate"><RuleNum path="rdSystem.openingBalanceRate" step="0.01" value={rdRules.openingBalanceRate} onValue={v => updateRdSystem('openingBalanceRate', v)} /><span className="br-unit">%</span></Row>
       <Row label={t('Min. Balance After Withdrawal (₹)')} help={t('A withdrawal must never take the balance below this')} path="rdSystem.minBalanceAfterWithdrawal"><RuleNum path="rdSystem.minBalanceAfterWithdrawal" step="1" value={rdRules.minBalanceAfterWithdrawal} onValue={v => updateRdSystem('minBalanceAfterWithdrawal', v)} /><span className="br-unit">₹</span></Row>
@@ -774,7 +774,7 @@ const ModifyBusinessRules: React.FC = () => {
       <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0 }}>
         <Info size={15} />
         <span>
-          <strong style={{ textTransform: 'uppercase', letterSpacing: '.04em' }}>{t('Placeholder Values:')} </strong>
+          <strong>{t('Placeholder Values:')} </strong>
           {t('The numbers shown above are working defaults, not finalized policy. Update them once the society confirms the real thresholds — nothing about the eligibility engine itself is hardcoded to these.')}
         </span>
       </div>
@@ -782,7 +782,7 @@ const ModifyBusinessRules: React.FC = () => {
   );
 
   const renderFundParams = () => (
-    <Card icon={<Settings size={14} />} title={t('Global Fund Parameters')}>
+    <Card icon={<Settings size={14} />} title={t('Global fund parameters')}>
       <Row label={t('Annual Fund Interest Rate (%)')} help={t('Applied on opening balance annually')} path="fundManagement.fundInterestRate"><RuleNum path="fundManagement.fundInterestRate" step="0.01" placeholder="0.00" value={fm.fundInterestRate} onValue={v => updateFundManagement('fundInterestRate', v)} /><span className="br-unit">%</span></Row>
       <Row label={t('Dividend Payout (%)')} help={t('Percentage of share capital')} path="fundManagement.dividendPercent"><RuleNum path="fundManagement.dividendPercent" step="0.01" min={0} max={100} placeholder="0.00" value={fm.dividendPercent} onValue={v => updateFundManagement('dividendPercent', v)} /><span className="br-unit">%</span></Row>
       <Row label={t('Group Insurance Deduction (₹)')} help={t('Fixed yearly deduction amount')} path="fundManagement.groupInsuranceAmount"><RuleNum path="fundManagement.groupInsuranceAmount" placeholder="0" value={fm.groupInsuranceAmount} onValue={v => updateFundManagement('groupInsuranceAmount', v)} /><span className="br-unit">₹</span></Row>
@@ -1003,14 +1003,14 @@ const ModifyBusinessRules: React.FC = () => {
 
   return (
     <ChgCtx.Provider value={changed}>
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Modify Business Rules')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <Building2 size={12} /> {t('Policy Configuration Ledger')}
-            <span className="aw-pill tone-success" style={{ marginLeft: 4 }}><i className="aw-status-dot" style={{ marginRight: 5 }} />{t('Live ruleset')}</span>
+            <span className="aw-pill tone-success" style={{ marginLeft: 4 }}><i className="aw-status-dot" style={{ marginRight: 8 }} />{t('Live ruleset')}</span>
             {changeCount > 0 && <span className="aw-pill tone-warning">{t('{{1}} unsaved change(s)', { 1: changeCount })}</span>}
           </p>
         </div>
@@ -1098,7 +1098,7 @@ const ModifyBusinessRules: React.FC = () => {
 
       {changeCount > 0 && (
         <div className="br-savebar" role="region" aria-label={t('Unsaved changes')}>
-          <span className="br-msg"><span className="aw-pill tone-warning"><i className="aw-status-dot" style={{ marginRight: 5 }} />{t('{{1}} unsaved change(s)', { 1: changeCount })}</span></span>
+          <span className="br-msg"><span className="aw-pill tone-warning"><i className="aw-status-dot" style={{ marginRight: 8 }} />{t('{{1}} unsaved change(s)', { 1: changeCount })}</span></span>
           <span className="br-grow" />
           <button type="button" onClick={() => setReviewOpen(true)} className="aw-btn aw-btn-secondary">{t('Review changes')}</button>
           <button type="button" onClick={handleDiscard} disabled={saving} className="aw-btn aw-btn-ghost">{t('Discard')}</button>
@@ -1109,8 +1109,8 @@ const ModifyBusinessRules: React.FC = () => {
       )}
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Policy Governance')}</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> {t('Policy Governance')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><ShieldCheck size={12} /> {t('Standard Compliant')}</span>
           <span>RULESET_V3.1.2</span>
         </span>

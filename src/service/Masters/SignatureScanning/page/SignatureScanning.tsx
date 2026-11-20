@@ -215,13 +215,13 @@ const SignatureScanning: React.FC = () => {
   });
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Signature Scanning')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Scan size={12} /> {t('Terminal v3.2')}
           </p>
         </div>
@@ -269,7 +269,7 @@ const SignatureScanning: React.FC = () => {
               <p className="aw-strong aw-fade-in" style={{ marginTop: 10, color: 'var(--aw-accent)' }}>{data.memberName}</p>
             )}
             {data.loading && (
-              <p className="aw-meta" style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }} role="status">
+              <p className="aw-meta" style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }} role="status">
                 <RefreshCw size={12} className="aw-spin" /> {t('Loading…')}
               </p>
             )}
@@ -279,7 +279,7 @@ const SignatureScanning: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Scan size={14} /></span>
-              <h2 className="aw-card-title">{t('Signature Zone')}</h2>
+              <h2 className="aw-card-title">{t('Signature zone')}</h2>
               <span className="aw-meta" style={{ marginLeft: 'auto' }}>
                 {data.memberId ? `ID ${data.memberId}` : t('No member selected')}
               </span>
@@ -289,11 +289,11 @@ const SignatureScanning: React.FC = () => {
               {/* Mode switch */}
               <div className="aw-seg" role="tablist" style={{ maxWidth: 340, ['--seg-index' as any]: sigMode === 'draw' ? 0 : 1, ['--seg-count' as any]: 2 }}>
                 <button type="button" role="tab" aria-selected={sigMode === 'draw'} onClick={() => setSigMode('draw')}
-                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <PenTool size={13} /> {t('Draw / Sign')}
                 </button>
                 <button type="button" role="tab" aria-selected={sigMode === 'upload'} onClick={() => setSigMode('upload')}
-                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <UploadIcon size={13} /> {t('Upload File')}
                 </button>
               </div>
@@ -314,7 +314,7 @@ const SignatureScanning: React.FC = () => {
                   />
                   {/* Placeholder — only shown while blank */}
                   {!hasDrawing && (
-                    <div className="pointer-events-none select-none" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#94a3b8' }}>
+                    <div className="pointer-events-none select-none" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#94a3b8' }}>
                       <PenTool size={24} />
                       <span style={{ fontSize: 'var(--type-body-size)', fontWeight: 600 }}>{t('Sign here with mouse or touch')}</span>
                     </div>
@@ -375,7 +375,7 @@ const SignatureScanning: React.FC = () => {
               {data.signatureData && (
                 <div className="aw-panel aw-fade-in" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div>
-                    <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: 'var(--aw-success)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: 'var(--aw-success)', fontWeight: 600 }}>
                       <CheckCircle2 size={12} /> {t('Saved signature on record')}
                     </p>
                     <img
@@ -398,7 +398,7 @@ const SignatureScanning: React.FC = () => {
       {/* ── Footer ── */}
       <div className="aw-footer">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> {t('Signature Capture')}</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--aw-accent)' }}><ShieldCheck size={12} /> {t('Secured')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--aw-accent)' }}><ShieldCheck size={12} /> {t('Secured')}</span>
       </div>
     </div>
   );

@@ -91,7 +91,7 @@ const ExitOption1: React.FC = () => {
   ];
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Exit Application')}</h1>
@@ -144,7 +144,7 @@ const ExitOption1: React.FC = () => {
 
             <div className="aw-inline" style={{ justifyContent: 'center', gap: 16 }}>
               {steps.map(step => (
-                <span key={step.label} className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, opacity: progress > step.at ? 1 : 0.4, transition: 'opacity .3s' }}>
+                <span key={step.label} className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, opacity: progress > step.at ? 1 : 0.4, transition: 'opacity .3s' }}>
                   <CheckCircle2 size={14} style={{ color: 'var(--aw-success)' }} /> {step.label}
                 </span>
               ))}

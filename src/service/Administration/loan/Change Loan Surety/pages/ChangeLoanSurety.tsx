@@ -34,7 +34,7 @@ const ChangeLoanSuretyForm: React.FC = () => {
 
   usePageToolbarActions({
     onSave: handleSubmit,
-    saveLabel: isSubmitting ? 'Processing...' : 'Commit Changes',
+    saveLabel: isSubmitting ? 'Processing...' : 'Commit changes',
     saveEnabled: !isSubmitting,
   });
 
@@ -83,17 +83,17 @@ const ChangeLoanSuretyForm: React.FC = () => {
   );
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Change Loan Surety')}</h1>
           <p className="aw-desc">{t('Administrative guarantor update')}</p>
         </div>
         <div className="aw-actions">
-          <span className="aw-pill tone-success"><ShieldCheck size={12} style={{ marginRight: 5 }} />{t('Session secure')}</span>
+          <span className="aw-pill tone-success"><ShieldCheck size={12} style={{ marginRight: 4 }} />{t('Session secure')}</span>
           <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="aw-btn aw-btn-primary">
             {isSubmitting ? <RefreshCw size={13} className="aw-spin" /> : <Save size={13} />}
-            {isSubmitting ? t('Processing...') : t('Commit Changes')}
+            {isSubmitting ? t('Processing...') : t('Commit changes')}
           </button>
         </div>
       </div>
@@ -104,7 +104,7 @@ const ChangeLoanSuretyForm: React.FC = () => {
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><User size={14} /></span>
-              <h2 className="aw-card-title">{t('Borrower Identity & Case Reference')}</h2>
+              <h2 className="aw-card-title">{t('Borrower identity & case reference')}</h2>
             </div>
             <div className="aw-stack">
               <div>
@@ -226,13 +226,13 @@ const ChangeLoanSuretyForm: React.FC = () => {
           <section className="aw-card" style={{ alignSelf: 'start' }}>
             <div className="aw-card-head">
               <span className="aw-card-icon"><Users size={14} /></span>
-              <h2 className="aw-card-title">{t('Guarantor Protocol')}</h2>
+              <h2 className="aw-card-title">{t('Guarantor protocol')}</h2>
             </div>
             <div className="aw-stack">
               {suretyBox('surety1', 'Guarantor 01', true, formData.surety1Name)}
               {suretyBox('surety2', 'Guarantor 02', false, formData.surety2Name)}
               <button type="button" onClick={resetForm} className="aw-btn aw-btn-danger" style={{ width: '100%' }}>
-                <RotateCcw size={13} /> {t('Reset Ledger')}
+                <RotateCcw size={13} /> {t('Reset ledger')}
               </button>
             </div>
           </section>

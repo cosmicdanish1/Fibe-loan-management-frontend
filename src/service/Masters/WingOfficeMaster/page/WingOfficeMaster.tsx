@@ -51,13 +51,13 @@ const WingOfficeMaster: React.FC = () => {
   });
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* Header */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Registry Terminal')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ShieldCheck size={12} /> {t('Organizational Core')}
           </p>
         </div>
@@ -69,7 +69,7 @@ const WingOfficeMaster: React.FC = () => {
           ].map((tab) => (
             <button key={tab.id} type="button" role="tab" aria-selected={tab.active}
               onClick={() => setShowWingMaster(tab.id === 'wing')}
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <tab.icon size={13} />
               {tab.label}
             </button>
@@ -108,7 +108,7 @@ const WingOfficeMaster: React.FC = () => {
           <span style={{ opacity: .5 }}>·</span>
           {showWingMaster ? t('Wing') : t('Office')} {t('Mode')}
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--aw-accent)' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--aw-accent)' }}>
           <ShieldCheck size={12} /> {t('Secured')}
         </span>
       </div>

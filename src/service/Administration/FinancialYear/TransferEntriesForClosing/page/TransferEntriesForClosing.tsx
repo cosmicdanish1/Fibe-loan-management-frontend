@@ -173,12 +173,12 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
   });
 
   return (
-    <div className={`app-window ${className}`}>
+    <div className={`app-window aw-calm ${className}`}>
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Transfer Entries For Closing')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Database size={12} /> {t('Financial Year · Ledger Transit')}
           </p>
         </div>
@@ -200,7 +200,7 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
           <section className="aw-card">
             <div className="aw-card-head">
               <span className="aw-card-icon"><Lock size={14} /></span>
-              <h2 className="aw-card-title">{t('Select Financial Year')}</h2>
+              <h2 className="aw-card-title">{t('Select financial year')}</h2>
               <button
                 type="button"
                 onClick={loadYears}
@@ -261,7 +261,7 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
             <section className="aw-card aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Plus size={14} /></span>
-                <h2 className="aw-card-title">{t('No Financial Year Set Up Yet')}</h2>
+                <h2 className="aw-card-title">{t('No financial year set up yet')}</h2>
               </div>
               <div className="aw-stack">
                 <p className="aw-meta" style={{ lineHeight: 1.5 }}>
@@ -288,7 +288,7 @@ const TransferEntriesForClosing: React.FC<{ className?: string }> = ({ className
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Building2 size={12} /> {t('Financial Year Management')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Building2 size={12} /> {t('Financial Year Management')}</span>
         <span>{t('Ledger Transit System')}</span>
       </div>
     </div>

@@ -63,7 +63,7 @@ const CashBook2: React.FC = () => {
   const hasData = Boolean(data?.entries?.length);
 
   return (
-    <div className="app-window cashbook2-page">
+    <div className="app-window aw-calm cashbook2-page">
       <div className="aw-header aw-ambient cb2-no-print">
         <div className="min-w-0">
           <h1 className="aw-title">Cash Book</h1>

@@ -2,6 +2,24 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.13.0",
+      "date": "2026-11-21",
+      "title": "NR Repayment, a real My Profile and clearer dividend windows",
+      "new": [
+        "Loan Repayment is now called NR Repayment (Not Recovered). It opens from the same place and keeps your rights.",
+        "My Profile shows your own details and your latest sign-ins, and says Not recorded for anything the system does not hold.",
+        "Dividend windows have financial-year dropdowns, a status column and a warning when a figure is only an estimate."
+      ],
+      "improved": [
+        "Screens across Administration, Masters, Transactions, Reports and Utility now translate fully when you choose another language.",
+        "Saakh Score uses clean icons instead of emoji.",
+        "Early Closure and NR Repayment show more of what is owed and why."
+      ],
+      "fixed": [
+        "Surety Register and Member Loan Detail load far faster, and each loan shows its own member's amounts."
+      ]
+    },
+    {
       "version": "1.12.0",
       "date": "2026-11-20",
       "title": "Early closure in Past Transaction, safer Import Demand List and a clearer Business Rules window",

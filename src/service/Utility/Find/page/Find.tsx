@@ -139,7 +139,7 @@ const Find: React.FC = () => {
   const SEARCH_TYPES = Object.entries(SEARCH_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* Header */}
       <div className="aw-header aw-ambient">
@@ -149,7 +149,7 @@ const Find: React.FC = () => {
         </div>
         <div className="aw-actions">
           {isLoading && (
-            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} role="status">
               <RefreshCw size={12} className="aw-spin" /> {t('Searching...')}
             </span>
           )}
@@ -167,7 +167,7 @@ const Find: React.FC = () => {
           <section className="aw-card" style={{ flex: 'none' }}>
             <div className="aw-card-head">
               <span className="aw-card-icon"><Search size={14} /></span>
-              <h2 className="aw-card-title">{t('Search Parameters')}</h2>
+              <h2 className="aw-card-title">{t('Search parameters')}</h2>
             </div>
             <div className="aw-stack">
               <div>
@@ -217,7 +217,7 @@ const Find: React.FC = () => {
           {results.length > 0 ? (
             <section className="aw-card aw-main" style={{ flex: 1 }}>
               <div className="aw-main-head">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span className="aw-card-icon"><FileText size={14} /></span>
                   <h2 className="aw-card-title">{t('Results')}</h2>
                 </div>

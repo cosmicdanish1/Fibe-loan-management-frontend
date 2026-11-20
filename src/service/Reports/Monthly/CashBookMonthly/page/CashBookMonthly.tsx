@@ -232,7 +232,7 @@ const CashBookMonthly: React.FC = () => {
 
   return (
     <ReportShell
-      className="cbm-page"
+      className="cbm-page aw-calm"
       title="Cash Book Monthly"
       desc="Monthly summary by account head"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

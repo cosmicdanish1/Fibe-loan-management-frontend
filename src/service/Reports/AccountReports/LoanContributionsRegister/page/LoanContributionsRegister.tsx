@@ -177,7 +177,7 @@ const LoanContributionsRegister: React.FC = () => {
 
   return (
     <ReportShell
-      className="loan-contrib-page"
+      className="loan-contrib-page aw-calm"
       title="Loan Contributions Register"
       desc="Loan transactions"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

@@ -235,7 +235,7 @@ export const useImportDemandList = (): ImportDemandListHookReturn => {
             const skippedMsg = (data.skipped > 0
                     ? `\nSKIPPED       : ${data.skipped}\n${skippedList.slice(0, 8).map(s => `• Row ${s.rowNo ?? '?'}${s.memberId ? ` (member ${s.memberId})` : ''}: ${s.reason}`).join('\n')}${data.skipped > 8 ? `\n• ... and ${data.skipped - 8} more (all are in the import log)` : ''}\n`
                     : '')
-                + (data.flagged > 0 ? `\nNEED CHECKING : ${data.flagged} row(s) flagged - see the Loan Position notices on Loan Repayment\n` : '');
+                + (data.flagged > 0 ? `\nNEED CHECKING : ${data.flagged} row(s) flagged - see the Loan Position notices on NR Repayment\n` : '');
 
             await showDialog(
                 'info',

@@ -177,7 +177,7 @@ const DepositDueDateRegister: React.FC = () => {
 
   return (
     <ReportShell
-      className="ddr-page"
+      className="ddr-page aw-calm"
       title="Deposit Due Date Register"
       desc="Deposits maturing in a date range"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

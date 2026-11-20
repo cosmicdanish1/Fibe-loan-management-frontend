@@ -200,7 +200,7 @@ const LoanStatement: React.FC = () => {
     const CELL_STYLE: Record<string, React.CSSProperties> = {
         forMonth: { color: 'var(--aw-muted)' },
         interest: { color: 'var(--aw-warning)' },
-        totalPaid: { fontWeight: 700 },
+        totalPaid: { fontWeight: 600 },
         balanceAfter: { color: 'var(--aw-accent)', fontWeight: 600 },
         receipt: { color: 'var(--aw-muted)' },
         narration: { color: 'var(--aw-muted)' },
@@ -242,7 +242,7 @@ const LoanStatement: React.FC = () => {
 
     return (
         <ReportShell
-            className="loan-stmt-page"
+            className="loan-stmt-page aw-calm"
             title="Loan Account Statement"
             desc="Installment-by-installment record for one loan at a time"
             asideWidth={280}
@@ -304,7 +304,7 @@ const LoanStatement: React.FC = () => {
                             trigger="click"
                             placement="bottomRight"
                             content={
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: 160 }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: 160 }}>
                                     {ALL_COLUMNS.map(c => (
                                         <label key={c.key} style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={visibleCols[c.key] !== false} onChange={() => toggleColumn(c.key)} /><span>{c.label}</span></label>
                                     ))}

@@ -114,7 +114,7 @@ const DatabaseBackup: React.FC = () => {
   ];
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* Header */}
       <div className="aw-header aw-ambient">
@@ -129,7 +129,7 @@ const DatabaseBackup: React.FC = () => {
         </div>
         <div className="aw-actions">
           {isLoading && (
-            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} role="status">
               <RefreshCw size={12} className="aw-spin" /> {t('Syncing with database server...')}
             </span>
           )}
@@ -185,7 +185,7 @@ const DatabaseBackup: React.FC = () => {
                     <input id="dbb-name" value={backupOptions.customName} onChange={e => setBackupOptions(p => ({ ...p, customName: e.target.value }))}
                       placeholder={t('Leave blank for auto...')} className="aw-input" />
                   </div>
-                  <div className="aw-stack" style={{ gap: 10 }}>
+                  <div className="aw-stack" style={{ gap: 12 }}>
                     <div className="aw-switch-row">
                       <button type="button" role="switch" id="dbb-schema" aria-checked={backupOptions.includeSchema}
                         onClick={() => setBackupOptions(p => ({ ...p, includeSchema: !p.includeSchema }))} className="aw-switch" />
@@ -230,9 +230,9 @@ const DatabaseBackup: React.FC = () => {
             {/* Backup History */}
             <section className="aw-card aw-main">
               <div className="aw-main-head">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span className="aw-card-icon"><History size={14} /></span>
-                  <h2 className="aw-card-title">{t('Backup History')}</h2>
+                  <h2 className="aw-card-title">{t('Backup history')}</h2>
                   <span className="aw-pill">{t('{{1}} files', { 1: filteredBackups.length })}</span>
                 </div>
                 <div className="aw-input-wrap has-icon aw-search">

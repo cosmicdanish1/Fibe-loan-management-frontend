@@ -141,7 +141,7 @@ const UpdateSavingInterest: React.FC = () => {
   const previewSlice = previewRows.slice((previewPage - 1) * PREVIEW_PAGE_SIZE, previewPage * PREVIEW_PAGE_SIZE);
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* Header */}
       <div className="aw-header aw-ambient">
@@ -151,11 +151,11 @@ const UpdateSavingInterest: React.FC = () => {
         </div>
         <div className="aw-actions">
           {isLoading && (
-            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} role="status">
               <RefreshCw size={12} className="aw-spin" /> {t('Syncing with ledger...')}
             </span>
           )}
-          <span className="aw-pill tone-info" style={{ gap: 6 }}>
+          <span className="aw-pill tone-info" style={{ gap: 8 }}>
             <TrendingUp size={12} /> {t('Current Rate:')} {currentRate}%
           </span>
           <button type="button" onClick={processInterest} disabled={isProcessing || !validationResult?.valid} className="aw-btn aw-btn-primary">
@@ -179,7 +179,7 @@ const UpdateSavingInterest: React.FC = () => {
                 <h2 className="aw-card-title">{t('Parameters')}</h2>
               </div>
               <div className="aw-stack">
-                <div className="aw-two" style={{ gap: 10 }}>
+                <div className="aw-two" style={{ gap: 12 }}>
                   <div>
                     <label className="aw-label" htmlFor="usi-from">{t('From Date')}</label>
                     <DatePicker id="usi-from" value={formData.fromDate ? dayjs(formData.fromDate) : null}
@@ -240,7 +240,7 @@ const UpdateSavingInterest: React.FC = () => {
               <div className={`aw-alert aw-fade-in ${validationResult.valid ? 'aw-alert-success' : 'aw-alert-danger'}`} role="status" style={{ marginBottom: 0 }}>
                 {validationResult.valid ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
                 <div>
-                  <strong style={{ textTransform: 'uppercase' }}>{validationResult.valid ? t('Validation Passed') : t('Validation Failed')}</strong>
+                  <strong>{validationResult.valid ? t('Validation Passed') : t('Validation Failed')}</strong>
                   {validationResult.message && <p style={{ marginTop: 2, fontWeight: 500 }}>{validationResult.message}</p>}
                 </div>
               </div>
@@ -251,7 +251,7 @@ const UpdateSavingInterest: React.FC = () => {
               <section className="aw-card aw-fade-in">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><Clock size={14} /></span>
-                  <h2 className="aw-card-title">{t('Batch History')}</h2>
+                  <h2 className="aw-card-title">{t('Batch history')}</h2>
                 </div>
                 <div className="aw-rows" style={{ maxHeight: 200, overflowY: 'auto' }}>
                   {interestHistory.slice(0, 10).map(h => (
@@ -272,12 +272,12 @@ const UpdateSavingInterest: React.FC = () => {
           {/* Right Panel: Preview */}
           <section className="aw-card aw-main">
             <div className="aw-main-head">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="aw-card-icon"><FileText size={14} /></span>
                 <h2 className="aw-card-title">{t('Preview / Sandbox')}</h2>
               </div>
               {previewResult && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span className="aw-pill tone-muted">{t('{{1}} members', { 1: previewResult.totalMembers })}</span>
                   <span className="aw-pill tone-success">{t('Total: ₹{{1}}', { 1: formatCurrency(previewResult.totalInterestAmount) })}</span>
                 </div>

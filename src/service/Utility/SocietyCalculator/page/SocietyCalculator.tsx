@@ -53,7 +53,7 @@ const SocietyCalculator: React.FC = () => {
   const slotText = rules ? `${rules.slot.startDay}th-${rules.slot.endDay}th = Slot 1` : '';
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Society Calculator')}</h1>
@@ -61,7 +61,7 @@ const SocietyCalculator: React.FC = () => {
         </div>
         <div className="aw-actions">
           {loadingRules && (
-            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} role="status">
               <RefreshCw size={12} className="aw-spin" /> {t('Loading rules...')}
             </span>
           )}

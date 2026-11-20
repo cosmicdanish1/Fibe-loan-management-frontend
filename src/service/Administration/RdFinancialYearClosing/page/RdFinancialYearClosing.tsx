@@ -40,16 +40,16 @@ const RdFinancialYearClosing: React.FC = () => {
     };
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             {/* ── Header ── */}
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">{t('RD Financial Year Closing')}</h1>
+                    <h1 className="aw-title">{t('RD/CD Financial Year Closing')}</h1>
                     <p className="aw-desc">{t('Bulk review, override, and close the RD year')}</p>
                 </div>
                 <div className="aw-actions">
                     {yearLabel && (
-                        <span className="aw-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <span className="aw-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                             <Calendar size={12} /> {yearLabel} (yearcode {yearcode})
                         </span>
                     )}
@@ -133,7 +133,7 @@ const RdFinancialYearClosing: React.FC = () => {
                                                 <tr key={m.mbno}>
                                                     <td className="is-accent">{m.mbno}</td>
                                                     <td>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: auto ? 'var(--aw-success)' : 'var(--aw-warning)' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: auto ? 'var(--aw-success)' : 'var(--aw-warning)' }}>
                                                             {auto ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
                                                             {PATTERN_LABEL[m.patternEvaluation.detectedPattern] || m.patternEvaluation.detectedPattern}
                                                         </div>
@@ -160,7 +160,7 @@ const RdFinancialYearClosing: React.FC = () => {
                                                                 <button type="button" onClick={() => setOverride(m.mbno, null)} className="aw-btn aw-btn-ghost aw-btn-sm" style={{ padding: '0 6px' }}>{t('Clear')}</button>
                                                             </div>
                                                         ) : (
-                                                            <div className="aw-stack" style={{ gap: 6 }}>
+                                                            <div className="aw-stack" style={{ gap: 8 }}>
                                                                 <input
                                                                     type="text"
                                                                     placeholder={t('Reason for override…')}
@@ -169,9 +169,9 @@ const RdFinancialYearClosing: React.FC = () => {
                                                                     onChange={(e) => setReasonDrafts((prev) => ({ ...prev, [m.mbno]: e.target.value }))}
                                                                     className="aw-input"
                                                                 />
-                                                                <div className="aw-btn-row" style={{ gap: 6 }}>
-                                                                    <button type="button" onClick={() => applyOverride(m.mbno, true)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Grant Full')}</button>
-                                                                    <button type="button" onClick={() => applyOverride(m.mbno, false)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Keep Reduced')}</button>
+                                                                <div className="aw-btn-row" style={{ gap: 8 }}>
+                                                                    <button type="button" onClick={() => applyOverride(m.mbno, true)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Grant full')}</button>
+                                                                    <button type="button" onClick={() => applyOverride(m.mbno, false)} disabled={!hasReason} className="aw-btn aw-btn-secondary aw-btn-sm">{t('Keep reduced')}</button>
                                                                 </div>
                                                             </div>
                                                         )}
@@ -192,7 +192,7 @@ const RdFinancialYearClosing: React.FC = () => {
 
             <div className="aw-footer">
                 <span>{t('{{1}} {{2}} of {{3}}', { 1: t('Page'), 2: page + 1, 3: totalPages })}</span>
-                <span style={{ display: 'inline-flex', gap: 6 }}>
+                <span style={{ display: 'inline-flex', gap: 8 }}>
                     <button type="button" onClick={() => yearcode && loadPage(yearcode, page - 1)} disabled={page <= 0 || loading} className="aw-btn aw-btn-secondary aw-btn-sm">
                         <ChevronLeft size={12} /> {t('Prev')}
                     </button>

@@ -271,7 +271,7 @@ const JournalTransferVoucher: React.FC = () => {
 
   return (
     <ReportShell
-      className="jtv-page"
+      className="jtv-page aw-calm"
       title="Journal / Transfer Voucher"
       desc="Find a saved journal voucher and print it"
       actions={

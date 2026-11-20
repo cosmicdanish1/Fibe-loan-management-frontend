@@ -106,7 +106,7 @@ const MemberStatus: React.FC = () => {
   const thisRows: StatusRow[] = s.rows;
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <style>{`
         .ms-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px; }
         .ms-tile { text-align: left; background: var(--aw-surface); border: 1px solid var(--aw-border); border-radius: var(--aw-radius); padding: 12px 14px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
@@ -130,7 +130,7 @@ const MemberStatus: React.FC = () => {
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Member Status')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <UserX size={12} /> {t('A member becomes inactive when retired and RD is zero — you mark them inactive by hand')}
           </p>
         </div>
@@ -176,7 +176,7 @@ const MemberStatus: React.FC = () => {
                 />
               </div>
               {showMonths && (
-                <label className="is-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 'var(--type-supporting-size)' }}>
+                <label className="is-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 'var(--type-supporting-size)' }}>
                   {t('Retiring within')}
                   <select className="aw-input" style={{ width: 'auto' }} value={s.months} onChange={e => s.changeMonths(Number(e.target.value))}>
                     {[3, 6, 12, 18, 24, 36].map(m => <option key={m} value={m}>{t('{{1}} months', { 1: m })}</option>)}
@@ -258,7 +258,7 @@ const MemberStatus: React.FC = () => {
 
             {found && (
               <div style={{ marginTop: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   <strong style={{ fontSize: 'var(--type-panel-title)' }}>{found.name || t('Member')} ({found.memberNo})</strong>
                   <span className="aw-pill">{found.active ? t('Active') : t('Inactive')}</span>
                   {found.active && found.readyToInactivate && <span className="aw-pill">{t('Ready to mark inactive')}</span>}
@@ -281,7 +281,7 @@ const MemberStatus: React.FC = () => {
                   )}
                 </div>
 
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--type-body-size)', margin: '18px 0 6px' }}><History size={13} /> {t('History')}</h3>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--type-body-size)', margin: '18px 0 6px' }}><History size={13} /> {t('History')}</h3>
                 {foundHistory.length === 0 ? (
                   <p className="is-muted" style={{ fontSize: 'var(--type-supporting-size)', margin: 0 }}>{t('No status changes recorded for this member.')}</p>
                 ) : (

@@ -23,7 +23,7 @@ const LoanReagreementHistoryView: React.FC<LoanReagreementHistoryHook> = ({
         return (
             <div key={r.id} className="aw-panel aw-fade-in" style={{ borderColor: r.status === 'PASSED' ? 'var(--aw-accent)' : undefined, opacity: r.status === 'CANCELLED' ? 0.75 : 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span className="aw-strong" style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><FileText size={14} /> Re-agreement {r.reagreementNo}</span>
+                    <span className="aw-strong" style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}><FileText size={14} /> Re-agreement {r.reagreementNo}</span>
                     <span className={`aw-pill ${STATUS_TONE[r.status]}`}>{r.status}</span>
                 </div>
                 <p className="aw-meta" style={{ margin: '3px 0 8px' }}>
@@ -54,7 +54,7 @@ const LoanReagreementHistoryView: React.FC<LoanReagreementHistoryHook> = ({
                 {(r.documents || []).length > 0 && (
                     <div style={{ marginTop: 8 }} className="aw-stack">
                         {(r.documents || []).map(d => (
-                            <div key={d.issueNo} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <div key={d.issueNo} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                 <span className="aw-meta">Saved agreement, copy {d.issueNo} · issued {fmtDate(d.issuedAt)}</span>
                                 {d.voided ? <span className="aw-pill tone-muted">voided (re-agreement was reversed)</span> : <span className="aw-pill tone-success">current</span>}
                                 <ReagreementDocumentActions id={r.id} issue={d.issueNo} baseName={r.reagreementNo} />
@@ -62,7 +62,7 @@ const LoanReagreementHistoryView: React.FC<LoanReagreementHistoryHook> = ({
                         ))}
                     </div>
                 )}
-                <div className="aw-btn-row" style={{ marginTop: 8, flexWrap: 'wrap', gap: 6 }}>
+                <div className="aw-btn-row" style={{ marginTop: 8, flexWrap: 'wrap', gap: 8 }}>
                     <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" onClick={() => showLog(r.id)}><History size={12} /> {log ? 'Hide log' : 'Event log'}</button>
                     {r.status === 'PASSED' && r.voucherNo && (
                         <button type="button" className="aw-btn aw-btn-danger aw-btn-sm" onClick={() => setReverseTarget(r)}><Undo2 size={12} /> Reverse</button>
@@ -82,7 +82,7 @@ const LoanReagreementHistoryView: React.FC<LoanReagreementHistoryHook> = ({
     };
 
     return (
-        <div className="app-window">
+        <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">Loan Re-agreement History</h1>
@@ -119,7 +119,7 @@ const LoanReagreementHistoryView: React.FC<LoanReagreementHistoryHook> = ({
                                 {memberName && <p className="aw-meta">{memberName}</p>}
                                 <div>
                                     <label className="aw-label" htmlFor="rh-case">…or loan case no. (any case of the loan)</label>
-                                    <div className="aw-inline" style={{ gap: 6 }}>
+                                    <div className="aw-inline" style={{ gap: 8 }}>
                                         <input id="rh-case" className="aw-input" value={caseNo} onChange={e => setCaseNo(e.target.value.replace(/[^0-9]/g, ''))} />
                                         <button type="button" className="aw-btn aw-btn-secondary" disabled={!mbno || !caseNo || loading} onClick={() => loadHistory(mbno, caseNo, loantype)}><Search size={13} /></button>
                                     </div>
@@ -129,7 +129,7 @@ const LoanReagreementHistoryView: React.FC<LoanReagreementHistoryHook> = ({
                         {memberLoans.length > 0 && (
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head"><span className="aw-card-icon"><GitMerge size={14} /></span><h2 className="aw-card-title">Member's loans</h2><span className="aw-meta" style={{ marginLeft: 'auto' }}>{memberLoans.length}</span></div>
-                                <div className="aw-stack" style={{ gap: 6, maxHeight: 360, overflowY: 'auto' }}>
+                                <div className="aw-stack" style={{ gap: 8, maxHeight: 360, overflowY: 'auto' }}>
                                     {memberLoans.map(l => {
                                         const open = l.balance > 0;
                                         const sel = caseNo === l.loancaseno && loantype === l.loantype;

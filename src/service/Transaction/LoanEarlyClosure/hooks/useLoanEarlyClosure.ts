@@ -300,10 +300,13 @@ export const useLoanEarlyClosure = () => {
         }
     }, []);
 
-    const fetchQuote = useCallback(async (loancaseno: string, adjustment: number, closureDate: string, applyRdShare: boolean, mbno: string, adjustPayrollLag: boolean = false) => {
-        if (!loancaseno) return;
+    // keepQuote: when an option checkbox is toggled the current quote stays on screen (the page fades it) while the new one
+    // loads, so the option cards never vanish. If the new quote cannot be loaded the old one stays and the caller puts the
+    // checkbox back, so what is shown always matches what is ticked. Returns 'ok', 'failed', or 'stale' (a newer request won).
+    const fetchQuote = useCallback(async (loancaseno: string, adjustment: number, closureDate: string, applyRdShare: boolean, mbno: string, adjustPayrollLag: boolean = false, keepQuote: boolean = false): Promise<'ok' | 'failed' | 'stale'> => {
+        if (!loancaseno) return 'stale';
         const seq = ++quoteSeq.current;
-        setQuote(null);
+        if (!keepQuote) setQuote(null);
         setQuoteLoading(true);
         setMessage(null);
         try {
@@ -323,12 +326,14 @@ export const useLoanEarlyClosure = () => {
             });
             if (!res.ok) throw new Error('Failed to load closure quote');
             const data = await res.json();
-            if (seq !== quoteSeq.current) return;
+            if (seq !== quoteSeq.current) return 'stale';
             setQuote(data.data || data);
+            return 'ok';
         } catch (err: any) {
-            if (seq !== quoteSeq.current) return;
-            setQuote(null);
+            if (seq !== quoteSeq.current) return 'stale';
+            if (!keepQuote) setQuote(null);
             setMessage({ type: 'error', text: err.message });
+            return 'failed';
         } finally {
             if (seq === quoteSeq.current) setQuoteLoading(false);
         }
@@ -358,20 +363,32 @@ export const useLoanEarlyClosure = () => {
 
     const toggleApplyRdShare = useCallback(async (value: boolean) => {
         setForm(prev => ({ ...prev, applyRdShare: value }));
-        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, value, form.mbno, form.adjustPayrollLag);
+        if (form.selectedLoanCase) {
+            const result = await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, value, form.mbno, form.adjustPayrollLag, true);
+            if (result === 'failed') setForm(prev => ({ ...prev, applyRdShare: !value }));
+        }
     }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.mbno, form.adjustPayrollLag, fetchQuote]);
 
     /** ES-522: switch the "delayed payroll principal is owed back to the member" option and re-quote. */
     const toggleAdjustPayrollLag = useCallback(async (value: boolean) => {
         setForm(prev => ({ ...prev, adjustPayrollLag: value }));
-        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, value);
+        if (form.selectedLoanCase) {
+            const result = await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, value, true);
+            if (result === 'failed') setForm(prev => ({ ...prev, adjustPayrollLag: !value }));
+        }
     }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, fetchQuote]);
 
     /** ES-556: close on next month's outstanding (the awaited EMI is treated as already paid) and re-quote. */
     const toggleNextMonth = useCallback(async (value: boolean) => {
         nextMonthRef.current = value;
         setForm(prev => ({ ...prev, nextMonth: value }));
-        if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag);
+        if (form.selectedLoanCase) {
+            const result = await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag, true);
+            if (result === 'failed') {
+                nextMonthRef.current = !value;
+                setForm(prev => ({ ...prev, nextMonth: !value }));
+            }
+        }
     }, [form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag, fetchQuote]);
 
     /** ES-522: record that (part of) the delayed payroll principal was already returned to the member, then re-quote. */

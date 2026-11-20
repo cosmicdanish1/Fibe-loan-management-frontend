@@ -118,7 +118,7 @@ const CertificateParameterSetting: React.FC = () => {
   };
 
   const TABS = [
-    { id: 'format', label: t('Format Identity'), icon: <FileText size={14} /> },
+    { id: 'format', label: t('Format identity'), icon: <FileText size={14} /> },
     { id: 'detail', label: t('Field Setup'),      icon: <Layout size={14} /> },
   ];
 
@@ -135,7 +135,7 @@ const CertificateParameterSetting: React.FC = () => {
   });
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
@@ -169,7 +169,7 @@ const CertificateParameterSetting: React.FC = () => {
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><FileText size={14} /></span>
                   <div>
-                    <h2 className="aw-card-title">{t('Format Identity')}</h2>
+                    <h2 className="aw-card-title">{t('Format identity')}</h2>
                     <p className="aw-meta">{t('Set the format name, account type and default flag')}</p>
                   </div>
                 </div>
@@ -202,7 +202,7 @@ const CertificateParameterSetting: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Layout size={14} /></span>
-                <h2 className="aw-card-title">{t('Field Positions')}</h2>
+                <h2 className="aw-card-title">{t('Field positions')}</h2>
                 <input
                   value={data.detailFormatName}
                   onChange={e => updateField('detailFormatName', e.target.value)}
@@ -248,11 +248,11 @@ const CertificateParameterSetting: React.FC = () => {
       </div>
 
       {/* Find Templates dialog */}
-      <AwDialog open={showFindModal} title={t('Select Certificate Template')} icon={<Search size={14} />} onClose={() => setShowFindModal(false)} maxWidth="30rem">
+      <AwDialog open={showFindModal} title={t('Select certificate template')} icon={<Search size={14} />} onClose={() => setShowFindModal(false)} maxWidth="30rem">
         {templates.length === 0 ? (
           <div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">{t('No templates found')}</span></div>
         ) : (
-          <div className="aw-stack" style={{ gap: 6 }}>
+          <div className="aw-stack" style={{ gap: 8 }}>
             {templates.map((t: any, i: number) => (
               <button
                 key={t.id ?? i}
@@ -261,7 +261,7 @@ const CertificateParameterSetting: React.FC = () => {
                 className="aw-right-cell"
                 style={{ justifyContent: 'space-between', width: '100%', padding: '10px 12px' }}
               >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
                   <span className="aw-card-icon"><FileText size={14} /></span>
                   <span>
                     <span className="aw-strong" style={{ display: 'block' }}>{t.templateName}</span>

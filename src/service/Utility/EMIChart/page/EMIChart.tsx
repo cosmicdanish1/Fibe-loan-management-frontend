@@ -134,7 +134,7 @@ const EMIChart: React.FC = () => {
   }, [selectedLoan]);
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* Header */}
       <div className="aw-header aw-ambient aw-noprint">
@@ -146,7 +146,7 @@ const EMIChart: React.FC = () => {
         </div>
         <div className="aw-actions">
           {loading && (
-            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} role="status">
               <RefreshCw size={12} className="aw-spin" /> {t('Loading...')}
             </span>
           )}
@@ -168,7 +168,7 @@ const EMIChart: React.FC = () => {
             <section className="aw-card">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><User size={14} /></span>
-                <h2 className="aw-card-title">{t('Member Terminal')}</h2>
+                <h2 className="aw-card-title">{t('Member terminal')}</h2>
               </div>
               <div className="aw-stack">
                 <div className="aw-input-wrap has-action">
@@ -242,10 +242,10 @@ const EMIChart: React.FC = () => {
               <div className="aw-alert aw-alert-danger aw-fade-in" role="alert" style={{ marginBottom: 0 }}>
                 <AlertCircle size={16} />
                 <div>
-                  <strong style={{ textTransform: 'uppercase' }}>{t('Access Interrupted')}</strong>
+                  <strong>{t('Access Interrupted')}</strong>
                   <p style={{ marginTop: 2 }}>{error}</p>
                   <button type="button" onClick={() => selectedMember && fetchMemberLoans(selectedMember.memberNo)}
-                    className="aw-btn aw-btn-ghost" style={{ marginTop: 6, padding: 0, color: 'inherit', minHeight: 0 }}>
+                    className="aw-btn aw-btn-ghost" style={{ marginTop: 8, padding: 0, color: 'inherit', minHeight: 0 }}>
                     <RefreshCw size={12} /> {t('Retry Protocol')}
                   </button>
                 </div>
@@ -290,10 +290,10 @@ const EMIChart: React.FC = () => {
                 {/* Amortization Table */}
                 <section className="aw-card aw-main" style={{ overflow: 'hidden' }}>
                   <div className="aw-main-head">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span className="aw-card-icon"><FileText size={14} /></span>
                       <div>
-                        <h3 className="aw-card-title">{t('Amortization Ledger')}</h3>
+                        <h3 className="aw-card-title">{t('Amortization ledger')}</h3>
                         <p className="aw-meta">{t('Official Payment Manifest')}</p>
                       </div>
                     </div>
@@ -381,12 +381,12 @@ const EMIChart: React.FC = () => {
       {/* Member Lookup Modal */}
       {showMemberLookup && (
         <div className="aw-modal-backdrop" onClick={() => setShowMemberLookup(false)}>
-          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Select Member')} onClick={(e) => e.stopPropagation()}>
+          <div className="aw-modal" role="dialog" aria-modal="true" aria-label={t('Select member')} onClick={(e) => e.stopPropagation()}>
             <div className="aw-modal-head">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span className="aw-card-icon"><User size={14} /></span>
                 <div>
-                  <h3 className="aw-card-title">{t('Select Member')}</h3>
+                  <h3 className="aw-card-title">{t('Select member')}</h3>
                   <p className="aw-meta">{t('Cross-referencing Global Ledger')}</p>
                 </div>
               </div>

@@ -299,7 +299,7 @@ const GeneralLedger: React.FC = () => {
 
   return (
     <ReportShell
-      className="gl-page"
+      className="gl-page aw-calm"
       title="General Ledger"
       desc="Head-wise account statement"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

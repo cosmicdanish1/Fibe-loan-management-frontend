@@ -105,7 +105,7 @@ const DayEnd: React.FC = () => {
 
   if (isLoading && !isProcessing) {
     return (
-      <div className="app-window">
+      <div className="app-window aw-calm">
         <div className="aw-empty" style={{ margin: 'auto' }}>
           <RefreshCw size={28} className="aw-spin" />
           <span className="aw-meta">{t('Loading...')}</span>
@@ -118,12 +118,12 @@ const DayEnd: React.FC = () => {
   // and Day-End would fail at its final step if run against this state.
   if (dayendData.noWorkingDateSet) {
     return (
-      <div className="app-window">
+      <div className="app-window aw-calm">
         <div style={{ margin: 'auto', width: '100%', maxWidth: 440, padding: 16 }}>
           <section className="aw-card aw-fade-in">
             <div className="aw-card-head">
               <span className="aw-card-icon" style={{ color: 'var(--aw-warning)' }}><Clock size={14} /></span>
-              <h2 className="aw-card-title">{t('No Working Date Set')}</h2>
+              <h2 className="aw-card-title">{t('No working date set')}</h2>
             </div>
             <div className="aw-stack">
               <p className="aw-meta" style={{ lineHeight: 1.5 }}>
@@ -143,7 +143,7 @@ const DayEnd: React.FC = () => {
                 {isInitializing ? <RefreshCw size={13} className="aw-spin" /> : <Play size={13} />}
                 {isInitializing ? t('Initializing...') : t('Set Working Date')}
               </button>
-              {error && <p className="aw-meta" style={{ color: 'var(--aw-danger)', fontWeight: 700 }}>{error}</p>}
+              {error && <p className="aw-meta" style={{ color: 'var(--aw-danger)', fontWeight: 600 }}>{error}</p>}
             </div>
           </section>
         </div>
@@ -161,12 +161,12 @@ const DayEnd: React.FC = () => {
   })();
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Day End Closing')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Calendar size={12} /> {new Date(dayendData.date).toDateString()}
           </p>
         </div>
@@ -204,7 +204,7 @@ const DayEnd: React.FC = () => {
           <div className={`aw-alert ${isBalanced ? 'aw-alert-success' : 'aw-alert-danger'}`} style={{ marginBottom: 0, alignItems: 'center' }} role="status">
             {isBalanced ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
             <div style={{ flex: 1 }}>
-              <div style={{ textTransform: 'uppercase', letterSpacing: '.04em' }}>{isBalanced ? t('Accounts Balanced') : t('Ledger Unbalanced')}</div>
+              <div>{isBalanced ? t('Accounts Balanced') : t('Ledger Unbalanced')}</div>
               <div style={{ fontWeight: 500, opacity: .85 }}>
                 {isBalanced ? t('System verified. Closing enabled.') : t('Day end restricted until resolved.')}
               </div>
@@ -225,7 +225,7 @@ const DayEnd: React.FC = () => {
             <section className="aw-card" style={{ alignSelf: 'start' }}>
               <div className="aw-card-head">
                 <span className="aw-card-icon"><CheckCircle2 size={14} /></span>
-                <h2 className="aw-card-title">{t('System Verification')}</h2>
+                <h2 className="aw-card-title">{t('System verification')}</h2>
               </div>
               <div className="aw-rows">
                 {[
@@ -251,7 +251,7 @@ const DayEnd: React.FC = () => {
                 type="button"
                 onClick={handleCloseDayClick}
                 className="aw-panel aw-panel-accent"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%', textAlign: 'left', cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%', textAlign: 'left', cursor: 'pointer' }}
                 data-tip={t('Select the next working date')}
                 data-tip-pos="top-start"
               >
@@ -345,7 +345,7 @@ const DayEnd: React.FC = () => {
           </div>
           <div>
             <span className="aw-label">{t('Day')}</span>
-            <div className="aw-input" style={{ display: 'flex', alignItems: 'center', color: 'var(--aw-accent)', fontWeight: 700 }}>
+            <div className="aw-input" style={{ display: 'flex', alignItems: 'center', color: 'var(--aw-accent)', fontWeight: 600 }}>
               {getDayName(nextWorkingDate)}
             </div>
           </div>

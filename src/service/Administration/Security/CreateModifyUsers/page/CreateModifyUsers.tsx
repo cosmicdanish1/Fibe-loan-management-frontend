@@ -95,7 +95,7 @@ const PermList: React.FC<PermListProps> = ({
   const [draggingItems, setDraggingItems] = useState<string[]>([]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span className="aw-label" style={{ marginBottom: 0 }}>{label}</span>
         <span className={`aw-pill ${side === 'right' ? '' : 'tone-muted'}`}>{count}</span>
@@ -288,12 +288,12 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
   const openAvatarPicker = () => document.getElementById('user-avatar-upload')?.click();
 
   return (
-    <div className={`app-window ${className}`}>
+    <div className={`app-window aw-calm ${className}`}>
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{isUpdating ? t('Modify User') : t('Create User')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Fingerprint size={12} /> {t('User Access Management')}
           </p>
         </div>
@@ -333,11 +333,11 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
               <section className="aw-card">
                 <div className="aw-card-head">
                   <span className="aw-card-icon"><UserCheck size={14} /></span>
-                  <h2 className="aw-card-title">{t('Identity Profile')}</h2>
+                  <h2 className="aw-card-title">{t('Identity profile')}</h2>
                 </div>
                 <div className="aw-stack">
                   {/* Avatar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 'var(--aw-gap)', borderBottom: '1px solid var(--aw-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 'var(--aw-gap)', borderBottom: '1px solid var(--aw-border)' }}>
                     <input id="user-avatar-upload" type="file" accept="image/jpeg,image/png" className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
@@ -409,7 +409,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                         className={`aw-input ${formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword ? 'is-invalid' : ''}`}
                         placeholder="••••••••" />
                       {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                        <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 700 }}>{t("Passwords don't match")}</p>
+                        <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 600 }}>{t("Passwords don't match")}</p>
                       )}
                     </div>
                   </div>
@@ -477,7 +477,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Settings2 size={14} /></span>
                 <div>
-                  <h2 className="aw-card-title">{t('Access Privilege Matrix')}</h2>
+                  <h2 className="aw-card-title">{t('Access privilege matrix')}</h2>
                   <p className="aw-meta">{t('Click to select · Ctrl+Click multi-select · Drag and drop or use the arrow buttons to transfer')}</p>
                 </div>
               </div>
@@ -489,7 +489,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   flyingOut={flyingToRight}
                   justArrived={arrivedLeft}
                   onToggle={toggleAvailable}
-                  label={t('Available Rights')}
+                  label={t('Available rights')}
                   count={`${formData.availablePermissions.length} pool`}
                   side="left"
                   onDragStartItems={handleDragStart}
@@ -498,7 +498,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   dropReady={dragFrom === 'right'}
                 />
 
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
                   <button type="button" onClick={handleMoveSelectedRight}
                     disabled={selectedDefaultRights.length === 0 || isAnimating}
                     className="aw-icon-btn" aria-label={t('Grant selected')} data-tip={t('Grant selected')} data-tip-pos="top-start">
@@ -528,7 +528,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                   flyingOut={flyingToLeft}
                   justArrived={arrivedRight}
                   onToggle={toggleAssigned}
-                  label={t('Active Privileges')}
+                  label={t('Active privileges')}
                   count={`${formData.assignedPermissions.length} granted`}
                   side="right"
                   onDragStartItems={handleDragStart}

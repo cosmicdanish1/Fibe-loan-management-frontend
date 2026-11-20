@@ -101,10 +101,10 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                 aria-checked={selected}
                 onClick={() => handleLoanSelect(loan.loancaseno)}
                 className="aw-right-cell"
-                style={{ flexDirection: 'column', alignItems: 'stretch', gap: 2, padding: '9px 10px', border: `1px solid ${selected ? 'var(--aw-accent)' : 'var(--aw-border)'}`, opacity: closedRow ? 0.85 : 1 }}
+                style={{ flexDirection: 'column', alignItems: 'stretch', gap: 2, padding: '8px 12px', border: `1px solid ${selected ? 'var(--aw-accent)' : 'var(--aw-border)'}`, opacity: closedRow ? 0.85 : 1 }}
             >
                 <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                    <span className="aw-strong" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span className="aw-strong" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                         {closedRow && <GitMerge size={13} />}
                         {LOAN_TYPE_LABEL[loan.loantype] || loan.loantype}
                     </span>
@@ -134,9 +134,9 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
     );
 
     return (
-        <div className="app-window">
+        <div className="app-window lec-win">
             {/* ── Header ── */}
-            <div className="aw-header aw-ambient">
+            <div className="aw-header">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Loan Early Closure')}</h1>
                     <p className="aw-desc">{detailed
@@ -200,26 +200,26 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head">
                                     <span className="aw-card-icon"><CreditCard size={14} /></span>
-                                    <h2 className="aw-card-title">{t('Select Loan to Close')}</h2>
+                                    <h2 className="aw-card-title">{t('Select loan to close')}</h2>
                                     <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('{{1}} loan{{2}}', { 1: filteredLoans.length, 2: filteredLoans.length !== 1 ? 's' : '' })}</span>
                                 </div>
                                 <div className="aw-input-wrap has-icon">
                                     <Search size={13} />
                                     <input type="text" value={loanSearch} onChange={e => setLoanSearch(e.target.value)} placeholder={t('Search by case no.')} aria-label={t('Search by case number')} className="aw-input" />
                                 </div>
-                                <div className="aw-stack" style={{ gap: 6, maxHeight: 240, overflowY: 'auto' }} role="radiogroup" aria-label={t('Open loans')}>
+                                <div className="aw-stack" style={{ gap: 8, maxHeight: 240, overflowY: 'auto' }} role="radiogroup" aria-label={t('Open loans')}>
                                     {filteredLoans.map(loan => loanRow(loan, false))}
                                     {filteredLoans.length === 0 && loanSearch && (
-                                        <p className="aw-meta" style={{ textAlign: 'center', padding: '10px 4px' }}>{t('No loans match "')}{loanSearch}"</p>
+                                        <p className="aw-meta" style={{ textAlign: 'center', padding: '12px 4px' }}>{t('No loans match "')}{loanSearch}"</p>
                                     )}
                                 </div>
 
                                 {/* Closed / consolidated cases — full history, view-only */}
                                 {closedLoans.length > 0 && (
                                     <div style={{ borderTop: '1px solid var(--aw-border)', paddingTop: 8 }}>
-                                        {toggleRow(showClosedLoans, () => setShowClosedLoans(v => !v), null, `Closed / Consolidated (${closedLoans.length})`)}
+                                        {toggleRow(showClosedLoans, () => setShowClosedLoans(v => !v), null, t('Closed / Consolidated ({{1}})', { 1: closedLoans.length }))}
                                         {showClosedLoans && (
-                                            <div className="aw-stack aw-fade-in" style={{ gap: 6, maxHeight: 220, overflowY: 'auto', marginTop: 6 }} role="radiogroup" aria-label={t('Closed loans')}>
+                                            <div className="aw-stack aw-fade-in" style={{ gap: 8, maxHeight: 220, overflowY: 'auto', marginTop: 8 }} role="radiogroup" aria-label={t('Closed loans')}>
                                                 {filteredClosedLoans.map(loan => loanRow(loan, true))}
                                             </div>
                                         )}
@@ -233,7 +233,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head">
                                     <span className="aw-card-icon"><IndianRupee size={14} /></span>
-                                    <h2 className="aw-card-title">{t('Closure Date, Adjustment & Receipt')}</h2>
+                                    <h2 className="aw-card-title">{t('Closure date, adjustment & receipt')}</h2>
                                 </div>
                                 <div className="aw-stack">
                                     <div>
@@ -280,11 +280,11 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                     </div>
 
                     {/* ── Right column — Settlement Quote ── */}
-                    <section className="aw-card" style={{ minWidth: 0 }}>
+                    <section className={`aw-card lec-quote${detailed ? "" : " is-pinned"}`} style={{ minWidth: 0 }}>
                         <div className="aw-card-head">
                             <span className="aw-card-icon"><FileText size={14} /></span>
                             <div>
-                                <h2 className="aw-card-title">{selectedLoanIsClosed ? t('Loan History') : t('Settlement Quote')}</h2>
+                                <h2 className="aw-card-title">{selectedLoanIsClosed ? t('Loan history') : t('Settlement quote')}</h2>
                                 {form.memberName && (
                                     <p className="aw-meta">
                                         {form.memberName}
@@ -306,7 +306,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     </span>
                                 )}
                             </div>
-                        ) : quoteLoading ? (
+                        ) : quoteLoading && !quote ? (
                             <div className="aw-empty" style={{ padding: 40 }}>
                                 <RefreshCw size={26} className="aw-spin" style={{ color: 'var(--aw-accent)' }} />
                                 <strong className="aw-strong">{t('Calculating settlement amount…')}</strong>
@@ -316,7 +316,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 <span className="aw-meta">{form.mbno ? (form.selectedLoanCase ? t('Inputs changed - click Recalc to refresh the settlement quote.') : t('Select a loan case to see its settlement quote.')) : t('Search for a member to begin.')}</span>
                             </div>
                         ) : (
-                            <div className="aw-stack aw-fade-in">
+                            <div className={`aw-stack aw-fade-in${quoteLoading ? ' lec-updating' : ''}`} aria-busy={quoteLoading}>
 
                                 {/* Loan summary: four figures in Detailed, one line in Simple */}
                                 {selectedLoan && detailed && (
@@ -336,7 +336,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     </div>
                                 )}
                                 {selectedLoan && !detailed && (
-                                    <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 22px', borderBottom: '1px solid var(--aw-border)', paddingBottom: 10 }}>
+                                    <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 24px', borderBottom: '1px solid var(--aw-border)', paddingBottom: 12 }}>
                                         <span>{t('Loan taken on')}: <strong style={{ color: 'var(--aw-text)' }}>{fmtDate(selectedLoan.loan_date)}</strong></span>
                                         {selectedLoan.rate != null && <span>{t('Interest rate')}: <strong style={{ color: 'var(--aw-text)' }}>{selectedLoan.rate}%</strong></span>}
                                         <span>{t('Active Loan Amount:')} <strong style={{ color: 'var(--aw-text)' }}>₹{fmt(quote.loanAmt)}</strong></span>
@@ -355,13 +355,13 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     <div className="aw-rows">
                                         {quote.consolidationHistory.absorbedCases.length > 0 && (
                                             <div className="aw-row">
-                                                <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><GitMerge size={13} /> {t('Includes earlier loan')}</span>
+                                                <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><GitMerge size={13} /> {t('Includes earlier loan')}</span>
                                                 <span className="aw-row-value">{quote.consolidationHistory.absorbedCases.map(c => `#${c.loancaseno}`).join(', ')}</span>
                                             </div>
                                         )}
                                         {quote.consolidationHistory.consolidatedIntoLoancaseno && (
                                             <div className="aw-row">
-                                                <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><GitMerge size={13} /> {t('Folded into loan')}</span>
+                                                <span className="aw-row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><GitMerge size={13} /> {t('Folded into loan')}</span>
                                                 <span className="aw-row-value">#{quote.consolidationHistory.consolidatedIntoLoancaseno}</span>
                                             </div>
                                         )}
@@ -390,7 +390,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                             <div className="aw-stack aw-fade-in" style={{ gap: 12 }}>
                                                 {quote.consolidationHistory.absorbedCases.length > 0 && (
                                                     <div>
-                                                        <p className="aw-meta" style={{ marginBottom: 6 }}>{t('This loan absorbed')} {quote.consolidationHistory.absorbedCases.length} {t('earlier case')}{quote.consolidationHistory.absorbedCases.length === 1 ? '' : 's'}:</p>
+                                                        <p className="aw-meta" style={{ marginBottom: 8 }}>{t('This loan absorbed')} {quote.consolidationHistory.absorbedCases.length} {t('earlier case')}{quote.consolidationHistory.absorbedCases.length === 1 ? '' : 's'}:</p>
                                                         <div className="aw-table-wrap">
                                                             <table className="aw-table">
                                                                 <thead><tr><th>{t('Case')}</th><th>{t('Type')}</th><th className="is-right">{t('Original amount')}</th><th className="is-right">{t('Settlement')}</th><th>{t('Date')}</th></tr></thead>
@@ -414,7 +414,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                 )}
                                                 {!selectedLoanIsClosed && quote.payrollAdjustments?.length > 0 && (
                                                     <div>
-                                                        <p className="aw-strong" style={{ marginBottom: 6 }}>{t('Previous-Loan Payroll Adjustment')}</p>
+                                                        <p className="aw-strong" style={{ marginBottom: 8 }}>{t('Previous-Loan Payroll Adjustment')}</p>
                                                         <div className="aw-table-wrap">
                                                             <table className="aw-table">
                                                                 <thead><tr><th>{t('Previous loan case')}</th><th>{t('Source payment')}</th><th>{t('Voucher')}</th><th className="is-right">{t('Previous-loan principal')}</th><th className="is-right">{t('Previous-loan interest')}</th><th className="is-right">{t('Total adjustment')}</th></tr></thead>
@@ -441,7 +441,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                                 </tbody>
                                                             </table>
                                                         </div>
-                                                        <p className="aw-meta" style={{ marginTop: 6 }}>
+                                                        <p className="aw-meta" style={{ marginTop: 8 }}>
                                                             {t('Applied post-consolidation principal offset:')} <b>−₹{fmt(quote.payrollLagPrincipalOffset || 0)}</b>. {t('Pre-consolidation payroll principal is already included in the effective opening principal. No predecessor interest is added again.')}
                                                         </p>
                                                         <details className="lec-why">
@@ -479,7 +479,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                     <strong className="aw-strong">{t('Closure options')}</strong>
                                                     <span className="aw-meta">{t('All off by default. Tick only what applies to this member.')}</span>
                                                 </div>
-                                                <div className="lec-opts-grid">
+                                                <div className={`lec-opts-grid${openCard.next || openCard.lag || openCard.rd ? ' has-open' : ''}`}>
 
                                                     {/* 1. Close on next month's outstanding */}
                                                     <article className={`lec-card${form.nextMonth ? ' is-on' : ''}`}>
@@ -670,15 +670,15 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                 </div>
                                             )}
                                             <div className="aw-row aw-row-total">
-                                                <span className="aw-row-label">{t('Settlement Amount')}</span>
+                                                <span className="aw-row-label">{t('Settlement amount')}</span>
                                                 <span className="aw-row-value">₹{fmt(quote.finalClosureAmount)}</span>
                                             </div>
                                         </div>
                                     )}
 
                                     {quote.suggestedAdjustment !== 0 && (
-                                        <div className="aw-alert aw-alert-info" style={{ marginBottom: 0, flexDirection: 'column', gap: 6 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%' }}>
+                                        <div className="aw-alert aw-alert-info" style={{ marginBottom: 0, flexDirection: 'column', gap: 8 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
                                                 <div>
                                                     <span className="aw-label" style={{ color: 'inherit' }}>{t('Detected: Payroll-Lag Credit — not applied yet')}</span>
                                                     <div className="aw-strong" style={{ color: 'var(--aw-success)', fontSize: 'calc(var(--type-body-size) + 2px)' }}>₹{fmt(quote.suggestedAdjustment)}</div>
@@ -753,7 +753,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                             </tr>
                                                         )}
                                                         <tr className="lec-total">
-                                                            <td className="aw-strong">{t('Settlement Amount')}</td>
+                                                            <td className="aw-strong">{t('Settlement amount')}</td>
                                                             <td className="aw-meta">
                                                                 {t('Outstanding Principal')} (₹{fmt(quote.outstandingPrincipal)}) + {t('Closure Interest')} (₹{fmt(quote.closureInterest)}) + {t('Penal Interest')} (₹{fmt(quote.penalInterest)})
                                                                 {quote.adjustment !== 0 && ' + ' + t('Adjustment (₹{{1}})', { 1: fmt(quote.adjustment) })}
@@ -868,7 +868,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 {!closed && !selectedLoanIsClosed && (
                                     <div className="lec-actionbar">
                                         <div className="min-w-0">
-                                            <span className="aw-label" style={{ margin: 0 }}>{t('Payable by Member')}</span>
+                                            <span className="aw-label" style={{ margin: 0 }}>{t('Payable by member')}</span>
                                             <span className="lec-pay">₹{fmt(quote.payableByMember)}</span>
                                             <span className="aw-meta" style={{ display: 'block' }}>
                                                 {quote.rdShareAdjustment && form.applyRdShare && quote.rdShareAdjustment.appliedFromRdShare > 0
@@ -888,50 +888,75 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
             </div>
 
             <style>{`
-        .app-window .lec-opts { padding: 12px 14px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface-muted); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+        /* Labels read as sentence case in this window, the same as Member Master. */
+        .lec-win .aw-label { text-transform: none; letter-spacing: 0; font-size: calc(var(--type-body-size) - 1px); font-weight: 600; }
+        /* A little depth so every card reads as its own surface. Follows the no-shadows setting and dark mode. */
+        .lec-win { --lec-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 8px 20px -10px rgba(16, 24, 40, .16); --lec-shadow-sm: 0 1px 2px rgba(16, 24, 40, .06), 0 4px 10px -6px rgba(16, 24, 40, .16); }
+        html.dark .lec-win { --lec-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 8px 20px -10px rgba(0, 0, 0, .55); --lec-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35), 0 4px 10px -6px rgba(0, 0, 0, .5); }
+        html.no-shadows .lec-win { --lec-shadow: none; --lec-shadow-sm: none; }
+        .lec-win .aw-card { box-shadow: var(--lec-shadow); border-color: var(--aw-border-strong); }
+        .app-window .lec-card { box-shadow: var(--lec-shadow-sm); border-color: var(--aw-border-strong); }
+        .app-window .lec-card:hover { box-shadow: var(--lec-shadow); }
+        /* Figures: one weight below bold, tabular. Pink is kept for the amount the member pays. */
+        .lec-win .aw-row-total { border-top: 3px double var(--aw-border-strong); padding-top: 12px; }
+        .lec-win .aw-row-total .aw-row-label { text-transform: none; letter-spacing: 0; font-size: var(--type-body-size); }
+        .lec-win .aw-row-total .aw-row-value { color: var(--aw-text); font-variant-numeric: tabular-nums; }
+
+        .app-window .lec-opts { padding: 16px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface-muted); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
         .app-window .lec-opts-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
-        .app-window .lec-opts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; align-items: start; }
-        .app-window .lec-card { display: flex; flex-direction: column; gap: 12px; padding: 14px; min-width: 0; border-radius: 12px; border: 1px solid var(--aw-border); background: var(--aw-surface, transparent); transition: border-color .15s, background-color .15s; }
+        .app-window .lec-opts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; align-items: stretch; }
+        .app-window .lec-opts-grid.has-open { align-items: start; }
+        .app-window .lec-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; min-width: 0; border-radius: var(--aw-radius); border: 1px solid var(--aw-border); background: var(--aw-surface, transparent); transition-property: border-color, background-color; transition-duration: .2s; transition-timing-function: var(--aw-ease); }
+        .app-window .lec-card:hover { border-color: var(--aw-border-strong); }
         .app-window .lec-card.is-on { border-color: var(--aw-accent); background: color-mix(in srgb, var(--aw-accent) 6%, transparent); }
-        .app-window .lec-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .app-window .lec-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
         .app-window .lec-card-check { position: relative; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; min-width: 0; flex: 1; }
         .app-window .lec-card-check input { position: absolute; opacity: 0; width: 24px; height: 24px; inset: 0 auto auto 0; margin: 0; cursor: pointer; }
         .app-window .lec-card-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .app-window .lec-box { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--aw-border-strong, #8a8a8a); background: transparent; color: transparent; transition: background-color .15s, border-color .15s, color .15s; }
+        .app-window .lec-box { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--aw-border-strong, #8a8a8a); background: transparent; color: transparent; transition-property: background-color, border-color, color; transition-duration: .2s; transition-timing-function: var(--aw-ease); }
         .app-window .lec-card.is-on .lec-box { background: var(--aw-accent); border-color: var(--aw-accent); color: #fff; }
         .app-window .lec-card-check:has(input:focus-visible) .lec-box { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
-        .app-window .lec-info-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--aw-border); background: var(--aw-surface, transparent); color: var(--aw-accent); cursor: pointer; }
-        .app-window .lec-info-btn[aria-expanded="true"] { background: color-mix(in srgb, var(--aw-accent) 14%, transparent); border-color: var(--aw-accent); }
+        .app-window .lec-info-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--aw-border); background: var(--aw-surface, transparent); color: var(--aw-muted); cursor: pointer; }
+        .app-window .lec-info-btn:hover { color: var(--aw-text); border-color: var(--aw-border-strong); }
+        .app-window .lec-info-btn[aria-expanded="true"] { color: var(--aw-accent); background: color-mix(in srgb, var(--aw-accent) 12%, transparent); border-color: var(--aw-accent); }
         .app-window .lec-info-btn:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
-        .app-window .lec-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px 14px; padding-top: 10px; border-top: 1px solid var(--aw-border); }
-        .app-window .lec-num { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .app-window .lec-num-v { font-variant-numeric: tabular-nums; font-size: calc(var(--type-body-size) + 1px); color: var(--aw-text); }
-        .app-window .lec-card-detail { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px dashed var(--aw-border); }
+        .app-window .lec-nums { display: flex; flex-direction: column; margin-top: auto; padding-top: 4px; border-top: 1px solid var(--aw-border); }
+        .app-window .lec-opts-grid.has-open .lec-nums { margin-top: 0; }
+        .app-window .lec-num { display: flex; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; min-width: 0; border-bottom: 1px solid var(--aw-border); }
+        .app-window .lec-num:last-child { border-bottom: 0; padding-bottom: 0; }
+        .app-window .lec-num .aw-label { margin: 0; min-width: 0; }
+        .app-window .lec-num-v { font-variant-numeric: tabular-nums; font-size: calc(var(--type-body-size) + 1px); color: var(--aw-text); white-space: nowrap; text-align: right; }
+        /* While a new quote loads, the old one stays visible but cannot be clicked, so a second click cannot race the first. */
+        /* Simple view: the quote stays in view while the longer left column scrolls, so there is no empty column beside it. */
+        .app-window .lec-quote.is-pinned { position: sticky; top: 4px; align-self: start; max-height: calc(100vh - var(--aw-pad) * 2); overflow-y: auto; }
+        @media (max-width: 720px) { .app-window .lec-quote.is-pinned { position: static; max-height: none; overflow: visible; } }
+        .app-window .lec-updating { opacity: .55; pointer-events: none; transition: opacity .2s var(--aw-ease); }
+        .app-window .lec-card-detail { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; border-top: 1px dashed var(--aw-border); }
         .app-window .lec-card-detail p { margin: 0; line-height: 1.5; }
-        .app-window .lec-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--aw-gap); padding-bottom: 12px; border-bottom: 1px solid var(--aw-border); }
+        .app-window .lec-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: var(--aw-gap); padding-bottom: 12px; border-bottom: 1px solid var(--aw-border); }
         .app-window .lec-strip > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .app-window .lec-strip strong { color: var(--aw-text); font-size: calc(var(--type-body-size) + 3px); font-weight: 700; font-variant-numeric: tabular-nums; }
-        .app-window .lec-block { padding: 12px 14px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface-muted); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+        .app-window .lec-strip strong { color: var(--aw-text); font-size: calc(var(--type-body-size) + 3px); font-weight: 600; font-variant-numeric: tabular-nums; }
+        .app-window .lec-block { padding: 16px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface-muted); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
         .app-window .lec-block-head { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0; border: 0; background: transparent; color: var(--aw-text); cursor: pointer; font: inherit; text-align: left; }
-        .app-window .lec-block-head:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 3px; border-radius: 6px; }
-        .app-window .lec-badges { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
-        .app-window .lec-why summary { cursor: pointer; color: var(--aw-accent); font-size: calc(var(--type-body-size) - 1px); font-weight: 700; }
-        .app-window .lec-why p { margin: 6px 0 0; }
+        .app-window .lec-block-head:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 4px; border-radius: 6px; }
+        .app-window .lec-badges { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+        .app-window .lec-why summary { cursor: pointer; color: var(--aw-accent); font-size: calc(var(--type-body-size) - 1px); font-weight: 600; }
+        .app-window .lec-why p { margin: 8px 0 0; }
         .app-window .lec-sched { margin: 0; }
         .app-window .lec-settle td { vertical-align: top; }
         .app-window .lec-settle td:nth-child(2) { max-width: 520px; line-height: 1.5; }
         .app-window .lec-settle .lec-sub td { background: color-mix(in srgb, var(--aw-accent) 5%, transparent); }
-        .app-window .lec-settle .lec-total td { border-top: 2px solid var(--aw-border-strong); }
-        .app-window .lec-settle .lec-total td.is-right { color: var(--aw-accent); font-size: calc(var(--type-body-size) + 3px); }
-        .app-window .lec-tabs-card { padding: 0 14px 12px; gap: 0; }
+        .app-window .lec-settle .lec-total td { border-top: 3px double var(--aw-border-strong); }
+        .app-window .lec-settle .lec-total td.is-right { color: var(--aw-text); font-size: calc(var(--type-body-size) + 3px); font-variant-numeric: tabular-nums; }
+        .app-window .lec-tabs-card { padding: 0 16px 12px; gap: 0; }
         .app-window .lec-tabs-card .aw-tabs { padding: 0; background: transparent; }
         .app-window .lec-actionbar {
           position: sticky; bottom: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
           margin: 4px calc(var(--aw-pad) * -1) calc(var(--aw-pad) * -1); padding: 12px var(--aw-pad);
-          background: var(--aw-surface); border-top: 1px solid var(--aw-border-strong); box-shadow: 0 -8px 20px -12px rgba(0, 0, 0, .35);
+          background: var(--aw-surface); border-top: 1px solid var(--aw-border-strong); box-shadow: 0 -8px 20px -12px rgba(0, 0, 0, .18);
           border-radius: 0 0 calc(var(--aw-radius) * 1.8) calc(var(--aw-radius) * 1.8);
         }
-        .app-window .lec-pay { display: block; color: var(--aw-accent); font-size: calc(var(--type-body-size) + 10px); font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+        .app-window .lec-pay { display: block; color: var(--aw-accent); font-size: calc(var(--type-body-size) + 10px); font-weight: 600; line-height: 1.15; font-variant-numeric: tabular-nums; }
       `}</style>
 
             {/* Confirm irreversible closure */}

@@ -232,7 +232,7 @@ const RDStatement: React.FC = () => {
 
   return (
     <ReportShell
-      className="rdstmt-page"
+      className="rdstmt-page aw-calm"
       title="RD Statement"
       desc="Recurring deposit statement"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

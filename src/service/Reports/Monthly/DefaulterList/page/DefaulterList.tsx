@@ -329,7 +329,7 @@ const DefaulterList: React.FC = () => {
 
   return (
     <ReportShell
-      className="dfl-page"
+      className="dfl-page aw-calm"
       title="Defaulter List"
       desc="Loans with an installment past its due month or grace day, risk view"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}
@@ -432,7 +432,7 @@ const DefaulterList: React.FC = () => {
           </div>
           <div className="dfl-noprint aw-main-foot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <span className="aw-meta">Showing {rangeStart}–{rangeEnd} of {totalCount} defaulters</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <select value={pageSize} onChange={handlePageSizeChange} className="aw-input" style={{ width: 'auto' }} aria-label="Rows per page">
                 <option value={10}>10 / page</option>
                 <option value={20}>20 / page</option>

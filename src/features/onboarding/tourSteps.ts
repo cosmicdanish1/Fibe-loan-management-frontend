@@ -38,12 +38,12 @@ export const TOUR_STEPS: TourStep[] = [
     title: tLabel('Masters'), text: 'The reference data everything else relies on.',
     highlights: [
       { action: 'MEMBER_MASTER', label: tLabel('Member Master') }, { action: 'SAVING_AC_OPENING', label: tLabel('Saving A/c Opening') },
-      { action: 'RD_MEMBER_SETUP', label: tLabel('RD Member Setup') }, { action: 'WING_OFFICE_MASTER', label: tLabel('Wing / Office Master') },
+      { action: 'RD_MEMBER_SETUP', label: tLabel('RD/CD Member Setup') }, { action: 'WING_OFFICE_MASTER', label: tLabel('Wing / Office Master') },
     ] },
   { id: 'menu-transaction', target: '[data-tour="menu-transaction"]', doodle: 'underline',
     title: tLabel('Transaction'), text: 'Your daily work is entered and passed here.',
     highlights: [
-      { action: 'LOAN_PAYMENT', label: tLabel('Loan Payment') }, { action: 'LOAN_REPAYMENT', label: tLabel('Loan Repayment') },
+      { action: 'LOAN_PAYMENT', label: tLabel('Loan Payment') }, { action: 'LOAN_REPAYMENT', label: tLabel('NR Repayment') },
       { action: 'RECEIPT_PAYMENT', label: tLabel('Receipt') }, { action: 'PASS_TRANSACTIONS', label: tLabel('Pass Transactions') },
       { action: 'GENERATE', label: tLabel('Demand Generate') }, { action: 'IMPORT_DEMAND_LIST', label: tLabel('Import Demand List') },
     ] },

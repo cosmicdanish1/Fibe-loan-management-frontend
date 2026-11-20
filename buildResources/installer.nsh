@@ -13,7 +13,7 @@
 ; quote is $\". A literal dollar sign is $$.
 ; ${VERSION} is set by electron-builder from package.json — no need
 ; to hardcode it here.
-!define RELEASE_NOTES "- App-wide dark mode, available from Settings on every screen.$\r$\n- Real role-based access control: login, navigation, and every route now enforce each user's configured rights (previously had no effect).$\r$\n- Security fixes: member KYC document access, file-upload handling, an account-takeover login issue, and password policy enforcement.$\r$\n- Day-End: fixed a bug allowing two runs at once, plus further date/timezone fixes; added an admin-only auto-close option.$\r$\n- Large batch of accuracy fixes across Financial Year, Day-End, Vouchers, FD/RD, Ledger Reports, and Monthly/Yearly Reports.$\r$\n- Demand & Recovery, Business Rules, and Communication Hub screens fixed after being non-functional.$\r$\n- Numerous smaller data-integrity and validation fixes across Member, Savings, RD, FD, and Loan modules."
+!define RELEASE_NOTES "- Business Rules window redesigned, with profiles.$\r$\n- Import Demand List: new import modes, plus an RD/CD repayment grid.$\r$\n- Society Calculator, customisable dashboard with notice board, and new settings sections.$\r$\n- Early closure: next-month option, Past Transaction hand-off, and re-agreement pop-up.$\r$\n- System Update and Mobile Control Center screens, 2FA login, and more languages.$\r$\n- Amount input limits and plain-language error messages."
 ; ================================================================
 
 !macro customWelcomePage

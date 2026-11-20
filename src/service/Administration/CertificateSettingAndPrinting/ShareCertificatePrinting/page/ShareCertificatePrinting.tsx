@@ -70,7 +70,7 @@ const ShareCertificatePrinting: React.FC = () => {
   const handleClear = () => { setForm(BLANK); setMemberName(''); };
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient aw-noprint">
         <div className="min-w-0">
@@ -104,9 +104,9 @@ const ShareCertificatePrinting: React.FC = () => {
                       onBlur={fetchMemberData} placeholder="e.g. 1234" className="aw-input" />
                   </Field>
                   {fetching && (
-                    <p className="aw-meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}><RefreshCw size={11} className="aw-spin" /> {t('Looking up…')}</p>
+                    <p className="aw-meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}><RefreshCw size={11} className="aw-spin" /> {t('Looking up…')}</p>
                   )}
-                  {memberName && <p className="aw-strong aw-fade-in" style={{ marginTop: 6, color: 'var(--aw-accent)' }}>{memberName}</p>}
+                  {memberName && <p className="aw-strong aw-fade-in" style={{ marginTop: 8, color: 'var(--aw-accent)' }}>{memberName}</p>}
                 </div>
 
                 <div className="aw-two">

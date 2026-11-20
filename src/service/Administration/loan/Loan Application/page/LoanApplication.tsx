@@ -42,6 +42,14 @@ interface LoanEligibilityStatus {
   maxLoanAmount?: number;
 }
 
+// Legacy "no date" placeholder (1900-01-01) and empty values show as N/A
+const formatRetireDate = (value: any, empty = 'N/A'): string => {
+  if (!value) return empty;
+  const d = new Date(value);
+  if (isNaN(d.getTime()) || d.getFullYear() <= 1901) return empty;
+  return d.toLocaleDateString();
+};
+
 const LoanApplication: React.FC = () => {
   const { t } = useTranslation();
   const {
@@ -227,7 +235,7 @@ const LoanApplication: React.FC = () => {
                 mbNo: no,
                 name: fullName,
                 netSalary: d.basic_pay || '',
-                dateOfRetire: d.dor ? new Date(d.dor).toLocaleDateString() : '',
+                dateOfRetire: formatRetireDate(d.dor, ''),
                 officeName: d.office_name || memberData.officeName || '',
                 address: d.present_address || d.permanent_address || '',
               });
@@ -263,7 +271,7 @@ const LoanApplication: React.FC = () => {
                 wingNo: memberDetails.wingno,
                 officeName: memberDetails.office_name,
                 basicPay: memberDetails.basic_pay || '0',
-                dateOfRetire: memberDetails.dor ? new Date(memberDetails.dor).toLocaleDateString() : 'N/A',
+                dateOfRetire: formatRetireDate(memberDetails.dor),
                 shareBalance: '0', // Will be fetched separately if needed
                 regularLoanBal: '0', // Will be fetched separately if needed
                 emergencyLoanBal: '0', // Will be fetched separately if needed
@@ -770,7 +778,7 @@ const LoanApplication: React.FC = () => {
   const saveLabel = isSaving ? 'Saving...' : isCheckingEligibility ? 'Checking Eligibility...' : 'Save';
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Loan Application')}</h1>

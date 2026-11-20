@@ -60,7 +60,7 @@ const LoanAgainstRdTab: React.FC<LoanAgainstRdTabProps> = ({
           <span className="aw-meta">{t('Select a member on the Loan Details tab first.')}</span>
         </div>
       ) : isCheckingEligibility && !eligibilityStatus ? (
-        <p className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <p className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <RefreshCw size={11} className="aw-spin" /> {t("Reading the member's RD...")}
         </p>
       ) : !eligibilityStatus || !eligibilityStatus.rdBacked ? (

@@ -1068,3 +1068,32 @@ html[data-header-style="mesh"] .app-window .aw-ambient::after {
 .login-stagger > * { animation: awFadeIn .5s var(--aw-ease) both !important; animation-duration: .5s !important; }
 .login-stagger > *:nth-child(2) { animation-delay: .08s !important; }
 .login-stagger > *:nth-child(3) { animation-delay: .16s !important; }
+
+/* ============================================================
+   CALM POLISH — opt in per window with `app-window aw-calm`
+   Sentence-case labels and table headers, a little card depth, ruled totals.
+   Follows the no-shadows setting and dark mode like the rest of the kit.
+   ============================================================ */
+.app-window.aw-calm { --aw-calm-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 8px 20px -10px rgba(16, 24, 40, .16); }
+html.dark .app-window.aw-calm { --aw-calm-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 8px 20px -10px rgba(0, 0, 0, .55); }
+html.no-shadows .app-window.aw-calm { --aw-calm-shadow: none; }
+.app-window.aw-calm .aw-card { border-color: var(--aw-border-strong); box-shadow: var(--aw-calm-shadow); }
+.app-window.aw-calm .aw-label { text-transform: none; letter-spacing: 0; font-size: calc(var(--type-body-size) - 1px); font-weight: 600; }
+.app-window.aw-calm .aw-table th { text-transform: none; letter-spacing: 0; font-weight: 600; font-size: calc(var(--type-body-size) - 1px); }
+.app-window.aw-calm .aw-table td.is-right, .app-window.aw-calm .aw-table th.is-right { font-variant-numeric: tabular-nums; }
+.app-window.aw-calm .aw-table tfoot td { border-top: 3px double var(--aw-border-strong); font-weight: 600; }
+.app-window.aw-calm .aw-card > :not(.aw-card-head) + * { margin-top: var(--aw-gap); }
+/* Keeps a short column in view while a longer neighbour scrolls (add to the short column). */
+.app-window.aw-calm .aw-pin { position: sticky; top: 4px; align-self: start; max-height: calc(100vh - var(--aw-pad) * 2); overflow-y: auto; }
+@media (max-width: 720px) { .app-window.aw-calm .aw-pin { position: static; max-height: none; overflow: visible; } }
+/* Tinted page behind white cards (opt-in with .aw-tint, together with .aw-calm). */
+.app-window.aw-calm.aw-tint { background: color-mix(in srgb, var(--aw-accent) 5%, #eceff5); }
+html.dark .app-window.aw-calm.aw-tint { background: color-mix(in srgb, var(--aw-accent) 6%, #0a0d12); }
+.app-window.aw-calm.aw-tint .aw-header { background: var(--aw-surface); }
+.app-window .aw-crumb { margin-bottom: 2px; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); }
+.app-window.aw-calm .aw-facts { gap: 12px 16px; }
+.app-window.aw-calm .aw-facts dt { text-transform: none; letter-spacing: 0; font-size: calc(var(--type-body-size) - 1px); font-weight: 600; }
+.app-window.aw-calm .aw-facts dd { font-weight: 600; }
+.app-window.aw-calm .aw-stat-label { text-transform: none; letter-spacing: 0; font-size: calc(var(--type-body-size) - 1px); font-weight: 600; }
+.app-window.aw-calm .aw-stat { background: var(--aw-surface-muted); border-color: var(--aw-border); padding: 12px 16px; }
+.app-window.aw-calm .aw-stat-value { color: var(--aw-tone, var(--aw-text)); font-weight: 600; }

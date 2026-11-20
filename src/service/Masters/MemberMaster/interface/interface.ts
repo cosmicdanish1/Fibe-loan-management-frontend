@@ -23,7 +23,6 @@ export interface MemberFormData {
   branchMsNo: string;
   monthlyContribution: string;
   compulsatoryDeposit: string;
-  startRd: boolean;
   isInsured: boolean;
   amountOfInsurance: string;
   mobileNumber: string;
@@ -112,7 +111,6 @@ export const defaultFormValues: MemberFormData = {
   branchMsNo: '',
   monthlyContribution: '',
   compulsatoryDeposit: '',
-  startRd: true,
   isInsured: false,
   amountOfInsurance: '',
   mobileNumber: '',

@@ -108,17 +108,17 @@ const InterestReceivableReceivedStatement: React.FC = () => {
   const yearOptions = years.map(y => ({ value: y, label: String(y) }));
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
 
       {/* Header */}
       <div className="aw-header aw-ambient aw-noprint">
         <div className="min-w-0">
-          <h1 className="aw-title">{t('Interest Statement')}</h1>
+          <h1 className="aw-title">{t('Interest statement')}</h1>
           <p className="aw-desc">{t('Loan Asset Performance Monitoring')}</p>
         </div>
         <div className="aw-actions">
           {loading && (
-            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} role="status">
+            <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} role="status">
               <RefreshCw size={12} className="aw-spin" /> {t('Generating statement...')}
             </span>
           )}
@@ -148,7 +148,7 @@ const InterestReceivableReceivedStatement: React.FC = () => {
               </div>
               <div className="aw-stack">
 
-                <div className="aw-two" style={{ gap: 10 }}>
+                <div className="aw-two" style={{ gap: 12 }}>
                   <div>
                     <label className="aw-label" htmlFor="irr-from-month">{t('From Month')}</label>
                     <Select id="irr-from-month" className="aw-select" popupClassName="aw-select-popup" value={filters.fromMonth}
@@ -161,7 +161,7 @@ const InterestReceivableReceivedStatement: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="aw-two" style={{ gap: 10 }}>
+                <div className="aw-two" style={{ gap: 12 }}>
                   <div>
                     <label className="aw-label" htmlFor="irr-to-month">{t('To Month')}</label>
                     <Select id="irr-to-month" className="aw-select" popupClassName="aw-select-popup" value={filters.toMonth}
@@ -191,7 +191,7 @@ const InterestReceivableReceivedStatement: React.FC = () => {
 
                 <div style={{ height: 1, background: 'var(--aw-border)' }} />
 
-                <div className="aw-two" style={{ gap: 10 }}>
+                <div className="aw-two" style={{ gap: 12 }}>
                   <div>
                     <label className="aw-label" htmlFor="irr-from-member">{t('From Member')}</label>
                     <input id="irr-from-member" value={filters.fromMember} onChange={e => setFilters(f => ({ ...f, fromMember: e.target.value }))}
@@ -227,12 +227,12 @@ const InterestReceivableReceivedStatement: React.FC = () => {
           {/* Statement Table */}
           <section className="aw-card aw-main">
             <div className="aw-main-head">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="aw-card-icon"><FileText size={14} /></span>
-                <h2 className="aw-card-title">{t('Interest Statement')}</h2>
+                <h2 className="aw-card-title">{t('Interest statement')}</h2>
                 {data.length > 0 && <span className="aw-pill">{t('{{1}} rows', { 1: data.length })}</span>}
               </div>
-              <span className="aw-meta" style={{ textTransform: 'uppercase' }}>{t('Ref:')} {stableId.current}</span>
+              <span className="aw-meta">{t('Ref:')} {stableId.current}</span>
             </div>
             <div className="aw-main-body" style={{ padding: 0 }}>
               {data.length > 0 ? (

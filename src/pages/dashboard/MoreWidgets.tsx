@@ -203,7 +203,7 @@ export const RdDuesWidget: React.FC<{ state: SummaryState; onOpen: Open }> = ({ 
               </div>
               <CardFoot>
                 <span>{t('Paid')} <strong>{d.paidMembers}</strong> · {t('Part')} <strong>{d.partialMembers}</strong> · {t('Unpaid')} <strong>{d.unpaidMembers}</strong></span>
-                <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => onOpen('/masters/rd-repayment')}>{t('Open RD Repayment')}</button>
+                <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => onOpen('/masters/rd-repayment')}>{t('Open RD/CD Repayment')}</button>
               </CardFoot>
             </>
           );

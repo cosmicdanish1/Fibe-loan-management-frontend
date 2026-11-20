@@ -239,7 +239,7 @@ const AnnualMemberStatement: React.FC = () => {
 
   return (
     <ReportShell
-      className="ams-page"
+      className="ams-page aw-calm"
       title="Annual Member Statement"
       desc="Yearly financial summary by wing and branch"
       switcher={<ReportViewSwitcher enabled={enabled} value={view} onChange={setView} />}

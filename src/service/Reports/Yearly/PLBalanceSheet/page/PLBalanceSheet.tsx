@@ -111,7 +111,7 @@ const PLBalanceSheet: React.FC = () => {
 
   return (
     <ReportShell
-      className="plbs-page"
+      className="plbs-page aw-calm"
       title="Balance Sheet"
       desc="Espat Karmchari Co-Operative Credit Society Limited."
       switcher={data ? <ReportViewSwitcher enabled={enabled} value={view} onChange={setView} /> : undefined}

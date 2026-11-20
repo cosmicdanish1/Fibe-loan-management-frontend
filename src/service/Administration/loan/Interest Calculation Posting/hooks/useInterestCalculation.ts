@@ -50,7 +50,18 @@ export const useInterestCalculation = () => {
   const PREVIEW_AFFECTING_FIELDS = ['calcInterestFor', 'accountType', 'fromDate', 'toDate', 'memberNo', 'interestRate'];
 
   const handleInputChange = useCallback((name: string, value: any) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      // Yearly Fund Process works on a whole financial year: start from the current financial year (1 April to 31 March),
+      // not from the one-month window the other interest runs use, so the clerk cannot close the wrong year by default.
+      if (name === 'calcInterestFor' && value === 'yearly_fund_process') {
+        const today = dayjs();
+        const startYear = today.month() >= 3 ? today.year() : today.year() - 1;
+        next.fromDate = `${startYear}-04-01`;
+        next.toDate = `${startYear + 1}-03-31`;
+      }
+      return next;
+    });
     if (PREVIEW_AFFECTING_FIELDS.includes(name)) setMemberRecords([]);
   }, []);
 

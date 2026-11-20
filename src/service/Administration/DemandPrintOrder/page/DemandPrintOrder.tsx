@@ -116,12 +116,12 @@ const DemandPrintOrder: React.FC = () => {
   );
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
           <h1 className="aw-title">{t('Demand Print Matrix')}</h1>
-          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p className="aw-desc" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Database size={12} /> {t('Administrative Logic Terminal')}
           </p>
         </div>
@@ -214,7 +214,7 @@ const DemandPrintOrder: React.FC = () => {
                           onChange={e => handleInputChange('printOrder', parseInt(e.target.value) || 1)} />
                       </td>
                       <td>
-                        <span style={{ display: 'inline-flex', gap: 6 }}>
+                        <span style={{ display: 'inline-flex', gap: 8 }}>
                           <button type="button" onClick={() => handleSave(index)} disabled={saving} className="aw-btn aw-btn-primary aw-btn-sm">
                             {saving ? <RefreshCw size={12} className="aw-spin" /> : <Save size={12} />} {t('Save')}
                           </button>
@@ -255,7 +255,7 @@ const DemandPrintOrder: React.FC = () => {
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <Building2 size={12} /> {t('Ledger Matrix Control ·')} {filteredRows.length} row{filteredRows.length !== 1 ? 's' : ''}
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={12} /> {t('Protocol v2.9.2')}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><ShieldCheck size={12} /> {t('Protocol v2.9.2')}</span>
       </div>
 
       <AwDialog open={showMDAmountModal} title={t('MD Column Registry')} icon={<Database size={14} />} onClose={() => setShowMDAmountModal(false)} maxWidth="26rem" flush>

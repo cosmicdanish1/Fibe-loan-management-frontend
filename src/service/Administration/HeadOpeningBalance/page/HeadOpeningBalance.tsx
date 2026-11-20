@@ -273,7 +273,7 @@ const HeadOpeningBalance: React.FC = () => {
   const yearCode = activeYear?.yearcode ?? '—';
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
@@ -316,7 +316,7 @@ const HeadOpeningBalance: React.FC = () => {
             <div style={{ minWidth: 220 }}>
               <label className="aw-label" htmlFor="hob-year">{t('Financial Year')}</label>
               {loadingYears ? (
-                <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <Loader2 size={12} className="aw-spin" /> {t('Loading…')}
                 </span>
               ) : (
@@ -381,7 +381,7 @@ const HeadOpeningBalance: React.FC = () => {
                     const tone = toneFor(row.rootCode.charAt(0));
                     if (row.type === 'section') {
                       const isOpen = expandedSections.has(row.rootCode);
-                      const cell: React.CSSProperties = { background: `color-mix(in srgb, ${tone} 12%, var(--aw-surface))`, color: tone, fontWeight: 700 };
+                      const cell: React.CSSProperties = { background: `color-mix(in srgb, ${tone} 12%, var(--aw-surface))`, color: tone, fontWeight: 600 };
                       return (
                         <tr key={row.entry.code} className="is-clickable" onClick={() => toggleSection(row.rootCode)}>
                           <td className="is-center" style={cell}>{isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</td>
@@ -402,7 +402,7 @@ const HeadOpeningBalance: React.FC = () => {
                       <tr key={e.code}>
                         <td className="is-muted is-center">{leafCounter}</td>
                         <td>
-                          <span style={{ color: tone, fontWeight: 700, marginRight: 8 }}>{e.code}</span>
+                          <span style={{ color: tone, fontWeight: 600, marginRight: 8 }}>{e.code}</span>
                           <span style={e.edited ? { color: 'var(--aw-warning)' } : undefined}>{e.headName}</span>
                           {e.edited && <span style={{ color: 'var(--aw-warning)', marginLeft: 4 }}>*</span>}
                         </td>
@@ -412,7 +412,7 @@ const HeadOpeningBalance: React.FC = () => {
                             step="0.01"
                             aria-label={t('Opening balance {{1}}', { 1: e.code })}
                             className="aw-input is-right"
-                            style={e.edited ? { color: 'var(--aw-warning)', fontWeight: 700 } : { fontWeight: 600 }}
+                            style={e.edited ? { color: 'var(--aw-warning)', fontWeight: 600 } : { fontWeight: 600 }}
                             value={e.openingBal}
                             onChange={ev => handleBalChange(e.code, ev.target.value)}
                           />

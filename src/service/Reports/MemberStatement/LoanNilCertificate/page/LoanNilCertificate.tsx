@@ -90,7 +90,7 @@ const LoanNilCertificate: React.FC = () => {
 
   return (
     <ReportShell
-      className="loannil-page"
+      className="loannil-page aw-calm"
       title="Loan Nil Certificate"
       desc="No-objection certificate: no outstanding loan"
       actions={

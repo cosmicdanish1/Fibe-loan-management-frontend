@@ -305,7 +305,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
   });
 
   return (
-    <div className="app-window">
+    <div className="app-window aw-calm">
       {/* ── Header ── */}
       <div className="aw-header aw-ambient">
         <div className="min-w-0">
@@ -330,11 +330,11 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
             <RefreshCcw size={13} className={loading ? 'aw-spin' : ''} /> {t('Refresh')}
           </button>
           <button type="button" onClick={addRow} className="aw-btn aw-btn-secondary">
-            <Plus size={13} /> {t('Add Row')}
+            <Plus size={13} /> {t('Add row')}
           </button>
           <button type="button" onClick={handleSave} disabled={saving || loading || rows.length === 0} className="aw-btn aw-btn-primary">
             {saving ? <RefreshCcw size={13} className="aw-spin" /> : <Save size={13} />}
-            {t('Save Slabs')}
+            {t('Save slabs')}
           </button>
           <button type="button" onClick={handleClose} className="aw-btn aw-btn-ghost">
             <X size={13} /> {t('Close')}
@@ -351,11 +351,11 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
               <div className="aw-stat-value" style={{ fontSize: 'calc(var(--type-body-size) + 3px)' }}>{TYPE_LABELS[selectedType]}</div>
             </div>
             <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-info)' }}>
-              <div className="aw-stat-head"><Database size={14} /><span className="aw-stat-label">{t('Total Slabs')}</span></div>
+              <div className="aw-stat-head"><Database size={14} /><span className="aw-stat-label">{t('Total slabs')}</span></div>
               <div className="aw-stat-value">{totalRows}</div>
             </div>
             <div className="aw-stat aw-stat-left" style={{ ['--aw-tone' as any]: 'var(--aw-success)' }}>
-              <div className="aw-stat-head"><Percent size={14} /><span className="aw-stat-label">{t('Avg Rate')}</span></div>
+              <div className="aw-stat-head"><Percent size={14} /><span className="aw-stat-label">{t('Avg rate')}</span></div>
               <div className="aw-stat-value">{avgRate}{avgRate !== '—' ? '%' : ''}</div>
             </div>
           </div>
@@ -466,7 +466,7 @@ const DepositLoanSlab: React.FC<{ onClose?: () => void }> = () => {
       </div>
 
       <div className="aw-footer">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center' }}><i className="aw-status-dot" style={{ background: 'var(--aw-warning)' }} />{t('Unsaved changes')}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center' }}><i className="aw-status-dot" />{t('Saved')}</span>
         </span>

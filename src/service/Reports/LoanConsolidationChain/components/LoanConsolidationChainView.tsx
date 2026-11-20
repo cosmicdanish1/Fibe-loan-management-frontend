@@ -27,7 +27,7 @@ const LoanConsolidationChainView: React.FC<Props> = ({
 
     return (
         <ReportShell
-            className="lcc-root"
+            className="lcc-root aw-calm"
             title="Loan Consolidation Chain"
             desc="Full history of each loan settlement and successor loan in the consolidation chain"
             switcher={chain ? <ReportViewSwitcher enabled={enabled} value={view} onChange={setView} /> : null}
@@ -118,7 +118,7 @@ const LoanConsolidationChainView: React.FC<Props> = ({
                                         </div>
                                         <span className="aw-meta">Disbursed {fmtDate(link.disbursementDate)}</span>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                                         <div>
                                             <span className="aw-label">{i === 0 ? 'Original Sanctioned Amount' : 'Consolidated Loan Amount'}</span>
                                             <span className="aw-strong">₹{fmt(link.loanAmt)}</span>
