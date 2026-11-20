@@ -2,6 +2,23 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.12.0",
+      "date": "2026-11-20",
+      "title": "Early closure in Past Transaction, safer Import Demand List and a clearer Business Rules window",
+      "new": [
+        "Loan Early Closure is now sent to Past Transaction and posted when it is passed. A new option closes the loan on next month's outstanding for regular payers, and the closure waits until that EMI arrives.",
+        "Import Demand List reads the payroll Excel/CSV file as it comes, with a choice of Strict (any problem and nothing is saved) or Standard (bad rows are skipped), and every row is kept in an import log.",
+        "Modify Business Rules is organised into tabs with a search box, marks the settings you have changed but not saved, and shows settings the application does not use yet as locked.",
+        "RD/CD Repayment shows the member's summary and lets you enter the 12 monthly instalments in one grid.",
+        "Loan Re-agreement tells you when only one EMI is left."
+      ],
+      "improved": [
+        "Amount boxes accept only digits and up to two decimals, and typing in the demand grid is quick even with thousands of members.",
+        "Loan Repayment, Journal Transfer and Compulsory Deposit screens were refreshed."
+      ],
+      "fixed": []
+    },
+    {
       "version": "1.11.0",
       "date": "2026-11-15",
       "title": "Society Calculator and rules profiles",

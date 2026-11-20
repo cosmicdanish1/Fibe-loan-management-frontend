@@ -78,7 +78,7 @@ const buildReportText = (d: ColumnarLedger): string => {
   lines.push(`Member   :- [${d.memberNumber} ]${d.memberName}`);
   lines.push(DASH);
 
-  lines.push(rowLine('', center('SHARE ACCOUNT', GW), center('LONG TERM LOAN', GW), center('EMERGENCY LOAN', GW), center('COMPULSORY DEPOSIT', GW)));
+  lines.push(rowLine('', center('SHARE ACCOUNT', GW), center('LONG TERM LOAN', GW), center('EMERGENCY LOAN', GW), center('RD/CD', GW)));
   lines.push(rowLine('    Date', groupH('Dr.', 'Cr.', 'Bal.'), groupH('Dr.', 'Cr.', 'Bal.'), groupH('Dr.', 'Cr.', 'Bal.'), groupH('Dr.', 'Cr.', 'Bal.')));
   lines.push(rowLine('', groupH('Rs.', 'Rs.', 'Rs.'), groupH('Rs.', 'Rs.', 'Rs.'), groupH('Rs.', 'Rs.', 'Rs.'), groupH('Rs.', 'Rs.', 'Rs.')));
   lines.push(DASH);

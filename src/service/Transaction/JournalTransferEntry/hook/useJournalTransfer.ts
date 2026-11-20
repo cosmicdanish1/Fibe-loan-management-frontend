@@ -44,6 +44,7 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
     const [voucherList, setVoucherList] = useState<VoucherOption[]>([]);
     const [activeMember, setActiveMember] = useState<{ mbno: string; name: string }>({ mbno: '', name: '' });
     const [rawVoucherRows, setRawVoucherRows] = useState<any[]>([]);
+    const [viewingExisting, setViewingExisting] = useState(false);
     const savingRef = useRef(false); // in-flight guard for Save
 
     useEffect(() => { fetchHeadList(); fetchVoucherList(); fetchMemberList(); }, []);
@@ -94,6 +95,9 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
                 const seen = new Set<string>();
                 const vouchers: VoucherOption[] = [];
                 for (const item of items) {
+                    // This is the Journal screen: Receipt / Payment / loan vouchers are not journals and cannot be
+                    // shown here (they have their own windows), so only journal vouchers are offered.
+                    if (String(item.vchrType || '').toUpperCase() !== 'JOURNAL') continue;
                     if (!item.voucherNo || seen.has(item.voucherNo)) continue;
                     seen.add(item.voucherNo);
                     vouchers.push({
@@ -114,49 +118,64 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
         if (!voucherNo) {
             setData([]);
             setActiveMember({ mbno: '', name: '' });
+            setViewingExisting(false);
             return;
         }
 
-        // Use the already-loaded flat rows — no extra network call needed.
-        // The backend returns one flat row per transaction line under each voucher.
-        const matchingRows = rawVoucherRows.filter(r => r.voucherNo === voucherNo);
+        // The pending list returns ONE row per voucher with its lines in `breakdown` (head code, DR/CR, amount,
+        // account no., and the line's member). The old code looked for flat per-line rows (`head`, `transType`)
+        // that the API never sends, so a selected voucher always showed a single empty row.
+        const voucher = rawVoucherRows.find(r => r.voucherNo === voucherNo);
+        const lines: any[] = Array.isArray(voucher?.breakdown) ? voucher.breakdown : [];
+        const headerMbno = String(voucher?.memberNo || '');
+        const headerName = voucher?.memberName || '';
+        setActiveMember({ mbno: headerMbno, name: headerName });
 
-        // Member info is identical on every row for the same voucher
-        const mbno = String(matchingRows[0]?.memberNo || '');
-        const mName = matchingRows[0]?.memberName || '';
-        setActiveMember({ mbno, name: mName });
-
-        if (matchingRows.length > 0 && matchingRows[0].head) {
-            // Voucher already has transaction lines — populate grid from them
-            const rows: JournalEntry[] = matchingRows.map(r => ({
-                key: generateRowKey(),
-                mbno,
-                name: mName,
-                code: r.head || '',
-                accountName: '',
-                debit: r.transType === 'DR' ? String(r.amount || '') : '',
-                credit: r.transType === 'CR' ? String(r.amount || '') : '',
-                rdSdSrNo: '',
-                narration: r.narration || '',
-            }));
+        if (lines.length > 0) {
+            const nameFor = (m: string) => (m && m === headerMbno ? headerName : (memberList.find(x => x.mbno === m)?.name || ''));
+            const rows: JournalEntry[] = lines.map(l => {
+                const m = String(l.mbno || '');
+                const head = headList.find(h => h.code === l.code);
+                return {
+                    key: generateRowKey(),
+                    mbno: m,
+                    name: nameFor(m),
+                    code: l.code || '',
+                    accountName: head?.name || l.headName || '',
+                    debit: l.transType === 'DR' ? String(l.amount || '') : '',
+                    credit: l.transType === 'CR' ? String(l.amount || '') : '',
+                    rdSdSrNo: l.accNo && l.accNo !== '0' ? String(l.accNo) : '',
+                    narration: l.name || '',
+                };
+            });
             setData(rows);
             setFormData(prev => ({
                 ...prev,
-                narration: matchingRows[0]?.narration || 'Journal Transfer',
+                voucherNo,
+                transferType: rows.some(r => r.mbno) ? 'memberToMember' : 'headToHead',
+                narration: voucher?.narration || 'Journal Transfer Entry',
             }));
         } else {
-            // Voucher exists but has no transaction lines yet — one pre-filled empty row
-            setData([{ ...createEmptyRow(), mbno, name: mName }]);
+            setData([]);
         }
-    }, [rawVoucherRows]);
+        setViewingExisting(true);
+    }, [rawVoucherRows, headList, memberList]);
 
     // Totals count only positive amounts - exactly the rows that get posted - so a negative cell can never
     // make an unbalanced voucher look balanced.
-    const totalDebit = useMemo(() => data.reduce((sum, r) => { const v = parseFloat(r.debit as string); return v > 0 ? sum + v : sum; }, 0), [data]);
-    const totalCredit = useMemo(() => data.reduce((sum, r) => { const v = parseFloat(r.credit as string); return v > 0 ? sum + v : sum; }, 0), [data]);
+    // Summed in whole paise so 0.1 + 0.2 style float drift can never show a wrong total or a false "Balanced".
+    const sumPaise = (col: 'debit' | 'credit') => data.reduce((sum, r) => { const v = parseFloat(r[col] as string); return v > 0 ? sum + Math.round(v * 100) : sum; }, 0) / 100;
+    const totalDebit = useMemo(() => sumPaise('debit'), [data]);
+    const totalCredit = useMemo(() => sumPaise('credit'), [data]);
 
     const updateField = useCallback((field: keyof JournalTransferData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        // Head-to-Head hides the member columns, so a member number left on a row from Member-to-Member (or from a
+        // loaded voucher) would still be saved even though the user can no longer see it.
+        if (field === 'transferType' && value === 'headToHead') {
+            setData(prev => prev.map(r => ({ ...r, mbno: '', name: '' })));
+            setActiveMember({ mbno: '', name: '' });
+        }
     }, []);
 
     const addRow = useCallback(() => {
@@ -189,6 +208,24 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
 
     const handleSave = async () => {
         if (savingRef.current) return;
+        if (viewingExisting) {
+            // Save always creates a NEW voucher. An already-saved one is approved or rejected in Pass Transactions.
+            await showDialog('warning', 'electron-react-ts', t('Voucher already saved'),
+                t('Voucher {{1}} is already saved and waiting in Pass Transactions. Click Clear to enter a new journal.', { 1: formData.voucherNo }));
+            return;
+        }
+        const hasTooManyDecimals = data.some(r => [r.debit, r.credit].some(v => {
+            const n = parseFloat(String(v ?? '').trim());
+            return n > 0 && Math.abs(n * 100 - Math.round(n * 100)) > 1e-6;
+        }));
+        if (hasTooManyDecimals) {
+            await showDialog('warning', 'electron-react-ts', t('Invalid Amount'), t('Debit and Credit amounts can have at most 2 decimal places.'));
+            return;
+        }
+        if (data.some(r => String(r.rdSdSrNo ?? '').trim() !== '' && !/^\d{1,15}$/.test(String(r.rdSdSrNo).trim()))) {
+            await showDialog('warning', 'electron-react-ts', t('Invalid Reference'), t('RD / SD Sr No must be a number (digits only).'));
+            return;
+        }
         const hasBadAmount = data.some(r => {
             const d = String(r.debit ?? '').trim();
             const c = String(r.credit ?? '').trim();
@@ -198,7 +235,7 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
             await showDialog('warning', 'electron-react-ts', t('Invalid Amount'), t('Debit and Credit amounts cannot be negative or non-numeric. Please correct the highlighted rows.'));
             return;
         }
-        if (Math.abs(totalDebit - totalCredit) > 0.01) {
+        if (Math.round(totalDebit * 100) !== Math.round(totalCredit * 100)) {
             await showDialog('error', 'electron-react-ts', t('Debit - Credit is not equal'),
                 t('Total Debit: ₹{{1}} Total Credit: ₹{{2}} Difference: ₹{{3}}', { 1: totalDebit.toFixed(2), 2: totalCredit.toFixed(2), 3: Math.abs(totalDebit - totalCredit).toFixed(2) }));
             return;
@@ -221,9 +258,10 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
         }
 
         if (formData.transferType === 'memberToMember') {
-            const rowsWithoutMember = validRows.filter(r => !r.mbno?.trim());
-            if (rowsWithoutMember.length > 0) {
-                await showDialog('warning', 'electron-react-ts', t('Member No Missing'), t('All rows must have a Member No for Member-to-Member transfers.'));
+            // The member goes on the row that adjusts the member's account (e.g. the loan head); the counter row
+            // (e.g. Cash in Hand) has no member. So one member row is enough.
+            if (!validRows.some(r => r.mbno?.trim())) {
+                await showDialog('warning', 'electron-react-ts', t('Member No Missing'), t('At least one row must have a Member No for Member-to-Member transfers.'));
                 return;
             }
         }
@@ -240,7 +278,8 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
                 narration: formData.narration,
                 chequeNo: formData.chequeNo,
                 rows: validRows.map(r => ({
-                    mbno: r.mbno ? parseInt(r.mbno) : undefined,
+                    // member columns exist only in Member-to-Member mode
+                    mbno: formData.transferType === 'memberToMember' && r.mbno ? parseInt(r.mbno) : undefined,
                     code: r.code,
                     debit: parseFloat(r.debit as string) || 0,
                     credit: parseFloat(r.credit as string) || 0,
@@ -268,6 +307,7 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
         setFormData({ voucherNo: '', transferType: 'headToHead', narration: 'Journal Transfer Entry', chequeNo: '' });
         setData([]);
         setActiveMember({ mbno: '', name: '' });
+        setViewingExisting(false);
     }, []);
 
     const handleExit = useCallback(() => {
@@ -276,7 +316,7 @@ export const useJournalTransfer = (): JournalTransferHookReturn => {
     }, []);
 
     return {
-        formData, totalDebit, totalCredit, data, isLoading, voucherList, headList, memberList,
+        formData, totalDebit, totalCredit, data, isLoading, voucherList, viewingExisting, headList, memberList,
         updateField, updateRow, addRow, removeRow, handleVoucherSelect,
         handleSave, handleReset, handleExit,
     };

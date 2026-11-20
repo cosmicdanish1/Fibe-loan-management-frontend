@@ -42,6 +42,8 @@ export interface GeneralSettings {
   autoDayEndCloseEnabled: boolean;
   /** Global on/off control for tiered penalties across all active loans. */
   tieredLoanPenaltiesEnabled: boolean;
+  /** ES-591: Import Demand List. STRICT = any problem in the file and nothing is saved; STANDARD = bad rows are skipped. */
+  demandImportStrictness: 'STRICT' | 'STANDARD';
 }
 
 /**
@@ -292,6 +294,8 @@ export const initialData: BusinessRulesData = {
     // they've finished entering that day's vouchers. Admin-only toggle.
     autoDayEndCloseEnabled: false,
     tieredLoanPenaltiesEnabled: false,
+    // when the rule is missing the backend also uses STRICT: when in doubt nothing is saved
+    demandImportStrictness: 'STRICT',
   },
   fundManagement: {
     fundInterestRate: 0,
@@ -484,6 +488,7 @@ export const useBusinessRules = () => {
             profitHead: str(d.SYS_PROFIT_HEAD, def.generalSettings.profitHead),
             autoDayEndCloseEnabled: bool(d.SYS_DAYEND_AUTO_CLOSE, def.generalSettings.autoDayEndCloseEnabled),
             tieredLoanPenaltiesEnabled: bool(d.RULE_TIERED_LOAN_PENALTY_ENABLED, def.generalSettings.tieredLoanPenaltiesEnabled),
+            demandImportStrictness: String(d.RULE_DEMAND_IMPORT_STRICTNESS ?? '').trim().toUpperCase() === 'STANDARD' ? 'STANDARD' : 'STRICT',
           },
           fundManagement: {
             fundInterestRate: num(d.RULE_FUND_INT_RATE, def.fundManagement.fundInterestRate),
@@ -642,6 +647,7 @@ export const useBusinessRules = () => {
         SYS_PROFIT_HEAD: currentData.generalSettings.profitHead,
         SYS_DAYEND_AUTO_CLOSE: currentData.generalSettings.autoDayEndCloseEnabled,
         RULE_TIERED_LOAN_PENALTY_ENABLED: currentData.generalSettings.tieredLoanPenaltiesEnabled,
+        RULE_DEMAND_IMPORT_STRICTNESS: currentData.generalSettings.demandImportStrictness,
         // Reducing balance is the single supported loan-interest method.
         RULE_LOAN_INTEREST_METHOD: 'REDUCING_BALANCE',
 

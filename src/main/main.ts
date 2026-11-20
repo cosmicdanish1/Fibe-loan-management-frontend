@@ -773,9 +773,9 @@ const WINDOW_CONFIGS: Record<string, {
 
   // Member Statement Reports
   '/reports/member-statement/saving-statement': { title: 'Saving Statement', frameless: false, width: 1000, height: 750 },
-  '/reports/member-statement/rd-statement': { title: 'RD Statement', frameless: false, width: 1000, height: 750 },
+  '/reports/member-statement/rd-statement': { title: 'RD/CD Statement', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/member-statement': { title: 'Member Statement', frameless: false, width: 1000, height: 750 },
-  '/reports/member-statement/rd-statement-new': { title: 'RD Statement New', frameless: false, width: 1000, height: 750 },
+  '/reports/member-statement/rd-statement-new': { title: 'RD/CD Statement New', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/new-share-certificate': { title: 'New Share Certificate', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/interest-certificate': { title: 'Interest Certificate', frameless: false, width: 1000, height: 750 },
   '/reports/member-statement/loan-nil-certificate': { title: 'Loan Nil Certificate', frameless: false, width: 1000, height: 750 },
@@ -786,8 +786,9 @@ const WINDOW_CONFIGS: Record<string, {
   '/masters/member-master': { title: 'Member Master', frameless: false, width: 1200, height: 850 },
   '/masters/member-status': { title: 'Member Status (Retired / Inactive)', frameless: false, width: 1180, height: 780, resizable: true, singleton: true },
   '/masters/signature-scanning': { title: 'Signature Scanning', frameless: false, width: 1000, height: 700 },
-  '/masters/rd-account/opening': { title: 'RD A/c Opening', frameless: false, width: 1000, height: 750 },
-  '/masters/rd-account/pass': { title: 'Pass RD A/C', frameless: false, width: 900, height: 650 },
+  '/masters/rd-account/opening': { title: 'RD/CD A/c Opening', frameless: false, width: 1000, height: 750 },
+  '/masters/rd-account/pass': { title: 'Pass RD/CD A/C', frameless: false, width: 900, height: 650 },
+  '/masters/rd-repayment': { title: 'RD/CD Repayment', frameless: false, width: 1180, height: 800 },
   '/masters/saving-account-opening': { title: 'Saving A/c Opening', frameless: false, width: 1000, height: 750 },
   '/masters/wing-office': { title: 'Wing / Office Master', frameless: false, width: 800, height: 600 },
   '/masters/modify-member-balance': { title: 'Modify Member Balance', frameless: false, width: 800, height: 600 },
@@ -811,7 +812,7 @@ const WINDOW_CONFIGS: Record<string, {
   '/transaction/loan-repayment': { title: 'Loan Repayment', frameless: false, width: 1100, height: 750 },
   '/transaction/loan-sanction': { title: 'Loan Sanction', frameless: false, width: 1200, height: 800 },
   '/loan-sanction': { title: 'Loan Sanction', frameless: false, width: 1200, height: 800 },
-  '/transaction/compulsory-deposit': { title: 'Compulsory Deposit Transaction', frameless: false, width: 1000, height: 750 },
+  '/transaction/compulsory-deposit': { title: 'RD/CD Transaction', frameless: false, width: 1000, height: 750 },
   '/transaction/pass-transactions': { title: 'Pass Transactions', frameless: false, width: 1000, height: 750 },
 
   // Demand / Recovery List
@@ -873,8 +874,8 @@ const WINDOW_CONFIGS: Record<string, {
 
   // Member Statement Sub-Reports
   '/reports/yearly/member-statement/saving-statement': { title: 'Saving Statement', frameless: false, width: 1200, height: 850 },
-  '/reports/yearly/member-statement/rd-statement': { title: 'RD Statement', frameless: false, width: 1200, height: 850 },
-  '/reports/yearly/member-statement/rd-statement-new': { title: 'RD Statement New', frameless: false, width: 1200, height: 850 },
+  '/reports/yearly/member-statement/rd-statement': { title: 'RD/CD Statement', frameless: false, width: 1200, height: 850 },
+  '/reports/yearly/member-statement/rd-statement-new': { title: 'RD/CD Statement New', frameless: false, width: 1200, height: 850 },
   '/reports/yearly/member-statement/new-share-certificate': { title: 'New Share Certificate', frameless: false, width: 1000, height: 750 },
   '/reports/yearly/member-statement/interest-certificate': { title: 'Interest Certificate', frameless: false, width: 1000, height: 750 },
   '/reports/yearly/member-statement/loan-nil-certificate': { title: 'Loan Nil Certificate', frameless: false, width: 1000, height: 750 },
@@ -890,7 +891,7 @@ const WINDOW_CONFIGS: Record<string, {
   // ===== UTILITY SECTION =====
 
   // Premature Information
-  '/utility/premature-information/rd': { title: 'Premature Information For RD A/c', frameless: false, width: 900, height: 700 },
+  '/utility/premature-information/rd': { title: 'Premature Information For RD/CD A/c', frameless: false, width: 900, height: 700 },
   '/utility/premature-information/sb': { title: 'Premature Information For SB A/c', frameless: false, width: 900, height: 700 },
 
   // Utility Tools

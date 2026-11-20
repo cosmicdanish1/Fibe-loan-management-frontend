@@ -14,6 +14,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
     data,
     isLoading,
     voucherList,
+    viewingExisting,
     headList,
     updateField,
     updateRow,
@@ -29,7 +30,7 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
     const [lookupRowKey, setLookupRowKey] = useState<string | null>(null);
 
     const imbalance = totalDebit - totalCredit;
-    const isBalanced = Math.abs(imbalance) < 0.01;
+    const isBalanced = Math.round(totalDebit * 100) === Math.round(totalCredit * 100);
 
     const getMemberDisplayName = (member: any) => (
         member?.memberName ||
@@ -52,10 +53,10 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
     usePageToolbarActions({
         onSave: handleSave,
         saveLabel: 'Post',
-        saveEnabled: !(isLoading || !isBalanced || totalDebit <= 0),
+        saveEnabled: !(isLoading || viewingExisting || !isBalanced || totalDebit <= 0),
     });
 
-    const canPost = !(isLoading || !isBalanced || totalDebit <= 0);
+    const canPost = !(isLoading || viewingExisting || !isBalanced || totalDebit <= 0);
     const closeLookup = () => { setShowLookupModal(false); setLookupRowKey(null); };
 
     return (
@@ -115,6 +116,11 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                                 </span>
                             </div>
                         </div>
+                        {viewingExisting && (
+                            <p className="aw-meta" role="status" style={{ margin: '4px 0' }}>
+                                {t('This voucher is already saved and waiting in Pass Transactions. It is shown for review only. Click Clear to enter a new journal.')}
+                            </p>
+                        )}
                         <div>
                             <span className="aw-label">{t('Transfer Type')}</span>
                             <div className="aw-seg" role="tablist" style={{ maxWidth: 480, ['--seg-index' as any]: formData.transferType === 'memberToMember' ? 1 : 0, ['--seg-count' as any]: 2 }}>
@@ -224,13 +230,13 @@ const JournalTransferForm: React.FC<JournalTransferHookReturn> = ({
                         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 1fr) 220px', gap: 'var(--aw-gap)', alignItems: 'start' }}>
                             <div>
                                 <label className="aw-label" htmlFor="jt-narr">{t('Narration')}</label>
-                                <textarea id="jt-narr" value={formData.narration} onChange={e => updateField('narration', e.target.value)}
+                                <textarea id="jt-narr" maxLength={100} value={formData.narration} onChange={e => updateField('narration', e.target.value)}
                                     placeholder={t('Enter narration…')} rows={2}
                                     className="aw-input" style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
                             </div>
                             <div>
                                 <label className="aw-label" htmlFor="jt-cheque">{t('Cheque No.')}</label>
-                                <input id="jt-cheque" value={formData.chequeNo} onChange={e => updateField('chequeNo', e.target.value)}
+                                <input id="jt-cheque" maxLength={10} value={formData.chequeNo} onChange={e => updateField('chequeNo', e.target.value)}
                                     placeholder={t('Cheque no...')} className="aw-input" style={{ fontFamily: 'monospace' }} />
                             </div>
                         </div>

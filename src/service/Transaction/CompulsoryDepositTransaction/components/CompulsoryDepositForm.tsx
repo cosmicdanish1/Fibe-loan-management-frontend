@@ -6,6 +6,49 @@ import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * ES-514: an amount typed into a box. Digits and one decimal point only, at most 2 decimals and 9 whole digits
+ * (up to 99 crore), so words, minus signs and 11-digit numbers cannot be entered.
+ */
+const cleanAmount = (raw: string): string => {
+    let s = raw.replace(/[^0-9.]/g, '');
+    const dot = s.indexOf('.');
+    if (dot >= 0) s = s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, '');
+    const [whole, frac] = s.split('.');
+    const w = (whole ?? '').slice(0, 9);
+    return frac !== undefined ? `${w}.${frac.slice(0, 2)}` : w;
+};
+
+interface MemberRowProps {
+    memberNo: number;
+    memberName: string;
+    currentBalance: number;
+    postAmount: string | number;
+    onChange: (memberNo: number, amount: string) => void;
+}
+
+/**
+ * ES-514: one grid row. Memoised, so typing in one member's box redraws only that row - not all ~7,500 (before, each
+ * keystroke redrew every row and took over a second).
+ */
+const MemberRow = React.memo(({ memberNo, memberName, currentBalance, postAmount, onChange }: MemberRowProps) => {
+    // translated here, not in the parent: the parent would otherwise run it for every row on every keystroke
+    const { t } = useTranslation();
+    const ariaLabel = t('Post amount for member {{1}}', { 1: memberNo });
+    return (
+    <tr>
+        <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{memberNo}</td>
+        <td title={memberName}>{memberName}</td>
+        <td className="is-right is-success">₹{Number(currentBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        <td className="has-input">
+            <input aria-label={ariaLabel} value={postAmount} inputMode="decimal" maxLength={12}
+                onChange={e => onChange(memberNo, cleanAmount(e.target.value))}
+                placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
+        </td>
+    </tr>
+    );
+});
+
 const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
     formData,
     members,
@@ -34,7 +77,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">{t('Compulsory Deposit Transaction')}</h1>
+                    <h1 className="aw-title">{t('RD/CD Transaction')}</h1>
                     <p className="aw-desc">{t('Bulk CD Posting')}</p>
                 </div>
                 <div className="aw-actions">
@@ -63,7 +106,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                                 <label className="aw-label" htmlFor="cd-amount">{t('Amount (₹)')} <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
                                 <div className="aw-input-wrap has-icon">
                                     <IndianRupee size={13} />
-                                    <input id="cd-amount" value={formData.amount} onChange={e => updateField('amount', e.target.value)}
+                                    <input id="cd-amount" value={formData.amount} inputMode="decimal" maxLength={12} onChange={e => updateField('amount', cleanAmount(e.target.value))}
                                         placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
                                 </div>
                             </div>
@@ -111,16 +154,9 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                                     ) : members.length === 0 ? (
                                         <tr><td colSpan={4}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">{t('No active members found')}</span></div></td></tr>
                                     ) : members.map((m, idx) => (
-                                        <tr key={`${m.memberNo}-${idx}`}>
-                                            <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{m.memberNo}</td>
-                                            <td title={m.memberName}>{m.memberName}</td>
-                                            <td className="is-right is-success">₹{Number(m.currentBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                                            <td className="has-input">
-                                                <input aria-label={t('Post amount for member {{1}}', { 1: m.memberNo })} value={m.postAmount}
-                                                    onChange={e => updateMemberAmount(m.memberNo, e.target.value)}
-                                                    placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 700 }} />
-                                            </td>
-                                        </tr>
+                                        <MemberRow key={`${m.memberNo}-${idx}`}
+                                            memberNo={m.memberNo} memberName={m.memberName} currentBalance={m.currentBalance}
+                                            postAmount={m.postAmount} onChange={updateMemberAmount} />
                                     ))}
                                 </tbody>
                             </table>
@@ -130,7 +166,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
             </div>
 
             <div className="aw-footer">
-                <span>{t('Compulsory Deposit Transaction')}{formData.amount && <> · <strong style={{ color: 'var(--aw-accent)' }}>{t('Amount: ₹{{1}}', { 1: formData.amount })}</strong></>}</span>
+                <span>{t('RD/CD Transaction')}{formData.amount && <> · <strong style={{ color: 'var(--aw-accent)' }}>{t('Amount: ₹{{1}}', { 1: formData.amount })}</strong></>}</span>
                 <span>{dayjs().format('DD-MMM-YY')}</span>
             </div>
         </div>

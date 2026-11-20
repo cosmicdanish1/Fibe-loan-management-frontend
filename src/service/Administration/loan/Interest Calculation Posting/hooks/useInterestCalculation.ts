@@ -89,6 +89,9 @@ export const useInterestCalculation = () => {
       accountType: formData.accountType,
       narration: `Interest posting for ${formData.accountType} — ${formData.fromDate} to ${formData.toDate}`,
     };
+    if (formData.calcInterestFor === 'yearly_fund_process' && Number(formData.insuranceLumpSum) > 0) {
+      payload.insuranceLumpSum = Number(formData.insuranceLumpSum);
+    }
     if (formData.calcInterestFor === 'specific_member' && formData.memberNo) {
       payload.memberNo = formData.memberNo;
     }

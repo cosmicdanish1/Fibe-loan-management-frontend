@@ -86,7 +86,7 @@ export const DepositsTab: React.FC<TabProps> = () => (
   <SubTabs items={[
     { id: 'sb', label: 'Savings (SB)', node: <FormCalc kind="sb-interest" title="Savings Bank interest" sections={sbSections} waiting="Enter the balance, rate and period." /> },
     { id: 'fd', label: 'Fixed Deposit (FD)', node: <FormCalc kind="fd-interest" title="Fixed Deposit interest" sections={fdSections} waiting="Enter the FD amount, rate and dates." /> },
-    { id: 'rd', label: 'Recurring Deposit (RD)', node: <FormCalc kind="rd-interest" title="RD financial-year interest" sections={rdSections} waiting="Enter the monthly amount and the financial year." /> },
+    { id: 'rd', label: 'RD/CD', node: <FormCalc kind="rd-interest" title="RD financial-year interest" sections={rdSections} waiting="Enter the monthly amount and the financial year." /> },
   ]} />
 );
 

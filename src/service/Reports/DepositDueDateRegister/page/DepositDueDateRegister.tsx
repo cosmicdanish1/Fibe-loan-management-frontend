@@ -31,7 +31,7 @@ const fmtDate = (d?: string) => (d ? dayjs(d).format('DD-MMM-YY') : '---');
 const DEPOSIT_TYPES = [
   { value: 'ALL',               label: 'ALL (Both Types)' },
   { value: 'Fixed Deposit',     label: 'SPECIAL DEPOSIT (FD)' },
-  { value: 'Recurring Deposit', label: 'RECURRING DEPOSIT (RD)' },
+  { value: 'Recurring Deposit', label: 'RD/CD' },
 ];
 
 const SOCIETY = {

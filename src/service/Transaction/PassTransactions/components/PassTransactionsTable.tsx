@@ -24,6 +24,8 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
   const { t } = useTranslation();
     const [searchText, setSearchText] = useState('');
     const [detail, setDetail] = useState<any | null>(null);
+    // ES-512: the lines of any voucher (what Pass will post), for the approver
+    const [linesOf, setLinesOf] = useState<any | null>(null);
 
     const filteredData = transactionData.filter(item =>
         item.voucherNo.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -132,7 +134,7 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                                                 {span > 0 && <td rowSpan={span} style={{ fontFamily: 'monospace', fontWeight: 700 }}>{record.memberNo}</td>}
                                                 {span > 0 && <td rowSpan={span} style={{ fontWeight: 700, textTransform: 'uppercase' }} title={record.memberName}>{record.memberName}</td>}
                                                 <td className="is-center">{record.noOfAcc}</td>
-                                                <td className="is-accent" style={{ fontWeight: 700 }}>{record.kind === 'REAGREEMENT' ? <span className="aw-pill tone-warning">RE-AGREEMENT</span> : record.head}</td>
+                                                <td className="is-accent" style={{ fontWeight: 700 }}>{record.kind === 'REAGREEMENT' && <span className="aw-pill tone-warning" style={{ marginRight: 6 }}>RE-AGREEMENT</span>}{record.head}</td>
                                                 <td className={record.transType === 'CR' ? 'is-success' : 'is-danger'} style={{ fontWeight: 700 }}>{record.transType}</td>
                                                 <td className="is-right" style={{ fontWeight: 700 }}>{money(record.amount)}</td>
                                                 <td className="is-center">{record.vchrType || 'P'}</td>
@@ -145,11 +147,9 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                                                 {span > 0 && (
                                                     <td rowSpan={span} className="is-center">
                                                         <div className="aw-btn-row" style={{ justifyContent: 'center' }}>
-                                                            {record.kind === 'REAGREEMENT' && (
-                                                                <button type="button" onClick={() => setDetail(record)} className="aw-btn aw-btn-secondary aw-btn-sm">
-                                                                    <Eye size={12} /> {t('Details')}
-                                                                </button>
-                                                            )}
+                                                            <button type="button" onClick={() => (record.kind === 'REAGREEMENT' ? setDetail(record) : setLinesOf(record))} className="aw-btn aw-btn-secondary aw-btn-sm">
+                                                                <Eye size={12} /> {t('Details')}
+                                                            </button>
                                                             <button type="button" onClick={() => handleDelete(record.voucherNo)} disabled={busyVouchers.includes(record.voucherNo)} className="aw-btn aw-btn-danger aw-btn-sm">
                                                                 <Trash2 size={12} /> {t('Reject')}
                                                             </button>
@@ -199,6 +199,44 @@ const PassTransactionsTable: React.FC<PassTransactionsHookReturn> = ({
                         <div><span className="aw-meta">{t('Draft agreement for signing:')}</span> <ReagreementDocumentActions id={r.id} draft baseName={r.reagreementNo} /></div>
                     </div>
                 ); })()}
+            </AwDialog>
+
+            <AwDialog open={!!linesOf} title={t('Voucher {{1}}', { 1: linesOf?.voucherNo || '' })} icon={<FileText size={14} />} onClose={() => setLinesOf(null)} maxWidth="48rem">
+                {linesOf && (
+                    <div className="aw-stack">
+                        <p className="aw-meta">
+                            {linesOf.vchrType} · {t('Member')} {linesOf.memberNo || '—'} {linesOf.memberName ? `(${linesOf.memberName})` : ''}
+                            {linesOf.loanCaseNo ? ` · case #${linesOf.loanCaseNo}` : ''} · {linesOf.paymentMode === 'bank' ? t('Bank') : t('Cash')}
+                        </p>
+                        {linesOf.narration && <p className="aw-meta">{linesOf.narration}</p>}
+                        <div className="aw-table-wrap"><table className="aw-table">
+                            <thead><tr>
+                                <th>#</th><th>{t('Tr. No.')}</th><th>{t('Head')}</th><th>{t('Trans Type')}</th>
+                                <th>{t('Acc')}</th><th>{t('Narration')}</th><th className="is-right">{t('Amount')}</th>
+                            </tr></thead>
+                            <tbody>
+                                {(linesOf.breakdown || []).map((l: any, i: number) => {
+                                    const cr = ['CR', 'DR'].includes(String(l.transType || '').toUpperCase()) ? String(l.transType).toUpperCase() === 'CR' : l.rp === 'R';
+                                    return (
+                                        <tr key={i}>
+                                            <td className="is-muted">{l.srNo}</td>
+                                            <td className="is-muted" style={{ fontFamily: 'monospace' }}>{l.trNo || '—'}</td>
+                                            <td className="is-accent" style={{ fontWeight: 700 }}>{[l.code, l.headName].filter(Boolean).join(' - ') || '—'}</td>
+                                            <td className={cr ? 'is-success' : 'is-danger'} style={{ fontWeight: 700 }}>{cr ? 'CR' : 'DR'}</td>
+                                            <td className="is-muted">{[l.accType, l.accNo].filter(Boolean).join(' ') || '—'}</td>
+                                            <td className="is-muted">{l.name || '—'}</td>
+                                            <td className="is-right" style={{ fontWeight: 700 }}>{money(Number(l.amount) || 0)}</td>
+                                        </tr>
+                                    );
+                                })}
+                                {(!linesOf.breakdown || linesOf.breakdown.length === 0) && (
+                                    <tr><td colSpan={7} className="is-muted" style={{ textAlign: 'center' }}>{t('This voucher has no posting lines yet.')}</td></tr>
+                                )}
+                            </tbody>
+                        </table></div>
+                        <p className="aw-strong" style={{ textAlign: 'right' }}>{t('Voucher total')}: {money(Number(linesOf.voucherAmount ?? 0))}</p>
+                    </div>
+                )}
             </AwDialog>
 
             <AwDialog open={!!reagreementResult} title={t('Re-agreement passed')} icon={<CheckCircle2 size={14} />} onClose={clearReagreementResult} maxWidth="40rem">

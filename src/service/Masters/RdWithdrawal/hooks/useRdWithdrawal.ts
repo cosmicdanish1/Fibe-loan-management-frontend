@@ -17,6 +17,7 @@ export const useRdWithdrawal = () => {
     const [yearLabel, setYearLabel] = useState('');
     const [balance, setBalance] = useState<number | null>(null);
     const [maxWithdrawable, setMaxWithdrawable] = useState<number | null>(null);
+    const [lockedAmount, setLockedAmount] = useState<number>(0);
     const [amount, setAmount] = useState<number>(0);
     const [narration, setNarration] = useState('Withdrawal');
     const [timeline, setTimeline] = useState<RdBalanceEventRow[]>([]);
@@ -50,6 +51,7 @@ export const useRdWithdrawal = () => {
             // never leave the previous member's balance/timeline under the new member
             setBalance(null);
             setMaxWithdrawable(null);
+            setLockedAmount(0);
             setTimeline([]);
             setAmount(0);
         }
@@ -67,12 +69,14 @@ export const useRdWithdrawal = () => {
             if (!bal.success) {
                 setBalance(null);
                 setMaxWithdrawable(null);
+            setLockedAmount(0);
                 setTimeline([]);
                 setAmount(0);
                 setMessage({ type: 'error', text: bal.message || 'Failed to load the RD balance.' });
                 return;
             }
-            setBalance(bal.data?.balance ?? 0);
+            setBalance(bal.data?.totalHoldings ?? bal.data?.balance ?? 0); // the one RD/CD balance (not the interest timeline)
+            setLockedAmount(bal.data?.lockedAmount ?? 0);
             setMaxWithdrawable(bal.data?.maxWithdrawable ?? 0);
             setTimeline(tl.success && Array.isArray(tl.data) ? tl.data : []);
             setAmount(0);
@@ -80,6 +84,7 @@ export const useRdWithdrawal = () => {
             if (seq !== loadSeq.current) return;
             setBalance(null);
             setMaxWithdrawable(null);
+            setLockedAmount(0);
             setTimeline([]);
             setAmount(0);
             setMessage({ type: 'error', text: err?.message || 'Failed to load the RD balance.' });
@@ -112,7 +117,7 @@ export const useRdWithdrawal = () => {
 
     return {
         mbno, memberName, yearLabel,
-        balance, maxWithdrawable, amount, setAmount, narration, setNarration,
+        balance, maxWithdrawable, lockedAmount, amount, setAmount, narration, setNarration,
         timeline, loading, saving, message,
         loadFinancialYear, loadMember, withdraw,
     };

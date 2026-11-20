@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { getApiBaseUrl } from '../../../../services/serverConfig';
 
 export interface ActiveLoan {
@@ -19,6 +19,10 @@ export interface UnpaidInstallment {
     monthsOverdue: number;
     /** 0 = within grace, no penal yet. 1 = same-month late fee. 2 = monthly-step penal. */
     tier: 0 | 1 | 2;
+    /** Full contracted EMI of this installment (principal + interest). What is still owed is in the *Due fields. */
+    emiAmount: number;
+    principalPaid: number;
+    interestPaid: number;
 }
 
 export interface EmiBreakdown {
@@ -37,6 +41,7 @@ export interface DueStatus {
     loanCaseNo: string;
     oldestUnpaidInstallment: number | null;
     unpaidInstallments: UnpaidInstallment[];
+    totalEmi: number;
     totalPrincipalDue: number;
     totalInterestDue: number;
     totalPenalDue: number;
@@ -47,6 +52,33 @@ export interface DueStatus {
     paidInstallments: number;
     /** How the constant EMI itself was built — purely informational. */
     emiBreakdown: EmiBreakdown;
+}
+
+/** What the backend will post for an amount (frozen into the voucher when it is raised). */
+export interface RepaymentPlanRow {
+    installmentNo: number;
+    month: number;
+    year: number;
+    amount: number;
+    principal: number;
+    interest: number;
+    penal: number;
+    monthsOverdue: number;
+    tier: number;
+}
+
+export interface RepaymentPlan {
+    amount: number;
+    principal: number;
+    interest: number;
+    penal: number;
+    dueTotal: number;
+    rows: RepaymentPlanRow[];
+}
+
+export interface PendingRepayment {
+    voucher_no: string;
+    amount: number | string;
 }
 
 export interface RepaymentForm {
@@ -77,18 +109,29 @@ export const useLoanRepayment = () => {
     const [historyLoading, setHistoryLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [flagNotice, setFlagNotice] = useState<string | null>(null);
-    // ES-551: shown when this payment brought in more than was due
-    const [excessNotice, setExcessNotice] = useState<string | null>(null);
+    // ES-558: how the typed amount will be applied (from the server), and the voucher waiting in Past Transaction
+    const [plan, setPlan] = useState<RepaymentPlan | null>(null);
+    const [planError, setPlanError] = useState<string | null>(null);
+    const [pendingRepayment, setPendingRepayment] = useState<PendingRepayment | null>(null);
+    const [sentVoucher, setSentVoucher] = useState<{ voucherNo: string; amount: number } | null>(null);
 
     // Request-sequence guards: only the latest lookup of each kind may write state
     const loansSeq = useRef(0);
     const historySeq = useRef(0);
     const dueSeq = useRef(0);
+    const planSeq = useRef(0);
     const submitting = useRef(false);
 
     const updateForm = <K extends keyof RepaymentForm>(key: K, value: RepaymentForm[K]) => {
         setForm(prev => ({ ...prev, [key]: value }));
     };
+
+    const authHeaders = (): Record<string, string> => {
+        const token = localStorage.getItem('accessToken');
+        return token ? { Authorization: `Bearer ${token}` } : {};
+    };
+
+    const loanTypeOf = (loancaseno: string) => activeLoans.find(l => l.loancaseno === loancaseno)?.loantype;
 
     const fetchMemberLoans = useCallback(async (mbno: string) => {
         if (!mbno) return;
@@ -98,10 +141,7 @@ export const useLoanRepayment = () => {
         setFlagNotice(null);
         try {
             const base = await getApiBaseUrl();
-            const token = localStorage.getItem('accessToken');
-            const res = await fetch(`${base}/loans/member/${mbno}/master`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
+            const res = await fetch(`${base}/loans/member/${mbno}/master`, { headers: authHeaders() });
             if (!res.ok) throw new Error('Member not found or no active loans');
             const data = await res.json();
             if (seq !== loansSeq.current) return;
@@ -124,10 +164,7 @@ export const useLoanRepayment = () => {
         setHistoryLoading(true);
         try {
             const base = await getApiBaseUrl();
-            const token = localStorage.getItem('accessToken');
-            const res = await fetch(`${base}/loans/member/${mbno}/repayment-history`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
+            const res = await fetch(`${base}/loans/member/${mbno}/repayment-history`, { headers: authHeaders() });
             if (!res.ok) throw new Error('Failed to load repayment history');
             const data = await res.json();
             if (seq !== historySeq.current) return;
@@ -141,19 +178,14 @@ export const useLoanRepayment = () => {
         }
     }, []);
 
-    // Server always recovers the oldest unpaid installment first regardless of
-    // what's asked for, so the form shows what's actually due (with penal)
-    // instead of letting the operator pick an arbitrary month.
+    // What the loan owes right now (oldest unpaid first), from the same engine Early Closure uses.
     const fetchDueStatus = useCallback(async (loancaseno: string): Promise<DueStatus | null> => {
         if (!loancaseno) return null;
         const seq = ++dueSeq.current;
         setDueStatusLoading(true);
         try {
             const base = await getApiBaseUrl();
-            const token = localStorage.getItem('accessToken');
-            const res = await fetch(`${base}/loans/due-status/${loancaseno}`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
+            const res = await fetch(`${base}/loans/due-status/${loancaseno}`, { headers: authHeaders() });
             if (!res.ok) throw new Error('Failed to load due status');
             const data = await res.json();
             const status: DueStatus = data.data || data;
@@ -168,9 +200,28 @@ export const useLoanRepayment = () => {
         }
     }, []);
 
+    // A repayment already waiting in Past Transaction for this loan (only one pending voucher per loan is allowed)
+    const fetchPending = useCallback(async (mbno: string, loancaseno: string) => {
+        if (!mbno || !loancaseno) { setPendingRepayment(null); return; }
+        try {
+            const base = await getApiBaseUrl();
+            const res = await fetch(`${base}/loans/repayment/pending/${mbno}/${loancaseno}`, { headers: authHeaders() });
+            if (!res.ok) { setPendingRepayment(null); return; }
+            const data = await res.json();
+            const body = data.data || data;
+            setPendingRepayment(body?.pending ?? null);
+        } catch {
+            setPendingRepayment(null);
+        }
+    }, []);
+
     const handleMemberLookup = useCallback(async (mbno: string, memberName: string) => {
         setForm(prev => ({ ...prev, mbno, memberName, selectedLoanCase: '', paymentAmount: 0 }));
         setDueStatus(null);
+        setPlan(null);
+        setPlanError(null);
+        setPendingRepayment(null);
+        setSentVoucher(null);
         dueSeq.current++;
         await fetchMemberLoans(mbno);
         await fetchRepaymentHistory(mbno);
@@ -179,14 +230,57 @@ export const useLoanRepayment = () => {
 
     const handleLoanSelect = useCallback(async (loancaseno: string) => {
         setForm(prev => ({ ...prev, selectedLoanCase: loancaseno, paymentAmount: 0 }));
+        setPlan(null);
+        setPlanError(null);
+        setSentVoucher(null);
+        setMessage(null);
         const seq = dueSeq.current + 1; // the id fetchDueStatus is about to take
-        const status = await fetchDueStatus(loancaseno);
+        const [status] = await Promise.all([fetchDueStatus(loancaseno), fetchPending(form.mbno, loancaseno)]);
         if (seq !== dueSeq.current) return; // a newer selection superseded this one
-        // "Pay What's Due" (the default mode) means exactly that — 0 when
-        // nothing is overdue, not the next not-yet-due EMI. A member who is
-        // fully caught up shouldn't see a payable amount sitting in the box.
+        // Loan Repayment collects what is due: the amount starts at the full dues and can be lowered (Custom).
         setForm(prev => ({ ...prev, paymentAmount: status?.totalDue || 0 }));
-    }, [fetchDueStatus]);
+    }, [fetchDueStatus, fetchPending, form.mbno]);
+
+    // Ask the server how the amount will be applied. It also says when the amount is more than the dues.
+    useEffect(() => {
+        if (!form.mbno || !form.selectedLoanCase || !(form.paymentAmount > 0)) {
+            planSeq.current++;
+            setPlan(null);
+            setPlanError(null);
+            return;
+        }
+        const seq = ++planSeq.current;
+        const timer = setTimeout(async () => {
+            try {
+                const base = await getApiBaseUrl();
+                const res = await fetch(`${base}/loans/repayment/preview`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                    body: JSON.stringify({
+                        mbno: form.mbno, loancaseno: form.selectedLoanCase,
+                        loantype: loanTypeOf(form.selectedLoanCase), amount: form.paymentAmount,
+                    }),
+                });
+                const data = await res.json();
+                if (seq !== planSeq.current) return;
+                if (!res.ok) {
+                    setPlan(null);
+                    setPlanError(data.message || 'The amount could not be applied.');
+                    return;
+                }
+                const body = data.data || data;
+                setPlan(body.plan || null);
+                setPlanError(null);
+                setFlagNotice(body.flag?.message ?? null);
+            } catch (err: any) {
+                if (seq !== planSeq.current) return;
+                setPlan(null);
+                setPlanError(err?.message || 'The amount could not be checked.');
+            }
+        }, 350);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [form.mbno, form.selectedLoanCase, form.paymentAmount, dueStatus]);
 
     const handleSubmit = async () => {
         if (submitting.current) return;
@@ -194,47 +288,38 @@ export const useLoanRepayment = () => {
             setMessage({ type: 'error', text: 'Please fill all required fields.' });
             return;
         }
+        if (planError) {
+            setMessage({ type: 'error', text: planError });
+            return;
+        }
         submitting.current = true;
         setLoading(true);
         setMessage(null);
+        setSentVoucher(null);
         try {
             const base = await getApiBaseUrl();
-            const token = localStorage.getItem('accessToken');
-            const res = await fetch(`${base}/loans/repayment`, {
+            const res = await fetch(`${base}/loans/repayment/hold`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
                 body: JSON.stringify({
                     mbno: form.mbno,
                     loancaseno: form.selectedLoanCase,
-                    paymentAmount: form.paymentAmount,
+                    loantype: loanTypeOf(form.selectedLoanCase),
+                    amount: form.paymentAmount,
                     receiptNo: form.receiptNo,
                     narration: form.narration,
+                    paymentMode: 'CASH',
                 }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Repayment failed');
-            setMessage({ type: 'success', text: data.message });
-            const flag = data.flag ?? data.data?.flag;
-            setFlagNotice(flag?.message ?? null);
-            const ex = data.excess ?? data.data?.excess;
-            let excessText: string | null = null;
-            if (ex && Number(ex.excessAmount) > 0) {
-                const inr = (v: number) => `₹${Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
-                const inst: number[] = Array.isArray(ex.installments) ? ex.installments : [];
-                excessText =
-                    `${inr(ex.excessAmount)} came in above what was due. ${inr(ex.appliedAmount)} was applied toward future installment${inst.length === 1 ? '' : 's'}${inst.length ? ` (#${inst.join(', #')})` : ''}.`
-                    + (Number(ex.unappliedAmount) > 0.01 ? ` ${inr(ex.unappliedAmount)} was more than the loan needed and was NOT applied.` : '');
-            }
-            setExcessNotice(null);
-            // Refresh loans, due status and history after successful repayment
-            await fetchMemberLoans(form.mbno);
-            await fetchRepaymentHistory(form.mbno);
-            await fetchDueStatus(form.selectedLoanCase);
-            // set last: the refresh above clears the other notices
-            setExcessNotice(excessText);
+            const body = data.data || data;
+            setMessage({ type: 'success', text: body.message || data.message });
+            setSentVoucher({ voucherNo: body.voucherNo, amount: Number(body.amount ?? form.paymentAmount) });
+            setFlagNotice(body.flag?.message ?? null);
+            // Nothing is posted yet (it is posted when the voucher is passed), so the dues are unchanged; refresh the pending notice
+            await fetchPending(form.mbno, form.selectedLoanCase);
+            setForm(prev => ({ ...prev, receiptNo: '' }));
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
         } finally {
@@ -247,13 +332,17 @@ export const useLoanRepayment = () => {
         loansSeq.current++;
         historySeq.current++;
         dueSeq.current++;
+        planSeq.current++;
         setForm(defaultForm);
         setActiveLoans([]);
         setDueStatus(null);
         setRepaymentHistory([]);
         setMessage(null);
         setFlagNotice(null);
-        setExcessNotice(null);
+        setPlan(null);
+        setPlanError(null);
+        setPendingRepayment(null);
+        setSentVoucher(null);
     };
 
     return {
@@ -266,7 +355,10 @@ export const useLoanRepayment = () => {
         historyLoading,
         message,
         flagNotice,
-        excessNotice,
+        plan,
+        planError,
+        pendingRepayment,
+        sentVoucher,
         updateForm,
         handleMemberLookup,
         handleLoanSelect,

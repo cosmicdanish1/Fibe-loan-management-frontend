@@ -1492,7 +1492,7 @@ class ApiService {
     return this.request(`/rd/member-config/${mbno}/${yearcode}/history`);
   }
 
-  async getRdCurrentBalance(mbno: string, yearcode: number): Promise<ApiResponse<{ balance: number; maxWithdrawable: number }>> {
+  async getRdCurrentBalance(mbno: string, yearcode: number): Promise<ApiResponse<{ balance: number; totalHoldings: number; maxWithdrawable: number; lockedAmount: number }>> {
     return this.request(`/rd/balance/${mbno}/${yearcode}/current`);
   }
 
@@ -1500,7 +1500,7 @@ class ApiService {
     return this.request(`/rd/balance/${mbno}/${yearcode}/timeline`);
   }
 
-  async withdrawRd(mbno: string, yearcode: number, amount: number, narration?: string): Promise<ApiResponse<{ newBalance: number }>> {
+  async withdrawRd(mbno: string, yearcode: number, amount: number, narration?: string): Promise<ApiResponse<{ newBalance: number; voucherNo: string }>> {
     return this.request(`/rd/balance/${mbno}/${yearcode}/withdraw`, {
       method: 'POST',
       body: JSON.stringify({ amount, narration }),
@@ -1576,6 +1576,10 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ yearcode, creditedBy }),
     });
+  }
+
+  async getRdRepaymentSummary(mbno: string, yearcode: number): Promise<ApiResponse<any>> {
+    return this.request(`/rd/repayment/${mbno}/${yearcode}/summary`);
   }
 
   async getRdPendingInstallments(mbno: string, yearcode: number): Promise<ApiResponse<any[]>> {

@@ -203,12 +203,14 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     // Blank fields are omitted (backend does a partial update) - never silently sent as 0.
     // Only an explicitly typed number (including 0) is sent.
     const fieldMap: Array<[keyof MemberBalanceData, string]> = [
-      ['shareOpBal', 'sharesOpeningBalance'], ['shareAmt', 'sharesInstallment'],
-      ['mdOpBal', 'monthlyContributionOpeningBalance'], ['mdAmt', 'monthlyContributionInstallment'],
-      ['cdOpBal', 'compulsoryDepositOpeningBalance'], ['cdAmt', 'compulsoryDepositInstallment'],
+      // Opening balances are read-only (they are history, carried in from the legacy); only the installment amounts and the
+      // loan receipt / suspense figures are saved. A CD amount also updates the member's RD/CD monthly amount (RD/CD Member Setup).
+      ['shareAmt', 'sharesInstallment'],
+      ['mdAmt', 'monthlyContributionInstallment'],
+      ['cdAmt', 'compulsoryDepositInstallment'],
       ['lnExecRec', 'loanExecutionReceipt'], ['suspBal', 'suspenseBalance'],
-      ['rlnOpBal', 'rlnOpBal'], ['rlnAmt', 'rlnAmt'],
-      ['elnOpBal', 'elnOpBal'], ['elnAmt', 'elnAmt'],
+      ['rlnAmt', 'rlnAmt'],
+      ['elnAmt', 'elnAmt'],
     ];
     const payload: Record<string, number> = {};
     for (const [formKey, apiKey] of fieldMap) {

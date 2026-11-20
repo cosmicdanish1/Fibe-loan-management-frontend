@@ -74,7 +74,7 @@ const buildReportText = (
     centre('Avenue A,Sahakari Sadan,Sector-6, AT Post:Bhilai Nagar,Dist:DURG-490006'),
     'Reg No: A.R/DRG/1796'.padEnd(SEP_W - 'Tel No: 0788-2298736'.length) + 'Tel No: 0788-2298736',
     '',
-    centre('RECURRING DEPOSIT STATEMENT'),
+    centre('RD/CD STATEMENT'),
     '',
     `Member No :- ${memberNo}   Member Name :- ${memberName}`,
     `From Date :- ${dayjs(fromDate).format('DD-MMM-YYYY')}   To Date :- ${dayjs(toDate).format('DD-MMM-YYYY')}`,

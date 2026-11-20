@@ -41,7 +41,7 @@ const PERIOD_UNITS = [
 ];
 
 const TYPE_LABELS: Record<DepositType, string> = {
-  RD: 'Recurring Deposit',
+  RD: 'RD/CD',
   LN: 'Loan',
 };
 

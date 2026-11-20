@@ -124,7 +124,7 @@ const CertificateParameterSetting: React.FC = () => {
 
   const ACCOUNT_OPTIONS = [
     { value: 'FIXED_DEPOSIT', label: t('Fixed Deposit (FD)') },
-    { value: 'RECURRING_DEPOSIT', label: t('Recurring Deposit (RD)') },
+    { value: 'RECURRING_DEPOSIT', label: t('RD/CD') },
     { value: 'SHARE', label: t('Share Certificate') },
   ];
 

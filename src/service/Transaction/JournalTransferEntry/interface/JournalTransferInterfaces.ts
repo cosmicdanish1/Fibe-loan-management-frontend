@@ -32,6 +32,8 @@ export interface JournalTransferHookReturn {
     data: JournalEntry[];
     isLoading: boolean;
     voucherList: VoucherOption[];
+    /** true while an already-saved PENDING voucher is loaded for viewing: it cannot be saved again (that would create a duplicate) */
+    viewingExisting: boolean;
     headList: { code: string; name: string }[];
     memberList: { mbno: string; name: string }[];
     updateField: (field: keyof JournalTransferData, value: any) => void;

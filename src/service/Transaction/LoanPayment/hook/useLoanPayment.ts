@@ -397,7 +397,7 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
                                     key: 'auto-rd-' + Date.now(),
                                     srNo: String(autoEntries.length + 1),
                                     code: elig.rdHeadCode || 'L1004',
-                                    name: `RECURRING DEPOSIT (${elig.rdPct}% shortfall)`,
+                                    name: `RD/CD (${elig.rdPct}% shortfall)`,
                                     rp: 'Receipt',
                                     amount: elig.rdShortfall,
                                 });

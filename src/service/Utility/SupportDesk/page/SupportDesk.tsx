@@ -47,7 +47,7 @@ const PRIORITIES: { value: Priority; label: string }[] = [
 
 const MODULES = [
   'Member Master', 'Loan Application', 'Loan Repayment', 'Loan Early Closure', 'Loan Re-agreement',
-  'Savings (SB)', 'Fixed Deposit (FD)', 'Recurring Deposit (RD)', 'CD / MD', 'Demand & Recovery',
+  'Savings (SB)', 'Fixed Deposit (FD)', 'RD/CD', 'MD', 'Demand & Recovery',
   'Vouchers & Transactions', 'Pass Transactions', 'Day-End', 'Financial Year', 'Reports & Printing',
   'Login & Security', 'Utility', 'Other',
 ];

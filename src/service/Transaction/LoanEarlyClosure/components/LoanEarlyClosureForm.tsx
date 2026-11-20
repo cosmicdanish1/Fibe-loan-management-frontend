@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, AlertTriangle, CheckCircle2, RefreshCw, ChevronDown, ChevronRight, GitMerge, Users, CreditCard, IndianRupee, FileText } from 'lucide-react';
+import { Check, Info, Search, AlertTriangle, CheckCircle2, RefreshCw, ChevronDown, ChevronRight, GitMerge, Users, CreditCard, IndianRupee, FileText } from 'lucide-react';
 import type { useLoanEarlyClosure } from '../hooks/useLoanEarlyClosure';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import MemberField from '@/components/shared/kit/MemberField';
@@ -45,6 +45,8 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
     const [showConfirm, setShowConfirm] = useState(false);
+    const [openCard, setOpenCard] = useState<Record<string, boolean>>({});
+    const toggleCard = (k: string) => setOpenCard(prev => ({ ...prev, [k]: !prev[k] }));
     const [loanSearch, setLoanSearch] = useState('');
     const [confirmTypedCase, setConfirmTypedCase] = useState('');
     const [showClosedLoans, setShowClosedLoans] = useState(false);
@@ -458,58 +460,180 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                 )}
 
                                 {!selectedLoanIsClosed && <>
-                                    {/* ES-522: delayed old-loan payroll money (principal + interest) owed back to the member. First thing under the quote header so it is easy to find. */}
-                                    {quote.payrollLagPrincipalOffset > 0 && (
-                                        <div className="aw-panel aw-panel-accent" style={{ border: '1px solid var(--aw-accent)' }}>
-                                            <div className="aw-stack" style={{ gap: 10 }}>
-                                                <div>
-                                                    <span className="aw-strong" style={{ display: 'block' }}>{t('Old-loan payroll was still deducted after this loan started')}</span>
-                                                    <span className="aw-meta">{t('Collected after the consolidation: principal ₹{{1}} + interest ₹{{2}}. Tick the box to treat it as money owed back to the member instead of reducing the loan.', { 1: fmt(quote.payrollLagPrincipalOffset), 2: fmt(quote.payrollLagInterestOffset ?? 0) })}</span>
+                                    {/* Closure options: every checkbox in one row of cards at the top, all unchecked by default.
+                                        Each card shows its key numbers at all times; the (i) icon at its top right opens the full detail. */}
+                                    {!closed && (() => {
+                                        const rdInfo = quote.rdShareAdjustment ?? quote.rdSharePreview ?? null;
+                                        const lagPrincipalOwed = Math.max(0, (quote.payrollLagPrincipalOffset ?? 0) - (quote.payrollLagRefunded ?? 0));
+                                        const lagInterestOwed = Math.max(0, (quote.payrollLagInterestOffset ?? 0) - (quote.payrollLagInterestRefunded ?? 0));
+                                        const Num = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
+                                            <div className="lec-num"><span className="aw-label">{label}</span><span className={strong ? 'aw-strong lec-num-v' : 'lec-num-v'}>{value}</span></div>
+                                        );
+                                        const InfoBtn = ({ k }: { k: 'next' | 'lag' | 'rd' }) => (
+                                            <button type="button" className="lec-info-btn" aria-expanded={!!openCard[k]} title={t('Show details')} aria-label={t('Show details')}
+                                                onClick={() => toggleCard(k)}><Info size={14} /></button>
+                                        );
+                                        return (
+                                            <section className="lec-opts" aria-label={t('Closure options')}>
+                                                <div className="lec-opts-head">
+                                                    <strong className="aw-strong">{t('Closure options')}</strong>
+                                                    <span className="aw-meta">{t('All off by default. Tick only what applies to this member.')}</span>
                                                 </div>
-                                                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', borderRadius: 8, background: 'var(--aw-surface, transparent)', border: '1px solid var(--aw-border, #ccc)' }}>
-                                                    <input type="checkbox" checked={form.adjustPayrollLag} onChange={e => toggleAdjustPayrollLag(e.target.checked)} style={{ width: 20, height: 20, accentColor: 'var(--aw-accent)' }} />
-                                                    <span className="aw-strong">{t('Return the delayed payroll principal and interest to the member (do not reduce the loan)')}</span>
-                                                </label>
-                                                {form.adjustPayrollLag && (
-                                                    <div className="aw-stack aw-fade-in" style={{ gap: 6 }}>
-                                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontVariantNumeric: 'tabular-nums' }}>
-                                                            <thead>
-                                                                <tr className="aw-meta" style={{ textAlign: 'right' }}>
-                                                                    <th style={{ textAlign: 'left', fontWeight: 600 }}>{t('Part')}</th>
-                                                                    <th style={{ fontWeight: 600 }}>{t('Collected')}</th>
-                                                                    <th style={{ fontWeight: 600 }}>{t('Already returned')}</th>
-                                                                    <th style={{ fontWeight: 600 }}>{t('Still owed back')}</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <tr style={{ textAlign: 'right' }}>
-                                                                    <td style={{ textAlign: 'left' }}>{t('Principal')}</td>
-                                                                    <td>₹{fmt(quote.payrollLagPrincipalOffset)}</td>
-                                                                    <td>₹{fmt(quote.payrollLagRefunded ?? 0)}</td>
-                                                                    <td className="aw-strong">₹{fmt(quote.payrollLagRefundDue ?? 0)}</td>
-                                                                </tr>
-                                                                <tr style={{ textAlign: 'right' }}>
-                                                                    <td style={{ textAlign: 'left' }}>{t('Interest')}</td>
-                                                                    <td>₹{fmt(quote.payrollLagInterestOffset ?? 0)}</td>
-                                                                    <td>₹{fmt(quote.payrollLagInterestRefunded ?? 0)}</td>
-                                                                    <td className="aw-strong">₹{fmt(quote.payrollLagInterestRefundDue ?? 0)}</td>
-                                                                </tr>
-                                                            </tbody>
-                                                        </table>
-                                                        <div className="aw-meta">{t('Outstanding principal shown and used for the average interest: ₹{{1}}. What is still owed back is deducted only from the amount the member pays; the loan account closes at ₹{{2}} principal.', { 1: fmt(quote.outstandingPrincipal), 2: fmt(quote.ledgerPrincipal ?? quote.outstandingPrincipal) })}</div>
-                                                        {((quote.payrollLagRefundDue ?? 0) > 0 || (quote.payrollLagInterestRefundDue ?? 0) > 0) && (
-                                                            <button type="button" className="aw-btn" style={{ alignSelf: 'flex-start' }} onClick={() => {
-                                                                const v = window.prompt(t('Voucher no. of the refund already paid to the member (optional)'), '');
-                                                                if (v === null) return;
-                                                                recordPayrollLagRefund(quote.payrollLagRefundDue ?? 0, quote.payrollLagInterestRefundDue ?? 0, v);
-                                                            }}>{t('Record that ₹{{1}} principal + ₹{{2}} interest was already returned to the member', { 1: fmt(quote.payrollLagRefundDue ?? 0), 2: fmt(quote.payrollLagInterestRefundDue ?? 0) })}</button>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
+                                                <div className="lec-opts-grid">
 
+                                                    {/* 1. Close on next month's outstanding */}
+                                                    <article className={`lec-card${form.nextMonth ? ' is-on' : ''}`}>
+                                                        <header className="lec-card-head">
+                                                            <label className="lec-card-check">
+                                                                <input type="checkbox" checked={form.nextMonth} onChange={e => toggleNextMonth(e.target.checked)} />
+                                                                <span className="lec-box" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>
+                                                                <span className="lec-card-title">
+                                                                    <span className="aw-strong">{t("Close on next month's outstanding")}</span>
+                                                                    <span className="aw-meta">{t('Regular payer, no NR')}</span>
+                                                                </span>
+                                                            </label>
+                                                            <InfoBtn k="next" />
+                                                        </header>
+                                                        <div className="lec-nums">
+                                                            <Num label={t('EMI')} value={`₹${fmt(selectedLoan?.instal_amt ?? 0)}`} />
+                                                            {form.nextMonth && quote.nextMonthInfo ? (<>
+                                                                <Num label={t('EMI principal received')} value={`₹${fmt(quote.nextMonthInfo.principal)}`} />
+                                                                <Num label={t('Outstanding used')} value={`₹${fmt(quote.outstandingPrincipal)}`} strong />
+                                                            </>) : (
+                                                                <Num label={t('Outstanding now')} value={`₹${fmt(quote.outstandingPrincipal)}`} strong />
+                                                            )}
+                                                        </div>
+                                                        {openCard.next && (
+                                                            <div className="lec-card-detail aw-fade-in">
+                                                                <p className="aw-meta">{t("For a member who pays the EMI regularly and has no NR: this month's EMI is cut next month, so it is treated as already received. Interest is calculated on next month's outstanding principal. The closure waits in Past Transaction until that EMI arrives.")}</p>
+                                                                {form.nextMonth && quote.nextMonthInfo ? (
+                                                                    <div className="aw-stack" style={{ gap: 4 }}>
+                                                                        <div className="aw-row"><span className="aw-row-label">{t('EMI principal treated as received')}</span><span className="aw-row-value">₹{fmt(quote.nextMonthInfo.principal)}</span></div>
+                                                                        <div className="aw-row"><span className="aw-row-label">{t('Outstanding principal used')}</span><span className="aw-row-value">₹{fmt(quote.outstandingPrincipal)}</span></div>
+                                                                        <div className="aw-row"><span className="aw-row-label">{t('Closure interest')}</span><span className="aw-row-value">₹{fmt(quote.closureInterest)}</span></div>
+                                                                        <div className="aw-row"><span className="aw-row-label">{t('Penalty')}</span><span className="aw-row-value">₹{fmt(0)}</span></div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="aw-meta">{t("Tick the box to see the figures calculated on next month's outstanding.")}</p>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </article>
+
+                                                    {/* 2. Return delayed payroll to the member (only when old-loan payroll was deducted after consolidation) */}
+                                                    {quote.payrollLagPrincipalOffset > 0 && (
+                                                        <article className={`lec-card${form.adjustPayrollLag ? ' is-on' : ''}`}>
+                                                            <header className="lec-card-head">
+                                                                <label className="lec-card-check">
+                                                                    <input type="checkbox" checked={form.adjustPayrollLag} onChange={e => toggleAdjustPayrollLag(e.target.checked)} />
+                                                                    <span className="lec-box" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>
+                                                                    <span className="lec-card-title">
+                                                                        <span className="aw-strong">{t('Return delayed payroll to the member')}</span>
+                                                                        <span className="aw-meta">{t('Old-loan EMI taken after consolidation')}</span>
+                                                                    </span>
+                                                                </label>
+                                                                <InfoBtn k="lag" />
+                                                            </header>
+                                                            <div className="lec-nums">
+                                                                <Num label={t('Collected principal')} value={`₹${fmt(quote.payrollLagPrincipalOffset)}`} />
+                                                                <Num label={t('Collected interest')} value={`₹${fmt(quote.payrollLagInterestOffset ?? 0)}`} />
+                                                                <Num label={form.adjustPayrollLag ? t('Owed back') : t('Owed back if ticked')} value={`₹${fmt(form.adjustPayrollLag ? (quote.payrollLagRefundDue ?? 0) + (quote.payrollLagInterestRefundDue ?? 0) : lagPrincipalOwed + lagInterestOwed)}`} strong />
+                                                            </div>
+                                                            {openCard.lag && (
+                                                                <div className="lec-card-detail aw-fade-in">
+                                                                    <p className="aw-meta">{t('Old-loan payroll was still deducted after this loan started. Tick the box to treat it as money owed back to the member instead of reducing the loan.')}</p>
+                                                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontVariantNumeric: 'tabular-nums' }}>
+                                                                        <thead>
+                                                                            <tr className="aw-meta" style={{ textAlign: 'right' }}>
+                                                                                <th style={{ textAlign: 'left', fontWeight: 600 }}>{t('Part')}</th>
+                                                                                <th style={{ fontWeight: 600 }}>{t('Collected')}</th>
+                                                                                <th style={{ fontWeight: 600 }}>{t('Already returned')}</th>
+                                                                                <th style={{ fontWeight: 600 }}>{t('Still owed back')}</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            <tr style={{ textAlign: 'right' }}>
+                                                                                <td style={{ textAlign: 'left' }}>{t('Principal')}</td>
+                                                                                <td>₹{fmt(quote.payrollLagPrincipalOffset)}</td>
+                                                                                <td>₹{fmt(quote.payrollLagRefunded ?? 0)}</td>
+                                                                                <td className="aw-strong">₹{fmt(form.adjustPayrollLag ? (quote.payrollLagRefundDue ?? 0) : lagPrincipalOwed)}</td>
+                                                                            </tr>
+                                                                            <tr style={{ textAlign: 'right' }}>
+                                                                                <td style={{ textAlign: 'left' }}>{t('Interest')}</td>
+                                                                                <td>₹{fmt(quote.payrollLagInterestOffset ?? 0)}</td>
+                                                                                <td>₹{fmt(quote.payrollLagInterestRefunded ?? 0)}</td>
+                                                                                <td className="aw-strong">₹{fmt(form.adjustPayrollLag ? (quote.payrollLagInterestRefundDue ?? 0) : lagInterestOwed)}</td>
+                                                                            </tr>
+                                                                        </tbody>
+                                                                    </table>
+                                                                    {form.adjustPayrollLag && (
+                                                                        <div className="aw-meta">{t('Outstanding principal shown and used for the average interest: ₹{{1}}. What is still owed back is deducted only from the amount the member pays; the loan account closes at ₹{{2}} principal.', { 1: fmt(quote.outstandingPrincipal), 2: fmt(quote.ledgerPrincipal ?? quote.outstandingPrincipal) })}</div>
+                                                                    )}
+                                                                    {form.adjustPayrollLag && ((quote.payrollLagRefundDue ?? 0) > 0 || (quote.payrollLagInterestRefundDue ?? 0) > 0) && (
+                                                                        <button type="button" className="aw-btn" style={{ alignSelf: 'flex-start' }} onClick={() => {
+                                                                            const v = window.prompt(t('Voucher no. of the refund already paid to the member (optional)'), '');
+                                                                            if (v === null) return;
+                                                                            recordPayrollLagRefund(quote.payrollLagRefundDue ?? 0, quote.payrollLagInterestRefundDue ?? 0, v);
+                                                                        }}>{t('Record that ₹{{1}} principal + ₹{{2}} interest was already returned to the member', { 1: fmt(quote.payrollLagRefundDue ?? 0), 2: fmt(quote.payrollLagInterestRefundDue ?? 0) })}</button>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </article>
+                                                    )}
+
+                                                    {/* 3. Adjust RD / Share Value toward closure */}
+                                                    <article className={`lec-card${form.applyRdShare ? ' is-on' : ''}`}>
+                                                        <header className="lec-card-head">
+                                                            <label className="lec-card-check">
+                                                                <input type="checkbox" checked={form.applyRdShare} onChange={e => toggleApplyRdShare(e.target.checked)} />
+                                                                <span className="lec-box" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>
+                                                                <span className="lec-card-title">
+                                                                    <span className="aw-strong">{t('Adjust RD / Share Value toward closure')}</span>
+                                                                    <span className="aw-meta">{t('RD first, then Share')}</span>
+                                                                </span>
+                                                            </label>
+                                                            <InfoBtn k="rd" />
+                                                        </header>
+                                                        <div className="lec-nums">
+                                                            <Num label={t('RD balance')} value={rdInfo ? `₹${fmt(rdInfo.currentRd)}` : '—'} />
+                                                            <Num label={t('Share value')} value={rdInfo ? `₹${fmt(rdInfo.currentShare)}` : '—'} />
+                                                            <Num label={form.applyRdShare ? t('Applied') : t('Would apply')} value={rdInfo ? `₹${fmt(rdInfo.appliedFromRdShare)}` : '—'} strong />
+                                                        </div>
+                                                        {openCard.rd && (
+                                                            <div className="lec-card-detail aw-fade-in">
+                                                                <p className="aw-meta">{t('Uses the member RD first, then Share Value, each above its minimum balance, to settle part of the closure amount. The member pays the rest.')}</p>
+                                                                {rdInfo?.rdYearClosed && (
+                                                                    <p className="aw-meta" style={{ color: 'var(--aw-warning)' }}>
+                                                                        {t("This member's RD financial year is already closed — RD is excluded from this adjustment; only Share Value (if any) applies.")}
+                                                                    </p>
+                                                                )}
+                                                                {rdInfo && (
+                                                                    <div className="aw-two">
+                                                                        <div>
+                                                                            <span className="aw-label">{t('RD Balance')}</span>
+                                                                            <div className="aw-strong">₹{fmt(rdInfo.currentRd)}</div>
+                                                                            <span className="aw-meta">{t('₹{{1}} available above ₹{{2}} min', { 1: fmt(rdInfo.rdAvailable), 2: fmt(rdInfo.rdMinBalance) })}</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className="aw-label">{t('Share Value')}</span>
+                                                                            <div className="aw-strong">₹{fmt(rdInfo.currentShare)}</div>
+                                                                            <span className="aw-meta">{t('₹{{1}} available above ₹{{2}} min', { 1: fmt(rdInfo.shareAvailable), 2: fmt(rdInfo.shareMinBalance) })}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                {rdInfo && (
+                                                                    <div className="aw-row aw-row-total" style={{ borderTop: '1px solid var(--aw-border)', paddingTop: 8 }}>
+                                                                        <span className="aw-row-label">{form.applyRdShare ? t('Applied from RD + Share') : t('Would be applied from RD + Share')}</span>
+                                                                        <span className="aw-row-value">₹{fmt(rdInfo.appliedFromRdShare)}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </article>
+                                                </div>
+                                            </section>
+                                        );
+                                    })()}
                                     {/* Future installments note */}
                                     {detailed && quote.totalInstallments - quote.paidInstallments - quote.unpaidInstallments.length > 0 && (
                                         <div className="aw-panel">
@@ -651,40 +775,6 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                         </div>
                                     )}
 
-                                    {/* RD / Share Value adjustment */}
-                                    <div className="aw-panel">
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: form.applyRdShare ? 10 : 0 }}>
-                                            <input type="checkbox" checked={form.applyRdShare} onChange={e => toggleApplyRdShare(e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--aw-accent)' }} />
-                                            <span className="aw-strong">{t('Adjust RD / Share Value toward closure')}</span>
-                                        </label>
-
-                                        {form.applyRdShare && quote.rdShareAdjustment && (
-                                            <div className="aw-stack aw-fade-in" style={{ gap: 8 }}>
-                                                {quote.rdShareAdjustment.rdYearClosed && (
-                                                    <p className="aw-meta" style={{ color: 'var(--aw-warning)' }}>
-                                                        {t("This member's RD financial year is already closed — RD is excluded from this adjustment; only Share Value (if any) applies.")}
-                                                    </p>
-                                                )}
-                                                <div className="aw-two">
-                                                    <div>
-                                                        <span className="aw-label">{t('RD Balance')}</span>
-                                                        <div className="aw-strong">₹{fmt(quote.rdShareAdjustment.currentRd)}</div>
-                                                        <span className="aw-meta">{t('₹{{1}} available above ₹{{2}} min', { 1: fmt(quote.rdShareAdjustment.rdAvailable), 2: fmt(quote.rdShareAdjustment.rdMinBalance) })}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="aw-label">{t('Share Value')}</span>
-                                                        <div className="aw-strong">₹{fmt(quote.rdShareAdjustment.currentShare)}</div>
-                                                        <span className="aw-meta">{t('₹{{1}} available above ₹{{2}} min', { 1: fmt(quote.rdShareAdjustment.shareAvailable), 2: fmt(quote.rdShareAdjustment.shareMinBalance) })}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="aw-row aw-row-total" style={{ borderTop: '1px solid var(--aw-border)', paddingTop: 8 }}>
-                                                    <span className="aw-row-label">{t('Applied from RD + Share')}</span>
-                                                    <span className="aw-row-value">₹{fmt(quote.rdShareAdjustment.appliedFromRdShare)}</span>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
                                     {!detailed && (
                                         <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setView('detailed')}>
                                             <ChevronRight size={12} /> {t('See how this was calculated')}
@@ -774,27 +864,6 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                     </section>
                                 )}
 
-                                {/* ES-556: for a member who pays the EMI regularly (no NR). The employee decides from the payment pattern. */}
-                                {!closed && !selectedLoanIsClosed && (
-                                    <div className="aw-panel">
-                                        <div className="aw-stack" style={{ gap: 8 }}>
-                                            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
-                                                <input type="checkbox" checked={form.nextMonth} onChange={e => toggleNextMonth(e.target.checked)}
-                                                    style={{ width: 20, height: 20, marginTop: 2, accentColor: 'var(--aw-accent)' }} />
-                                                <span>
-                                                    <span className="aw-strong" style={{ display: 'block' }}>{t("Close on next month's outstanding")}</span>
-                                                    <span className="aw-meta">{t("For a member who pays the EMI regularly and has no NR: this month's EMI is cut next month, so it is treated as already received. Interest is calculated on next month's outstanding principal. The closure waits in Past Transaction until that EMI arrives.")}</span>
-                                                </span>
-                                            </label>
-                                            {form.nextMonth && quote.nextMonthInfo && (
-                                                <span className="aw-meta aw-fade-in">
-                                                    {t('EMI principal treated as received: ₹{{1}}. Outstanding used: ₹{{2}}. No penalty is added.', { 1: fmt(quote.nextMonthInfo.principal), 2: fmt(quote.outstandingPrincipal) })}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
                                 {/* What the member pays and the one action, always in view at the bottom of the quote. */}
                                 {!closed && !selectedLoanIsClosed && (
                                     <div className="lec-actionbar">
@@ -819,6 +888,26 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
             </div>
 
             <style>{`
+        .app-window .lec-opts { padding: 12px 14px; border-radius: calc(var(--aw-radius) * 1.4); border: 1px solid var(--aw-border); background: var(--aw-surface-muted); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+        .app-window .lec-opts-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+        .app-window .lec-opts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; align-items: start; }
+        .app-window .lec-card { display: flex; flex-direction: column; gap: 12px; padding: 14px; min-width: 0; border-radius: 12px; border: 1px solid var(--aw-border); background: var(--aw-surface, transparent); transition: border-color .15s, background-color .15s; }
+        .app-window .lec-card.is-on { border-color: var(--aw-accent); background: color-mix(in srgb, var(--aw-accent) 6%, transparent); }
+        .app-window .lec-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .app-window .lec-card-check { position: relative; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; min-width: 0; flex: 1; }
+        .app-window .lec-card-check input { position: absolute; opacity: 0; width: 24px; height: 24px; inset: 0 auto auto 0; margin: 0; cursor: pointer; }
+        .app-window .lec-card-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .app-window .lec-box { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--aw-border-strong, #8a8a8a); background: transparent; color: transparent; transition: background-color .15s, border-color .15s, color .15s; }
+        .app-window .lec-card.is-on .lec-box { background: var(--aw-accent); border-color: var(--aw-accent); color: #fff; }
+        .app-window .lec-card-check:has(input:focus-visible) .lec-box { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+        .app-window .lec-info-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--aw-border); background: var(--aw-surface, transparent); color: var(--aw-accent); cursor: pointer; }
+        .app-window .lec-info-btn[aria-expanded="true"] { background: color-mix(in srgb, var(--aw-accent) 14%, transparent); border-color: var(--aw-accent); }
+        .app-window .lec-info-btn:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: 2px; }
+        .app-window .lec-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px 14px; padding-top: 10px; border-top: 1px solid var(--aw-border); }
+        .app-window .lec-num { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .app-window .lec-num-v { font-variant-numeric: tabular-nums; font-size: calc(var(--type-body-size) + 1px); color: var(--aw-text); }
+        .app-window .lec-card-detail { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px dashed var(--aw-border); }
+        .app-window .lec-card-detail p { margin: 0; line-height: 1.5; }
         .app-window .lec-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--aw-gap); padding-bottom: 12px; border-bottom: 1px solid var(--aw-border); }
         .app-window .lec-strip > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
         .app-window .lec-strip strong { color: var(--aw-text); font-size: calc(var(--type-body-size) + 3px); font-weight: 700; font-variant-numeric: tabular-nums; }

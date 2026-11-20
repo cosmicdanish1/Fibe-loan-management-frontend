@@ -186,7 +186,7 @@ const InterestCalculation: React.FC<IInterestCalculatorProps> = ({
     saveEnabled: !(disabled || !calculationResult || isPosting),
   });
 
-  const ACCOUNT_OPTIONS = ['RECURRING DEPOSIT', 'SAVINGS ACCOUNT', 'FIXED DEPOSIT']
+  const ACCOUNT_OPTIONS = ['SAVINGS ACCOUNT', 'FIXED DEPOSIT'] // RD/CD interest: RD/CD Financial Year Closing
     .map(v => ({ value: v, label: v }));
   const inr = (n: any) => `₹${Number(n).toLocaleString('en-IN')}`;
 

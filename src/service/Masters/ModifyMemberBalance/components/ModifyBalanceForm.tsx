@@ -20,7 +20,8 @@ const AmtInput: React.FC<{
     label: string;
     placeholder?: string;
     accent?: boolean;
-}> = ({ value, onChange, label, placeholder = '0.00', accent }) => (
+    readOnly?: boolean;
+}> = ({ value, onChange, label, placeholder = '0.00', accent, readOnly }) => (
     <div className="aw-input-wrap has-icon">
         <IndianRupee size={13} />
         <input
@@ -32,6 +33,8 @@ const AmtInput: React.FC<{
             onKeyDown={e => { if (['e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
             onWheel={e => (e.target as HTMLInputElement).blur()}
             placeholder={placeholder}
+            readOnly={readOnly}
+            tabIndex={readOnly ? -1 : undefined}
             className={`aw-input is-right ${accent ? 'is-accent' : ''}`}
         />
     </div>
@@ -64,7 +67,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
     const rows: { label: string; dot: string; op: keyof MemberBalanceData; amt?: keyof MemberBalanceData; muted?: boolean }[] = [
         { label: t('Shares'), dot: 'var(--aw-accent)', op: 'shareOpBal', amt: 'shareAmt' },
         { label: t('Monthly Contribution'), dot: 'var(--aw-success)', op: 'mdOpBal', amt: 'mdAmt' },
-        { label: t('Compulsory Deposit'), dot: 'var(--aw-warning)', op: 'cdOpBal', amt: 'cdAmt' },
+        { label: t('RD/CD'), dot: 'var(--aw-warning)', op: 'cdOpBal', amt: 'cdAmt' },
         { label: t('Loan Exec. Receipt'), dot: 'var(--aw-muted)', op: 'lnExecRec', muted: true },
     ];
 
@@ -183,7 +186,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                     <div className="aw-bal-label" style={r.muted ? { color: 'var(--aw-muted)' } : undefined}>
                                         <span className="aw-bal-dot" style={{ background: r.dot }} />{r.label}
                                     </div>
-                                    <AmtInput value={formData[r.op]} onChange={upd(r.op)} label={t('{{1}} opening balance', { 1: r.label })} />
+                                    <AmtInput value={formData[r.op]} onChange={upd(r.op)} readOnly label={t('{{1}} opening balance', { 1: r.label })} />
                                     {r.amt ? <AmtInput value={formData[r.amt]} onChange={upd(r.amt)} label={t('{{1}} installment amount', { 1: r.label })} /> : <div />}
                                 </React.Fragment>
                             ))}
@@ -214,7 +217,7 @@ const ModifyBalanceForm: React.FC<MemberBalanceHookReturn> = ({
                                 <div className="aw-two" style={{ gap: 10 }}>
                                     <div>
                                         <label className="aw-label">{t('Op. Balance')}</label>
-                                        <AmtInput value={formData[l.op]} onChange={upd(l.op)} label={t('{{1}} opening balance', { 1: l.title })} />
+                                        <AmtInput value={formData[l.op]} onChange={upd(l.op)} readOnly label={t('{{1}} opening balance', { 1: l.title })} />
                                     </div>
                                     <div>
                                         <label className="aw-label">{t('Inst. Amount')}</label>

@@ -8,12 +8,10 @@ export const interestCalculationOptions = [
 
 export const accountTypeOptions = [
   { id: 'SB', name: 'SB — Savings Account',   head: 'A1001' },
-  { id: 'RD', name: 'RD — Recurring Deposit', head: 'A1002' },
   { id: 'FD', name: 'FD — Fixed Deposit',     head: 'A1003' },
 ];
 
 export const accountHeadMap: Record<string, string> = {
   SB: 'A1001',
-  RD: 'A1002',
   FD: 'A1003',
 };

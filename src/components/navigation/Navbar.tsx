@@ -78,7 +78,7 @@ const navConfig: NavItem[] = [
       },
       { title: tLabel('Saakh Score — Member Health'), action: 'SAAKH_SCORE' },
       { title: tLabel('Modify Business Rules'), action: 'MODIFY_BIZ_RULES' },
-      { title: tLabel('RD Financial Year Closing'), action: 'RD_FY_CLOSING' },
+      { title: tLabel('RD/CD Financial Year Closing'), action: 'RD_FY_CLOSING' },
       { title: tLabel('Dividend Calculation'), action: 'DIVIDEND_CALCULATION' },
       { title: tLabel('Dividend Credit'), action: 'DIVIDEND_CREDIT' },
       { title: tLabel('Demand Print Order'), action: 'DEMAND_PRINT_ORDER' },
@@ -102,9 +102,9 @@ const navConfig: NavItem[] = [
       { title: tLabel('Saving A/c Opening'), action: 'SAVING_AC_OPENING' },
       { title: tLabel('Wing / Office Master'), action: 'WING_OFFICE_MASTER' },
       { title: tLabel('Modify Member Balance'), action: 'MODIFY_MEMBER_BAL' },
-      { title: tLabel('RD Member Setup'), action: 'RD_MEMBER_SETUP' },
-      { title: tLabel('RD Withdrawal'), action: 'RD_WITHDRAWAL' },
-      { title: tLabel('RD Repayment'), action: 'RD_REPAYMENT' },
+      { title: tLabel('RD/CD Member Setup'), action: 'RD_MEMBER_SETUP' },
+      { title: tLabel('RD/CD Withdrawal'), action: 'RD_WITHDRAWAL' },
+      { title: tLabel('RD/CD Repayment'), action: 'RD_REPAYMENT' },
       { title: tLabel('Cast Category'), action: 'CAST_CATEGORY' },
       { title: tLabel('Designation Master'), action: 'DESIGNATION_MASTER' },
       // Hidden: legacy Data Entry windows not used in current app
@@ -136,7 +136,7 @@ const navConfig: NavItem[] = [
       { title: tLabel('Loan Repayment'), action: 'LOAN_REPAYMENT' },
       { title: tLabel('Loan Early Closure'), action: 'LOAN_EARLY_CLOSURE' },
       { title: tLabel('Loan Re-agreement'), action: 'LOAN_REAGREEMENT' },
-      { title: tLabel('Compulsory Deposit Transaction'), action: 'COMPULSORY_DEPOSIT_TRANSACTION' },
+      { title: tLabel('RD/CD Transaction'), action: 'COMPULSORY_DEPOSIT_TRANSACTION' },
       { title: tLabel('Member Balance Transfer'), action: 'MEMBER_BALANCE_TRANSFER' },
       { title: tLabel('Pass Transactions'), action: 'PASS_TRANSACTIONS' },
       {
@@ -220,7 +220,7 @@ const navConfig: NavItem[] = [
         title: '9. ' + tLabel('Member Statement'),
         submenu: [
           { title: '9.1 ' + tLabel('Saving Statement'), action: 'SAVING_STATEMENT' },
-          { title: '9.2 ' + tLabel('RD Statement'), action: 'RD_STATEMENT' },
+          { title: '9.2 ' + tLabel('RD/CD Statement'), action: 'RD_STATEMENT' },
           { title: '9.4 ' + tLabel('Member Statement'), action: 'MEMBER_STATEMENT' },
           { title: '9.5 ' + tLabel('New Share Certificate'), action: 'NEW_SHARE_CERTIFICATE' },
           { title: '9.6 ' + tLabel('Interest Certificate'), action: 'INTEREST_CERTIFICATE' },
@@ -234,7 +234,7 @@ const navConfig: NavItem[] = [
         submenu: [
           { title: '1. ' + tLabel('Account Closing Register'), action: 'ACCOUNT_CLOSING_REGISTER' },
           { title: '3. ' + tLabel('Share Certificate'), action: 'SHARE_CERTIFICATE' },
-          { title: '4. ' + tLabel('Recurring Details'), action: 'RECURRING_DETAILS' },
+          { title: '4. ' + tLabel('RD/CD Details'), action: 'RECURRING_DETAILS' },
           { title: '5. ' + tLabel('Recovery Details'), action: 'RECOVERY_DETAILS' },
           { title: '6. ' + tLabel('Loan Contributions Register'), action: 'LOAN_CONTRIBUTIONS_REGISTER' },
           { title: '7. ' + tLabel('Lien Account Information'), action: 'LIEN_ACCOUNT_INFORMATION' },

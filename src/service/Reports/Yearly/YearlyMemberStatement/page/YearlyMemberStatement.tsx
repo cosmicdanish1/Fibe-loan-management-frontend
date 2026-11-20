@@ -240,7 +240,7 @@ const YearlyMemberStatement: React.FC = () => {
             csvContent += `${societyInfo.address}\n\n`;
             csvContent += 'YEARLY MEMBER STATEMENT\n';
             csvContent += `Period: ${fromDate.format('DD-MMM-YYYY')} to ${toDate.format('DD-MMM-YYYY')}\n\n`;
-            csvContent += 'Member No,Member Name,Shares,Compulsory Deposit,Regular Loan,Emergency Loan\n';
+            csvContent += 'Member No,Member Name,Shares,RD/CD,Regular Loan,Emergency Loan\n';
 
             statementData.forEach(item => {
                 csvContent += `${item.memberNo},${csvCell(item.memberName)},${item.shares},${item.compulsoryDeposit},${item.regularLoan},${item.emergencyLoan}\n`;

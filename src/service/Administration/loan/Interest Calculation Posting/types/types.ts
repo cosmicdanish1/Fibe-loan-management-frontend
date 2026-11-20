@@ -1,11 +1,13 @@
 export interface InterestCalculationData {
   calcInterestFor: string;
-  accountType: 'SB' | 'RD' | 'FD';
+  accountType: 'SB' | 'FD'; // RD/CD interest is the yearly journal in RD/CD Financial Year Closing
   fromDate: string;
   toDate: string;
   memberNo: string;
   memberName?: string;
   interestRate?: number;
+  /** Yearly Fund Process only: the year's group insurance lump sum (deducted from every member's RD/CD); blank = not run here */
+  insuranceLumpSum?: string;
 }
 
 export interface MemberRecord {

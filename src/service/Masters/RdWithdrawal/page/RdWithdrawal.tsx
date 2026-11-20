@@ -18,7 +18,7 @@ const RdWithdrawal: React.FC = () => {
   const { t } = useTranslation();
     const {
         mbno, memberName, yearLabel,
-        balance, maxWithdrawable, amount, setAmount, narration, setNarration,
+        balance, maxWithdrawable, lockedAmount, amount, setAmount, narration, setNarration,
         timeline, loading, saving, message,
         loadFinancialYear, loadMember, withdraw,
     } = useRdWithdrawal();
@@ -40,8 +40,8 @@ const RdWithdrawal: React.FC = () => {
         <div className="app-window">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">{t('RD Withdrawal')}</h1>
-                    <p className="aw-desc">{t("Withdraw from a member's RD balance")}</p>
+                    <h1 className="aw-title">{t('RD/CD Withdrawal')}</h1>
+                    <p className="aw-desc">{t("Withdraw from a member's RD/CD balance. The cash paid out is booked with a CD payment voucher.")}</p>
                 </div>
                 {yearLabel && (
                     <span className="aw-pill" style={{ gap: 6 }}><Calendar size={12} /> {yearLabel}</span>
@@ -80,9 +80,15 @@ const RdWithdrawal: React.FC = () => {
                                 <div className="aw-stack">
                                     <div className="aw-rows">
                                         <div className="aw-row">
-                                            <span className="aw-row-label">{t('Current Balance')}</span>
+                                            <span className="aw-row-label">{t('RD/CD Balance')}</span>
                                             <span className="aw-row-value">₹{balance !== null ? fmt(balance) : '—'}</span>
                                         </div>
+                                        {lockedAmount > 0 && (
+                                            <div className="aw-row">
+                                                <span className="aw-row-label">{t('Locked by Loan Against RD')}</span>
+                                                <span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>₹{fmt(lockedAmount)}</span>
+                                            </div>
+                                        )}
                                         <div className="aw-row">
                                             <span className="aw-row-label">{t('Max Withdrawable')}</span>
                                             <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>₹{maxWithdrawable !== null ? fmt(maxWithdrawable) : '—'}</span>
@@ -132,14 +138,14 @@ const RdWithdrawal: React.FC = () => {
                             <div className="aw-main-head">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                                     <span className="aw-card-icon"><History size={14} /></span>
-                                    <h2 className="aw-card-title">{t('Balance Timeline — {{1}}', { 1: yearLabel })}</h2>
+                                    <h2 className="aw-card-title">{t('Interest Timeline — {{1}}', { 1: yearLabel })}</h2>
                                 </div>
                             </div>
                             <div className="aw-main-body" style={{ padding: 0 }}>
                                 {timeline.length === 0 ? (
                                     <div className="aw-empty">
                                         <History size={32} />
-                                        <span>{t('No balance events yet for this financial year.')}</span>
+                                        <span>{t('No interest-timeline events yet for this financial year. (Migrated members have none; their balance is shown above.)')}</span>
                                     </div>
                                 ) : (
                                     <table className="aw-table">

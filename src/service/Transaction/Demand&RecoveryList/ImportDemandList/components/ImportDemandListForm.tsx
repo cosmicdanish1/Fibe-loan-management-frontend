@@ -10,11 +10,13 @@ import { useTranslation } from 'react-i18next';
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const YEARS = Array.from({ length: 30 }, (_, i) => (2020 + i).toString());
 
-const HEADERS = ['Period', 'Branch', 'Member No', 'Personal No', 'Member Name', 'Total Amount', 'RD Amount', 'Regular Loan', 'Emergency Loan', 'Loan Interest', 'IFRS Amt', 'FRS 1 Amt', 'Status', 'Check'];
+const HEADERS = ['Row', 'H.O.NO.', 'Member No', 'PS.NO.', 'Member Name', 'Total Amount', 'F/D (RD/CD)', 'Regular Loan', 'Emergency Loan', 'Loan Interest', 'FRS 1 (MD)', 'FRS 2 (MD1)', 'Found By', 'Status', 'Check'];
+
+const FOUND_BY: Record<string, string> = { HONO: 'H.O.NO.', MEMBER_NO: 'MS.NO.', MANUAL: 'By hand' };
 
 const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
-    importConfig, previewData, branches, isImporting, isSaving, recordCount,
-    updateConfig, handleImport, handleSave, handleClear, handleExit,
+    importConfig, previewData, branches, isImporting, isSaving, recordCount, strictness, saveBlockedReason,
+    updateConfig, handleImport, handleSave, handleClear, handleExit, pickMember,
 }) => {
   const { t } = useTranslation();
     const validCount = previewData.filter(r => r.status === 'Valid').length;
@@ -24,7 +26,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
     usePageToolbarActions({
         onSave: handleSave,
         saveLabel: isSaving ? 'Saving...' : 'Save',
-        saveEnabled: !(isSaving || previewData.length === 0),
+        saveEnabled: !(isSaving || previewData.length === 0 || !!saveBlockedReason),
     });
 
     return (
@@ -35,7 +37,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                     <p className="aw-desc">{t('Demand & Recovery List')}</p>
                 </div>
                 <div className="aw-actions">
-                    <button type="button" onClick={handleSave} disabled={isSaving || previewData.length === 0} className="aw-btn aw-btn-primary">
+                    <button type="button" onClick={handleSave} disabled={isSaving || previewData.length === 0 || !!saveBlockedReason} title={saveBlockedReason || undefined} className="aw-btn aw-btn-primary">
                         {isSaving ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />} {isSaving ? t('Saving...') : t('Save')}
                     </button>
                     <button type="button" onClick={handleClear} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> {t('Clear')}</button>
@@ -51,6 +53,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                             <h2 className="aw-card-title">{t('Import Configuration')}</h2>
                             {recordCount > 0 && (
                                 <span className="aw-inline" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
+                                    <span className="aw-pill" title={t('Import strictness from Modify Business Rules')}>{strictness === 'STRICT' ? t('Strict') : t('Standard')}</span>
                                     <span className="aw-pill">{t('{{1}} Record(s)', { 1: recordCount })}</span>
                                     {validCount > 0 && <span className="aw-pill tone-success"><CheckCircle2 size={11} /> {validCount} {t('Valid')}</span>}
                                     {errorCount > 0 && <span className="aw-pill tone-danger"><AlertCircle size={11} /> {errorCount} {t('Error')}</span>}
@@ -108,12 +111,19 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                                 <span className="aw-meta">{t('Select Branch, Month, Year and click "Import Demand" to load an Excel file')}</span>
                                 <div className="aw-panel aw-panel-dashed" style={{ textAlign: 'left', maxWidth: 520 }}>
                                     <span className="aw-label">{t('Expected Excel Format')}</span>
-                                    <p className="aw-meta">S.NO. | YYMM | CODE | MS.NO. | PS.NO. | NAME | TOTAL | R/D | R/LOAN | E/LOAN | INTT.</p>
+                                    <p className="aw-meta">YYMM | CODE | H.O.NO. (or MS.NO.) | PS.NO. | NAME | TOTAL | F/D (or R/D) | R/LOAN | E/LOAN | INTT. | F.R.S.-1 | F.R.S.-2</p>
                                 </div>
                             </div>
                         ) : (
+                            <>
+                            {saveBlockedReason && (
+                                <div className="aw-panel aw-panel-accent" style={{ marginBottom: 8 }}>
+                                    <span className="aw-label">{t('Strict mode: nothing can be saved yet')}</span>
+                                    <p className="aw-meta" style={{ whiteSpace: 'pre-line', marginTop: 4 }}>{saveBlockedReason}</p>
+                                </div>
+                            )}
                             <div className="aw-table-wrap" style={{ maxHeight: 'calc(100vh - 340px)', minHeight: 200 }}>
-                                <table className="aw-table" style={{ minWidth: 1330 }}>
+                                <table className="aw-table" style={{ minWidth: 1560 }}>
                                     <thead>
                                         <tr>
                                             {HEADERS.map((h, i) => (
@@ -124,29 +134,45 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                                     <tbody>
                                         {previewData.map((row) => (
                                             <tr key={row.key}>
-                                                <td className="is-muted">{row.period}</td>
-                                                <td className="is-muted">{row.branch}</td>
-                                                <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{row.memberNo}</td>
-                                                <td style={{ fontFamily: 'monospace' }}>{row.personalNo}</td>
+                                                <td className="is-muted">{row.rowNo ?? ''}</td>
+                                                <td className="is-muted" style={{ fontFamily: 'monospace' }}>{row.honoGiven ?? ''}</td>
+                                                <td className="is-accent" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{row.memberId}</td>
+                                                <td style={{ fontFamily: 'monospace' }}>{row.psNo ?? ''}</td>
                                                 <td style={{ fontWeight: 700, textTransform: 'uppercase' }}>{row.memberName}</td>
-                                                <td className="is-right" style={{ fontWeight: 700 }}>{row.totalAmount || ''}</td>
-                                                <td className="is-right">{row.rdAmount || ''}</td>
-                                                <td className="is-right is-info">{row.regularLoanAmt || ''}</td>
-                                                <td className="is-right is-warning">{row.emergencyLoanAmt || ''}</td>
-                                                <td className="is-right is-muted">{row.loanInterest || ''}</td>
-                                                <td className="is-right">{row.frs1Amount || ''}</td>
-                                                <td className="is-right">{row.frs2Amount || ''}</td>
+                                                <td className="is-right" style={{ fontWeight: 700 }}>{row.totalDemand || ''}</td>
+                                                <td className="is-right">{row.cdAmount || ''}</td>
+                                                <td className="is-right is-info">{row.rlnAmount || ''}</td>
+                                                <td className="is-right is-warning">{row.alnAmount || ''}</td>
+                                                <td className="is-right is-muted">{row.interest || ''}</td>
+                                                <td className="is-right">{row.mdAmount || ''}</td>
+                                                <td className="is-right">{row.md1Amount || ''}</td>
+                                                <td className="is-center">
+                                                    {row.matchMethod ? <span className="aw-pill">{FOUND_BY[row.matchMethod] ?? row.matchMethod}</span> : ''}
+                                                </td>
                                                 <td className="is-center">
                                                     {row.status === 'Valid' ? (
                                                         <span style={{ display: 'inline-flex', color: 'var(--aw-success)' }}><CheckCircle2 size={14} /></span>
                                                     ) : (
-                                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--aw-danger)' }} title={row.remarks}>
+                                                        <span style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, color: 'var(--aw-danger)' }} title={row.remarks}>
                                                             <AlertCircle size={14} /> <span>{row.remarks}</span>
+                                                            {/* ES-587: the member was not found - offer similar names, the operator decides */}
+                                                            {(row.suggestions?.length ?? 0) > 0 && (
+                                                                <Select size="small" placeholder={t('Pick member')} style={{ minWidth: 240 }}
+                                                                    className="aw-select" popupClassName="aw-select-popup"
+                                                                    onChange={(v: string) => pickMember(row.key, v)}
+                                                                    options={row.suggestions!.map(s => ({ value: s.memberNo, label: `${s.memberNo} - ${s.name} (${t('Branch')} ${s.officeno})` }))} />
+                                                            )}
                                                         </span>
                                                     )}
                                                 </td>
-                                                {/* Check-this flag: possible old-EMI / new-EMI mix-up. Saving is never blocked. */}
+                                                {/* Check column: name / PS.NO. differences and the possible old-EMI / new-EMI mix-up. Saving is never blocked. */}
                                                 <td className="is-center">
+                                                    {(row.warnings?.length ?? 0) > 0 && (
+                                                        <span className="aw-pill tone-warning" style={{ cursor: 'help', marginRight: 4 }}
+                                                            title={row.warnings!.join('\n')}>
+                                                            <AlertCircle size={11} style={{ marginRight: 4 }} /> {t('Name / PS.NO.')}
+                                                        </span>
+                                                    )}
                                                     {(row.flags?.length ?? 0) > 0 && (
                                                         <span className="aw-pill tone-warning" style={{ cursor: 'help' }}
                                                             title={row.flags!.map(f => `Loan #${f.loancaseno}: ${f.message}`).join('\n\n')}>
@@ -159,6 +185,7 @@ const ImportDemandListForm: React.FC<ImportDemandListHookReturn> = ({
                                     </tbody>
                                 </table>
                             </div>
+                            </>
                         )}
                     </section>
                 </div>

@@ -41,7 +41,7 @@ const InterestCalculationPosting: React.FC = () => {
 
   const glHead =
     formData.accountType === 'SB' ? 'A1001 — Savings' :
-    formData.accountType === 'RD' ? 'A1002 — Recurring' : 'A1003 — Fixed Deposit';
+    'A1003 — Fixed Deposit';
 
   const totals = {
     principal: memberRecords.reduce((s, r) => s + r.balance, 0),
@@ -200,8 +200,18 @@ const InterestCalculationPosting: React.FC = () => {
                   </div>
                 ) : isYearly ? (
                   <div>
-                    <span className="aw-label">{t('Applies')}</span>
-                    <p className="aw-meta">{t('Opening Balance Interest · Monthly Contribution · Dividend & Group Insurance Deduction')}</p>
+                    <label className="aw-label" htmlFor="ic-insurance">{t('Group Insurance Lump Sum (optional)')}</label>
+                    <input
+                      id="ic-insurance"
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      value={formData.insuranceLumpSum ?? ''}
+                      onChange={(e) => handleInputChange('insuranceLumpSum', e.target.value)}
+                      placeholder={t('Leave blank to skip')}
+                      className="aw-input is-right"
+                    />
+                    <p className="aw-meta" style={{ marginTop: 4 }}>{t('RD/CD interest (DR E1026 / CR L1004) · Group insurance (DR L1004 / CR L1003) when a lump sum is entered · Dividend declaration')}</p>
                   </div>
                 ) : (
                   <div>

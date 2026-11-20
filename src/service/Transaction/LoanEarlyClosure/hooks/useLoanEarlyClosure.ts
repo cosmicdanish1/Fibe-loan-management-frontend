@@ -153,6 +153,8 @@ export interface ClosureQuote {
     finalClosureAmount: number;
     /** null when applyRdShare was false in the request. */
     rdShareAdjustment: RdShareClosureAdjustment | null;
+    /** Display only: the RD / Share figures even while the option is unticked (never changes payableByMember). */
+    rdSharePreview?: RdShareClosureAdjustment | null;
     /** What the member actually needs to pay — equals finalClosureAmount when
      *  rdShareAdjustment is null or nothing was available to apply. */
     payableByMember: number;
@@ -221,7 +223,8 @@ const makeDefaultForm = (): ClosureForm => ({
     closureDate: todayIso(),
     adjustment: 0,
     receiptNo: '',
-    applyRdShare: true,
+    // every closure option starts unchecked (the Closure options card)
+    applyRdShare: false,
     adjustPayrollLag: false,
     nextMonth: false,
 });
@@ -334,17 +337,20 @@ export const useLoanEarlyClosure = () => {
     const handleMemberLookup = useCallback(async (mbno: string, memberName: string) => {
         quoteSeq.current++;
         setQuoteLoading(false);
-        setForm(prev => ({ ...prev, mbno, memberName, selectedLoanCase: '', adjustment: 0, closureDate: todayIso() }));
+        nextMonthRef.current = false;
+        setForm(prev => ({ ...prev, mbno, memberName, selectedLoanCase: '', adjustment: 0, closureDate: todayIso(), applyRdShare: false, adjustPayrollLag: false, nextMonth: false }));
         setQuote(null);
         setClosed(false);
         await fetchMemberLoans(mbno);
     }, [fetchMemberLoans]);
 
     const handleLoanSelect = useCallback(async (loancaseno: string) => {
-        setForm(prev => ({ ...prev, selectedLoanCase: loancaseno, adjustment: 0 }));
+        // a newly picked loan always starts with every option unchecked
+        nextMonthRef.current = false;
+        setForm(prev => ({ ...prev, selectedLoanCase: loancaseno, adjustment: 0, applyRdShare: false, adjustPayrollLag: false, nextMonth: false }));
         setClosed(false);
-        await fetchQuote(loancaseno, 0, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag);
-    }, [fetchQuote, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag]);
+        await fetchQuote(loancaseno, 0, form.closureDate, false, form.mbno, false);
+    }, [fetchQuote, form.closureDate, form.mbno]);
 
     const recalculate = useCallback(async () => {
         if (form.selectedLoanCase) await fetchQuote(form.selectedLoanCase, form.adjustment, form.closureDate, form.applyRdShare, form.mbno, form.adjustPayrollLag);

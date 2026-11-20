@@ -20,9 +20,13 @@ export interface TransactionEntry {
     narration: string;   // Narration
     loanCaseNo?: string; // Internal mapping
     /** 'REAGREEMENT' for a loan re-agreement voucher (a receipt of NR interest + penalty, no payout). */
-    kind?: 'VOUCHER' | 'REAGREEMENT';
+    kind?: 'VOUCHER' | 'REAGREEMENT' | 'EARLY_CLOSURE' | 'REPAYMENT';
     /** Full re-agreement summary (old vs new terms, amounts) when kind is REAGREEMENT. */
     reagreement?: any;
+    /** The voucher's own total (the row's `amount` is the single line). */
+    voucherAmount?: number;
+    /** Every line of the voucher (head, name, Dr/Cr, amount) for the details view. */
+    breakdown?: Array<{ srNo: string; code: string; headName?: string; name?: string; trNo?: string; transType?: string; accNo?: string; accType?: string; rp: string; amount: number }>;
 }
 
 export interface PassTransactionsHookReturn {

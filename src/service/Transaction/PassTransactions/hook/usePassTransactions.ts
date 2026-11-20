@@ -62,7 +62,27 @@ export const usePassTransactions = (): PassTransactionsHookReturn => {
         try {
             const response = await apiService.getPendingVouchers();
             if (response.success && response.data) {
-                setTransactionData(response.data.map((item: any, index: number) => ({
+                // ES-512: one grid row per voucher LINE (head, Dr/Cr, amount), so the approver sees what will be posted.
+                // The voucher-level fields (kind, reagreement, breakdown, voucherAmount) are kept on every row.
+                const rows: any[] = [];
+                response.data.forEach((item: any) => {
+                    const lines: any[] = Array.isArray(item.breakdown) ? item.breakdown : [];
+                    const base = { ...item, voucherAmount: item.amount };
+                    if (lines.length === 0) { rows.push(base); return; }
+                    lines.forEach((line: any) => rows.push({
+                        ...base,
+                        trNo: line.trNo || '',
+                        head: [line.code, line.headName].filter(Boolean).join(' - '),
+                        // journal lines carry CR / DR themselves; receipt / payment lines carry R / P (R = head credited)
+                        transType: ['CR', 'DR'].includes(String(line.transType || '').toUpperCase())
+                            ? String(line.transType).toUpperCase()
+                            : (line.rp === 'R' ? 'CR' : 'DR'),
+                        noOfAcc: line.accNo || '',
+                        amount: line.amount,
+                        narration: line.name || item.narration,
+                    }));
+                });
+                setTransactionData(rows.map((item: any, index: number) => ({
                     ...item,
                     // a multi-line voucher repeats voucherNo, so the row key must include the position
                     key: `${item.voucherNo || 'row'}-${item.trNo ?? ''}-${index}`

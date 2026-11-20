@@ -25,7 +25,7 @@ export interface ClosingDerived {
   daily: { day: string; value: number }[];
 }
 
-const typeName = (t: string) => (t === 'FD' ? 'Special Deposit (FD)' : t === 'RD' ? 'Recurring Deposit (RD)' : t || 'Other');
+const typeName = (t: string) => (t === 'FD' ? 'Special Deposit (FD)' : t === 'RD' ? 'RD/CD' : t || 'Other');
 
 export const deriveClosing = (items: ClosingItem[]): ClosingDerived => {
   const total = items.reduce((s, r) => s + (Number(r.finalAmount) || 0), 0);

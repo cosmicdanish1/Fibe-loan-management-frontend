@@ -1,0 +1,82 @@
+/* Modify Business Rules — layout kit (tabs + section sidebar + setting rows + table + save bar).
+   Built only from the shared --aw-* tokens so it follows the accent colour, density and dark mode. */
+
+.app-window .br-tabbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; flex: none; padding: 0 calc(var(--aw-pad) * 1.4); background: var(--aw-surface); border-bottom: 1px solid var(--aw-border); }
+.app-window .br-tabbar .aw-tabs { padding: 0; border-bottom: 0; flex-wrap: wrap; }
+.app-window .br-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; border: 1px solid var(--aw-border); background: var(--aw-surface-muted); color: var(--aw-muted); font-size: 10.5px; font-weight: 700; }
+.app-window .br-count.is-chg { background: var(--aw-accent); border-color: var(--aw-accent); color: #fff; }
+
+/* search */
+.app-window .br-search { position: relative; margin-left: auto; width: 280px; max-width: 100%; }
+.app-window .br-search .aw-input { padding-left: 30px; padding-right: 58px; }
+.app-window .br-search > svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--aw-muted); pointer-events: none; }
+.app-window .br-search kbd { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); padding: 1px 6px; border: 1px solid var(--aw-border-strong); border-radius: 5px; background: var(--aw-surface); color: var(--aw-muted); font: 600 10.5px inherit; pointer-events: none; }
+.app-window .br-results { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; width: min(420px, 90vw); max-height: 60vh; overflow: auto; padding: 6px; border: 1px solid var(--aw-border-strong); border-radius: calc(var(--aw-radius) * 1.4); background: var(--aw-surface); box-shadow: var(--aw-shadow-pop); }
+.app-window .br-result { display: flex; flex-direction: column; gap: 1px; width: 100%; padding: 7px 10px; border: 0; border-radius: var(--aw-radius); background: transparent; color: var(--aw-text); text-align: left; cursor: pointer; }
+.app-window .br-result:hover, .app-window .br-result:focus-visible { background: var(--aw-accent-soft); outline: 0; }
+.app-window .br-result b { font-size: var(--type-field-size); font-weight: 600; }
+.app-window .br-result span { color: var(--aw-muted); font-size: calc(var(--type-body-size) - 2px); }
+
+/* body: section sidebar + content */
+.app-window .br-body { display: flex; flex: 1; min-height: 0; }
+.app-window .br-side { display: flex; flex-direction: column; gap: 2px; flex: none; width: 224px; padding: var(--aw-pad) 10px var(--aw-pad) calc(var(--aw-pad) * 1.4); overflow: auto; }
+.app-window .br-side-title { margin: 0 0 6px 10px; color: var(--aw-muted); font-size: calc(var(--type-label-size) + 0px); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.app-window .br-nav { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 10px; border: 0; border-radius: var(--aw-radius); background: transparent; color: var(--aw-text); font-size: var(--type-field-size); font-weight: 600; text-align: left; cursor: pointer; }
+.app-window .br-nav:hover { background: var(--aw-surface-muted); }
+.app-window .br-nav[aria-current="true"] { background: var(--aw-accent-soft); color: var(--aw-accent); }
+.app-window .br-nav:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: -2px; }
+.app-window .br-nav .br-count { margin-left: auto; }
+.app-window .br-main { flex: 1; min-width: 0; min-height: 0; overflow: auto; padding: var(--aw-pad) calc(var(--aw-pad) * 1.4) calc(var(--aw-pad) * 1.6) calc(var(--aw-pad) * .6); }
+.app-window .br-main.is-full { padding-left: calc(var(--aw-pad) * 1.4); }
+.app-window .br-crumb { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.app-window .br-crumb h2 { margin: 0; color: var(--aw-text); font-size: var(--type-panel-title); font-weight: 700; letter-spacing: -.01em; }
+.app-window .br-crumb p { margin: 0; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); }
+
+/* setting rows */
+.app-window .br-card { padding: 0; overflow: hidden; }
+.app-window .br-card > .aw-card-head { margin: 0; padding: calc(var(--aw-pad) * .8) var(--aw-pad); }
+.app-window .br-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 24px; padding: calc(var(--aw-pad) * .85) var(--aw-pad); border-top: 1px solid var(--aw-border); }
+.app-window .br-card > .aw-card-head + .br-row { border-top: 0; }
+.app-window .br-row-text { flex: 1 1 300px; min-width: 0; }
+.app-window .br-row-text b { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--aw-text); font-size: var(--type-field-size); font-weight: 600; }
+.app-window .br-row-text span.br-help { display: block; margin-top: 1px; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 2px); line-height: 1.4; }
+.app-window .br-row-ctl { display: flex; flex: none; align-items: center; gap: 8px; }
+.app-window .br-row-ctl .aw-input { width: 140px; text-align: right; font-variant-numeric: tabular-nums; }
+.app-window .br-row-ctl .aw-input[type="text"] { text-align: left; }
+.app-window .br-row-ctl .aw-select { width: 280px; max-width: 100%; }
+.app-window .br-unit { min-width: 16px; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 1px); }
+.app-window .br-row.is-chg, .app-window .br-trow.is-chg { background: linear-gradient(90deg, var(--aw-accent-soft), transparent 40%); box-shadow: inset 3px 0 0 var(--aw-accent); }
+.app-window .br-row.is-off { opacity: .55; }
+.app-window .br-row.is-off .br-row-ctl { pointer-events: none; }
+.app-window .aw-input.is-chg, .app-window .aw-select.is-chg .ant-select-selector { border-color: var(--aw-accent) !important; background: var(--aw-accent-soft) !important; }
+
+/* tables (loan type × setting) */
+.app-window .br-table-wrap { overflow-x: auto; }
+.app-window .br-table { width: 100%; border-collapse: collapse; }
+.app-window .br-table th { padding: 9px 14px; background: var(--aw-surface-muted); border-bottom: 1px solid var(--aw-border); color: var(--aw-muted); font-size: calc(var(--type-label-size) + 0px); font-weight: 700; letter-spacing: .06em; text-align: right; text-transform: uppercase; white-space: nowrap; }
+.app-window .br-table td { padding: 8px 14px; border-bottom: 1px solid var(--aw-border); text-align: right; vertical-align: middle; }
+.app-window .br-table tr:last-child td { border-bottom: 0; }
+.app-window .br-table th:first-child, .app-window .br-table td:first-child { text-align: left; }
+.app-window .br-table td:first-child b { display: block; color: var(--aw-text); font-size: var(--type-field-size); font-weight: 700; }
+.app-window .br-table td:first-child span { display: block; color: var(--aw-muted); font-size: calc(var(--type-body-size) - 2px); }
+.app-window .br-table .aw-input { width: 112px; text-align: right; font-variant-numeric: tabular-nums; }
+.app-window .br-cell-off { display: inline-flex; align-items: center; gap: 6px; opacity: .6; }
+.app-window .br-cell-off .aw-input { pointer-events: none; }
+
+/* slot day bar */
+.app-window .br-slotbar { display: flex; height: 34px; overflow: hidden; border: 1px solid var(--aw-border-strong); border-radius: var(--aw-radius); font-size: calc(var(--type-body-size) - 1px); font-weight: 700; }
+.app-window .br-slotbar > div { display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden; white-space: nowrap; }
+
+/* sticky save bar */
+.app-window .br-savebar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; flex: none; padding: 9px calc(var(--aw-pad) * 1.4); border-top: 1px solid var(--aw-border-strong); background: var(--aw-surface); box-shadow: 0 -6px 20px rgba(20, 31, 56, .06); }
+.app-window .br-savebar .br-grow { flex: 1; }
+.app-window .br-savebar .br-msg { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: var(--type-field-size); }
+
+@media (max-width: 760px) {
+  .app-window .br-body { flex-direction: column; }
+  .app-window .br-side { flex-direction: row; width: auto; overflow-x: auto; padding: 8px var(--aw-pad); }
+  .app-window .br-side-title { display: none; }
+  .app-window .br-nav { white-space: nowrap; }
+  .app-window .br-search { width: 100%; margin-left: 0; padding-bottom: 6px; }
+  .app-window .br-main { padding: var(--aw-pad); }
+}

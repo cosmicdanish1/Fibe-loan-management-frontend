@@ -37,7 +37,7 @@ const MONTHS = [
 const ACCOUNT_TYPES = [
   { value: 'ALL', label: 'ALL (FD + RD)' },
   { value: 'FD',  label: 'Special Deposit (FD)' },
-  { value: 'RD',  label: 'Recurring Deposit (RD)' },
+  { value: 'RD',  label: 'RD/CD' },
 ];
 
 const buildReportText = (

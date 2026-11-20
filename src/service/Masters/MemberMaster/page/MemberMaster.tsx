@@ -401,7 +401,7 @@ const MemberMaster: React.FC = () => {
       ['basicPay', 'Basic Pay', 0, 9999999],
       ['shareAmt', 'Share Amount', 0, 9999999],
       ['monthlyContribution', 'Monthly Contribution', 0, 99999],
-      ['compulsatoryDeposit', 'Compulsory Deposit', 0, 99999],
+      ['compulsatoryDeposit', 'RD/CD', 0, 99999],
     ];
     for (const [field, label, min, max] of numChecks) {
       const val = Number(formData[field as keyof typeof formData]);
@@ -1092,20 +1092,30 @@ const MemberMaster: React.FC = () => {
                   onChange={(e) => handleInputChange('compulsatoryDeposit', e.target.value)}
                   className="aw-input"
                   placeholder="0.00"
+                  disabled={!!formData.memberNumber}
+                  title={formData.memberNumber ? t('The starting RD/CD amount is fixed once the member is created.') : undefined}
                 />
                 {/* RD starts automatically for a new member using this amount
                     as their monthly RD contribution — defaults to the
                     configured RD minimum, editable, and skippable via this
-                    checkbox for a member who shouldn't have RD started yet. */}
-                <label className="flex items-center gap-1 mt-1 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={formData.startRd}
-                    onChange={(e) => handleInputChange('startRd', e.target.checked)}
-                    style={{ accentColor: 'var(--aw-accent)' }}
-                  />
-                  <span className="aw-meta">{t('Start RD for this member')}</span>
-                </label>
+                    checkbox for a member who shouldn't have RD started yet.
+                    ES-575: for an EXISTING member this field changes nothing real, so it is read-only; the monthly
+                    amount is changed in RD/CD Member Setup and money is received in RD/CD Repayment. */}
+                {formData.memberNumber ? (
+                  <span className="aw-meta" style={{ display: 'block', marginTop: 4 }}>
+                    {t('To change the monthly RD/CD amount use RD/CD Member Setup; to receive money use RD/CD Repayment.')}
+                  </span>
+                ) : (
+                  <label className="flex items-center gap-1 mt-1 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={formData.startRd}
+                      onChange={(e) => handleInputChange('startRd', e.target.checked)}
+                      style={{ accentColor: 'var(--aw-accent)' }}
+                    />
+                    <span className="aw-meta">{t('Start RD/CD monthly amount for this member')}</span>
+                  </label>
+                )}
               </div>
             </div>
 

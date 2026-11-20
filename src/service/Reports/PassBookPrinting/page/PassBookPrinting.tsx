@@ -176,7 +176,7 @@ const loanRowHtml = (r: LoanRow) => `<tr>
 const DEPOSIT_HEADER = `
   <tr><td class="date hd" rowspan="2">DATE</td>
     <td class="hd" colspan="3">SHARE VALUE</td>
-    <td class="hd" colspan="3">COMPULSORY DEPOSIT</td>
+    <td class="hd" colspan="3">RD/CD</td>
     <td class="hd" colspan="2">F.R.S.-1</td>
     <td class="hd">F.R.S.-2</td></tr>
   <tr class="hdrline">

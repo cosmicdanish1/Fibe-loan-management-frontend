@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Search, RefreshCw, Users, CreditCard, IndianRupee, CheckCircle2, AlertCircle, FileText, Info } from 'lucide-react';
-import type { useLoanRepayment, UnpaidInstallment } from '../hooks/useLoanRepayment';
+import React, { useState } from 'react';
+import { Search, RefreshCw, Users, CreditCard, IndianRupee, CheckCircle2, AlertCircle, FileText, ClipboardList } from 'lucide-react';
+import type { useLoanRepayment } from '../hooks/useLoanRepayment';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import MemberField from '@/components/shared/kit/MemberField';
 import LoanPositionPanel from '@/components/shared/loan/LoanPositionPanel';
@@ -23,73 +23,40 @@ const LOAN_TYPE_LABEL: Record<string, string> = {
 const fmt = (n: number | string) =>
     Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const fmtDate = (d: string) => {
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 const TIER_LABEL: Record<number, string> = { 0: 'Grace', 1: 'Same-Month', 2: 'Monthly' };
 
-interface WaterfallInstallmentResult {
-    installmentNo: number;
-    penalApplied: number;
-    interestApplied: number;
-    principalApplied: number;
-    fullyCovered: boolean;
-}
-
-interface WaterfallResult {
-    perInstallment: WaterfallInstallmentResult[];
-    leftoverPrepayment: number;
-    totalPrincipalApplied: number;
-    /** Payment amount left over after even a full-balance prepayment — the
-     *  real backend would leave this unapplied (it would overpay the loan). */
-    unusedAmount: number;
-}
-
-/**
- * Simulates the real backend waterfall (recordLoanRepayment: oldest-first,
- * penal → interest → principal per installment, leftover applied as a
- * straight principal prepayment capped at the remaining balance) so the
- * screen can show exactly how a payment amount will actually be applied
- * before it's submitted — which installments get touched, and by how much —
- * instead of only the final balance-after number.
- */
-function simulateWaterfall(paymentAmount: number, unpaidInstallments: UnpaidInstallment[], currentBalance: number): WaterfallResult {
-    let remaining = paymentAmount;
-    let totalPrincipalApplied = 0;
-    const perInstallment: WaterfallInstallmentResult[] = [];
-    for (const inst of unpaidInstallments) {
-        if (remaining <= 0) break;
-        const penalApplied = Math.min(remaining, inst.penalDue);
-        remaining -= penalApplied;
-        const interestApplied = Math.min(remaining, inst.interestDue);
-        remaining -= interestApplied;
-        const principalApplied = Math.min(remaining, inst.principalDue);
-        remaining -= principalApplied;
-        totalPrincipalApplied += principalApplied;
-        if (penalApplied > 0 || interestApplied > 0 || principalApplied > 0) {
-            perInstallment.push({
-                installmentNo: inst.installmentNo,
-                penalApplied, interestApplied, principalApplied,
-                fullyCovered: penalApplied >= inst.penalDue && interestApplied >= inst.interestDue && principalApplied >= inst.principalDue,
-            });
-        }
-    }
-    let leftoverPrepayment = 0;
-    if (remaining > 0) {
-        leftoverPrepayment = Math.min(remaining, Math.max(0, currentBalance - totalPrincipalApplied));
-        totalPrincipalApplied += leftoverPrepayment;
-        remaining -= leftoverPrepayment;
-    }
-    return { perInstallment, leftoverPrepayment, totalPrincipalApplied, unusedAmount: Math.max(0, remaining) };
-}
+// Two views of the same figures. Simple is what the operator needs to collect this month's dues; Detailed adds the
+// EMI working, the full loan position and the repayment history. Both use the same dues and the same Save.
+type RepaymentView = 'simple' | 'detailed';
+const viewKey = () => {
+    let user = '';
+    try { user = String(JSON.parse(localStorage.getItem('user') || '{}')?.username || ''); } catch { /* no saved user */ }
+    return `lms-loan-repayment-view:${user}`;
+};
+const loadView = (): RepaymentView => {
+    try { return localStorage.getItem(viewKey()) === 'detailed' ? 'detailed' : 'simple'; } catch { return 'simple'; }
+};
 
 const LoanRepaymentForm: React.FC<Props> = ({
     form, activeLoans, dueStatus, dueStatusLoading, repaymentHistory, loading, historyLoading,
-    message, flagNotice, excessNotice, updateForm, handleMemberLookup, handleLoanSelect, handleSubmit, handleReset,
+    message, flagNotice, plan, planError, pendingRepayment, sentVoucher,
+    updateForm, handleMemberLookup, handleLoanSelect, handleSubmit, handleReset,
 }) => {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
     const [loanSearch, setLoanSearch] = useState('');
-    const [paymentMode, setPaymentMode] = useState<'due' | 'advance' | 'custom'>('due');
-    const [advanceCount, setAdvanceCount] = useState(1);
     const [showAllHistory, setShowAllHistory] = useState(false);
     const [showEmiDetail, setShowEmiDetail] = useState(false);
+    const [view, setViewState] = useState<RepaymentView>(loadView);
+    const detailed = view === 'detailed';
+    const setView = (next: RepaymentView) => {
+        setViewState(next);
+        try { localStorage.setItem(viewKey(), next); } catch { /* storage unavailable */ }
+    };
 
     const selectedLoan = activeLoans.find(l => l.loancaseno === form.selectedLoanCase);
     const filteredLoans = activeLoans.filter(l =>
@@ -101,32 +68,10 @@ const LoanRepaymentForm: React.FC<Props> = ({
         ? repaymentHistory.filter(r => String(r.loancaseno) === form.selectedLoanCase)
         : repaymentHistory;
 
-    // Reset to "Pay What's Due" whenever a different loan is selected — an
-    // advance/custom amount chosen for one loan shouldn't silently carry over.
-    useEffect(() => {
-        setPaymentMode('due');
-        setAdvanceCount(1);
-        setShowEmiDetail(false);
-    }, [form.selectedLoanCase]);
-
-    // Keep the amount field in sync with the selected mode. "Custom" leaves it
-    // alone entirely — the operator types whatever figure they need.
-    // "Pay What's Due" means exactly that — 0 when nothing is overdue, not a
-    // silent fallback to the next not-yet-due EMI (that's what "Pay in
-    // Advance" is for). Otherwise the button stays live after a member is
-    // fully caught up, inviting an accidental repeat/advance payment.
-    useEffect(() => {
-        if (!selectedLoan || paymentMode === 'custom') return;
-        const emi = parseFloat(selectedLoan.instal_amt as any) || 0;
-        const due = dueStatus?.totalDue || 0;
-        const amount = paymentMode === 'advance' ? due + advanceCount * emi : due;
-        updateForm('paymentAmount', Math.round(amount * 100) / 100);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [paymentMode, advanceCount, dueStatus, selectedLoan?.loancaseno]);
-
-    const waterfall = selectedLoan && form.paymentAmount > 0
-        ? simulateWaterfall(form.paymentAmount, dueStatus?.unpaidInstallments || [], parseFloat(selectedLoan.balance as any))
-        : null;
+    const unpaid = dueStatus?.unpaidInstallments || [];
+    const totalDue = dueStatus?.totalDue || 0;
+    const blockedByPending = !!pendingRepayment;
+    const canSave = !(loading || form.paymentAmount <= 0 || !!planError || blockedByPending || !plan);
 
     const onMemberSelected = (member: any) => {
         const memberNo = String(member.memberNo || '');
@@ -137,8 +82,8 @@ const LoanRepaymentForm: React.FC<Props> = ({
 
     usePageToolbarActions({
         onSave: handleSubmit,
-        saveLabel: loading ? 'Recording...' : 'Record Repayment',
-        saveEnabled: !(loading || form.paymentAmount <= 0),
+        saveLabel: loading ? 'Sending...' : 'Send to Past Transaction',
+        saveEnabled: canSave,
     });
 
     return (
@@ -147,9 +92,15 @@ const LoanRepaymentForm: React.FC<Props> = ({
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Loan Repayment')}</h1>
-                    <p className="aw-desc">{t('Record monthly installment payments against active loans')}</p>
+                    <p className="aw-desc">{t("Collect the installments that are due now. The payment is posted when it is passed in Past Transaction.")}</p>
                 </div>
                 <div className="aw-actions">
+                    <div className="aw-chips" role="radiogroup" aria-label={t('How much detail to show')}>
+                        <button type="button" role="radio" aria-checked={!detailed} className="aw-chip" onClick={() => setView('simple')}
+                            data-tip={t('Only what is needed to collect the dues')} data-tip-pos="bottom">{t('Simple')}</button>
+                        <button type="button" role="radio" aria-checked={detailed} className="aw-chip" onClick={() => setView('detailed')}
+                            data-tip={t('Adds the EMI working, the loan position and the history')} data-tip-pos="bottom">{t('Detailed')}</button>
+                    </div>
                     <button type="button" onClick={handleReset} className="aw-btn aw-btn-secondary">
                         <RefreshCw size={13} /> {t('Reset')}
                     </button>
@@ -252,131 +203,56 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                     {selectedLoan && (
                                         <p className="aw-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 16px' }}>
                                             <span>{t('Original:')} <strong style={{ color: 'var(--aw-text)' }}>₹{fmt(selectedLoan.loan_amt)}</strong></span>
+                                            <span>{t('Balance:')} <strong style={{ color: 'var(--aw-danger)' }}>₹{fmt(selectedLoan.balance)}</strong></span>
                                             {dueStatus && <span>{t('Paid:')} <strong style={{ color: 'var(--aw-text)' }}>{t('{{1}} of {{2}}', { 1: dueStatus.paidInstallments, 2: dueStatus.totalInstallments })}</strong></span>}
                                         </p>
                                     )}
 
-                                    {/* EMI card — click to expand the full "how this EMI was built" trace.
-                                        remainingCount uses totalInstallments minus paidInstallments, same as
-                                        the "Paid" figure above — an estimate, since some remaining installments
-                                        may already be partly covered by advance prepayments not yet counted as
-                                        officially due. */}
-                                    {selectedLoan && dueStatus && (
-                                        <div className="aw-panel">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowEmiDetail(v => !v)}
-                                                aria-expanded={showEmiDetail}
-                                                style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%' }}
-                                            >
-                                                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                                                    <span>
-                                                        <span className="aw-label" style={{ marginBottom: 0 }}>EMI</span>
-                                                        <span className="aw-strong" style={{ fontSize: 'calc(var(--type-body-size) + 3px)' }}>₹{fmt(selectedLoan.instal_amt)}</span>
-                                                    </span>
-                                                    <span style={{ textAlign: 'right' }}>
-                                                        <span className="aw-meta" style={{ display: 'block' }}>{t('{{1}} {{2}} of {{3}}', { 1: t('Remaining:'), 2: dueStatus.totalInstallments - dueStatus.paidInstallments, 3: dueStatus.totalInstallments })}</span>
-                                                        <span className="aw-strong" style={{ fontWeight: 600 }}>{t('≈ ₹{{1}} estimated', { 1: fmt((dueStatus.totalInstallments - dueStatus.paidInstallments) * dueStatus.emiBreakdown.instalAmt) })}</span>
-                                                    </span>
-                                                </span>
-                                                <span className="aw-meta" style={{ display: 'block', marginTop: 4, color: 'var(--aw-accent)', fontWeight: 700 }}>
-                                                    {showEmiDetail ? '▲ ' + t('Hide calculation') : '▼ ' + t('Why is the EMI this amount?')}
-                                                </span>
-                                            </button>
-
-                                            {showEmiDetail && (
-                                                <div className="aw-fade-in" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--aw-border)' }}>
-                                                    <div className="aw-meta" style={{ fontFamily: "'IBM Plex Mono', 'Courier New', monospace", lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                        <div>
-                                                            Monthly Principal = Loan Amount (₹{fmt(dueStatus.emiBreakdown.loanAmt)}) ÷ Installments ({dueStatus.emiBreakdown.noOfInstal})
-                                                            {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.monthlyPrincipal)}</b>
-                                                        </div>
-                                                        {dueStatus.emiBreakdown.hasRbSchedule ? (
-                                                            <>
-                                                                <div>
-                                                                    Compulsory Slot Interest = Total EMI Interest (₹{fmt(dueStatus.emiBreakdown.totalInterestForEMI)}) − True Reducing-Balance Interest for the full schedule (₹{fmt(dueStatus.emiBreakdown.totalRBInterestFullSchedule)})
-                                                                    {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.compulsorySlotInterest)}</b>
-                                                                </div>
-                                                                <div>
-                                                                    Monthly Interest = (RB Interest ₹{fmt(dueStatus.emiBreakdown.totalRBInterestFullSchedule)} + Slot Interest ₹{fmt(dueStatus.emiBreakdown.compulsorySlotInterest)}) ÷ Installments ({dueStatus.emiBreakdown.noOfInstal})
-                                                                    {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)}</b>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <div>
-                                                                {t('This loan predates the reducing-balance schedule feature — Monthly Interest is a simple flat split')}
-                                                                {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)}</b>
-                                                            </div>
-                                                        )}
-                                                        <div style={{ paddingTop: 4, borderTop: '1px solid var(--aw-border)' }}>
-                                                            EMI = Monthly Principal (₹{fmt(dueStatus.emiBreakdown.monthlyPrincipal)}) + Monthly Interest (₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)})
-                                                            {' '}= <b style={{ color: 'var(--aw-accent)' }}>₹{fmt(dueStatus.emiBreakdown.instalAmt)}</b>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
+                                    {/* One pending voucher per loan: a repayment already waiting blocks a second one */}
+                                    {blockedByPending && (
+                                        <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0 }} role="alert">
+                                            <ClipboardList size={14} />
+                                            <span>{t('A repayment of ₹{{1}} is already waiting in Past Transaction (voucher {{2}}). Accept or reject it there before recording another.', { 1: fmt(pendingRepayment!.amount), 2: pendingRepayment!.voucher_no })}</span>
                                         </div>
                                     )}
 
                                     {dueStatusLoading ? (
                                         <p className="aw-meta" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><RefreshCw size={12} className="aw-spin" /> {t('Checking outstanding dues…')}</p>
-                                    ) : dueStatus && dueStatus.unpaidInstallments.length > 0 ? (
-                                        <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0, justifyContent: 'space-between' }}>
-                                            <span>{dueStatus.unpaidInstallments.length} {t('overdue — oldest recovered first')}</span>
-                                            <span>₹{fmt(dueStatus.totalDue)}</span>
-                                        </div>
-                                    ) : dueStatus ? (
+                                    ) : dueStatus && unpaid.length === 0 ? (
                                         <div className="aw-alert aw-alert-success" style={{ marginBottom: 0 }}>
                                             <CheckCircle2 size={15} />
-                                            <span>{t('Fully paid up — nothing currently due. Switch to "Pay in Advance" to prepay a future installment.')}</span>
+                                            <span>{t('Nothing is due on this loan right now. To pay it off ahead of schedule, use Loan Early Closure.')}</span>
                                         </div>
                                     ) : null}
 
-                                    {/* Payment mode */}
-                                    <div>
-                                        <span className="aw-label">{t('Payment Mode')}</span>
-                                        <div className="aw-seg" role="tablist" style={{ ['--seg-index' as any]: paymentMode === 'due' ? 0 : paymentMode === 'advance' ? 1 : 2, ['--seg-count' as any]: 3 }}>
-                                            {([
-                                                { key: 'due', label: t("Pay What's Due") },
-                                                { key: 'advance', label: t('Pay in Advance') },
-                                                { key: 'custom', label: t('Custom') },
-                                            ] as const).map(m => (
-                                                <button key={m.key} type="button" role="tab" aria-selected={paymentMode === m.key} onClick={() => setPaymentMode(m.key)}>
-                                                    {m.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        {paymentMode === 'advance' && (
-                                            <div className="aw-inline aw-fade-in" style={{ marginTop: 8, gap: 8, flexWrap: 'wrap' }}>
-                                                <label className="aw-meta" htmlFor="lr-adv">{t('Installments ahead:')}</label>
-                                                <input
-                                                    id="lr-adv"
-                                                    type="number"
-                                                    min={1}
-                                                    value={advanceCount}
-                                                    onChange={e => setAdvanceCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                                                    className="aw-input"
-                                                    style={{ width: 80, textAlign: 'center' }}
-                                                />
-                                                <span className="aw-meta">× ₹{fmt(selectedLoan?.instal_amt || 0)} {t("EMI, on top of what's due")}</span>
-                                            </div>
-                                        )}
-                                    </div>
-
                                     <div>
                                         <label className="aw-label" htmlFor="lr-amt">{t('Amount (₹)')}</label>
-                                        <input
-                                            id="lr-amt"
-                                            type="number"
-                                            value={form.paymentAmount || ''}
-                                            onChange={e => updateForm('paymentAmount', Number(e.target.value))}
-                                            readOnly={paymentMode !== 'custom'}
-                                            className="aw-input"
-                                            placeholder={selectedLoan ? `EMI: ${fmt(selectedLoan.instal_amt)}` : ''}
-                                        />
-                                        {paymentMode !== 'custom' && (
-                                            <p className="aw-meta" style={{ marginTop: 4 }}>{t('Auto-filled by the selected mode — switch to "Custom" to edit directly.')}</p>
-                                        )}
+                                        <div className="aw-inline" style={{ gap: 8 }}>
+                                            <input
+                                                id="lr-amt"
+                                                type="number"
+                                                min={0}
+                                                max={totalDue || undefined}
+                                                value={form.paymentAmount || ''}
+                                                onChange={e => updateForm('paymentAmount', Number(e.target.value))}
+                                                className="aw-input"
+                                                placeholder={totalDue ? fmt(totalDue) : ''}
+                                                disabled={blockedByPending || unpaid.length === 0}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="aw-btn aw-btn-secondary"
+                                                onClick={() => updateForm('paymentAmount', totalDue)}
+                                                disabled={blockedByPending || unpaid.length === 0 || form.paymentAmount === totalDue}
+                                                data-tip={t('Fill in everything that is due')}
+                                            >
+                                                {t('Full dues')}
+                                            </button>
+                                        </div>
+                                        <p className="aw-meta" style={{ marginTop: 4 }}>
+                                            {t('Up to ₹{{1}} (everything due). It is applied penalty, then interest, then principal, oldest installment first.', { 1: fmt(totalDue) })}
+                                        </p>
+                                        {planError && <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-danger)', fontWeight: 700 }} role="alert">{planError}</p>}
                                     </div>
                                     <div className="aw-two">
                                         <div>
@@ -389,26 +265,17 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                         </div>
                                     </div>
 
-                                    {selectedLoan && (
+                                    {plan && !planError && (
                                         <div className="aw-panel">
                                             <div className="aw-rows">
-                                                <div className="aw-row"><span className="aw-row-label">{t('Outstanding Balance')}</span><span className="aw-row-value" style={{ color: 'var(--aw-danger)' }}>₹{fmt(selectedLoan.balance)}</span></div>
-                                                <div className="aw-row"><span className="aw-row-label">{t('Balance After Payment')}</span>
-                                                    <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>
-                                                        ₹{fmt(Math.max(0, parseFloat(selectedLoan.balance as any) - (waterfall?.totalPrincipalApplied || 0)))}
-                                                    </span>
-                                                </div>
+                                                <div className="aw-row"><span className="aw-row-label">{t('Principal')}</span><span className="aw-row-value">₹{fmt(plan.principal)}</span></div>
+                                                <div className="aw-row"><span className="aw-row-label">{t('Interest')}</span><span className="aw-row-value">₹{fmt(plan.interest)}</span></div>
+                                                <div className="aw-row"><span className="aw-row-label">{t('Penalty')}</span><span className="aw-row-value" style={{ color: plan.penal > 0 ? 'var(--aw-danger)' : undefined }}>₹{fmt(plan.penal)}</span></div>
+                                                <div className="aw-row"><span className="aw-row-label aw-strong">{t('Total collected')}</span><span className="aw-row-value aw-strong">₹{fmt(plan.amount)}</span></div>
+                                                {plan.amount < totalDue - 0.005 && (
+                                                    <div className="aw-row"><span className="aw-row-label">{t('Still due after this')}</span><span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>₹{fmt(totalDue - plan.amount)}</span></div>
+                                                )}
                                             </div>
-                                            {waterfall && waterfall.leftoverPrepayment > 0 && (
-                                                <p className="aw-meta" style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--aw-border)' }}>
-                                                    ₹{fmt(waterfall.leftoverPrepayment)} {t("beyond what's currently due will be applied as an advance against principal.")}
-                                                </p>
-                                            )}
-                                            {waterfall && waterfall.unusedAmount > 0.01 && (
-                                                <p className="aw-meta" style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--aw-border)', color: 'var(--aw-warning)', fontWeight: 700 }}>
-                                                    ₹{fmt(waterfall.unusedAmount)} {t('exceeds the outstanding balance — it will not be applied (would overpay the loan).')}
-                                                </p>
-                                            )}
                                         </div>
                                     )}
 
@@ -418,16 +285,15 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                         </div>
                                     )}
 
-                                    {/* ES-551: this payment brought in more than was due. Informational; the money is already applied. */}
-                                    {excessNotice && (
+                                    {sentVoucher && (
                                         <div className="aw-alert aw-alert-info aw-fade-in" style={{ marginBottom: 0 }} role="status">
-                                            <Info size={14} />
-                                            <span><strong>{t('Excess payment received.')}</strong> {excessNotice}</span>
+                                            <ClipboardList size={14} />
+                                            <span><strong>{t('Sent to Past Transaction.')}</strong> {t('Voucher {{1}} for ₹{{2}} posts when it is passed. Nothing has been posted yet.', { 1: sentVoucher.voucherNo, 2: fmt(sentVoucher.amount) })}</span>
                                         </div>
                                     )}
 
-                                    {/* Check-this flag raised by this payment (possible old-EMI / new-EMI mix-up).
-                                        The payment is already recorded - this only asks someone to look. */}
+                                    {/* Check-this flag raised for this payment (possible old-EMI / new-EMI mix-up).
+                                        Only asks someone to look; it never changes how the money is applied. */}
                                     {flagNotice && (
                                         <div className="aw-alert aw-alert-warning aw-fade-in" style={{ marginBottom: 0 }} role="alert">
                                             <AlertCircle size={14} />
@@ -435,9 +301,9 @@ const LoanRepaymentForm: React.FC<Props> = ({
                                         </div>
                                     )}
 
-                                    <button type="button" onClick={handleSubmit} disabled={loading || form.paymentAmount <= 0} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
+                                    <button type="button" onClick={handleSubmit} disabled={!canSave} className="aw-btn aw-btn-primary" style={{ width: '100%' }}>
                                         {loading ? <RefreshCw size={13} className="aw-spin" /> : null}
-                                        {loading ? t('Recording…') : t('Record Repayment')}
+                                        {loading ? t('Sending…') : t('Send to Past Transaction')}
                                     </button>
                                 </div>
                             </section>
@@ -453,144 +319,209 @@ const LoanRepaymentForm: React.FC<Props> = ({
                     {/* ── Right column ── */}
                     <div className="aw-stack" style={{ minWidth: 0 }}>
 
-                        {/* This payment will cover */}
-                        {form.selectedLoanCase && waterfall && waterfall.perInstallment.length > 0 && (
+                        {/* What is due now: one row per installment, with totals */}
+                        {form.selectedLoanCase && dueStatus && (
+                            <section className="aw-card aw-fade-in">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon" style={{ color: unpaid.length ? 'var(--aw-warning)' : undefined }}><AlertCircle size={14} /></span>
+                                    <h2 className="aw-card-title">
+                                        {unpaid.length > 0 ? t('{{1}} installment(s) due — oldest recovered first', { 1: unpaid.length }) : t('Nothing due')}
+                                    </h2>
+                                    {unpaid.length > 0 && <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-warning)' }}>₹{fmt(totalDue)}</span>}
+                                </div>
+                                {unpaid.length > 0 && (
+                                    <div className="aw-table-wrap" style={{ maxHeight: 360 }}>
+                                        <table className="aw-table" style={{ minWidth: 760 }}>
+                                            <thead>
+                                                <tr>
+                                                    <th>{t('Inst. No.')}</th>
+                                                    <th className="is-right">EMI</th>
+                                                    <th>{t('Due date')}</th>
+                                                    <th className="is-right">{t('Principal due')}</th>
+                                                    <th className="is-right">{t('Interest due')}</th>
+                                                    <th className="is-right">{t('Penalty due')}</th>
+                                                    <th>{t('Penalty tier')}</th>
+                                                    <th>{t('Overdue')}</th>
+                                                    <th className="is-right">{t('Total due')}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {unpaid.map(inst => (
+                                                    <tr key={inst.installmentNo}>
+                                                        <td>{inst.installmentNo}</td>
+                                                        <td className="is-right">₹{fmt(inst.emiAmount)}</td>
+                                                        <td className="is-muted">{fmtDate(inst.dueDate)}</td>
+                                                        <td className="is-right">₹{fmt(inst.principalDue)}</td>
+                                                        <td className="is-right">₹{fmt(inst.interestDue)}</td>
+                                                        <td className="is-right is-danger">{inst.penalDue > 0 ? `₹${fmt(inst.penalDue)}` : '—'}</td>
+                                                        <td className="is-muted">{t(TIER_LABEL[inst.tier] || '—')}</td>
+                                                        <td className={inst.monthsOverdue > 0 ? 'is-danger' : 'is-muted'}>{inst.monthsOverdue > 0 ? t('{{1}} mo', { 1: inst.monthsOverdue }) : t('Current')}</td>
+                                                        <td className="is-right aw-strong">₹{fmt(inst.principalDue + inst.interestDue + inst.penalDue)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr style={{ fontWeight: 700 }}>
+                                                    <td>{t('Total')}</td>
+                                                    <td className="is-right">₹{fmt(dueStatus.totalEmi)}</td>
+                                                    <td />
+                                                    <td className="is-right">₹{fmt(dueStatus.totalPrincipalDue)}</td>
+                                                    <td className="is-right">₹{fmt(dueStatus.totalInterestDue)}</td>
+                                                    <td className="is-right is-danger">₹{fmt(dueStatus.totalPenalDue)}</td>
+                                                    <td />
+                                                    <td />
+                                                    <td className="is-right">₹{fmt(dueStatus.totalDue)}</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                )}
+                            </section>
+                        )}
+
+                        {/* How the typed amount will be applied (worked out by the server) */}
+                        {form.selectedLoanCase && plan && plan.rows.length > 0 && !planError && (
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head">
                                     <span className="aw-card-icon"><CheckCircle2 size={14} /></span>
                                     <h2 className="aw-card-title">{t('This Payment Will Cover')}</h2>
                                 </div>
                                 <div className="aw-stack" style={{ gap: 6 }}>
-                                    {waterfall.perInstallment.map(w => (
-                                        <div key={w.installmentNo} className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                                            <span>
-                                                Installment #{w.installmentNo}{' '}
-                                                <span className={`aw-pill tone-${w.fullyCovered ? 'success' : 'warning'}`}>{w.fullyCovered ? t('fully settled') : t('partially covered')}</span>
-                                            </span>
-                                            <span className="aw-meta">{t('{{1}} {{2}} ₹{{3}} principal', { 1: w.penalApplied > 0 && t('₹{{1}} penal +', { 1: fmt(w.penalApplied) }), 2: w.interestApplied > 0 && t('₹{{1}} interest +', { 1: fmt(w.interestApplied) }), 3: fmt(w.principalApplied) })}</span>
-                                        </div>
-                                    ))}
-                                    {waterfall.leftoverPrepayment > 0 && (
-                                        <div className="aw-panel" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span>{t('Advance principal prepayment')}</span>
-                                            <span className="aw-meta">₹{fmt(waterfall.leftoverPrepayment)}</span>
-                                        </div>
-                                    )}
+                                    {plan.rows.map(r => {
+                                        const inst = unpaid.find(u => u.installmentNo === r.installmentNo);
+                                        const settled = !!inst && r.principal >= inst.principalDue - 0.005 && r.interest >= inst.interestDue - 0.005 && r.penal >= inst.penalDue - 0.005;
+                                        return (
+                                            <div key={r.installmentNo} className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                                <span>
+                                                    {t('Installment')} #{r.installmentNo}{' '}
+                                                    <span className={`aw-pill tone-${settled ? 'success' : 'warning'}`}>{settled ? t('fully settled') : t('partially covered')}</span>
+                                                </span>
+                                                <span className="aw-meta">
+                                                    {r.penal > 0 ? `₹${fmt(r.penal)} ${t('penal')} + ` : ''}{r.interest > 0 ? `₹${fmt(r.interest)} ${t('interest')} + ` : ''}₹{fmt(r.principal)} {t('principal')}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </section>
                         )}
 
-                        {/* Overdue installments */}
-                        {form.selectedLoanCase && dueStatus && dueStatus.unpaidInstallments.length > 0 && (
+                        {/* Detailed view: the working behind the figures, the loan position and the history */}
+                        {detailed && form.selectedLoanCase && selectedLoan && dueStatus && (
                             <section className="aw-card aw-fade-in">
                                 <div className="aw-card-head">
-                                    <span className="aw-card-icon" style={{ color: 'var(--aw-warning)' }}><AlertCircle size={14} /></span>
-                                    <h2 className="aw-card-title">{dueStatus.unpaidInstallments.length} {t('Installment(s) Overdue — Oldest Recovered First')}</h2>
-                                    <span className="aw-strong" style={{ marginLeft: 'auto', color: 'var(--aw-warning)' }}>₹{fmt(dueStatus.totalDue)}</span>
+                                    <span className="aw-card-icon"><FileText size={14} /></span>
+                                    <h2 className="aw-card-title">{t('How the EMI was built')}</h2>
+                                    <button type="button" className="aw-btn aw-btn-ghost aw-btn-sm" style={{ marginLeft: 'auto' }} onClick={() => setShowEmiDetail(v => !v)} aria-expanded={showEmiDetail}>
+                                        {showEmiDetail ? t('Hide calculation') : t('Show calculation')}
+                                    </button>
                                 </div>
-                                <div className="aw-table-wrap" style={{ maxHeight: 300 }}>
-                                    <table className="aw-table">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th><th>{t('Month')}</th><th>{t('Overdue')}</th>
-                                                <th className="is-right">{t('Principal')}</th><th className="is-right">{t('Interest')}</th><th className="is-right">{t('Penal')}</th>
-                                                <th>{t('Tier')}</th><th className="is-right">{t('Total')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {dueStatus.unpaidInstallments.map(inst => (
-                                                <tr key={inst.installmentNo}>
-                                                    <td>{inst.installmentNo}</td>
-                                                    <td className="is-muted">{MONTHS[new Date(inst.dueDate).getMonth()]?.label?.slice(0, 3)} {new Date(inst.dueDate).getFullYear()}</td>
-                                                    <td className="is-danger">{inst.monthsOverdue > 0 ? t('{{1}}mo', { 1: inst.monthsOverdue }) : 'current'}</td>
-                                                    <td className="is-right">₹{fmt(inst.principalDue)}</td>
-                                                    <td className="is-right">₹{fmt(inst.interestDue)}</td>
-                                                    <td className="is-right is-danger">{inst.penalDue > 0 ? `₹${fmt(inst.penalDue)}` : '—'}</td>
-                                                    <td className="is-muted">{TIER_LABEL[inst.tier]}</td>
-                                                    <td className="is-right">₹{fmt(inst.principalDue + inst.interestDue + inst.penalDue)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <p className="aw-meta">EMI <strong style={{ color: 'var(--aw-text)' }}>₹{fmt(selectedLoan.instal_amt)}</strong> · {t('Remaining:')} {dueStatus.totalInstallments - dueStatus.paidInstallments} {t('of')} {dueStatus.totalInstallments}</p>
+                                {showEmiDetail && (
+                                    <div className="aw-meta aw-fade-in" style={{ fontFamily: "'IBM Plex Mono', 'Courier New', monospace", lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
+                                        <div>
+                                            Monthly Principal = Loan Amount (₹{fmt(dueStatus.emiBreakdown.loanAmt)}) ÷ Installments ({dueStatus.emiBreakdown.noOfInstal})
+                                            {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.monthlyPrincipal)}</b>
+                                        </div>
+                                        {dueStatus.emiBreakdown.hasRbSchedule ? (
+                                            <>
+                                                <div>
+                                                    Compulsory Slot Interest = Total EMI Interest (₹{fmt(dueStatus.emiBreakdown.totalInterestForEMI)}) − True Reducing-Balance Interest for the full schedule (₹{fmt(dueStatus.emiBreakdown.totalRBInterestFullSchedule)})
+                                                    {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.compulsorySlotInterest)}</b>
+                                                </div>
+                                                <div>
+                                                    Monthly Interest = (RB Interest ₹{fmt(dueStatus.emiBreakdown.totalRBInterestFullSchedule)} + Slot Interest ₹{fmt(dueStatus.emiBreakdown.compulsorySlotInterest)}) ÷ Installments ({dueStatus.emiBreakdown.noOfInstal})
+                                                    {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)}</b>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div>
+                                                {t('This loan predates the reducing-balance schedule feature — Monthly Interest is a simple flat split')}
+                                                {' '}= <b style={{ color: 'var(--aw-text)' }}>₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)}</b>
+                                            </div>
+                                        )}
+                                        <div style={{ paddingTop: 4, borderTop: '1px solid var(--aw-border)' }}>
+                                            EMI = Monthly Principal (₹{fmt(dueStatus.emiBreakdown.monthlyPrincipal)}) + Monthly Interest (₹{fmt(dueStatus.emiBreakdown.monthlyInterestForEMI)})
+                                            {' '}= <b style={{ color: 'var(--aw-accent)' }}>₹{fmt(dueStatus.emiBreakdown.instalAmt)}</b>
+                                        </div>
+                                    </div>
+                                )}
                             </section>
                         )}
 
-                        {/* Repayment history — filtered to the selected loan by default, since
-                            /repayment-history returns every loan the member has and it's otherwise
-                            easy to lose the payment you just made in someone else's history. */}
                         {/* Read-only Loan Position: ledger vs loan record, schedule, closure and notices (nothing saved) */}
-                        {form.selectedLoanCase && (
+                        {detailed && form.selectedLoanCase && (
                             <LoanPositionPanel
                                 mbno={form.mbno}
                                 loancaseno={form.selectedLoanCase}
                                 loantype={selectedLoan?.loantype}
-                                refreshKey={`${repaymentHistory.length}|${message?.text ?? ''}`}
+                                refreshKey={`${repaymentHistory.length}|${sentVoucher?.voucherNo ?? ''}`}
                             />
                         )}
 
-                        <section className="aw-card">
-                            <div className="aw-card-head">
-                                <span className="aw-card-icon"><FileText size={14} /></span>
-                                <div>
-                                    <h2 className="aw-card-title">
-                                        {t('Repayment History')}
-                                        {form.selectedLoanCase && !showAllHistory && <span style={{ color: 'var(--aw-muted)', fontWeight: 500 }}> — Loan #{form.selectedLoanCase}</span>}
-                                    </h2>
-                                    {form.memberName && <p className="aw-meta">{form.memberName} — #{form.mbno}</p>}
+                        {detailed && (
+                            <section className="aw-card">
+                                <div className="aw-card-head">
+                                    <span className="aw-card-icon"><FileText size={14} /></span>
+                                    <div>
+                                        <h2 className="aw-card-title">
+                                            {t('Repayment History')}
+                                            {form.selectedLoanCase && !showAllHistory && <span style={{ color: 'var(--aw-muted)', fontWeight: 500 }}> — Loan #{form.selectedLoanCase}</span>}
+                                        </h2>
+                                        {form.memberName && <p className="aw-meta">{form.memberName} — #{form.mbno}</p>}
+                                    </div>
+                                    {form.selectedLoanCase && (
+                                        <button type="button" onClick={() => setShowAllHistory(v => !v)} className="aw-btn aw-btn-ghost aw-btn-sm" style={{ marginLeft: 'auto' }}>
+                                            {showAllHistory ? t('Show this loan only') : t("Show all this member's loans")}
+                                        </button>
+                                    )}
                                 </div>
-                                {form.selectedLoanCase && (
-                                    <button type="button" onClick={() => setShowAllHistory(v => !v)} className="aw-btn aw-btn-ghost aw-btn-sm" style={{ marginLeft: 'auto' }}>
-                                        {showAllHistory ? t('Show this loan only') : t("Show all this member's loans")}
-                                    </button>
-                                )}
-                            </div>
-                            {historyLoading ? (
-                                <div className="aw-empty" style={{ padding: 28 }}><RefreshCw size={22} className="aw-spin" /><span className="aw-meta">{t('Loading…')}</span></div>
-                            ) : filteredHistory.length === 0 ? (
-                                <div className="aw-empty" style={{ padding: 28 }}>
-                                    <span className="aw-meta">
-                                        {!form.mbno
-                                            ? t('Search for a member to view history.')
-                                            : form.selectedLoanCase && !showAllHistory
-                                                ? t('No repayment records found for this loan yet.')
-                                                : t('No repayment records found.')}
-                                    </span>
-                                </div>
-                            ) : (
-                                <div className="aw-table-wrap" style={{ maxHeight: '44vh' }}>
-                                    <table className="aw-table" style={{ minWidth: 820 }}>
-                                        <thead>
-                                            <tr>
-                                                <th>{t('Loan Case')}</th><th>{t('Type')}</th><th>{t('Month/Year')}</th>
-                                                <th className="is-right">{t('Amount')}</th><th>{t('Receipt')}</th><th className="is-right">{t('Remaining')}</th>
-                                                <th>{t('Date')}</th><th>{t('Narration')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filteredHistory.map((row, i) => (
-                                                <tr key={i}>
-                                                    <td>{row.loancaseno}</td>
-                                                    <td className="is-muted">{LOAN_TYPE_LABEL[row.loantype] || row.loantype}</td>
-                                                    <td className="is-muted">{MONTHS.find(m => m.value === row.payment_month)?.label?.slice(0, 3)} {row.payment_year}</td>
-                                                    <td className="is-right">₹{fmt(row.payment_amount)}</td>
-                                                    <td className="is-muted">{row.receipt_no || '—'}</td>
-                                                    <td className="is-right is-danger">₹{fmt(row.remaining_balance)}</td>
-                                                    <td className="is-muted">{row.payment_date ? new Date(row.payment_date).toLocaleDateString('en-IN') : '—'}</td>
-                                                    {/* Surfaces rows like "Consolidated into loan case #X (principal
-                                                        ₹... + closure interest ₹...)" written by passTransaction()'s
-                                                        consolidation branch — so a case that hit ₹0 balance via
-                                                        consolidation doesn't look like an unexplained data gap. */}
-                                                    <td className={row.narration?.startsWith('Consolidated into') ? 'is-warning' : 'is-muted'} style={{ maxWidth: 260 }}>
-                                                        {row.narration || '—'}
-                                                    </td>
+                                {historyLoading ? (
+                                    <div className="aw-empty" style={{ padding: 28 }}><RefreshCw size={22} className="aw-spin" /><span className="aw-meta">{t('Loading…')}</span></div>
+                                ) : filteredHistory.length === 0 ? (
+                                    <div className="aw-empty" style={{ padding: 28 }}>
+                                        <span className="aw-meta">
+                                            {!form.mbno
+                                                ? t('Search for a member to view history.')
+                                                : form.selectedLoanCase && !showAllHistory
+                                                    ? t('No repayment records found for this loan yet.')
+                                                    : t('No repayment records found.')}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="aw-table-wrap" style={{ maxHeight: '44vh' }}>
+                                        <table className="aw-table" style={{ minWidth: 820 }}>
+                                            <thead>
+                                                <tr>
+                                                    <th>{t('Loan Case')}</th><th>{t('Type')}</th><th>{t('Month/Year')}</th>
+                                                    <th className="is-right">{t('Amount')}</th><th>{t('Receipt')}</th><th className="is-right">{t('Remaining')}</th>
+                                                    <th>{t('Date')}</th><th>{t('Narration')}</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </section>
+                                            </thead>
+                                            <tbody>
+                                                {filteredHistory.map((row, i) => (
+                                                    <tr key={i}>
+                                                        <td>{row.loancaseno}</td>
+                                                        <td className="is-muted">{LOAN_TYPE_LABEL[row.loantype] || row.loantype}</td>
+                                                        <td className="is-muted">{MONTHS.find(m => m.value === row.payment_month)?.label?.slice(0, 3)} {row.payment_year}</td>
+                                                        <td className="is-right">₹{fmt(row.payment_amount)}</td>
+                                                        <td className="is-muted">{row.receipt_no || '—'}</td>
+                                                        <td className="is-right is-danger">₹{fmt(row.remaining_balance)}</td>
+                                                        <td className="is-muted">{row.payment_date ? new Date(row.payment_date).toLocaleDateString('en-IN') : '—'}</td>
+                                                        {/* Surfaces rows like "Consolidated into loan case #X (principal
+                                                            ₹... + closure interest ₹...)" so a case that hit ₹0 balance via
+                                                            consolidation doesn't look like an unexplained data gap. */}
+                                                        <td className={row.narration?.startsWith('Consolidated into') ? 'is-warning' : 'is-muted'} style={{ maxWidth: 260 }}>
+                                                            {row.narration || '—'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </section>
+                        )}
                     </div>
                 </div>
             </div>

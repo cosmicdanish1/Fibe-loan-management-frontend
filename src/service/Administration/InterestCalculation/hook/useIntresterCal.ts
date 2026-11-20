@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next';
 
 // Initial form data
 const initialFormData: CalculationData = {
-  selectedAccount: 'RECURRING DEPOSIT',
+  selectedAccount: 'SAVINGS ACCOUNT',
   fromDate: dayjs().subtract(1, 'year').startOf('year').format('DD-MMM-YYYY'),
   toDate: dayjs().subtract(1, 'year').endOf('year').format('DD-MMM-YYYY'),
   rate: '',
@@ -115,7 +115,6 @@ export const useDropdownData = (): UseDropdownDataReturn => {
     
     try {
       const options: DropdownOption[] = [
-        { value: 'RECURRING DEPOSIT', label: 'RECURRING DEPOSIT' },
         { value: 'SAVINGS ACCOUNT', label: 'SAVINGS ACCOUNT' },
         { value: 'FIXED DEPOSIT', label: 'FIXED DEPOSIT' }
       ];

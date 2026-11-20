@@ -43,20 +43,21 @@ const flattenSearchResults = (items: any): SearchResult[] => {
       if (r.type === 'member') {
         const memberNo = id.replace(/^member-/, '');
         return {
-          id, memberNo, name: title, type: 'member' as const,
+          id, memberNo: String(r.memberNo ?? memberNo), name: title, type: 'member' as const,
+          wing: r.wing, division: r.division, accountNo: r.accountNo, srNo: r.srNo,
           title, subtitle: String(r.subtitle ?? ''), details,
         };
       }
       if (r.type === 'loan') {
         const caseNo = id.replace(/^loan-/, '');
         return {
-          id, accountNo: caseNo, name: details.split(' - ')[0] || '', type: 'loan' as const,
+          id, memberNo: r.memberNo, accountNo: String(r.accountNo ?? caseNo), name: details.split(' - ')[0] || '', type: 'loan' as const,
           title, subtitle: String(r.subtitle ?? ''), details,
         };
       }
       const accountNo = id.replace(/^account-(sb|fd)-/, '');
       return {
-        id, accountNo, name: details.split(' | ')[0] || '', type: 'account' as const,
+        id, memberNo: r.memberNo, accountNo: String(r.accountNo ?? accountNo), name: details.split(' | ')[0] || '', type: 'account' as const,
         title, subtitle: String(r.subtitle ?? ''), details,
       };
     });
