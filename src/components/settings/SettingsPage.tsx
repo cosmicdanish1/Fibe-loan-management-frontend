@@ -308,7 +308,7 @@ const Panel: React.FC<{
           {icon}
         </div>
         <div className="min-w-0">
-          <h3 className="settings-panel-title font-bold tracking-tight" style={{ color: C.textStrong }}>{title}</h3>
+          <h3 className="settings-panel-title font-semibold tracking-tight" style={{ color: C.textStrong }}>{title}</h3>
           {subtitle && (
             <p className="fz-small font-medium" style={{ color: C.dim }}>{tLabel(subtitle)}</p>
           )}
@@ -324,7 +324,7 @@ const Panel: React.FC<{
 const Counter: React.FC<{ children: React.ReactNode; color?: string }> = ({ children, color = 'var(--settings-accent)' }) => {
   return (
     <span
-      className="px-2.5 py-1 fz-tiny font-bold rounded-full"
+      className="px-2.5 py-1 fz-tiny font-semibold rounded-full"
       style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
     >
       {children}
@@ -493,11 +493,11 @@ const AiAssistantSettingsSection: React.FC<{ accent: string; isAdmin: boolean }>
   const stat = (label: string, value: React.ReactNode, color?: string) => (
     <div className="px-3.5 py-3 rounded-xl" style={{ background: C.fill }}>
       <div className="fz-small" style={{ color: C.dim }}>{label}</div>
-      <div className="fz-body font-bold" style={{ color: color ?? C.textStrong, fontSize: 18 }}>{value}</div>
+      <div className="fz-body font-semibold" style={{ color: color ?? C.textStrong, fontSize: 18 }}>{value}</div>
     </div>
   );
   const chip = (key: typeof filter, label: string) => (
-    <button key={key} type="button" aria-pressed={filter === key} onClick={() => setFilter(key)} className="px-3 py-1.5 rounded-full fz-small font-bold cursor-pointer"
+    <button key={key} type="button" aria-pressed={filter === key} onClick={() => setFilter(key)} className="px-3 py-1.5 rounded-full fz-small font-semibold cursor-pointer"
       style={{ background: filter === key ? `color-mix(in srgb, ${accent} 14%, transparent)` : 'transparent', color: filter === key ? C.textStrong : C.dim, border: `1px solid ${filter === key ? accent : C.border}` }}>{label}</button>
   );
 
@@ -537,7 +537,7 @@ const AiAssistantSettingsSection: React.FC<{ accent: string; isAdmin: boolean }>
             <div key={r.id} className="px-3.5 py-3 rounded-xl" style={{ background: C.fill }}>
               <button type="button" onClick={() => setOpen(open === r.id ? null : r.id)} className="w-full text-left" style={{ color: 'inherit' }}>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="fz-body font-bold" style={{ color: C.textStrong, overflowWrap: 'anywhere' }}>{r.question}</span>
+                  <span className="fz-body font-semibold" style={{ color: C.textStrong, overflowWrap: 'anywhere' }}>{r.question}</span>
                   <span className="shrink-0 fz-small font-semibold" style={{ color: statusColor(r.status) }}>
                     {r.status === 'OK' ? r.provider : r.status.replace('_', ' ').toLowerCase()}{r.feedback === 1 ? ' 👍' : r.feedback === -1 ? ' 👎' : ''}
                   </span>
@@ -606,7 +606,7 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
 
           <div className={row} style={{ background: C.fill }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Authenticator code')}</span>
+              <span className="fz-body font-semibold" style={{ color: C.textStrong }}>{t('Authenticator code')}</span>
               <p className="fz-small" style={{ color: C.dim }}>{t("The 6-digit code (or a recovery code) from the user's phone app. Only users who have set up an authenticator can use it.")}</p>
             </div>
             <Toggle on={!!cfg?.forgotAuthenticator && !off} accent={accent} label={t('Allow password reset with authenticator code')}
@@ -615,7 +615,7 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
 
           <div className={row} style={{ background: C.fill, opacity: 0.7 }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Email OTP')}</span>
+              <span className="fz-body font-semibold" style={{ color: C.textStrong }}>{t('Email OTP')}</span>
               <p className="fz-small" style={{ color: C.dim }}>{t("A one-time code sent to the user's email address. Needs email sending to be set up first.")}</p>
             </div>
             <Counter color={C.amber ?? C.dim}>{t('Coming soon')}</Counter>
@@ -623,7 +623,7 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
 
           <div className={row} style={{ background: C.fill }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Contact administrator')}</span>
+              <span className="fz-body font-semibold" style={{ color: C.textStrong }}>{t('Contact administrator')}</span>
               <p className="fz-small" style={{ color: C.dim }}>{t("Always shown. An administrator can reset a user's authenticator or password.")}</p>
             </div>
             <Counter>{t('Always on')}</Counter>
@@ -642,7 +642,7 @@ const ForgotPasswordSettingsSection: React.FC<{ accent: string; isAdmin: boolean
               className="rounded-lg px-3 fz-body outline-none" style={{ height: 34, width: 110, ...btn }} />
             <span className="fz-body" style={{ color: C.dim }}>{t('days')}</span>
             <button type="button" disabled={!daysValid || !cfg || daysNum === cfg.monthlyCheckDays}
-              className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer"
+              className="rounded-lg px-3.5 fz-tiny font-semibold cursor-pointer"
               style={{ height: 34, background: accent, color: '#fff', border: 0, opacity: !daysValid || !cfg || daysNum === cfg.monthlyCheckDays ? 0.5 : 1 }}
               onClick={() => void save({ monthlyCheckDays: daysNum }, daysNum === 0 ? t('Periodic check switched off.') : t('Users are asked for their code at least every {{1}} days.', { 1: daysNum }))}>
               {t('Save')}
@@ -682,8 +682,8 @@ const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
   const top = Math.max(1, report.started, ...rows.map((r) => r.reached));
   const stat = (label: string, value: string, sub?: string) => (
     <div className="rounded-xl px-3.5 py-3 flex-1 min-w-[120px]" style={{ background: C.fill }}>
-      <div className="fz-tiny font-bold" style={{ color: C.dim }}>{label}</div>
-      <div className="font-bold" style={{ color: C.textStrong, fontSize: '1.4em' }}>{value}</div>
+      <div className="fz-tiny font-semibold" style={{ color: C.dim }}>{label}</div>
+      <div className="font-semibold" style={{ color: C.textStrong, fontSize: '1.4em' }}>{value}</div>
       {sub && <div className="fz-small" style={{ color: C.dim }}>{sub}</div>}
     </div>
   );
@@ -692,7 +692,7 @@ const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
   return (
     <>
       <Panel icon={<BarChart2 size={16} />} tint="#0ea5e9" title={t('Tour insights')} subtitle={t('How far people get through the welcome tour')}
-        right={<button type="button" onClick={() => void load()} className="rounded-lg px-3 fz-tiny font-bold cursor-pointer" style={{ height: 30, background: C.fill, border: `1px solid ${C.border}`, color: C.text }}>{t('Refresh')}</button>}>
+        right={<button type="button" onClick={() => void load()} className="rounded-lg px-3 fz-tiny font-semibold cursor-pointer" style={{ height: 30, background: C.fill, border: `1px solid ${C.border}`, color: C.text }}>{t('Refresh')}</button>}>
         <div className="flex flex-col gap-4">
           <div className="flex gap-3 flex-wrap">
             {stat(t('Users'), String(report.totalUsers))}
@@ -723,7 +723,7 @@ const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
             <div style={{ width: `${pct(terms.accepted, report.totalUsers)}%`, height: '100%', background: C.green, borderRadius: 999, transition: 'width .4s' }} />
           </div>
           <div>
-            <div className="fz-tiny font-bold mb-1.5" style={{ color: C.dim }}>{t('Not accepted yet')} ({terms.pendingTotal})</div>
+            <div className="fz-tiny font-semibold mb-1.5" style={{ color: C.dim }}>{t('Not accepted yet')} ({terms.pendingTotal})</div>
             {terms.pending.length === 0
               ? <p className="fz-body" style={{ color: C.green }}>{t('Everyone has accepted this version.')}</p>
               : <div className="flex flex-wrap gap-1.5">
@@ -732,13 +732,13 @@ const OnboardingInsights: React.FC<{ accent: string }> = ({ accent }) => {
                 </div>}
           </div>
           <div>
-            <div className="fz-tiny font-bold mb-1.5" style={{ color: C.dim }}>{t('Recent acceptances')}</div>
+            <div className="fz-tiny font-semibold mb-1.5" style={{ color: C.dim }}>{t('Recent acceptances')}</div>
             {terms.recent.length === 0
               ? <p className="fz-body" style={{ color: C.dim }}>{t('Nobody has accepted yet.')}</p>
               : <div className="flex flex-col gap-1">
                   {terms.recent.slice(0, 10).map((r) => (
                     <div key={r.username + r.acceptedAt} className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg" style={{ background: C.fill }}>
-                      <span className="fz-body font-bold" style={{ color: C.textStrong }}>{r.username}</span>
+                      <span className="fz-body font-semibold" style={{ color: C.textStrong }}>{r.username}</span>
                       <span className="fz-small" style={{ color: C.dim }}>{t('version')} {r.version} · {new Date(r.acceptedAt).toLocaleString()}</span>
                     </div>
                   ))}
@@ -792,7 +792,7 @@ const LanguageSettingsSection: React.FC<{ accent: string }> = ({ accent }) => {
                   minWidth: 140,
                 }}
               >
-                <span className="block fz-body font-bold">{lang.nativeName}</span>
+                <span className="block fz-body font-semibold">{lang.nativeName}</span>
                 <span className="block fz-small" style={{ color: C.dim }}>{lang.name}{pending === lang.code ? ' …' : ''}</span>
               </button>
             );
@@ -828,7 +828,7 @@ const OnboardingSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> 
   const Row: React.FC<{ title: string; hint: string; on: boolean; disabled?: boolean; onChange: (v: boolean) => void }> = ({ title, hint, on, disabled, onChange }) => (
     <div className={row} style={{ background: C.fill, opacity: disabled ? 0.5 : 1, pointerEvents: disabled || busy ? 'none' : 'auto' }}>
       <div className="min-w-0">
-        <span className="fz-body font-bold" style={{ color: C.textStrong }}>{title}</span>
+        <span className="fz-body font-semibold" style={{ color: C.textStrong }}>{title}</span>
         <p className="fz-small" style={{ color: C.dim }}>{hint}</p>
       </div>
       <Toggle on={on} accent={accent} label={title} onChange={onChange} />
@@ -922,7 +922,7 @@ const ApproversSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> =
             : ' ' + t('No window asks for an approver code at the moment.'))}
         </p>
         <div>
-          <button type="button" onClick={openWindow} className="rounded-lg px-4 fz-tiny font-bold cursor-pointer"
+          <button type="button" onClick={openWindow} className="rounded-lg px-4 fz-tiny font-semibold cursor-pointer"
             style={{ height: 34, background: accent, color: '#fff', border: 0 }}>{t('Open Two-Factor & Approvals')}</button>
         </div>
       </div>
@@ -970,7 +970,7 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
                   <button
                     type="button"
                     onClick={() => { resetReportPref(def.id); refresh(); }}
-                    className="rounded-lg px-3 fz-tiny font-bold flex items-center gap-2 cursor-pointer"
+                    className="rounded-lg px-3 fz-tiny font-semibold flex items-center gap-2 cursor-pointer"
                     style={{ height: 28, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
                   >
                     <RotateCcw size={12} /> {t('Reset')}
@@ -994,7 +994,7 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
                       : { border: `1px solid ${C.border}`, background: C.fillSoft, opacity: 0.75 }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="fz-tiny font-bold leading-none" style={{ color: on ? C.textStrong : C.dim }}>
+                      <p className="fz-tiny font-semibold leading-none" style={{ color: on ? C.textStrong : C.dim }}>
                         {tLabel(meta.label)}{locked && <span style={{ color: C.dimmer, fontWeight: 700 }}> · {t('always on')}</span>}
                       </p>
                       <p className="fz-tiny mt-1" style={{ color: C.dimmer }}>{tLabel(meta.desc)}</p>
@@ -1002,7 +1002,7 @@ const ReportViewsSettingsSection: React.FC<{ accent: string }> = ({ accent }) =>
                         type="button"
                         disabled={!on || isDefault}
                         onClick={() => setDefault(def.id, view)}
-                        className="mt-2 rounded-md px-2 fz-tiny font-bold cursor-pointer disabled:cursor-default"
+                        className="mt-2 rounded-md px-2 fz-tiny font-semibold cursor-pointer disabled:cursor-default"
                         style={{
                           height: 22,
                           border: `1px solid ${isDefault ? accent : C.border}`,
@@ -1172,7 +1172,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
         {loadError && (
           <div className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <span className="fz-body" style={{ color: C.red }}>{loadError}</span>
-            <button onClick={load} className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer" style={smallButton(false)}>{t('Retry')}</button>
+            <button onClick={load} className="rounded-lg px-3.5 fz-tiny font-semibold cursor-pointer" style={smallButton(false)}>{t('Retry')}</button>
           </div>
         )}
       </Panel>
@@ -1216,16 +1216,16 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
             <def.Icon size={26} />
           </span>
           <span>
-            <span className="block font-black" style={{ fontSize: 19, color: C.textStrong }}>{def.name}</span>
+            <span className="block font-semibold" style={{ fontSize: 19, color: C.textStrong }}>{def.name}</span>
             <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{def.tagline}</span>
           </span>
-          <span className="flex items-center gap-1.5 fz-small font-bold" style={{ color: status.color }}>
+          <span className="flex items-center gap-1.5 fz-small font-semibold" style={{ color: status.color }}>
             <span className="block rounded-full" style={{ width: 8, height: 8, background: status.color }} />
             {status.text}
           </span>
         </button>
         <div className="flex items-center justify-between gap-2">
-          <span className="fz-tiny font-bold" style={{ color: selected ? def.tint : C.dimmer }}>
+          <span className="fz-tiny font-semibold" style={{ color: selected ? def.tint : C.dimmer }}>
             {t('Open settings ›')}
           </span>
           <Toggle on={ch.enabled} accent={def.tint} label={t('Send alerts to {{1}}', { 1: def.name })} onChange={(v) => toggleDest(def.id, v)} />
@@ -1245,8 +1245,8 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
         <c.Icon size={17} />
       </span>
       <span className="min-w-0">
-        <span className="fz-body font-bold block truncate" style={{ color: C.text }}>{c.name}</span>
-        <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Coming soon')}</span>
+        <span className="fz-body font-semibold block truncate" style={{ color: C.text }}>{c.name}</span>
+        <span className="fz-tiny font-semibold block" style={{ color: C.dimmer }}>{t('Coming soon')}</span>
       </span>
     </div>
   );
@@ -1269,7 +1269,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <div>
-              <span className="fz-body font-bold block" style={{ color: C.text }}>
+              <span className="fz-body font-semibold block" style={{ color: C.text }}>
                 {t('Connection:')} <span style={{ color: status.color }}>{status.text}</span>
               </span>
               <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
@@ -1279,10 +1279,10 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
               </span>
               {ch.configured && mapping.length > 0 && (
                 <span className="flex flex-wrap items-center gap-1.5 mt-2">
-                  <span className="fz-tiny font-bold" style={{ color: C.dimmer }}>{sel === 'discord' ? t('Channels') : t('Topics')}</span>
+                  <span className="fz-tiny font-semibold" style={{ color: C.dimmer }}>{sel === 'discord' ? t('Channels') : t('Topics')}</span>
                   {noTopics && <span className="fz-small" style={{ color: C.dim }}>{t("none set up: everything goes to the group's General chat")}</span>}
                   {!noTopics && mapping.map(([name, ok]) => (
-                    <span key={name} className="px-2 py-0.5 rounded-full fz-tiny font-bold"
+                    <span key={name} className="px-2 py-0.5 rounded-full fz-tiny font-semibold"
                       style={{ background: `color-mix(in srgb, ${ok ? C.green : C.amber} 16%, transparent)`, color: ok ? C.green : C.amber }}>
                       #{name} {ok ? '✓' : '—'}
                     </span>
@@ -1294,7 +1294,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
               <button
                 onClick={() => sendTest(sel)}
                 disabled={testingDest === sel || !ch.configured}
-                className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer"
+                className="rounded-lg px-3.5 fz-tiny font-semibold cursor-pointer"
                 style={smallButton(testingDest === sel || !ch.configured)}
               >
                 {testingDest === sel ? t('Sending…') : t('Send test')}
@@ -1310,7 +1310,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
                 <div key={g.id}>
                   <div className="flex items-center justify-between gap-3 px-1 pb-2">
                     <div className="min-w-0">
-                      <span className="fz-body font-bold block" style={{ color: g.id === 'errors' ? C.red : C.textStrong }}>{tLabel(g.label)}</span>
+                      <span className="fz-body font-semibold block" style={{ color: g.id === 'errors' ? C.red : C.textStrong }}>{tLabel(g.label)}</span>
                       <span className="fz-small block" style={{ color: C.dim }}>{tLabel(g.description)}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -1322,7 +1322,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
                     {g.alerts.map((a) => (
                       <div key={a.key} className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ background: C.fill }}>
                         <div className="min-w-0">
-                          <span className="fz-body font-bold block" style={{ color: C.text }}>{tLabel(a.label)}</span>
+                          <span className="fz-body font-semibold block" style={{ color: C.text }}>{tLabel(a.label)}</span>
                           <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{tLabel(a.description)}</span>
                         </div>
                         <Toggle on={effective(a)} accent={def.tint} label={t('{{1}} to {{2}}', { 1: tLabel(a.label), 2: def.name })} onChange={(v) => toggleAlertFor(a.key, sel, v)} />
@@ -1347,8 +1347,8 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
       right={(
         <>
           <Counter color={online && online.length > 0 ? C.green : C.dimmer}>{online ? t('{{1}} online', { 1: online.length }) : '…'}</Counter>
-          <button onClick={loadOnline} className="rounded-lg px-3 fz-tiny font-bold cursor-pointer" style={smallButton(false)}>{t('Refresh')}</button>
-          <button onClick={postOnline} disabled={posting || !online} className="rounded-lg px-3 fz-tiny font-bold cursor-pointer" style={smallButton(posting || !online)}>
+          <button onClick={loadOnline} className="rounded-lg px-3 fz-tiny font-semibold cursor-pointer" style={smallButton(false)}>{t('Refresh')}</button>
+          <button onClick={postOnline} disabled={posting || !online} className="rounded-lg px-3 fz-tiny font-semibold cursor-pointer" style={smallButton(posting || !online)}>
             {posting ? t('Posting…') : t('Post to channels')}
           </button>
         </>
@@ -1367,16 +1367,16 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
           {online.map((u, i) => (
             <div key={`${u.username}-${u.host}-${i}`} className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ background: C.fill }}>
               <div className="min-w-0">
-                <span className="fz-body font-bold block" style={{ color: C.text }}>
+                <span className="fz-body font-semibold block" style={{ color: C.text }}>
                   <span className="inline-block rounded-full align-middle mr-2" style={{ width: 8, height: 8, background: C.green }} />
                   {u.username}
-                  {u.role && <span className="fz-tiny font-bold ml-2" style={{ color: C.dimmer }}>{u.role.toLowerCase()}</span>}
+                  {u.role && <span className="fz-tiny font-semibold ml-2" style={{ color: C.dimmer }}>{u.role.toLowerCase()}</span>}
                 </span>
                 <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
                   {[u.host, u.ip, u.mac && `MAC ${u.mac}`, u.version && `v${u.version}`].filter(Boolean).join(' · ')}
                 </span>
               </div>
-              <span className="fz-small font-bold shrink-0" style={{ color: C.dim }}>{t('online')} {fmtMinutes(u.minutes)}</span>
+              <span className="fz-small font-semibold shrink-0" style={{ color: C.dim }}>{t('online')} {fmtMinutes(u.minutes)}</span>
             </div>
           ))}
         </div>
@@ -1390,7 +1390,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
           {withLimits.map((a) => (
             <div key={a.key} className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ background: C.fill }}>
               <div className="min-w-0">
-                <span className="fz-body font-bold block" style={{ color: C.text }}>{tLabel(a.label)}</span>
+                <span className="fz-body font-semibold block" style={{ color: C.text }}>{tLabel(a.label)}</span>
                 <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{tLabel(a.description)}</span>
               </div>
               <label className="flex items-center gap-2 fz-small shrink-0" style={{ color: C.dim }}>
@@ -1405,7 +1405,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
                   onChange={(e) => setDrafts((p) => ({ ...p, [a.key]: e.target.value }))}
                   onBlur={() => commitParam(a)}
                   onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                  className="rounded-lg px-2 text-right font-bold"
+                  className="rounded-lg px-2 text-right font-semibold"
                   style={{ width: 64, height: 30, background: C.panel, border: `1px solid ${C.border}`, color: C.text }}
                 />
                 <span>{a.param!.unit}</span>
@@ -1423,7 +1423,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
         <button
           type="button"
           onClick={() => setSel(null)}
-          className="flex items-center gap-1.5 fz-small font-bold cursor-pointer"
+          className="flex items-center gap-1.5 fz-small font-semibold cursor-pointer"
           style={{ border: 'none', background: 'transparent', color: C.dim, padding: 0 }}
         >
           ‹ {t('Back to Alert Channels')}
@@ -1444,7 +1444,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <div>
-              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Send alerts')}</span>
+              <span className="fz-body font-semibold block" style={{ color: C.text }}>{t('Send alerts')}</span>
               <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
                 {t('Master switch for every channel. Off = nothing is sent anywhere. Muted alerts are dropped, never saved up for later.')}
               </span>
@@ -1453,15 +1453,15 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
           </div>
 
           <div>
-            <span className="fz-tiny font-bold block mb-2" style={{ color: C.dimmer }}>{t('Channels you can use now')}</span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 220px))', gap: 14 }}>
+            <span className="fz-tiny font-semibold block mb-2" style={{ color: C.dimmer }}>{t('Channels you can use now')}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 220px))', gap: 16 }}>
               {CHANNEL_DEFS.map(renderChannelCard)}
             </div>
           </div>
 
           <div>
-            <span className="fz-tiny font-bold block mb-2" style={{ color: C.dimmer }}>{t('Planned')}</span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10 }}>
+            <span className="fz-tiny font-semibold block mb-2" style={{ color: C.dimmer }}>{t('Planned')}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 12 }}>
               {COMING_SOON.map(renderComingSoon)}
             </div>
           </div>
@@ -1474,7 +1474,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <div>
-              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Create a Jira ticket for each query')}</span>
+              <span className="fz-body font-semibold block" style={{ color: C.text }}>{t('Create a Jira ticket for each query')}</span>
               <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
                 {data.jira.configured
                   ? t('Tickets go to project {{1}} on {{2}} as "{{3}}". Off = queries are still saved here, with no ticket.', { 1: data.jira.projectKey, 2: data.jira.site, 3: data.jira.issueType })
@@ -1485,7 +1485,7 @@ const AlertSettingsSection: React.FC<{ accent: string; isAdmin: boolean }> = ({ 
               <button
                 onClick={testJira}
                 disabled={jiraTesting || !data.jira.configured}
-                className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer"
+                className="rounded-lg px-3.5 fz-tiny font-semibold cursor-pointer"
                 style={smallButton(jiraTesting || !data.jira.configured)}
               >
                 {jiraTesting ? t('Testing…') : t('Test connection')}
@@ -1566,9 +1566,9 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
         <div className="flex items-center gap-3 mb-5">
           <div className="p-2 rounded-[10px]" style={{ background: C.panel, color: cfg.color }}>{cfg.icon}</div>
           <div>
-            <h3 className="text-sm font-bold" style={{ color: C.textStrong }}>{t('License Status')}</h3>
+            <h3 className="text-sm font-semibold" style={{ color: C.textStrong }}>{t('License Status')}</h3>
             <span
-              className="inline-block mt-1.5 px-2.5 py-0.5 fz-tiny font-black rounded-full uppercase tracking-widest"
+              className="inline-block mt-1.5 px-2.5 py-0.5 fz-tiny font-semibold rounded-full"
               style={{ background: `rgba(${sr},${sg},${sb},.15)`, color: cfg.color }}
             >
               {tLabel(cfg.label)}
@@ -1579,26 +1579,26 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
         <div className="grid grid-cols-3 gap-4">
           {customerName && (
             <div>
-              <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Customer')}</span>
-              <span className="fz-body font-bold" style={{ color: C.text }}>{customerName}</span>
+              <span className="fz-tiny font-semibold block" style={{ color: C.dimmer }}>{t('Customer')}</span>
+              <span className="fz-body font-semibold" style={{ color: C.text }}>{customerName}</span>
             </div>
           )}
           {expiresAt && (
             <div>
-              <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Expires')}</span>
-              <span className="fz-body font-bold" style={{ color: C.text }}>{new Date(expiresAt).toLocaleDateString()}</span>
+              <span className="fz-tiny font-semibold block" style={{ color: C.dimmer }}>{t('Expires')}</span>
+              <span className="fz-body font-semibold" style={{ color: C.text }}>{new Date(expiresAt).toLocaleDateString()}</span>
             </div>
           )}
           {status === 'active' && (
             <div>
-              <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Days Remaining')}</span>
-              <span className="font-black text-lg" style={{ color: daysRemaining <= 30 ? C.amber : C.green }}>{daysRemaining}</span>
+              <span className="fz-tiny font-semibold block" style={{ color: C.dimmer }}>{t('Days Remaining')}</span>
+              <span className="font-semibold text-lg" style={{ color: daysRemaining <= 30 ? C.amber : C.green }}>{daysRemaining}</span>
             </div>
           )}
           {status === 'grace' && (
             <div>
-              <span className="fz-tiny font-bold block" style={{ color: C.dimmer }}>{t('Grace Days Left')}</span>
-              <span className="font-black text-lg" style={{ color: C.red }}>{graceDaysRemaining}</span>
+              <span className="fz-tiny font-semibold block" style={{ color: C.dimmer }}>{t('Grace Days Left')}</span>
+              <span className="font-semibold text-lg" style={{ color: C.red }}>{graceDaysRemaining}</span>
             </div>
           )}
         </div>
@@ -1627,11 +1627,11 @@ const LicenseSection: React.FC<{ accent: string }> = ({ accent }) => {
             border: `1px solid ${C.border}`, background: C.fill, color: C.text,
           }}
         />
-        {activateError && <p className="fz-small font-bold mt-2" style={{ color: C.red }}>{activateError}</p>}
+        {activateError && <p className="fz-small font-semibold mt-2" style={{ color: C.red }}>{activateError}</p>}
         <button
           onClick={handleActivate}
           disabled={activating || activateKey.length !== 24}
-          className="w-full mt-3 rounded-[10px] border-0 font-bold cursor-pointer disabled:cursor-not-allowed"
+          className="w-full mt-3 rounded-[10px] border-0 font-semibold cursor-pointer disabled:cursor-not-allowed"
           style={{
             height: 40, background: accent, color: '#fff',
             opacity: activating || activateKey.length !== 24 ? 0.45 : 1,
@@ -1823,12 +1823,14 @@ const SettingsPage: React.FC = () => {
 
   // --- Effects ---
 
+  // ES-623: the Developer tab is for administrators only. The PIN is only a convenience check made in the browser, and a
+  // flag typed into the console must not open it for anybody else, so the saved flag counts for an administrator only.
   useEffect(() => {
     const devModeEnabled = sessionStorage.getItem('developerModeEnabled');
-    if (devModeEnabled === 'true') {
+    if (devModeEnabled === 'true' && isAdmin) {
       setIsDeveloperMode(true);
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     // 1. Fetch latest settings from server ensures we display the "Truth"
@@ -2030,7 +2032,7 @@ const SettingsPage: React.FC = () => {
     { key: 'approvers',  label: t('Approvers'),       Icon: ShieldCheck, gradient: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', adminOnly: true },
     { key: 'assistant',  label: t('AI Assistant'),    Icon: MessageSquare, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', adminOnly: true },
     { key: 'forgot',     label: t('Forgot Password'), Icon: KeyRound,   gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)', adminOnly: true },
-    { key: 'developer',  label: t('Developer'),      Icon: Code,      gradient: 'linear-gradient(135deg,#3f3f46,#71717a)', devOnly: true },
+    { key: 'developer',  label: t('Developer'),      Icon: Code,      gradient: 'linear-gradient(135deg,#3f3f46,#71717a)', devOnly: true, adminOnly: true },
     { key: 'onboarding', label: t('Welcome Tour'),    Icon: Compass,   gradient: 'linear-gradient(135deg,#f97316,#fb923c)' },
     { key: 'license',    label: t('License'),        Icon: KeyRound,  gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)', afterDivider: true },
   ]), []);
@@ -2059,7 +2061,7 @@ const SettingsPage: React.FC = () => {
     borderRadius: 10,
     display: 'flex',
     alignItems: 'center',
-    gap: 11,
+    gap: 12,
     cursor: 'pointer',
     background: activeTab === key ? accentRgba(0.16) : 'transparent',
     color: activeTab === key ? C.textStrong : C.dim,
@@ -2075,7 +2077,7 @@ const SettingsPage: React.FC = () => {
         <div className="space-y-5">
           {/* Theme Mode */}
           <div className="space-y-2">
-            <label className="fz-small font-bold block" style={fieldLabel}>{t('Interface Mode')}</label>
+            <label className="fz-small font-semibold block" style={fieldLabel}>{t('Interface Mode')}</label>
             <div className="relative flex p-[3px] rounded-[10px]" style={{ background: C.fill }}>
               {/* Sliding pill: glides between Light and Dark instead of swapping backgrounds. */}
               <span
@@ -2101,7 +2103,7 @@ const SettingsPage: React.FC = () => {
                         document.documentElement.classList.toggle('dark', mode === 'dark');
                       });
                     }}
-                    className="relative z-[1] flex-1 py-1.5 rounded-[8px] border-0 bg-transparent fz-small font-bold cursor-pointer flex items-center justify-center gap-1.5"
+                    className="relative z-[1] flex-1 py-1.5 rounded-[8px] border-0 bg-transparent fz-small font-semibold cursor-pointer flex items-center justify-center gap-1.5"
                     style={{ color: active ? C.textStrong : C.dim }}
                   >
                     <ModeIcon size={13} />
@@ -2114,7 +2116,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Accent Color */}
           <div className="space-y-2">
-            <label className="fz-small font-bold block" style={fieldLabel}>{t('Accent Color')}</label>
+            <label className="fz-small font-semibold block" style={fieldLabel}>{t('Accent Color')}</label>
             <div className="flex flex-wrap gap-2.5 items-center">
               {ACCENT_PRESETS.map(color => {
                 const selected = accent.toLowerCase() === color.toLowerCase();
@@ -2149,9 +2151,9 @@ const SettingsPage: React.FC = () => {
           {/* Text Size */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="fz-small font-bold" style={fieldLabel}>{t('Text Size')}</label>
+              <label className="fz-small font-semibold" style={fieldLabel}>{t('Text Size')}</label>
               <span
-                className="fz-tiny font-black uppercase px-2 py-0.5 rounded-full"
+                className="fz-tiny font-semibold px-2 py-0.5 rounded-full"
                 style={{ background: accentRgba(0.15), color: accent }}
               >
                 {t(settings.fontSize === 'small' ? 'Small' : settings.fontSize === 'medium' ? 'Medium' : 'Large')}
@@ -2173,7 +2175,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Font Style */}
           <div className="space-y-2">
-            <label className="fz-small font-bold block" style={fieldLabel}>{t('Font Style')}</label>
+            <label className="fz-small font-semibold block" style={fieldLabel}>{t('Font Style')}</label>
             <div className="grid grid-cols-2 gap-2">
               {FONT_OPTIONS.map(font => {
                 const selected = settings.fontFamily === font.value;
@@ -2192,7 +2194,7 @@ const SettingsPage: React.FC = () => {
                         input.css is what lets this beat the global !important
                         font-family — same trick the .font-mono override uses. */}
                     <div
-                      className="fz-body font-bold leading-tight font-face-preview"
+                      className="fz-body font-semibold leading-tight font-face-preview"
                       style={{ color: C.text, ['--preview-font' as any]: font.value }}
                     >
                       {tLabel(font.label)}
@@ -2213,7 +2215,7 @@ const SettingsPage: React.FC = () => {
           {/* Bold Text */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="fz-small font-bold block" style={fieldLabel}>{t('Bold Text')}</label>
+              <label className="fz-small font-semibold block" style={fieldLabel}>{t('Bold Text')}</label>
               <p className="fz-small mt-0.5" style={{ color: C.dim }}>{t('Make all labelled text heavier')}</p>
             </div>
             <Toggle
@@ -2238,7 +2240,7 @@ const SettingsPage: React.FC = () => {
           {/* Soft Shadows */}
           <div className="flex items-center justify-between gap-4 lg:col-span-2">
             <div>
-              <label className="fz-small font-bold block" style={fieldLabel}>{t('Soft Shadows')}</label>
+              <label className="fz-small font-semibold block" style={fieldLabel}>{t('Soft Shadows')}</label>
               <p className="fz-small mt-0.5" style={{ color: C.dim }}>{t('Subtle depth on cards, buttons and pop-ups. Turn off for maximum speed on older PCs.')}</p>
             </div>
             <Toggle
@@ -2252,7 +2254,7 @@ const SettingsPage: React.FC = () => {
           {/* Header Style */}
           <div className="space-y-2 lg:col-span-2">
             <div>
-              <label className="fz-small font-bold block" style={fieldLabel}>{t('Header Style')}</label>
+              <label className="fz-small font-semibold block" style={fieldLabel}>{t('Header Style')}</label>
               <p className="fz-small mt-0.5" style={{ color: C.dim }}>{t("A soft decorative background behind each window's title bar.")}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -2299,7 +2301,7 @@ const SettingsPage: React.FC = () => {
                         />
                       )}
                     </div>
-                    <span className="fz-small font-bold" style={{ color: C.text }}>{tLabel(opt.label)}</span>
+                    <span className="fz-small font-semibold" style={{ color: C.text }}>{tLabel(opt.label)}</span>
                   </div>
                 );
               })}
@@ -2308,7 +2310,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Density Toggle */}
           <div className="space-y-2">
-            <label className="fz-small font-bold block" style={fieldLabel}>{t('Layout Density')}</label>
+            <label className="fz-small font-semibold block" style={fieldLabel}>{t('Layout Density')}</label>
             <div className="grid grid-cols-2 gap-2.5">
               {(['compact', 'comfortable'] as const).map(d => {
                 const selected = settings.density === d;
@@ -2329,7 +2331,7 @@ const SettingsPage: React.FC = () => {
                       <div className="h-[5px] w-2/3 rounded-full mb-1.5" style={{ background: C.dim }} />
                       <div className="h-[5px] w-full rounded-full" style={{ background: C.divider }} />
                     </div>
-                    <span className="fz-small font-bold" style={{ color: C.text }}>{d === 'compact' ? t('Compact') : t('Comfortable')}</span>
+                    <span className="fz-small font-semibold" style={{ color: C.text }}>{d === 'compact' ? t('Compact') : t('Comfortable')}</span>
                   </div>
                 );
               })}
@@ -2339,8 +2341,8 @@ const SettingsPage: React.FC = () => {
           {/* Border Radius */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="fz-small font-bold" style={fieldLabel}>{t('Corner Radius')}</label>
-              <span className="fz-tiny font-bold px-2 py-0.5 rounded-full" style={{ background: accentRgba(0.15), color: accent }}>{settings.borderRadius}px</span>
+              <label className="fz-small font-semibold" style={fieldLabel}>{t('Corner Radius')}</label>
+              <span className="fz-tiny font-semibold px-2 py-0.5 rounded-full" style={{ background: accentRgba(0.15), color: accent }}>{settings.borderRadius}px</span>
             </div>
             <Range
               ariaLabel="Corner radius"
@@ -2366,7 +2368,7 @@ const SettingsPage: React.FC = () => {
               className="mb-4 px-3.5 py-2.5 rounded-[10px]"
               style={{ background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.2)' }}
             >
-              <p className="fz-caption font-bold" style={{ color: C.amber }}>
+              <p className="fz-caption font-semibold" style={{ color: C.amber }}>
                 {t('Dark mode uses its own canvas colour — these background settings apply in Light mode.')}
               </p>
             </div>
@@ -2380,7 +2382,7 @@ const SettingsPage: React.FC = () => {
                 <button
                   key={mode}
                   onClick={() => applyTheme({ backgroundType: mode })}
-                  className="flex-1 py-2 rounded-lg fz-small font-bold cursor-pointer"
+                  className="flex-1 py-2 rounded-lg fz-small font-semibold cursor-pointer"
                   style={
                     selected
                       ? { background: accentRgba(0.12), color: accent, border: `1px solid ${accent}` }
@@ -2396,7 +2398,7 @@ const SettingsPage: React.FC = () => {
           {/* Solid/Gradient Controls */}
           {settings.backgroundType !== 'image' && (
             <div className="space-y-3">
-              <label className="fz-small font-bold block" style={fieldLabel}>
+              <label className="fz-small font-semibold block" style={fieldLabel}>
                 {settings.backgroundType === 'gradient' ? t('Colors') : t('Color Selection')}
               </label>
               <div className="flex flex-wrap gap-2 items-center">
@@ -2440,7 +2442,7 @@ const SettingsPage: React.FC = () => {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="rounded-[10px] fz-small font-bold flex items-center gap-2 px-4 cursor-pointer"
+                  className="rounded-[10px] fz-small font-semibold flex items-center gap-2 px-4 cursor-pointer"
                   style={{ height: 34, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
                 >
                   <UploadCloud size={13} /> {t('Upload Image')}
@@ -2483,7 +2485,7 @@ const SettingsPage: React.FC = () => {
                   className="flex flex-col items-center gap-1 p-3 rounded-[10px] cursor-pointer"
                   style={{ background: selected ? accentRgba(0.12) : C.fill, border: '1.5px solid ' + (selected ? accent : C.border) }}
                 >
-                  <span className="fz-small font-bold flex items-center gap-1" style={{ color: selected ? accent : C.textStrong }}>
+                  <span className="fz-small font-semibold flex items-center gap-1" style={{ color: selected ? accent : C.textStrong }}>
                     {selected && <Check size={12} />}{t(opt.name)}
                   </span>
                   <span className="fz-tiny font-medium text-center" style={{ color: C.dim }}>{t(opt.description)}</span>
@@ -2493,7 +2495,7 @@ const SettingsPage: React.FC = () => {
           </div>
           <div className="flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl mt-3" style={{ background: C.fill }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Adapt to this PC (recommended)')}</span>
+              <span className="fz-body font-semibold" style={{ color: C.textStrong }}>{t('Adapt to this PC (recommended)')}</span>
               <p className="fz-small" style={{ color: C.dim }}>
                 {t('Checks how fast this PC draws the screen and shortens or switches off animation on a slow PC, so the app always feels quick.')}
               </p>
@@ -2509,7 +2511,7 @@ const SettingsPage: React.FC = () => {
               (the same switch is in Welcome Tour). */}
           <div className="flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl mt-2.5" style={{ background: C.fill }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold" style={{ color: C.textStrong }}>{t('Calm mode: no motion')}</span>
+              <span className="fz-body font-semibold" style={{ color: C.textStrong }}>{t('Calm mode: no motion')}</span>
               <p className="fz-small" style={{ color: C.dim }}>
                 {calmPref
                   ? t('On. Every animation is off on this PC, whatever style is chosen above.')
@@ -2547,7 +2549,7 @@ const SettingsPage: React.FC = () => {
                   <div style={{ width: '100%', height: 96, display: 'grid', placeItems: 'center', transform: 'scale(.8)' }}>
                     <LoadingAnimation variant={opt.id} height={96} />
                   </div>
-                  <span className="fz-small font-bold flex items-center gap-1" style={{ color: selected ? accent : C.textStrong }}>
+                  <span className="fz-small font-semibold flex items-center gap-1" style={{ color: selected ? accent : C.textStrong }}>
                     {selected && <Check size={12} />}{opt.name}
                   </span>
                   <span className="fz-tiny font-medium text-center" style={{ color: C.dim }}>{tLabel(opt.description)}</span>
@@ -2639,7 +2641,7 @@ const SettingsPage: React.FC = () => {
                     <Icon size={17} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="fz-tiny font-bold leading-none" style={{ color: isOn ? C.textStrong : C.dim }}>{label}</p>
+                    <p className="fz-tiny font-semibold leading-none" style={{ color: isOn ? C.textStrong : C.dim }}>{label}</p>
                     <p className="fz-tiny mt-1 truncate" style={{ color: C.dimmer }}>{desc}</p>
                   </div>
                   <div
@@ -2666,14 +2668,14 @@ const SettingsPage: React.FC = () => {
         >
           <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
             <div className="min-w-0">
-              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Reset Card Layout')}</span>
+              <span className="fz-body font-semibold block" style={{ color: C.text }}>{t('Reset Card Layout')}</span>
               <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
                 {t('To arrange the dashboard, press Customize on it: drag a card to move it, drag the line between two cards to resize them, and use × to remove a card. This button puts every card back in its original place and size.')}
               </span>
             </div>
             <button
               onClick={resetDashboardLayout}
-              className="rounded-lg px-3.5 fz-tiny font-bold flex items-center gap-2 cursor-pointer shrink-0"
+              className="rounded-lg px-3.5 fz-tiny font-semibold flex items-center gap-2 cursor-pointer shrink-0"
               style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
             >
               {layoutReset ? <><Check size={12} strokeWidth={3} /> {t('Layout reset')}</> : <><RotateCcw size={12} /> {t('Reset Layout')}</>}
@@ -2689,7 +2691,7 @@ const SettingsPage: React.FC = () => {
           subtitle={t('The background colour of the dashboard, and a picture behind it or inside its cards')}
           right={
             <>
-              <span className="fz-small font-bold" style={{ color: C.dim }}>{t('Picture behind the dashboard')}</span>
+              <span className="fz-small font-semibold" style={{ color: C.dim }}>{t('Picture behind the dashboard')}</span>
               <Toggle on={artConfig.enabled} accent={accent} label={t('Show the picture behind the dashboard')} onChange={(v) => updateArt({ enabled: v })} />
             </>
           }
@@ -2697,7 +2699,7 @@ const SettingsPage: React.FC = () => {
           <div>
             {/* Background colour of the dashboard page. Light mode only: Dark keeps its own colour so text stays readable. */}
             <div className="px-4 py-3.5 rounded-xl mb-4" style={{ background: C.fill }}>
-              <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Background colour')}</span>
+              <span className="fz-body font-semibold block" style={{ color: C.text }}>{t('Background colour')}</span>
               <span className="fz-small block mt-0.5 mb-3" style={{ color: isDark ? C.amber : C.dim }}>
                 {isDark
                   ? t('Dark mode uses its own background colour. This choice applies in Light mode.')
@@ -2714,11 +2716,11 @@ const SettingsPage: React.FC = () => {
                       style={{ height: 30, border: `1px solid ${selected ? accent : C.border}`, background: selected ? accentRgba(0.12) : 'transparent' }}
                     >
                       <span className="block rounded-full" style={{ width: 18, height: 18, backgroundColor: opt.preview, border: `1px solid ${C.border}` }} />
-                      <span className="fz-tiny font-bold" style={{ color: selected ? C.textStrong : C.dim }}>{tLabel(opt.label)}</span>
+                      <span className="fz-tiny font-semibold" style={{ color: selected ? C.textStrong : C.dim }}>{tLabel(opt.label)}</span>
                     </button>
                   );
                 })}
-                <span className="fz-small font-bold ml-1" style={fieldLabel}>{t('Custom')}</span>
+                <span className="fz-small font-semibold ml-1" style={fieldLabel}>{t('Custom')}</span>
                 <ColorWell value={settings.dashboardBg} ariaLabel="Dashboard background colour" onChange={applyDashboardBg} />
               </div>
             </div>
@@ -2726,13 +2728,13 @@ const SettingsPage: React.FC = () => {
             <div className="px-4 py-3.5 rounded-xl mb-4" style={{ background: C.fill }}>
               <div className="flex items-center justify-between gap-3 mb-2.5">
                 <div className="min-w-0">
-                  <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Show inside these cards')}</span>
+                  <span className="fz-body font-semibold block" style={{ color: C.text }}>{t('Show inside these cards')}</span>
                   <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{t('Click a card to put the picture inside it. Each card is switched on its own.')}</span>
                 </div>
                 {artConfig.cards.length > 0 && (
                   <button
                     type="button" onClick={() => updateArt({ cards: [] })}
-                    className="px-2.5 py-1 fz-mini font-bold rounded-lg cursor-pointer shrink-0"
+                    className="px-2.5 py-1 fz-mini font-semibold rounded-lg cursor-pointer shrink-0"
                     style={{ color: C.dim, border: `1px solid ${C.border}`, background: 'transparent' }}
                   >
                     {t('Clear all')}
@@ -2745,7 +2747,7 @@ const SettingsPage: React.FC = () => {
                   return (
                     <button
                       key={key} type="button" aria-pressed={on} onClick={() => toggleArtCard(key)}
-                      className="rounded-full px-3 fz-tiny font-bold cursor-pointer flex items-center gap-1.5"
+                      className="rounded-full px-3 fz-tiny font-semibold cursor-pointer flex items-center gap-1.5"
                       style={{ height: 28, border: `1px solid ${on ? accent : C.border}`, background: on ? accentRgba(0.14) : 'transparent', color: on ? C.textStrong : C.dim }}
                     >
                       {on && <Check size={11} strokeWidth={3} style={{ color: accent }} />}
@@ -2758,17 +2760,17 @@ const SettingsPage: React.FC = () => {
             {/* A picture of its own for each card that shows one. */}
             {artConfig.cards.length > 0 && (
               <div className="px-4 py-3.5 rounded-xl mb-4" style={{ background: C.fill }}>
-                <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Picture for each card')}</span>
+                <span className="fz-body font-semibold block" style={{ color: C.text }}>{t('Picture for each card')}</span>
                 <span className="fz-small block mt-0.5 mb-3" style={{ color: C.dim }}>{t('Every card can use a different picture. "Default" follows the picture chosen below.')}</span>
                 <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
                   {WIDGET_DEFS.filter(w => artConfig.cards.includes(w.key)).map(w => (
                     <label key={w.key} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg" style={{ border: `1px solid ${C.border}`, background: C.fillSoft }}>
-                      <span className="fz-small font-bold truncate" style={{ color: C.text }}>{w.label}</span>
+                      <span className="fz-small font-semibold truncate" style={{ color: C.text }}>{w.label}</span>
                       <select
                         aria-label={t('Picture for {{1}}', { 1: w.label })}
                         value={artConfig.cardArt[w.key] ?? ''}
                         onChange={e => setCardPicture(w.key, e.target.value)}
-                        className="rounded-md px-2 fz-small font-bold cursor-pointer"
+                        className="rounded-md px-2 fz-small font-semibold cursor-pointer"
                         style={{ height: 30, maxWidth: 170, border: `1px solid ${C.border}`, background: C.panel, color: C.text }}
                       >
                         <option value="">{t('Default')}</option>
@@ -2785,7 +2787,7 @@ const SettingsPage: React.FC = () => {
             <div className="px-4 py-3.5 rounded-xl mb-4" style={{ background: C.fill }}>
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Parallax motion')}</span>
+                  <span className="fz-body font-semibold block" style={{ color: C.text }}>{t('Parallax motion')}</span>
                   <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
                     {t('When you scroll the dashboard, each picture drifts a little against its card, and the picture behind the page moves slower than the page. It switches itself off when Animations are off or in Calm mode, and on a slow PC.')}
                   </span>
@@ -2794,8 +2796,8 @@ const SettingsPage: React.FC = () => {
               </div>
               <div className="mt-3" style={{ opacity: artConfig.parallax ? 1 : 0.5, pointerEvents: artConfig.parallax ? 'auto' : 'none' }}>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="fz-small font-bold" style={{ color: C.dim }}>{t('Strength')}</span>
-                  <span className="fz-tiny font-bold px-2 py-0.5 rounded-full" style={{ background: accentRgba(0.15), color: accent }}>
+                  <span className="fz-small font-semibold" style={{ color: C.dim }}>{t('Strength')}</span>
+                  <span className="fz-tiny font-semibold px-2 py-0.5 rounded-full" style={{ background: accentRgba(0.15), color: accent }}>
                     {artConfig.parallaxStrength === 0 ? t('Off') : artConfig.parallaxStrength < 34 ? t('Gentle') : artConfig.parallaxStrength < 67 ? t('Medium') : t('Strong')} · {artConfig.parallaxStrength}%
                   </span>
                 </div>
@@ -2816,7 +2818,7 @@ const SettingsPage: React.FC = () => {
                   <button
                     key={c.id} type="button" role="radio" aria-checked={on}
                     onClick={() => setArtCategory(c.id)}
-                    className="rounded-full px-3 fz-tiny font-bold cursor-pointer flex items-center gap-1.5"
+                    className="rounded-full px-3 fz-tiny font-semibold cursor-pointer flex items-center gap-1.5"
                     style={{ height: 28, border: `1px solid ${on ? accent : C.border}`, background: on ? accent : C.fill, color: on ? '#fff' : C.dim }}
                   >
                     {t(c.label)}
@@ -2831,7 +2833,7 @@ const SettingsPage: React.FC = () => {
                 <button
                   type="button" aria-pressed={artConfig.art === CUSTOM_ART} disabled={!customArt}
                   onClick={() => customArt && pickArt(CUSTOM_ART)}
-                  className="rounded-xl overflow-hidden p-0 shrink-0 flex items-center justify-center fz-tiny font-bold"
+                  className="rounded-xl overflow-hidden p-0 shrink-0 flex items-center justify-center fz-tiny font-semibold"
                   style={{
                     width: 240, aspectRatio: '3 / 1', color: C.dimmer, cursor: customArt ? 'pointer' : 'default',
                     border: `2px solid ${customArt && artConfig.art === CUSTOM_ART ? accent : C.border}`,
@@ -2841,13 +2843,13 @@ const SettingsPage: React.FC = () => {
                   {!customArt && t('No picture imported')}
                 </button>
                 <div className="min-w-0 flex-1">
-                  <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Use your own picture')}</span>
+                  <span className="fz-body font-semibold block" style={{ color: C.text }}>{t('Use your own picture')}</span>
                   <span className="fz-small block mt-0.5" style={{ color: C.dim }}>
                     {t('PNG, JPG or WebP. The dashboard shows a wide 3:1 banner, so a picture of another shape is scaled to fill it and cut around its centre. Best result: 2400 × 800 or larger. The picture stays on this PC and is used in both Light and Dark.')}
                   </span>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <label
-                      className="rounded-lg px-3.5 fz-tiny font-bold flex items-center gap-2 cursor-pointer"
+                      className="rounded-lg px-3.5 fz-tiny font-semibold flex items-center gap-2 cursor-pointer"
                       style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
                     >
                       <UploadCloud size={13} /> {customArt ? t('Replace Picture') : t('Import Picture')}
@@ -2856,7 +2858,7 @@ const SettingsPage: React.FC = () => {
                     {customArt && (
                       <button
                         type="button" onClick={onRemoveArt}
-                        className="rounded-lg px-3.5 fz-tiny font-bold cursor-pointer"
+                        className="rounded-lg px-3.5 fz-tiny font-semibold cursor-pointer"
                         style={{ height: 32, border: `1px solid ${C.border}`, background: 'transparent', color: C.dim }}
                       >
                         {t('Remove')}
@@ -2891,7 +2893,7 @@ const SettingsPage: React.FC = () => {
                                 ))}
                               </div>
                               <div className="flex items-center justify-between gap-2 px-2.5 py-2">
-                                <span className="fz-tiny font-bold truncate" style={{ color: selected ? C.textStrong : C.dim }}>
+                                <span className="fz-tiny font-semibold truncate" style={{ color: selected ? C.textStrong : C.dim }}>
                                   {t(cat.label)} {cat.artworks.length > 1 ? i + 1 : ''}
                                 </span>
                                 {selected && <Check size={12} strokeWidth={3} style={{ color: accent, flex: 'none' }} />}
@@ -2924,7 +2926,7 @@ const SettingsPage: React.FC = () => {
                     localStorage.setItem(QA_STORAGE_KEY, JSON.stringify(DEFAULT_ENABLED_QA_IDS));
                     try { const bc = new BroadcastChannel(QA_BROADCAST_CHANNEL); bc.postMessage({ enabledIds: DEFAULT_ENABLED_QA_IDS }); bc.close(); } catch { }
                   }}
-                  className="px-2.5 py-1 fz-mini font-bold rounded-lg cursor-pointer"
+                  className="px-2.5 py-1 fz-mini font-semibold rounded-lg cursor-pointer"
                   style={{ color: C.dim, border: `1px solid ${C.border}`, background: 'transparent' }}
                 >
                   {t('Reset')}
@@ -2941,7 +2943,7 @@ const SettingsPage: React.FC = () => {
               return (
                 <div key={cat}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="fz-tiny font-bold" style={{ color }}>{cat}</span>
+                    <span className="fz-tiny font-semibold" style={{ color }}>{cat}</span>
                     <div className="flex-1 h-px" style={{ background: C.divider }} />
                     <span className="fz-mini" style={{ color: C.dimmer }}>{enabledInCat}/{items.length}</span>
                   </div>
@@ -2967,7 +2969,7 @@ const SettingsPage: React.FC = () => {
                             <IconComp size={13} />
                           </div>
                           <span
-                            className="fz-micro font-black uppercase tracking-tight text-center leading-tight"
+                            className="fz-micro font-semibold text-center leading-tight"
                             style={{ color: isOn ? '#e5e5ea' : C.dimmer }}
                           >
                             {tLabel(item.label)}
@@ -3022,7 +3024,7 @@ const SettingsPage: React.FC = () => {
               style={{ background: C.fill }}
             >
               <div className="min-w-0">
-                <span className="fz-body font-bold block" style={{ color: C.text }}>{row.title}</span>
+                <span className="fz-body font-semibold block" style={{ color: C.text }}>{row.title}</span>
                 <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{row.desc}</span>
               </div>
               <Toggle on={row.value} accent={accent} label={row.title} onChange={row.onChange} />
@@ -3033,12 +3035,12 @@ const SettingsPage: React.FC = () => {
       <Panel icon={<Monitor size={16} />} tint="#a78bfa" title={t('Windows')} subtitle={t('Size and position of the windows the app opens')}>
         <div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl" style={{ background: C.fill }}>
           <div className="min-w-0">
-            <span className="fz-body font-bold block" style={{ color: C.text }}>{t('Reset window sizes')}</span>
+            <span className="fz-body font-semibold block" style={{ color: C.text }}>{t('Reset window sizes')}</span>
             <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{t('Every window opens at its original size and position again. The dashboard card layout is reset separately, in Dashboard.')}</span>
           </div>
           <button
             onClick={resetWindowStates}
-            className="rounded-lg px-3.5 fz-tiny font-bold flex items-center gap-2 cursor-pointer shrink-0"
+            className="rounded-lg px-3.5 fz-tiny font-semibold flex items-center gap-2 cursor-pointer shrink-0"
             style={{ height: 32, border: `1px solid ${C.border}`, background: C.fill, color: C.text }}
           >
             <RotateCcw size={12} /> {t('Reset Windows')}
@@ -3069,7 +3071,7 @@ const SettingsPage: React.FC = () => {
                 <Icon size={17} />
               </span>
               <span className="min-w-0">
-                <span className="fz-body font-bold block" style={{ color: C.textStrong }}>{title}</span>
+                <span className="fz-body font-semibold block" style={{ color: C.textStrong }}>{title}</span>
                 <span className="fz-small block mt-0.5" style={{ color: C.dim }}>{desc}</span>
               </span>
             </button>
@@ -3130,8 +3132,8 @@ const SettingsPage: React.FC = () => {
               <Settings size={20} />
             </div>
             <div>
-              <h1 className="settings-title font-bold tracking-tight leading-none" style={{ color: C.textStrong }}>{t('System Configuration')}</h1>
-              <div className="flex items-center gap-1.5 mt-1.5 fz-tiny font-bold leading-none" style={{ color: C.dim }}>
+              <h1 className="settings-title font-semibold tracking-tight leading-none" style={{ color: C.textStrong }}>{t('System Configuration')}</h1>
+              <div className="flex items-center gap-1.5 mt-1.5 fz-tiny font-semibold leading-none" style={{ color: C.dim }}>
                 <ShieldCheck size={11} style={{ color: C.green }} /> {t('Administrative Panel')}
               </div>
             </div>
@@ -3139,9 +3141,9 @@ const SettingsPage: React.FC = () => {
 
           <div className="flex items-center gap-2.5">
 
-            <button
+            {isAdmin && <button
               onClick={handleDeveloperModeToggle}
-              className="rounded-[10px] px-3.5 fz-small font-bold flex items-center gap-2 cursor-pointer"
+              className="rounded-[10px] px-3.5 fz-small font-semibold flex items-center gap-2 cursor-pointer"
               style={
                 isDeveloperMode
                   ? { height: 34, background: 'rgba(52,211,153,.12)', color: C.green, border: '1px solid rgba(52,211,153,.2)' }
@@ -3150,14 +3152,14 @@ const SettingsPage: React.FC = () => {
             >
               {isDeveloperMode ? <Unlock size={13} /> : <Lock size={13} />}
               {isDeveloperMode ? t('Dev Active') : t('Dev Locked')}
-            </button>
+            </button>}
 
             <div className="w-px h-5" style={{ background: C.divider }} />
 
             <button
               onClick={handleSaveWithAnimation}
               disabled={isSaving}
-              className="rounded-[10px] border-0 text-white fz-small font-bold flex items-center gap-2 cursor-pointer"
+              className="rounded-[10px] border-0 text-white fz-small font-semibold flex items-center gap-2 cursor-pointer"
               style={{ height: 34, paddingLeft: 18, paddingRight: 18, background: accent, boxShadow: '0 3px 12px rgba(0,0,0,.35)' }}
             >
               <span key={isSaving ? 'saving' : justSaved ? 'saved' : 'idle'} className="settings-swap inline-flex items-center gap-2">
@@ -3168,7 +3170,7 @@ const SettingsPage: React.FC = () => {
 
             <button
               onClick={() => window.close()}
-              className="rounded-[10px] px-4 fz-small font-bold flex items-center gap-2 cursor-pointer"
+              className="rounded-[10px] px-4 fz-small font-semibold flex items-center gap-2 cursor-pointer"
               style={{ height: 34, background: 'rgba(255,69,58,.12)', color: C.red, border: '1px solid rgba(255,69,58,.15)' }}
             >
               <X size={13} /> {t('Close')}
@@ -3197,7 +3199,7 @@ const SettingsPage: React.FC = () => {
 
             <nav className="settings-nav flex flex-col gap-0.5" aria-label={t('Settings sections')}>
               {visibleNav.map((item, idx) => {
-                const { key, label, Icon, gradient } = item;
+                const { key, label, Icon } = item;
                 // Keep the divider the design puts above License, but only when
                 // something actually precedes it after filtering.
                 const showDivider = item.afterDivider && idx > 0;
@@ -3207,11 +3209,11 @@ const SettingsPage: React.FC = () => {
                     <button className="settings-nav-button" onClick={() => setActiveTab(key)} style={navButtonStyle(key)} aria-current={activeTab === key ? 'page' : undefined}>
                       <div
                         className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: gradient }}
+                        style={{ background: activeTab === key ? accent : C.fill, transition: 'background .15s' }}
                       >
-                        <Icon size={15} className="text-white" />
+                        <Icon size={15} style={{ color: activeTab === key ? '#fff' : C.dim }} />
                       </div>
-                      <span className="fz-body font-bold">{label}</span>
+                      <span className="fz-body font-semibold">{label}</span>
                     </button>
                   </React.Fragment>
                 );
@@ -3228,7 +3230,7 @@ const SettingsPage: React.FC = () => {
               className="settings-main-header sticky top-0 z-[8]"
               style={{ background: C.bg }}
             >
-              <h2 className="m-0 settings-section-title font-bold tracking-tight" style={{ color: C.textStrong }}>{tLabel(tabMeta.title)}</h2>
+              <h2 className="m-0 settings-section-title font-semibold tracking-tight" style={{ color: C.textStrong }}>{tLabel(tabMeta.title)}</h2>
               <p className="mt-1 fz-body" style={{ color: C.dim }}>{tLabel(tabMeta.subtitle)}</p>
             </div>
 
@@ -3267,9 +3269,9 @@ const SettingsPage: React.FC = () => {
             >
               <div className="flex items-center gap-2 mb-4" style={{ color: accent }}>
                 <Lock size={16} />
-                <span className="text-sm font-bold">{t('Security Access')}</span>
+                <span className="text-sm font-semibold">{t('Security Access')}</span>
               </div>
-              <p className="text-center fz-small font-bold mb-3.5" style={{ color: C.dim }}>
+              <p className="text-center fz-small font-semibold mb-3.5" style={{ color: C.dim }}>
                 {t('Enter Restricted PIN to Unlock')}
               </p>
               <input
@@ -3287,17 +3289,17 @@ const SettingsPage: React.FC = () => {
                   border: `1px solid ${C.border}`, background: C.fill, color: C.textStrong,
                 }}
               />
-              {pinError && <p className="text-center fz-small font-bold mt-2.5" style={{ color: C.red }}>{pinError}</p>}
+              {pinError && <p className="text-center fz-small font-semibold mt-2.5" style={{ color: C.red }}>{pinError}</p>}
               <button
                 onClick={handlePinSubmit}
-                className="w-full mt-3 rounded-[10px] border-0 fz-small font-bold text-white cursor-pointer"
+                className="w-full mt-3 rounded-[10px] border-0 fz-small font-semibold text-white cursor-pointer"
                 style={{ height: 42, background: accent }}
               >
                 {t('Authenticate')}
               </button>
               <button
                 onClick={() => setShowPinDialog(false)}
-                className="w-full mt-1.5 border-0 bg-transparent fz-small font-bold cursor-pointer"
+                className="w-full mt-1.5 border-0 bg-transparent fz-small font-semibold cursor-pointer"
                 style={{ height: 36, color: C.dim }}
               >
                 {t('Cancel')}

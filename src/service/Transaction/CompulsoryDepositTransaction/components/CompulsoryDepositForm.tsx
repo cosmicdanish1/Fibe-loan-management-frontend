@@ -24,6 +24,8 @@ interface MemberRowProps {
     memberName: string;
     currentBalance: number;
     postAmount: string | number;
+    /** charge variant: the box is marked when the charge is more than the member's balance */
+    isCharge?: boolean;
     onChange: (memberNo: number, amount: string) => void;
 }
 
@@ -31,7 +33,8 @@ interface MemberRowProps {
  * ES-514: one grid row. Memoised, so typing in one member's box redraws only that row - not all ~7,500 (before, each
  * keystroke redrew every row and took over a second).
  */
-const MemberRow = React.memo(({ memberNo, memberName, currentBalance, postAmount, onChange }: MemberRowProps) => {
+const MemberRow = React.memo(({ memberNo, memberName, currentBalance, postAmount, isCharge, onChange }: MemberRowProps) => {
+    const tooMuch = !!isCharge && (parseFloat(String(postAmount)) || 0) > Number(currentBalance || 0);
     // translated here, not in the parent: the parent would otherwise run it for every row on every keystroke
     const { t } = useTranslation();
     const ariaLabel = t('Post amount for member {{1}}', { 1: memberNo });
@@ -43,13 +46,15 @@ const MemberRow = React.memo(({ memberNo, memberName, currentBalance, postAmount
         <td className="has-input">
             <input aria-label={ariaLabel} value={postAmount} inputMode="decimal" maxLength={12}
                 onChange={e => onChange(memberNo, cleanAmount(e.target.value))}
-                placeholder="0.00" className="aw-input is-right" style={{ fontWeight: 600 }} />
+                placeholder="0.00" className={`aw-input is-right${tooMuch ? ' is-invalid' : ''}`} style={{ fontWeight: 600 }}
+                title={tooMuch ? 'More than the member\'s Compulsory Deposit balance' : undefined} aria-invalid={tooMuch || undefined} />
         </td>
     </tr>
     );
 });
 
-const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
+const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn & { variant?: 'interest' | 'charge' }> = ({
+    variant = 'interest',
     formData,
     members,
     incomeHeads,
@@ -63,6 +68,8 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
     distributeEqually,
 }) => {
   const { t } = useTranslation();
+    const isCharge = variant === 'charge';
+    const windowTitle = isCharge ? t('RD/CD Transaction Legacy') : t('RD/CD Transaction');
     const distributedTotal = members.reduce(
         (sum, m) => sum + (parseFloat(String(m.postAmount || 0)) || 0), 0
     );
@@ -77,8 +84,8 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
         <div className="app-window aw-calm">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
-                    <h1 className="aw-title">{t('RD/CD Transaction')}</h1>
-                    <p className="aw-desc">{t('Bulk CD Posting')}</p>
+                    <h1 className="aw-title">{windowTitle}</h1>
+                    <p className="aw-desc">{isCharge ? t('Bulk CD charge · debits each member, credits the head') : t('Bulk CD Posting')}</p>
                 </div>
                 <div className="aw-actions">
                     <button type="button" onClick={distributeEqually} disabled={isLoading || isPosting} className="aw-btn aw-btn-secondary">
@@ -87,7 +94,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                     <button type="button" onClick={handleReset} disabled={isPosting} className="aw-btn aw-btn-secondary"><RotateCcw size={13} /> {t('Clear')}</button>
                     <button type="button" onClick={handleSave} disabled={isPosting || isLoading} className="aw-btn aw-btn-primary">
                         {isPosting ? <RotateCcw size={13} className="aw-spin" /> : <Save size={13} />}
-                        {isPosting ? t('Posting…') : t('Post')}
+                        {isPosting ? t('Posting…') : (isCharge ? t('Post Charges') : t('Post'))}
                     </button>
                     <button type="button" onClick={handleExit} className="aw-btn aw-btn-ghost"><X size={13} /> {t('Exit')}</button>
                 </div>
@@ -111,7 +118,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                                 </div>
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="cd-head">{t('Income Head')} <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
+                                <label className="aw-label" htmlFor="cd-head">{isCharge ? t('Credit Head') : t('Income Head')} <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
                                 <Select
                                     id="cd-head"
                                     value={(formData.incomeHead || undefined) as string}
@@ -156,7 +163,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
                                     ) : members.map((m, idx) => (
                                         <MemberRow key={`${m.memberNo}-${idx}`}
                                             memberNo={m.memberNo} memberName={m.memberName} currentBalance={m.currentBalance}
-                                            postAmount={m.postAmount} onChange={updateMemberAmount} />
+                                            postAmount={m.postAmount} isCharge={isCharge} onChange={updateMemberAmount} />
                                     ))}
                                 </tbody>
                             </table>
@@ -166,7 +173,7 @@ const CompulsoryDepositForm: React.FC<CompulsoryDepositHookReturn> = ({
             </div>
 
             <div className="aw-footer">
-                <span>{t('RD/CD Transaction')}{formData.amount && <> · <strong style={{ color: 'var(--aw-accent)' }}>{t('Amount: ₹{{1}}', { 1: formData.amount })}</strong></>}</span>
+                <span>{windowTitle}{formData.amount && <> · <strong style={{ color: 'var(--aw-accent)' }}>{t('Amount: ₹{{1}}', { 1: formData.amount })}</strong></>}</span>
                 <span>{dayjs().format('DD-MMM-YY')}</span>
             </div>
         </div>

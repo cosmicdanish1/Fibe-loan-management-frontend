@@ -28,7 +28,10 @@ const ReagreementQuotePanel: React.FC<Props> = ({ quote, loading, hideSchedule }
         return <p className="aw-meta" style={{ padding: 10 }}>{loading ? t('Calculating…') : t('Enter the new term and rate to see the new agreement.')}</p>;
     }
     const { position: pos, old, neu, collect } = quote;
-    const general = quote.errors.filter(e => e.field === 'loan' || e.field === 'general');
+    // Every reason the new agreement could not be priced is shown (tenure, rate, application date as well as the
+    // loan itself). Before, only loan-level reasons showed, so a blocked quote looked like an empty "—" column
+    // with a silently disabled Sanction button.
+    const general = quote.errors;
 
     return (
         <div className="aw-stack" style={{ opacity: loading ? 0.65 : 1, transition: 'opacity .15s' }}>

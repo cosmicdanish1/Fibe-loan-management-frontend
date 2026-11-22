@@ -72,11 +72,11 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
     const bankBal = formData.bankBal || 0;
 
     return (
-        <div className="app-window aw-calm">
+        <div className="app-window aw-calm aw-voucher">
             <div className="aw-header aw-ambient">
                 <div className="min-w-0">
                     <h1 className="aw-title">{t('Receipt')}</h1>
-                    <p className="aw-desc">{t('CR(R) + DR(P) → Ledger')}{formData.memberName && !isGeneral ? ` · ${formData.memberName}` : ''}</p>
+                    <p className="aw-desc">{t('Held until passed in Pass Transactions')}{formData.memberName && !isGeneral ? ` · ${formData.memberName}` : ''}</p>
                 </div>
                 <div className="aw-actions">
                     <div className="aw-seg" role="tablist" style={{ ['--seg-index' as any]: Math.max(0, RECEIPT_TYPES.findIndex(t => t.value === formData.receiptType)), ['--seg-count' as any]: RECEIPT_TYPES.length }}>
@@ -123,7 +123,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                     options={Array.from({ length: 10 }, (_, i) => (dayjs().year() - 2 + i).toString()).map(y => ({ value: y, label: y }))} />
                             </span>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--aw-gap)', alignItems: 'start' }}>
+                        <div className="aw-split-fields" style={{ gridTemplateColumns: formData.receiptType === 'receipt' ? 'minmax(220px, 1.2fr) minmax(140px, 0.6fr) minmax(260px, 1fr)' : 'minmax(220px, 1.2fr) minmax(140px, 0.6fr)' }}>
                             <div>
                                 <label className="aw-label" htmlFor="rc-member">{t('Member No')} <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
                                 <div className="aw-input-wrap has-action">
@@ -141,8 +141,8 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                 )}
                             </div>
                             <div>
-                                <label className="aw-label" htmlFor="rc-office">{t('Office')} <span style={{ color: 'var(--aw-danger)' }}>*</span></label>
-                                <input id="rc-office" value={formData.officeNo} onChange={e => updateField('officeNo', e.target.value)} placeholder={t('Office No...')} className="aw-input" />
+                                <label className="aw-label" htmlFor="rc-office">{t('Office')} {!isGeneral && <span style={{ color: 'var(--aw-danger)' }}>*</span>}</label>
+                                <input id="rc-office" value={formData.officeNo} onChange={e => updateField('officeNo', e.target.value)} placeholder={t('Office No...')} disabled={isGeneral} className="aw-input" />
                             </div>
                             {formData.receiptType === 'receipt' && (
                                 <div className="aw-panel">
@@ -151,14 +151,13 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                         <thead><tr><th>{t('Loan')}</th><th className="is-right">{t('Bal')}</th><th className="is-right">{t('Intt')}</th></tr></thead>
                                         <tbody>
                                             {[
-                                                { label: 'RLN', bal: formData.rlnBal, intt: formData.rlnIntt },
-                                                { label: 'ELN', bal: formData.elnBal, intt: formData.elnIntt },
-                                                { label: 'FLN', bal: formData.flnBal, intt: formData.flnIntt },
+                                                { label: t('Regular'), bal: formData.rlnBal },
+                                                { label: t('Emergency'), bal: formData.elnBal },
                                             ].map(item => (
                                                 <tr key={item.label}>
                                                     <td>{item.label}</td>
                                                     <td className={`is-right ${item.bal > 0 ? 'is-danger' : 'is-muted'}`}>{item.bal.toFixed(2)}</td>
-                                                    <td className={`is-right ${item.intt > 0 ? 'is-danger' : 'is-muted'}`}>{item.intt.toFixed(2)}</td>
+                                                    <td className="is-right is-muted" title={t('Interest is not tracked per member yet')}>—</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -231,7 +230,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                                 </thead>
                                 <tbody>
                                     {formData.rows.length === 0 ? (
-                                        <tr><td colSpan={5}><div className="aw-empty" style={{ padding: 24 }}><span className="aw-meta">{t('Add rows using the button above')}</span></div></td></tr>
+                                        <tr><td colSpan={5}><div className="aw-empty"><span className="aw-meta">{t('Add rows using the button above')}</span></div></td></tr>
                                     ) : formData.rows.map((record: ReceiptRow) => (
                                         <tr key={record.id}>
                                             <td className="has-input">
@@ -269,7 +268,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
                     <section className="aw-card">
                         <label className="aw-label" htmlFor="rc-narr">{t('Narration')}</label>
                         <textarea id="rc-narr" value={formData.narration} onChange={e => updateField('narration', e.target.value)}
-                            placeholder={t('Enter narration / remarks…')} rows={2}
+                            placeholder={t('Enter narration / remarks…')} rows={2} maxLength={100}
                             className="aw-input" style={{ height: 'auto', paddingTop: 8, resize: 'none' }} />
                     </section>
                 </div>
@@ -277,7 +276,7 @@ const ReceiptForm: React.FC<ReceiptHookReturn> = ({
 
             <div className="aw-footer">
                 <span>{t('Receipt')}{formData.memberName && !isGeneral && <> · <strong style={{ color: 'var(--aw-accent)' }}>{formData.memberName}</strong></>}</span>
-                <span>{dayjs().format('DD-MMM-YY')}</span>
+                <span title={t('Working date')}>{dayjs(formData.transDate).format('DD-MMM-YY')}</span>
             </div>
 
             <MemberLookupDialog open={showLookup} onClose={() => setShowLookup(false)} onSelect={onMemberSelected} />

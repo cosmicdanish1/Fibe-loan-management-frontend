@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, ArrowUp, ArrowDown } from 'lucide-react';
 import dayjs from 'dayjs';
-import apiService from '../../services/api';
+import apiService from './dashApi';
 import { WidgetCard, Headline, CardFoot, ErrorNote, Loading, money, TONE_ACCENT, TONE_INFO, TONE_WARNING, TONE_SUCCESS } from './AnalyticsWidgets';
 import { Donut, HalfGauge, Sparkline, LegendRow, CountUp, type Slice } from './DashCharts';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +12,7 @@ import { tLabel } from '../../i18n';
 interface Amount { count: number; amount: number }
 
 export interface DashboardSummary {
-  deposits: { fixedRecurring: Amount; savings: Amount; shares: number; compulsory: number } | null;
+  deposits: { fixedRecurring: Amount; savings: Amount | null; shares: number; compulsory: number } | null;
   maturities: { accountNo: string; memberNo: string; name: string | null; date: string; amount: number; kind: string | null }[] | null;
   applications: { pending: Amount; sanctioned: Amount; disbursedThisMonth: Amount } | null;
   members: { newThisMonth: number; newLastMonth: number } | null;
@@ -34,7 +34,7 @@ export const loadWithRetry = async <T,>(run: () => Promise<T>, ok: (r: T) => boo
 export interface SummaryState { summary: DashboardSummary | null; loading: boolean; failed: boolean }
 
 /** Loads the one summary call that feeds most of the new widgets. */
-export const useDashboardSummary = (): SummaryState => {
+export const useDashboardSummary = (reloadKey = 0): SummaryState => {
   const [state, setState] = useState<SummaryState>({ summary: null, loading: true, failed: false });
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +44,7 @@ export const useDashboardSummary = (): SummaryState => {
       else setState({ summary: null, loading: false, failed: true });
     }).catch(() => { if (!cancelled) setState({ summary: null, loading: false, failed: true }); });
     return () => { cancelled = true; };
-  }, []);
+  }, [reloadKey]);
   return state;
 };
 
@@ -243,9 +243,10 @@ export const DepositsSummaryWidget: React.FC<{ state: SummaryState }> = ({ state
   <WidgetCard title={t('Deposits Summary')} tone={TONE_SUCCESS}>
     <Section state={state} name="deposits" error="Could not load deposit totals">
       {d => {
+        // Saving Bank is switched off by default (d.savings is null), so it is left out of the chart
         const slices: Slice[] = [
           { label: t('Fixed & recurring'), value: d.fixedRecurring.amount, color: 'var(--aw-accent)' },
-          { label: t('Savings'), value: d.savings.amount, color: 'var(--aw-success)' },
+          ...(d.savings ? [{ label: t('Savings'), value: d.savings.amount, color: 'var(--aw-success)' }] : []),
           { label: t('Compulsory deposit'), value: d.compulsory, color: 'var(--aw-warning)' },
         ];
         const total = slices.reduce((s, x) => s + x.value, 0);
@@ -257,8 +258,8 @@ export const DepositsSummaryWidget: React.FC<{ state: SummaryState }> = ({ state
               <Donut slices={slices} ariaLabel="Deposits by type" />
               <div className="aw-rows">
                 <LegendRow color={slices[0]!.color} label={t('Fixed & recurring')} value={short(d.fixedRecurring.amount)} sub={`${d.fixedRecurring.count} account${d.fixedRecurring.count === 1 ? '' : 's'}`} />
-                <LegendRow color={slices[1]!.color} label={t('Savings')} value={short(d.savings.amount)} sub={`${d.savings.count} account${d.savings.count === 1 ? '' : 's'}`} />
-                <LegendRow color={slices[2]!.color} label={t('Compulsory deposit')} value={short(d.compulsory)} />
+                {d.savings && <LegendRow color={slices[1]!.color} label={t('Savings')} value={short(d.savings.amount)} sub={`${d.savings.count} account${d.savings.count === 1 ? '' : 's'}`} />}
+                <LegendRow color={slices[slices.length - 1]!.color} label={t('Compulsory deposit')} value={short(d.compulsory)} />
               </div>
             </div>
             <CardFoot>

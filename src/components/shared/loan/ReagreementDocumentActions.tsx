@@ -38,7 +38,8 @@ const ReagreementDocumentActions: React.FC<Props> = ({ id, draft, issue, baseNam
 
     return (
         <>
-            <span className="aw-btn-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+            {/* an even grid of equal buttons that wraps cleanly at any width, instead of a ragged column or row */}
+            <span style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(74px, 1fr))', gap: 6, width: '100%' }}>
                 <button type="button" className={cls} disabled={!!busy} onClick={() => run('view', async () => {
                     const blob = await fetchAgreementBlob(id, 'png', { draft, issue });
                     setViewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(blob); });

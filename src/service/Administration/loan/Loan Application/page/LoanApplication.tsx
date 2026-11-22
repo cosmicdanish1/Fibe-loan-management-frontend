@@ -8,6 +8,7 @@ import type { LoanDetails, NomineeDetail } from '../types';
 import { API_ROUTES, API_BASE_URL, getApiBaseUrl } from '../../../../../services/apiVersionConfig';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import { localISODate } from '../../../../../utils/dates';
+import { apiService } from '../../../../../services/api';
 import { useTranslation } from 'react-i18next';
 
 interface LoanEligibilityStatus {
@@ -76,6 +77,22 @@ const LoanApplication: React.FC = () => {
   const [isCheckingEligibility, setIsCheckingEligibility] = React.useState(false);
   const eligibilityDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // The application is dated by this window's Date setting (Day End > Date settings: the working date by default, as in
+  // legacy). The date shown is the one the server will use; it can not be edited here and the server ignores any date sent.
+  const applicationDateRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    let alive = true;
+    apiService.getPostingDate('LOAN_APP').then((res: any) => {
+      const d = res?.data?.date ?? res?.data?.data?.date;
+      if (alive && res?.success && typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        applicationDateRef.current = d;
+        updateLoanDetails('applDate', d as any);
+      }
+    }).catch(() => undefined);
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   React.useEffect(() => {
     const amount = parseFloat(state.loanDetails.loanAmount) || 0;
     const memberNo = state.loanDetails.memberNo;
@@ -83,15 +100,21 @@ const LoanApplication: React.FC = () => {
 
     // Loan Against RD (ELN) is limited by the member's own RD, so its figures are
     // read as soon as a member is chosen (amount may still be empty) to show the
-    // largest loan allowed. Regular and Emergency loans are checked by the server
-    // when the application is saved.
-    if (!memberNo || (loanType || '').toUpperCase() !== 'ELN') {
+    // largest loan allowed. Regular and Emergency loans are checked once an amount
+    // is entered, so the RD / Share shortfall is shown before saving.
+    const typeCode = (loanType || '').toUpperCase();
+    const isEln = typeCode === 'ELN';
+    if (!memberNo || !['RLN', 'ALN', 'ELN'].includes(typeCode) || (!isEln && amount <= 0)) {
       setEligibilityStatus(null);
       setIsCheckingEligibility(false);
       return;
     }
 
     if (eligibilityDebounceRef.current) clearTimeout(eligibilityDebounceRef.current);
+
+    // A slow answer for an older amount must never replace the answer for the amount now typed: when the inputs change
+    // (or the window closes) this run is marked stale and its answer is dropped.
+    let stale = false;
 
     setIsCheckingEligibility(true);
     eligibilityDebounceRef.current = setTimeout(async () => {
@@ -104,19 +127,20 @@ const LoanApplication: React.FC = () => {
         if (resp.ok) {
           const result = await resp.json();
           const data = result.data || result;
-          setEligibilityStatus(data);
-        } else {
+          if (!stale) setEligibilityStatus(data);
+        } else if (!stale) {
           setEligibilityStatus(null);
         }
       } catch (err) {
         console.error('Failed to check loan eligibility:', err);
-        setEligibilityStatus(null);
+        if (!stale) setEligibilityStatus(null);
       } finally {
-        setIsCheckingEligibility(false);
+        if (!stale) setIsCheckingEligibility(false);
       }
     }, 500);
 
     return () => {
+      stale = true;
       if (eligibilityDebounceRef.current) clearTimeout(eligibilityDebounceRef.current);
     };
   }, [state.loanDetails.loanAmount, state.loanDetails.memberNo, state.loanDetails.loanType]);
@@ -402,7 +426,7 @@ const LoanApplication: React.FC = () => {
     updateLoanDetails('loanAmount', '');
     updateLoanDetails('formNumber', '');
     updateLoanDetails('reason', '');
-    updateLoanDetails('applDate', localISODate() as any);
+    updateLoanDetails('applDate', (applicationDateRef.current ?? localISODate()) as any);
     setSelectedMember(null);
     setMemberLoanCases([]);
     setEligibilityStatus(null);

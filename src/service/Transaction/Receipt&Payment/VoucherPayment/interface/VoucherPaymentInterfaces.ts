@@ -1,42 +1,63 @@
 // interface/VoucherPaymentInterfaces.ts
+// Voucher Payment = the cashier's step for payment vouchers: pick a voucher created in Voucher Creation, choose
+// cash or bank, and sign. A signed voucher is then passed in Pass Transactions.
 
-export interface ReceiptRow {
-  id: string;
-  code: string;
-  accType: string;
-  description: string;
-  amount: string;
+export interface UnsignedVoucher {
+  voucherNo: string;
+  voucherDate: string;
+  total: number;
+  memberNo: string | number | null;
+  memberName: string;
 }
 
-export interface VoucherPaymentData {
+export interface VoucherRow {
+  code: string;
+  name: string;
+  amount: number;
+  rdSrNo: string;
+}
+
+export interface VoucherDetail {
+  voucherNo: string;
+  voucherDate: string;
+  total: number;
   memberNo: string;
   memberName: string;
-  voucherNo: string;
-  transDate: string;
-  paymentType: 'payment' | 'general';
-  subDivision: string;
+  officeNo: string | number;
+  isGeneral: boolean;
+  narration: string;
+  rows: VoucherRow[];
+}
+
+export interface SignForm {
   modeOfPay: 'cash' | 'bank';
+  bankCode: string;     // our bank account the money goes out of (bank mode)
   chequeDate: string;
   chequeNo: string;
-  bankName: string;
-  receiveIntoCode: string; // ledger account debited (cash A1001 or chosen bank account)
-  narration: string;
-  rows: ReceiptRow[];
+  bankName: string;     // customer's bank name
 }
 
 export interface VoucherPaymentHookReturn {
-  formData: VoucherPaymentData;
-  totalAmount: number;
+  vouchers: UnsignedVoucher[];
+  isLoadingList: boolean;
+  selectedNo: string;
+  detail: VoucherDetail | null;
+  isLoadingDetail: boolean;
+  /** the member's signature from the member master: image URL, or why there is none */
+  signature: { state: 'none' | 'loading' | 'ready' | 'missing'; url: string };
+  form: SignForm;
   bankAccounts: { code: string; name: string }[];
   accountBalance: number;
-  lastSaved: { voucherNo: string; memberNo: string; memberName: string; total: number } | null;
-  updateField: (field: keyof VoucherPaymentData, value: any) => void;
-  handleMemberSelect: (memberNo: string, memberData?: any) => void;
-  addRow: () => void;
-  updateRow: (id: string, field: keyof ReceiptRow, value: string) => void;
-  removeRow: (id: string) => void;
+  isSigning: boolean;
+  updateForm: (field: keyof SignForm, value: string) => void;
+  selectVoucher: (voucherNo: string) => void;
   handleSave: () => void;
+  /** Sign (as in the legacy window): shows the member's signature for checking, nothing more */
+  signatureOpen: boolean;
+  openSignature: () => void;
+  closeSignature: () => void;
+  handleDelete: () => void;
+  handleRefresh: () => void;
   handleClear: () => void;
   handleExit: () => void;
-  isLoading: boolean;
 }

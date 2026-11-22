@@ -972,6 +972,30 @@ class ApiService {
     return this.request(`/utilities/search?${params.toString()}`);
   }
 
+  /** The date a window will put on its entries now: its Date setting (Day End > Date settings), the working date by default */
+  async getPostingDate(windowKey: string): Promise<ApiResponse<{ date: string; mode: 'WORKING' | 'SYSTEM' }>> {
+    return this.request<{ date: string; mode: 'WORKING' | 'SYSTEM' }>(`/utilities/posting-date?window=${encodeURIComponent(windowKey)}`);
+  }
+
+  // Day End > Date settings (administrator)
+  async getDatePolicy(): Promise<ApiResponse<any>> { return this.request<any>('/admin/day-end/date-policy'); }
+  async saveDatePolicy(changes: Array<{ windowKey: string; mode: 'WORKING' | 'SYSTEM' }>): Promise<ApiResponse<any>> {
+    return this.request<any>('/admin/day-end/date-policy', { method: 'PUT', body: JSON.stringify({ changes }) });
+  }
+  async exportDatePolicy(): Promise<ApiResponse<any>> { return this.request<any>('/admin/day-end/date-policy/export'); }
+  async previewDatePolicyImport(file: unknown): Promise<ApiResponse<any>> {
+    return this.request<any>('/admin/day-end/date-policy/import/preview', { method: 'POST', body: JSON.stringify({ file }) });
+  }
+  async importDatePolicy(file: unknown): Promise<ApiResponse<any>> {
+    return this.request<any>('/admin/day-end/date-policy/import', { method: 'POST', body: JSON.stringify({ file }) });
+  }
+  async getDatePolicyHistory(): Promise<ApiResponse<any>> { return this.request<any>('/admin/day-end/date-policy/history'); }
+
+  /** The Day-End working date ({ date: 'YYYY-MM-DD' | null }): the day every voucher is dated on */
+  async getWorkingDate(): Promise<ApiResponse<{ date: string | null }>> {
+    return this.request<{ date: string | null }>('/utilities/working-date');
+  }
+
   async getMemberBalance(memberId: number): Promise<ApiResponse> {
     return this.request(`/utilities/balance/member/${memberId}`);
   }
@@ -2600,6 +2624,17 @@ class ApiService {
 
   async getCDIncomeHeads(): Promise<ApiResponse<any[]>> {
     return this.request<any[]>('/transactions/cd/income-heads');
+  }
+
+  async getCDChargeHeads(): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>('/transactions/cd/charge-heads');
+  }
+
+  async postCDCharge(data: any): Promise<ApiResponse<any>> {
+    return this.request<any>('/transactions/cd/charge', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   }
 
   async postCDTransaction(data: any): Promise<ApiResponse<any>> {

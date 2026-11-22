@@ -3,9 +3,10 @@
 import React from 'react';
 import { Select, DatePicker } from 'antd';
 import AwDialog from '@/components/shared/kit/AwDialog';
+import LoanSanctionPanel from '../../LoanSanction/components/LoanSanctionPanel';
 import {
     Banknote, RotateCcw, Save, X, ShieldCheck, Building2,
-    Calendar, FileText, IndianRupee, Hash, CreditCard, Plus, Trash2,
+    Calendar, FileText, Hash, CreditCard, Plus, Trash2,
 } from 'lucide-react';
 import { LoanPaymentHookReturn, PaymentEntry } from '../interface/LoanPaymentInterfaces';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
@@ -17,7 +18,7 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
     actualAmount, bankBalance, totalReceipt, totalPayment,
     data, headList, bankList,
     updateField, updateModalField, handleLoanCaseChange,
-    openSanctionWindow, closeModal, handleModalSave,
+    openSanctionWindow, isSanctionOpen, closeSanctionDialog, handleSanctionedInDialog,
     handleSave, handleReset, handleExit,
     addVoucherEntry, updateVoucherEntry, removeVoucherEntry,
 }) => {
@@ -337,42 +338,15 @@ const LoanPaymentForm: React.FC<LoanPaymentHookReturn> = ({
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Calendar size={12} /> {dayjs().format('DD-MMM-YY')}</span>
             </div>
 
-            {/* ── Sanction Authorization dialog ── */}
-            <AwDialog open={modalData.isOpen} title={t('Sanction Authorization')} icon={<ShieldCheck size={14} />} onClose={closeModal} maxWidth="34rem" compact>
-                <div className="aw-stack">
-                    <dl className="aw-facts aw-panel">
-                        <div><dt>{t('Applicant')}</dt><dd>{modalData.memberName}</dd></div>
-                        <div><dt>{t('Applied Amount')}</dt><dd style={{ color: 'var(--aw-accent)' }}>₹{modalData.appliedAmount}</dd></div>
-                        <div><dt>{t('Basic Salary')}</dt><dd>₹{modalData.basicPay}</dd></div>
-                        <div><dt>{t('Share Capital')}</dt><dd style={{ color: 'var(--aw-success)' }}>₹{modalData.shareAmount}</dd></div>
-                    </dl>
-                    <div className="aw-two">
-                        <div>
-                            <label className="aw-label" htmlFor="lp-m-amt">{t('Approved Sanction (₹)')}</label>
-                            <div className="aw-input-wrap has-icon">
-                                <IndianRupee size={13} />
-                                <input id="lp-m-amt" className="aw-input" style={{ color: 'var(--aw-success)', fontWeight: 600 }} value={modalData.sanctionedAmount}
-                                    onChange={e => updateModalField('sanctionedAmount', e.target.value)} />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="aw-label" htmlFor="lp-m-inst">{t('No. of Installments')}</label>
-                            <input id="lp-m-inst" className="aw-input" value={modalData.noOfInstallments} onChange={e => updateModalField('noOfInstallments', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="aw-label" htmlFor="lp-m-rate">{t('Interest Rate (%)')}</label>
-                            <input id="lp-m-rate" className="aw-input" value={modalData.rate} onChange={e => updateModalField('rate', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="aw-label" htmlFor="lp-m-pen">{t('Penal Rate (%)')}</label>
-                            <input id="lp-m-pen" className="aw-input" style={{ color: 'var(--aw-danger)' }} value={modalData.penalRate} onChange={e => updateModalField('penalRate', e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
-                        <button type="button" onClick={closeModal} className="aw-btn aw-btn-secondary">{t('Cancel')}</button>
-                        <button type="button" onClick={handleModalSave} className="aw-btn aw-btn-primary"><ShieldCheck size={13} /> {t('Confirm Sanction')}</button>
-                    </div>
-                </div>
+            {/* ── Sanction dialog: the same form as the Loan Sanction window, without leaving this screen ── */}
+            <AwDialog open={isSanctionOpen} title={t('Loan Sanction')} icon={<ShieldCheck size={14} />} onClose={closeSanctionDialog} maxWidth="72rem" compact>
+                {isSanctionOpen && (
+                    <LoanSanctionPanel
+                        {...(formData.loanCaseNo ? { initialCaseNo: formData.loanCaseNo } : {})}
+                        onSanctioned={handleSanctionedInDialog}
+                        onClose={closeSanctionDialog}
+                    />
+                )}
             </AwDialog>
         </div>
     );

@@ -26,6 +26,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'LOAN_REAGREEMENT': { route: '/transaction/loan-reagreement', electronMethod: 'openNewWindow' },
   'LOAN_REAGREEMENT_HISTORY': { route: '/reports/loan-reagreement-history', electronMethod: 'openNewWindow' },
   'COMPULSORY_DEPOSIT_TRANSACTION': { route: '/transaction/compulsory-deposit', electronMethod: 'openNewWindow' },
+  'COMPULSORY_DEPOSIT_LEGACY': { route: '/transaction/compulsory-deposit-legacy', electronMethod: 'openNewWindow' },
   'MEMBER_BALANCE_TRANSFER': { route: '/transaction/member-balance-transfer', electronMethod: 'openNewWindow' },
   'PASS_TRANSACTIONS': { route: '/transaction/pass-transactions', electronMethod: 'openNewWindow' },
 
@@ -196,10 +197,18 @@ export const ROUTE_TO_ACTION: Record<string, string> = {
   '/loan-sanction': 'LOAN_PAYMENT',
 };
 
+/**
+ * Saving Bank is switched off: the legacy system never had savings accounts. The backend refuses these routes
+ * unless SB_ENABLED=true in its .env; flip this to true as well to bring the menus back.
+ */
+export const SB_FEATURE_ENABLED = false;
+const SB_ONLY_ACTIONS = new Set(['SAVING_AC_OPENING', 'SAVING_RECEIPT_PAYMENT', 'SAVING_STATEMENT', 'UPDATE_SAVING_INTT', 'PREMATURE_SB_AC']);
+
 /** True if `action` should open given the user's allowedActions from login.
  * null/undefined allowedActions means unrestricted (SYSTEM/ADMINISTRATOR). */
 export function isActionAllowed(allowedActions: string[] | null | undefined, action?: string): boolean {
   if (!action) return true;
+  if (!SB_FEATURE_ENABLED && SB_ONLY_ACTIONS.has(action)) return false;
   if (NEVER_GATED.has(action)) return true;
   if (!allowedActions) return true;
   if (allowedActions.includes(action)) return true;

@@ -71,8 +71,8 @@ export interface LoanSanctionHookReturn {
     isSaving: boolean;
     loanDetails: LoanDetails;
     sanctionDetails: SanctionDetails;
-    rules: SanctionRules;
-    toggleRule: (key: keyof SanctionRules) => void;
+    /** Share value / RD requirement for the amount being sanctioned (null until known, and for re-agreements). */
+    eligibility: any | null;
     handleLoanCaseChange: (caseNo: string) => void;
     updateSanctionField: (field: keyof SanctionDetails, value: string) => void;
     handleSanctionSave: () => void;

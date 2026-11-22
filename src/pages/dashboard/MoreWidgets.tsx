@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import dayjs from 'dayjs';
-import apiService from '../../services/api';
+import apiService from './dashApi';
 import { WidgetCard, Headline, CardFoot, ErrorNote, Loading, money, TONE_ACCENT, TONE_INFO, TONE_WARNING, TONE_SUCCESS } from './AnalyticsWidgets';
 import { HalfGauge, LegendRow, CountUp } from './DashCharts';
 import { Section, short, type SummaryState } from './SummaryWidgets';

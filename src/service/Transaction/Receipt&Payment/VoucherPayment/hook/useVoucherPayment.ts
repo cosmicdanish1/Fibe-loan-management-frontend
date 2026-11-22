@@ -1,196 +1,220 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
-import { VoucherPaymentData, VoucherPaymentHookReturn, ReceiptRow } from '../interface/VoucherPaymentInterfaces';
+import { Modal } from 'antd';
 import { apiService } from '../../../../../services/api';
 import { useTranslation } from 'react-i18next';
 import { showDialog4 as showDialog } from '@/utils/dialog';
+import type { SignForm, UnsignedVoucher, VoucherDetail, VoucherPaymentHookReturn } from '../interface/VoucherPaymentInterfaces';
 
-const CASH_ACCOUNT = { code: 'A1001', name: 'CASH IN HAND' };
+const CASH_CODE = 'A1001';
 
-const emptyForm = (): VoucherPaymentData => ({
-  memberNo: '',
-  memberName: '',
-  voucherNo: '',
-  transDate: dayjs().format('YYYY-MM-DD'),
-  paymentType: 'payment',
-  subDivision: '',
+const emptyForm = (): SignForm => ({
   modeOfPay: 'cash',
+  bankCode: '',
   chequeDate: dayjs().format('YYYY-MM-DD'),
   chequeNo: '',
   bankName: '',
-  receiveIntoCode: CASH_ACCOUNT.code,
-  narration: '',
-  rows: [],
 });
 
-const newRow = (): ReceiptRow => ({
-  id: Date.now().toString() + Math.random().toString(36).slice(2),
-  code: '',
-  accType: '',
-  description: '',
-  amount: '',
-});
+// the transform interceptor can wrap a payload once or twice
+const payloadOf = (response: any) => response?.data?.data ?? response?.data;
 
 export const useVoucherPayment = (): VoucherPaymentHookReturn => {
   const { t } = useTranslation();
-  const [formData, setFormData] = useState<VoucherPaymentData>(emptyForm());
-  const [isLoading, setIsLoading] = useState(false);
-  const [bankAccounts, setBankAccounts] = useState<{ code: string; name: string }[]>([CASH_ACCOUNT]);
+  const [vouchers, setVouchers] = useState<UnsignedVoucher[]>([]);
+  const [isLoadingList, setIsLoadingList] = useState(false);
+  const [selectedNo, setSelectedNo] = useState('');
+  const [detail, setDetail] = useState<VoucherDetail | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [form, setForm] = useState<SignForm>(emptyForm());
+  const [bankAccounts, setBankAccounts] = useState<{ code: string; name: string }[]>([]);
   const [accountBalance, setAccountBalance] = useState(0);
-  const [lastSaved, setLastSaved] = useState<{ voucherNo: string; memberNo: string; memberName: string; total: number } | null>(null);
-  const savingRef = useRef(false); // in-flight guard for Save
+  const [isSigning, setIsSigning] = useState(false);
+  const signingRef = useRef(false);
+  const detailSeq = useRef(0);
 
-  // Cash + real bank current accounts (from /reports/banks) for the "Receive Into" selector
+  // The member's signature from the member master, shown so the cashier can check it (the legacy "Sign" button did this).
+  const [signature, setSignature] = useState<{ state: 'none' | 'loading' | 'ready' | 'missing'; url: string }>({ state: 'none', url: '' });
+  const signatureUrlRef = useRef('');
+  const setSignatureState = useCallback((state: 'none' | 'loading' | 'ready' | 'missing', url = '') => {
+    if (signatureUrlRef.current) URL.revokeObjectURL(signatureUrlRef.current);
+    signatureUrlRef.current = url;
+    setSignature({ state, url });
+  }, []);
+  useEffect(() => () => { if (signatureUrlRef.current) URL.revokeObjectURL(signatureUrlRef.current); }, []);
+
+  // "Sign" (legacy): a dialog that shows the member's signature, loaded only when it is opened
+  const [signatureOpen, setSignatureOpen] = useState(false);
+  const openSignature = useCallback(() => setSignatureOpen(true), []);
+  const closeSignature = useCallback(() => setSignatureOpen(false), []);
+
+  useEffect(() => {
+    const memberNo = signatureOpen && detail && !detail.isGeneral ? detail.memberNo : '';
+    if (!memberNo || memberNo === '0') { setSignatureState('none'); return; }
+    let cancelled = false;
+    setSignatureState('loading');
+    apiService.fetchProtectedFile(`/members/master/${encodeURIComponent(memberNo)}/signature`)
+      .then(blob => {
+        if (cancelled) return;
+        if (blob) setSignatureState('ready', URL.createObjectURL(blob));
+        else setSignatureState('missing');
+      })
+      .catch(() => { if (!cancelled) setSignatureState('missing'); });
+    return () => { cancelled = true; };
+  }, [detail, signatureOpen, setSignatureState]);
+
+  const loadList = useCallback(async () => {
+    setIsLoadingList(true);
+    try {
+      const response = await apiService.get('/utilities/payment-vouchers/unsigned');
+      const list = payloadOf(response);
+      setVouchers(Array.isArray(list) ? list : []);
+    } catch {
+      setVouchers([]);
+    } finally {
+      setIsLoadingList(false);
+    }
+  }, []);
+
+  useEffect(() => { loadList(); }, [loadList]);
+
+  // our bank accounts, for "pay from" in bank mode
   useEffect(() => {
     apiService.getBankList()
       .then(response => {
         const banks = Array.isArray(response.data) ? response.data : (response.data?.data || []);
-        const mapped = (Array.isArray(banks) ? banks : []).map((b: any) => ({ code: b.code, name: b.name || b.head_name || b.code }));
-        setBankAccounts([CASH_ACCOUNT, ...mapped]);
+        setBankAccounts((Array.isArray(banks) ? banks : []).map((b: any) => ({ code: b.code, name: b.name || b.head_name || b.code })));
       })
-      .catch(() => setBankAccounts([CASH_ACCOUNT]));
+      .catch(() => setBankAccounts([]));
   }, []);
 
-  // Live balance of the receiving account (cash A1001, or the chosen bank account)
-  const activeAccount = formData.modeOfPay === 'bank' ? (formData.receiveIntoCode || 'A1001') : 'A1001';
+  // live balance of the account the money goes out of
+  const activeCode = form.modeOfPay === 'bank' ? (form.bankCode || '') : CASH_CODE;
   useEffect(() => {
+    if (!activeCode) { setAccountBalance(0); return; }
     let cancelled = false;
-    apiService.getHeadBalance(activeAccount)
+    apiService.getHeadBalance(activeCode)
       .then(response => {
         if (cancelled) return;
-        const bal = response?.data?.balance ?? response?.data?.data?.balance ?? 0;
-        setAccountBalance(Number(bal) || 0);
+        setAccountBalance(Number(response?.data?.balance ?? response?.data?.data?.balance ?? 0) || 0);
       })
       .catch(() => { if (!cancelled) setAccountBalance(0); });
     return () => { cancelled = true; };
-  }, [activeAccount]);
+  }, [activeCode]);
 
-  const totalAmount = useMemo(() =>
-    formData.rows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0),
-    [formData.rows]
-  );
-
-  const updateField = useCallback((field: keyof VoucherPaymentData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const updateForm = useCallback((field: keyof SignForm, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleMemberSelect = useCallback((memberNo: string, memberData?: any) => {
-    const actualNo = memberData?.memberNo || memberNo;
-    setFormData(prev => ({
-      ...prev,
-      memberNo: actualNo,
-      memberName: memberData?.memberName || '',
-      subDivision: memberData?.officeNo?.toString() || prev.subDivision,
-    }));
-  }, []);
+  const selectVoucher = useCallback(async (voucherNo: string) => {
+    const seq = ++detailSeq.current;
+    setSelectedNo(voucherNo);
+    setDetail(null);
+    setForm(emptyForm());
+    if (!voucherNo) return;
+    setIsLoadingDetail(true);
+    try {
+      const response = await apiService.get(`/utilities/payment-voucher/${encodeURIComponent(voucherNo)}`);
+      if (seq !== detailSeq.current) return;
+      const d = payloadOf(response);
+      if (response?.success === false || !d?.voucherNo) {
+        await showDialog('error', t('Voucher Payment'), t('Could not open the voucher'), response?.message || t('It may already be saved or deleted.'));
+        setSelectedNo('');
+        loadList();
+        return;
+      }
+      setDetail(d);
+    } catch (err: any) {
+      if (seq === detailSeq.current) {
+        await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), err?.message || '');
+        setSelectedNo('');
+      }
+    } finally {
+      if (seq === detailSeq.current) setIsLoadingDetail(false);
+    }
+  }, [loadList, t]);
 
-  const addRow = useCallback(() => {
-    setFormData(prev => ({ ...prev, rows: [...prev.rows, newRow()] }));
-  }, []);
-
-  const updateRow = useCallback((id: string, field: keyof ReceiptRow, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      rows: prev.rows.map(r => r.id === id ? { ...r, [field]: value } : r)
-    }));
-  }, []);
-
-  const removeRow = useCallback((id: string) => {
-    setFormData(prev => ({ ...prev, rows: prev.rows.filter(r => r.id !== id) }));
+  const handleClear = useCallback(() => {
+    detailSeq.current++;
+    setSelectedNo('');
+    setDetail(null);
+    setForm(emptyForm());
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (savingRef.current) return;
-    // "General Payment" is a non-member (office/general ledger) voucher, so a member
-    // is only required for a member "Payment".
-    const isGeneral = formData.paymentType === 'general';
-    if (!isGeneral && !formData.memberNo) {
-      await showDialog('warning', t('Input Validation Error'), t('Member Required'), t('Please select a member, or switch to "General Payment".'));
-      return;
+    if (signingRef.current || !detail) return;
+    if (form.modeOfPay === 'bank') {
+      if (!form.bankCode) {
+        await showDialog('warning', t('Input Validation Error'), t('Bank Account Required'), t('Choose the bank account the payment is made from.'));
+        return;
+      }
+      if (!form.chequeNo.trim()) {
+        await showDialog('warning', t('Input Validation Error'), t('Cheque Number Required'), t('Please enter the cheque number for bank/cheque payment mode.'));
+        return;
+      }
     }
-    const validRows = formData.rows.filter(r => r.code && parseFloat(r.amount) > 0);
-    if (validRows.length === 0) {
-      await showDialog('warning', t('Input Validation Error'), t('No Valid Rows'), t('Please add at least one row with a head code and amount greater than zero.'));
-      return;
-    }
-    // Only the rows that are actually posted count towards the total shown/validated
-    const validTotal = Math.round(validRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0) * 100) / 100;
-    if (validTotal <= 0) {
-      await showDialog('warning', t('Input Validation Error'), t('Invalid Total Amount'), t('Total voucher amount must be greater than zero.'));
-      return;
-    }
-    if (!formData.transDate || !/^\d{4}-\d{2}-\d{2}$/.test(formData.transDate) || !dayjs(formData.transDate).isValid()) {
-      await showDialog('warning', t('Input Validation Error'), t('Date Required'), t('Please enter a valid transaction date.'));
-      return;
-    }
-    if (formData.modeOfPay === 'bank' && !formData.chequeNo.trim()) {
-      await showDialog('warning', t('Input Validation Error'), t('Cheque Number Required'), t('Please enter the cheque number for bank/cheque payment mode.'));
-      return;
-    }
-
-    savingRef.current = true;
-    setIsLoading(true);
+    signingRef.current = true;
+    setIsSigning(true);
     try {
-      const payload = {
-        memberNo: formData.memberNo ? parseInt(formData.memberNo) : 0,
-        paymentType: formData.paymentType,
-        voucherNo: formData.voucherNo || '',
-        transDate: formData.transDate,
-        modeOfPay: formData.modeOfPay === 'bank' ? 'B' : 'C',
-        // Cash receipts debit cash (A1001); bank receipts debit the chosen bank account.
-        receiveIntoCode: formData.modeOfPay === 'bank' ? (formData.receiveIntoCode || 'A1001') : 'A1001',
-        narration: formData.narration || '',
-        cheqNo: formData.modeOfPay === 'bank' ? formData.chequeNo.trim() : '',
-        cheqDate: formData.modeOfPay === 'bank' ? (formData.chequeDate || '') : '',
-        bankName: formData.modeOfPay === 'bank' ? (formData.bankName || '') : '',
-        rows: validRows.map(r => ({
-          code: r.code,
-          accType: r.accType || 'OTH',
-          amount: parseFloat(r.amount) || 0,
-        })),
-      };
-
-      const response = await apiService.saveReceiptVoucher(payload);
-      if (response.success) {
-        const result = response.data;
-        const vchr = result?.voucherNo || '—';
+      const response: any = await apiService.post('/utilities/payment-voucher/save', {
+        voucherNo: detail.voucherNo,
+        modeOfPay: form.modeOfPay === 'bank' ? 'B' : 'C',
+        bankCode: form.modeOfPay === 'bank' ? form.bankCode : '',
+        cheqNo: form.modeOfPay === 'bank' ? form.chequeNo.trim() : '',
+        cheqDate: form.modeOfPay === 'bank' ? form.chequeDate : '',
+        bankName: form.modeOfPay === 'bank' ? form.bankName : '',
+      });
+      if (response?.success) {
         await showDialog(
-          'info',
-          'electron-react-ts',
-          t('Voucher Payment Staged Successfully!'),
+          'info', 'electron-react-ts', t('Voucher Saved'),
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-          `VOUCHER NO    : ${vchr}\n` +
-          `MEMBER NO     : ${formData.memberNo} - ${formData.memberName || 'N/A'}\n` +
-          `MODE OF PAY   : ${formData.modeOfPay === 'bank' ? 'Bank/Cheque' : 'Cash'}\n` +
-          `TOTAL AMOUNT  : ₹${validTotal.toLocaleString('en-IN')}\n` +
-          `ROWS          : ${validRows.length}\n` +
+          `VOUCHER NO    : ${detail.voucherNo}\n` +
+          `MEMBER        : ${detail.isGeneral ? t('General') : `${detail.memberNo} - ${detail.memberName}`}\n` +
+          `MODE OF PAY   : ${form.modeOfPay === 'bank' ? 'Bank/Cheque' : 'Cash'}\n` +
+          `AMOUNT        : ₹${detail.total.toLocaleString('en-IN')}\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-          `✓ Staged in transactions (pending pass)\n` +
-          `✓ Awaiting cashier authorization`,
+          `✓ Saved in Voucher Payment\n` +
+          `✓ Go to Pass Transactions to approve`,
         );
-        setLastSaved({
-          voucherNo: vchr,
-          memberNo: formData.memberNo,
-          memberName: formData.memberName,
-          total: validTotal,
-        });
-        setFormData(emptyForm());
+        handleClear();
+        loadList();
       } else {
-        // BUG FIX: was response.error — apiService returns response.message, not response.error
-        await showDialog('error', t('Voucher Payment Error'), t('Failed to Save Voucher Payment'), response.message || t('An unexpected error occurred. Please try again.'));
+        await showDialog('error', t('Voucher Payment'), t('Failed to save the voucher'), response?.message || t('An unexpected error occurred. Please try again.'));
+        loadList();
       }
     } catch (err: any) {
-      await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), t('Technical details: {{1}}', { 1: err.message }));
+      await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), err?.message || '');
     } finally {
-      savingRef.current = false;
-      setIsLoading(false);
+      signingRef.current = false;
+      setIsSigning(false);
     }
-  }, [formData]);
+  }, [detail, form, handleClear, loadList, t]);
 
-  const handleClear = useCallback(() => {
-    setFormData(emptyForm());
-    setLastSaved(null);
-  }, []);
+  const handleDelete = useCallback(() => {
+    if (!detail) return;
+    const no = detail.voucherNo;
+    Modal.confirm({
+      title: t('Delete voucher {{1}}?', { 1: no }),
+      content: t('The voucher is removed completely. This cannot be undone.'),
+      okText: t('Delete'),
+      okButtonProps: { danger: true },
+      cancelText: t('Cancel'),
+      onOk: async () => {
+        try {
+          const response: any = await apiService.delete(`/transactions/voucher/${encodeURIComponent(no)}`);
+          if (response?.success === false) {
+            await showDialog('error', t('Voucher Payment'), t('Failed to delete the voucher'), response?.message || '');
+          } else {
+            handleClear();
+          }
+        } catch (err: any) {
+          await showDialog('error', t('System Connection Error'), t('Unable to Connect to Server'), err?.message || '');
+        } finally {
+          loadList();
+        }
+      },
+    });
+  }, [detail, handleClear, loadList, t]);
 
   const handleExit = useCallback(() => {
     if ((window as any).electron?.ipcRenderer) {
@@ -199,10 +223,7 @@ export const useVoucherPayment = (): VoucherPaymentHookReturn => {
   }, []);
 
   return {
-    formData, totalAmount, bankAccounts, accountBalance, lastSaved,
-    updateField, handleMemberSelect,
-    addRow, updateRow, removeRow,
-    handleSave, handleClear, handleExit,
-    isLoading,
+    vouchers, isLoadingList, selectedNo, detail, isLoadingDetail, signature, form, bankAccounts, accountBalance, isSigning,
+    updateForm, selectVoucher, handleSave, signatureOpen, openSignature, closeSignature, handleDelete, handleRefresh: loadList, handleClear, handleExit,
   };
 };

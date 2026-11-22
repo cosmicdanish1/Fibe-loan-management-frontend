@@ -16,14 +16,12 @@ export interface PaymentVoucherData {
   memberName: string;
   officeNo: string;
   narration: string;
-  payFromCode: string; // ledger account credited (cash A1001 or a bank account)
 }
 
 export interface PaymentVoucherHookReturn {
   formData: PaymentVoucherData;
   rows: RowData[];
   totalAmount: number;
-  payFromAccounts: { code: string; name: string }[];
   lastSaved: { voucherNo: string; memberNo: string; memberName: string; total: number; transDate: string } | null;
   updateField: (field: keyof PaymentVoucherData, value: any) => void;
   handleMemberSelect: (memberNo: string, memberData?: any) => void;

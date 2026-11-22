@@ -416,35 +416,51 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
         }
     };
 
-    // Holds the previous listener's own unsubscribe fn so re-opening the
-    // sanction window (e.g. for a different loan case) doesn't stack up
-    // stale listeners that never get removed.
-    const sanctionListenerCleanupRef = useRef<(() => void) | null>(null);
+    // Always-on listener for the Sanction window's "loan-sanctioned" signal.
+    // It used to be attached only when the Sanction button was clicked, and it
+    // reloaded the dropdown only when the sanctioned case was the one already
+    // selected here. A case being sanctioned is by definition not yet in this
+    // list, so the dropdown stayed stale until the window was closed and reopened.
+    // Now every sanction reloads the list, and the new case is selected for the
+    // clerk when nothing is selected yet. Refs keep the handler on current state.
+    const currentCaseRef = useRef('');
+    currentCaseRef.current = formData.loanCaseNo;
+    const selectCaseRef = useRef<(caseNo: string) => void>(() => { });
+    selectCaseRef.current = (caseNo: string) => { void handleLoanCaseChange(caseNo); };
 
-    const openSanctionWindow = useCallback(() => {
-        if ((window as any).electronAPI) {
-            (window as any).electronAPI.send('open-window', { route: '/loan-sanction' });
-            if ((window as any).electronAPI.on) {
-                sanctionListenerCleanupRef.current?.();
-                // The shared IPC bridge always calls listeners as
-                // (event, ...args) — the actual payload is the SECOND
-                // argument, not the first. A single-argument callback here
-                // silently bound to the Electron event object instead of the
-                // sanctioned-loan data, so the loanCaseNo check below always
-                // failed and this never refreshed until the window was
-                // manually closed and reopened.
-                sanctionListenerCleanupRef.current = (window as any).electronAPI.on('loan-sanctioned', (_event: any, data: any) => {
-                    if (data.loanCaseNo === formData.loanCaseNo) {
-                        updateField('sanctionLoanAmount', data.sanctionedAmount);
-                        showDialog('info', 'electron-react-ts', t('Loan Sanctioned'), t('Loan Case {{1}} has been sanctioned for ₹{{2}}.', { 1: data.loanCaseNo, 2: parseFloat(data.sanctionedAmount).toLocaleString('en-IN') }));
-                        fetchPendingLoans();
-                    }
-                });
+    useEffect(() => {
+        const api = (window as any).electronAPI;
+        if (!api?.on) return;
+        // The shared IPC bridge calls listeners as (event, ...args): the payload is the SECOND argument.
+        const off = api.on('loan-sanctioned', async (_event: any, data: any) => {
+            if (!data?.loanCaseNo) return;
+            const sanctioned = String(data.loanCaseNo);
+            if (localSanctionRef.current === sanctioned) { localSanctionRef.current = ''; return; }
+            await fetchPendingLoans();
+            if (!currentCaseRef.current) {
+                selectCaseRef.current(sanctioned);
+            } else if (currentCaseRef.current === sanctioned) {
+                updateField('sanctionLoanAmount', data.sanctionedAmount);
+                showDialog('info', 'electron-react-ts', t('Loan Sanctioned'), t('Loan Case {{1}} has been sanctioned for ₹{{2}}.', { 1: data.loanCaseNo, 2: parseFloat(data.sanctionedAmount).toLocaleString('en-IN') }));
             }
-        } else {
-            setModalData(prev => ({ ...prev, isOpen: true }));
-        }
-    }, [formData.loanCaseNo]);
+        });
+        return () => { if (typeof off === 'function') off(); };
+    }, []);
+
+    // Sanction happens in a dialog inside this screen (same form as the Loan Sanction window),
+    // so the clerk never leaves Loan Payment and there is no second window to keep in step.
+    const [isSanctionOpen, setIsSanctionOpen] = useState(false);
+    const openSanctionWindow = useCallback(() => setIsSanctionOpen(true), []);
+    const closeSanctionDialog = useCallback(() => setIsSanctionOpen(false), []);
+
+    // Called by the dialog right after the sanction is saved: reload the list and open that case here.
+    const localSanctionRef = useRef('');
+    const handleSanctionedInDialog = useCallback(async (caseNo: string) => {
+        localSanctionRef.current = caseNo;   // the broadcast of this same sanction must not repeat the work
+        setIsSanctionOpen(false);
+        await fetchPendingLoans();
+        void handleLoanCaseChange(caseNo);
+    }, []);
 
     const closeModal = useCallback(() => {
         setModalData(prev => ({ ...prev, isOpen: false }));
@@ -668,6 +684,9 @@ export const useLoanPayment = (): LoanPaymentHookReturn => {
         removeVoucherEntry,
         handleLoanCaseChange,
         openSanctionWindow,
+        isSanctionOpen,
+        closeSanctionDialog,
+        handleSanctionedInDialog,
         closeModal,
         handleModalSave,
         handleSave,

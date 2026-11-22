@@ -32,7 +32,7 @@ const SECTION_CATALOG: [string, string[]][] = [
     'Journal / Transfer Voucher', 'Payment Voucher Creation', 'Voucher Payment', 'Receipt',
     'Fixed Deposit Receipt', 'Dividend Payment', 'Dividend Warrant', 'Interest Calculation',
     'Interest Calculation / Posting', 'Group Insurance', 'Yearly TF Interest', 'Update Saving Intt.',
-    'Modify Short Recovery', 'Compulsory Deposit Transaction', 'Demand Print Order',
+    'Modify Short Recovery', 'Compulsory Deposit Transaction', 'RD/CD Transaction Legacy', 'Demand Print Order',
     'Import Demand List', 'Generate', 'Generate Demand', 'Change Member Office',
     'Print Members Demand List',
   ]],

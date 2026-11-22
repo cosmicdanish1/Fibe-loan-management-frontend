@@ -211,10 +211,9 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
                                     {message.type === 'error' ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />} {message.text}
                                 </span>
                                 {applied && message.type === 'success' && (
-                                    <div style={{ marginTop: 8 }}>
-                                        <span className="aw-meta">{t('Draft agreement for signing (watermarked, not the saved copy):')}</span>{' '}
-                                        <ReagreementDocumentActions id={applied.id} draft baseName={applied.reagreementNo} />
-                                    </div>
+                                    <p className="aw-meta" style={{ marginTop: 6, fontWeight: 500 }}>
+                                        {t('The draft agreement for signing (watermarked) is in “Open re-agreements” below.')}
+                                    </p>
                                 )}
                             </div>
                         )}
@@ -225,21 +224,27 @@ const LoanReagreementForm: React.FC<LoanReagreementHook> = ({
                                     <span className="aw-meta" style={{ marginLeft: 'auto' }}>{openList.length}</span></div>
                                 <div className="aw-stack" style={{ gap: 8 }}>
                                     {openList.map(r => (
-                                        <div key={r.id} className="aw-panel">
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                                        <div key={r.id} className="aw-panel aw-stack" style={{ gap: 10 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                                 <span className="aw-strong">{r.reagreementNo}</span>
                                                 <span className={`aw-pill ${STATUS_TONE[r.status]}`}>{r.status}</span>
                                             </div>
-                                            <p className="aw-meta" style={{ margin: '4px 0' }}>{STATUS_LABEL[r.status]}</p>
-                                            <p className="aw-meta" style={{ margin: 0 }}>Case #{r.oldLoanCaseNo} → <strong>#{r.newLoanCaseNo}</strong> · {r.neu.installments} {t('inst. @')} {r.neu.rate}% · EMI ₹{fmtMoney(r.neu.monthlyInstallment)}</p>
-                                            <p className="aw-meta" style={{ margin: '2px 0 6px' }}>{t('Applied')} {fmtDate(r.applicationDate)}{r.voucherNo ? ` · voucher ${r.voucherNo}` : ''}</p>
-                                            <span className="aw-btn-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+                                            <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px 12px' }}>
+                                                <div><dt>{t('Case')}</dt><dd>#{r.oldLoanCaseNo} → #{r.newLoanCaseNo}</dd></div>
+                                                <div><dt>{t('New term')}</dt><dd>{r.neu.installments} {t('inst. @')} {r.neu.rate}%</dd></div>
+                                                <div><dt>{t('New EMI')}</dt><dd>₹{fmtMoney(r.neu.monthlyInstallment)}</dd></div>
+                                                <div><dt>{t('Applied')}</dt><dd>{fmtDate(r.applicationDate)}</dd></div>
+                                                {r.voucherNo && <div><dt>{t('Voucher')}</dt><dd>{r.voucherNo}</dd></div>}
+                                            </dl>
+                                            <p className="aw-meta">{STATUS_LABEL[r.status]}</p>
+                                            <div className="aw-stack" style={{ gap: 6 }}>
+                                                <span className="aw-label" style={{ marginBottom: 0 }}>{t('Draft agreement')}</span>
                                                 <ReagreementDocumentActions id={r.id} draft baseName={r.reagreementNo} />
-                                                {r.status !== 'VOUCHERED' && (
-                                                    <button type="button" className="aw-btn aw-btn-danger aw-btn-sm" onClick={() => { setCancelTarget(r); setCancelReason(''); }}>{t('Cancel')}</button>
-                                                )}
-                                            </span>
-                                            {r.status === 'VOUCHERED' && <p className="aw-meta" style={{ marginTop: 4 }}>{t('Reject its voucher in Pass Transactions first to cancel it.')}</p>}
+                                            </div>
+                                            {r.status !== 'VOUCHERED' && (
+                                                <button type="button" className="aw-btn aw-btn-danger aw-btn-sm" style={{ alignSelf: 'flex-end' }} onClick={() => { setCancelTarget(r); setCancelReason(''); }}>{t('Cancel re-agreement')}</button>
+                                            )}
+                                            {r.status === 'VOUCHERED' && <p className="aw-meta">{t('Reject its voucher in Pass Transactions first to cancel it.')}</p>}
                                         </div>
                                     ))}
                                 </div>

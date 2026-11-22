@@ -5,7 +5,7 @@ import { type LoanDetails } from '../../types';
 import { getLoanTypeOptions } from '../../utils/utilsloanApplication';
 import { handleEnterAsTab } from '../../utils/keyboardNav';
 import type { EmployeeDetail } from '../../types/employee';
-import { ShieldCheck, RefreshCw, User, Users, Wallet, MapPin, Search, FileText } from 'lucide-react';
+import { ShieldCheck, RefreshCw, User, Users, Wallet, MapPin, Search } from 'lucide-react';
 import { Select } from 'antd';
 import { useTranslation } from 'react-i18next';
 
@@ -168,131 +168,190 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
         ? 'Select existing loan case'
         : 'Auto-generated on save';
 
+  const typeCode = (loanDetails.loanType || '').toUpperCase();
+  const typeNoun = typeCode === 'ALN' ? t('Emergency') : t('Regular');
+  const amountNum = parseFloat(loanDetails.loanAmount || '0') || 0;
+  const amountPlaceholder =
+    typeCode === 'ALN' ? t('Max ₹5,00,000')
+      : typeCode === 'RLN' ? t('Default ₹10,00,000')
+        : isLoanAgainstRd
+          ? (isRdPanel ? t('Up to {{1}}', { 1: inr(eligibilityStatus!.maxLoanAmount) }) : t("Depends on the member's RD"))
+          : undefined;
+
+  const compactCss = `
+    .app-window .la-compact { padding: 12px 16px; }
+    .app-window .la-compact .aw-card-head { padding-bottom: 8px; margin-bottom: 10px; }
+    .app-window .la-compact .aw-table th, .app-window .la-compact .aw-table td { padding-top: 6px; padding-bottom: 6px; }
+    .app-window .la-member { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+    .app-window .la-cell { margin: 0; min-width: 0; }
+    .app-window .la-cell dt { margin: 0; color: var(--aw-muted); font-size: calc(var(--type-label-size) + 1px); font-weight: 500; }
+    .app-window .la-cell dd { margin: 1px 0 0; color: var(--aw-text); font-size: var(--type-body-size); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .app-window .la-grid { display: grid; grid-template-columns: minmax(340px, 400px) minmax(0, 1fr); gap: 12px; align-items: start; }
+    .app-window .la-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+    .app-window .la-span2 { grid-column: 1 / -1; }
+    .app-window .la-elig td, .app-window .la-elig th { font-variant-numeric: tabular-nums; }
+    .app-window .la-result { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--aw-border); }
+    .app-window .la-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .app-window .la-hint { display: flex; align-items: center; gap: 8px; padding: 16px; border: 1px dashed var(--aw-border-strong); border-radius: calc(var(--aw-radius) * 1.8); color: var(--aw-muted); }
+    @media (max-width: 900px) { .app-window .la-grid { grid-template-columns: minmax(0, 1fr); } .app-window .la-three { grid-template-columns: minmax(0, 1fr); } }
+  `;
+
+  const caseLabel = (c: any) =>
+    `${c.loanCaseNo} · ${c.loanType} ${inr(c.loanAmount)} · ${c.sanctioned ? t('Sanctioned') : t('Awaiting sanction')}`;
+
+  const cell = (label: string, value: React.ReactNode, color?: string, title?: string) => (
+    <dl className="la-cell"><dt>{label}</dt><dd style={color ? { color } : undefined} title={title}>{value}</dd></dl>
+  );
+
   return (
-    <div className="aw-stack" style={{ minHeight: 0 }}>
-      <div className="aw-split aw-split-form" style={{ height: 'auto' }}>
-        {/* ── Left: application form ── */}
-        <div className="aw-side" style={{ overflow: 'visible' }} onKeyDown={handleEnterAsTab}>
-          <section className="aw-card">
-            <div className="aw-card-head">
-              <span className="aw-card-icon"><Wallet size={14} /></span>
-              <h2 className="aw-card-title">{t('Application')}</h2>
+    <div className="aw-stack" style={{ minHeight: 0, gap: 12 }}>
+      <style>{compactCss}</style>
+
+      {/* ── Member strip: who it is, one line. Balances live in the eligibility card. ── */}
+      <section className="aw-card la-compact aw-fade-in">
+        {selectedMember ? (
+          <>
+            <div className="la-member">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <span className="aw-card-icon" style={{ width: 34, height: 34, borderRadius: '50%', fontWeight: 600 }}>
+                  {(selectedMember.name || '?')[0]}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <p className="aw-strong" style={{ whiteSpace: 'nowrap' }}>{selectedMember.name}</p>
+                  <p className="aw-meta">{selectedMember.memberNo}</p>
+                </div>
+                <span className={`aw-pill tone-${selectedMember.isRetired ? 'warning' : 'success'}`}>
+                  {selectedMember.isRetired ? t('Retired') : t('Active')}
+                </span>
+              </div>
+              {cell(t('Office'), selectedMember.officeName || selectedMember.officeNo || '—')}
+              {cell(t('Basic pay'), selectedMember.basicPay ? inr(selectedMember.basicPay) : '—')}
+              {cell(t('Retire date'), selectedMember.dateOfRetire || 'N/A')}
+              {cell(t('Regular loan'), inr(selectedMember.regularLoanBal))}
+              {cell(t('Emergency loan'), inr(selectedMember.emergencyLoanBal))}
             </div>
-            <div className="aw-stack">
-              <FormField
-                label={t('Appl Date')}
-                name="applDate"
-                type="date"
-                value={loanDetails.applDate}
-                onChange={(value: string) => onLoanDetailsChange('applDate', value)}
-                required
-              />
+            {(selectedMember.presentAddress || selectedMember.permanentAddress) && (
+              <p
+                className="aw-meta"
+                style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                title={selectedMember.presentAddress || selectedMember.permanentAddress}
+              >
+                <MapPin size={12} style={{ flex: 'none' }} /> {selectedMember.presentAddress || selectedMember.permanentAddress}
+              </p>
+            )}
+          </>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--aw-muted)' }}>
+            <User size={18} />
+            <strong className="aw-strong">{t('No Member Selected')}</strong>
+            <span className="aw-meta">{t('Click Member No. to search')}</span>
+          </div>
+        )}
+      </section>
 
-              <FormField
-                label={t('Member No.')}
-                name="memberNo"
-                type="text"
-                value={loanDetails.memberNo}
-                onChange={handleMemberNoChange}
-                onKeyDown={handleMemberNoKeyDown}
-                onClick={() => {
-                  onLookup?.('memberNo');
-                  handleMemberNoClick();
-                }}
-                placeholder={t('Search MBNo (Click or F2)')}
-                required
-              />
+      <div className="la-grid">
+        {/* ── Left: application form ── */}
+        <section className="aw-card la-compact" onKeyDown={handleEnterAsTab}>
+          <div className="aw-card-head">
+            <span className="aw-card-icon"><Wallet size={14} /></span>
+            <h2 className="aw-card-title">{t('Application')}</h2>
+          </div>
+          <div className="la-form-grid">
+            <FormField
+              label={t('Appl Date')}
+              name="applDate"
+              type="date"
+              value={loanDetails.applDate}
+              onChange={(value: string) => onLoanDetailsChange('applDate', value)}
+              readOnly
+              required
+            />
 
-              <FormField
-                label={t('Loan Type')}
-                name="loanType"
-                type="select"
-                value={loanDetails.loanType}
-                onChange={handleLoanTypeChange}
-                options={getLoanTypeOptions()}
-                required
-              />
+            <FormField
+              label={t('Member No.')}
+              name="memberNo"
+              type="text"
+              value={loanDetails.memberNo}
+              onChange={handleMemberNoChange}
+              onKeyDown={handleMemberNoKeyDown}
+              onClick={() => {
+                onLookup?.('memberNo');
+                handleMemberNoClick();
+              }}
+              placeholder={t('Search (Click or F2)')}
+              required
+            />
 
-              {/* Loan Case No. - Dropdown shows existing cases only */}
-              <div>
-                <label className="aw-label" htmlFor="loanCaseNo">
-                  {t('Loan Case No.')} <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>{t('(optional — auto-generated)')}</span>
-                </label>
-                <Select
-                  id="loanCaseNo"
-                  className="aw-select"
-                  popupClassName="aw-select-popup"
-                  value={loanDetails.loanCaseNo || undefined}
-                  onChange={(v) => handleLoanCaseChange(v ?? '')}
-                  disabled={!selectedMember || isLoadingLoanCases}
-                  placeholder={caseHint}
-                  allowClear
-                  options={memberLoanCases.map((loanCase) => ({
-                    value: loanCase.loanCaseNo,
-                    label: `${loanCase.loanCaseNo} — ${loanCase.loanType} (${inr(loanCase.loanAmount)})`,
-                  }))}
-                />
-                {isLoadingLoanCases && (
-                  <p className="aw-meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <RefreshCw size={11} className="aw-spin" /> {t('Loading...')}
-                  </p>
+            <FormField
+              label={t('Loan Type')}
+              name="loanType"
+              type="select"
+              value={loanDetails.loanType}
+              onChange={handleLoanTypeChange}
+              options={getLoanTypeOptions()}
+              required
+            />
+
+            {/* Loan Case No. — also the list of the member's open applications */}
+            <div>
+              <label className="aw-label" htmlFor="loanCaseNo">
+                {t('Loan Case No.')}
+                {selectedMember && memberLoanCases.length > 0 && (
+                  <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500, marginLeft: 6 }}>
+                    {t('{{1}} open', { 1: memberLoanCases.length })}
+                  </span>
                 )}
-                {selectedMember && !isLoadingLoanCases && memberLoanCases.length === 0 && (
-                  <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-success)' }}>✓ {t('Auto-generated on save')}</p>
-                )}
-                {selectedMember && !isLoadingLoanCases && memberLoanCases.length > 0 && !loanDetails.loanCaseNo && (
-                  <p className="aw-meta" style={{ marginTop: 4, color: 'var(--aw-warning)' }}>⚠ {t('Select existing or auto-generate new')}</p>
-                )}
-              </div>
-
-              {/* Loan Amount with formatting and helper text */}
-              <div>
-                <FormField
-                  label={t('Loan Amount')}
-                  name="loanAmount"
-                  type="text"
-                  value={loanDetails.loanAmount}
-                  onChange={(value: string) => {
-                    // ES-505: keep the decimal point (one dot, at most 2 decimals); the old rule deleted the dot, so a pasted
-                    // 100.50 became 10050 (100 times too much). Commas and spaces from a pasted amount are dropped.
-                    // a sign or an exponent (-500, 1e5) is refused instead of being turned into another amount
-                    if (/[-+eE]/.test(value)) return;
-                    let cleaned = value.replace(/[^0-9.]/g, '');
-                    const firstDot = cleaned.indexOf('.');
-                    if (firstDot !== -1) {
-                      cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/./g, '').slice(0, 2);
-                    }
-                    onLoanDetailsChange('loanAmount', cleaned);
-                  }}
-                  required
-                />
-                {loanDetails.loanAmount && (
-                  <div style={{ marginTop: 4 }}>
-                    <p className="aw-strong" style={{ color: 'var(--aw-accent)' }}>
-                      {inr(parseFloat(loanDetails.loanAmount || '0') || 0)}
-                    </p>
-                    {loanDetails.loanType && (
-                      <p className="aw-meta">
-                        {loanDetails.loanType.toUpperCase() === 'ALN' && t('Emergency Loan - Max: ₹5,00,000')}
-                        {loanDetails.loanType.toUpperCase() === 'RLN' && t('Regular Loan - Default: ₹10,00,000')}
-                        {isLoanAgainstRd && (isRdPanel
-                          ? t('Loan Against RD - up to {{1}} for this member', { 1: inr(eligibilityStatus!.maxLoanAmount) })
-                          : t("Loan Against RD - limit depends on the member's RD"))}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <FormField
-                label={t('Form Number')}
-                name="formNumber"
-                type="text"
-                value={loanDetails.formNumber}
-                onChange={(value: string) => onLoanDetailsChange('formNumber', value)}
-                maxLength={10}
+              </label>
+              <Select
+                id="loanCaseNo"
+                className="aw-select"
+                popupClassName="aw-select-popup"
+                value={loanDetails.loanCaseNo || undefined}
+                onChange={(v) => handleLoanCaseChange(v ?? '')}
+                disabled={!selectedMember || isLoadingLoanCases}
+                placeholder={isLoadingLoanCases ? t('Loading...') : caseHint}
+                allowClear
+                optionLabelProp="value"
+                options={memberLoanCases.map((loanCase) => ({
+                  value: loanCase.loanCaseNo,
+                  label: caseLabel(loanCase),
+                  title: loanCase.purpose || undefined,
+                }))}
+                popupMatchSelectWidth={false}
               />
+            </div>
 
+            <FormField
+              label={t('Loan Amount')}
+              name="loanAmount"
+              type="text"
+              value={loanDetails.loanAmount}
+              {...(amountPlaceholder ? { placeholder: amountPlaceholder } : {})}
+              onChange={(value: string) => {
+                // ES-505: keep the decimal point (one dot, at most 2 decimals); the old rule deleted the dot, so a pasted
+                // 100.50 became 10050 (100 times too much). Commas and spaces from a pasted amount are dropped.
+                // a sign or an exponent (-500, 1e5) is refused instead of being turned into another amount
+                if (/[-+eE]/.test(value)) return;
+                let cleaned = value.replace(/[^0-9.]/g, '');
+                const firstDot = cleaned.indexOf('.');
+                if (firstDot !== -1) {
+                  cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, '').slice(0, 2);
+                }
+                onLoanDetailsChange('loanAmount', cleaned);
+              }}
+              required
+            />
+
+            <FormField
+              label={t('Form Number')}
+              name="formNumber"
+              type="text"
+              value={loanDetails.formNumber}
+              onChange={(value: string) => onLoanDetailsChange('formNumber', value)}
+              maxLength={10}
+            />
+
+            <div className="la-span2">
               <FormField
                 label={t('Reason')}
                 name="reason"
@@ -303,76 +362,87 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                 maxLength={50}
               />
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
-        {/* ── Right: member profile, eligibility, pending cases ── */}
-        <div className="aw-stack" style={{ minWidth: 0 }}>
-        <div className="aw-card aw-main" style={{ overflow: 'visible', padding: 0 }}>
-          {selectedMember ? (
-            <div className="aw-main-body aw-stack aw-fade-in">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span className="aw-card-icon" style={{ width: 40, height: 40, borderRadius: '50%', fontSize: 'calc(var(--type-body-size) + 5px)', fontWeight: 700 }}>
-                  {(selectedMember.name || '?')[0]}
-                </span>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <p className="aw-strong" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedMember.name}</p>
-                  <p className="aw-meta">{selectedMember.memberNo}</p>
-                </div>
-                <span className={`aw-pill tone-${selectedMember.isRetired ? 'warning' : 'success'}`}>
-                  {selectedMember.isRetired ? t('Retired') : t('Active')}
+        {/* ── Right: eligibility ── */}
+        <div className="aw-stack" style={{ minWidth: 0, gap: 12 }}>
+          {/* Regular / Emergency. A shortfall is NOT a rejection — it is withheld from the
+              disbursement. Only breaching the maximum limit blocks the loan. */}
+          {!isLoanAgainstRd && (isCheckingEligibility || eligibilityStatus) && (
+            <section className="aw-card la-compact aw-fade-in">
+              <div className="aw-card-head">
+                <span className="aw-card-icon"><ShieldCheck size={14} /></span>
+                <h2 className="aw-card-title">{t('Eligibility')}</h2>
+                <span style={{ marginLeft: 'auto' }}>
+                  {isCheckingEligibility ? (
+                    <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <RefreshCw size={11} className="aw-spin" /> {t('Checking...')}
+                    </span>
+                  ) : (
+                    <span className={`aw-pill tone-${eligTone}`}>
+                      {blocked ? t('Over limit') : hasShortfall ? t('Shortfall') : t('Eligible')}
+                    </span>
+                  )}
                 </span>
               </div>
-
-              <dl className="aw-facts" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-                <div><dt>{t('Office')}</dt><dd>{selectedMember.officeName || selectedMember.officeNo || '—'}</dd></div>
-                <div><dt>{t('Basic Pay')}</dt><dd style={{ color: 'var(--aw-success)' }}>{selectedMember.basicPay ? inr(selectedMember.basicPay) : '—'}</dd></div>
-                <div><dt>{t('Retire Date')}</dt><dd>{selectedMember.dateOfRetire || 'N/A'}</dd></div>
-              </dl>
-
-              <div>
-                <p className="aw-label">{t('Financial summary')}</p>
-                <div className="aw-stats aw-stats-3">
-                  <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-accent)' }}>
-                    <div className="aw-stat-label">{t('Shares')}</div>
-                    <div className="aw-stat-value">{inr(selectedMember.shareBalance)}</div>
+              {eligibilityStatus && (
+                <div className="la-elig">
+                  <p className="aw-meta" style={{ marginBottom: 8, color: eligibilityStatus.withinMaxLimit ? undefined : 'var(--aw-danger)' }}>
+                    {t('Exposure')}: {typeNoun} {inr(eligibilityStatus.existingOutstanding)} + {t('new')} {inr(eligibilityStatus.loanAmount)} = <strong>{inr(eligibilityStatus.totalExposure)}</strong> {t('of')} {inr(eligibilityStatus.maxLimit)} {t('limit')}
+                  </p>
+                  <div className="aw-table-wrap" style={{ maxHeight: 'none' }}>
+                    <table className="aw-table">
+                      <thead>
+                        <tr>
+                          <th />
+                          <th className="is-right">{t('Current')}</th>
+                          <th className="is-right">{t('Required')}</th>
+                          <th className="is-right">{t('Shortfall')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>{t('Share value')} <span className="aw-meta">{eligibilityStatus.sharePct}%</span></td>
+                          <td className="is-right">{inr(eligibilityStatus.currentShare)}</td>
+                          <td className="is-right">{inr(eligibilityStatus.requiredShare)}</td>
+                          <td className="is-right" style={eligibilityStatus.shareShortfall > 0 ? { color: 'var(--aw-warning)', fontWeight: 600 } : { color: 'var(--aw-muted)' }}>{eligibilityStatus.shareShortfall > 0 ? inr(eligibilityStatus.shareShortfall) : '—'}</td>
+                        </tr>
+                        <tr>
+                          <td>{t('RD balance')} <span className="aw-meta">{eligibilityStatus.rdPct}%</span></td>
+                          <td className="is-right">{inr(eligibilityStatus.currentRd)}</td>
+                          <td className="is-right">{inr(eligibilityStatus.requiredRd)}</td>
+                          <td className="is-right" style={eligibilityStatus.rdShortfall > 0 ? { color: 'var(--aw-warning)', fontWeight: 600 } : { color: 'var(--aw-muted)' }}>{eligibilityStatus.rdShortfall > 0 ? inr(eligibilityStatus.rdShortfall) : '—'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                  <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-warning)' }}>
-                    <div className="aw-stat-label">{t('Regular Loan')}</div>
-                    <div className="aw-stat-value">{inr(selectedMember.regularLoanBal)}</div>
-                  </div>
-                  <div className="aw-stat" style={{ ['--aw-tone' as any]: 'var(--aw-danger)' }}>
-                    <div className="aw-stat-label">{t('Emergency Loan')}</div>
-                    <div className="aw-stat-value">{inr(selectedMember.emergencyLoanBal)}</div>
-                  </div>
-                </div>
-              </div>
-
-              {(selectedMember.presentAddress || selectedMember.permanentAddress) && (
-                <div className="aw-panel">
-                  <p className="aw-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><MapPin size={12} /> {t('Address')}</p>
-                  <p className="aw-strong" style={{ fontWeight: 500 }}>{selectedMember.presentAddress || selectedMember.permanentAddress}</p>
+                  {hasShortfall && eligibilityStatus.withinMaxLimit && (
+                    <div className="la-result" title={t('Withheld towards RD/Share — not added to the loan.')}>
+                      <span className="aw-meta">{t('Withheld from payout')} <strong style={{ color: 'var(--aw-warning)' }}>− {inr(eligibilityStatus.totalShortfall)}</strong></span>
+                      <span className="aw-strong" style={{ color: 'var(--aw-success)' }}>{t('Net payable')} {inr(eligibilityStatus.netDisbursement)}</span>
+                    </div>
+                  )}
+                  {blocked && eligibilityStatus.message && (
+                    <div className="aw-alert aw-alert-danger" style={{ marginTop: 8, marginBottom: 0, padding: '6px 10px' }}>{eligibilityStatus.message}</div>
+                  )}
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="aw-empty" style={{ margin: 'auto', padding: 40 }}>
-              <User size={30} />
-              <strong className="aw-strong">{t('No Member Selected')}</strong>
-              <span className="aw-meta">{t('Click Member No. to search')}</span>
+            </section>
+          )}
+
+          {!isLoanAgainstRd && !isCheckingEligibility && !eligibilityStatus && (
+            <div className="la-hint aw-meta">
+              <ShieldCheck size={16} />
+              <span>{t('Choose a loan type and amount to check the member\'s share and RD requirement.')}</span>
             </div>
           )}
-        </div>
 
-          {/* ── Regular Loan Eligibility Panel (RLN only) ──
-              A shortfall is NOT a rejection — it is withheld from the
-              disbursement. Only breaching the maximum limit blocks the loan. */}
-          {/* ── Loan Against RD panel (ELN only) ──
-              The member's own RD is the security: show what they have, what is
-              already locked, and the largest loan allowed. The amount stays free
+          {/* Loan Against RD (ELN) — the member's own RD is the security: what they have,
+              what is already locked, and the largest loan allowed. The amount stays free
               to edit — the maximum is a ceiling, not a default. */}
           {isLoanAgainstRd && (isCheckingEligibility || eligibilityStatus) && (
-            <section className="aw-card aw-fade-in">
+            <section className="aw-card la-compact aw-fade-in">
               <div className="aw-card-head">
                 <span className="aw-card-icon"><ShieldCheck size={14} /></span>
                 <h2 className="aw-card-title">{t('Loan Against RD')}</h2>
@@ -383,166 +453,43 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
                     </span>
                   ) : isRdPanel ? (
                     <span className={`aw-pill tone-${eligibilityStatus!.isEligible ? 'success' : 'danger'}`}>
-                      {(eligibilityStatus!.maxLoanAmount ?? 0) <= 0 ? t('No RD Available') : eligibilityStatus!.isEligible ? t('Eligible') : t('Over Limit')}
+                      {(eligibilityStatus!.maxLoanAmount ?? 0) <= 0 ? t('No RD available') : eligibilityStatus!.isEligible ? t('Eligible') : t('Over limit')}
                     </span>
                   ) : null}
                 </span>
               </div>
               {isRdPanel && (
-                <div className="aw-stack">
-                  <div className="aw-panel">
-                    <p className="aw-label">{t("Member's RD")}</p>
-                    <div className="aw-rows">
-                      <div className="aw-row"><span className="aw-row-label">{t('Total RD')}</span><span className="aw-row-value">{inr(eligibilityStatus!.totalRd)}</span></div>
-                      <div className="aw-row"><span className="aw-row-label">{t('Locked for other loans')}</span><span className="aw-row-value">{inr(eligibilityStatus!.lockedRd)}</span></div>
-                      <div className="aw-row aw-row-total"><span className="aw-row-label">{t('Free RD')}</span><span className="aw-row-value">{inr(eligibilityStatus!.freeRd)}</span></div>
-                    </div>
+                <div className="aw-stack" style={{ gap: 10 }}>
+                  <div className="la-three">
+                    {cell(t('Total RD'), inr(eligibilityStatus!.totalRd))}
+                    {cell(t('Locked for other loans'), inr(eligibilityStatus!.lockedRd))}
+                    {cell(t('Free RD'), inr(eligibilityStatus!.freeRd))}
                   </div>
-
-                  <div className="aw-panel">
-                    <p className="aw-label">{t('Largest loan allowed')}</p>
-                    <div className="aw-rows">
-                      <div className="aw-row aw-row-total">
-                        <span className="aw-row-label">{t('Up to ({{1}}% of RD, within the per-member maximum)', { 1: eligibilityStatus!.rdPct })}</span>
-                        <span className="aw-row-value" style={{ color: 'var(--aw-success)' }}>{inr(eligibilityStatus!.maxLoanAmount)}</span>
-                      </div>
-                    </div>
+                  <div className="la-result" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0 }}>
+                    <span className="aw-meta">
+                      {t('Largest loan allowed ({{1}}% of free RD)', { 1: eligibilityStatus!.rdPct })}{' '}
+                      <strong style={{ color: 'var(--aw-success)' }}>{inr(eligibilityStatus!.maxLoanAmount)}</strong>
+                    </span>
                     {(eligibilityStatus!.maxLoanAmount ?? 0) > 0 && (
                       <button
                         type="button"
                         className="aw-btn aw-btn-ghost"
-                        style={{ marginTop: 8 }}
                         onClick={() => onLoanDetailsChange('loanAmount', String(eligibilityStatus!.maxLoanAmount))}
                       >
                         {t('Use maximum')}
                       </button>
                     )}
                   </div>
-
-                  {parseInt(loanDetails.loanAmount || '0', 10) > 0 && eligibilityStatus!.isEligible && (
-                    <div className="aw-alert aw-alert-success" style={{ marginBottom: 0, flexDirection: 'column', gap: 4 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <span>{t('RD locked for this loan')}</span><span>{inr(parseInt(loanDetails.loanAmount, 10))}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <span>{t('RD left free')}</span>
-                        <span>{inr(Math.max(0, (eligibilityStatus!.freeRd ?? 0) - parseInt(loanDetails.loanAmount, 10)))}</span>
-                      </div>
-                      <span className="aw-meta" style={{ fontWeight: 500 }}>{t('Only the loan amount is locked, and the lock is released when the loan closes.')}</span>
-                    </div>
+                  {amountNum > 0 && eligibilityStatus!.isEligible && (
+                    <p className="aw-meta" title={t('Only the loan amount is locked, and the lock is released when the loan closes.')}>
+                      {t('RD locked for this loan')} <strong>{inr(amountNum)}</strong> · {t('RD left free')} <strong>{inr(Math.max(0, (eligibilityStatus!.freeRd ?? 0) - amountNum))}</strong>
+                    </p>
                   )}
-
                   {!eligibilityStatus!.isEligible && eligibilityStatus!.message && (
-                    <div className="aw-alert aw-alert-danger" style={{ marginBottom: 0 }}>{eligibilityStatus!.message}</div>
+                    <div className="aw-alert aw-alert-danger" style={{ marginBottom: 0, padding: '6px 10px' }}>{eligibilityStatus!.message}</div>
                   )}
                 </div>
               )}
-            </section>
-          )}
-
-          {!isLoanAgainstRd && (isCheckingEligibility || eligibilityStatus) && (
-            <section className="aw-card aw-fade-in">
-              <div className="aw-card-head">
-                <span className="aw-card-icon"><ShieldCheck size={14} /></span>
-                <h2 className="aw-card-title">{t('Regular loan eligibility')}</h2>
-                <span style={{ marginLeft: 'auto' }}>
-                  {isCheckingEligibility ? (
-                    <span className="aw-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <RefreshCw size={11} className="aw-spin" /> {t('Checking...')}
-                    </span>
-                  ) : (
-                    <span className={`aw-pill tone-${eligTone}`}>
-                      {blocked ? t('Over Limit') : hasShortfall ? t('Shortfall') : t('Eligible')}
-                    </span>
-                  )}
-                </span>
-              </div>
-              {eligibilityStatus && (
-                <div className="aw-stack">
-                  <div className="aw-panel">
-                    <p className="aw-label">{t('Total Exposure')}</p>
-                    <div className="aw-rows">
-                      <div className="aw-row"><span className="aw-row-label">{t('Existing Regular')}</span><span className="aw-row-value">{inr(eligibilityStatus.existingOutstanding)}</span></div>
-                      <div className="aw-row"><span className="aw-row-label">+ {t('New Loan')}</span><span className="aw-row-value">{inr(eligibilityStatus.loanAmount)}</span></div>
-                      <div className="aw-row aw-row-total">
-                        <span className="aw-row-label">{t('Total / Max')}</span>
-                        <span className="aw-row-value" style={eligibilityStatus.withinMaxLimit ? undefined : { color: 'var(--aw-danger)' }}>
-                          {inr(eligibilityStatus.totalExposure)} / {inr(eligibilityStatus.maxLimit)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="aw-panel">
-                    <p className="aw-label">{t('Share Value')}</p>
-                    <div className="aw-rows">
-                      <div className="aw-row"><span className="aw-row-label">{t('Current')}</span><span className="aw-row-value">{inr(eligibilityStatus.currentShare)}</span></div>
-                      <div className="aw-row"><span className="aw-row-label">{t('Required ({{1}}%)', { 1: eligibilityStatus.sharePct })}</span><span className="aw-row-value">{inr(eligibilityStatus.requiredShare)}</span></div>
-                      {eligibilityStatus.shareShortfall > 0 && (
-                        <div className="aw-row"><span className="aw-row-label" style={{ color: 'var(--aw-warning)' }}>{t('Shortfall')}</span><span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>{inr(eligibilityStatus.shareShortfall)}</span></div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="aw-panel">
-                    <p className="aw-label">{t('RD Balance')}</p>
-                    <div className="aw-rows">
-                      <div className="aw-row"><span className="aw-row-label">{t('Current')}</span><span className="aw-row-value">{inr(eligibilityStatus.currentRd)}</span></div>
-                      <div className="aw-row"><span className="aw-row-label">{t('Required ({{1}}%)', { 1: eligibilityStatus.rdPct })}</span><span className="aw-row-value">{inr(eligibilityStatus.requiredRd)}</span></div>
-                      {eligibilityStatus.rdShortfall > 0 && (
-                        <div className="aw-row"><span className="aw-row-label" style={{ color: 'var(--aw-warning)' }}>{t('Shortfall')}</span><span className="aw-row-value" style={{ color: 'var(--aw-warning)' }}>{inr(eligibilityStatus.rdShortfall)}</span></div>
-                      )}
-                    </div>
-                  </div>
-
-                  {hasShortfall && eligibilityStatus.withinMaxLimit && (
-                    <div className="aw-alert aw-alert-warning" style={{ marginBottom: 0, flexDirection: 'column', gap: 4 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}><span>{t('Withheld')}</span><span>− {inr(eligibilityStatus.totalShortfall)}</span></div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', color: 'var(--aw-success)' }}><span>{t('Net Payable')}</span><span>{inr(eligibilityStatus.netDisbursement)}</span></div>
-                      <span className="aw-meta" style={{ fontWeight: 500 }}>{t('Withheld towards RD/Share — not added to the loan.')}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* ── Pending applications for this member (already fetched for the dropdown) ── */}
-          {selectedMember && (
-            <section className="aw-card aw-fade-in">
-              <div className="aw-card-head">
-                <span className="aw-card-icon"><FileText size={14} /></span>
-                <h2 className="aw-card-title">{t('Pending applications')}</h2>
-                <span className="aw-meta" style={{ marginLeft: 'auto' }}>{t('{{1}} open', { 1: memberLoanCases.length })}</span>
-              </div>
-              {memberLoanCases.length === 0 ? (
-                <p className="aw-meta">{t('No open applications. A new case number is generated on save.')}</p>
-              ) : (
-                <div className="aw-table-wrap" style={{ maxHeight: 220 }}>
-                  <table className="aw-table">
-                    <thead>
-                      <tr><th>{t('Case No.')}</th><th>{t('Type')}</th><th className="is-right">{t('Amount')}</th><th>{t('Purpose')}</th><th>{t('Status')}</th></tr>
-                    </thead>
-                    <tbody>
-                      {memberLoanCases.map((c, i) => (
-                        <tr
-                          key={c.loanCaseNo ?? i}
-                          className="is-clickable"
-                          onClick={() => handleLoanCaseChange(c.loanCaseNo)}
-                          aria-selected={loanDetails.loanCaseNo === c.loanCaseNo}
-                        >
-                          <td className={loanDetails.loanCaseNo === c.loanCaseNo ? 'is-accent' : ''}>{c.loanCaseNo}</td>
-                          <td>{c.loanType}</td>
-                          <td className="is-right">{inr(c.loanAmount)}</td>
-                          <td className="is-muted">{c.purpose || '—'}</td>
-                          <td><span className={`aw-pill tone-${c.sanctioned ? 'success' : 'warning'}`}>{c.sanctioned ? t('Sanctioned') : t('Awaiting sanction')}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {memberLoanCases.length > 0 && <p className="aw-meta" style={{ marginTop: 6 }}>{t('Click a row to load that case into the form.')}</p>}
             </section>
           )}
         </div>
@@ -550,7 +497,7 @@ const LoanDetailsTab: React.FC<LoanDetailsTabProps> = ({
 
       {/* ── Surety table — only for Regular Loan (RLN) ── */}
       {isRegularLoan && (
-        <section className="aw-card aw-fade-in" style={{ flex: 'none' }}>
+        <section className="aw-card la-compact aw-fade-in" style={{ flex: 'none' }}>
           <div className="aw-card-head">
             <span className="aw-card-icon"><Users size={14} /></span>
             <h2 className="aw-card-title">{t('Surety details')}</h2>

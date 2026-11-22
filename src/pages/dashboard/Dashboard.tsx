@@ -248,7 +248,20 @@ const Dashboard: React.FC = () => {
   }, []);
   const hiddenIds = CARD_IDS.filter(id => !widgets[id]);
 
-  const summaryState = useDashboardSummary();
+  // ES-616: the cards load once when the dashboard opens, so one that failed (busy server) stayed failed for as long as
+  // the window stayed open. Bumping `reloadKey` makes every card load again: when the window comes back to the front
+  // after 5+ minutes, and every 10 minutes while it is in view.
+  const [reloadKey, setReloadKey] = useState(0);
+  useEffect(() => {
+    let lastLoad = Date.now();
+    const reload = () => { lastLoad = Date.now(); setReloadKey(k => k + 1); };
+    const onVisible = () => { if (document.visibilityState === 'visible' && Date.now() - lastLoad > 5 * 60_000) reload(); };
+    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') reload(); }, 10 * 60_000);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('focus', onVisible); };
+  }, []);
+  const summaryState = useDashboardSummary(reloadKey);
 
   const userName = useMemo(() => getCurrentUserName(), []);
   const hour = new Date().getHours();
@@ -404,7 +417,7 @@ const Dashboard: React.FC = () => {
 
           {anyVisible && (
             <BentoGrid rows={rows} hidden={hidden} editing={editing} art={cardArtApi}
-              onHide={id => setWidgetOn(id as WidgetKey, false)} onChange={handleLayout} renderCard={id => cards[id] ?? null} />
+              onHide={id => setWidgetOn(id as WidgetKey, false)} onChange={handleLayout} renderCard={id => <React.Fragment key={reloadKey}>{cards[id] ?? null}</React.Fragment>} />
           )}
 
           {/* All widgets hidden */}

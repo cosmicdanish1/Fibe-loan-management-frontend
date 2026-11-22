@@ -817,9 +817,10 @@ html.dark .aw-select-popup.ant-picker-dropdown .ant-picker-panel-container { bac
 
 /* ── App Window: segmented control, message list, icon tile, small button, toolbar ── */
 .app-window .aw-seg { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: calc(var(--aw-radius) * 1.2); background: var(--aw-surface-muted); border: 1px solid var(--aw-border); }
-.app-window .aw-seg::before { content: ''; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--seg-count, 2)); border-radius: var(--aw-radius); background: var(--aw-surface); box-shadow: var(--aw-shadow-btn); transform: translateX(calc(var(--seg-index, 0) * 100%)); transition: transform .3s var(--aw-ease) !important; }
+.app-window .aw-seg::before { content: ''; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--seg-count, 2)); border-radius: var(--aw-radius); background: var(--aw-accent); box-shadow: 0 1px 2px rgba(0,0,0,.18), 0 3px 8px color-mix(in srgb, var(--aw-accent) 35%, transparent); transform: translateX(calc(var(--seg-index, 0) * 100%)); transition: transform .3s var(--aw-ease) !important; }
 .app-window .aw-seg > button { position: relative; z-index: 1; padding: 8px 10px; border: 0; background: transparent; color: var(--aw-muted); font-size: var(--type-field-size); font-weight: 700; cursor: pointer; white-space: nowrap; }
-.app-window .aw-seg > button[aria-selected="true"] { color: var(--aw-text); }
+.app-window .aw-seg > button[aria-selected="true"] { color: #fff; }
+.app-window .aw-seg > button[aria-selected="false"]:hover { color: var(--aw-text); }
 .app-window .aw-seg > button:focus-visible { outline: 3px solid var(--aw-focus); outline-offset: -2px; border-radius: var(--aw-radius); }
 /* A switch in a window header sits at the very top, so its tooltips open downward instead of being clipped. */
 .app-window .aw-header .aw-seg > button[data-tip]::after { bottom: auto; top: calc(100% + 10px); transform-origin: top center; }
@@ -1097,3 +1098,27 @@ html.dark .app-window.aw-calm.aw-tint { background: color-mix(in srgb, var(--aw-
 .app-window.aw-calm .aw-stat-label { text-transform: none; letter-spacing: 0; font-size: calc(var(--type-body-size) - 1px); font-weight: 600; }
 .app-window.aw-calm .aw-stat { background: var(--aw-surface-muted); border-color: var(--aw-border); padding: 12px 16px; }
 .app-window.aw-calm .aw-stat-value { color: var(--aw-tone, var(--aw-text)); font-weight: 600; }
+
+/* ── Voucher windows (Receipt, Payment Voucher Creation, Voucher Payment): a denser, quieter rhythm ──
+   Same sections, same order. Only the spacing scale is tightened so the form reads as one block instead of
+   floating cards, and short rows no longer leave wide empty bands. */
+.app-window.aw-voucher {
+  --aw-pad: calc(12px * var(--ui-density, 1));
+  --aw-gap: calc(10px * var(--ui-density, 1));
+  --aw-control-h: max(28px, calc(var(--fz-base) * 2.4 * var(--ui-density, 1)));
+}
+.app-window.aw-voucher .aw-header { padding: 10px 16px; }
+.app-window.aw-voucher .aw-content { padding: 12px 16px; }
+.app-window.aw-voucher .aw-card-head { padding-bottom: 8px; margin-bottom: 10px; }
+.app-window.aw-voucher .aw-label { margin-bottom: 3px; }
+.app-window.aw-voucher .aw-table th { padding: 6px 12px; }
+.app-window.aw-voucher .aw-table td { padding: 5px 12px; }
+.app-window.aw-voucher .aw-table td.has-input { padding: 4px 8px; }
+.app-window.aw-voucher .aw-empty { padding: 14px; }
+.app-window.aw-voucher .aw-panel { padding: 8px 12px; }
+.app-window.aw-voucher .aw-footer { padding-top: 6px; padding-bottom: 6px; }
+.app-window.aw-voucher .aw-split-fields { display: grid; gap: var(--aw-gap); align-items: start; }
+@media (max-width: 900px) { .app-window.aw-voucher .aw-split-fields { grid-template-columns: minmax(0, 1fr) !important; } }
+.app-window.aw-voucher .aw-panel .aw-table th { padding: 3px 8px; }
+.app-window.aw-voucher .aw-panel .aw-table td { padding: 3px 8px; }
+.app-window.aw-voucher .aw-panel > .aw-label { margin-bottom: 2px; }

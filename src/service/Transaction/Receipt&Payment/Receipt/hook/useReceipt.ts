@@ -36,6 +36,19 @@ const newRow = (): ReceiptRow => ({
 export const useReceipt = (): ReceiptHookReturn => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState<ReceiptData>(emptyForm());
+  // The voucher is dated by this window's Date setting (Day End > Date settings: the working date by default), which this
+  // window can not change: the date shown is the one the server will use (the server ignores any date sent).
+  const workingDateRef = useRef<string | null>(null);
+  const withWorkingDate = <T extends { transDate: string }>(form: T): T => (workingDateRef.current ? { ...form, transDate: workingDateRef.current } : form);
+  useEffect(() => {
+    let alive = true;
+    apiService.getPostingDate('RECEIPT_PAYMENT').then(res => {
+      const d = (res as any)?.data?.date ?? (res as any)?.data?.data?.date;
+      if (alive && res.success && typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) { workingDateRef.current = d; setFormData(prev => ({ ...prev, transDate: d })); }
+    }).catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
+
   const [bankHeads, setBankHeads] = useState<{ code: string; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMember, setIsLoadingMember] = useState(false);
@@ -191,12 +204,12 @@ export const useReceipt = (): ReceiptHookReturn => {
         transDate: formData.transDate,
         modeOfPay: formData.modeOfPay === 'bank' ? 'B' : 'C',
         bankCode: resolvedBankCode,
-        // /utilities/receipt writes straight to the ledger and has no cheque columns, so the cheque details
-        // are also carried in the narration (the only place the ledger row can keep them).
-        narration: isBank
-          ? [formData.narration, `Cheque ${formData.chequeNo.trim()}${formData.chequeDate ? ` dt ${formData.chequeDate}` : ''}${formData.customerBankName ? ` (${formData.customerBankName})` : ''}`]
-              .filter(Boolean).join(' | ')
-          : (formData.narration || ''),
+        // ES-611: which tab it was entered on, and the demand month / year, travel with the voucher
+        receiptType: formData.receiptType,
+        month: formData.receiptType === 'demand' ? formData.month : undefined,
+        year: formData.receiptType === 'demand' ? formData.year : undefined,
+        // the cheque details have their own columns now; the narration stays the user's own text (max 100)
+        narration: formData.narration || '',
         cheqNo: isBank ? formData.chequeNo.trim() : '',
         cheqDate: isBank ? (formData.chequeDate || '') : '',
         bankName: isBank ? (formData.customerBankName || '') : '',
@@ -204,6 +217,7 @@ export const useReceipt = (): ReceiptHookReturn => {
           code: r.code,
           accType: r.accType || 'OTH',
           amount: parseFloat(r.amount) || 0,
+          rdSrNo: (r.rdSrNo || '').trim(),
         })),
       };
 
@@ -219,12 +233,13 @@ export const useReceipt = (): ReceiptHookReturn => {
           `VOUCHER NO    : ${vchr}\n` +
           `MEMBER NO     : ${formData.memberNo} - ${formData.memberName || 'N/A'}\n` +
           `TRANS DATE    : ${formData.transDate}\n` +
+          (formData.receiptType === 'demand' ? `DEMAND FOR    : ${formData.month} ${formData.year}\n` : '') +
           `MODE OF PAY   : ${formData.modeOfPay === 'bank' ? 'Bank/Cheque' : 'Cash'}\n` +
           `TOTAL AMOUNT  : ₹${validTotal.toLocaleString('en-IN')}\n` +
           `ROWS          : ${validRows.length}\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-          `✓ Saved to ledger\n` +
-          `✓ ${formData.modeOfPay === 'cash' ? 'Cash account (A1001)' : 'Bank account'} debited`,
+          `✓ Saved (Pending Pass)\n` +
+          `✓ Go to Pass Transactions to approve`,
         );
         setLastSaved({
           voucherNo: vchr,
@@ -232,7 +247,7 @@ export const useReceipt = (): ReceiptHookReturn => {
           memberName: formData.memberName,
           total: validTotal,
         });
-        setFormData(emptyForm());
+        setFormData(withWorkingDate(emptyForm()));
       } else {
         // BUG FIX: was response.error — apiService returns response.message, not response.error
         await showDialog('error', t('Receipt Error'), t('Failed to Save Receipt'), response.message || t('An unexpected error occurred. Please try again.'));
@@ -246,7 +261,7 @@ export const useReceipt = (): ReceiptHookReturn => {
   }, [formData]);
 
   const handleCancel = useCallback(() => {
-    setFormData(emptyForm());
+    setFormData(withWorkingDate(emptyForm()));
     setLastSaved(null);
   }, []);
 

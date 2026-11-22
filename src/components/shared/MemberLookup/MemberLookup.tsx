@@ -31,8 +31,13 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
     // Tracks the in-flight request so a slower, stale response (e.g. from a
     // search term the user already changed) can never overwrite a newer one.
     const abortRef = useRef<AbortController | null>(null);
+    // The search text the list on screen belongs to, and the pause timer before a typed search runs (ES-620):
+    // Enter must never pick a member from a list that is older than what is typed in the box.
+    const loadedTermRef = useRef('');
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const firstRun = useRef(true);
 
-    const fetchMembers = useCallback(async (search: string = '') => {
+    const fetchMembers = useCallback(async (search: string = ''): Promise<Member[] | null> => {
         abortRef.current?.abort();
         const controller = new AbortController();
         abortRef.current = controller;
@@ -62,20 +67,23 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
                     name: m.name || m.memberName || '' // Ensure name exists
                 }));
                 setMembers(formattedData);
+                loadedTermRef.current = search.trim();
+                return formattedData;
             } else {
                 throw new Error(`Server error: ${response.status}`);
             }
         } catch (err: any) {
             // Superseded by a newer search — not a real failure, stay quiet.
-            if (err?.name === 'AbortError' && abortRef.current !== controller) return;
+            if (err?.name === 'AbortError' && abortRef.current !== controller) return null;
             if (err?.name === 'AbortError') {
                 setError('Request timed out. Please check your connection and try again.');
                 message.error(t('Request timed out'));
-                return;
+                return null;
             }
             console.error('Fetch error:', err);
             setError('Failed to load members. Please try again.');
             message.error(t('Failed to load members'));
+            return null;
         } finally {
             clearTimeout(timeoutId);
             if (abortRef.current === controller) setIsLoading(false);
@@ -93,11 +101,12 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
         };
     }, [fetchMembers]);
 
+    // A typed search runs after a short pause. Clearing the box searches too (ES-620: it used to leave the old filtered list).
+    // The very first load is done by the effect above.
     useEffect(() => {
-        const timer = setTimeout(() => {
-            if (searchTerm) fetchMembers(searchTerm);
-        }, 400);
-        return () => clearTimeout(timer);
+        if (firstRun.current) { firstRun.current = false; return; }
+        debounceRef.current = setTimeout(() => { fetchMembers(searchTerm); }, 400);
+        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     }, [searchTerm, fetchMembers]);
 
     const handleSelect = (member: Member) => {
@@ -130,8 +139,16 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
                         if (e.key === 'Escape') {
                             isModal ? onClose?.() : window.close();
                         }
-                        if (e.key === 'Enter' && members.length > 0 && members[0]) {
-                            handleSelect(members[0]);
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (searchTerm.trim() === loadedTermRef.current) {
+                                // the list on screen is the result of what is typed
+                                if (members[0]) handleSelect(members[0]);
+                            } else {
+                                // typed but not searched yet: search now and pick from THAT result, never from the old list
+                                if (debounceRef.current) clearTimeout(debounceRef.current);
+                                fetchMembers(searchTerm).then(rows => { if (rows && rows[0]) handleSelect(rows[0]); });
+                            }
                         }
                     }}
                 />
@@ -181,7 +198,7 @@ const MemberLookup: React.FC<MemberLookupProps> = ({ onSelect, onClose, isModal 
                     <strong>{members.length}</strong> {t('Records Found')}
                     {searchTerm && <>· {t('Searching: {{1}}', { 1: searchTerm })}</>}
                 </span>
-                <span className="aw-meta" style={{ fontStyle: 'italic' }}>{t('Tip: Double-click row to select • ESC to exit')}</span>
+                <span className="aw-meta" style={{ fontStyle: 'italic' }}>{t('Tip: Click a row or press Enter to select • ESC to exit')}</span>
             </div>
         </>
     );

@@ -137,6 +137,7 @@ const navConfig: NavItem[] = [
       { title: tLabel('Loan Early Closure'), action: 'LOAN_EARLY_CLOSURE' },
       { title: tLabel('Loan Re-agreement'), action: 'LOAN_REAGREEMENT' },
       { title: tLabel('RD/CD Transaction'), action: 'COMPULSORY_DEPOSIT_TRANSACTION' },
+      { title: tLabel('RD/CD Transaction Legacy'), action: 'COMPULSORY_DEPOSIT_LEGACY' },
       { title: tLabel('Member Balance Transfer'), action: 'MEMBER_BALANCE_TRANSFER' },
       { title: tLabel('Pass Transactions'), action: 'PASS_TRANSACTIONS' },
       {

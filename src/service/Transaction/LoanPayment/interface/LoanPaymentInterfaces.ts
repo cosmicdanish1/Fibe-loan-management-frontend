@@ -115,6 +115,9 @@ export interface LoanPaymentHookReturn {
     removeVoucherEntry: (index: number) => void;
     handleLoanCaseChange: (caseNo: string) => void;
     openSanctionWindow: () => void;
+    isSanctionOpen: boolean;
+    closeSanctionDialog: () => void;
+    handleSanctionedInDialog: (caseNo: string) => void;
     closeModal: () => void;
     handleModalSave: () => void;
     handleSave: () => void;

@@ -60,6 +60,8 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => onChange(e.target.value)}
             className="aw-input"
             required={required}
+            readOnly={readOnly}
+            disabled={readOnly}
           />
         );
 

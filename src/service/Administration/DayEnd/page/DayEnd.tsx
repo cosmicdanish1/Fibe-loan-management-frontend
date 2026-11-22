@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import AwDialog from '@/components/shared/kit/AwDialog';
 import { useDayend, useDayendCalculations } from '../hooks/useDayend';
+import DateSettings from '../components/DateSettings';
 import type { DayendDisplayProps } from '../interface/dayend';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import { localISODate } from '../../../../utils/dates';
@@ -64,6 +65,9 @@ const DayEnd: React.FC = () => {
   const { t } = useTranslation();
   const { dayendData, isProcessing, isLoading, error, processDayend, refreshData, initializeWorkingDate, isInitializing } = useDayend();
   const { isBalanced, difference } = useDayendCalculations(dayendData);
+
+  // Two sections: closing the day, and the per-window Date settings
+  const [tab, setTab] = React.useState<'dayend' | 'dates'>('dayend');
 
   // "Select Next Working Date" modal state
   const [showNextDateModal, setShowNextDateModal] = React.useState(false);
@@ -197,7 +201,14 @@ const DayEnd: React.FC = () => {
         </div>
       </div>
 
-      <div className="aw-content">
+      <div className="aw-tabs" role="tablist">
+        <button type="button" role="tab" className="aw-tab" aria-selected={tab === 'dayend'} onClick={() => setTab('dayend')}>{t('Day End')}</button>
+        <button type="button" role="tab" className="aw-tab" aria-selected={tab === 'dates'} onClick={() => setTab('dates')}>{t('Date settings')}</button>
+      </div>
+
+      {tab === 'dates' && <div className="aw-content"><DateSettings /></div>}
+
+      {tab === 'dayend' && <div className="aw-content">
         <div className="aw-stack aw-narrow" style={{ maxWidth: 940 }}>
 
           {/* Status bar */}
@@ -304,7 +315,7 @@ const DayEnd: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
+      </div>}
 
       {/* ── Processing overlay (cannot be dismissed) ── */}
       {isProcessing && (

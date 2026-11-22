@@ -1,11 +1,10 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import { apiService } from '../../../../../services/api';
 import { PaymentVoucherData, RowData, PaymentVoucherHookReturn } from '../interface/PaymentVoucherInterfaces';
 import { useTranslation } from 'react-i18next';
 import { showDialog4 as showDialog } from '@/utils/dialog';
 
-const CASH_ACCOUNT = { code: 'A1001', name: 'CASH IN HAND' };
 
 const emptyForm = (): PaymentVoucherData => ({
   voucherNo: '',
@@ -15,7 +14,6 @@ const emptyForm = (): PaymentVoucherData => ({
   memberName: '',
   officeNo: '',
   narration: '',
-  payFromCode: CASH_ACCOUNT.code,
 });
 
 const newRow = (): RowData => ({
@@ -29,22 +27,23 @@ const newRow = (): RowData => ({
 export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState<PaymentVoucherData>(emptyForm());
+  // The voucher is dated by this window's Date setting (Day End > Date settings: the working date by default), which this
+  // window can not change: the date shown is the one the server will use (the server ignores any date sent).
+  const workingDateRef = useRef<string | null>(null);
+  const withWorkingDate = <T extends { transDate: string }>(form: T): T => (workingDateRef.current ? { ...form, transDate: workingDateRef.current } : form);
+  useEffect(() => {
+    let alive = true;
+    apiService.getPostingDate('RECEIPT_PAYMENT_VOUCHER_CREATION').then(res => {
+      const d = (res as any)?.data?.date ?? (res as any)?.data?.data?.date;
+      if (alive && res.success && typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) { workingDateRef.current = d; setFormData(prev => ({ ...prev, transDate: d })); }
+    }).catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
+
   const [rows, setRows] = useState<RowData[]>([newRow()]);
-  // "Pay From" options: Cash in hand + the real bank current accounts (from /reports/banks)
-  const [payFromAccounts, setPayFromAccounts] = useState<{ code: string; name: string }[]>([CASH_ACCOUNT]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSaved, setLastSaved] = useState<{ voucherNo: string; memberNo: string; memberName: string; total: number; transDate: string } | null>(null);
 
-  // Load the real bank current accounts on mount and prepend Cash.
-  useEffect(() => {
-    apiService.getBankList()
-      .then(response => {
-        const banks = Array.isArray(response.data) ? response.data : (response.data?.data || []);
-        const mapped = (Array.isArray(banks) ? banks : []).map((b: any) => ({ code: b.code, name: b.name || b.head_name || b.code }));
-        setPayFromAccounts([CASH_ACCOUNT, ...mapped]);
-      })
-      .catch(() => setPayFromAccounts([CASH_ACCOUNT]));
-  }, []);
 
   const totalAmount = useMemo(() =>
     rows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0),
@@ -52,7 +51,19 @@ export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
   );
 
   const updateField = useCallback((field: keyof PaymentVoucherData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      // General Payment is not for a member: member selection is switched off (member 0) and cleared
+      if (field === 'paymentType' && value === 'general') {
+        updated.memberNo = '0';
+        updated.memberName = '';
+        updated.officeNo = '';
+      }
+      if (field === 'paymentType' && value !== 'general' && prev.memberNo === '0') {
+        updated.memberNo = '';
+      }
+      return updated;
+    });
   }, []);
 
   const handleMemberSelect = useCallback((memberNo: string, memberData?: any) => {
@@ -78,7 +89,7 @@ export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!formData.memberNo) {
+    if (formData.paymentType !== 'general' && !formData.memberNo) {
       await showDialog('warning', t('Input Validation Error'), t('Member Required'), t('Please select a member before saving.'));
       return;
     }
@@ -100,13 +111,12 @@ export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
     setIsLoading(true);
     try {
       const payload = {
-        memberNo: parseInt(formData.memberNo),
+        memberNo: formData.paymentType === 'general' ? 0 : parseInt(formData.memberNo),
         voucherNo: formData.voucherNo || '',
         transDate: formData.transDate,
         paymentType: formData.paymentType,
         officeNo: formData.officeNo,
         narration: formData.narration,
-        payFromCode: formData.payFromCode || 'A1001',
         rows: validRows.map(r => ({
           code: r.code,
           name: r.name,
@@ -141,7 +151,7 @@ export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
           total: totalAmount,
           transDate: formData.transDate,
         });
-        setFormData(emptyForm());
+        setFormData(withWorkingDate(emptyForm()));
         setRows([newRow()]);
       } else {
         // BUG FIX: was response.error — apiService returns response.message, not response.error
@@ -155,7 +165,7 @@ export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
   }, [formData, rows, totalAmount]);
 
   const handleClear = useCallback(() => {
-    setFormData(emptyForm());
+    setFormData(withWorkingDate(emptyForm()));
     setRows([newRow()]);
     setLastSaved(null);
   }, []);
@@ -167,7 +177,7 @@ export const usePaymentVoucher = (): PaymentVoucherHookReturn => {
   }, []);
 
   return {
-    formData, rows, totalAmount, payFromAccounts,
+    formData, rows, totalAmount,
     lastSaved,
     updateField, handleMemberSelect,
     addRow, updateRow, removeRow,

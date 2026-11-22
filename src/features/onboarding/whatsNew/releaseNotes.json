@@ -2,6 +2,25 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.14.0",
+      "date": "2026-11-23",
+      "title": "Date settings, bulk Compulsory Deposit charge and loan penal rate exceptions",
+      "new": [
+        "Date settings under Day End: for each window, choose whether entries are dated with the Day-End working date (the default) or the real date of the day. The date shown on a window is the one the server will use.",
+        "Compulsory Deposit (Legacy) window: charge many members' Compulsory Deposit in one go and credit a head.",
+        "Loan Sanction can set a different penal rate for one loan, with a reason. Without it, Business Rules apply.",
+        "Loan Sanction shows the largest loan allowed and any RD or Share shortfall as soon as you enter an amount."
+      ],
+      "improved": [
+        "Searching for a member never picks someone from an older list than what is typed in the box, and clearing the box searches again.",
+        "Pasted amounts keep their decimal point, so 100.50 stays 100.50, and signs or exponents are refused.",
+        "The dashboard cards reload by themselves when the window comes back after a few minutes and every ten minutes while open.",
+        "Signing out is recorded, and the sign-in history in My Profile closes every open session.",
+        "Saving Bank menus are hidden while that feature is switched off."
+      ],
+      "fixed": []
+    },
+    {
       "version": "1.13.0",
       "date": "2026-11-21",
       "title": "NR Repayment, a real My Profile and clearer dividend windows",

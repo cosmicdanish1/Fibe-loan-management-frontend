@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { apiService } from '../../../../services/api';
 
 declare global {
   interface Window {
@@ -15,69 +16,85 @@ declare global {
   }
 }
 
+// How long the app waits for the server to record the sign-out before it quits anyway (an offline PC must still be able to exit).
+const SIGN_OUT_WAIT_MS = 1500;
+
 const ExitOption1: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
   const [progress, setProgress] = useState(0);
+  const signOutRef = useRef<Promise<unknown>>(Promise.resolve());
+  const quitStarted = useRef(false);
 
   const handleExit = useCallback(() => {
+    // ES-621: the server is told the user signed out (the login log row is closed) before the app quits.
+    signOutRef.current = Promise.resolve(apiService.logout()).catch(() => undefined);
     setIsExiting(true);
     setShowConfirmation(false);
-
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-
-          if (window.electronAPI) {
-            window.electronAPI.quitApp();
-            setTimeout(() => {
-              if (window.electronAPI) {
-                window.electronAPI.forceQuitApp();
-              }
-            }, 1000);
-          }
-          else if (window.electron?.ipcRenderer) {
-            window.electron.ipcRenderer.send('app-quit');
-            setTimeout(() => {
-              if (window.electron?.ipcRenderer) {
-                window.electron.ipcRenderer.send('app-quit-force');
-              }
-            }, 1000);
-          }
-          else if (window.opener) {
-            window.close();
-          } else {
-            try {
-              window.open('', '_self', '');
-              window.close();
-            } catch (e) {
-              // Silent fail
-            }
-          }
-
-          return 100;
-        }
-        return prev + 2;
-      });
-    }, 20);
-
-    return () => clearInterval(interval);
   }, []);
 
+  // Cancel: back to where the user came from. When this window was opened on its own there is no page to go back to,
+  // so the window itself closes (ES-621: navigate(-1) alone left the user stuck).
   const handleCancel = useCallback(() => {
-    navigate(-1);
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else if (window.electronAPI?.closeWindow) {
+      window.electronAPI.closeWindow();
+    } else if (window.electron?.ipcRenderer) {
+      window.electron.ipcRenderer.send('window-close');
+    } else {
+      window.close();
+    }
   }, [navigate]);
 
+  // ESC cancels, as the footer says (ES-621).
+  useEffect(() => {
+    if (!showConfirmation) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handleCancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showConfirmation, handleCancel]);
+
+  // The progress bar: 2% every 20 ms.
+  useEffect(() => {
+    if (!isExiting) return;
+    const interval = setInterval(() => setProgress(prev => Math.min(100, prev + 2)), 20);
+    return () => clearInterval(interval);
+  }, [isExiting]);
+
+  // At 100%: wait (briefly) for the sign-out, then quit the app.
+  useEffect(() => {
+    if (progress < 100 || quitStarted.current) return;
+    quitStarted.current = true;
+    const quit = () => {
+      if (window.electronAPI) {
+        window.electronAPI.quitApp();
+        setTimeout(() => { window.electronAPI?.forceQuitApp(); }, 1000);
+      } else if (window.electron?.ipcRenderer) {
+        window.electron.ipcRenderer.send('app-quit');
+        setTimeout(() => { window.electron?.ipcRenderer.send('app-quit-force'); }, 1000);
+      } else if (window.opener) {
+        window.close();
+      } else {
+        try {
+          window.open('', '_self', '');
+          window.close();
+        } catch {
+          // Silent fail
+        }
+      }
+    };
+    Promise.race([signOutRef.current, new Promise(resolve => setTimeout(resolve, SIGN_OUT_WAIT_MS))]).then(quit);
+  }, [progress]);
+
   const exitMessages = useMemo(() => [
-    'Saving your session...',
-    'Closing connections...',
-    'Finalizing data...',
-    'Almost done...',
-    'See you soon!'
-  ], []);
+    t('Signing you out...'),
+    t('Closing windows...'),
+    t('Almost done...'),
+    t('See you soon!'),
+  ], [t]);
 
   const currentMessage = useMemo(() => {
     const index = Math.floor((progress / 100) * exitMessages.length);
@@ -85,7 +102,7 @@ const ExitOption1: React.FC = () => {
   }, [progress, exitMessages]);
 
   const steps = [
-    { label: t('Saved'), at: 20 },
+    { label: t('Signed out'), at: 20 },
     { label: t('Closed'), at: 50 },
     { label: t('Done'), at: 80 },
   ];

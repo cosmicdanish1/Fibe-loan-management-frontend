@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Donut, LegendRow, CountUp, type Slice } from './DashCharts';
-import apiService from '../../services/api';
+import apiService from './dashApi';
 import { useTranslation } from 'react-i18next';
 
 // ─── One anatomy for every dashboard widget ──────────────────────────────────

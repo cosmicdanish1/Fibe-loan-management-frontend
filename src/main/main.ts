@@ -813,6 +813,7 @@ const WINDOW_CONFIGS: Record<string, {
   '/transaction/loan-sanction': { title: 'Loan Sanction', frameless: false, width: 1200, height: 800 },
   '/loan-sanction': { title: 'Loan Sanction', frameless: false, width: 1200, height: 800 },
   '/transaction/compulsory-deposit': { title: 'RD/CD Transaction', frameless: false, width: 1000, height: 750 },
+  '/transaction/compulsory-deposit-legacy': { title: 'RD/CD Transaction Legacy', frameless: false, width: 1000, height: 750 },
   '/transaction/pass-transactions': { title: 'Pass Transactions', frameless: false, width: 1000, height: 750 },
 
   // Demand / Recovery List

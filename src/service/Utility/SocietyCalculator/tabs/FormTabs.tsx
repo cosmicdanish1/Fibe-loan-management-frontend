@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Banknote, CalendarDays, Gavel, Landmark, PiggyBank, ShieldCheck, Users, Percent, Scale, Award, Handshake } from 'lucide-react';
 import FormCalc, { SectionDef } from '../components/FormCalc';
 import type { CalculatorRules } from '../lib/types';
+import { SB_FEATURE_ENABLED } from '../../../../config/menuActions';
 
 type TabProps = { rules: CalculatorRules | null };
 
@@ -84,7 +85,7 @@ const rdSections: SectionDef[] = [
 ];
 export const DepositsTab: React.FC<TabProps> = () => (
   <SubTabs items={[
-    { id: 'sb', label: 'Savings (SB)', node: <FormCalc kind="sb-interest" title="Savings Bank interest" sections={sbSections} waiting="Enter the balance, rate and period." /> },
+    ...(SB_FEATURE_ENABLED ? [{ id: 'sb', label: 'Savings (SB)', node: <FormCalc kind="sb-interest" title="Savings Bank interest" sections={sbSections} waiting="Enter the balance, rate and period." /> }] : []),
     { id: 'fd', label: 'Fixed Deposit (FD)', node: <FormCalc kind="fd-interest" title="Fixed Deposit interest" sections={fdSections} waiting="Enter the FD amount, rate and dates." /> },
     { id: 'rd', label: 'RD/CD', node: <FormCalc kind="rd-interest" title="RD financial-year interest" sections={rdSections} waiting="Enter the monthly amount and the financial year." /> },
   ]} />

@@ -7,14 +7,22 @@ import {
     LoanCase,
     LoanDetails,
     SanctionDetails,
-    SanctionRules,
     LoanSanctionHookReturn
 } from '../interface/LoanSanctionInterfaces';
 import { API_ROUTES, getApiBaseUrl } from '../../../../services/apiVersionConfig';
 import { reagreementApi, ReagreementQuote } from '../../../../services/reagreementApi';
 import { useTranslation } from 'react-i18next';
 
-export const useLoanSanction = (): LoanSanctionHookReturn => {
+export interface UseLoanSanctionOptions {
+    /** Embedded use (dialog inside Loan Payment): open with this case already chosen, if it is still pending. */
+    initialCaseNo?: string;
+    /** Called after the sanction was saved, with the case number. */
+    onSanctioned?: (caseNo: string) => void;
+    /** Replaces the default "close this window" behaviour of Exit. */
+    onClose?: () => void;
+}
+
+export const useLoanSanction = (options: UseLoanSanctionOptions = {}): LoanSanctionHookReturn => {
   const { t } = useTranslation();
     const [loanCases, setLoanCases] = useState<LoanCase[]>([]);
     const [selectedLoanCase, setSelectedLoanCase] = useState<string>("");
@@ -66,18 +74,42 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         rateOverrideReason: "",
     });
 
-    // Sanction recovery rules (legacy "Rules" panel) — operator acknowledgement
-    const [rules, setRules] = useState<SanctionRules>({
-        sharesBalance: false,
-        tenPercentOfLoan: false,
-    });
-
-    const toggleRule = useCallback((key: keyof SanctionRules) => {
-        setRules(prev => ({ ...prev, [key]: !prev[key] }));
-    }, []);
+    // Share value / RD requirement for the amount being sanctioned (same server check the application uses):
+    // what the member holds, what is short, and what is adjusted from the payout. Replaces the old "Rules"
+    // checkboxes, which were never sent anywhere and changed nothing.
+    const [eligibility, setEligibility] = useState<any | null>(null);
+    useEffect(() => {
+        const type = (loanDetails.loanType || '').toUpperCase();
+        const amount = parseFloat(sanctionDetails.sanctionedAmount);
+        if (reagreement || !selectedLoanCase || !loanDetails.memberNo || !['RLN', 'ALN', 'ELN'].includes(type) || !(amount > 0)) {
+            setEligibility(null);
+            return;
+        }
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                const res = await fetch(
+                    `${await getApiBaseUrl()}/loans/eligibility/${encodeURIComponent(loanDetails.memberNo)}?amount=${amount}&loanType=${type}&caseNo=${encodeURIComponent(selectedLoanCase)}`,
+                    { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+                );
+                const body = await res.json().catch(() => ({}));
+                if (cancelled) return;
+                setEligibility(res.ok ? (body?.data ?? body) : null);
+            } catch {
+                if (!cancelled) setEligibility(null);
+            }
+        }, 350);
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [selectedLoanCase, loanDetails.memberNo, loanDetails.loanType, sanctionDetails.sanctionedAmount, reagreement]);
 
     useEffect(() => {
-        fetchPendingLoanCases();
+        (async () => {
+            const pending = await fetchPendingLoanCases();
+            if (options.initialCaseNo && pending.some((l: any) => String(l.loanCaseNo) === String(options.initialCaseNo))) {
+                handleLoanCaseChange(String(options.initialCaseNo));
+            }
+        })();
     }, []);
 
     // Re-agreement: the server recalculates on every tenure / rate edit (debounced); nothing is computed here
@@ -146,8 +178,9 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         return () => { cancelled = true; clearTimeout(timer); };
     }, [selectedLoanCase, sanctionDetails.sanctionedAmount, sanctionDetails.noOfInstallments, sanctionDetails.rate, reagreement]);
 
-    const fetchPendingLoanCases = async () => {
+    const fetchPendingLoanCases = async (): Promise<any[]> => {
         setIsLoadingCases(true);
+        let found: any[] = [];
         try {
             console.log('🔍 Fetching pending loan cases for sanction...');
             const endpoint = API_ROUTES.loans.pending();
@@ -164,6 +197,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 const pendingLoans = loans.filter((loan: any) => !loan.sanctioned || loan.applicationKind === 'REAGREEMENT');
 
                 setLoanCases(pendingLoans);
+                found = pendingLoans;
                 console.log(`✅ Found ${pendingLoans.length} pending loan cases`);
             } else {
                 throw new Error('Failed to fetch loan cases');
@@ -175,13 +209,12 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         } finally {
             setIsLoadingCases(false);
         }
+        return found;
     };
 
     const handleLoanCaseChange = async (caseNo: string) => {
         setSelectedLoanCase(caseNo);
 
-        // Reset rule acknowledgements whenever the selected case changes
-        setRules({ sharesBalance: false, tenPercentOfLoan: false });
         setReagreement(null);
         setRaQuote(null);
         setRateDefaults(null);
@@ -308,7 +341,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
 
     // ES-506: load the Business Rules rate / penalty for the chosen loan type and put them in the fields
     useEffect(() => {
-        if (!selectedLoanCase || reagreement || !loanDetails.loanType) return;
+        if (!selectedLoanCase || !loanDetails.loanType) return;
         let cancelled = false;
         (async () => {
             try {
@@ -320,7 +353,11 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                 const d = body?.data ?? body;
                 if (cancelled || !res.ok || !(Number(d?.rate) > 0)) return;
                 setRateDefaults({ rate: Number(d.rate), penalRate: Number(d.penalRate) });
-                setSanctionDetails(prev => ({ ...prev, rate: String(d.rate), penalRate: String(d.penalRate), rateOverrideReason: '' }));
+                // A re-agreement keeps the rate it was applied with (the quote is built on it); only the penalty
+                // starts from Business Rules, and the officer may change it for this one loan.
+                setSanctionDetails(prev => reagreement
+                    ? { ...prev, penalRate: String(d.penalRate), rateOverrideReason: '' }
+                    : { ...prev, rate: String(d.rate), penalRate: String(d.penalRate), rateOverrideReason: '' });
             } catch { /* the fields keep their last values */ }
         })();
         return () => { cancelled = true; };
@@ -351,8 +388,9 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         }
 
         // ES-506: a rate / penalty different from Business Rules is an exception for this customer and needs a reason
-        const differsFromRules = !reagreement && !!rateDefaults && (
-            Math.abs(parseFloat(sanctionDetails.rate) - rateDefaults.rate) > 0.0001 ||
+        // (for a re-agreement only the penalty is compared: its interest rate is the new term being priced)
+        const differsFromRules = !!rateDefaults && (
+            (!reagreement && Math.abs(parseFloat(sanctionDetails.rate) - rateDefaults.rate) > 0.0001) ||
             Math.abs(parseFloat(sanctionDetails.penalRate) - rateDefaults.penalRate) > 0.0001
         );
         if (differsFromRules && !sanctionDetails.rateOverrideReason.trim()) {
@@ -406,6 +444,8 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
                     });
                 }
 
+                options.onSanctioned?.(String(selectedLoanCase));
+
                 // Refresh loan cases
                 await fetchPendingLoanCases();
 
@@ -432,10 +472,11 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
     };
 
     const handleExit = useCallback(() => {
+        if (options.onClose) { options.onClose(); return; }
         if ((window as any).electron?.ipcRenderer) {
             (window as any).electron.ipcRenderer.send('window-close');
         }
-    }, []);
+    }, [options.onClose]);
 
     return {
         reagreement,
@@ -450,8 +491,7 @@ export const useLoanSanction = (): LoanSanctionHookReturn => {
         isSaving,
         loanDetails,
         sanctionDetails,
-        rules,
-        toggleRule,
+        eligibility,
         handleLoanCaseChange,
         updateSanctionField,
         handleSanctionSave,

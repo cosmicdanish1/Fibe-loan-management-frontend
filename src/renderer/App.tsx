@@ -207,6 +207,7 @@ const LoanReagreementHistory = lazy(() => import('../service/Reports/LoanReagree
 const LoanConsolidationChain = lazy(() => import('../service/Reports/LoanConsolidationChain/page/LoanConsolidationChainPage'));
 const LoanSanction = lazy(() => import('../service/Transaction/LoanSanction/page/LoanSanction'));
 const CompulsoryDepositTransaction = lazy(() => import('../service/Transaction/CompulsoryDepositTransaction/page/CompulsoryDepositTransaction'));
+const CompulsoryDepositLegacy = lazy(() => import('../service/Transaction/CompulsoryDepositLegacy/page/CompulsoryDepositLegacy'));
 const MemberBalanceTransfer = lazy(() => import('../service/Transaction/MemberBalanceTransfer/page/MemberBalanceTransfer'));
 const PassTransactions = lazy(() => import('../service/Transaction/PassTransactions/page/PassTransactions'));
 
@@ -486,6 +487,7 @@ const App: React.FC = () => {
                   <Route path="/reports/loan-consolidation-chain" element={<LoanConsolidationChain />} />
                   <Route path="/loan-sanction" element={<LoanSanction />} />
                   <Route path="/transaction/compulsory-deposit" element={<CompulsoryDepositTransaction />} />
+                  <Route path="/transaction/compulsory-deposit-legacy" element={<CompulsoryDepositLegacy />} />
                   <Route path="/transaction/member-balance-transfer" element={<MemberBalanceTransfer />} />
                   <Route path="/transaction/pass-transactions" element={<PassTransactions />} />
 
