@@ -61,6 +61,7 @@ export interface UseUserManagementReturn {
   resetForm: () => void;
   saveUser: () => Promise<void>;
   isUpdating: boolean;
+  existingUserId: number | null;
   fetchUser: (username?: string) => Promise<void>;
   allUsers: User[];
   isLoadingUsers: boolean;

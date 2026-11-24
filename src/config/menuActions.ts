@@ -75,6 +75,7 @@ export const ACTION_ROUTE_MAP: Record<string, { route: string; electronMethod: s
   'RD_WITHDRAWAL': { route: '/masters/rd-withdrawal', electronMethod: 'openNewWindow' },
   'RD_REPAYMENT': { route: '/masters/rd-repayment', electronMethod: 'openNewWindow' },
   'RD_FY_CLOSING': { route: '/administration/rd-fy-closing', electronMethod: 'openNewWindow' },
+  'RD_INTEREST': { route: '/administration/rd-interest', electronMethod: 'openNewWindow' },
   'DIVIDEND_CALCULATION': { route: '/administration/dividend-calculation', electronMethod: 'openNewWindow' },
   'DIVIDEND_CREDIT': { route: '/administration/dividend-credit', electronMethod: 'openNewWindow' },
   'CAST_CATEGORY': { route: '/masters/cast-category', electronMethod: 'openNewWindow' },

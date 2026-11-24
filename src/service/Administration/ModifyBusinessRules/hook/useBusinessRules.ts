@@ -209,6 +209,8 @@ export interface RdSystemRules {
   /** Whether more than one separate gap in the same year can still
    *  qualify for automatic full interest. */
   allowMultipleGaps: boolean;
+  /** ES-629: automatic pattern posting at year end (off = every undecided member is denied) */
+  autoPatternPosting: boolean;
 }
 
 export interface BusinessRulesData {
@@ -351,6 +353,7 @@ export const initialData: BusinessRulesData = {
     allowLaterMissRecovery: true,
     maxArrearsClearanceMonths: 3,
     allowMultipleGaps: false,
+    autoPatternPosting: true,
   },
 };
 
@@ -541,6 +544,7 @@ export const useBusinessRules = () => {
             allowLaterMissRecovery: bool(d.RULE_RD_ALLOW_LATER_MISS_RECOVERY, def.rdSystem.allowLaterMissRecovery),
             maxArrearsClearanceMonths: num(d.RULE_RD_MAX_ARREARS_CLEARANCE_MONTHS, def.rdSystem.maxArrearsClearanceMonths),
             allowMultipleGaps: bool(d.RULE_RD_ALLOW_MULTIPLE_GAPS, def.rdSystem.allowMultipleGaps),
+            autoPatternPosting: bool(d.RULE_RD_AUTO_PATTERN_POSTING, def.rdSystem.autoPatternPosting),
           },
         });
         setLoaded(true);
@@ -696,6 +700,7 @@ export const useBusinessRules = () => {
         RULE_RD_ALLOW_LATER_MISS_RECOVERY: currentData.rdSystem.allowLaterMissRecovery,
         RULE_RD_MAX_ARREARS_CLEARANCE_MONTHS: currentData.rdSystem.maxArrearsClearanceMonths,
         RULE_RD_ALLOW_MULTIPLE_GAPS: currentData.rdSystem.allowMultipleGaps,
+        RULE_RD_AUTO_PATTERN_POSTING: currentData.rdSystem.autoPatternPosting,
       };
 
       const response = await apiService.updateBusinessRules(flatRules);

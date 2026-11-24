@@ -2,6 +2,23 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.15.0",
+      "date": "2026-11-24",
+      "title": "RD/CD interest decisions and window rights per person",
+      "new": [
+        "RD/CD Interest window: for each member, see the interest worked out the way the society's printed RD chart is made, and choose Allow or Deny with a reason. Allow counts a late instalment as paid on time; Deny gives interest only from the month the money was deposited.",
+        "RD/CD Financial Year Closing closes the year for every member in one go, each posted with his saved decision. A Business Rules switch controls whether fully regular members are allowed automatically.",
+        "Create / Modify Users lets you set each person's own window rights. Once set, those are the person's rights; the level's defaults are only the starting point.",
+        "Head Addition / Modification and Head Opening Balance windows were rebuilt, with each head kept under its own section and a warning before typed numbers would be lost."
+      ],
+      "improved": [
+        "Login names are checked as you type: no spaces, 1 to 20 characters, and only letters, digits, dot, underscore and hyphen.",
+        "Passbook Printing was reworked.",
+        "Dialogs now open above sticky table headers."
+      ],
+      "fixed": []
+    },
+    {
       "version": "1.14.0",
       "date": "2026-11-23",
       "title": "Date settings, bulk Compulsory Deposit charge and loan penal rate exceptions",

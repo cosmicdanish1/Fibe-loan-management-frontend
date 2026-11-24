@@ -789,6 +789,8 @@ const WINDOW_CONFIGS: Record<string, {
   '/masters/rd-account/opening': { title: 'RD/CD A/c Opening', frameless: false, width: 1000, height: 750 },
   '/masters/rd-account/pass': { title: 'Pass RD/CD A/C', frameless: false, width: 900, height: 650 },
   '/masters/rd-repayment': { title: 'RD/CD Repayment', frameless: false, width: 1180, height: 800 },
+  '/administration/rd-fy-closing': { title: 'RD/CD Financial Year Closing', frameless: false, width: 1360, height: 860, resizable: true },
+  '/administration/rd-interest': { title: 'RD/CD Interest', frameless: false, width: 1280, height: 880, resizable: true },
   '/masters/saving-account-opening': { title: 'Saving A/c Opening', frameless: false, width: 1000, height: 750 },
   '/masters/wing-office': { title: 'Wing / Office Master', frameless: false, width: 800, height: 600 },
   '/masters/modify-member-balance': { title: 'Modify Member Balance', frameless: false, width: 800, height: 600 },

@@ -1,5 +1,5 @@
 // useUserManagement.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from '../../../../../services/api';
 import type {
   UserFormData,
@@ -9,9 +9,27 @@ import type {
 } from '../interface/types';
 import { useTranslation } from 'react-i18next';
 import { showDialog4 as showDialog } from '@/utils/dialog';
+import { isDuplicateUserError } from '../utils/windowRights';
+
+/** A yes / no question: the native box in the app, the browser's own when there is no app shell */
+export const askYesNo = async (title: string, message: string, detail = ''): Promise<boolean> => {
+  const api = (window as any).electronAPI;
+  if (api?.showMessageBox) {
+    const r = await api.showMessageBox({ type: 'question', title, message, detail, buttons: ['Yes', 'No'], defaultId: 0, cancelId: 1 });
+    return r?.response === 0;
+  }
+  return typeof window !== 'undefined' && typeof window.confirm === 'function' ? window.confirm(`${message}\n\n${detail}`.trim()) : false;
+};
+
+interface HookOptions {
+  /** The window rights to save with the person: set by the page once its rights lists exist (null = nothing to send) */
+  getMenuIds?: React.MutableRefObject<() => number[] | null>;
+  /** Called after a successful save, before the form is cleared */
+  onSaved?: React.MutableRefObject<() => void>;
+}
 
 // ── Native Electron dialog helper (replaces antd message) ─────────────────────
-export const useUserManagement = (): UseUserManagementReturn => {
+export const useUserManagement = (opts: HookOptions = {}): UseUserManagementReturn => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState<UserFormData>({
     username: '',
@@ -153,6 +171,9 @@ export const useUserManagement = (): UseUserManagementReturn => {
           setExistingUserId(null);
           setStatusMessage({ type: 'info', text: `No existing user found for '${target}'. You can create a new one.` });
         }
+      } else {
+        // a refused or failed lookup used to do nothing at all
+        await showDialog('error', t('Search Failed'), t('Identity lookup failed'), response.message || (response as any).error || t('Check server connection.'));
       }
     } catch (err: any) {
       console.error('Fetch user failed:', err);
@@ -224,6 +245,11 @@ export const useUserManagement = (): UseUserManagementReturn => {
       showDialog('warning', t('Validation'), t('User Name and User Level are mandatory'), '');
       return false;
     }
+    // the same rule the server applies: it used to fail with a database error (longer than 20) or save with spaces
+    if (username.trim().length > 20 || !/^[A-Za-z0-9._-]+$/.test(username.trim())) {
+      showDialog('warning', t('Validation'), t('User name: up to 20 letters, digits, dot, underscore or hyphen'), t('No spaces.'));
+      return false;
+    }
 
     if (!isUpdating && !password.trim()) {
       showDialog('warning', t('Validation'), t('Password is required for new users'), '');
@@ -243,6 +269,12 @@ export const useUserManagement = (): UseUserManagementReturn => {
 
     if (isUpdating && password && password.length < 6) {
       showDialog('warning', t('Validation'), t('New password must be at least 6 characters'), '');
+      return false;
+    }
+
+    const ids = opts.getMenuIds?.current?.();
+    if (ids && ids.length === 0) {
+      showDialog('warning', t('Validation'), t('Give this person at least one window'), t('Move at least one window to Allowed.'));
       return false;
     }
 
@@ -280,9 +312,11 @@ export const useUserManagement = (): UseUserManagementReturn => {
     setSelectedRightsAllot([]);
   };
 
+  const savingRef = useRef(false);
   const saveUser = async () => {
+    if (savingRef.current) return; // a double click or Enter + click sends one request
     if (!validateForm()) return;
-
+    savingRef.current = true;
     try {
       // Trim both sides: a stray leading/trailing space in either field used
       // to produce a malformed synthesized email (e.g. "danish @bank.local")
@@ -293,7 +327,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
       const lastName = formData.lastName || 'User';
 
       const payload: any = {
-        username: formData.username,
+        username: formData.username.trim(),
         email,
         firstName,
         lastName,
@@ -306,6 +340,9 @@ export const useUserManagement = (): UseUserManagementReturn => {
       if (formData.password) {
         payload.password = formData.password;
       }
+      // the windows this person may open (not sent for administrators / SYSTEM, who have every window)
+      const menuIds = opts.getMenuIds?.current?.();
+      if (menuIds) payload.menuIds = menuIds;
 
       let response;
       if (isUpdating) {
@@ -331,9 +368,20 @@ export const useUserManagement = (): UseUserManagementReturn => {
         `✓ Role-based access control (RBAC) active`
       );
 
+      opts.onSaved?.current?.();
       resetForm();
       fetchAllUsers();
     } catch (err: any) {
+      // Legacy asks "This user already exists. Do you want to modify or disable this user?": say yes and the person is loaded
+      if (!isUpdating && isDuplicateUserError(String(err?.message || ''))) {
+        const modify = await askYesNo(
+          t('User already exists'),
+          t('This user already exists. Do you want to modify or disable this user?'),
+          formData.username,
+        );
+        if (modify) await fetchUser(formData.username);
+        return;
+      }
       await showDialog(
         'error',
         t('Identity Synchronization Error'),
@@ -344,6 +392,8 @@ export const useUserManagement = (): UseUserManagementReturn => {
         `• Ensure the database server is reachable\n` +
         `• Verify your network connection`
       );
+    } finally {
+      savingRef.current = false;
     }
   };
 
@@ -361,6 +411,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
     resetForm,
     saveUser,
     isUpdating,
+    existingUserId,
     fetchUser,
     allUsers,
     isLoadingUsers,

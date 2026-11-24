@@ -1,6 +1,16 @@
 import { useState, useCallback } from 'react';
 import apiService from '../../../../services/api';
 
+export interface RdClosingDecision {
+    saved: 'ALLOW' | 'DENY' | null;
+    reason: string | null;
+    by: string | null;
+    at: string | null;
+    effective: 'ALLOW' | 'DENY';
+    source: 'SAVED' | 'AUTO' | 'DEFAULT';
+    needsDecision: boolean;
+}
+
 export interface RdClosingMemberRow {
     mbno: string;
     patternEvaluation: {
@@ -14,13 +24,14 @@ export interface RdClosingMemberRow {
     };
     installmentInterest: { totalInterest: number };
     openingBalanceInterest: { totalInterest: number };
+    /** what will be posted (the decision that applies) */
     totalInterestIfClosedNow: number;
     currentBalance: number;
-}
-
-export interface OverrideEntry {
-    eligible: boolean;
-    reason: string;
+    /** ES-629: the total if the employee allows / denies */
+    interestIfAllowed: number;
+    interestIfDenied: number;
+    patternLabel: string;
+    decision: RdClosingDecision;
 }
 
 const PAGE_SIZE = 100;
@@ -33,7 +44,7 @@ export const useRdFinancialYearClosing = () => {
     const [page, setPage] = useState(0);
     const [loading, setLoading] = useState(false);
     const [closing, setClosing] = useState(false);
-    const [overrides, setOverrides] = useState<Record<string, OverrideEntry>>({});
+    const [busyMember, setBusyMember] = useState<string | null>(null);
     const [closeResult, setCloseResult] = useState<{ succeeded: any[]; failed: Array<{ mbno: string; error: string }> } | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -76,33 +87,29 @@ export const useRdFinancialYearClosing = () => {
         await loadPage(year, 0);
     }, [yearcode, loadFinancialYear, loadPage]);
 
-    const setOverride = useCallback((mbno: string, entry: OverrideEntry | null) => {
-        setOverrides((prev) => {
-            const next = { ...prev };
-            if (entry) next[mbno] = entry;
-            else delete next[mbno];
-            return next;
-        });
-    }, []);
-
-    const closeOne = useCallback(async (mbno: string, closedBy: string) => {
+    /** Confirm Deny for one member from the list (Allow needs a reason, so it is done in the one-member window). */
+    const denyMember = useCallback(async (mbno: string) => {
         if (!yearcode) return;
-        const override = overrides[mbno];
-        const res = await apiService.closeRdMemberYear(mbno, yearcode, closedBy, override?.eligible, override?.reason);
-        if (res.success) {
-            await loadPage(yearcode, page);
+        setBusyMember(mbno);
+        setError(null);
+        try {
+            const res = await apiService.setRdInterestDecision(mbno, yearcode, 'DENY', '');
+            if (!res.success) setError(res.message || 'Could not save the decision.');
+            else await loadPage(yearcode, page);
+        } catch (err: any) {
+            setError(err.message || 'Could not save the decision.');
+        } finally {
+            setBusyMember(null);
         }
-        return res;
-    }, [yearcode, overrides, page, loadPage]);
+    }, [yearcode, page, loadPage]);
 
+    /** Close the year for every member: each one is posted with his saved decision, else the default (Deny, or Allow when fully regular). */
     const closeAll = useCallback(async (closedBy: string) => {
         if (!yearcode) return;
         setClosing(true);
         setError(null);
         try {
-            const overridesPayload: Record<string, { eligible: boolean; reason: string }> = {};
-            for (const [mbno, o] of Object.entries(overrides)) overridesPayload[mbno] = o;
-            const res = await apiService.closeRdFinancialYear(yearcode, closedBy, overridesPayload);
+            const res = await apiService.closeRdFinancialYear(yearcode, closedBy);
             if (res.success) {
                 setCloseResult(res.data ?? null);
                 await loadPage(yearcode, page);
@@ -114,11 +121,11 @@ export const useRdFinancialYearClosing = () => {
         } finally {
             setClosing(false);
         }
-    }, [yearcode, overrides, page, loadPage]);
+    }, [yearcode, page, loadPage]);
 
     return {
         yearcode, yearLabel, members, total, page, pageSize: PAGE_SIZE,
-        loading, closing, overrides, closeResult, error,
-        loadForYear, loadPage, setOverride, closeOne, closeAll,
+        loading, closing, busyMember, closeResult, error,
+        loadForYear, loadPage, denyMember, closeAll,
     };
 };

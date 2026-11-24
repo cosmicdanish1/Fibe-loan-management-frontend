@@ -1568,6 +1568,30 @@ class ApiService {
     });
   }
 
+  // ES-629: RD/CD interest of one member, month by month, with the pattern and the employee's Allow / Deny decision
+  async getRdHistoryYears(): Promise<ApiResponse<any>> {
+    return this.request('/rd/closing/history/years');
+  }
+
+  async explainRdInterestHistory(mbno: string, fyStartYear: number): Promise<ApiResponse<any>> {
+    return this.request(`/rd/closing/${mbno}/history/${fyStartYear}/explain`);
+  }
+
+  async explainRdInterest(mbno: string, yearcode: number): Promise<ApiResponse<any>> {
+    return this.request(`/rd/closing/${mbno}/${yearcode}/explain`);
+  }
+
+  async setRdInterestDecision(mbno: string, yearcode: number, decision: 'ALLOW' | 'DENY', reason: string): Promise<ApiResponse<any>> {
+    return this.request(`/rd/closing/${mbno}/${yearcode}/decision`, {
+      method: 'POST',
+      body: JSON.stringify({ decision, reason }),
+    });
+  }
+
+  async clearRdInterestDecision(mbno: string, yearcode: number): Promise<ApiResponse<any>> {
+    return this.request(`/rd/closing/${mbno}/${yearcode}/decision/clear`, { method: 'POST', body: JSON.stringify({}) });
+  }
+
   // ── Dividend: monthly Share snapshot, Total Product calculation, credit ──
   async captureShareMonthEndSnapshot(month: number, year: number): Promise<ApiResponse<{ success: boolean; captured: number; message: string }>> {
     return this.request('/dividend/share-snapshot', {
@@ -2718,6 +2742,18 @@ class ApiService {
 
   async getRoleMenus(): Promise<ApiResponse<any[]>> {
     return this.request<any[]>('/admin/roles/menus');
+  }
+
+  /** One user's window rights: granted, the level defaults and every window (ES-645) */
+  async getUserMenuRights(userId: number): Promise<ApiResponse<any>> {
+    return this.request<any>(`/admin/users/${userId}/menu-rights`);
+  }
+
+  async setUserMenuRights(userId: number, menuIds: number[]): Promise<ApiResponse<any>> {
+    return this.request<any>(`/admin/users/${userId}/menu-rights`, {
+      method: 'PUT',
+      body: JSON.stringify({ menuIds }),
+    });
   }
 
   async getRoleDefaultRights(levelId: number): Promise<ApiResponse<number[]>> {

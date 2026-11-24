@@ -79,6 +79,7 @@ const navConfig: NavItem[] = [
       { title: tLabel('Saakh Score — Member Health'), action: 'SAAKH_SCORE' },
       { title: tLabel('Modify Business Rules'), action: 'MODIFY_BIZ_RULES' },
       { title: tLabel('RD/CD Financial Year Closing'), action: 'RD_FY_CLOSING' },
+      { title: tLabel('RD/CD Interest (one member)'), action: 'RD_INTEREST' },
       { title: tLabel('Dividend Calculation'), action: 'DIVIDEND_CALCULATION' },
       { title: tLabel('Dividend Credit'), action: 'DIVIDEND_CREDIT' },
       { title: tLabel('Demand Print Order'), action: 'DEMAND_PRINT_ORDER' },

@@ -765,9 +765,10 @@ const ModifyBusinessRules: React.FC = () => {
         <SwitchRow label={t('Allow Recovery From an Initial-Month Gap')} path="rdSystem.allowInitialMissRecovery" checked={rdRules.allowInitialMissRecovery} onChange={v => updateRdSystem('allowInitialMissRecovery', v)} />
         <SwitchRow label={t('Allow Recovery From a Later Gap')} path="rdSystem.allowLaterMissRecovery" checked={rdRules.allowLaterMissRecovery} onChange={v => updateRdSystem('allowLaterMissRecovery', v)} />
         <SwitchRow label={t('Allow Multiple Separate Gaps in One Year')} path="rdSystem.allowMultipleGaps" checked={rdRules.allowMultipleGaps} onChange={v => updateRdSystem('allowMultipleGaps', v)} />
+        <SwitchRow label={t('Automatic Pattern Posting at Year End')} path="rdSystem.autoPatternPosting" checked={rdRules.autoPatternPosting} onChange={v => updateRdSystem('autoPatternPosting', v)} />
         <div className="br-row">
           <p className="aw-meta" style={{ lineHeight: 1.5 }}>
-            {t("A member who doesn't automatically qualify still receives their normal RD interest in full; an authority can separately upgrade them to full annual interest as an exception, never a prerequisite.")}
+            {t('On: a fully regular member is allowed the full interest automatically; every other member waits for the employee to Allow or Deny (undecided = Deny, interest only from the month the money was actually deposited). Off: nothing is allowed automatically and every undecided member is Denied.')}
           </p>
         </div>
       </Card>

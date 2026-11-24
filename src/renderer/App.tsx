@@ -83,6 +83,7 @@ const RdMemberSetup = lazy(() => import('../service/Masters/RdMemberSetup/page/R
 const RdWithdrawal = lazy(() => import('../service/Masters/RdWithdrawal/page/RdWithdrawal'));
 const RdRepayment = lazy(() => import('../service/Masters/RdRepayment/page/RdRepayment'));
 const RdFinancialYearClosing = lazy(() => import('../service/Administration/RdFinancialYearClosing/page/RdFinancialYearClosing'));
+const RdInterest = lazy(() => import('../service/Administration/RdInterest/page/RdInterest'));
 const DividendCalculation = lazy(() => import('../service/Administration/DividendCalculation/page/DividendCalculation'));
 const DividendCredit = lazy(() => import('../service/Administration/DividendCredit/page/DividendCredit'));
 const CastCategory = lazy(() => import('../service/Masters/CastCategory/page/CastCategory'));
@@ -460,6 +461,7 @@ const App: React.FC = () => {
                   <Route path="/masters/rd-withdrawal" element={<RdWithdrawal />} />
                   <Route path="/masters/rd-repayment" element={<RdRepayment />} />
                   <Route path="/administration/rd-fy-closing" element={<RdFinancialYearClosing />} />
+                  <Route path="/administration/rd-interest" element={<RdInterest />} />
                   <Route path="/administration/dividend-calculation" element={<DividendCalculation />} />
                   <Route path="/administration/dividend-credit" element={<DividendCredit />} />
                   <Route path="/masters/cast-category" element={<CastCategory />} />

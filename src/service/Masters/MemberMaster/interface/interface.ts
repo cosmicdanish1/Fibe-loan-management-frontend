@@ -19,6 +19,7 @@ export interface MemberFormData {
   basicPay: string;
   shareAmt: string;
   retirementDate: string;
+  joiningDate: string;
   aadharNo: string;
   branchMsNo: string;
   monthlyContribution: string;
@@ -107,6 +108,7 @@ export const defaultFormValues: MemberFormData = {
   basicPay: '',
   shareAmt: '',
   retirementDate: '',
+  joiningDate: '',
   aadharNo: '',
   branchMsNo: '',
   monthlyContribution: '',

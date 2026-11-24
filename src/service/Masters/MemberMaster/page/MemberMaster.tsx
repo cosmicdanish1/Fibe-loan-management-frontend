@@ -529,6 +529,7 @@ const MemberMaster: React.FC = () => {
         age: String(formData.age),                          // BUG FIX 6: was `formData.age || ''` (0 → '')
         dob: formData.dateOfBirth || null,
         dor: formData.retirementDate || null,
+        date_of_appt: formData.joiningDate || null,
         supanuationdate: formData.dateOfWithdrawRetire || null,
         gross_salary: parseFloat(formData.monthlyContribution) || 0,
         basic_pay: parseFloat(formData.basicPay) || 0,
@@ -607,6 +608,7 @@ const MemberMaster: React.FC = () => {
             basicPay: getVal(savedDetails, ['basicPay', 'basic_pay', 'pay']) || formData.basicPay,
             shareAmt: getVal(savedDetails, ['shareAmt', 'share_amt', 'share_amount']) || formData.shareAmt,
             retirementDate: getVal(savedDetails, ['retirementDate', 'retirement_date', 'date_of_retirement', 'retired_date', 'date_of_retire', 'dor']) || formData.retirementDate,
+            joiningDate: getVal(savedDetails, ['joiningDate', 'date_of_appt']) || formData.joiningDate,
             aadharNo: getVal(savedDetails, ['aadharNo', 'aadhar_no', 'uid_no', 'aadharno']) || formData.aadharNo,
             branchMsNo: getVal(savedDetails, ['branchMsNo', 'branch_ms_no', 'ms_no', 'branchmsno']) || formData.branchMsNo,
             monthlyContribution: getVal(savedDetails, ['monthlyContribution', 'monthly_contribution', 'contri']) || formData.monthlyContribution,
@@ -779,6 +781,7 @@ const MemberMaster: React.FC = () => {
           basicPay: getVal(memberDetails, ['basicPay', 'basic_pay', 'pay']) || '0',
           shareAmt: getVal(memberDetails, ['shareAmt', 'share_amt', 'share_amount']) || '0',
           retirementDate: fmtDate(getVal(memberDetails, ['retirementDate', 'retirement_date', 'date_of_retirement', 'retired_date', 'date_of_retire', 'dor'])),
+          joiningDate: fmtDate(getVal(memberDetails, ['joiningDate', 'date_of_appt'])),
           aadharNo: getVal(memberDetails, ['aadharNo', 'aadhar_no', 'uid_no', 'aadharno']) || '',
           branchMsNo: getVal(memberDetails, ['branchMsNo', 'branch_ms_no', 'ms_no', 'branchmsno']) || '',
           monthlyContribution: String(getVal(memberDetails, ['monthlyContribution', 'monthly_contribution', 'gross_salary']) || '0'),
@@ -852,7 +855,7 @@ const MemberMaster: React.FC = () => {
   const sectionDone: Record<string, boolean> = {
     's-identity': !!(formData.firstName?.trim() && formData.lastName?.trim()),
     's-contact': hasValue(formData.mobileNumber, formData.email, formData.panCardNo, formData.aadharNo),
-    's-employment': hasValue(formData.srNoEpfPfNo, formData.designation, formData.department, formData.branchMsNo, formData.membershipDate, formData.retirementDate, formData.frsNumber),
+    's-employment': hasValue(formData.srNoEpfPfNo, formData.designation, formData.department, formData.branchMsNo, formData.membershipDate, formData.retirementDate, formData.joiningDate, formData.frsNumber),
     's-money': hasValue(formData.basicPay, formData.monthlyContribution, formData.shareAmt, formData.isInsured),
     's-address': hasValue(formData.homeAddress, formData.dateOfWithdrawRetire),
     's-org': !!(formData.divisionRo && formData.branch),
@@ -1552,6 +1555,10 @@ const MemberMaster: React.FC = () => {
               <div className="col-span-4">
                 <label className="aw-label">{t('Retirement Date')}</label>
                 <MemberDate ariaLabel="Retirement date" value={formData.retirementDate} onChange={(v) => handleInputChange('retirementDate', v)} />
+              </div>
+              <div className="col-span-4">
+                <label className="aw-label">{t('Date of Joining Service')}</label>
+                <MemberDate ariaLabel="Date of joining service" value={formData.joiningDate} onChange={(v) => handleInputChange('joiningDate', v)} />
               </div>
               <div className="col-span-4">
                 <label className="aw-label">{t('F.R.S. Number')}</label>

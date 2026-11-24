@@ -32,6 +32,7 @@ export const useChangeLoanSuretyForm = () => {
   const submittingRef = useRef(false);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const validationMsgRef = useRef('');
+  const lastDialogPickRef = useRef(0);
   useEffect(() => () => {
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
   }, []);
@@ -346,6 +347,9 @@ ${dbUpdates}${suretyUpdate}
 
   const handleMemberSelect = useCallback((member: any) => {
     if (!lookupTarget) return;
+    // The shared lookup also broadcasts 'member-selected' to every window; it arrives after this callback.
+    // Without this stamp the broadcast was taken as a NEW BORROWER and wiped the loan case (ES-631).
+    lastDialogPickRef.current = Date.now();
 
     if (lookupTarget === 'memberNumber') {
       const mbNo = member.memberNo || member.mbno;
@@ -379,7 +383,7 @@ ${dbUpdates}${suretyUpdate}
     if (window.electronAPI) {
       const handleMemberBroadcast = (_event: any, member: any) => {
         console.log('Broadcast received in ChangeLoanSurety:', member);
-        if (!isLookupOpen) {
+        if (!isLookupOpen && Date.now() - lastDialogPickRef.current > 3000) {
           const mbNo = member.memberNo || member.mbno;
           setFormData(prev => ({
             ...prev,

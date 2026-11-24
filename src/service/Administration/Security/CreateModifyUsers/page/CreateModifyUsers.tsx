@@ -25,6 +25,9 @@ import {
   Mail,
 } from 'lucide-react';
 import { useUserManagement } from '../hook/useUserManagement';
+import { useWindowRights } from '../hook/useWindowRights';
+import WindowRightsPanel from '../components/WindowRightsPanel';
+import { levelsFor } from '../utils/windowRights';
 import type { UserLevel } from '../interface/types';
 import { usePageToolbarActions } from '../../../../../utils/pageToolbarActions';
 import { Select } from 'antd';
@@ -154,6 +157,8 @@ const PermList: React.FC<PermListProps> = ({
 // ── Main component ────────────────────────────────────────────────────────────
 const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' }) => {
   const { t } = useTranslation();
+  const menuIdsRef = useRef<() => number[] | null>(() => null);
+  const savedRef = useRef<() => void>(() => undefined);
   const {
     formData,
     selectedDefaultRights,
@@ -167,11 +172,18 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
     resetForm,
     saveUser,
     isUpdating,
+    existingUserId,
     fetchUser,
     loadUser,
     statusMessage,
     clearStatus,
-  } = useUserManagement();
+  } = useUserManagement({ getMenuIds: menuIdsRef, onSaved: savedRef });
+  // the window rights (which windows this person may open) follow the level and the person being edited
+  const windowRights = useWindowRights({ role: formData.userLevel, userId: existingUserId });
+  menuIdsRef.current = windowRights.menuIdsToSave;
+  savedRef.current = windowRights.reset;
+  const actorRole = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}')?.role || ''; } catch { return ''; } })();
+  const levelOptions = levelsFor(USER_LEVELS.filter(l => l.value !== ''), actorRole);
 
   const [isLookupVisible, setIsLookupVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -368,6 +380,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                       <User size={13} />
                       <input id="cmu-username" type="text" value={formData.username}
                         onChange={(e) => updateFormData('username', e.target.value)}
+                        maxLength={20} autoComplete="off" spellCheck={false}
                         className="aw-input" placeholder={t('e.g. admin_pro_01')} />
                       <button
                         type="button"
@@ -431,7 +444,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                       value={formData.userLevel || undefined}
                       onChange={(v) => updateFormData('userLevel', v ?? '')}
                       placeholder={t('Select Level')}
-                      options={USER_LEVELS.filter(l => l.value !== '').map(l => ({ value: l.value, label: l.label }))}
+                      options={levelOptions.map(l => ({ value: l.value, label: l.label }))}
                     />
                   </div>
                   <div className="aw-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -472,7 +485,18 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
               </section>
             </div>
 
-            {/* ── Right: access privilege matrix ── */}
+            {/* ── Right: window rights, then the access privilege matrix ── */}
+            <div className="aw-stack" style={{ minWidth: 0 }}>
+            <WindowRightsPanel
+              menus={windowRights.menus}
+              granted={windowRights.granted}
+              loading={windowRights.loading}
+              error={windowRights.error}
+              unrestricted={windowRights.unrestricted}
+              noLevel={!formData.userLevel}
+              onMove={windowRights.move}
+              onRetry={windowRights.reload}
+            />
             <section className="aw-card" style={{ minWidth: 0 }}>
               <div className="aw-card-head">
                 <span className="aw-card-icon"><Settings2 size={14} /></span>
@@ -538,6 +562,7 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                 />
               </div>
             </section>
+            </div>
           </div>
         </div>
       </div>
