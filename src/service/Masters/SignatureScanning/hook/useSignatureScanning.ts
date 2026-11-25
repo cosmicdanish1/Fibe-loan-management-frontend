@@ -79,11 +79,13 @@ export const useSignatureScanning = (): SignatureScanningHookReturn => {
           ...prev,
           // BUG FIX 1+2: store mbno as string, build URL using master route
           memberId: mbno,
+          memberNumber: String(mbno),
           memberName: fullName,
           loading: false
         }));
 
-        if (member.signature_image_path) {
+        // the file saved by this screen, or the signature migrated from the legacy Bank_Signature table
+        if (member.signature_image_path || member.has_bank_signature) {
           await loadSignatureImage(mbno);
         } else {
           setSignatureObjectUrl('');

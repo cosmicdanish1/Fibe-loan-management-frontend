@@ -16,8 +16,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useSignatureScanning } from '../hook/useSignatureScanning';
-import MemberLookupInput from '../../../../components/shared/MemberLookup/MemberLookupInput';
-import type { MemberLookupData } from '../../../../components/shared/MemberLookup/MemberLookupInput';
+import MemberField from '../../../../components/shared/kit/MemberField';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import { useTranslation } from 'react-i18next';
 
@@ -192,14 +191,12 @@ const SignatureScanning: React.FC = () => {
     }, 'image/png');
   }, [uploadFile, clearCanvas, data.memberId]);
 
-  // ── Member lookup handler ──────────────────────────────────────────────────
-  // Called by MemberLookupInput: memberData is set only when a dropdown item is clicked
-  const handleMemberSelect = (memberNo: string, memberData?: MemberLookupData) => {
-    updateMemberNumber(memberNo);
-    if (memberData) {
-      // Dropdown selection — fetch full details (incl. signature_image_path)
-      searchMember(memberNo);
-    }
+  // ── Member lookup ──────────────────────────────────────────────────────────
+  // The shared lookup dialog (as in Member Master): the magnifier button, F2 or a quick double space open it, and
+  // Enter in the box loads the member number that was typed.
+  const handleMemberPicked = (member: { memberNo: string }) => {
+    updateMemberNumber(String(member.memberNo));
+    searchMember(String(member.memberNo));
   };
 
   const handleExit = () => {
@@ -228,7 +225,7 @@ const SignatureScanning: React.FC = () => {
         <div className="aw-actions">
           <button
             type="button"
-            onClick={clearSignature}
+            onClick={() => { if (window.confirm(t('Delete the saved signature of this member? This cannot be undone.'))) clearSignature(); }}
             disabled={!data.memberId}
             className="aw-btn aw-btn-danger"
             data-tip={t("Delete this member's saved signature from the database")}
@@ -256,14 +253,15 @@ const SignatureScanning: React.FC = () => {
               </span>
             </div>
             <span className="aw-label">{t('Member ID / Name')}</span>
-            <MemberLookupInput
-              variant="kit"
+            <MemberField
               value={data.memberNumber}
-              onChange={handleMemberSelect}
-              placeholder={t('Type name, number (or double-space for all)')}
+              onChange={updateMemberNumber}
+              onSelect={handleMemberPicked}
+              onSubmit={(v) => { if (v.trim()) searchMember(v.trim()); }}
+              placeholder={t('Type the member number, or press F2 / the search button')}
+              ariaLabel={t('Member number')}
               disabled={data.loading}
-              showLookupButton={true}
-              autoSearch={true}
+              shortcuts
             />
             {data.memberName && (
               <p className="aw-strong aw-fade-in" style={{ marginTop: 10, color: 'var(--aw-accent)' }}>{data.memberName}</p>

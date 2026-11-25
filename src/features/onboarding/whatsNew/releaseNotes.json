@@ -2,6 +2,21 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.18.0",
+      "date": "2026-11-26",
+      "title": "Signature Scanning: legacy signatures and member search",
+      "new": [
+        "Signature Scanning window: members whose signature was migrated from the old system now show that signature, so you can see it without scanning it again."
+      ],
+      "improved": [
+        "Signature Scanning window: the member box now uses the same member search as Member Master. Press F2, the search button or double space to open the list, or type the member number and press Enter to load the member.",
+        "Signature Scanning window: the Delete button now asks you to confirm before it removes the saved signature of the member."
+      ],
+      "fixed": [
+        "Signature Scanning window: the member number box is now filled in correctly after a member is picked or loaded."
+      ]
+    },
+    {
       "version": "1.17.0",
       "date": "2026-11-26",
       "title": "Member Master rules, one person one member, sky-blue look saved per person",
