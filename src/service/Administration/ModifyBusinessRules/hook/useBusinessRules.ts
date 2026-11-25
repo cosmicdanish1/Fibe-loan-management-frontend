@@ -176,6 +176,21 @@ export interface OldEmiFlag {
 }
 
 /**
+ * Member Master rules, checked on the server when a member is saved. A limit of 0 means "no limit".
+ * The legacy keeps the deposit range in Modify Business Rules too (Min / Max CD Amt) and refuses a deposit outside it.
+ */
+export interface MemberRules {
+  /** Minimum age in whole years on the membership date (checked when the birth date or membership date is entered). */
+  minAgeAtJoining: number;
+  /** Compulsory Deposit range (rupees). */
+  cdMin: number;
+  cdMax: number;
+  /** Monthly Contribution range (rupees); a contribution of 0 is always accepted. */
+  mdMin: number;
+  mdMax: number;
+}
+
+/**
  * RD (Recurring Deposit) system rules — built from scratch, distinct from
  * the old fdmaster-based RD account system removed earlier (zero real
  * production data). RD and CD share the same GL head and collection
@@ -239,6 +254,7 @@ export interface BusinessRulesData {
   loanReagreement: LoanReagreementRules;
   loanRounding: LoanRounding;
   oldEmiFlag: OldEmiFlag;
+  memberRules: MemberRules;
   rdSystem: RdSystemRules;
 }
 
@@ -341,6 +357,8 @@ export const initialData: BusinessRulesData = {
   oldEmiFlag: {
     tolerance: 10,
   },
+  // minimum age 18 at joining; the deposit ranges start switched off (0 = no limit) until the society sets them
+  memberRules: { minAgeAtJoining: 18, cdMin: 0, cdMax: 0, mdMin: 0, mdMax: 0 },
   // Placeholder thresholds pending the society's final policy numbers — not
   // authoritative, just defaults so the screen has something sensible to
   // show until they're set for real.
@@ -536,6 +554,13 @@ export const useBusinessRules = () => {
           oldEmiFlag: {
             tolerance: num(d.RULE_LOAN_OLD_EMI_FLAG_TOLERANCE, def.oldEmiFlag.tolerance),
           },
+          memberRules: {
+            minAgeAtJoining: num(d.RULE_MEMBER_MIN_AGE, def.memberRules.minAgeAtJoining),
+            cdMin: num(d.RULE_MEMBER_CD_MIN, def.memberRules.cdMin),
+            cdMax: num(d.RULE_MEMBER_CD_MAX, def.memberRules.cdMax),
+            mdMin: num(d.RULE_MEMBER_MD_MIN, def.memberRules.mdMin),
+            mdMax: num(d.RULE_MEMBER_MD_MAX, def.memberRules.mdMax),
+          },
           rdSystem: {
             minMonthlyAmount: num(d.RULE_RD_MIN_MONTHLY_AMOUNT, def.rdSystem.minMonthlyAmount),
             openingBalanceRate: num(d.RULE_RD_OPENING_BALANCE_RATE, def.rdSystem.openingBalanceRate),
@@ -692,6 +717,13 @@ export const useBusinessRules = () => {
         RULE_REAGREEMENT_ALLOW_BACKDATE: currentData.loanReagreement.allowBackdate,
         RULE_LOAN_ROUNDING_MODE: currentData.loanRounding.mode,
         RULE_LOAN_OLD_EMI_FLAG_TOLERANCE: currentData.oldEmiFlag.tolerance,
+
+        // Member Master rules (checked by the server when a member is saved)
+        RULE_MEMBER_MIN_AGE: currentData.memberRules.minAgeAtJoining,
+        RULE_MEMBER_CD_MIN: currentData.memberRules.cdMin,
+        RULE_MEMBER_CD_MAX: currentData.memberRules.cdMax,
+        RULE_MEMBER_MD_MIN: currentData.memberRules.mdMin,
+        RULE_MEMBER_MD_MAX: currentData.memberRules.mdMax,
 
         // RD system — built from scratch, own tab
         RULE_RD_MIN_MONTHLY_AMOUNT: currentData.rdSystem.minMonthlyAmount,

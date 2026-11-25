@@ -38,6 +38,7 @@ const GROUP_LABELS: Record<string, string> = {
   loanReagreement: 'Re-agreement Limits',
   loanRounding: 'Loan Rounding',
   oldEmiFlag: 'Old EMI Flag',
+  memberRules: 'Member Rules',
   rdSystem: 'RD System',
 };
 

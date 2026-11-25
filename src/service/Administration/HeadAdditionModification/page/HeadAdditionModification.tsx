@@ -289,8 +289,8 @@ const HeadAdditionModification: React.FC = () => {
               const st = sectionTotals[root];
               const open = expanded.has(root);
               return (
-                <button key={root} type="button" className="hm-stat" onClick={() => toggleSection(root)} aria-pressed={open} aria-label={t('{{1}}: show or hide the heads', { 1: t(SECTION_NAMES[letter]) })}>
-                  <span className="hm-stat-label"><span className="hm-stat-dot" style={{ background: toneFor(letter) }} />{t(SECTION_NAMES[letter])}</span>
+                <button key={root} type="button" className="hm-stat" onClick={() => toggleSection(root)} aria-pressed={open} aria-label={t('{{1}}: show or hide the heads', { 1: t(SECTION_NAMES[letter] ?? letter) })}>
+                  <span className="hm-stat-label"><span className="hm-stat-dot" style={{ background: toneFor(letter) }} />{t(SECTION_NAMES[letter] ?? letter)}</span>
                   <span className="hm-stat-fig">{st && st.balance !== 0 ? fmt(st.balance) : '–'}</span>
                   <span className="hm-stat-note">{t('{{1}} heads', { 1: st?.count ?? 0 })}</span>
                 </button>

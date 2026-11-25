@@ -10,6 +10,15 @@ import { applyTypographyOffsets, fzBaseForScale, normalizeTypographyOffsets, rea
 import { FONT_OPTIONS, applyAppFont } from '../../config/fontOptions';
 import { useMotion } from '../../config/motion';
 
+// The fields the server stores per person (the preferences endpoint rejects anything else).
+const SYNCED_KEYS = ['interfaceMode', 'accentColor', 'fontScale', 'density', 'cornerRadius', 'fontFamily', 'backgroundType',
+    'backgroundColor1', 'backgroundColor2', 'backgroundImage', 'textColor', 'notifications', 'soundEffects', 'showChatbot'];
+const pickSynced = (src: Record<string, unknown>): Record<string, unknown> => {
+    const out: Record<string, unknown> = {};
+    for (const k of SYNCED_KEYS) if (src[k] !== undefined && src[k] !== null) out[k] = src[k];
+    return out;
+};
+
 interface ThemeProviderProps {
     children: React.ReactNode;
 }
@@ -17,8 +26,12 @@ interface ThemeProviderProps {
 const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const dispatch = useDispatch();
     const theme = useSelector((state: RootState) => state.theme);
-    const { isAuthenticated } = useAuth();
-    const isFirstMount = React.useRef(true);
+    const { isAuthenticated, user } = useAuth();
+    const userKey = isAuthenticated ? String((user as any)?.id ?? (user as any)?.username ?? 'user') : null;
+    const loadedFor = React.useRef<string | null>(null);
+    const lastSaved = React.useRef<Record<string, unknown> | null>(null);
+    const themeRef = React.useRef(theme);
+    themeRef.current = theme;
     const isDark = theme.interfaceMode === 'dark';
     // Pop-ups (dropdowns, selects, toasts, tooltips) use the same short, soft motion as the windows (Settings > Animations).
     const { resolved: motionNow } = useMotion();
@@ -40,31 +53,55 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         } catch { /* storage unavailable */ }
     }, [dispatch]);
 
-    // 1. Fetch preferences on login (Only on first mount)
+    // 1. Load this person's saved look on EVERY login (ES-668). It used to run once per app start, so after a
+    //    logout and login the previous person's look stayed. The server copy is the truth; every change below is
+    //    saved to it automatically, so it is never older than what the person last chose.
     useEffect(() => {
-        const fetchPrefs = async () => {
-            if (isAuthenticated && isFirstMount.current) {
-                try {
-                    console.log('[ThemeProvider] Fetching initial settings from DB...');
-                    const prefRes = await apiService.getUserPreferences();
-
-                    const newTheme: any = {};
-                    if (prefRes.success && prefRes.data) {
-                        Object.assign(newTheme, prefRes.data);
-                    }
-
-                    if (Object.keys(newTheme).length > 0) {
-                        console.log('[ThemeProvider] Applying remote settings to local store:', newTheme);
-                        dispatch(setTheme(newTheme));
-                    }
-                    isFirstMount.current = false;
-                } catch (error) {
-                    console.error('[ThemeProvider] Failed to fetch settings:', error);
+        if (!userKey) {
+            loadedFor.current = null;
+            lastSaved.current = null;
+            return;
+        }
+        if (loadedFor.current === userKey) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const prefRes = await apiService.getUserPreferences();
+                if (cancelled) return;
+                if (prefRes.success && prefRes.data) {
+                    // Null columns are skipped so they cannot wipe a value.
+                    const remote = Object.fromEntries(
+                        Object.entries(prefRes.data as Record<string, unknown>).filter(([, v]) => v !== null && v !== undefined)
+                    );
+                    // What the server now holds = its values over what is on screen (a null column keeps the screen value).
+                    lastSaved.current = { ...pickSynced(themeRef.current as unknown as Record<string, unknown>), ...pickSynced(remote) };
+                    loadedFor.current = userKey;
+                    dispatch(setTheme(remote));
                 }
+            } catch (error) {
+                console.error('[ThemeProvider] Failed to fetch settings:', error);
             }
-        };
-        fetchPrefs();
-    }, [isAuthenticated, dispatch]);
+        })();
+        return () => { cancelled = true; };
+    }, [userKey, dispatch]);
+
+    // 1b. Save every appearance change to the server a moment after it is made, so it survives a restart,
+    //     a logout and a different PC. Only the fields that changed are sent.
+    useEffect(() => {
+        if (!userKey || loadedFor.current !== userKey || !lastSaved.current) return;
+        const current = pickSynced(theme as unknown as Record<string, unknown>);
+        const saved = lastSaved.current;
+        const diff: Record<string, unknown> = {};
+        for (const k of Object.keys(current)) if (current[k] !== saved[k]) diff[k] = current[k];
+        if (Object.keys(diff).length === 0) return;
+        const timer = window.setTimeout(async () => {
+            try {
+                const res = await apiService.updateUserPreferences(diff);
+                if (res.success) lastSaved.current = { ...(lastSaved.current ?? {}), ...diff };
+            } catch { /* the next change retries */ }
+        }, 800);
+        return () => window.clearTimeout(timer);
+    }, [theme, userKey]);
 
     // 2. Apply CSS Variables to Document Root
     useEffect(() => {

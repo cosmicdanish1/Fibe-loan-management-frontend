@@ -11,6 +11,8 @@ import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import type { RootState } from '../../../../store';
 import { useTranslation } from 'react-i18next';
 import MobileAccessBadge from '../components/MobileAccessBadge';
+import { isPlaceholderDate, ageOn, retirementDateFor, dateProblems } from '../utils/memberDates';
+import { branchForOffice, cleanBranchMsNo, BRANCH_OPTIONS } from '../utils/memberBranch';
 
 type MemberSelectProps = {
   value: string;
@@ -424,9 +426,7 @@ const MemberMaster: React.FC = () => {
       const dob = new Date(formData.dateOfBirth);
       if (dob > new Date()) errors.push('Date of Birth cannot be in the future');
     }
-    if (formData.retirementDate && formData.dateOfBirth) {
-      if (new Date(formData.retirementDate) <= new Date(formData.dateOfBirth)) errors.push('Retirement Date must be after Date of Birth');
-    }
+    errors.push(...dateProblems(formData)); // ES-382: membership before birth, retirement not after birth
 
     // Insurance
     if (formData.isInsured) {
@@ -531,7 +531,9 @@ const MemberMaster: React.FC = () => {
         dor: formData.retirementDate || null,
         date_of_appt: formData.joiningDate || null,
         supanuationdate: formData.dateOfWithdrawRetire || null,
-        gross_salary: parseFloat(formData.monthlyContribution) || 0,
+        // Monthly Contribution is the member's monthly amount (the legacy keeps it in the funds table); gross_salary is left alone
+        monthly_contribution: parseFloat(formData.monthlyContribution) || 0,
+        member_type: formData.memberType || 'Regular',
         basic_pay: parseFloat(formData.basicPay) || 0,
         compulsory_deposit: parseFloat(formData.compulsatoryDeposit) || 0,
         username: (() => {
@@ -559,11 +561,8 @@ const MemberMaster: React.FC = () => {
         pan_no: formData.panCardNo || '',
         frs_no: formData.frsNumber || '',
         fathers_name: formData.fatherName || '',
-        // BUG FIX 14: branchMsNo (free-text, unvalidated) was taking priority over branch
-        //   (the structured dropdown matching real office_master rows), so any stray text
-        //   typed into "Branch MS No" silently overrode a correct "Branch" selection.
-        //   branch now wins; branchMsNo is only used as a fallback when branch is empty.
-        branchmsno: formData.branch || formData.branchMsNo || '',
+        // Branch MS No is its own free-text box (as in the legacy); the Branch dropdown only sets the office number above
+        branchmsno: formData.branchMsNo || '',
         email: formData.email || '',
       };
 
@@ -744,7 +743,7 @@ const MemberMaster: React.FC = () => {
         // Helper to format date value to yyyy-MM-dd for date inputs
         // Handles both plain 'YYYY-MM-DD' strings and ISO timestamps
         const fmtDate = (val: any): string => {
-          if (!val) return '';
+          if (!val || isPlaceholderDate(val)) return ''; // ES-382: the legacy "no date" (1900-01-01) shows as empty
           try {
             // If already a plain date string YYYY-MM-DD, return as-is
             if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
@@ -783,8 +782,8 @@ const MemberMaster: React.FC = () => {
           retirementDate: fmtDate(getVal(memberDetails, ['retirementDate', 'retirement_date', 'date_of_retirement', 'retired_date', 'date_of_retire', 'dor'])),
           joiningDate: fmtDate(getVal(memberDetails, ['joiningDate', 'date_of_appt'])),
           aadharNo: getVal(memberDetails, ['aadharNo', 'aadhar_no', 'uid_no', 'aadharno']) || '',
-          branchMsNo: getVal(memberDetails, ['branchMsNo', 'branch_ms_no', 'ms_no', 'branchmsno']) || '',
-          monthlyContribution: String(getVal(memberDetails, ['monthlyContribution', 'monthly_contribution', 'gross_salary']) || '0'),
+          branchMsNo: cleanBranchMsNo(getVal(memberDetails, ['branchMsNo', 'branch_ms_no', 'ms_no', 'branchmsno'])),
+          monthlyContribution: String(getVal(memberDetails, ['monthlyContribution', 'monthly_contribution']) || '0'),
           compulsatoryDeposit: String(getVal(memberDetails, ['compulsatoryDeposit', 'compulsatory_deposit', 'compulsory_deposit']) || '0'),
           isInsured: getVal(memberDetails, ['isInsured', 'is_insured', 'insured', 'flg_insured']) === 'Y' || getVal(memberDetails, ['isInsured', 'is_insured', 'insured', 'flg_insured']) === true,
           amountOfInsurance: getVal(memberDetails, ['amountOfInsurance', 'amount_of_insurance', 'insurance_amount', 'insureamt']) || '0',
@@ -807,7 +806,7 @@ const MemberMaster: React.FC = () => {
             if (off && wing) return `${off}-${wing}`;
             return getVal(memberDetails, ['divisionRo', 'division_ro', 'office_name']) || '';
           })(),
-          branch: getVal(memberDetails, ['branch', 'branch_name', 'branchmsno']) || '',
+          branch: branchForOffice(memberDetails.officeno),
           nomineeName: getVal(memberDetails, ['nomineeName', 'nominee_name']) || '',
           nomineeAddress: getVal(memberDetails, ['nomineeAddress', 'nominee_address']) || '',
           relationWithNominee: getVal(memberDetails, ['relationWithNominee', 'relation_with_nominee', 'relation', 'nominee_relation']) || '',
@@ -1137,18 +1136,12 @@ const MemberMaster: React.FC = () => {
                   onChange={(dob) => {
                     handleInputChange('dateOfBirth', dob);
 
-                    // Auto-calculate age when DOB changes
+                    // As the legacy does: Age is the age at the membership date (today when there is none), and an
+                    // empty Retirement Date is filled with the end of the month in which the member turns 60.
                     if (dob) {
-                      const today = new Date();
-                      const birthDate = new Date(dob);
-                      let age = today.getFullYear() - birthDate.getFullYear();
-                      const monthDiff = today.getMonth() - birthDate.getMonth();
-
-                      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                        age--;
-                      }
-
-                      handleInputChange('age', age);
+                      const age = ageOn(dob, formData.membershipDate || undefined);
+                      if (age !== null) handleInputChange('age', age);
+                      if (!formData.retirementDate) handleInputChange('retirementDate', retirementDateFor(dob));
                     }
                   }}
                 />
@@ -1550,7 +1543,11 @@ const MemberMaster: React.FC = () => {
             <div className="grid grid-cols-12 mm-row">
               <div className="col-span-4">
                 <label className="aw-label">{t('Membership Date')}</label>
-                <MemberDate ariaLabel="Membership date" value={formData.membershipDate} onChange={(v) => handleInputChange('membershipDate', v)} />
+                <MemberDate ariaLabel="Membership date" value={formData.membershipDate} onChange={(v) => {
+                  handleInputChange('membershipDate', v);
+                  const age = formData.dateOfBirth && v ? ageOn(formData.dateOfBirth, v) : null;
+                  if (age !== null) handleInputChange('age', age);
+                }} />
               </div>
               <div className="col-span-4">
                 <label className="aw-label">{t('Retirement Date')}</label>
@@ -1782,12 +1779,7 @@ const MemberMaster: React.FC = () => {
                   onChange={(value) => handleInputChange('branch', value)}
                 >
                   <option value="">{t('Select...')}</option>
-                  <option value="1-BHILAI-BHILAI-61">1-BHILAI-BHILAI-61</option>
-                  <option value="2-POWER HOUSE-POWER HOUSE-94">2-POWER HOUSE-POWER HOUSE-94</option>
-                  <option value="3-RISALI-RISALI-99">3-RISALI-RISALI-99</option>
-                  <option value="4-NANDINI-NANDINI-13">4-NANDINI-NANDINI-13</option>
-                  <option value="5-DALLI RAJHRA-DALLI RAJHRA-03">5-DALLI RAJHRA-DALLI RAJHRA-03</option>
-                  <option value="6-MECON-BHILAI-90">6-MECON-BHILAI-90</option>
+                  {BRANCH_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
                 </MemberSelect>
               </div>
             </div>

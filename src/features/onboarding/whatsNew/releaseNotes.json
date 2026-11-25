@@ -2,6 +2,28 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.17.0",
+      "date": "2026-11-26",
+      "title": "Member Master rules, one person one member, sky-blue look saved per person",
+      "new": [
+        "Modify Business Rules window, new Members section: set the minimum age at joining (default 18) and the minimum and maximum for Compulsory Deposit and for Monthly Contribution. 0 means no limit, and the deposit ranges start switched off. The rules are checked when a member is saved in Member Master.",
+        "Member Master window: the Age box now shows the age on the membership date (today when there is none), and an empty Retirement Date is filled with the end of the month in which the member turns 60."
+      ],
+      "improved": [
+        "Member Master window: Monthly Contribution and Member Type are now saved with the member, so the screen no longer shows 0 for them after a reload.",
+        "Member Master window: Branch MS No is its own free-text box again, and the Branch dropdown only sets the office number. The branch list is shared and an old branch text no longer shows in the wrong box.",
+        "Member Master window: the old no-date value 1900-01-01 now shows as an empty date, and a joining date before the birth date is refused.",
+        "Settings panel: the default accent colour is now sky blue. Each person's saved look (theme and colour) is loaded at every login, so after a logout and login the previous person's look no longer stays, and every change is saved to the server a moment after it is made.",
+        "Head Addition / Modification window: a head group with an unknown section letter now shows its letter instead of an empty name."
+      ],
+      "fixed": [
+        "Server, Member Master: one Personal Number can belong to only one member. A duplicate on a new member or on an edit shows one clear message, and two saves at the same moment can no longer both succeed (ES-652).",
+        "Server, Member Master: new member numbers are given from one locked counter in the 990,000,000 to 999,999,999 block and skip numbers already held (ES-310).",
+        "Server, Member Master: a joining date before the birth date is refused and the old 1900-01-01 no-date value counts as empty (ES-382).",
+        "Server, Settings: the default accent colour is sky blue for people who never changed it (ES-668)."
+      ]
+    },
+    {
       "version": "1.16.0",
       "date": "2026-11-25",
       "title": "Live users and analytics, one password rule, a clearer System Update window",

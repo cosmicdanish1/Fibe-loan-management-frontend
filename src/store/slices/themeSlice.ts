@@ -26,7 +26,7 @@ export interface ThemeState {
 
 const initialState: ThemeState = {
     interfaceMode: 'light',
-    accentColor: '#ec4899',
+    accentColor: '#0ea5e9',
     fontScale: 1.0,
     density: 1.0,
     cornerRadius: 8,

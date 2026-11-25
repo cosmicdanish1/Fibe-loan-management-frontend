@@ -103,6 +103,7 @@ const TAB_SECTIONS: Record<Exclude<TabKey, 'unused'>, Array<{ key: string; label
   ops: [
     { key: 'ops/dayend', label: 'Day-End', blurb: 'Nightly close of the day book.' },
     { key: 'ops/import', label: 'Demand Import', blurb: 'How strictly the Import Demand List treats a file with problems.' },
+    { key: 'ops/members', label: 'Members', blurb: 'Minimum age at joining and the deposit ranges checked when a member is saved. 0 means no limit.' },
     { key: 'ops/heads', label: 'Ledger Heads', blurb: 'System ledger heads used for posting.' },
   ],
 };
@@ -130,6 +131,7 @@ const sectionOf = (path: string): string => {
     case 'loanSlotDelay': case 'loanRounding': case 'oldEmiFlag': return 'loans/slots';
     case 'earlyClosureProtection': return 'loans/closure';
     case 'loanReagreement': return 'loans/reagreement';
+    case 'memberRules': return 'ops/members';
     case 'rdSystem': return ['minMonthlyAmount', 'openingBalanceRate', 'minBalanceAfterWithdrawal'].includes(field) ? 'rd/core' : 'rd/thresholds';
     case 'fundManagement':
       if (field === 'interestChart') return 'fund/chart';
@@ -164,6 +166,7 @@ const SEARCH_INDEX: Array<[string, string, string]> = [
   ['Fixed dividend rate', 'fund/dividend', 'dividend'], ['Minimum dividend rate', 'fund/dividend', 'dividend'], ['Maximum dividend rate', 'fund/dividend', 'dividend'],
   ['Monthly Contribution Interest Chart', 'fund/chart', 'slab'],
   ['Auto Day-End (nightly close, 11:30 PM)', 'ops/dayend', 'day end'], ['Import strictness', 'ops/import', 'demand import strict standard'], ['Profit Head', 'ops/heads', 'ledger'],
+  ['Minimum age at joining', 'ops/members', 'member age 18'], ['Compulsory Deposit range', 'ops/members', 'min max cd member deposit'], ['Monthly Contribution range', 'ops/members', 'md min max member contribution'],
   ['Grain Loan', 'unused/all', ''], ['Loan On Deposit', 'unused/all', ''], ['Min. Membership / Share amounts / Security Dep', 'unused/all', 'others'], ['Min. Balance For Saving A/c', 'unused/all', 'sb'], ['Working charges', 'unused/all', ''],
 ];
 
@@ -351,6 +354,11 @@ const ModifyBusinessRules: React.FC = () => {
     }
     neg('Slot 1 delay months', sl.slot1DelayMonths); neg('Slot 2 delay months', sl.slot2DelayMonths);
     neg('Old EMI flag range', rules.oldEmiFlag.tolerance);
+    const mr = rules.memberRules;
+    if (!Number.isInteger(mr.minAgeAtJoining) || mr.minAgeAtJoining < 0 || mr.minAgeAtJoining > 100) bad.push('Minimum age at joining must be a whole number between 0 and 100');
+    neg('Compulsory Deposit minimum', mr.cdMin); neg('Compulsory Deposit maximum', mr.cdMax); neg('Monthly Contribution minimum', mr.mdMin); neg('Monthly Contribution maximum', mr.mdMax);
+    if (mr.cdMax > 0 && mr.cdMin > mr.cdMax) bad.push('Compulsory Deposit minimum cannot exceed the maximum');
+    if (mr.mdMax > 0 && mr.mdMin > mr.mdMax) bad.push('Monthly Contribution minimum cannot exceed the maximum');
     const rd = rules.rdSystem;
     neg('Minimum Monthly RD Amount', rd.minMonthlyAmount); pct('Opening-Balance Interest Rate (%)', rd.openingBalanceRate); neg('Min. Balance After Withdrawal', rd.minBalanceAfterWithdrawal);
     neg('RD min consecutive installments', rd.minConsecutiveInstallments); neg('RD max payment gap months', rd.maxPaymentGapMonths);
@@ -888,6 +896,24 @@ const ModifyBusinessRules: React.FC = () => {
     </Card>
   );
 
+  // Member Master rules: the server checks them when a member is saved (age only when the birth or membership date is entered or changed)
+  const setMember = (field: keyof BusinessRulesData['memberRules'], v: number) =>
+    setBusinessRules(prev => ({ ...prev, memberRules: { ...prev.memberRules, [field]: Math.max(0, v) } }));
+  const renderMembers = () => {
+    const mr = businessRules.memberRules;
+    return (
+      <Card icon={<ShieldCheck size={14} />} title={t('Member rules')} hint={t('Checked when a member is saved in Member Master. 0 means no limit.')}>
+        <Row label={t('Minimum age at joining (years)')} help={t('Age on the membership date. Members already saved are not checked again.')} path="memberRules.minAgeAtJoining">
+          <RuleNum path="memberRules.minAgeAtJoining" kind="int" min={0} max={100} value={mr.minAgeAtJoining} onValue={v => setMember('minAgeAtJoining', v)} />
+        </Row>
+        <Row label={t('Compulsory Deposit - minimum (₹)')} path="memberRules.cdMin"><RuleNum path="memberRules.cdMin" step="0.01" min={0} value={mr.cdMin} onValue={v => setMember('cdMin', v)} /></Row>
+        <Row label={t('Compulsory Deposit - maximum (₹)')} path="memberRules.cdMax"><RuleNum path="memberRules.cdMax" step="0.01" min={0} value={mr.cdMax} onValue={v => setMember('cdMax', v)} /></Row>
+        <Row label={t('Monthly Contribution - minimum (₹)')} help={t('A contribution of 0 is always accepted.')} path="memberRules.mdMin"><RuleNum path="memberRules.mdMin" step="0.01" min={0} value={mr.mdMin} onValue={v => setMember('mdMin', v)} /></Row>
+        <Row label={t('Monthly Contribution - maximum (₹)')} path="memberRules.mdMax"><RuleNum path="memberRules.mdMax" step="0.01" min={0} value={mr.mdMax} onValue={v => setMember('mdMax', v)} /></Row>
+      </Card>
+    );
+  };
+
   const renderHeads = () => (
     <Card icon={<Database size={14} />} title={t('Ledger Heads')}>
       <Row label={t('Profit Head')} path="generalSettings.profitHead">
@@ -994,6 +1020,7 @@ const ModifyBusinessRules: React.FC = () => {
       case 'fund/chart': return renderInterestChart();
       case 'ops/dayend': return renderDayEnd();
       case 'ops/import': return renderImport();
+      case 'ops/members': return renderMembers();
       case 'ops/heads': return renderHeads();
       default: return renderUnused();
     }

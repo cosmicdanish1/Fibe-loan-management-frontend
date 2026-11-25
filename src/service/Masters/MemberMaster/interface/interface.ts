@@ -72,8 +72,9 @@ export const castCategoryOptions: SelectOption[] = [
 
 export const memberTypeOptions: SelectOption[] = [
   { value: 'Regular', label: tLabel('Regular') },
-  { value: 'Associate', label: tLabel('Associate') },
-  { value: 'Honorary', label: tLabel('Honorary') }
+  { value: 'Other Nominal', label: tLabel('Other Nominal') },
+  { value: 'Co-Op Member', label: tLabel('Co-Op Member') },
+  { value: 'Well Wisher Member', label: tLabel('Well Wisher Member') }
 ];
 
 export const relationOptions: SelectOption[] = [

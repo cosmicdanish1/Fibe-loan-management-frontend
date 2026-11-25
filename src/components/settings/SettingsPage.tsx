@@ -113,7 +113,7 @@ interface AppSettings {
 
 const defaultSettings: AppSettings = {
   themeMode: 'light',
-  accentColor: '#ec4899',
+  accentColor: '#0ea5e9',
   density: 'comfortable',
   borderRadius: 8,
 
@@ -183,8 +183,8 @@ const hexToRgb = (hex: string): [number, number, number] => {
 
 // Preset Palettes
 const ACCENT_PRESETS = [
-  '#6366f1', // Indigo (Default)
-  '#0ea5e9', // Sky
+  '#0ea5e9', // Sky (Default)
+  '#6366f1', // Indigo
   '#10b981', // Emerald
   '#f59e0b', // Amber
   '#ef4444', // Rose
@@ -1715,7 +1715,7 @@ const SettingsPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pinInputRef = useRef<HTMLInputElement>(null);
 
-  const accent = settings.accentColor || '#6366f1';
+  const accent = settings.accentColor || '#0ea5e9';
   const loadingAnimation = useLoadingAnimation();
   const motionUi = useMotion();
   const [ar, ag, ab] = hexToRgb(accent);
