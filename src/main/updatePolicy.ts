@@ -28,7 +28,7 @@ export function classifyUpdate(backendVersion: string | undefined, requiresBacke
 // day-end flag of /health sit inside `data`. An older or plain reply (fields at the top level) still works.
 // Reading only the top level made every update look "unverified" and blocked the install (ES-682).
 export interface BackendHealth {
-  version?: string;
+  version?: string | undefined;
   dayEndInProgress?: boolean;
 }
 

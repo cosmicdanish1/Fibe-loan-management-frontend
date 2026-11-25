@@ -13,7 +13,7 @@
 ; quote is $\". A literal dollar sign is $$.
 ; ${VERSION} is set by electron-builder from package.json — no need
 ; to hardcode it here.
-!define RELEASE_NOTES "- New RD/CD Interest window, bulk year closing, and rebuilt Head windows.$\r$\n- Per-person window rights and per-window date settings.$\r$\n- Compulsory Deposit (Legacy) and loan penal rate exception.$\r$\n- Loan Repayment renamed NR Repayment; real My Profile with recent sign-ins; full translation coverage.$\r$\n- Sturdier member search and sign-out; clearer early closure and repayment."
+!define RELEASE_NOTES "- One-click app updates now work: the app can read the server version again.$\r$\n- The update waits while Day-End is running."
 ; ================================================================
 
 !macro customWelcomePage

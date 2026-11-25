@@ -2,6 +2,16 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.19.1",
+      "date": "2026-11-26",
+      "title": "One-click app updates now work",
+      "new": [],
+      "improved": [],
+      "fixed": [
+        "System Update window and the update pop-up: the app could not install updates because it could not read the server version. It can now, so Update now works. The update also waits while Day-End is running."
+      ]
+    },
+    {
       "version": "1.19.0",
       "date": "2026-11-26",
       "title": "Scanner and pen in Signature Scanning, Wing and Office Master fixed",
