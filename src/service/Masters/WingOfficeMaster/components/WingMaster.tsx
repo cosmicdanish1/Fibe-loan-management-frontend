@@ -4,6 +4,7 @@ import React from 'react';
 import { Layers, Hash, FileText, CheckCircle2, XCircle, Info } from 'lucide-react';
 import { WingMasterHookReturn } from '../interface/interface';
 import { useTranslation } from 'react-i18next';
+import { WING_CODE_MAX, WING_NAME_MAX } from '../utils/officeRules';
 
 const WingMaster: React.FC<WingMasterHookReturn> = ({
   data,
@@ -32,11 +33,12 @@ const WingMaster: React.FC<WingMasterHookReturn> = ({
               <Hash size={13} />
               <input
                 id="wm-code"
+                maxLength={WING_CODE_MAX}
                 value={data.wingCode}
                 onChange={(e) => updateWingCode(e.target.value)}
                 onBlur={() => fetchWing(data.wingCode)}
                 onKeyDown={(e) => { if (e.key === 'Enter') fetchWing(data.wingCode); }}
-                placeholder={t('e.g. W01')}
+                placeholder={t('e.g. 1')}
                 className="aw-input"
               />
             </div>
@@ -47,6 +49,7 @@ const WingMaster: React.FC<WingMasterHookReturn> = ({
               <FileText size={13} />
               <input
                 id="wm-name"
+                maxLength={WING_NAME_MAX}
                 value={data.name}
                 onChange={(e) => updateName(e.target.value)}
                 placeholder={t('Enter wing name...')}

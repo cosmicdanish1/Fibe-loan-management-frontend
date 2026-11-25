@@ -23,3 +23,19 @@ export function classifyUpdate(backendVersion: string | undefined, requiresBacke
   if (!backendVersion || backendVersion === 'unknown' || !requiresBackend) return 'unverified';
   return compareVersions(backendVersion, requiresBackend) >= 0 ? 'minor' : 'major';
 }
+
+// The server wraps every reply as { success, statusCode, message, data: { ... } }, so the version and the
+// day-end flag of /health sit inside `data`. An older or plain reply (fields at the top level) still works.
+// Reading only the top level made every update look "unverified" and blocked the install (ES-682).
+export interface BackendHealth {
+  version?: string;
+  dayEndInProgress?: boolean;
+}
+
+export function parseHealth(body: unknown): BackendHealth | null {
+  if (!body || typeof body !== 'object') return null;
+  const outer = body as Record<string, unknown>;
+  const inner = outer.data && typeof outer.data === 'object' ? (outer.data as Record<string, unknown>) : outer;
+  const version = typeof inner.version === 'string' && inner.version ? inner.version : undefined;
+  return { version, dayEndInProgress: inner.dayEndInProgress === true };
+}

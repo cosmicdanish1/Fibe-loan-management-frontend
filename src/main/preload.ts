@@ -65,6 +65,7 @@ const validInvokeChannels = [
   'passbook-render-pdf',
   'passbook-print',
   'show-message-box',
+  'scanner-acquire',
   'get-license-status',
   'get-machine-id',
   'get-server-url',
@@ -302,6 +303,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
     return Promise.reject(new Error('Invalid passbook render payload'));
   },
+  // Document scanner (Signature Scanning): opens the Windows scan dialog, answers { ok, mime, base64 } or { ok: false, reason }
+  scanDocument: () => secureIpcRenderer.invoke('scanner-acquire'),
+
   passbookPrint: (payload: { html: string; widthMm: number; heightMm: number; deviceName?: string }) => {
     if (payload && typeof payload.html === 'string') {
       return secureIpcRenderer.invoke('passbook-print', payload);

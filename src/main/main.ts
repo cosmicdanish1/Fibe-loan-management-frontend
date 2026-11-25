@@ -7,6 +7,7 @@ import * as http from 'http';
 import { randomUUID, createHash } from 'crypto';
 import { initMainLogger, resolveLogDir } from './logger';
 import { initUpdater } from './updater';
+import { scanWithWia } from './scanner';
 
 // Dev vs packaged — use Electron's built-in flag instead of the external
 // `electron-is-dev` module (which isn't a production dep, so it's absent from
@@ -2120,6 +2121,20 @@ ipcMain.handle('get-machine-id', () => {
       .digest('hex');
   } catch {
     return null;
+  }
+});
+
+// IPC handler: scan a document with a scanner (Windows WIA dialog) for Signature Scanning. One scan at a time.
+let scanInProgress = false;
+ipcMain.handle('scanner-acquire', async () => {
+  if (scanInProgress) return { ok: false, reason: 'error', message: 'a scan is already in progress' };
+  scanInProgress = true;
+  try {
+    return await scanWithWia();
+  } catch (e) {
+    return { ok: false, reason: 'error', message: e instanceof Error ? e.message : String(e) };
+  } finally {
+    scanInProgress = false;
   }
 });
 

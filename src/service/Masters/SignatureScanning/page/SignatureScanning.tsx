@@ -14,13 +14,16 @@ import {
   PenTool,
   Save,
   RefreshCw,
+  ScanLine,
 } from 'lucide-react';
 import { useSignatureScanning } from '../hook/useSignatureScanning';
 import MemberField from '../../../../components/shared/kit/MemberField';
+import { strokeWidth, smoothWidth, ignoreTouch, scanMessage } from '../utils/drawing';
+import { base64ToBlob, scanToUploadFile } from '../utils/scanImage';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
 import { useTranslation } from 'react-i18next';
 
-type SigMode = 'draw' | 'upload';
+type SigMode = 'draw' | 'upload' | 'scan';
 
 const SignatureScanning: React.FC = () => {
   const { t } = useTranslation();
@@ -49,65 +52,17 @@ const SignatureScanning: React.FC = () => {
   const lastPosRef      = useRef({ x: 0, y: 0 });
   const hasDrawingRef   = useRef(false);
 
-  // ── Canvas init + non-passive touch listeners (must be imperative) ─────────
+  // ── Canvas init ────────────────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const initCtx = () => {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = '#1e293b';
-      ctx.lineWidth   = 2.5;
-      ctx.lineCap     = 'round';
-      ctx.lineJoin    = 'round';
-    };
-    initCtx();
-
-    // Scale raw clientX/Y to canvas internal resolution
-    const scaled = (clientX: number, clientY: number) => {
-      const r = canvas.getBoundingClientRect();
-      return {
-        x: (clientX - r.left) * (canvas.width  / r.width),
-        y: (clientY - r.top)  * (canvas.height / r.height),
-      };
-    };
-
-    const onTouchStart = (e: TouchEvent) => {
-      e.preventDefault(); // must be non-passive to work
-      const t = e.touches[0];
-      if (!t) return;
-      const p = scaled(t.clientX, t.clientY);
-      isDrawingRef.current  = true;
-      lastPosRef.current    = p;
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      if (!isDrawingRef.current) return;
-      const t = e.touches[0];
-      if (!t) return;
-      const p = scaled(t.clientX, t.clientY);
-      ctx.beginPath();
-      ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      lastPosRef.current = p;
-      if (!hasDrawingRef.current) { hasDrawingRef.current = true; setHasDrawing(true); }
-    };
-
-    const onTouchEnd = () => { isDrawingRef.current = false; };
-
-    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-    canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
-    canvas.addEventListener('touchend',   onTouchEnd);
-    return () => {
-      canvas.removeEventListener('touchstart', onTouchStart);
-      canvas.removeEventListener('touchmove',  onTouchMove);
-      canvas.removeEventListener('touchend',   onTouchEnd);
-    };
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth   = 2.5;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
   }, []);
 
   // ── Clear canvas ───────────────────────────────────────────────────────────
@@ -133,26 +88,26 @@ const SignatureScanning: React.FC = () => {
     clearCanvas();
   }, [data.memberId, clearCanvas]);
 
-  // ── Mouse events (React synthetic — no passive constraint) ─────────────────
-  const scaledMouse = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // ── Pointer events: mouse, touch and pen (graphics tablet / signature pad in tablet mode) ──
+  // A pen reports pressure, so a light touch draws a thin line and a firm press a thick one.
+  const lastPenRef   = useRef(0);
+  const widthRef     = useRef<number | null>(null);
+  const pointerIdRef = useRef<number | null>(null);
+
+  const scaledPoint = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current!;
     const r = canvas.getBoundingClientRect();
-    return {
-      x: (e.clientX - r.left) * (canvas.width  / r.width),
-      y: (e.clientY - r.top)  * (canvas.height / r.height),
-    };
+    return { x: (clientX - r.left) * (canvas.width / (r.width || 1)), y: (clientY - r.top) * (canvas.height / (r.height || 1)) };
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    isDrawingRef.current = true;
-    lastPosRef.current   = scaledMouse(e);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawingRef.current) return;
-    const canvas = canvasRef.current!;
-    const ctx    = canvas.getContext('2d')!;
-    const pos    = scaledMouse(e);
+  const drawTo = (clientX: number, clientY: number, pointerType: string, pressure: number) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    const pos = scaledPoint(clientX, clientY);
+    const w = smoothWidth(widthRef.current, strokeWidth(pointerType, pressure));
+    widthRef.current = w;
+    ctx.lineWidth = w;
     ctx.beginPath();
     ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
     ctx.lineTo(pos.x, pos.y);
@@ -161,7 +116,64 @@ const SignatureScanning: React.FC = () => {
     if (!hasDrawingRef.current) { hasDrawingRef.current = true; setHasDrawing(true); }
   };
 
-  const stopDrawing = () => { isDrawingRef.current = false; };
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.pointerType === 'pen') lastPenRef.current = Date.now();
+    if (ignoreTouch(e.pointerType, lastPenRef.current, Date.now())) return; // a palm resting on the pad
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* not supported */ }
+    pointerIdRef.current = e.pointerId;
+    isDrawingRef.current = true;
+    widthRef.current = null;
+    lastPosRef.current = scaledPoint(e.clientX, e.clientY);
+    drawTo(e.clientX, e.clientY, e.pointerType, e.pressure); // a tap leaves a dot
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current || e.pointerId !== pointerIdRef.current) return;
+    if (e.pointerType === 'pen') lastPenRef.current = Date.now();
+    // a fast pen gives several points between two events; using all of them keeps the line smooth
+    const native: any = e.nativeEvent;
+    const coalesced: PointerEvent[] = typeof native.getCoalescedEvents === 'function' ? native.getCoalescedEvents() : [];
+    const points: PointerEvent[] = coalesced.length ? coalesced : [native];
+    for (const p of points) drawTo(p.clientX, p.clientY, e.pointerType, p.pressure);
+  };
+
+  const stopDrawing = (e?: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e && pointerIdRef.current !== null && e.pointerId !== pointerIdRef.current) return;
+    isDrawingRef.current = false;
+    pointerIdRef.current = null;
+    widthRef.current = null;
+  };
+
+  // ── Scanner (Windows scan dialog, desktop app only) ────────────────────────
+  const canScan = typeof window !== 'undefined' && typeof (window as any).electronAPI?.scanDocument === 'function';
+  const [scanning, setScanning] = useState(false);
+  const [scanPreview, setScanPreview] = useState<{ url: string; file: File } | null>(null);
+  useEffect(() => () => { if (scanPreview) URL.revokeObjectURL(scanPreview.url); }, [scanPreview]);
+
+  const scanNow = async () => {
+    if (!data.memberId || scanning) return;
+    setScanning(true);
+    try {
+      const r = await (window as any).electronAPI.scanDocument();
+      const msg = scanMessage(r);
+      if (msg) { setSaveNotif({ ok: false, text: t(msg) }); return; }
+      if (!r?.ok) return; // cancelled in the scan dialog
+      const file = await scanToUploadFile(base64ToBlob(r.base64, r.mime));
+      setScanPreview({ url: URL.createObjectURL(file), file });
+    } catch (err: any) {
+      setSaveNotif({ ok: false, text: err?.message ? String(err.message) : t('The scan failed. Try again.') });
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const saveScan = async () => {
+    if (!scanPreview) return;
+    const ok = await uploadFile(scanPreview.file);
+    setSaveNotif(ok ? { ok: true, text: 'Signature saved to database successfully' } : { ok: false, text: 'Failed to save signature — check connection and retry' });
+    if (ok) setScanPreview(null);
+  };
 
   // ── Save drawn signature ───────────────────────────────────────────────────
   const saveDrawing = useCallback(async () => {
@@ -285,7 +297,7 @@ const SignatureScanning: React.FC = () => {
 
             <div className="aw-stack">
               {/* Mode switch */}
-              <div className="aw-seg" role="tablist" style={{ maxWidth: 340, ['--seg-index' as any]: sigMode === 'draw' ? 0 : 1, ['--seg-count' as any]: 2 }}>
+              <div className="aw-seg" role="tablist" style={{ maxWidth: 340, ['--seg-index' as any]: sigMode === 'draw' ? 0 : sigMode === 'upload' ? 1 : 2, ['--seg-count' as any]: canScan ? 3 : 2 }}>
                 <button type="button" role="tab" aria-selected={sigMode === 'draw'} onClick={() => setSigMode('draw')}
                   style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <PenTool size={13} /> {t('Draw / Sign')}
@@ -294,6 +306,12 @@ const SignatureScanning: React.FC = () => {
                   style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <UploadIcon size={13} /> {t('Upload File')}
                 </button>
+                {canScan && (
+                  <button type="button" role="tab" aria-selected={sigMode === 'scan'} onClick={() => setSigMode('scan')}
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <ScanLine size={13} /> {t('Scan')}
+                  </button>
+                )}
               </div>
 
               {/* ── Draw tab (kept mounted so a drawing survives switching tabs) ── */}
@@ -305,10 +323,10 @@ const SignatureScanning: React.FC = () => {
                     height={200}
                     className="w-full cursor-crosshair select-none"
                     style={{ touchAction: 'none', display: 'block', height: 190 }}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={stopDrawing}
+                    onPointerCancel={stopDrawing}
                   />
                   {/* Placeholder — only shown while blank */}
                   {!hasDrawing && (
@@ -357,6 +375,29 @@ const SignatureScanning: React.FC = () => {
                   </div>
                 </Upload>
               </div>
+
+              {/* ── Scan tab: the Windows scan dialog ── */}
+              {canScan && (
+                <div className="aw-stack" style={{ display: sigMode === 'scan' ? 'flex' : 'none' }}>
+                  <p className="aw-meta">{t('Place the signed paper in the scanner and press Scan. The Windows scan window opens: choose the scanner, scan, and the picture comes back here to check before it is saved.')}</p>
+                  <div className="aw-btn-row">
+                    <button type="button" onClick={scanNow} disabled={!data.memberId || scanning || data.loading} className="aw-btn aw-btn-primary" style={{ flex: 'none' }}>
+                      {scanning ? <RefreshCw size={13} className="aw-spin" /> : <ScanLine size={13} />}
+                      {scanning ? t('Waiting for the scanner…') : t('Scan')}
+                    </button>
+                    {!data.memberId && <span className="aw-meta" style={{ color: 'var(--aw-danger)' }}>{t('Search for a member first')}</span>}
+                  </div>
+                  {scanPreview && (
+                    <div className="aw-panel aw-fade-in" style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                      <img src={scanPreview.url} alt={t('Scanned signature')} style={{ maxHeight: 140, maxWidth: 320, objectFit: 'contain', background: '#ffffff', border: '1px solid var(--aw-border-strong)', borderRadius: 8, padding: 6 }} />
+                      <div className="aw-btn-row" style={{ marginLeft: 'auto' }}>
+                        <button type="button" onClick={() => setScanPreview(null)} className="aw-btn aw-btn-secondary" style={{ flex: 'none' }}>{t('Discard')}</button>
+                        <button type="button" onClick={saveScan} disabled={data.loading} className="aw-btn aw-btn-primary" style={{ flex: 'none' }}><Save size={13} /> {t('Save this scan')}</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* ── Save result — for both Draw and Upload, dismisses itself after 4 s ── */}
               {saveNotif && (

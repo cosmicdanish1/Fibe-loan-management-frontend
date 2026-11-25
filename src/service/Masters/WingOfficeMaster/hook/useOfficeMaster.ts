@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { isFailure, toastError } from '@/utils/dialog';
-import type { OfficeMasterData, OfficeMasterHookReturn } from '../interface/interface';
+import type { OfficeMasterData, OfficeMasterHookReturn, WingOption } from '../interface/interface';
 import { apiService } from '../../../../services/api';
+import { officeProblems, buildOfficePayload, movedText } from '../utils/officeRules';
 
 const notify = async (type: 'info' | 'warning' | 'error', title: string, message: string, detail: string) => {
     if ((window as any).electronAPI?.showMessageBox) {
@@ -11,30 +12,39 @@ const notify = async (type: 'info' | 'warning' | 'error', title: string, message
     }
 };
 
-export const useOfficeMaster = (): OfficeMasterHookReturn => {
-  const [data, setData] = useState<OfficeMasterData>({
-    branchNo: '',
-    name: '',
-    divisionRO: '',
-    address: '',
-    city: ''
-  });
+const EMPTY: OfficeMasterData = { branchNo: '', name: '', wingId: '', divisionNo: '', address: '', city: '' };
 
-  // Track whether the office was loaded from DB (update) vs new (create) — mirrors the Wing flow,
-  // avoiding the GET-then-update/catch-create TOCTOU pattern.
+export const useOfficeMaster = (): OfficeMasterHookReturn => {
+  const [data, setData] = useState<OfficeMasterData>(EMPTY);
+  const [wings, setWings] = useState<WingOption[]>([]);
+
+  // Track whether the office was loaded from DB (update) vs new (create): no GET-then-update/catch-create race.
   const [isExisting, setIsExisting] = useState(false);
 
-  const fetchOffice = useCallback(async (branchNo: string) => {
-    if (!branchNo || isNaN(parseInt(branchNo))) return;
+  const refreshWings = useCallback(async () => {
     try {
-      const response = await apiService.getOffice(parseInt(branchNo));
+      const res: any = await apiService.getWings();
+      const raw = res?.data?.data ?? res?.data ?? [];
+      if (res?.success !== false && Array.isArray(raw)) {
+        setWings(raw.map((w: any) => ({ wingId: String(w.wingId ?? ''), wingName: String(w.wingName ?? ''), state: String(w.state ?? '1') })));
+      }
+    } catch { /* the box stays empty; the message at save explains */ }
+  }, []);
+
+  useEffect(() => { refreshWings(); }, [refreshWings]);
+
+  const fetchOffice = useCallback(async (branchNo: string) => {
+    if (!branchNo || !/^\d+$/.test(branchNo.trim())) return;
+    try {
+      const response = await apiService.getOffice(parseInt(branchNo, 10));
       if (isFailure(response)) toastError(response, 'load the office');
       if (response.success && response.data) {
         const office = (response.data as any).data || response.data;
         setData(prev => ({
           ...prev,
-          name: office.officeName || office.office_name || '',
-          divisionRO: (office.division ?? '').toString(),
+          name: office.officeName || '',
+          wingId: String(office.wingId ?? ''),
+          divisionNo: office.division === null || office.division === undefined ? '' : String(office.division),
           address: office.address || '',
           city: office.city || ''
         }));
@@ -43,9 +53,9 @@ export const useOfficeMaster = (): OfficeMasterHookReturn => {
       }
       setIsExisting(false);
     } catch {
-      // Not found — switch to "new" mode, clear dependent fields and tell the user.
+      // Not found: switch to "new" mode, clear dependent fields and tell the user.
       setIsExisting(false);
-      setData(prev => ({ ...prev, name: '', divisionRO: '', address: '', city: '' }));
+      setData(prev => ({ ...prev, name: '', wingId: '', divisionNo: '', address: '', city: '' }));
       await notify('info', 'Office Lookup', 'No Existing Office', `No office found with number ${branchNo}. Fill in details to create a new one.`);
     }
   }, []);
@@ -54,105 +64,56 @@ export const useOfficeMaster = (): OfficeMasterHookReturn => {
     setData(prev => ({ ...prev, branchNo: value }));
     setIsExisting(false); // reset mode when the number changes
   }, []);
-
-  const updateName = useCallback((value: string) => {
-    setData(prev => ({ ...prev, name: value }));
-  }, []);
-
-  const updateDivisionRO = useCallback((value: string) => {
-    setData(prev => ({ ...prev, divisionRO: value }));
-  }, []);
-
-  const updateAddress = useCallback((value: string) => {
-    setData(prev => ({ ...prev, address: value }));
-  }, []);
-
-  const updateCity = useCallback((value: string) => {
-    setData(prev => ({ ...prev, city: value }));
-  }, []);
+  const updateName = useCallback((value: string) => setData(prev => ({ ...prev, name: value })), []);
+  const updateWingId = useCallback((value: string) => setData(prev => ({ ...prev, wingId: value })), []);
+  const updateDivisionNo = useCallback((value: string) => setData(prev => ({ ...prev, divisionNo: value })), []);
+  const updateAddress = useCallback((value: string) => setData(prev => ({ ...prev, address: value })), []);
+  const updateCity = useCallback((value: string) => setData(prev => ({ ...prev, city: value })), []);
 
   const save = useCallback(async () => {
-    if (!data.name) {
-      await notify('warning', 'Input Validation Error', 'Office Name Required', 'Please enter an office name before saving.');
+    const problems = officeProblems(data);
+    if (problems.length > 0) {
+      await notify('warning', 'Input Validation Error', problems[0]!, problems.join('\n'));
       return;
     }
-
     try {
-      // officeno is NOT NULL. The UI says "leave blank for new", so when blank we auto-assign
-      // the next number (MAX + 1) instead of blocking the user. A typed value must be numeric.
-      let officeId: number;
-      if (!data.branchNo || data.branchNo.trim() === '') {
-        try {
-          const list = await apiService.getOffices();
-          const offices = (list.data as any)?.data || list.data || [];
-          const maxNo = Array.isArray(offices)
-            ? offices.reduce((m: number, o: any) => Math.max(m, Number(o.officeId ?? o.officeno ?? 0)), 0)
-            : 0;
-          officeId = maxNo + 1;
-        } catch {
-          officeId = 1;
-        }
-      } else if (isNaN(parseInt(data.branchNo))) {
-        await notify('warning', 'Input Validation Error', 'Invalid Branch No', 'Branch / Office No must be numeric. Leave it blank to auto-assign a new number.');
-        return;
-      } else {
-        officeId = parseInt(data.branchNo);
-      }
-
-      const payload = {
-        officeId,
-        officeName: data.name,
-        division: data.divisionRO,
-        address: data.address,
-        city: data.city
-      };
-
-      // Use the isExisting flag (set by fetchOffice) instead of a second GET — no TOCTOU race.
-      const response = isExisting
-        ? await apiService.updateOffice(officeId, payload)
+      const payload = buildOfficePayload(data);
+      // A blank Branch No is a new branch: the server gives the next number (highest + 1) so two users never collide.
+      const response: any = isExisting && payload.officeId !== undefined
+        ? await apiService.updateOffice(payload.officeId as number, payload)
         : await apiService.createOffice(payload);
 
       if (response.success) {
-        setData(prev => ({ ...prev, branchNo: String(officeId) })); // reflect the (possibly auto-assigned) number
-        setIsExisting(true); // it now exists — a subsequent save updates rather than re-creates
+        const saved = response.data?.data ?? response.data ?? {};
+        const officeId = saved.officeId ?? payload.officeId;
+        setData(prev => ({ ...prev, branchNo: String(officeId ?? prev.branchNo) }));
+        setIsExisting(true); // it now exists: a later save updates it
+        const wingName = wings.find(w => w.wingId === data.wingId)?.wingName ?? '';
         await notify(
           'info',
-          'electron-react-ts',
+          'Office Master',
           'Office Master Saved Successfully!',
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `OFFICE NO   : ${officeId}\n` +
-          `OFFICE NAME : ${data.name}\n` +
-          `DIVISION/RO : ${data.divisionRO || '—'}\n` +
-          `CITY        : ${data.city || '—'}\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-          `✓ Saved to office master`
+          `OFFICE NAME : ${data.name.trim()}\n` +
+          `DIVISION/RO : ${wingName ? `${wingName} (${data.wingId})` : data.wingId}\n` +
+          `CITY        : ${data.city.trim() || '—'}` +
+          (movedText(saved.membersMoved) ? `\n\n${movedText(saved.membersMoved)}` : ''),
         );
       } else {
         await notify('error', 'Office Master Error', 'Failed to Save Office', response.message || 'An unexpected error occurred.');
       }
-
     } catch (error: any) {
       console.error('Office Master save error:', error);
       await notify('error', 'System Connection Error', 'Unable to Connect to Server', `Technical details: ${error.message}`);
     }
-  }, [data, isExisting]);
+  }, [data, isExisting, wings]);
 
   const reset = useCallback(() => {
-    setData({ branchNo: '', name: '', divisionRO: '', address: '', city: '' });
+    setData(EMPTY);
     setIsExisting(false);
   }, []);
 
-  return {
-    data,
-    fetchOffice,
-    updateBranchNo,
-    updateName,
-    updateDivisionRO,
-    updateAddress,
-    updateCity,
-    save,
-    reset
-  };
+  return { data, wings, refreshWings, fetchOffice, updateBranchNo, updateName, updateWingId, updateDivisionNo, updateAddress, updateCity, save, reset };
 };
 
 export default useOfficeMaster;

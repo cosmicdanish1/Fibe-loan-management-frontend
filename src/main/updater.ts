@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, net } from 'electron';
 import { autoUpdater } from 'electron-updater';
-import { classifyUpdate, type UpdateKind } from './updatePolicy';
+import { classifyUpdate, parseHealth, type BackendHealth, type UpdateKind } from './updatePolicy';
 
 // Public GitHub repo that holds the installers only (no source). Must match
 // build.publish in package.json.
@@ -44,11 +44,6 @@ interface UpdateInfoFile {
   whatsNew?: { new?: string[]; improved?: string[]; fixed?: string[]; title?: string };
 }
 
-interface BackendHealth {
-  version?: string;
-  dayEndInProgress?: boolean;
-}
-
 let state: UpdateState = { status: 'idle', currentVersion: app.getVersion(), packaged: app.isPackaged };
 let resolveApiUrl: () => Promise<{ url: string | null; configured: boolean }> = async () => ({ url: null, configured: false });
 let checking = false;
@@ -74,7 +69,7 @@ async function fetchBackendHealth(): Promise<BackendHealth | null> {
   try {
     const { url } = await resolveApiUrl();
     if (!url) return null;
-    return await fetchJson<BackendHealth>(`${url}/health`);
+    return parseHealth(await fetchJson<unknown>(`${url}/health`));
   } catch {
     return null;
   }

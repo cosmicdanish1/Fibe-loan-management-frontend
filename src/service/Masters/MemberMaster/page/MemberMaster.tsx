@@ -12,7 +12,7 @@ import type { RootState } from '../../../../store';
 import { useTranslation } from 'react-i18next';
 import MobileAccessBadge from '../components/MobileAccessBadge';
 import { isPlaceholderDate, ageOn, retirementDateFor, dateProblems } from '../utils/memberDates';
-import { branchForOffice, cleanBranchMsNo, BRANCH_OPTIONS } from '../utils/memberBranch';
+import { cleanBranchMsNo, officeLabel, wingLabel, officesForWing, resolveWingCode, parseOfficeNo, officeCode, orgProblems, branchBelongsToWing, type WingRow, type OfficeRow } from '../utils/memberBranch';
 
 type MemberSelectProps = {
   value: string;
@@ -188,6 +188,32 @@ const MemberMaster: React.FC = () => {
   const [kycDocType, setKycDocType] = useState('Aadhaar');
   const [kycDocuments, setKycDocuments] = useState<any[]>([]);
   const [kycUploading, setKycUploading] = useState(false);
+
+  // ── Division / RO and Branch come from the database (Wing / Office Master): a wing or branch added there is
+  // here at once. Nothing is typed into this screen. ──
+  const [wings, setWings] = useState<WingRow[]>([]);
+  const [offices, setOffices] = useState<OfficeRow[]>([]);
+  const wingsRef = useRef<WingRow[]>([]);
+  useEffect(() => { wingsRef.current = wings; }, [wings]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const [w, o]: any[] = await Promise.all([apiService.getWings(), apiService.getOffices()]);
+        const wl = w?.data?.data ?? w?.data ?? [];
+        const ol = o?.data?.data ?? o?.data ?? [];
+        if (Array.isArray(wl)) setWings(wl.map((x: any) => ({ wingId: String(x.wingId ?? '').trim(), wingName: String(x.wingName ?? '') })));
+        if (Array.isArray(ol)) setOffices(ol.map((x: any) => ({ officeId: Number(x.officeId), officeName: String(x.officeName ?? ''), wingId: String(x.wingId ?? '').trim() })));
+      } catch { /* the boxes stay empty; Save explains what is missing */ }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (wings.length === 0) return;
+    const resolved = resolveWingCode(formData.divisionRo, wings);
+    if (resolved !== formData.divisionRo) handleInputChange('divisionRo', resolved);
+    else if (!formData.divisionRo && wings.length === 1) handleInputChange('divisionRo', wings[0]!.wingId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wings, formData.divisionRo]);
 
   // ── Cast Category options — loaded from the Cast Category Master screen so
   // the two stay in sync; falls back to the legacy fixed list if the fetch fails. ──
@@ -400,7 +426,8 @@ const MemberMaster: React.FC = () => {
     if (ln && (ln.length < 2 || ln.length > 50)) errors.push('Last Name must be 2-50 characters');
     if (ln && !/^[A-Za-z\s.]+$/.test(ln)) errors.push('Last Name: letters and spaces only');
 
-    if (!formData.divisionRo?.trim()) errors.push('Division/RO is required');
+    errors.push(...orgProblems(formData.divisionRo, formData.branch));
+    if (offices.length > 0 && formData.divisionRo && parseOfficeNo(formData.branch) !== null && !branchBelongsToWing(formData.branch, formData.divisionRo, offices)) errors.push('The Branch does not belong to the chosen Division/RO');
 
     // Age: DB column is varchar(2), max 99
     if (formData.age < 0 || formData.age > 99) errors.push('Age must be between 0 and 99');
@@ -494,25 +521,9 @@ const MemberMaster: React.FC = () => {
       // BUG FIX 5: nominee_relation was mapped from 'nomineeRelation' → always ''.
       //   Correct field name is 'relationWithNominee'.
       // BUG FIX 6: age used `formData.age || ''` — falsy for 0 → '' saved. Now uses String().
-      // BUG FIX 9: wingno/officeno were mapped from non-existent wingNo/officeNo fields.
-      //   Now derived from divisionRo (e.g. "1-BHILAI" → officeno=1, wingno="BHILAI").
-      // BUG FIX 13: officeno was derived from `divisionRo`, whose dropdown has exactly one
-      //   possible option ("1-BHILAI") — every member got officeno=1 regardless of which of
-      //   the 6 real offices was picked in the "Branch" dropdown (which correctly lists all
-      //   office_master rows, e.g. "6-MECON-BHILAI-90"). officeno is now derived from `branch`
-      //   instead, falling back to divisionRo only if branch wasn't set.
-      // wingno is intentionally left as-is: neither field's option strings encode a value that
-      // corresponds to any real wing_master row (wing_master currently only has codes '1'/'50',
-      // unrelated to these office names) — deriving it from `branch` would just be a different
-      // wrong guess. Needs real wing reference data before this can be fixed correctly.
-      const officeSource = formData.branch || formData.divisionRo;
-      const [, ...divisionRest] = formData.divisionRo.split('-');
-      const parsedOfficeNo = parseInt(officeSource.split('-')[0] || '', 10) || 0;
-      // ES-492: member_master.wingno holds the wing CODE ("1"), not the wing name ("BHILAI") — every migrated member
-      // has wingno '1' and the wing/office joins match on it. The Division/RO option value is "<wing code>-<name>",
-      // so the code is the part before the first dash.
-      void divisionRest;
-      const parsedWingNo = (formData.divisionRo.split('-')[0] || '').trim();
+      // Division/RO holds the wing CODE ("1") and Branch the office NUMBER ("5"); both come from the Wing / Office Master.
+      const parsedOfficeNo = parseOfficeNo(formData.branch) ?? 0;
+      const parsedWingNo = String(formData.divisionRo ?? '').trim();
 
       const memberPayload: any = {
         mbno: isNewMember ? 'auto' : formData.memberNumber,
@@ -622,8 +633,8 @@ const MemberMaster: React.FC = () => {
             castCategory: getVal(savedDetails, ['castCategory', 'cast_category', 'category', 'cat']) || formData.castCategory,
             dateOfWithdrawRetire: getVal(savedDetails, ['dateOfWithdrawRetire', 'withdraw_date', 'date_of_withdraw_retire', 'exit_date']) || formData.dateOfWithdrawRetire,
             memberType: getVal(savedDetails, ['memberType', 'member_type', 'type']) || formData.memberType,
-            divisionRo: getVal(savedDetails, ['divisionRo', 'division_ro', 'office_name', 'office_no']) || formData.divisionRo,
-            branch: getVal(savedDetails, ['branch', 'branch_name']) || formData.branch,
+            divisionRo: formData.divisionRo,
+            branch: formData.branch,
             nomineeName: getVal(savedDetails, ['nomineeName', 'nominee_name']) || formData.nomineeName,
             nomineeAddress: getVal(savedDetails, ['nomineeAddress', 'nominee_address']) || formData.nomineeAddress,
             relationWithNominee: getVal(savedDetails, ['relationWithNominee', 'relation_with_nominee', 'relation', 'nominee_relation']) || formData.relationWithNominee,
@@ -651,7 +662,7 @@ const MemberMaster: React.FC = () => {
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `DESIGNATION       : ${memberPayload.desig || '—'}\n` +
           `DEPARTMENT        : ${memberPayload.dept_name || '—'}\n` +
-          `DIVISION/RO       : ${formData.divisionRo || '—'}\n` +
+          `DIVISION/RO       : ${(() => { const w = wings.find((x) => x.wingId === formData.divisionRo); return w ? `${wingLabel(w)} (${w.wingId})` : (formData.divisionRo || '—'); })()}\n` +
           `WING / OFFICE NO. : ${memberPayload.wingno || '—'} / ${memberPayload.officeno ?? '—'}\n` +
           `BRANCH            : ${memberPayload.branchmsno || '—'}\n` +
           `PF / SR NO.       : ${memberPayload.pfno || '—'}\n` +
@@ -796,17 +807,10 @@ const MemberMaster: React.FC = () => {
           dateOfWithdrawRetire: fmtDate(getVal(memberDetails, ['dateOfWithdrawRetire', 'withdraw_date', 'supanuationdate', 'date_of_withdraw_retire', 'exit_date'])),
           declarationDate: fmtDate(getVal(memberDetails, ['declarationDate', 'declaration_date', 'declare_date'])),
           memberType: getVal(memberDetails, ['memberType', 'member_type', 'type']) || 'Regular',
-          // Reconstruct dropdown value from officeno+wingno stored in DB (e.g. 3+"RISALI" → "3-RISALI")
-          divisionRo: (() => {
-            const off = memberDetails.officeno;
-            const wing = memberDetails.wingno;
-            // ES-492: wingno is the wing code ('1'); older rows saved by the screen hold the name ('BHILAI').
-            // The only Division/RO option is "1-BHILAI".
-            if (wing === '1' || String(wing).toUpperCase() === 'BHILAI') return '1-BHILAI';
-            if (off && wing) return `${off}-${wing}`;
-            return getVal(memberDetails, ['divisionRo', 'division_ro', 'office_name']) || '';
-          })(),
-          branch: branchForOffice(memberDetails.officeno),
+          // Division/RO = the wing code, Branch = the office number, as stored. A member saved by an older version of this
+          // screen holds the wing NAME ("BHILAI"); it is turned into the wing's code when the wing list knows it.
+          divisionRo: resolveWingCode(memberDetails.wingno, wingsRef.current),
+          branch: officeCode(memberDetails.officeno),
           nomineeName: getVal(memberDetails, ['nomineeName', 'nominee_name']) || '',
           nomineeAddress: getVal(memberDetails, ['nomineeAddress', 'nominee_address']) || '',
           relationWithNominee: getVal(memberDetails, ['relationWithNominee', 'relation_with_nominee', 'relation', 'nominee_relation']) || '',
@@ -1766,20 +1770,25 @@ const MemberMaster: React.FC = () => {
                 <MemberSelect
                   ariaLabel="Division/RO"
                   value={formData.divisionRo}
-                  onChange={(value) => handleInputChange('divisionRo', value)}
+                  onChange={(value) => {
+                    handleInputChange('divisionRo', value);
+                    // a Branch of another Division/RO no longer applies
+                    if (formData.branch && !branchBelongsToWing(formData.branch, value, offices)) handleInputChange('branch', '');
+                  }}
                 >
-                  <option value="1-BHILAI">BHILAI</option>
+                  <option value="">{t('Select...')}</option>
+                  {wings.map((w) => <option key={w.wingId} value={w.wingId}>{wingLabel(w)}</option>)}
                 </MemberSelect>
               </div>
               <div className="col-span-6">
-                <label className="aw-label">{t('Branch')}</label>
+                <label className="aw-label">{t('Branch *')}</label>
                 <MemberSelect
                   ariaLabel="Branch"
                   value={formData.branch}
                   onChange={(value) => handleInputChange('branch', value)}
                 >
                   <option value="">{t('Select...')}</option>
-                  {BRANCH_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
+                  {officesForWing(offices, formData.divisionRo).map((o) => <option key={o.officeId} value={String(o.officeId)}>{officeLabel(o)}</option>)}
                 </MemberSelect>
               </div>
             </div>

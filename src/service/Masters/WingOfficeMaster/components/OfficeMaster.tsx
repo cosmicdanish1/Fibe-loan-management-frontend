@@ -1,49 +1,25 @@
 // components/OfficeMaster.tsx
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Select } from 'antd';
-import { Hash, Building2, MapPin, Navigation, Search, Info } from 'lucide-react';
+import { Hash, Building2, MapPin, Navigation, Search, Info, MoreHorizontal } from 'lucide-react';
 import { OfficeMasterHookReturn } from '../interface/interface';
-import { getApiBaseUrl } from '../../../../services/apiVersionConfig';
+import { wingLabel, CITY_MAX } from '../utils/officeRules';
 import { useTranslation } from 'react-i18next';
 
 const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
   data,
+  wings,
   fetchOffice,
   updateBranchNo,
   updateName,
-  updateDivisionRO,
+  updateWingId,
+  updateDivisionNo,
   updateAddress,
-  updateCity
+  updateCity,
+  onOpenWing,
 }) => {
   const { t } = useTranslation();
-  const [divisions, setDivisions] = useState<any[]>([]);
-
-  useEffect(() => {
-    const loadDivisions = async () => {
-      try {
-        const token = localStorage.getItem('accessToken');
-        const response = await fetch(`${await getApiBaseUrl()}/utilities/divisions`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (response.ok) {
-          const result = await response.json();
-          const d = result.data || [];
-          const divs = Array.isArray(d) ? d : (d.data || []);
-          if (divs.length > 0) { setDivisions(divs); return; }
-        }
-      } catch { /* silent */ }
-      setDivisions([
-        { divno: 3, name: 'DALLI RAJHRA' },
-        { divno: 13, name: 'NANDINI' },
-        { divno: 61, name: 'BHILAI' },
-        { divno: 90, name: 'MECON' },
-        { divno: 94, name: 'POWER HOUSE' },
-        { divno: 99, name: 'RISALI' },
-      ]);
-    };
-    loadDivisions();
-  }, []);
 
   const handleBranchSearch = () => {
     if (!data.branchNo) return;
@@ -100,20 +76,36 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
             </div>
           </div>
 
-          {/* Division/RO */}
-          <div>
-            <label className="aw-label" htmlFor="om-division">{t('Division / RO')}</label>
-            <Select
-              id="om-division"
-              value={data.divisionRO || null}
-              onChange={(value) => updateDivisionRO(value)}
-              placeholder={t('Select division...')}
-              className="aw-select"
-              popupClassName="aw-select-popup"
-              showSearch
-              optionFilterProp="label"
-              options={divisions.map((div) => ({ value: String(div.divno), label: div.name }))}
-            />
+          {/* Division/RO = the wing, with its code, and a button to the Wing Master (as the legacy) */}
+          <div className="aw-form-3">
+            <div className="aw-span-2">
+              <label className="aw-label" htmlFor="om-division">{t('Division / RO')}</label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Select
+                    id="om-division"
+                    value={data.wingId || null}
+                    onChange={(value) => updateWingId(value)}
+                    placeholder={t('Select division / RO...')}
+                    className="aw-select"
+                    popupClassName="aw-select-popup"
+                    showSearch
+                    optionFilterProp="label"
+                    options={wings.map((w) => ({ value: w.wingId, label: wingLabel(w) }))}
+                  />
+                </div>
+                <span className="aw-pill" data-testid="om-wing-code" aria-label={t('Wing code')}>{data.wingId || '—'}</span>
+                <button type="button" className="aw-btn aw-btn-secondary aw-btn-sm" onClick={() => onOpenWing?.()}
+                  aria-label={t('Open Wing Master')} data-tip={t('Open Wing Master')} data-tip-pos="bottom-end">
+                  <MoreHorizontal size={14} />
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="aw-label" htmlFor="om-divno">{t('Division No')}</label>
+              <input id="om-divno" value={data.divisionNo} onChange={(e) => updateDivisionNo(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder={t('Branch No')} className="aw-input" inputMode="numeric" />
+            </div>
           </div>
         </div>
       </section>
@@ -142,6 +134,7 @@ const OfficeMaster: React.FC<OfficeMasterHookReturn> = ({
               <Navigation size={13} />
               <input
                 id="om-city"
+                maxLength={CITY_MAX}
                 value={data.city}
                 onChange={(e) => updateCity(e.target.value)}
                 placeholder={t('City...')}

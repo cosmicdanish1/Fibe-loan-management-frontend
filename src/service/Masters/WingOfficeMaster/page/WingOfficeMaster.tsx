@@ -68,7 +68,7 @@ const WingOfficeMaster: React.FC = () => {
             { id: 'wing', label: t('Wing'), icon: Layout, active: showWingMaster }
           ].map((tab) => (
             <button key={tab.id} type="button" role="tab" aria-selected={tab.active}
-              onClick={() => setShowWingMaster(tab.id === 'wing')}
+              onClick={() => { setShowWingMaster(tab.id === 'wing'); if (tab.id === 'office') officeProps.refreshWings(); }}
               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <tab.icon size={13} />
               {tab.label}
@@ -95,7 +95,7 @@ const WingOfficeMaster: React.FC = () => {
           {showWingMaster ? (
             <WingMaster {...wingProps} />
           ) : (
-            <OfficeMaster {...officeProps} />
+            <OfficeMaster {...officeProps} onOpenWing={() => setShowWingMaster(true)} />
           )}
         </div>
       </div>

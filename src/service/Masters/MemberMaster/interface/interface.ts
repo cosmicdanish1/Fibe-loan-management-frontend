@@ -124,7 +124,7 @@ export const defaultFormValues: MemberFormData = {
   castCategory: 'OBC',
   dateOfWithdrawRetire: '',
   memberType: 'Regular',
-  divisionRo: '1-BHILAI',
+  divisionRo: '',
   branch: '',
   nomineeName: '',
   nomineeAddress: '',

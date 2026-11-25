@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { isFailure, toastError } from '@/utils/dialog';
 import type { WingMasterData, WingMasterHookReturn } from '../interface/interface';
 import { apiService } from '../../../../services/api';
+import { isValidState, stateText, STATE_MESSAGE, WING_CODE_MAX, WING_NAME_MAX } from '../utils/officeRules';
 
 const notify = async (type: 'info' | 'warning' | 'error', title: string, message: string, detail: string) => {
     if ((window as any).electronAPI?.showMessageBox) {
@@ -36,7 +37,7 @@ export const useWingMaster = (): WingMasterHookReturn => {
         setData(prev => ({
           ...prev,
           name: wing.wingName || wing.wname || '',
-          state: wing.state || wing.winstate?.toString() || '1'
+          state: stateText(wing.state ?? wing.winstate)
         }));
         setIsExisting(true);
       }
@@ -52,22 +53,30 @@ export const useWingMaster = (): WingMasterHookReturn => {
   }, []);
 
   const handleOK = useCallback(async () => {
-    if (!data.wingCode || !data.name) {
+    if (!data.wingCode.trim() || !data.name.trim()) {
       await notify('warning', 'Input Validation Error', 'Wing Code and Name Required', 'Please enter both Wing Code and Wing Name before saving.');
+      return;
+    }
+    if (data.wingCode.trim().length > WING_CODE_MAX || data.name.trim().length > WING_NAME_MAX) {
+      await notify('warning', 'Input Validation Error', 'Too Long', `Wing Code can have at most ${WING_CODE_MAX} characters and Wing Name at most ${WING_NAME_MAX}.`);
+      return;
+    }
+    if (!isValidState(data.state)) {
+      await notify('warning', 'State', 'Invalid State', STATE_MESSAGE);
       return;
     }
 
     try {
       const payload = {
-        wingId: data.wingCode,
-        wingName: data.name,
+        wingId: data.wingCode.trim(),
+        wingName: data.name.trim(),
         state: data.state
       };
 
       // BUG FIX: use isExisting flag (set by fetchWing) instead of a second GET call (TOCTOU race).
       let response;
       if (isExisting) {
-        response = await apiService.updateWing(data.wingCode, payload);
+        response = await apiService.updateWing(data.wingCode.trim(), payload);
       } else {
         response = await apiService.createWing(payload);
       }
@@ -80,7 +89,7 @@ export const useWingMaster = (): WingMasterHookReturn => {
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `WING CODE   : ${data.wingCode}\n` +
           `WING NAME   : ${data.name}\n` +
-          `STATE       : ${data.state === '1' ? 'Active' : 'Inactive'}\n` +
+          `STATE       : ${data.state === '1' ? 'In State (1)' : 'Out State (0)'}\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `✓ ${isExisting ? 'Updated' : 'Created'} in wing master`
         );

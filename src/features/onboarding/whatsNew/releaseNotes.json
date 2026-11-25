@@ -2,6 +2,25 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.19.0",
+      "date": "2026-11-26",
+      "title": "Scanner and pen in Signature Scanning, Wing and Office Master fixed",
+      "new": [
+        "Signature Scanning window: a Scan button opens the Windows scanner dialog (installed app only). The scanned image is resized and saved as a signature of under 2 MB; if you cancel, nothing happens, and if it fails the message tells you what to do.",
+        "Signature Scanning window, drawing pad: you can now sign with a mouse, touch or a pen / graphics tablet. With a pen, a light touch draws a thin line and a firm press a thick one; a palm resting on the screen after the pen is ignored."
+      ],
+      "improved": [
+        "Wing Master and Office Master windows: now save into the wing and office lists the rest of the app actually reads, so what you save shows up in Member Master and in searches.",
+        "Office Master window: Division / RO is now chosen from the wing list and shows the wing code; a \"...\" button next to it opens Wing Master. A new Division No box was added. Leave Branch No blank for a new branch and the server gives the next free number; a typed number that already exists is refused instead of overwriting. Moving an office to another wing moves its members too.",
+        "Wing Master window: the example code is now a plain number, and a wing that members or offices still use cannot be deleted."
+      ],
+      "fixed": [
+        "System Update window and the update pop-up: the app read the server version from the wrong place in the server reply, so every update looked unverified and the install was blocked. It now reads it correctly (ES-682).",
+        "Server, Wing Master: the window saved into a table nothing reads; it now edits the real wing table, and State must be 1 or 0 (ES-326).",
+        "Server, Office Master: the window saved into a table nothing reads and a typed office number could overwrite an existing one; it now edits the real office table and refuses a number that exists (ES-299)."
+      ]
+    },
+    {
       "version": "1.18.0",
       "date": "2026-11-26",
       "title": "Signature Scanning: legacy signatures and member search",
