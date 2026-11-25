@@ -2,6 +2,21 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.20.0",
+      "date": "2026-11-26",
+      "title": "Support Desk database requests, new Modify Member Balance layout",
+      "new": [
+        "Support Desk window: two new request types, Database delete and Database update. You give the kind of data, the records (voucher no., member no., date, amount), what should be deleted or changed, the business reason, who authorised it, and whether the support team should do it remotely or by visiting the office. You cannot change the database yourself; the request goes to the support team."
+      ],
+      "improved": [
+        "Modify Member Balance window: new layout like Member Master, with a member panel on the left (Wing, member number box with F2 search, first/previous/next/last buttons) and Funds and Loans cards on the right. Opening balances are shown locked; you edit the installment amounts and the suspense balance.",
+        "Modify Member Balance window: pressing Enter in the member number box loads that member, and the boxes stay disabled while a member is loading."
+      ],
+      "fixed": [
+        "Modify Member Balance window: the Regular loan and Emergency loan boxes are now read-only and show the member's latest loan; they are no longer sent when you save, so they cannot overwrite other balances."
+      ]
+    },
+    {
       "version": "1.19.1",
       "date": "2026-11-26",
       "title": "One-click app updates now work",

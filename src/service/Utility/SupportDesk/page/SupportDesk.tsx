@@ -9,7 +9,7 @@ import { useAuth } from '../../../../auth/context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { tLabel } from '../../../../i18n';
 
-type QueryType = 'BUG' | 'QUESTION' | 'DATA_CORRECTION' | 'FEATURE_REQUEST' | 'OTHER';
+type QueryType = 'BUG' | 'QUESTION' | 'DATA_CORRECTION' | 'DB_DELETE' | 'DB_UPDATE' | 'FEATURE_REQUEST' | 'OTHER';
 type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 type Tab = 'raise' | 'mine' | 'all';
 
@@ -34,6 +34,8 @@ const QUERY_TYPES: { value: QueryType; label: string; hint: string }[] = [
   { value: 'BUG', label: tLabel('Bug'), hint: tLabel('Something is not working or shows a wrong result') },
   { value: 'QUESTION', label: tLabel('Question'), hint: tLabel('How do I do something?') },
   { value: 'DATA_CORRECTION', label: tLabel('Data correction'), hint: tLabel('A saved record needs to be corrected') },
+  { value: 'DB_DELETE', label: tLabel('Database delete'), hint: tLabel('Ask the support team to delete records (e.g. a voucher) as per your business norms') },
+  { value: 'DB_UPDATE', label: tLabel('Database update'), hint: tLabel('Ask the support team to change saved data as per your business norms') },
   { value: 'FEATURE_REQUEST', label: tLabel('Feature request'), hint: tLabel('Something new we would like') },
   { value: 'OTHER', label: tLabel('Other'), hint: tLabel('Anything else') },
 ];
@@ -50,6 +52,14 @@ const MODULES = [
   'Savings (SB)', 'Fixed Deposit (FD)', 'RD/CD', 'MD', 'Demand & Recovery',
   'Vouchers & Transactions', 'Pass Transactions', 'Day-End', 'Financial Year', 'Reports & Printing',
   'Login & Security', 'Utility', 'Other',
+];
+
+const isDbRequest = (q: QueryType) => q === 'DB_DELETE' || q === 'DB_UPDATE';
+
+const DB_DATA_KINDS = [
+  'Voucher (receipt / payment / journal)', 'Loan record', 'Loan EMI / repayment entry', 'Member record',
+  'Savings (SB) entry', 'RD / CD / MD entry', 'Fixed Deposit entry', 'Demand / recovery entry',
+  'Ledger entry', 'Day-End / Financial Year entry', 'Other',
 ];
 
 const MAX_SCREENSHOT_BYTES = 3 * 1024 * 1024;
@@ -76,6 +86,13 @@ const SupportDesk: React.FC = () => {
   const [module, setModule] = useState('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
+  // Extra details for database delete / update requests
+  const [dbKind, setDbKind] = useState('');
+  const [dbRecords, setDbRecords] = useState('');
+  const [dbChange, setDbChange] = useState('');
+  const [dbReason, setDbReason] = useState('');
+  const [dbApprover, setDbApprover] = useState('');
+  const [dbMode, setDbMode] = useState<'API' | 'OFFICE_VISIT'>('API');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -162,25 +179,46 @@ const SupportDesk: React.FC = () => {
 
   // ── Submit ──
   const subjectOk = subject.trim().length >= 5;
-  const descriptionOk = description.trim().length >= 10;
+  const dbReq = isDbRequest(queryType);
+  const descriptionOk = dbReq
+    ? dbRecords.trim().length >= 5 && dbChange.trim().length >= 5 && dbReason.trim().length >= 10 && dbApprover.trim().length >= 2 && !!dbKind
+    : description.trim().length >= 10;
   const canSubmit = subjectOk && descriptionOk && !submitting;
+
+  const buildDbDescription = () => [
+    `DATABASE ${queryType === 'DB_DELETE' ? 'DELETE' : 'UPDATE'} REQUEST`,
+    '',
+    `Data type: ${dbKind}`,
+    `Records affected (voucher no. / member no. / date / amount): ${dbRecords.trim()}`,
+    `${queryType === 'DB_DELETE' ? 'What must be deleted' : 'Current value -> required value'}: ${dbChange.trim()}`,
+    `Business reason: ${dbReason.trim()}`,
+    `Authorised by (client side): ${dbApprover.trim()}`,
+    `Preferred way: ${dbMode === 'API' ? 'Remotely by the support team' : 'Visit to the office'}`,
+    description.trim() ? `\nAdditional notes: ${description.trim()}` : '',
+  ].join('\n').slice(0, 5000);
 
   const resetForm = () => {
     setQueryType('BUG'); setPriority('MEDIUM'); setModule('');
     setSubject(''); setDescription(''); setScreenshot(null);
+    setDbKind(''); setDbRecords(''); setDbChange(''); setDbReason(''); setDbApprover(''); setDbMode('API');
     setSubmitted(null); setFormError(null);
   };
 
   const submit = async () => {
     setFormError(null);
     if (!subjectOk) { setFormError(t('Please give the query a short title (at least 5 characters).')); return; }
-    if (!descriptionOk) { setFormError(t('Please describe the problem in a little more detail (at least 10 characters).')); return; }
+    if (!descriptionOk) {
+      setFormError(dbReq
+        ? t('Please fill in the data type, records, requested change, business reason and who authorised it.')
+        : t('Please describe the problem in a little more detail (at least 10 characters).'));
+      return;
+    }
 
     const fd = new FormData();
     fd.append('queryType', queryType);
     fd.append('priority', priority);
     fd.append('subject', subject.trim());
-    fd.append('description', description.trim());
+    fd.append('description', dbReq ? buildDbDescription() : description.trim());
     if (module) fd.append('module', module);
     fd.append('appVersion', appVersion || 'unknown');
     fd.append('clientInfo', `${navigator.userAgent} | screen ${window.screen.width}x${window.screen.height}`.slice(0, 1000));
@@ -366,15 +404,66 @@ const SupportDesk: React.FC = () => {
                   placeholder={t('e.g. Cash Book total does not match the day book')} />
               </div>
 
+              {dbReq && (
+                <>
+                  <div className="aw-alert aw-alert-warning" role="note">
+                    <AlertCircle size={16} />
+                    <span>{t('You cannot change the database yourself. This request goes to the support team, who will carry it out remotely or by visiting your office after checking the details.')}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 'var(--aw-gap)' }}>
+                    <div>
+                      <label className="aw-label" htmlFor="sd-dbkind">{t('What kind of data?')}</label>
+                      <select id="sd-dbkind" className="aw-input" value={dbKind} onChange={(e) => setDbKind(e.target.value)}>
+                        <option value="">{t('Select…')}</option>
+                        {DB_DATA_KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="aw-label" id="sd-mode-label">{t('How should we do it?')}</span>
+                      <div className="aw-chips" role="radiogroup" aria-labelledby="sd-mode-label">
+                        <button type="button" role="radio" aria-checked={dbMode === 'API'} className="aw-chip" onClick={() => setDbMode('API')}>{t('Remotely')}</button>
+                        <button type="button" role="radio" aria-checked={dbMode === 'OFFICE_VISIT'} className="aw-chip" onClick={() => setDbMode('OFFICE_VISIT')}>{t('Visit the office')}</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="aw-label" htmlFor="sd-dbrec">{t('Which records? (voucher no., member no., dates, amounts)')}</label>
+                    <textarea id="sd-dbrec" className="aw-input" rows={3} value={dbRecords} maxLength={1500}
+                      onChange={(e) => setDbRecords(e.target.value)}
+                      style={{ padding: '8px 10px', resize: 'vertical', lineHeight: 1.45 }}
+                      placeholder={t('e.g. Receipt voucher no. 1234 dated 12-Nov-2026, member 900001234, Rs 5,000')} />
+                  </div>
+                  <div>
+                    <label className="aw-label" htmlFor="sd-dbchange">{queryType === 'DB_DELETE' ? t('What exactly should be deleted?') : t('Current value and the value it should become')}</label>
+                    <textarea id="sd-dbchange" className="aw-input" rows={3} value={dbChange} maxLength={1500}
+                      onChange={(e) => setDbChange(e.target.value)}
+                      style={{ padding: '8px 10px', resize: 'vertical', lineHeight: 1.45 }}
+                      placeholder={queryType === 'DB_DELETE' ? t('e.g. Delete the whole voucher including its ledger lines') : t('e.g. Voucher date 12-Nov-2026 should be 11-Nov-2026')} />
+                  </div>
+                  <div>
+                    <label className="aw-label" htmlFor="sd-dbreason">{t('Business reason')}</label>
+                    <textarea id="sd-dbreason" className="aw-input" rows={3} value={dbReason} maxLength={1500}
+                      onChange={(e) => setDbReason(e.target.value)}
+                      style={{ padding: '8px 10px', resize: 'vertical', lineHeight: 1.45 }}
+                      placeholder={t('Why is this needed? Mention the committee decision or business norm.')} />
+                  </div>
+                  <div>
+                    <label className="aw-label" htmlFor="sd-dbappr">{t('Authorised by (name and designation)')}</label>
+                    <input id="sd-dbappr" className="aw-input" value={dbApprover} maxLength={150}
+                      onChange={(e) => setDbApprover(e.target.value)} placeholder={t('e.g. R. Sharma, Secretary')} />
+                  </div>
+                </>
+              )}
+
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <label className="aw-label" htmlFor="sd-desc">{t('Describe the problem')}</label>
+                  <label className="aw-label" htmlFor="sd-desc">{dbReq ? t('Additional notes (optional)') : t('Describe the problem')}</label>
                   <span className="aw-meta">{description.length}/5000</span>
                 </div>
-                <textarea id="sd-desc" className="aw-input" rows={6} value={description} maxLength={5000}
+                <textarea id="sd-desc" className="aw-input" rows={dbReq ? 3 : 6} value={description} maxLength={5000}
                   onChange={(e) => setDescription(e.target.value)}
                   style={{ padding: '8px 10px', resize: 'vertical', lineHeight: 1.45 }}
-                  placeholder={t('What were you doing? What did you expect, and what happened instead? Include member numbers, dates or amounts if they help.')} />
+                  placeholder={dbReq ? t('Anything else the support team should know') : t('What were you doing? What did you expect, and what happened instead? Include member numbers, dates or amounts if they help.')} />
               </div>
 
               <div>
@@ -420,7 +509,7 @@ const SupportDesk: React.FC = () => {
                   {!subjectOk
                     ? t('Title needs at least 5 characters ({{1}}/5)', { 1: subject.trim().length })
                     : !descriptionOk
-                      ? t('Description needs at least 10 characters ({{1}}/10)', { 1: description.trim().length })
+                      ? (dbReq ? t('Fill in all the request details above') : t('Description needs at least 10 characters ({{1}}/10)', { 1: description.trim().length }))
                       : <>{t('Sent as')} <strong>{user?.username || 'you'}</strong>{appVersion ? ` · app v${appVersion}` : ''}</>}
                 </span>
                 <button type="button" className="aw-btn aw-btn-primary" disabled={!canSubmit} onClick={submit}>

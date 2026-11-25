@@ -30,6 +30,10 @@ export interface MemberBalanceHookReturn {
   setWing: (value: string) => void;
   wings: Wing[];
   memberNo: string;
+  memberInput: string;      // text in the member box (may be a number still being typed)
+  setMemberInput: (value: string) => void;
+  submitMember: (value: string) => void;
+  loading: boolean;
   memberName: string;
   memberIndex: number;      // current position (1-based)
   memberTotal: number;      // total members in fundsmaster

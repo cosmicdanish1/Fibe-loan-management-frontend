@@ -26,6 +26,8 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
   const [wings, setWings] = useState<Wing[]>([]);
   const [memberNo, setMemberNo] = useState<string>('');
   const [memberName, setMemberName] = useState<string>('');
+  const [memberInput, setMemberInput] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const [memberIndex, setMemberIndex] = useState<number>(0);
   const [memberTotal, setMemberTotal] = useState<number>(0);
   const [formData, setFormData] = useState<MemberBalanceData>(emptyForm());
@@ -77,7 +79,9 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
 
     const seq = ++loadSeq.current;
     setMemberNo(no);
+    setMemberInput(no);
     setMemberName(name || '');
+    setLoading(true);
     setFormData(emptyForm());
     setLoadedMemberNo(null);
 
@@ -100,6 +104,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     try {
       const response = await apiService.getMemberFunds(numericNo);
       if (seq !== loadSeq.current) return; // a newer member was requested - drop this stale response
+      setLoading(false);
       const data = response?.success ? response.data : null;
       if (data) {
         setFormData({
@@ -123,6 +128,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
       }
     } catch (err) {
       if (seq !== loadSeq.current) return;
+      setLoading(false);
       console.error('[ModifyMemberBalance] Failed to fetch funds:', err);
       setFormData(emptyForm());
       notify('error', 'Load Error', 'Failed to Load Member Balances', 'Could not retrieve balance data for this member. Please try again.');
@@ -139,6 +145,12 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
     if (memberData?.memberNo) {
       loadMember(memberData.memberNo, memberData.memberName);
     }
+  }, [loadMember]);
+
+  // Enter in the member box: load the typed member number.
+  const submitMember = useCallback((value: string) => {
+    const v = String(value ?? '').trim();
+    if (v) loadMember(v);
   }, [loadMember]);
 
   const navigateMember = useCallback((direction: 'first' | 'prev' | 'next' | 'last') => {
@@ -209,8 +221,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
       ['mdAmt', 'monthlyContributionInstallment'],
       ['cdAmt', 'compulsoryDepositInstallment'],
       ['lnExecRec', 'loanExecutionReceipt'], ['suspBal', 'suspenseBalance'],
-      ['rlnAmt', 'rlnAmt'],
-      ['elnAmt', 'elnAmt'],
+      // The Regular / Emergency loan boxes are read-only (shown from the member's latest loans); they are never saved here.
     ];
     const payload: Record<string, number> = {};
     for (const [formKey, apiKey] of fieldMap) {
@@ -265,7 +276,7 @@ export const useModifyMemberBalance = (): MemberBalanceHookReturn => {
   return {
     formData, setFormData,
     wing, setWing, wings,
-    memberNo, memberName,
+    memberNo, memberName, memberInput, setMemberInput, submitMember, loading,
     memberIndex, memberTotal,
     handleMemberSelect,
     navigateMember,
