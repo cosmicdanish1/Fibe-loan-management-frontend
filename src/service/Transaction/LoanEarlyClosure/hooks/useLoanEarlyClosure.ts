@@ -133,6 +133,8 @@ export interface ClosureQuote {
     /** ES-556: the quote closes on next month's outstanding (the awaited EMI is treated as already paid). */
     nextMonth?: boolean;
     nextMonthInfo?: { installmentNo: number | null; principal: number; wasInGrace: boolean } | null;
+    /** Whether "close on next month's outstanding" can be used for this member (available=false: NR exists and Business Rules do not allow it). */
+    nextMonthOption?: { available: boolean; nrCount: number; allowedWithNr: boolean; reason: string | null } | null;
     /** ES-522: delayed payroll principal already returned to the member (tracked separately). */
     payrollLagRefunded?: number;
     /** ES-522: delayed payroll principal still owed back; deducted from what the member pays (0 when the option is off). */
@@ -236,6 +238,9 @@ export const useLoanEarlyClosure = () => {
     const quoteSeq = useRef(0);
     // ES-556: read by fetchQuote so every existing quote call site keeps its signature
     const nextMonthRef = useRef(false);
+    // The server's real reason when an option tick could not be applied; shown in a pop-up card, not the small red strip.
+    const [quoteError, setQuoteError] = useState<{ title: string; text: string } | null>(null);
+    const clearQuoteError = useCallback(() => setQuoteError(null), []);
     const [holdInfo, setHoldInfo] = useState<{ voucherNo: string; nextMonth: boolean; expectedMonth: string | null } | null>(null);
     const [activeLoans, setActiveLoans] = useState<ActiveLoan[]>([]);
     const [quote, setQuote] = useState<ClosureQuote | null>(null);
@@ -324,15 +329,25 @@ export const useLoanEarlyClosure = () => {
                 // wrong one.
                 body: JSON.stringify({ adjustment, closureDate, applyRdShare, mbno, adjustPayrollLag, nextMonth: nextMonthRef.current }),
             });
-            if (!res.ok) throw new Error('Failed to load closure quote');
+            if (!res.ok) {
+                // keep the server's own explanation (it says WHY, e.g. the member has NR) instead of a generic line
+                let reason = '';
+                try { const j = await res.json(); const m = j?.message; reason = Array.isArray(m) ? m.join(' ') : String(m || ''); } catch { /* body was not JSON */ }
+                throw new Error(reason || 'The closure quote could not be loaded. Please try again.');
+            }
             const data = await res.json();
             if (seq !== quoteSeq.current) return 'stale';
             setQuote(data.data || data);
             return 'ok';
         } catch (err: any) {
             if (seq !== quoteSeq.current) return 'stale';
-            if (!keepQuote) setQuote(null);
-            setMessage({ type: 'error', text: err.message });
+            if (!keepQuote) {
+                setQuote(null);
+                setMessage({ type: 'error', text: err.message });
+            } else {
+                // an option tick that could not be applied: explain it in a pop-up card
+                setQuoteError({ title: 'This option cannot be applied', text: err.message });
+            }
             return 'failed';
         } finally {
             if (seq === quoteSeq.current) setQuoteLoading(false);
@@ -483,6 +498,8 @@ export const useLoanEarlyClosure = () => {
     return {
         holdInfo,
         toggleNextMonth,
+        quoteError,
+        clearQuoteError,
         form,
         activeLoans,
         quote,

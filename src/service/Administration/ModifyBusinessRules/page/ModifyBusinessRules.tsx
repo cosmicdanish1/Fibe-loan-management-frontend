@@ -8,7 +8,7 @@ import {
   Save, Info, Trash2, Plus, X, Clock, RefreshCw, Search,
 } from 'lucide-react';
 import './ModifyBusinessRules.css';
-import { Select } from 'antd';
+import { Select, Radio } from 'antd';
 import { useBusinessRules, BusinessRulesData, GeneralSettings, LoanType, RdSystemRules } from '../hook/useBusinessRules';
 import { buildProfileFile, parseProfileFile, PROFILE_MAX_BYTES, ProfileParseResult } from '../util/rulesProfile';
 import { usePageToolbarActions } from '../../../../utils/pageToolbarActions';
@@ -724,6 +724,17 @@ const ModifyBusinessRules: React.FC = () => {
         onChange={val => setBusinessRules(prev => ({ ...prev, earlyClosureProtection: { ...prev.earlyClosureProtection, autoPass: val } }))} />
       <SwitchRow label={t('Apply the grace period in a loan closure')} help={t("Off = this month's EMI is always settled in the closure, with no penalty.")} path="earlyClosureProtection.graceEnabled" checked={businessRules.earlyClosureProtection.graceEnabled}
         onChange={val => setBusinessRules(prev => ({ ...prev, earlyClosureProtection: { ...prev.earlyClosureProtection, graceEnabled: val } }))} />
+      <Row label={t('Close on next month\u0027s outstanding for a member who has NR')} help={t('Allowed (default) = the option can be used for a member with NR; the earlier NR is still settled in the closure. Not allowed = it is greyed out for members with unpaid due instalments (NR).')} path="earlyClosureProtection.nextMonthAllowNr">
+        <Radio.Group value={businessRules.earlyClosureProtection.nextMonthAllowNr ? 'allow' : 'block'}
+          onChange={e => {
+            const allow = e.target.value === 'allow';
+            setBusinessRules(prev => ({ ...prev, earlyClosureProtection: { ...prev.earlyClosureProtection, nextMonthAllowNr: allow } }));
+            if (!allow) void showDialog('warning', t('Next-month closure will be blocked for NR members'), t('With this set to Not allowed, "Close on next month\u0027s outstanding" is greyed out for every member who has unpaid due instalments (NR).'), t('What this causes: staff cannot close such a member\u0027s loan on next month\u0027s outstanding at all. They must either collect the NR first or close the loan normally on today\u0027s outstanding, which costs the member more and can lead to disputes or manual workarounds outside the system. Keep it Allowed unless the society wants regular payers only. The change takes effect when you press Save.'));
+          }}>
+          <Radio value="block">{t('Not allowed')}</Radio>
+          <Radio value="allow">{t('Allowed')}</Radio>
+        </Radio.Group>
+      </Row>
     </Card>
   );
 

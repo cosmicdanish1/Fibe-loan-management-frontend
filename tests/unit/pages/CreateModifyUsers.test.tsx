@@ -257,7 +257,7 @@ describe('useUserManagement', () => {
     return { ...h, getMenuIds, onSaved };
   };
   const fill = (h: any, o: Record<string, any> = {}) => act(() => {
-    for (const [k, v] of Object.entries({ username: 'Test123', password: 'Abcdef1', confirmPassword: 'Abcdef1', userLevel: 'clerk', ...o })) h.result.current.updateFormData(k, v);
+    for (const [k, v] of Object.entries({ username: 'Test123', password: 'Abcdef1x', confirmPassword: 'Abcdef1x', userLevel: 'clerk', ...o })) h.result.current.updateFormData(k, v);
   });
 
   it('choosing a level fills the role permissions for a new user', async () => {
@@ -269,7 +269,7 @@ describe('useUserManagement', () => {
     const h = await mount(); fill(h, { username: '  Test123  ' });
     await act(async () => { await h.result.current.saveUser(); });
     expect(api.createUser).toHaveBeenCalledTimes(1);
-    expect(api.createUser.mock.calls[0]![0]).toMatchObject({ username: 'Test123', email: 'test123@bank.local', role: 'clerk', menuIds: [1, 2], password: 'Abcdef1', isActive: true });
+    expect(api.createUser.mock.calls[0]![0]).toMatchObject({ username: 'Test123', email: 'test123@bank.local', role: 'clerk', menuIds: [1, 2], password: 'Abcdef1x', isActive: true });
     expect(h.onSaved.current).toHaveBeenCalled();
     expect(h.result.current.formData.username).toBe('');
   });
@@ -287,7 +287,12 @@ describe('useUserManagement', () => {
     ['name with a space', { username: 'two words' }, /up to 20/],
     ['name with a symbol', { username: 'bob@home' }, /up to 20/],
     ['no password', { password: '', confirmPassword: '' }, /Password is required/],
-    ['short password', { password: 'abc', confirmPassword: 'abc' }, /at least 6/],
+    ['short password', { password: 'abc', confirmPassword: 'abc' }, /8 to 64 characters/],
+    ['6-character password (the old minimum)', { password: 'Abc123', confirmPassword: 'Abc123' }, /8 to 64 characters/],
+    ['password with no capital', { password: 'abcdefg1', confirmPassword: 'abcdefg1' }, /8 to 64 characters/],
+    ['password with no number', { password: 'Abcdefgh', confirmPassword: 'Abcdefgh' }, /8 to 64 characters/],
+    ['65-character password', { password: 'Aa1' + 'x'.repeat(62), confirmPassword: 'Aa1' + 'x'.repeat(62) }, /8 to 64 characters/],
+    ['password that starts like a hash', { password: '$2b$Abcdef1', confirmPassword: '$2b$Abcdef1' }, /8 to 64 characters/],
     ['passwords that differ', { confirmPassword: 'Other123' }, /do not match/],
     ['bad e-mail', { email: 'nope' }, /Email address is not valid/],
   ])('refuses %s and sends nothing', async (_n, patch, text) => {

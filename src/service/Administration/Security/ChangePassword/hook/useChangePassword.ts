@@ -1,5 +1,5 @@
 // useChangePassword.ts
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type {
     ChangePasswordFormData,
     PasswordValidation,
@@ -10,6 +10,7 @@ import { apiService } from '../../../../../services/api';
 import { markProgress } from '../../../../../features/onboarding/onboardingApi';
 import { useAuth } from '../../../../../auth/context/AuthContext';
 import i18n from '../../../../../i18n';
+import { passwordProblems, PASSWORD_MAX } from '../../../../../utils/passwordPolicy';
 
 const defaultPasswordRequirements: PasswordRequirements = {
   minLength: 8,
@@ -76,6 +77,11 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     if (requirements.requireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
       errors.push(i18n.t('Password must contain at least one special character'));
     }
+
+    // ES-657 / ES-654: the same maximum and the same refusal the server applies
+    const extra = passwordProblems(password);
+    if (extra.includes('long')) errors.push(i18n.t('Password can be at most {{count}} characters long', { count: PASSWORD_MAX }));
+    if (extra.includes('hashlike')) errors.push(i18n.t('Password must not start with $2a$, $2b$ or $2y$'));
 
     return {
       isValid: errors.length === 0,
@@ -147,13 +153,18 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     return validateForm().isValid;
   }, [validateForm]);
 
+  // A double click or Enter + click must send ONE request: the second one would meet the already-changed password and show
+  // "Current password is incorrect" after a change that actually worked.
+  const submittingRef = useRef(false);
   const submitPasswordChange = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    if (submittingRef.current) return { success: false, error: i18n.t('Already changing the password') };
     const validation = validateForm();
 
     if (!validation.isValid) {
       return { success: false, error: i18n.t('Form validation failed') };
     }
 
+    submittingRef.current = true;
     setIsLoading(true);
 
     try {
@@ -190,6 +201,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     } finally {
+      submittingRef.current = false;
       setIsLoading(false);
     }
   }, [formData, validateForm, sessionUsername]);

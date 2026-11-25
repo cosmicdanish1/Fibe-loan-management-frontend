@@ -10,6 +10,7 @@ import type {
 import { useTranslation } from 'react-i18next';
 import { showDialog4 as showDialog } from '@/utils/dialog';
 import { isDuplicateUserError } from '../utils/windowRights';
+import { passwordProblems } from '../../../../../utils/passwordPolicy';
 
 /** A yes / no question: the native box in the app, the browser's own when there is no app shell */
 export const askYesNo = async (title: string, message: string, detail = ''): Promise<boolean> => {
@@ -256,20 +257,19 @@ export const useUserManagement = (opts: HookOptions = {}): UseUserManagementRetu
       return false;
     }
 
-    // Backend enforces @MinLength(6)
-    if (!isUpdating && password.length < 6) {
-      showDialog('warning', t('Validation'), t('Password must be at least 6 characters'), '');
-      return false;
-    }
-
     if (password && password !== confirmPassword) {
       showDialog('warning', t('Validation'), t('Passwords do not match'), t('Re-enter the password in both fields.'));
       return false;
     }
 
-    if (isUpdating && password && password.length < 6) {
-      showDialog('warning', t('Validation'), t('New password must be at least 6 characters'), '');
-      return false;
+    // ES-660: the same rule the person must follow when they change it themselves (the server applies it again)
+    if (password) {
+      const problems = passwordProblems(password);
+      if (problems.length > 0) {
+        showDialog('warning', t('Validation'), t('Password must be 8 to 64 characters with an uppercase letter, a lowercase letter and a number'),
+          problems.includes('hashlike') ? t('It must not start with $2a$, $2b$ or $2y$.') : '');
+        return false;
+      }
     }
 
     const ids = opts.getMenuIds?.current?.();

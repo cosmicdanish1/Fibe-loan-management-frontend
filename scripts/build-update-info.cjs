@@ -23,6 +23,11 @@ if (!entry) fail(`No release notes for ${version}. Add a "${version}" entry to s
 const items = [...(entry.new || []), ...(entry.fixed || []), ...(entry.improved || [])];
 if (items.length === 0) fail(`The ${version} release notes are empty. Write at least one line of what is new, improved or fixed.`);
 
+const compat = JSON.parse(fs.readFileSync('src/service/Utility/SystemUpdate/compatibility.json', 'utf8')).rows || [];
+const compatRow = compat.find((r) => r.frontend === version);
+if (!compatRow) fail(`No compatibility row for ${version}. Add it to src/service/Utility/SystemUpdate/compatibility.json (backendMin, backendMax), commit and re-tag.`);
+if (compatRow.backendMin !== requirement) fail(`compatibility.json says ${version} needs backend ${compatRow.backendMin}, but backend-requirement.json says ${requirement}. Make them match.`);
+
 if (checkOnly) {
   console.log(`Release notes found for ${version} (${items.length} lines).`);
   process.exit(0);
@@ -40,6 +45,7 @@ fs.writeFileSync('update-info.json', JSON.stringify({
   version,
   requiresBackend: requirement,
   notes,
+  backendMax: compatRow.backendMax ?? null,
   highlights: items.slice(0, 6),
   whatsNew: entry,
 }, null, 2));

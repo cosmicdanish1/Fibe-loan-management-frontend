@@ -14,6 +14,13 @@ const FETCH_TIMEOUT_MS = 8000;
 export interface UpdateState {
   status: 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error';
   currentVersion: string;
+  /** false in a development run: updates are switched off there. */
+  packaged: boolean;
+  /** ISO time of the last completed check. */
+  checkedAt?: string | undefined;
+  /** Grouped release notes of the available version. */
+  whatsNew?: { new?: string[]; improved?: string[]; fixed?: string[]; title?: string } | undefined;
+  backendMax?: string | null | undefined;
   version?: string | undefined;
   notes?: string | undefined;
   /** Hand-written release notes (what is new / fixed), from update-info.json. Preferred over `notes`. */
@@ -33,6 +40,8 @@ interface UpdateInfoFile {
   requiresBackend?: string;
   notes?: string;
   highlights?: string[];
+  backendMax?: string | null;
+  whatsNew?: { new?: string[]; improved?: string[]; fixed?: string[]; title?: string };
 }
 
 interface BackendHealth {
@@ -40,7 +49,7 @@ interface BackendHealth {
   dayEndInProgress?: boolean;
 }
 
-let state: UpdateState = { status: 'idle', currentVersion: app.getVersion() };
+let state: UpdateState = { status: 'idle', currentVersion: app.getVersion(), packaged: app.isPackaged };
 let resolveApiUrl: () => Promise<{ url: string | null; configured: boolean }> = async () => ({ url: null, configured: false });
 let checking = false;
 
@@ -83,7 +92,8 @@ async function checkNow(): Promise<UpdateState> {
     const result = await autoUpdater.checkForUpdates();
     const info = result?.updateInfo;
     if (!info || !result?.isUpdateAvailable) {
-      setState({ status: 'idle', version: undefined, kind: undefined });
+      const h = await fetchBackendHealth();
+      setState({ status: 'idle', version: undefined, kind: undefined, whatsNew: undefined, backendVersion: h?.version, checkedAt: new Date().toISOString() });
       return state;
     }
 
@@ -99,6 +109,9 @@ async function checkNow(): Promise<UpdateState> {
       notes,
       highlights: Array.isArray(infoFile?.highlights) ? infoFile.highlights.filter((h) => typeof h === 'string').slice(0, 6) : undefined,
       requiresBackend: infoFile?.requiresBackend,
+      backendMax: infoFile?.backendMax ?? null,
+      whatsNew: infoFile?.whatsNew,
+      checkedAt: new Date().toISOString(),
       backendVersion: health?.version,
       kind: classifyUpdate(health?.version, infoFile?.requiresBackend),
       dayEndInProgress: !!health?.dayEndInProgress,
@@ -127,7 +140,11 @@ export function initUpdater(options: {
 
   // Dev runs and unpackaged builds have no app-update.yml, so there is nothing to check.
   if (!app.isPackaged) {
-    ipcMain.handle('updater:check', () => state);
+    ipcMain.handle('updater:check', async () => {
+      const h = await fetchBackendHealth();
+      setState({ backendVersion: h?.version, checkedAt: new Date().toISOString() });
+      return state;
+    });
     ipcMain.handle('updater:download', () => ({ ok: false, error: 'Updates are disabled in development.' }));
     ipcMain.handle('updater:install', () => ({ ok: false, error: 'Updates are disabled in development.' }));
     return;

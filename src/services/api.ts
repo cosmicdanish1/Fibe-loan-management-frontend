@@ -2771,6 +2771,16 @@ class ApiService {
     return this.request<any[]>('/admin/users/active-sessions/matrix');
   }
 
+  /** Logout User > Live users: every enabled user as one card, live ones first. */
+  async getLiveUsers(): Promise<ApiResponse<any>> {
+    return this.request<any>('/admin/users/active-sessions/live');
+  }
+
+  /** Logout User > Analytics: sign-ins over the last N days. */
+  async getSessionAnalytics(days = 30): Promise<ApiResponse<any>> {
+    return this.request<any>(`/admin/users/active-sessions/analytics?days=${encodeURIComponent(days)}`);
+  }
+
   async forceLogoutUser(username: string): Promise<ApiResponse> {
     return this.request('/admin/users/active-sessions/terminate', {
       method: 'POST',

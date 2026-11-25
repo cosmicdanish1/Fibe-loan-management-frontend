@@ -2,6 +2,33 @@
   "_help": "One entry per release, newest first. 'version' must match package.json. Write for the people who use the app: plain words, what they will notice. The release workflow refuses to build a tag that has no entry here. Groups: new, improved, fixed (any of them may be empty).",
   "releases": [
     {
+      "version": "1.16.0",
+      "date": "2026-11-25",
+      "title": "Live users and analytics, one password rule, a clearer System Update window",
+      "new": [
+        "Logout User window, Live users tab: every enabled user is one card, with a green dot while that person's app is still sending its minute heartbeat. People who are online come first, then the most recently seen. One click logs a person out, and their card goes quiet at once.",
+        "Logout User window, Analytics tab: sign-ins per day, the busiest hours, the average session length, the most active people and sessions that never closed, for the last 1 to 365 days.",
+        "System Update window redesigned: it shows the installed version, the time of the last check, the release notes of the available version grouped as New, Improved and Fixed, and a table of which backend versions each Frontend version works with. Updates are switched off in a development run.",
+        "Modify Business Rules, Loan Early Closure Protection card: a new switch decides whether Close on next month's outstanding may be used for a member who has unpaid (NR) instalments. It is ON by default."
+      ],
+      "improved": [
+        "Loan Early Closure window: when the member has NR and Business Rules do not allow the next-month option, the option is greyed out up front, and clicking it opens a card that says why. If the server refuses an option, its own reason is shown instead of a generic red line.",
+        "Change Password window: a double click or Enter plus click now sends one request. Before, the second request met the already changed password and showed Current password is incorrect even though the change had worked.",
+        "Change Password and Create / Modify Users windows: both show and check the same password rule as the server, 8 to 64 characters with an uppercase letter, a lowercase letter and a number.",
+        "Sign-in sessions now carry the Day-End working date and the real time of sign-out, so a session that crosses midnight no longer shows a negative length."
+      ],
+      "fixed": [
+        "Server, Change Password: the current-password check and the save now run under one lock on the person's row, so ten requests sent at once can no longer all pass the check (ES-658).",
+        "Server, Change Password: wrong current passwords are counted per person like sign-in, and 5 wrong in 15 minutes lock the person for 15 minutes (ES-656). A new password may not be the current one or one of the last 5 (ES-207), and every other signed-in PC or stolen session stops working the moment the password changes (ES-297).",
+        "Server, sign-in and Change Password: login names now match in any letter case, as they already did for new names and in the old system, so test1212 and TEST1212 are one login (ES-659).",
+        "Server, passwords: a password such as $2b$Abcdef1 was mistaken for an already scrambled one and stored as plain text, so the person could never sign in. Only a real 60-character hash is kept as it is now, and a password may not start with $2a$, $2b$ or $2y$ (ES-654).",
+        "Server, passwords: nothing limited the length, and anything past 72 bytes was silently cut. The maximum is 64 characters (ES-657).",
+        "Server, passwords: Change Password, Forgot password and an administrator creating a user or resetting a password now follow one rule. Before, an administrator could hand out a 6-character password (ES-660).",
+        "Server, Create / Modify Users: a new person reusing the id of a deleted person no longer inherits that person's remembered passwords (ES-655).",
+        "Server, Loan Early Closure: the quote and the execution apply the same rule for the next-month option and the same awaited EMI. Any other unpaid due instalment is settled as NR, or the option is refused when Business Rules do not allow it."
+      ]
+    },
+    {
       "version": "1.15.0",
       "date": "2026-11-24",
       "title": "RD/CD interest decisions and window rights per person",

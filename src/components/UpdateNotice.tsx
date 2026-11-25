@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Progress, theme } from 'antd';
+import { Button, Modal, Progress } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 // Mirrors UpdateState in main/updater.ts (the main process owns the rules; this only renders them).
@@ -37,7 +37,6 @@ const isDismissed = (version?: string) => {
 
 const UpdateNotice: React.FC = () => {
   const { t } = useTranslation();
-  const { token } = theme.useToken();
   const [state, setState] = useState<UpdateState | null>(null);
   const [hidden, setHidden] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -79,104 +78,65 @@ const UpdateNotice: React.FC = () => {
   if (!visible || (state.status === 'available' && isDismissed(state.version))) return null;
 
   const installable = state.kind === 'minor';
+  const downloading = state.status === 'downloading';
+  const downloaded = state.status === 'downloaded';
 
   return (
-    <div
-      role="status"
-      style={{
-        position: 'fixed',
-        left: 16,
-        bottom: 16,
-        zIndex: 1000,
-        width: 340,
-        padding: 16,
-        borderRadius: token.borderRadiusLG,
-        background: token.colorBgElevated,
-        color: token.colorText,
-        border: `1px solid ${token.colorBorderSecondary}`,
-        boxShadow: token.boxShadowSecondary,
-      }}
+    <Modal
+      open
+      centered
+      width={480}
+      closable={!downloading}
+      maskClosable={false}
+      keyboard={!downloading}
+      onCancel={later}
+      title={t('A new version is available')}
+      footer={
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          {!downloading && <Button onClick={later}>{t('Later')}</Button>}
+          {state.status === 'available' && installable && (
+            <Button type="primary" loading={busy} disabled={!!state.dayEndInProgress} onClick={() => run(() => bridge.download())}>
+              {t('Update now')}
+            </Button>
+          )}
+          {state.status === 'available' && !installable && state.releaseUrl && (
+            <Button onClick={() => openExternal(state.releaseUrl!)}>{t('View release')}</Button>
+          )}
+          {downloaded && !state.installOnQuit && (
+            <Button loading={busy} onClick={() => run(() => bridge.install('on-quit'))}>{t('Install when I close')}</Button>
+          )}
+          {downloaded && (
+            <Button type="primary" loading={busy} onClick={() => run(() => bridge.install('now'))}>{t('Restart and install')}</Button>
+          )}
+        </div>
+      }
     >
-      <div style={{ fontWeight: 600, marginBottom: 4 }}>
-        {installable ? t('Update {{1}} available', { 1: state.version }) : t('Major update {{1}} available', { 1: state.version })}
-      </div>
-      <div style={{ fontSize: 12, color: token.colorTextSecondary, marginBottom: 8 }}>
-        {t('You are on version')} {state.currentVersion}.
-      </div>
-
-      {state.highlights && state.highlights.length > 0 && state.status === 'available' && (
-        <div style={{ fontSize: 12, marginBottom: 8 }}>
-          <div style={{ fontWeight: 600, marginBottom: 2 }}>{t("What's new")}</div>
-          <ul style={{ margin: 0, paddingLeft: 16, maxHeight: 120, overflowY: 'auto' }}>
-            {state.highlights.map((h, i) => <li key={i}>{h}</li>)}
-          </ul>
-        </div>
-      )}
-
-      {!(state.highlights && state.highlights.length > 0) && state.notes && state.status === 'available' && (
-        <div style={{ fontSize: 12, maxHeight: 96, overflowY: 'auto', whiteSpace: 'pre-wrap', marginBottom: 8 }}>
-          {state.notes}
-        </div>
-      )}
+      <p style={{ margin: '0 0 8px', fontSize: 15 }}>
+        {t('Version {{1}} is ready. You are on version {{2}}. Please update.', { 1: state.version, 2: state.currentVersion })}
+      </p>
 
       {!installable && state.status === 'available' && (
-        <div style={{ fontSize: 12, marginBottom: 12 }}>
+        <p style={{ margin: '0 0 8px', fontSize: 13 }}>
           {state.kind === 'major'
             ? t('This update needs a server update first. Please contact support before installing it.')
             : t('We could not confirm this update is compatible with your server. Please contact support.')}
-        </div>
+        </p>
       )}
 
-      {state.status === 'downloading' && <Progress percent={state.progress ?? 0} size="small" />}
+      {downloading && <Progress percent={state.progress ?? 0} size="small" />}
 
-      {state.status === 'downloaded' && (
-        <div style={{ fontSize: 12, marginBottom: 12 }}>
-          {state.installOnQuit
-            ? t('Downloaded. It will install when you close the app.')
-            : t('Downloaded and ready to install.')}
-        </div>
+      {downloaded && (
+        <p style={{ margin: '0 0 8px', fontSize: 13 }}>
+          {state.installOnQuit ? t('Downloaded. It will install when you close the app.') : t('Downloaded and ready to install.')}
+        </p>
       )}
 
       {state.dayEndInProgress && installable && state.status === 'available' && (
-        <div style={{ fontSize: 12, color: token.colorWarning, marginBottom: 12 }}>
-          {t('Day-end is running. You can update once it finishes.')}
-        </div>
+        <p style={{ margin: '0 0 8px', fontSize: 13 }}>{t('Day-end is running. You can update once it finishes.')}</p>
       )}
 
-      {message && <div style={{ fontSize: 12, color: token.colorError, marginBottom: 8 }}>{message}</div>}
-
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        {state.status === 'available' && installable && (
-          <Button
-            type="primary"
-            size="small"
-            loading={busy}
-            disabled={!!state.dayEndInProgress}
-            onClick={() => run(() => bridge.download())}
-          >
-            {t('Download update')}
-          </Button>
-        )}
-        {state.status === 'available' && !installable && state.releaseUrl && (
-          <Button size="small" onClick={() => openExternal(state.releaseUrl!)}>{t('View release')}</Button>
-        )}
-        {state.status === 'downloaded' && (
-          <>
-            {!state.installOnQuit && (
-              <Button size="small" loading={busy} onClick={() => run(() => bridge.install('on-quit'))}>
-                {t('Install when I close')}
-              </Button>
-            )}
-            <Button type="primary" size="small" loading={busy} onClick={() => run(() => bridge.install('now'))}>
-              {t('Restart & install')}
-            </Button>
-          </>
-        )}
-        {state.status !== 'downloading' && (
-          <Button size="small" type="text" onClick={later}>{t('Later')}</Button>
-        )}
-      </div>
-    </div>
+      {message && <p role="alert" style={{ margin: 0, fontSize: 13, color: '#b42330' }}>{message}</p>}
+    </Modal>
   );
 };
 

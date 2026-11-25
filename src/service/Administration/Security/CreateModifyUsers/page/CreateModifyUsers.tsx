@@ -411,13 +411,17 @@ const CreateModifyUsers: React.FC<CreateModifyUsersProps> = ({ className = '' })
                     <div>
                       <label className="aw-label" htmlFor="cmu-pw">{t('Password')}</label>
                       <PasswordInput withIcon id="cmu-pw" value={formData.password}
+                          maxLength={64}
+                          autoComplete="new-password"
                           onChange={(e) => updateFormData('password', e.target.value)}
                           className="aw-input" placeholder={isUpdating ? t('(blank = keep)') : '••••••••'} />
-                      {!isUpdating && <p className="aw-meta" style={{ marginTop: 4 }}>{t('Min 6 characters')}</p>}
+                      <p className="aw-meta" style={{ marginTop: 4 }}>{t('8 to 64 characters with upper, lower and a number')}</p>
                     </div>
                     <div>
                       <label className="aw-label" htmlFor="cmu-pw2">{t('Confirm')}</label>
                       <PasswordInput id="cmu-pw2" value={formData.confirmPassword}
+                        maxLength={64}
+                        autoComplete="new-password"
                         onChange={(e) => updateFormData('confirmPassword', e.target.value)}
                         className={`aw-input ${formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword ? 'is-invalid' : ''}`}
                         placeholder="••••••••" />

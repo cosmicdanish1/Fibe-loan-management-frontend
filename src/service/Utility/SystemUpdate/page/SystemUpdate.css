@@ -1,0 +1,59 @@
+/* System Update window. Colours come from the shared --aw-* tokens, so dark mode follows the app. */
+.su-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .su-grid { grid-template-columns: 1fr; } }
+
+.su-product { display: flex; flex-direction: column; gap: 16px; }
+.su-product-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.su-product-name { font-size: 13px; font-weight: 500; color: var(--aw-text); }
+.su-product-sub { font-size: 12px; color: var(--aw-muted); margin-top: 2px; }
+
+.su-versions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 0; border-top: 1px solid var(--aw-border); border-bottom: 1px solid var(--aw-border); }
+.su-ver-label { font-size: 12px; color: var(--aw-muted); }
+.su-ver-num { margin-top: 4px; font-size: 24px; line-height: 28px; font-weight: 500; letter-spacing: -.01em; font-variant-numeric: tabular-nums; color: var(--aw-text); }
+.su-ver-num.is-new { color: var(--aw-accent); }
+.su-ver-num.is-none { color: var(--aw-muted); }
+
+.su-status { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 20px; color: var(--aw-text); }
+.su-dot { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--aw-muted); }
+.su-dot.ok { background: var(--aw-success); }
+.su-dot.new { background: var(--aw-accent); }
+.su-dot.warn { background: var(--aw-warning); }
+.su-dot.bad { background: var(--aw-danger); }
+
+.su-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.su-progress { height: 4px; border-radius: 2px; background: var(--aw-border-strong); overflow: hidden; }
+.su-progress > span { display: block; height: 100%; background: var(--aw-accent); transition: width .2s ease; }
+.su-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--aw-muted); }
+.su-meta strong { color: var(--aw-text); font-weight: 500; }
+
+.su-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.su-section-title { font-size: 13px; font-weight: 500; color: var(--aw-text); }
+.su-section-hint { font-size: 12px; color: var(--aw-muted); }
+
+.su-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.su-table th { text-align: left; font-weight: 400; font-size: 12px; color: var(--aw-muted); padding: 0 12px 8px; border-bottom: 1px solid var(--aw-border-strong); }
+.su-table td { padding: 8px 12px; border-bottom: 1px solid var(--aw-border); color: var(--aw-text); }
+.su-table tr:last-child td { border-bottom: 0; }
+.su-table tr.is-current td { background: var(--aw-accent-soft); }
+.su-table tr.is-current td:first-child { box-shadow: inset 2px 0 0 var(--aw-accent); }
+.su-tag { margin-left: 8px; font-size: 12px; color: var(--aw-muted); }
+.su-pair { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
+
+.su-tabs { display: inline-flex; gap: 4px; padding: 2px; border-radius: 8px; background: var(--aw-surface-muted); border: 1px solid var(--aw-border); margin-bottom: 16px; }
+.su-tab { height: 28px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--aw-muted); font-size: 13px; cursor: pointer; transition: background-color .12s ease, color .12s ease; }
+.su-tab:hover { color: var(--aw-text); }
+.su-tab:focus-visible { outline: 2px solid var(--aw-focus); outline-offset: 1px; }
+.su-tab.is-on { background: var(--aw-surface); color: var(--aw-text); box-shadow: 0 0 0 1px var(--aw-border-strong); }
+
+.su-notes-title { font-size: 13px; font-weight: 500; margin: 0 0 12px; }
+.su-notes-group { margin-bottom: 16px; }
+.su-notes-group:last-child { margin-bottom: 0; }
+.su-notes-label { font-size: 12px; color: var(--aw-muted); margin-bottom: 4px; }
+.su-notes-list { margin: 0; padding: 0; list-style: none; }
+.su-notes-list li { position: relative; padding: 4px 0 4px 16px; font-size: 13px; line-height: 20px; color: var(--aw-text); }
+.su-notes-list li::before { content: ''; position: absolute; left: 4px; top: 12px; width: 4px; height: 4px; border-radius: 50%; background: var(--aw-muted); }
+
+.su-adv > summary { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--aw-text); list-style: none; display: flex; align-items: center; gap: 8px; }
+.su-adv > summary::-webkit-details-marker { display: none; }
+.su-adv > summary:focus-visible { outline: 2px solid var(--aw-focus); outline-offset: 2px; border-radius: 4px; }
+.su-adv-body { margin-top: 16px; display: flex; flex-direction: column; gap: 16px; }

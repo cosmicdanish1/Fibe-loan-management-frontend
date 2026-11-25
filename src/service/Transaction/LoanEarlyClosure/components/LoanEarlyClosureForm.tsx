@@ -41,9 +41,16 @@ const loadView = (): ClosureView => {
 const LoanEarlyClosureForm: React.FC<Props> = ({
     form, activeLoans, quote, quoteLoading, loading, message, closed, requireTypeConfirm,
     updateForm, handleMemberLookup, handleLoanSelect, recalculate, toggleApplyRdShare, toggleAdjustPayrollLag, recordPayrollLagRefund,
-    applySuggestedAdjustment, handleExecuteClosure, handleReset, holdInfo, toggleNextMonth,
+    applySuggestedAdjustment, handleExecuteClosure, handleReset, holdInfo, toggleNextMonth, quoteError, clearQuoteError,
 }) => {
   const { t } = useTranslation();
+    // Pop-up card explaining why an option cannot be used: either the server refused it (quoteError) or the window already
+    // knows it is unavailable (the member has NR and Business Rules do not allow it) and the greyed-out card was clicked.
+    const [blockedCard, setBlockedCard] = useState<{ title: string; text: string } | null>(null);
+    const infoCard = quoteError ?? blockedCard;
+    const closeInfoCard = () => { setBlockedCard(null); clearQuoteError(); };
+    const nextMonthOption = quote?.nextMonthOption;
+    const nextMonthBlocked = !!nextMonthOption && !nextMonthOption.available && !form.nextMonth;
     const [showConfirm, setShowConfirm] = useState(false);
     const [openCard, setOpenCard] = useState<Record<string, boolean>>({});
     const toggleCard = (k: string) => setOpenCard(prev => ({ ...prev, [k]: !prev[k] }));
@@ -482,14 +489,23 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                 <div className={`lec-opts-grid${openCard.next || openCard.lag || openCard.rd ? ' has-open' : ''}`}>
 
                                                     {/* 1. Close on next month's outstanding */}
-                                                    <article className={`lec-card${form.nextMonth ? ' is-on' : ''}`}>
+                                                    <article
+                                                        className={`lec-card${form.nextMonth ? ' is-on' : ''}`}
+                                                        aria-disabled={nextMonthBlocked}
+                                                        style={nextMonthBlocked ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+                                                        onClick={nextMonthBlocked ? () => setBlockedCard({ title: t("Close on next month's outstanding is not available"), text: nextMonthOption?.reason || '' }) : undefined}
+                                                    >
                                                         <header className="lec-card-head">
-                                                            <label className="lec-card-check">
-                                                                <input type="checkbox" checked={form.nextMonth} onChange={e => toggleNextMonth(e.target.checked)} />
+                                                            <label className="lec-card-check" style={nextMonthBlocked ? { cursor: 'not-allowed' } : undefined}>
+                                                                <input type="checkbox" checked={form.nextMonth} disabled={nextMonthBlocked} onChange={e => toggleNextMonth(e.target.checked)} />
                                                                 <span className="lec-box" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>
                                                                 <span className="lec-card-title">
                                                                     <span className="aw-strong">{t("Close on next month's outstanding")}</span>
-                                                                    <span className="aw-meta">{t('Regular payer, no NR')}</span>
+                                                                    <span className="aw-meta">
+                                                                        {nextMonthBlocked
+                                                                            ? t('Not available: member has NR ({{1}} unpaid) — click for details', { 1: nextMonthOption?.nrCount ?? 0 })
+                                                                            : (nextMonthOption?.nrCount ? t('Member has NR — allowed by Business Rules') : t('Regular payer, no NR'))}
+                                                                    </span>
                                                                 </span>
                                                             </label>
                                                             <InfoBtn k="next" />
@@ -511,7 +527,7 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                                                                         <div className="aw-row"><span className="aw-row-label">{t('EMI principal treated as received')}</span><span className="aw-row-value">₹{fmt(quote.nextMonthInfo.principal)}</span></div>
                                                                         <div className="aw-row"><span className="aw-row-label">{t('Outstanding principal used')}</span><span className="aw-row-value">₹{fmt(quote.outstandingPrincipal)}</span></div>
                                                                         <div className="aw-row"><span className="aw-row-label">{t('Closure interest')}</span><span className="aw-row-value">₹{fmt(quote.closureInterest)}</span></div>
-                                                                        <div className="aw-row"><span className="aw-row-label">{t('Penalty')}</span><span className="aw-row-value">₹{fmt(0)}</span></div>
+                                                                        <div className="aw-row"><span className="aw-row-label">{t('Penalty')}</span><span className="aw-row-value">₹{fmt(quote.penalInterest)}</span></div>
                                                                     </div>
                                                                 ) : (
                                                                     <p className="aw-meta">{t("Tick the box to see the figures calculated on next month's outstanding.")}</p>
@@ -1002,6 +1018,23 @@ const LoanEarlyClosureForm: React.FC<Props> = ({
                         >
                             {t('Yes, Close Loan')}
                         </button>
+                    </div>
+                </div>
+            </AwDialog>
+
+            {/* Why an option cannot be used (the server's own explanation) */}
+            <AwDialog
+                open={!!infoCard}
+                title={infoCard ? t(infoCard.title) : ''}
+                icon={<AlertTriangle size={14} />}
+                onClose={closeInfoCard}
+                maxWidth="30rem"
+                compact
+            >
+                <div className="aw-stack">
+                    <p className="aw-meta" style={{ lineHeight: 1.6 }}>{infoCard?.text}</p>
+                    <div className="aw-btn-row" style={{ justifyContent: 'flex-end' }}>
+                        <button type="button" onClick={closeInfoCard} className="aw-btn aw-btn-primary">{t('OK')}</button>
                     </div>
                 </div>
             </AwDialog>

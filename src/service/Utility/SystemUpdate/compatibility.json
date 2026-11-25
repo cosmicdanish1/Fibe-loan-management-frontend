@@ -1,0 +1,14 @@
+{
+  "_help": "One row per frontend release, newest first. backendMin = oldest backend this frontend works with (same value as backend-requirement.json at release time). backendMax = newest backend it is known to work with; null means every newer backend. Set backendMax only when a later backend breaks this frontend. The release workflow refuses a tag with no row here.",
+  "rows": [
+    { "frontend": "1.16.0", "backendMin": "1.17.0", "backendMax": null },
+    { "frontend": "1.15.0", "backendMin": "1.16.0", "backendMax": null },
+    { "frontend": "1.14.0", "backendMin": "1.15.0", "backendMax": null },
+    { "frontend": "1.13.0", "backendMin": "1.14.0", "backendMax": null },
+    { "frontend": "1.12.0", "backendMin": "1.13.0", "backendMax": null },
+    { "frontend": "1.11.0", "backendMin": "1.12.0", "backendMax": null },
+    { "frontend": "1.10.0", "backendMin": "1.11.0", "backendMax": null },
+    { "frontend": "1.9.0", "backendMin": "1.10.0", "backendMax": null },
+    { "frontend": "1.8.0", "backendMin": "1.9.0", "backendMax": null }
+  ]
+}

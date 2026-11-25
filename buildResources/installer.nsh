@@ -13,7 +13,7 @@
 ; quote is $\". A literal dollar sign is $$.
 ; ${VERSION} is set by electron-builder from package.json — no need
 ; to hardcode it here.
-!define RELEASE_NOTES "- Business Rules window redesigned, with profiles.$\r$\n- Import Demand List: new import modes, plus an RD/CD repayment grid.$\r$\n- Society Calculator, customisable dashboard with notice board, and new settings sections.$\r$\n- Early closure: next-month option, Past Transaction hand-off, and re-agreement pop-up.$\r$\n- System Update and Mobile Control Center screens, 2FA login, and more languages.$\r$\n- Amount input limits and plain-language error messages."
+!define RELEASE_NOTES "- New RD/CD Interest window, bulk year closing, and rebuilt Head windows.$\r$\n- Per-person window rights and per-window date settings.$\r$\n- Compulsory Deposit (Legacy) and loan penal rate exception.$\r$\n- Loan Repayment renamed NR Repayment; real My Profile with recent sign-ins; full translation coverage.$\r$\n- Sturdier member search and sign-out; clearer early closure and repayment."
 ; ================================================================
 
 !macro customWelcomePage

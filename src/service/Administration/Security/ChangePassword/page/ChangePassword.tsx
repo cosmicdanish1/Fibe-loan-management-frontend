@@ -93,6 +93,8 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ className = '' }) => {
           value={formData[field]}
           onChange={e => updateField(field, e.target.value)}
           placeholder={t(placeholder)}
+          maxLength={64} /* ES-657: only the first 72 bytes of a longer password would ever count */
+          autoComplete={field === 'currentPassword' ? 'current-password' : 'new-password'}
           className={`aw-input ${invalid ? 'is-invalid' : ''}`}
         />
         <button
